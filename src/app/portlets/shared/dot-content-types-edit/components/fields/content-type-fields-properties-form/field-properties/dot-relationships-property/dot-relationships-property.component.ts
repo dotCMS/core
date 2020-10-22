@@ -64,7 +64,11 @@ export class DotRelationshipsPropertyComponent implements OnInit {
      */
     getValidationErrorMessage(): string {
         return this.status === this.STATUS_NEW
-            ? this.dotMessageService.get('contenttypes.field.properties.relationships.new.error.required')
-            : this.dotMessageService.get('contenttypes.field.properties.relationships.edit.error.required');
+            ? this.dotMessageService.get(
+                  'contenttypes.field.properties.relationships.new.error.required'
+              )
+            : this.dotMessageService.get(
+                  'contenttypes.field.properties.relationships.edit.error.required'
+              );
     }
 }

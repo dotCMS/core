@@ -1,25 +1,26 @@
 @use "variables" as *;
 .p-tooltip .p-tooltip-text {
-  background: rgba(97, 97, 97, 0.9);
-  color: $white;
-  padding: $spacing-2 $spacing-3;
-  font-size: 1rem;
-  box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2), 0 8px 10px 1px rgba(0, 0, 0, 0.14), 0 3px 14px 2px rgba(0, 0, 0, 0.12);
-  border-radius: $border-radius;
+    background: rgba(97, 97, 97, 0.9);
+    color: $white;
+    padding: $spacing-2 $spacing-3;
+    font-size: 1rem;
+    box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2), 0 8px 10px 1px rgba(0, 0, 0, 0.14),
+        0 3px 14px 2px rgba(0, 0, 0, 0.12);
+    border-radius: $border-radius;
 }
 .p-tooltip.p-tooltip-right .p-tooltip-arrow {
-  border-right-color: rgba(97, 97, 97, 0.9);
+    border-right-color: rgba(97, 97, 97, 0.9);
 }
 .p-tooltip.p-tooltip-left .p-tooltip-arrow {
-  border-left-color: rgba(97, 97, 97, 0.9);
+    border-left-color: rgba(97, 97, 97, 0.9);
 }
 .p-tooltip.p-tooltip-top .p-tooltip-arrow {
-  border-top-color: rgba(97, 97, 97, 0.9);
+    border-top-color: rgba(97, 97, 97, 0.9);
 }
 .p-tooltip.p-tooltip-bottom .p-tooltip-arrow {
-  border-bottom-color: rgba(97, 97, 97, 0.9);
+    border-bottom-color: rgba(97, 97, 97, 0.9);
 }
 
 .p-tooltip .p-tooltip-text {
-  box-shadow: none;
+    box-shadow: none;
 }

@@ -13,43 +13,59 @@ import { LoggerService } from 'dotcms-js';
 @Component({
     selector: 'rule-condition',
     template: `<div *ngIf="typeDropdown != null" flex layout="row" class="cw-condition cw-entry">
-  <div class="cw-btn-group cw-condition-toggle">
-    <button pButton class="p-button-secondary" aria-label="Swap And/Or" (click)="toggleOperator()" [label]="condition.operator" *ngIf="index !== 0"></button>
-  </div>
+            <div class="cw-btn-group cw-condition-toggle">
+                <button
+                    pButton
+                    class="p-button-secondary"
+                    aria-label="Swap And/Or"
+                    (click)="toggleOperator()"
+                    [label]="condition.operator"
+                    *ngIf="index !== 0"
+                ></button>
+            </div>
 
-  <cw-input-dropdown
-      [options]="typeDropdown.options"
-      flex="25"
-      class="cw-type-dropdown"
-      [value]="condition.type?.key"
-      placeholder="{{conditionTypePlaceholder}}"
-      (onDropDownChange)="onTypeChange($event)">
-
-  </cw-input-dropdown>
-  <div flex="75" class="cw-condition-row-main" [ngSwitch]="condition.type?.key">
-    <ng-template [ngSwitchCase]="'NoSelection'">
-      <div class="cw-condition-component"></div>
-    </ng-template>
-    <ng-template [ngSwitchCase]="'VisitorsGeolocationConditionlet'">
-      <cw-visitors-location-container
-          [componentInstance]="condition"
-          (parameterValuesChange)="onParameterValuesChange($event)"></cw-visitors-location-container>
-    </ng-template>
-    <ng-template ngSwitchDefault>
-      <cw-serverside-condition class="cw-condition-component"
-                               [componentInstance]="condition"
-                               (parameterValueChange)="onParameterValueChange($event)">
-      </cw-serverside-condition>
-    </ng-template>
-  </div>
-</div>
-<div class="cw-btn-group cw-delete-btn">
-  <div class="ui basic icon buttons">
-    <button pButton type="button" icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-text"  aria-label="Delete Condition" (click)="onDeleteConditionClicked()" [disabled]="!condition.isPersisted()">
-    </button>
-  </div>
-</div>
-`
+            <cw-input-dropdown
+                [options]="typeDropdown.options"
+                flex="25"
+                class="cw-type-dropdown"
+                [value]="condition.type?.key"
+                placeholder="{{ conditionTypePlaceholder }}"
+                (onDropDownChange)="onTypeChange($event)"
+            >
+            </cw-input-dropdown>
+            <div flex="75" class="cw-condition-row-main" [ngSwitch]="condition.type?.key">
+                <ng-template [ngSwitchCase]="'NoSelection'">
+                    <div class="cw-condition-component"></div>
+                </ng-template>
+                <ng-template [ngSwitchCase]="'VisitorsGeolocationConditionlet'">
+                    <cw-visitors-location-container
+                        [componentInstance]="condition"
+                        (parameterValuesChange)="onParameterValuesChange($event)"
+                    ></cw-visitors-location-container>
+                </ng-template>
+                <ng-template ngSwitchDefault>
+                    <cw-serverside-condition
+                        class="cw-condition-component"
+                        [componentInstance]="condition"
+                        (parameterValueChange)="onParameterValueChange($event)"
+                    >
+                    </cw-serverside-condition>
+                </ng-template>
+            </div>
+        </div>
+        <div class="cw-btn-group cw-delete-btn">
+            <div class="ui basic icon buttons">
+                <button
+                    pButton
+                    type="button"
+                    icon="pi pi-trash"
+                    class="p-button-rounded p-button-danger p-button-text"
+                    aria-label="Delete Condition"
+                    (click)="onDeleteConditionClicked()"
+                    [disabled]="!condition.isPersisted()"
+                ></button>
+            </div>
+        </div> `
 })
 export class ConditionComponent implements OnInit {
     @Input() condition: ConditionModel;
@@ -76,17 +92,17 @@ export class ConditionComponent implements OnInit {
 
     typeDropdown: any;
 
-    constructor(private _resources: I18nService, private loggerService: LoggerService) { }
+    constructor(private _resources: I18nService, private loggerService: LoggerService) {}
 
     ngOnInit(): void {
         setTimeout(() => {
             this.typeDropdown = {
-                options: Object.keys(this.conditionTypes).map(key => {
+                options: Object.keys(this.conditionTypes).map((key) => {
                     const type = this.conditionTypes[key];
-                        return {
-                            label: type._opt.label,
-                            value: type._opt.value
-                        };
+                    return {
+                        label: type._opt.label,
+                        value: type._opt.value
+                    };
                 }),
                 placeholder: this._resources.get(
                     'api.sites.ruleengine.rules.inputs.condition.type.placeholder'
@@ -118,7 +134,7 @@ export class ConditionComponent implements OnInit {
     }
 
     onParameterValuesChange(event: { name: string; value: string }[]): void {
-        event.forEach(change => this.onParameterValueChange(change));
+        event.forEach((change) => this.onParameterValueChange(change));
     }
 
     onParameterValueChange(event: { name: string; value: string }): void {

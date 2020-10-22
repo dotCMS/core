@@ -16,8 +16,10 @@ const contentTypesRoutes: Routes = [
         redirectTo: ''
     },
     {
-        loadChildren:
-            () => import('@portlets/shared/dot-content-types-edit/dot-content-types-edit.module').then(m => m.DotContentTypesEditModule),
+        loadChildren: () =>
+            import('@portlets/shared/dot-content-types-edit/dot-content-types-edit.module').then(
+                (m) => m.DotContentTypesEditModule
+            ),
         path: 'create/:type',
         resolve: {
             contentType: DotContentTypeEditResolver
@@ -28,8 +30,10 @@ const contentTypesRoutes: Routes = [
         redirectTo: ''
     },
     {
-        loadChildren:
-            () => import('@portlets/shared/dot-content-types-edit/dot-content-types-edit.module').then(m => m.DotContentTypesEditModule),
+        loadChildren: () =>
+            import('@portlets/shared/dot-content-types-edit/dot-content-types-edit.module').then(
+                (m) => m.DotContentTypesEditModule
+            ),
         path: 'edit/:id',
         resolve: {
             contentType: DotContentTypeEditResolver

@@ -7,7 +7,7 @@
     >
         <ng-template ngFor let-row let-i="index" [ngForOf]="fieldRows">
             <dot-content-type-fields-row
-                *ngIf="row.columns && row.columns.length;else tab_container"
+                *ngIf="row.columns && row.columns.length; else tab_container"
                 [fieldRow]="row"
                 (editField)="editFieldHandler($event)"
                 (removeField)="removeField($event)"
@@ -39,7 +39,7 @@
     [header]="currentFieldType?.label"
 >
     <p-tabView [activeIndex]="dialogActiveTab" (onChange)="handleTabChange($event.index)">
-        <p-tabPanel [header]=" 'contenttypes.dropzone.tab.overview' | dm">
+        <p-tabPanel [header]="'contenttypes.dropzone.tab.overview' | dm">
             <dot-content-type-fields-properties-form
                 [formFieldData]="currentField"
                 (saveField)="saveFieldsHandler($event)"

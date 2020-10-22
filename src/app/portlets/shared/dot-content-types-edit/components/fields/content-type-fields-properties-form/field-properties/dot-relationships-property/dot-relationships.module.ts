@@ -20,9 +20,7 @@ import { RadioButtonModule } from 'primeng/radiobutton';
         DotCardinalitySelectorComponent,
         DotEditRelationshipsComponent
     ],
-    entryComponents: [
-        DotRelationshipsPropertyComponent
-    ],
+    entryComponents: [DotRelationshipsPropertyComponent],
     exports: [DotRelationshipsPropertyComponent],
     imports: [
         CommonModule,
@@ -33,9 +31,6 @@ import { RadioButtonModule } from 'primeng/radiobutton';
         SearchableDropDownModule,
         DotPipesModule
     ],
-    providers: [
-        DotRelationshipService,
-        DotEditContentTypeCacheService
-    ]
+    providers: [DotRelationshipService, DotEditContentTypeCacheService]
 })
 export class DotRelationshipsModule {}

@@ -19,16 +19,18 @@ describe('CheckboxPropertyComponent', () => {
         'contenttypes.field.properties.unique.label': 'unique'
     });
 
-    beforeEach(waitForAsync( () => {
-        DOTTestBed.configureTestingModule({
-            declarations: [CheckboxPropertyComponent],
-            imports: [],
-            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-        });
+    beforeEach(
+        waitForAsync(() => {
+            DOTTestBed.configureTestingModule({
+                declarations: [CheckboxPropertyComponent],
+                imports: [],
+                providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+            });
 
-        fixture = DOTTestBed.createComponent(CheckboxPropertyComponent);
-        comp = fixture.componentInstance;
-    }));
+            fixture = DOTTestBed.createComponent(CheckboxPropertyComponent);
+            comp = fixture.componentInstance;
+        })
+    );
 
     it('should have a form', () => {
         const group = new FormGroup({});
@@ -47,7 +49,7 @@ describe('CheckboxPropertyComponent', () => {
             name: 'indexed',
             value: 'value',
             field: {
-                ...dotcmsContentTypeFieldBasicMock,
+                ...dotcmsContentTypeFieldBasicMock
             }
         };
 

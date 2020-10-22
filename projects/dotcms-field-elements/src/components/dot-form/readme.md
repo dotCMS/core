@@ -1,9 +1,6 @@
 # dot-form
 
-
-
 <!-- Auto Generated Below -->
-
 
 ## Properties
 
@@ -15,7 +12,6 @@
 | `submitLabel`  | `submit-label`   | (optional) Text to be rendered on Submit button                          | `string`                       | `'Submit'`  |
 | `variable`     | `variable`       | Content type variable name                                               | `string`                       | `''`        |
 
+---
 
-----------------------------------------------
-
-*Built with [StencilJS](https://stenciljs.com/)*
+_Built with [StencilJS](https://stenciljs.com/)_

@@ -10,7 +10,6 @@ import { DotEditPageStateControllerComponent } from './dot-edit-page-state-contr
 import { DotEditPageLockInfoComponent } from './components/dot-edit-page-lock-info/dot-edit-page-lock-info.component';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
-
 @NgModule({
     declarations: [DotEditPageStateControllerComponent, DotEditPageLockInfoComponent],
     exports: [DotEditPageStateControllerComponent],

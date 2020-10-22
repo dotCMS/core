@@ -21,21 +21,20 @@ export const ConfirmDialogTemplate = `
 `;
 
 @Component({
-  selector: 'app-p-confirm-dialog',
-  template: ConfirmDialogTemplate,
+    selector: 'app-p-confirm-dialog',
+    template: ConfirmDialogTemplate
 })
 export class ConfirmDialogComponent {
+    constructor(private confirmationService: ConfirmationService) {}
 
-  constructor(private confirmationService: ConfirmationService) {}
-
-  confirm(): void {
-    this.confirmationService.confirm({
-        message:
-            'Are you sure you want to delete the Content Type Contact and all the content associated with it? (This operation can not be undone)',
-        header: 'Delete Content Type',
-        acceptLabel: 'Close',
-        rejectLabel: 'Cancel',
-        rejectButtonStyleClass: 'p-button-secondary'
-    });
-  }
+    confirm(): void {
+        this.confirmationService.confirm({
+            message:
+                'Are you sure you want to delete the Content Type Contact and all the content associated with it? (This operation can not be undone)',
+            header: 'Delete Content Type',
+            acceptLabel: 'Close',
+            rejectLabel: 'Cancel',
+            rejectButtonStyleClass: 'p-button-secondary'
+        });
+    }
 }

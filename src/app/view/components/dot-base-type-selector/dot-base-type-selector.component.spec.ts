@@ -13,11 +13,12 @@ import { Dropdown } from 'primeng/dropdown';
 
 @Injectable()
 class MockDotContentTypeService {
-    getAllContentTypes = jasmine
-        .createSpy('getContentTypes')
-        .and.returnValue(
-            observableOf([{ name: 'FORM', label: 'Form' }, { name: 'WIDGET', label: 'Widget' }])
-        );
+    getAllContentTypes = jasmine.createSpy('getContentTypes').and.returnValue(
+        observableOf([
+            { name: 'FORM', label: 'Form' },
+            { name: 'WIDGET', label: 'Widget' }
+        ])
+    );
 }
 
 describe('DotBaseTypeSelectorComponent', () => {

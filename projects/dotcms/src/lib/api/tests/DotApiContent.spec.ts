@@ -69,8 +69,7 @@ describe('DotApiContent', () => {
             };
 
             const requestParams = {
-                url:
-                    `/api/content/query/+contentType:${params.contentType}%20/depth/${params.options.depth}`,
+                url: `/api/content/query/+contentType:${params.contentType}%20/depth/${params.options.depth}`,
                 method: 'GET',
                 body: ''
             };

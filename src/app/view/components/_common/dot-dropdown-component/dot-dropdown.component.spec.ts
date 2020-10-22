@@ -8,10 +8,11 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 @Component({
     selector: 'dot-test-host-component',
     template: `<dot-dropdown-component
-            [gravatar]="gravatar"
-            [icon]="icon"
-            [title]="title"
-            [disabled]="disabled"></dot-dropdown-component>`
+        [gravatar]="gravatar"
+        [icon]="icon"
+        [title]="title"
+        [disabled]="disabled"
+    ></dot-dropdown-component>`
 })
 class DotTestHostComponent {
     disabled: boolean;
@@ -75,24 +76,26 @@ describe('DotDropdownComponent', () => {
     let comp: DotDropdownComponent;
     let de: DebugElement;
 
-    beforeEach(waitForAsync( () => {
-        DOTTestBed.configureTestingModule({
-            declarations: [
-                DotDropdownComponent,
-                MockGravatarComponent,
-                MockDotIconButtonComponent,
-                DotTestHostComponent
-            ],
-            imports: [BrowserAnimationsModule]
-        });
+    beforeEach(
+        waitForAsync(() => {
+            DOTTestBed.configureTestingModule({
+                declarations: [
+                    DotDropdownComponent,
+                    MockGravatarComponent,
+                    MockDotIconButtonComponent,
+                    DotTestHostComponent
+                ],
+                imports: [BrowserAnimationsModule]
+            });
 
-        hostFixture = DOTTestBed.createComponent(DotTestHostComponent);
-        hostComp = hostFixture.debugElement.componentInstance;
-        hostDe = hostFixture.debugElement;
+            hostFixture = DOTTestBed.createComponent(DotTestHostComponent);
+            hostComp = hostFixture.debugElement.componentInstance;
+            hostDe = hostFixture.debugElement;
 
-        de = hostDe.query(By.css('dot-dropdown-component'));
-        comp = de.componentInstance;
-    }));
+            de = hostDe.query(By.css('dot-dropdown-component'));
+            comp = de.componentInstance;
+        })
+    );
 
     describe('Enabled', () => {
         let button: DebugElement;

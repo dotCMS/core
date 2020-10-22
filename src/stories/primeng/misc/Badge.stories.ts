@@ -3,20 +3,20 @@ import { moduleMetadata } from '@storybook/angular';
 import { ButtonModule } from 'primeng/button';
 
 export default {
-  title: 'PrimeNG/Misc/Badge',
-  parameters: {
-    docs: {
-      description: {
-        component:
-          'Badge is a small status indicator for another element.: https://primefaces.org/primeng/showcase/#/badge',
-      },
+    title: 'PrimeNG/Misc/Badge',
+    parameters: {
+        docs: {
+            description: {
+                component:
+                    'Badge is a small status indicator for another element.: https://primefaces.org/primeng/showcase/#/badge'
+            }
+        }
     },
-  },
-  decorators: [
-    moduleMetadata({
-      imports: [ButtonModule],
-    }),
-  ],
+    decorators: [
+        moduleMetadata({
+            imports: [ButtonModule]
+        })
+    ]
 } as Meta;
 
 const TooltipPrimaryTemplate = `
@@ -31,33 +31,32 @@ const TooltipSecondaryTemplate = `
   <p><span class="p-badge p-badge-secondary p-badge-xl">6</span></p>
 `;
 
-
 export const Primary: Story = (props: any) => {
-  return {
-      props,
-      template: TooltipPrimaryTemplate
-  }
-}
+    return {
+        props,
+        template: TooltipPrimaryTemplate
+    };
+};
 
 Primary.parameters = {
-  docs: {
-    source: {
-      code: TooltipPrimaryTemplate,
-    },
-  },
+    docs: {
+        source: {
+            code: TooltipPrimaryTemplate
+        }
+    }
 };
 
 export const Secondary: Story = (props: any) => {
-  return {
-      props,
-      template: TooltipSecondaryTemplate
-  }
-}
+    return {
+        props,
+        template: TooltipSecondaryTemplate
+    };
+};
 
 Secondary.parameters = {
-  docs: {
-    source: {
-      code: TooltipSecondaryTemplate,
-    },
-  },
+    docs: {
+        source: {
+            code: TooltipSecondaryTemplate
+        }
+    }
 };

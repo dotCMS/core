@@ -1,4 +1,3 @@
-
 /**
  *{@link DotMessage}'s severity
  *

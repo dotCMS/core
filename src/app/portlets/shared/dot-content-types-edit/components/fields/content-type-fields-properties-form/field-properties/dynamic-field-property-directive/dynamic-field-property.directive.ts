@@ -38,7 +38,6 @@ export class DynamicFieldPropertyDirective implements OnChanges {
             componentFactory
         );
 
-
         componentRef.instance.property = {
             field: this.field,
             name: this.propertyName,

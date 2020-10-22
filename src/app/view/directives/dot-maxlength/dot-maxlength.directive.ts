@@ -18,7 +18,7 @@ export class DotMaxlengthDirective implements OnInit, OnDestroy {
     constructor(private el: ElementRef) {}
 
     ngOnInit() {
-        const eventStreams = this.events.map(ev => fromEvent(this.el.nativeElement, ev));
+        const eventStreams = this.events.map((ev) => fromEvent(this.el.nativeElement, ev));
         const allEvents$ = merge(...eventStreams);
         allEvents$
             .pipe(

@@ -65,9 +65,9 @@ export class ContentTypeFieldsTabComponent implements OnInit {
             accept: () => {
                 this.removeTab.emit(this.fieldTab);
             },
-            header: `${this.dotMessageService.get('contenttypes.action.delete')} ${
-                this.dotMessageService.get('contenttypes.content.field')
-            }`,
+            header: `${this.dotMessageService.get(
+                'contenttypes.action.delete'
+            )} ${this.dotMessageService.get('contenttypes.content.field')}`,
             message: this.dotMessageService.get(
                 'contenttypes.confirm.message.delete.field',
                 this.fieldTab.divider.name

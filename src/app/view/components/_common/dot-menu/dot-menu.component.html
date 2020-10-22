@@ -1,12 +1,23 @@
-<dot-icon-button class="dot-menu__button" float [icon]="icon || ''" (click)="toggle($event)" *ngIf="float; else noFloat"></dot-icon-button>
+<dot-icon-button
+    class="dot-menu__button"
+    float
+    [icon]="icon || ''"
+    (click)="toggle($event)"
+    *ngIf="float; else noFloat"
+></dot-icon-button>
 
 <ng-template #noFloat>
-    <dot-icon-button class="dot-menu__button" [icon]="icon || ''" (click)="toggle($event)"></dot-icon-button>
+    <dot-icon-button
+        class="dot-menu__button"
+        [icon]="icon || ''"
+        (click)="toggle($event)"
+    ></dot-icon-button>
 </ng-template>
-
 
 <ul class="dot-menu__list" *ngIf="visible">
     <li class="dot-menu-item" *ngFor="let item of model">
-        <a (click)="itemClick($event, item)" class="dot-menu-item__link"><span>{{ item.label }}</span></a>
+        <a (click)="itemClick($event, item)" class="dot-menu-item__link"
+            ><span>{{ item.label }}</span></a
+        >
     </li>
 </ul>

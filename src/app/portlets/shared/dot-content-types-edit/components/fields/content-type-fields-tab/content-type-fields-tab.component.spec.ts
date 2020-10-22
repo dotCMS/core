@@ -1,6 +1,6 @@
 import { waitForAsync, ComponentFixture } from '@angular/core/testing';
 import { DOTTestBed } from '@tests/dot-test-bed';
-import { DebugElement, Component} from '@angular/core';
+import { DebugElement, Component } from '@angular/core';
 import { ContentTypeFieldsTabComponent } from '.';
 import { By } from '@angular/platform-browser';
 import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from 'dotcms-models';
@@ -9,7 +9,6 @@ import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
-
 
 const tabField: DotCMSContentTypeField = {
     ...dotcmsContentTypeFieldBasicMock,
@@ -48,29 +47,28 @@ describe('ContentTypeFieldsTabComponent', () => {
         'contenttypes.action.cancel': 'cancel text'
     });
 
-    beforeEach(waitForAsync( () => {
-        DOTTestBed.configureTestingModule({
-            declarations: [
-                ContentTypeFieldsTabComponent,
-                DotTestHostComponent
-            ],
-            imports: [DotIconButtonTooltipModule],
-            providers: [
-                DotAlertConfirmService,
-                {
-                    provide: DotMessageService,
-                    useValue: messageServiceMock
-                }
-            ]
-        });
+    beforeEach(
+        waitForAsync(() => {
+            DOTTestBed.configureTestingModule({
+                declarations: [ContentTypeFieldsTabComponent, DotTestHostComponent],
+                imports: [DotIconButtonTooltipModule],
+                providers: [
+                    DotAlertConfirmService,
+                    {
+                        provide: DotMessageService,
+                        useValue: messageServiceMock
+                    }
+                ]
+            });
 
-        hostFixture = DOTTestBed.createComponent(DotTestHostComponent);
-        hostComp = hostFixture.componentInstance;
-        hostDe = hostFixture.debugElement;
-        de = hostDe.query(By.css('dot-content-type-fields-tab'));
-        comp = de.componentInstance;
-        dotDialogService = de.injector.get(DotAlertConfirmService);
-    }));
+            hostFixture = DOTTestBed.createComponent(DotTestHostComponent);
+            hostComp = hostFixture.componentInstance;
+            hostDe = hostFixture.debugElement;
+            de = hostDe.query(By.css('dot-content-type-fields-tab'));
+            comp = de.componentInstance;
+            dotDialogService = de.injector.get(DotAlertConfirmService);
+        })
+    );
 
     beforeEach(() => {
         hostComp.setData(mockFieldTab);
@@ -130,5 +128,4 @@ describe('ContentTypeFieldsTabComponent', () => {
         deleteButton.click();
         expect(comp.removeTab.emit).toHaveBeenCalledWith(mockFieldTab);
     });
-
 });

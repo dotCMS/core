@@ -1,14 +1,17 @@
-<div dotMaxlength="255"
+<div
+    dotMaxlength="255"
     class="tab__label no-drag"
     contenteditable="true"
     [textContent]="label"
     (blur)="changeLabel($event)"
-    (keydown.enter)="changeLabel($event)"></div>
+    (keydown.enter)="changeLabel($event)"
+></div>
 <dot-icon-button-tooltip
     tiny
     class="field__actions-delete"
     icon="delete"
     [tooltipText]="'contenttypes.action.delete' | dm"
-    (click)="removeItem($event)">
+    (click)="removeItem($event)"
+>
 </dot-icon-button-tooltip>
 <hr />

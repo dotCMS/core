@@ -3,12 +3,13 @@ import { DotContentletEditorService } from '@components/dot-contentlet-editor/se
 import { ActivatedRoute } from '@angular/router';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
-import {DotCustomEventHandlerService} from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
 
 @Component({
     providers: [],
     selector: 'dot-contentlets',
-    template: '<dot-edit-contentlet (close)="onCloseEditor()" (custom)="onCustomEvent($event)"></dot-edit-contentlet>'
+    template:
+        '<dot-edit-contentlet (close)="onCloseEditor()" (custom)="onCustomEvent($event)"></dot-edit-contentlet>'
 })
 export class DotContentletsComponent implements AfterViewInit {
     constructor(

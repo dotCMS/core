@@ -41,8 +41,8 @@ describe('DotAddContentletComponent', () => {
     let dotAddContentletWrapperComponent: DotContentletWrapperComponent;
     let dotContentletEditorService: DotContentletEditorService;
 
-   beforeEach(
-          waitForAsync(() => {
+    beforeEach(
+        waitForAsync(() => {
             TestBed.configureTestingModule({
                 declarations: [DotAddContentletComponent, DotContentletWrapperComponent],
                 providers: [
@@ -68,7 +68,12 @@ describe('DotAddContentletComponent', () => {
                     StringUtils,
                     UserModel
                 ],
-                imports: [DotIframeDialogModule, BrowserAnimationsModule, RouterTestingModule, HttpClientTestingModule]
+                imports: [
+                    DotIframeDialogModule,
+                    BrowserAnimationsModule,
+                    RouterTestingModule,
+                    HttpClientTestingModule
+                ]
             });
         })
     );

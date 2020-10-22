@@ -44,6 +44,7 @@ p-chips.ng-dirty.ng-invalid > .p-chips > .p-inputtext {
     margin: 0;
 }
 
-.p-chips.p-error > .p-inputtext, .p-chips.p-invalid > .p-inputtext {
+.p-chips.p-error > .p-inputtext,
+.p-chips.p-invalid > .p-inputtext {
     border-color: $error;
 }

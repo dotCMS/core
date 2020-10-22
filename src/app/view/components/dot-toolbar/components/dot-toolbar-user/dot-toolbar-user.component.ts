@@ -60,7 +60,7 @@ export class DotToolbarUserComponent implements OnInit {
                     this.location.reload();
                 });
             },
-            error => {
+            (error) => {
                 this.loggerService.error(error);
             }
         );

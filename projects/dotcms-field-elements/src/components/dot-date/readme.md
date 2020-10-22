@@ -1,9 +1,6 @@
 # dot-date
 
-
-
 <!-- Auto Generated Below -->
-
 
 ## Properties
 
@@ -19,8 +16,7 @@
 | `requiredMessage`   | `required-message`   | (optional) Text that be shown when required is set and condition not met                    | `string`  | `'This field is required'`                             |
 | `step`              | `step`               | (optional) Step specifies the legal number intervals for the input field                    | `string`  | `'1'`                                                  |
 | `validationMessage` | `validation-message` | (optional) Text that be shown when min or max are set and condition not met                 | `string`  | `"The field doesn't comply with the specified format"` |
-| `value`             | `value`              | Value format yyyy-mm-dd  e.g., 2005-12-01                                                   | `string`  | `''`                                                   |
-
+| `value`             | `value`              | Value format yyyy-mm-dd e.g., 2005-12-01                                                    | `string`  | `''`                                                   |
 
 ## Events
 
@@ -28,7 +24,6 @@
 | -------------- | ----------- | ---------------------------------- |
 | `statusChange` |             | `CustomEvent<DotFieldStatusEvent>` |
 | `valueChange`  |             | `CustomEvent<DotFieldValueEvent>`  |
-
 
 ## Methods
 
@@ -40,9 +35,6 @@ Reset properties of the field, clear value and emit events.
 
 Type: `void`
 
+---
 
-
-
-----------------------------------------------
-
-*Built with [StencilJS](https://stenciljs.com/)*
+_Built with [StencilJS](https://stenciljs.com/)_

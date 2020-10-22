@@ -14,9 +14,7 @@ import { DotApps } from '@models/dot-apps/dot-apps.model';
  */
 @Injectable()
 export class DotAppsConfigurationDetailResolver implements Resolve<DotApps> {
-    constructor(
-        private dotAppsService: DotAppsService
-    ) {}
+    constructor(private dotAppsService: DotAppsService) {}
 
     resolve(route: ActivatedRouteSnapshot): Observable<DotApps> {
         const appKey = route.paramMap.get('appKey');

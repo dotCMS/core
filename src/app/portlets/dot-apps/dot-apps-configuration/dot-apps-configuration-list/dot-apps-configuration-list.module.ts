@@ -7,12 +7,7 @@ import { DotAppsConfigurationItemModule } from './dot-apps-configuration-item/do
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @NgModule({
-    imports: [
-        ButtonModule,
-        CommonModule,
-        DotAppsConfigurationItemModule,
-        DotPipesModule
-    ],
+    imports: [ButtonModule, CommonModule, DotAppsConfigurationItemModule, DotPipesModule],
     declarations: [DotAppsConfigurationListComponent],
     exports: [DotAppsConfigurationListComponent]
 })

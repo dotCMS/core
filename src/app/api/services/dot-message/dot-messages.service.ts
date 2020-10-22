@@ -48,7 +48,9 @@ export class DotMessageService {
      */
     get(key: string, ...args: string[]): string {
         return this.messageMap[key]
-            ? args.length ? this.formatMessage(this.messageMap[key], args) : this.messageMap[key]
+            ? args.length
+                ? this.formatMessage(this.messageMap[key], args)
+                : this.messageMap[key]
             : key;
     }
 
@@ -71,7 +73,7 @@ export class DotMessageService {
 
         const relativeDateMessages = Object.assign(
             {},
-            ...relativeDateKeys.map(p => ({ [p.split('.')[1]]: this.messageMap[p] }))
+            ...relativeDateKeys.map((p) => ({ [p.split('.')[1]]: this.messageMap[p] }))
         );
         this.formatDateService.setLang(languageId.split('_')[0], relativeDateMessages);
     }

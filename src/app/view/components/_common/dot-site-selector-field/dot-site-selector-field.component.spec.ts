@@ -30,7 +30,6 @@ class FakeFormComponent {
     }
 }
 
-
 @Component({
     selector: 'dot-site-selector',
     template: ''
@@ -52,15 +51,21 @@ describe('SiteSelectorFieldComponent', () => {
     let de: DebugElement;
     const siteServiceMock = new SiteServiceMock();
 
-    beforeEach(waitForAsync( () => {
-        siteServiceMock.setFakeCurrentSite();
+    beforeEach(
+        waitForAsync(() => {
+            siteServiceMock.setFakeCurrentSite();
 
-        DOTTestBed.configureTestingModule({
-            declarations: [FakeFormComponent, SiteSelectorComponent, DotSiteSelectorFieldComponent],
-            imports: [],
-            providers: [{ provide: SiteService, useValue: siteServiceMock }]
-        });
-    }));
+            DOTTestBed.configureTestingModule({
+                declarations: [
+                    FakeFormComponent,
+                    SiteSelectorComponent,
+                    DotSiteSelectorFieldComponent
+                ],
+                imports: [],
+                providers: [{ provide: SiteService, useValue: siteServiceMock }]
+            });
+        })
+    );
 
     beforeEach(() => {
         fixture = TestBed.createComponent(FakeFormComponent);

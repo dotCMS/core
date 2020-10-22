@@ -23,9 +23,10 @@ export class DotBaseTypeSelectorComponent implements OnInit {
     ) {}
 
     ngOnInit() {
-        this.options = this.dotContentTypeService
-            .getAllContentTypes()
-            .pipe(take(1), map((structures: StructureTypeView[]) => this.setOptions(structures)));
+        this.options = this.dotContentTypeService.getAllContentTypes().pipe(
+            take(1),
+            map((structures: StructureTypeView[]) => this.setOptions(structures))
+        );
     }
 
     change(item: SelectItem) {

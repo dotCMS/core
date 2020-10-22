@@ -97,7 +97,7 @@ export class DotNewRelationshipsComponent implements OnInit, OnChanges {
                 velocityVar = velocityVar.split('.')[0];
             }
 
-            this.contentTypeService.getContentType(velocityVar).subscribe(contentType => {
+            this.contentTypeService.getContentType(velocityVar).subscribe((contentType) => {
                 this.contentType = contentType;
             });
         } else {

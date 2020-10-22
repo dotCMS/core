@@ -8,13 +8,7 @@ import { LOCATION_TOKEN } from 'src/app/providers';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @NgModule({
-    imports: [
-        CommonModule,
-        ButtonModule,
-        DotCopyButtonModule,
-        DotApiLinkModule,
-        DotPipesModule
-    ],
+    imports: [CommonModule, ButtonModule, DotCopyButtonModule, DotApiLinkModule, DotPipesModule],
     exports: [DotEditPageInfoComponent],
     declarations: [DotEditPageInfoComponent],
     providers: [{ provide: LOCATION_TOKEN, useValue: window.location }]

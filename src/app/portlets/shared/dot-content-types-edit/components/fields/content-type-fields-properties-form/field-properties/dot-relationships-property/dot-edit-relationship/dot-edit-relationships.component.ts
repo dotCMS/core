@@ -8,7 +8,6 @@ import { DotEditContentTypeCacheService } from '../services/dot-edit-content-typ
 import { DotRelationshipService } from '../services/dot-relationship.service';
 import { DotRelationshipCardinality } from '../model/dot-relationship-cardinality.model';
 
-
 /**
  *Cardinalities sorted by id
  *
@@ -17,7 +16,6 @@ import { DotRelationshipCardinality } from '../model/dot-relationship-cardinalit
 interface CardinalitySorted {
     [id: number]: DotRelationshipCardinality;
 }
-
 
 /**
  *List the orphans relationships for a content type. The content type to filter the relationships
@@ -33,23 +31,22 @@ interface CardinalitySorted {
     templateUrl: './dot-edit-relationships.component.html'
 })
 export class DotEditRelationshipsComponent implements OnInit {
-
     @Output()
     change: EventEmitter<DotRelationshipsPropertyValue> = new EventEmitter();
 
-    currentPage: Observable<{label: string, relationship: DotRelationship}[]>;
+    currentPage: Observable<{ label: string; relationship: DotRelationship }[]>;
 
     private cardinalities: CardinalitySorted;
 
     constructor(
         public dotPaginatorService: PaginatorService,
         private dotEditContentTypeCacheService: DotEditContentTypeCacheService,
-        private dotRelationshipService: DotRelationshipService) {}
+        private dotRelationshipService: DotRelationshipService
+    ) {}
 
     ngOnInit() {
         this.dotPaginatorService.url = 'v1/relationships';
     }
-
 
     /**
      *Filter relationchips by name
@@ -67,7 +64,7 @@ export class DotEditRelationshipsComponent implements OnInit {
      * @param {{filter: string, first: number}} event
      * @memberof DotEditRelationshipsComponent
      */
-    handlePageChange(event: {filter: string, first: number}): void {
+    handlePageChange(event: { filter: string; first: number }): void {
         this.getRelationshipList(event.filter, event.first);
     }
 
@@ -85,9 +82,7 @@ export class DotEditRelationshipsComponent implements OnInit {
     }
 
     private getCardinalities(): Observable<CardinalitySorted> {
-
         if (!this.cardinalities) {
-
             return this.dotRelationshipService.loadCardinalities().pipe(
                 map((relationshipCardinalities: DotRelationshipCardinality[]) => {
                     this.cardinalities = {};
@@ -105,7 +100,10 @@ export class DotEditRelationshipsComponent implements OnInit {
     }
 
     private getRelationshipList(filter = '', offset = 0): void {
-        this.dotPaginatorService.setExtraParams('contentTypeId', this.dotEditContentTypeCacheService.get().id);
+        this.dotPaginatorService.setExtraParams(
+            'contentTypeId',
+            this.dotEditContentTypeCacheService.get().id
+        );
         this.dotPaginatorService.filter = filter;
 
         this.currentPage = this.getCardinalities().pipe(
@@ -114,13 +112,15 @@ export class DotEditRelationshipsComponent implements OnInit {
                     flatMap((relationships: DotRelationship[]) => relationships),
                     map((relationship: DotRelationship) => {
                         return {
-                            label: `${relationship.relationTypeValue}.${cardinalities[relationship.cardinality].label}`,
+                            label: `${relationship.relationTypeValue}.${
+                                cardinalities[relationship.cardinality].label
+                            }`,
                             relationship: <DotRelationship>relationship
                         };
                     }),
                     toArray()
                 );
-            }),
+            })
         );
     }
 }

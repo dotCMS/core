@@ -34,9 +34,7 @@ export class DotAutocompleteTagsComponent implements OnInit, ControlValueAccesso
 
     private lastDeletedTag: DotTag;
 
-    constructor(
-        private dotTagsService: DotTagsService
-    ) {}
+    constructor(private dotTagsService: DotTagsService) {}
 
     propagateChange = (_: any) => {};
 

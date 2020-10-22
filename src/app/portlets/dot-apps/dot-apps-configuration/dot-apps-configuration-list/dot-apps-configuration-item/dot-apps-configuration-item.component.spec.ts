@@ -45,15 +45,10 @@ describe('DotAppsConfigurationItemComponent', () => {
 
     const messageServiceMock = new MockDotMessageService(messages);
 
-   beforeEach(
-          waitForAsync(() => {
+    beforeEach(
+        waitForAsync(() => {
             DOTTestBed.configureTestingModule({
-                imports: [
-                    CommonModule,
-                    DotIconButtonModule,
-                    DotIconModule,
-                    TooltipModule
-                ],
+                imports: [CommonModule, DotIconButtonModule, DotIconModule, TooltipModule],
                 declarations: [DotAppsConfigurationItemComponent],
                 providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
             });
@@ -107,7 +102,7 @@ describe('DotAppsConfigurationItemComponent', () => {
             const stopPropagationSpy = jasmine.createSpy('spy');
             const deleteBtn = fixture.debugElement.queryAll(By.css('dot-icon-button'))[0];
 
-            spyOn(dialogService, 'confirm').and.callFake(conf => {
+            spyOn(dialogService, 'confirm').and.callFake((conf) => {
                 conf.accept();
             });
 

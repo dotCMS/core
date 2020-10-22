@@ -1,4 +1,3 @@
-
 /**
  * Mock of DotMessageService.
  * How to use:
@@ -23,7 +22,9 @@ export class MockDotMessageService {
 
     get(key: string, ...args: string[]): string {
         return this.messages[key]
-            ? args.length ? this.formatMessage(this.messages[key], args) : this.messages[key]
+            ? args.length
+                ? this.formatMessage(this.messages[key], args)
+                : this.messages[key]
             : key;
     }
 

@@ -12,22 +12,24 @@ describe('DotUnlicensedPorletComponent', () => {
     let fixture: ComponentFixture<DotUnlicensedPorletComponent>;
     let de: DebugElement;
 
-    beforeEach(waitForAsync( () => {
-        const messageServiceMock = new MockDotMessageService({
-            'request.a.trial.license': 'Request'
-        });
+    beforeEach(
+        waitForAsync(() => {
+            const messageServiceMock = new MockDotMessageService({
+                'request.a.trial.license': 'Request'
+            });
 
-        TestBed.configureTestingModule({
-            declarations: [DotUnlicensedPorletComponent],
-            providers: [
-                {
-                    provide: DotMessageService,
-                    useValue: messageServiceMock
-                }
-            ],
-            imports: [DotIconModule, DotPipesModule]
-        }).compileComponents();
-    }));
+            TestBed.configureTestingModule({
+                declarations: [DotUnlicensedPorletComponent],
+                providers: [
+                    {
+                        provide: DotMessageService,
+                        useValue: messageServiceMock
+                    }
+                ],
+                imports: [DotIconModule, DotPipesModule]
+            }).compileComponents();
+        })
+    );
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotUnlicensedPorletComponent);

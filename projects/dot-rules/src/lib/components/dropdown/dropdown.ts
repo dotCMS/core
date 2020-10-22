@@ -114,7 +114,7 @@ export class Dropdown implements ControlValueAccessor, OnChanges {
                 this.inputDropdown.focus();
             }, 0);
         }
-    }
+    };
 
     onChange: Function = () => {};
     onTouched: Function = () => {};

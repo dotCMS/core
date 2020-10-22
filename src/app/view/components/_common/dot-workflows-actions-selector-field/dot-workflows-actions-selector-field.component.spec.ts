@@ -70,22 +70,24 @@ describe('DotWorkflowsActionsSelectorFieldComponent', () => {
     const getDropdownDebugElement = () => de.query(By.css('p-dropdown'));
     const getDropdownComponent = () => getDropdownDebugElement().componentInstance;
 
-    beforeEach(waitForAsync( () => {
-        DOTTestBed.configureTestingModule({
-            declarations: [DotWorkflowsActionsSelectorFieldComponent, FakeFormComponent],
-            providers: [
-                {
-                    provide: DotMessageService,
-                    useValue: messageServiceMock
-                },
-                {
-                    provide: DotWorkflowsActionsSelectorFieldService,
-                    useClass: DotWorkflowsActionsSelectorFieldServiceMock
-                }
-            ],
-            imports: [DropdownModule]
-        });
-    }));
+    beforeEach(
+        waitForAsync(() => {
+            DOTTestBed.configureTestingModule({
+                declarations: [DotWorkflowsActionsSelectorFieldComponent, FakeFormComponent],
+                providers: [
+                    {
+                        provide: DotMessageService,
+                        useValue: messageServiceMock
+                    },
+                    {
+                        provide: DotWorkflowsActionsSelectorFieldService,
+                        useClass: DotWorkflowsActionsSelectorFieldServiceMock
+                    }
+                ],
+                imports: [DropdownModule]
+            });
+        })
+    );
 
     beforeEach(() => {
         fixtureHost = DOTTestBed.createComponent(FakeFormComponent);

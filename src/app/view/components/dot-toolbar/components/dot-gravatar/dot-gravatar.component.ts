@@ -20,7 +20,6 @@ export class DotGravatarComponent implements OnChanges {
     constructor(private gravatarService: DotGravatarService) {}
 
     ngOnChanges(changes: SimpleChanges): void {
-
         if (changes.email && changes.email.currentValue) {
             const hash = md5(this.email);
             this.avatarUrl = this.gravatarService.getPhoto(hash);

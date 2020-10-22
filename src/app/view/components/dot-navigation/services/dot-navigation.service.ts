@@ -213,7 +213,10 @@ export class DotNavigationService {
         this.dotEventsService.notify('dot-side-nav-toggle');
         const isCollapsed = this._collapsed$.getValue();
         isCollapsed ? this.expandMenu() : this.collapseMenu();
-        this.dotLocalstorageService.setItem<boolean>(DOTCMS_MENU_STATUS, this._collapsed$.getValue());
+        this.dotLocalstorageService.setItem<boolean>(
+            DOTCMS_MENU_STATUS,
+            this._collapsed$.getValue()
+        );
     }
 
     /**

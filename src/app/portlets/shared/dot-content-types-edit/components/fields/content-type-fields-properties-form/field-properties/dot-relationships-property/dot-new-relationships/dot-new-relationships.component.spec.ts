@@ -52,10 +52,12 @@ const contentTypeMock: DotCMSContentType = {
 
 @Component({
     selector: 'dot-host-component',
-    template: `<dot-new-relationships [cardinality] = "cardinalityIndex"
-                                      [velocityVar] = "velocityVar"
-                                      [editing] = "editing">
-               </dot-new-relationships>`
+    template: `<dot-new-relationships
+        [cardinality]="cardinalityIndex"
+        [velocityVar]="velocityVar"
+        [editing]="editing"
+    >
+    </dot-new-relationships>`
 })
 class HostTestComponent {
     cardinalityIndex: number;
@@ -149,8 +151,8 @@ describe('DotNewRelationshipsComponent', () => {
         'contenttypes.field.properties.relationships.label': 'Relationship'
     });
 
-   beforeEach(
-          waitForAsync(() => {
+    beforeEach(
+        waitForAsync(() => {
             DOTTestBed.configureTestingModule({
                 declarations: [
                     HostTestComponent,
@@ -240,7 +242,7 @@ describe('DotNewRelationshipsComponent', () => {
             expect(dotSearchableDropdown.componentInstance.data).toEqual([contentTypeMock]);
         });
 
-        it('should tigger change event when content type changed', done => {
+        it('should tigger change event when content type changed', (done) => {
             fixtureHostComponent.detectChanges();
 
             comp.change.subscribe((relationshipSelect: any) => {
@@ -270,7 +272,7 @@ describe('DotNewRelationshipsComponent', () => {
                 fixtureHostComponent.componentInstance.velocityVar = `${contentTypeMock.name}.${contentTypeMock.variable}`;
             });
 
-            it('should load content type, and emit change event with the right variableValue', done => {
+            it('should load content type, and emit change event with the right variableValue', (done) => {
                 const contentTypeService = de.injector.get(DotContentTypeService);
                 spyOn(contentTypeService, 'getContentType').and.callThrough();
 
@@ -306,7 +308,7 @@ describe('DotNewRelationshipsComponent', () => {
             expect(dotCardinalitySelector.componentInstance.value).toEqual(comp.cardinality);
         });
 
-        it('should tigger change event when cardinality changed', done => {
+        it('should tigger change event when cardinality changed', (done) => {
             comp.change.subscribe((relationshipSelect: any) => {
                 expect(relationshipSelect).toEqual({
                     velocityVar: undefined,

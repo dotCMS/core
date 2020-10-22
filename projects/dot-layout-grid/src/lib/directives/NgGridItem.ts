@@ -1,4 +1,16 @@
-import { Directive, ElementRef, EventEmitter, KeyValueDiffer, KeyValueDiffers, OnInit, OnDestroy, ViewContainerRef, Output, DoCheck, Renderer2 } from '@angular/core';
+import {
+    Directive,
+    ElementRef,
+    EventEmitter,
+    KeyValueDiffer,
+    KeyValueDiffers,
+    OnInit,
+    OnDestroy,
+    ViewContainerRef,
+    Output,
+    DoCheck,
+    Renderer2
+} from '@angular/core';
 import {
     NgGridItemConfig,
     NgGridItemEvent,
@@ -501,14 +513,22 @@ export class NgGridItem implements OnInit, OnDestroy, DoCheck {
         this._renderer.addClass(this._ngEl.nativeElement, 'moving');
         const style: any = window.getComputedStyle(this._ngEl.nativeElement);
         if (this._ngGrid.autoStyle)
-            this._renderer.setStyle(this._ngEl.nativeElement, 'z-index', (parseInt(style.getPropertyValue('z-index'), 10) + 1).toString());
+            this._renderer.setStyle(
+                this._ngEl.nativeElement,
+                'z-index',
+                (parseInt(style.getPropertyValue('z-index'), 10) + 1).toString()
+            );
     }
 
     public stopMoving(): void {
         this._renderer.removeClass(this._ngEl.nativeElement, 'moving');
         const style: any = window.getComputedStyle(this._ngEl.nativeElement);
         if (this._ngGrid.autoStyle)
-            this._renderer.setStyle(this._ngEl.nativeElement, 'z-index', (parseInt(style.getPropertyValue('z-index'), 10) - 1).toString());
+            this._renderer.setStyle(
+                this._ngEl.nativeElement,
+                'z-index',
+                (parseInt(style.getPropertyValue('z-index'), 10) - 1).toString()
+            );
     }
 
     public recalculateSelf(): void {
@@ -604,8 +624,8 @@ export class NgGridItem implements OnInit, OnDestroy, DoCheck {
             e = oe.touches.length
                 ? oe.touches[0]
                 : oe.changedTouches.length
-                    ? oe.changedTouches[0]
-                    : e;
+                ? oe.changedTouches[0]
+                : e;
         } else if (e.touches) {
             e = e.touches.length ? e.touches[0] : e.changedTouches.length ? e.changedTouches[0] : e;
         }

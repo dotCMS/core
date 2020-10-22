@@ -61,7 +61,7 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
         this.passwordMatch = false;
         this.changePasswordOption = false;
         this.loginService.watchUser(this.loadUser.bind(this));
-        this.dotcmsConfigService.getConfig().subscribe(res => {
+        this.dotcmsConfigService.getConfig().subscribe((res) => {
             this.emailRegex = res.emailRegex;
         });
     }
@@ -121,7 +121,7 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
 
     save(): void {
         this.accountService.updateUser(this.accountUser).subscribe(
-            response => {
+            (response) => {
                 // TODO: replace the alert with a Angular components
                 alert(this.dotMessageService.get('message.createaccount.success'));
                 this.close.emit();
@@ -135,7 +135,7 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
                     });
                 }
             },
-            response => {
+            (response) => {
                 // TODO: We have to define how must be the user feedback in case of error
                 this.message = response.errorsMessages;
             }

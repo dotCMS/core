@@ -45,7 +45,7 @@ export class ServerSideFieldModel extends CwModel {
             this.parameterDefs = {};
             this.parameters = {};
 
-            Object.keys(type.parameters).forEach(key => {
+            Object.keys(type.parameters).forEach((key) => {
                 const x = type.parameters[key];
                 const paramDef = ParameterDefinition.fromJson(x);
                 const defaultValue =
@@ -100,7 +100,7 @@ export class ServerSideFieldModel extends CwModel {
     isValid(): boolean {
         let valid = true;
         if (this.parameterDefs) {
-            Object.keys(this.parameterDefs).some(key => {
+            Object.keys(this.parameterDefs).some((key) => {
                 const paramDef = this.getParameterDef(key);
                 const param = this.parameters[key];
                 const value = param.value;

@@ -195,7 +195,7 @@ export class DotRouterService {
 
         const urlSegments = url
             .split('/')
-            .filter(item => item !== '' && item !== '#' && item !== 'c');
+            .filter((item) => item !== '' && item !== '#' && item !== 'c');
         return urlSegments.indexOf('add') > -1 ? urlSegments.splice(-1)[0] : urlSegments[0];
     }
 

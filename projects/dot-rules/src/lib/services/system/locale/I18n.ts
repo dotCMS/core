@@ -110,7 +110,7 @@ export class I18nService {
     makeRequest(url): Observable<HttpResponse<any>> {
         return this.coreWebService
             .request({
-                url: this._baseUrl + '/' + url,
+                url: this._baseUrl + '/' + url
             })
             .pipe(
                 map((res) => {

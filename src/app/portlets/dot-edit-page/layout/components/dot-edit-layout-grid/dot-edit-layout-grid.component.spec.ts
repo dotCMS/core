@@ -1,4 +1,3 @@
-
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { Component, DebugElement, Input, HostBinding, Output, EventEmitter } from '@angular/core';
@@ -180,7 +179,9 @@ describe('DotEditLayoutGridComponent', () => {
 
         const length = component.grid.boxes.length;
 
-        expect(component.grid.boxes[length - 1].config.payload).not.toBe(component.grid.boxes[length - 2].config.payload);
+        expect(component.grid.boxes[length - 1].config.payload).not.toBe(
+            component.grid.boxes[length - 2].config.payload
+        );
     });
 
     it('should add a new add class button', () => {
@@ -335,7 +336,11 @@ describe('DotEditLayoutGridComponent', () => {
 
         function showDialog(type) {
             const addRowClassButtons = hostComponentfixture.debugElement.query(
-                By.css(type === 'box' ? `.box__add-box-class-button` : `.box__add-${type}-class-button dot-icon-button-tooltip`)
+                By.css(
+                    type === 'box'
+                        ? `.box__add-box-class-button`
+                        : `.box__add-${type}-class-button dot-icon-button-tooltip`
+                )
             );
 
             addRowClassButtons.triggerEventHandler('click', null);

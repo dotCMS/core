@@ -77,7 +77,7 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState> {
                         body: null,
                         status: HttpCode.FORBIDDEN,
                         headers: null,
-                        url: '',
+                        url: ''
                     })
                 )
             );
@@ -90,7 +90,7 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState> {
                         headers: new HttpHeaders({
                             'error-key': 'dotcms.api.error.license.required'
                         }),
-                        url: '',
+                        url: ''
                     })
                 )
             );

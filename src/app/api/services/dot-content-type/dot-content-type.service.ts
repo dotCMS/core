@@ -19,10 +19,7 @@ export class DotContentTypeService {
             .requestView({
                 url: `v1/contenttype/id/${idOrVar}`
             })
-            .pipe(
-                take(1),
-                pluck('entity')
-            );
+            .pipe(take(1), pluck('entity'));
     }
 
     /**

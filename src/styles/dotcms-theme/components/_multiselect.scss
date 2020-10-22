@@ -3,7 +3,8 @@
 .p-multiselect {
     background: $white;
     border: 1px solid $input-border-color;
-    transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s, background-size 0.2s cubic-bezier(0.64, 0.09, 0.08, 1);
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s,
+        background-size 0.2s cubic-bezier(0.64, 0.09, 0.08, 1);
     border-radius: $border-radius;
     min-width: 13rem;
 }
@@ -21,7 +22,8 @@
 
 .p-multiselect .p-multiselect-label {
     padding: $spacing-2 $spacing-2;
-    transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s, background-size 0.2s cubic-bezier(0.64, 0.09, 0.08, 1);
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s,
+        background-size 0.2s cubic-bezier(0.64, 0.09, 0.08, 1);
 }
 
 .p-multiselect .p-multiselect-label.p-placeholder {
@@ -41,7 +43,8 @@
     color: $black;
     border: 0 none;
     border-radius: $border-radius;
-    box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2), 0 8px 10px 1px rgba(0, 0, 0, 0.14), 0 3px 14px 2px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2), 0 8px 10px 1px rgba(0, 0, 0, 0.14),
+        0 3px 14px 2px rgba(0, 0, 0, 0.12);
 }
 
 .p-multiselect-panel .p-multiselect-header {
@@ -58,7 +61,10 @@
     padding-right: $spacing-6;
 }
 
-.p-multiselect-panel .p-multiselect-header .p-multiselect-filter-container .p-multiselect-filter-icon {
+.p-multiselect-panel
+    .p-multiselect-header
+    .p-multiselect-filter-container
+    .p-multiselect-filter-icon {
     right: $spacing-2;
     color: $black;
 }
@@ -114,7 +120,9 @@
     background: $bg-highlight;
 }
 
-.p-multiselect-panel .p-multiselect-items .p-multiselect-item:not(.p-highlight):not(.p-disabled):hover {
+.p-multiselect-panel
+    .p-multiselect-items
+    .p-multiselect-item:not(.p-highlight):not(.p-disabled):hover {
     color: $text-color-hover;
     background: $bg-hover;
 }
@@ -135,7 +143,8 @@
     background: transparent;
 }
 
-.p-multiselect .p-multiselect-label, .p-multiselect .p-multiselect-trigger {
+.p-multiselect .p-multiselect-label,
+.p-multiselect .p-multiselect-trigger {
     background-image: none;
     background: transparent;
 }

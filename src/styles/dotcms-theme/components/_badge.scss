@@ -1,31 +1,30 @@
 @use "variables" as *;
 
 .p-badge {
-  background:  $brand-primary;
-  color: $white;
-  font-size: $font-size-x-small;
-  font-weight: 700;
-  min-width: $spacing-4;
-  height: $spacing-4;
-  line-height: 1.5;
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
+    background: $brand-primary;
+    color: $white;
+    font-size: $font-size-x-small;
+    font-weight: 700;
+    min-width: $spacing-4;
+    height: $spacing-4;
+    line-height: 1.5;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
 }
 .p-badge.p-badge-secondary {
-  background-color: initial;
-  color: $brand-secondary;
-  border: 1px solid $brand-secondary;
+    background-color: initial;
+    color: $brand-secondary;
+    border: 1px solid $brand-secondary;
 }
 
 .p-badge.p-badge-lg {
-  font-size: 1.125rem;
-  min-width: $spacing-6;
-  height: $spacing-6;
+    font-size: 1.125rem;
+    min-width: $spacing-6;
+    height: $spacing-6;
 }
 .p-badge.p-badge-xl {
-  font-size: 1.5rem;
-  min-width: $spacing-7;
-  height: $spacing-7;
+    font-size: 1.5rem;
+    min-width: $spacing-7;
+    height: $spacing-7;
 }
-

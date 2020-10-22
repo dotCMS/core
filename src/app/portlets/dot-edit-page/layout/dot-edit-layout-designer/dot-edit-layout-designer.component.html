@@ -57,7 +57,9 @@
         <ng-template #permission>
             <div
                 class="dot-edit__layout-actions-themes"
-                pTooltip="{{ 'org.dotcms.frontend.content.submission.not.proper.permissions' | dm }}"
+                pTooltip="{{
+                    'org.dotcms.frontend.content.submission.not.proper.permissions' | dm
+                }}"
                 tooltipPosition="left"
             >
                 <button
@@ -65,7 +67,7 @@
                     type="button"
                     class="dot-edit-layout__toolbar-action-themes p-button-text p-button-sm"
                     icon="fa fa-paint-brush"
-                    label="{{'editpage.layout.theme.button.label' | dm }}"
+                    label="{{ 'editpage.layout.theme.button.label' | dm }}"
                     (click)="themeDialogVisibility = !themeDialogVisibility"
                     disabled="false"
                 ></button>

@@ -9,7 +9,8 @@
             formControlName="name"
             [tabindex]="1"
             #name
-            dotAutofocus/>
+            dotAutofocus
+        />
         <dot-field-validation-message
             [message]="'dot.common.message.field.required' | dm: [nameFieldLabel]"
             [field]="form.get('name')"
@@ -18,7 +19,7 @@
     <div class="p-field">
         <label for="content-type-form-description">{{
             'contenttypes.form.label.description' | dm
-            }}</label>
+        }}</label>
         <input
             pInputText
             type="text"
@@ -57,12 +58,9 @@
             [workflows]="workflowsSelected$ | async"
         ></dot-workflows-actions-selector-field>
     </div>
-    <span
-        id="field-workflow-hint"
-        class="p-field-hint"
-        *ngIf="form.get('workflows').disabled"
-        >{{ 'contenttypes.form.hint.error.only.default.scheme.available.in.Community' | dm }}</span
-    >
+    <span id="field-workflow-hint" class="p-field-hint" *ngIf="form.get('workflows').disabled">{{
+        'contenttypes.form.hint.error.only.default.scheme.available.in.Community' | dm
+    }}</span>
     <div class="p-formgrid p-grid">
         <div class="p-field p-col">
             <label for="content-type-form-publish-date-field" class="form__label">{{
@@ -117,7 +115,7 @@
         ></dot-field-helper>
         <label for="content-type-form-url-map-pattern">{{
             'contenttypes.form.label.URL.pattern' | dm
-            }}</label>
+        }}</label>
         <input
             pInputText
             type="text"

@@ -33,31 +33,31 @@ describe('Integration.api.rule-engine.ActionService', () => {
     const actionTypes = {};
     let setSessionActionlet;
 
-    beforeAll(done => {
+    beforeAll((done) => {
         ruleService = injector.get(RuleService);
         actionService = injector.get(ActionService);
-        ruleService.getRuleActionTypes().subscribe(typesAry => {
-            typesAry.forEach(item => (actionTypes[item.key] = item));
+        ruleService.getRuleActionTypes().subscribe((typesAry) => {
+            typesAry.forEach((item) => (actionTypes[item.key] = item));
             setSessionActionlet = actionTypes['SetSessionAttributeActionlet'];
             done();
         });
     });
 
-    beforeEach(function(done): void {
+    beforeEach(function (done): void {
         Gen.createRules(ruleService);
         ruleOnAddSub = ruleService.loadRules().subscribe(
             (rule: RuleModel[]) => {
                 ruleUnderTest = rule[0];
                 done();
             },
-            err => {
+            (err) => {
                 expect(err).toBeUndefined('error was thrown.');
                 done();
             }
         );
     });
 
-    afterEach(done => {
+    afterEach((done) => {
         ruleService.deleteRule(ruleUnderTest.key).subscribe(() => {
             ruleUnderTest = null;
             ruleOnAddSub.unsubscribe();
@@ -69,7 +69,7 @@ describe('Integration.api.rule-engine.ActionService', () => {
         expect(ruleUnderTest.isPersisted()).toBe(true);
     });
 
-    it('Can add a new Action', done => {
+    it('Can add a new Action', (done) => {
         console.log('can add new', setSessionActionlet);
         const anAction = new ActionModel(null, setSessionActionlet);
         anAction.setParameter('sessionKey', 'foo');
@@ -83,7 +83,7 @@ describe('Integration.api.rule-engine.ActionService', () => {
             });
     });
 
-    it('Action being added to the owning rule is persisted to server.', done => {
+    it('Action being added to the owning rule is persisted to server.', (done) => {
         const anAction = new ActionModel(null, setSessionActionlet);
         anAction.setParameter('sessionKey', 'foo');
         anAction.setParameter('sessionValue', 'bar');
@@ -108,7 +108,7 @@ describe('Integration.api.rule-engine.ActionService', () => {
                                     sub.unsubscribe();
                                     done();
                                 },
-                                e => {
+                                (e) => {
                                     console.log(e);
                                     expect(e).toBeUndefined('Test Failed');
                                 }
@@ -118,7 +118,7 @@ describe('Integration.api.rule-engine.ActionService', () => {
             });
     });
 
-    it('Will add a new action parameters to an existing action.', done => {
+    it('Will add a new action parameters to an existing action.', (done) => {
         const clientAction = new ActionModel(null, setSessionActionlet);
         clientAction.setParameter('sessionKey', 'foo');
         clientAction.setParameter('sessionValue', 'bar');
@@ -132,19 +132,21 @@ describe('Integration.api.rule-engine.ActionService', () => {
             clientAction.setParameter(key, value);
             actionService.updateRuleAction(ruleUnderTest.key, clientAction).subscribe(() => {
                 // savedAction is also the same instance as resultAction
-                actionService.get(ruleUnderTest.key, clientAction.key).subscribe(updatedAction => {
-                    // updatedAction and clientAction SHOULD NOT be the same instance object.
-                    updatedAction['abc123'] = 100;
-                    expect(clientAction['abc123']).toBeUndefined();
-                    expect(clientAction.getParameterValue(key)).toBe(value);
-                    expect(updatedAction.getParameterValue(key)).toBe(value);
-                    done();
-                });
+                actionService
+                    .get(ruleUnderTest.key, clientAction.key)
+                    .subscribe((updatedAction) => {
+                        // updatedAction and clientAction SHOULD NOT be the same instance object.
+                        updatedAction['abc123'] = 100;
+                        expect(clientAction['abc123']).toBeUndefined();
+                        expect(clientAction.getParameterValue(key)).toBe(value);
+                        expect(updatedAction.getParameterValue(key)).toBe(value);
+                        done();
+                    });
             });
         });
     });
 
-    it('Can update action parameter values on existing action.', done => {
+    it('Can update action parameter values on existing action.', (done) => {
         const param1 = { key: 'sessionKey', v1: 'value1', v2: 'value2' };
         const param2 = { key: 'sessionValue', v1: 'abc123', v2: 'def456' };
 
@@ -155,11 +157,13 @@ describe('Integration.api.rule-engine.ActionService', () => {
         actionService.createRuleAction(ruleUnderTest.key, clientAction).subscribe(() => {
             clientAction.setParameter(param1.key, param1.v2);
             actionService.updateRuleAction(ruleUnderTest.key, clientAction).subscribe(() => {
-                actionService.get(ruleUnderTest.key, clientAction.key).subscribe(updatedAction => {
-                    expect(updatedAction.getParameterValue(param1.key)).toBe(param1.v2);
-                    expect(updatedAction.getParameterValue(param2.key)).toBe(param2.v1);
-                    done();
-                });
+                actionService
+                    .get(ruleUnderTest.key, clientAction.key)
+                    .subscribe((updatedAction) => {
+                        expect(updatedAction.getParameterValue(param1.key)).toBe(param1.v2);
+                        expect(updatedAction.getParameterValue(param2.key)).toBe(param2.v1);
+                        done();
+                    });
             });
         });
     });

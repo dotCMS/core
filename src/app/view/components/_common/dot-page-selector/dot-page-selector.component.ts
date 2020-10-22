@@ -180,8 +180,8 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
     private getErrorMessage(): string {
         return this.results.data.length === 0
             ? this.results.type === 'site'
-              ? this.dotMessageService.get('page.selector.no.sites.results')
-              : this.dotMessageService.get('page.selector.no.page.results')
+                ? this.dotMessageService.get('page.selector.no.sites.results')
+                : this.dotMessageService.get('page.selector.no.page.results')
             : null;
     }
 

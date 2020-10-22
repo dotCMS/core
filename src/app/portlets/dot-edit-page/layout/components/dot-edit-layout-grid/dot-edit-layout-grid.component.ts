@@ -263,7 +263,7 @@ export class DotEditLayoutGridComponent implements OnInit, OnDestroy, ControlVal
     addRowClass(index: number): void {
         this.addClass({
             getter: () => this.grid.getRowClass(index) || '',
-            setter: value => this.grid.setRowClass(value, index),
+            setter: (value) => this.grid.setRowClass(value, index),
             title: this.dotMessageService.get('editpage.layout.css.class.add.to.row')
         });
     }
@@ -335,8 +335,11 @@ export class DotEditLayoutGridComponent implements OnInit, OnDestroy, ControlVal
     }
 
     private resizeGrid(timeOut?): void {
-        setTimeout(() => {
-            this.ngGrid.triggerResize();
-        }, timeOut ? timeOut : 0);
+        setTimeout(
+            () => {
+                this.ngGrid.triggerResize();
+            },
+            timeOut ? timeOut : 0
+        );
     }
 }

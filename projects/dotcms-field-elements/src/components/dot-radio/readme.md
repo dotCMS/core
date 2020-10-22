@@ -1,9 +1,6 @@
 # dot-radio
 
-
-
 <!-- Auto Generated Below -->
-
 
 ## Properties
 
@@ -18,14 +15,12 @@
 | `requiredMessage` | `required-message` | (optional) Text that will be shown when required is set and condition is not met | `string`  | `''`    |
 | `value`           | `value`            | Value set from the ratio option                                                  | `string`  | `''`    |
 
-
 ## Events
 
 | Event          | Description | Type                               |
 | -------------- | ----------- | ---------------------------------- |
 | `statusChange` |             | `CustomEvent<DotFieldStatusEvent>` |
 | `valueChange`  |             | `CustomEvent<DotFieldValueEvent>`  |
-
 
 ## Methods
 
@@ -37,9 +32,6 @@ Reset properties of the field, clear value and emit events.
 
 Type: `void`
 
+---
 
-
-
-----------------------------------------------
-
-*Built with [StencilJS](https://stenciljs.com/)*
+_Built with [StencilJS](https://stenciljs.com/)_

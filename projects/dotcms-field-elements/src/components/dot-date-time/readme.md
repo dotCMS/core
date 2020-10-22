@@ -1,9 +1,6 @@
 # dot-date-time
 
-
-
 <!-- Auto Generated Below -->
-
 
 ## Properties
 
@@ -23,14 +20,12 @@
 | `validationMessage` | `validation-message` | (optional) Text that be shown when min or max are set and condition not met                                                    | `string`  | `"The field doesn't comply with the specified format"` |
 | `value`             | `value`              | Value format yyyy-mm-dd hh:mm:ss e.g., 2005-12-01 15:22:00                                                                     | `string`  | `''`                                                   |
 
-
 ## Events
 
 | Event          | Description | Type                               |
 | -------------- | ----------- | ---------------------------------- |
 | `statusChange` |             | `CustomEvent<DotFieldStatusEvent>` |
 | `valueChange`  |             | `CustomEvent<DotFieldValueEvent>`  |
-
 
 ## Methods
 
@@ -42,9 +37,6 @@ Reset properties of the filed, clear value and emit events.
 
 Type: `void`
 
+---
 
-
-
-----------------------------------------------
-
-*Built with [StencilJS](https://stenciljs.com/)*
+_Built with [StencilJS](https://stenciljs.com/)_

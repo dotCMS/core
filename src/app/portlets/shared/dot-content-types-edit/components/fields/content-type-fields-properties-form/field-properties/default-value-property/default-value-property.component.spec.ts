@@ -21,27 +21,29 @@ describe('DefaultValuePropertyComponent', () => {
             'date-time error'
     });
 
-    beforeEach(waitForAsync( () => {
-        TestBed.configureTestingModule({
-            declarations: [DefaultValuePropertyComponent, DotFieldValidationMessageComponent],
-            imports: [ReactiveFormsModule, DotPipesModule],
-            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-        }).compileComponents();
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                declarations: [DefaultValuePropertyComponent, DotFieldValidationMessageComponent],
+                imports: [ReactiveFormsModule, DotPipesModule],
+                providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+            }).compileComponents();
 
-        fixture = TestBed.createComponent(DefaultValuePropertyComponent);
-        comp = fixture.componentInstance;
-        de = fixture.debugElement;
-        comp.group = new FormGroup({
-            name: new FormControl('')
-        });
-        comp.property = {
-            name: 'name',
-            value: 'value',
-            field: {
-                ...dotcmsContentTypeFieldBasicMock
-            }
-        };
-    }));
+            fixture = TestBed.createComponent(DefaultValuePropertyComponent);
+            comp = fixture.componentInstance;
+            de = fixture.debugElement;
+            comp.group = new FormGroup({
+                name: new FormControl('')
+            });
+            comp.property = {
+                name: 'name',
+                value: 'value',
+                field: {
+                    ...dotcmsContentTypeFieldBasicMock
+                }
+            };
+        })
+    );
 
     it('should have a form', () => {
         const group = new FormGroup({});

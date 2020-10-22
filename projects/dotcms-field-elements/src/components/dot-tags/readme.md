@@ -1,9 +1,6 @@
 # dot-tags
 
-
-
 <!-- Auto Generated Below -->
-
 
 ## Properties
 
@@ -21,14 +18,12 @@
 | `threshold`       | `threshold`        | Min characters to start search in the autocomplete input                       | `number`                              | `0`                        |
 | `value`           | `value`            | Value formatted splitted with a comma, for example: tag-1,tag-2                | `string`                              | `''`                       |
 
-
 ## Events
 
 | Event          | Description | Type                               |
 | -------------- | ----------- | ---------------------------------- |
 | `statusChange` |             | `CustomEvent<DotFieldStatusEvent>` |
 | `valueChange`  |             | `CustomEvent<DotFieldValueEvent>`  |
-
 
 ## Methods
 
@@ -40,9 +35,6 @@ Reset properties of the filed, clear value and emit events.
 
 Type: `void`
 
+---
 
-
-
-----------------------------------------------
-
-*Built with [StencilJS](https://stenciljs.com/)*
+_Built with [StencilJS](https://stenciljs.com/)_

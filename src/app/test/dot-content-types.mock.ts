@@ -1,4 +1,8 @@
-import { DotCMSContentTypeField, DotCMSContentType, DotCMSContentTypeLayoutRow } from 'dotcms-models';
+import {
+    DotCMSContentTypeField,
+    DotCMSContentType,
+    DotCMSContentTypeLayoutRow
+} from 'dotcms-models';
 import { EMPTY_FIELD } from '@portlets/shared/dot-content-types-edit/components/fields/util/field-util';
 
 export const dotcmsContentTypeBasicMock: DotCMSContentType = {
@@ -35,7 +39,7 @@ export const dotcmsContentTypeFieldBasicMock: DotCMSContentTypeField = {
 export const fieldsWithBreakColumn: DotCMSContentTypeLayoutRow[] = [
     {
         divider: {
-            ...dotcmsContentTypeFieldBasicMock,
+            ...dotcmsContentTypeFieldBasicMock
         },
         columns: [
             {

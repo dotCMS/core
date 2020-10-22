@@ -8,41 +8,41 @@ import { InplaceModule } from 'primeng/inplace';
 import { TableModule } from 'primeng/table';
 
 export default {
-  title: 'PrimeNG/Misc/InPlace',
-  parameters: {
-    docs: {
-      description: {
-        component:
-          'Inplace provides an easy to do editing and display at the same time where clicking the output displays the actual content.: https://primefaces.org/primeng/showcase/#/inplace',
-      },
+    title: 'PrimeNG/Misc/InPlace',
+    parameters: {
+        docs: {
+            description: {
+                component:
+                    'Inplace provides an easy to do editing and display at the same time where clicking the output displays the actual content.: https://primefaces.org/primeng/showcase/#/inplace'
+            }
+        }
     },
-  },
-  decorators: [
-    moduleMetadata({
-      imports: [
-        BrowserModule,
-        BrowserAnimationsModule,
-        InplaceModule,
-        InputTextModule,
-        TableModule,
-        HttpClientModule,
-      ],
-    }),
-  ],
-  args: {
-    records: [
-      { brand: 'VW', year: 2012, color: 'Orange', vin: 'dsad231ff' },
-      { brand: 'Audi', year: 2011, color: 'Black', vin: 'gwregre345' },
-      { brand: 'Renault', year: 2005, color: 'Gray', vin: 'h354htr' },
-      { brand: 'BMW', year: 2003, color: 'Blue', vin: 'j6w54qgh' },
-      { brand: 'Mercedes', year: 1995, color: 'Orange', vin: 'hrtwy34' },
-      { brand: 'Volvo', year: 2005, color: 'Black', vin: 'jejtyj' },
-      { brand: 'Honda', year: 2012, color: 'Yellow', vin: 'g43gr' },
-      { brand: 'Jaguar', year: 2013, color: 'Orange', vin: 'greg34' },
-      { brand: 'Ford', year: 2000, color: 'Black', vin: 'h54hw5' },
-      { brand: 'Fiat', year: 2013, color: 'Red', vin: '245t2s' },
+    decorators: [
+        moduleMetadata({
+            imports: [
+                BrowserModule,
+                BrowserAnimationsModule,
+                InplaceModule,
+                InputTextModule,
+                TableModule,
+                HttpClientModule
+            ]
+        })
     ],
-  },
+    args: {
+        records: [
+            { brand: 'VW', year: 2012, color: 'Orange', vin: 'dsad231ff' },
+            { brand: 'Audi', year: 2011, color: 'Black', vin: 'gwregre345' },
+            { brand: 'Renault', year: 2005, color: 'Gray', vin: 'h354htr' },
+            { brand: 'BMW', year: 2003, color: 'Blue', vin: 'j6w54qgh' },
+            { brand: 'Mercedes', year: 1995, color: 'Orange', vin: 'hrtwy34' },
+            { brand: 'Volvo', year: 2005, color: 'Black', vin: 'jejtyj' },
+            { brand: 'Honda', year: 2012, color: 'Yellow', vin: 'g43gr' },
+            { brand: 'Jaguar', year: 2013, color: 'Orange', vin: 'greg34' },
+            { brand: 'Ford', year: 2000, color: 'Black', vin: 'h54hw5' },
+            { brand: 'Fiat', year: 2013, color: 'Red', vin: '245t2s' }
+        ]
+    }
 } as Meta;
 
 const InPlaceTemplate = `
@@ -77,18 +77,18 @@ const InPlaceTemplate = `
 `;
 
 const Template: Story<any> = (props: any) => {
-  const template = InPlaceTemplate;
-  return {
-    props,
-    template,
-  };
+    const template = InPlaceTemplate;
+    return {
+        props,
+        template
+    };
 };
 
 export const Primary: Story = Template.bind({});
 Primary.parameters = {
-  docs: {
-    source: {
-      code: InPlaceTemplate,
-    },
-  },
+    docs: {
+        source: {
+            code: InPlaceTemplate
+        }
+    }
 };

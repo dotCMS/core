@@ -59,7 +59,6 @@ export class DotThemeSelectorComponent implements OnInit {
         private siteService: SiteService
     ) {}
 
-
     ngOnInit() {
         this.dialogActions = {
             accept: {

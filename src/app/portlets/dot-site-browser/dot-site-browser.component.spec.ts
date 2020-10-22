@@ -6,8 +6,8 @@ describe('DotSiteBrowserComponent', () => {
     let component: DotSiteBrowserComponent;
     let fixture: ComponentFixture<DotSiteBrowserComponent>;
 
-   beforeEach(
-          waitForAsync(() => {
+    beforeEach(
+        waitForAsync(() => {
             TestBed.configureTestingModule({
                 declarations: [DotSiteBrowserComponent]
             }).compileComponents();

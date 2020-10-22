@@ -43,7 +43,10 @@ export class DotLargeMessageDisplayComponent implements OnInit, OnDestroy, After
 
     ngAfterViewInit() {
         this.dialogs.changes
-            .pipe(takeUntil(this.destroy$), filter(() => this.recentlyDialogAdded))
+            .pipe(
+                takeUntil(this.destroy$),
+                filter(() => this.recentlyDialogAdded)
+            )
             .subscribe((dialogs: QueryList<DotDialogComponent>) => {
                 this.createContent(dialogs.last, this.messages[this.messages.length - 1]);
                 this.recentlyDialogAdded = false;

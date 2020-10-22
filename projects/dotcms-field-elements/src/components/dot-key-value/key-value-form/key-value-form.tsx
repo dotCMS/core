@@ -91,7 +91,7 @@ export class DotKeyValueComponent {
     }
 
     private isButtonDisabled(): boolean {
-        return !this.isFormValid() || (this.disabled || null);
+        return !this.isFormValid() || this.disabled || null;
     }
 
     private isFormValid(): boolean {

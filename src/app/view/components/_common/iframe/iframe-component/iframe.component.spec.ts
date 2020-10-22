@@ -39,8 +39,8 @@ describe('IframeComponent', () => {
 
     dotcmsEventsService = new DotcmsEventsServiceMock();
 
-   beforeEach(
-          waitForAsync(() => {
+    beforeEach(
+        waitForAsync(() => {
             TestBed.configureTestingModule({
                 declarations: [IframeComponent, MockDotLoadingIndicatorComponent],
                 imports: [RouterTestingModule, DotOverlayMaskModule, DotPipesModule],

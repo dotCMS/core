@@ -18,22 +18,22 @@ describe('DotAppsConfigurationListResolver', () => {
     let dotAppsServices: DotAppsService;
     let dotAppsConfigurationListResolver: DotAppsConfigurationResolver;
 
-    beforeEach(waitForAsync( () => {
-        const testbed = TestBed.configureTestingModule({
-            providers: [
-                DotAppsConfigurationResolver,
-                { provide: DotAppsService, useClass: AppsServicesMock },
-                {
-                    provide: ActivatedRouteSnapshot,
-                    useValue: activatedRouteSnapshotMock
-                }
-            ]
-        });
-        dotAppsServices = testbed.get(DotAppsService);
-        dotAppsConfigurationListResolver = testbed.get(
-            DotAppsConfigurationResolver
-        );
-    }));
+    beforeEach(
+        waitForAsync(() => {
+            const testbed = TestBed.configureTestingModule({
+                providers: [
+                    DotAppsConfigurationResolver,
+                    { provide: DotAppsService, useClass: AppsServicesMock },
+                    {
+                        provide: ActivatedRouteSnapshot,
+                        useValue: activatedRouteSnapshotMock
+                    }
+                ]
+            });
+            dotAppsServices = testbed.get(DotAppsService);
+            dotAppsConfigurationListResolver = testbed.get(DotAppsConfigurationResolver);
+        })
+    );
 
     it('should get and return apps with configurations', () => {
         const response = {

@@ -44,27 +44,31 @@ export class ActionHeaderComponent implements OnChanges {
     }
 
     private setCommandWrapper(options: ButtonAction[]): void {
-        options.forEach(actionButton => {
-            actionButton.model.filter(model => model.deleteOptions).forEach(model => {
-                if (typeof model.command === 'function') {
-                    const callback = model.command;
-                    model.command = $event => {
-                        const originalEvent = $event;
+        options.forEach((actionButton) => {
+            actionButton.model
+                .filter((model) => model.deleteOptions)
+                .forEach((model) => {
+                    if (typeof model.command === 'function') {
+                        const callback = model.command;
+                        model.command = ($event) => {
+                            const originalEvent = $event;
 
-                        this.dotDialogService.confirm({
-                            accept: () => {
-                                callback(originalEvent);
-                            },
-                            header: model.deleteOptions.confirmHeader,
-                            message: model.deleteOptions.confirmMessage,
-                            footerLabel: {
-                                accept: this.dotMessageService.get('contenttypes.action.delete'),
-                                reject: this.dotMessageService.get('contenttypes.action.cancel')
-                            }
-                        });
-                    };
-                }
-            });
+                            this.dotDialogService.confirm({
+                                accept: () => {
+                                    callback(originalEvent);
+                                },
+                                header: model.deleteOptions.confirmHeader,
+                                message: model.deleteOptions.confirmMessage,
+                                footerLabel: {
+                                    accept: this.dotMessageService.get(
+                                        'contenttypes.action.delete'
+                                    ),
+                                    reject: this.dotMessageService.get('contenttypes.action.cancel')
+                                }
+                            });
+                        };
+                    }
+                });
         });
     }
 

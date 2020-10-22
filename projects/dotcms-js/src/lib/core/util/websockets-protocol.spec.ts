@@ -26,7 +26,7 @@ describe('WebSocketProtocol', () => {
     });
 
     it('should tigger message event', (done) => {
-        mockServer.on('connection', socket => {
+        mockServer.on('connection', (socket) => {
             socket.send(
                 JSON.stringify({
                     data: 'testing'

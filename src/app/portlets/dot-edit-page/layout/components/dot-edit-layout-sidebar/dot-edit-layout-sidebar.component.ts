@@ -27,8 +27,9 @@ export class DotEditLayoutSidebarComponent implements ControlValueAccessor {
     value: DotLayoutSideBar;
 
     constructor(
-        private dotEditLayoutService: DotEditLayoutService, 
-        private templateContainersCacheService: TemplateContainersCacheService) {}
+        private dotEditLayoutService: DotEditLayoutService,
+        private templateContainersCacheService: TemplateContainersCacheService
+    ) {}
 
     /**
      * Returns DotContainerColumnBox model.
@@ -39,9 +40,11 @@ export class DotEditLayoutSidebarComponent implements ControlValueAccessor {
      */
     getModel(containers: DotContainerColumnBox[]): DotLayoutSideBar {
         if (containers) {
-            this.value.containers = containers.map(item => {
+            this.value.containers = containers.map((item) => {
                 return {
-                    identifier: this.templateContainersCacheService.getContainerReference(item.container),
+                    identifier: this.templateContainersCacheService.getContainerReference(
+                        item.container
+                    ),
                     uuid: item.uuid
                 };
             });

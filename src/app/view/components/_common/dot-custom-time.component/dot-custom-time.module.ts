@@ -6,6 +6,6 @@ import { CustomTimeComponent } from './dot-custom-time.component';
 @NgModule({
     imports: [CommonModule],
     exports: [CustomTimeComponent],
-    declarations: [CustomTimeComponent],
+    declarations: [CustomTimeComponent]
 })
 export class DotCustomTimeModule {}

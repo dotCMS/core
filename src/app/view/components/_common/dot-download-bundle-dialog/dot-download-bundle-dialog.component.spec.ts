@@ -254,7 +254,9 @@ xdescribe('DotDownloadBundleDialogComponent', () => {
 
             describe('on error', () => {
                 beforeEach(() => {
-                    spyOn<any>(window, 'fetch').and.returnValue(Promise.resolve(throwError('error')));
+                    spyOn<any>(window, 'fetch').and.returnValue(
+                        Promise.resolve(throwError('error'))
+                    );
                 });
 
                 it('should enable buttons and display error message', fakeAsync(() => {

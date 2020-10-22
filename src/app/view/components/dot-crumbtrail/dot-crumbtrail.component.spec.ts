@@ -24,18 +24,20 @@ describe('DotCrumbtrailComponent', () => {
     let de: DebugElement;
     const dotCrumbtrailService: MockDotCrumbtrailService = new MockDotCrumbtrailService();
 
-    beforeEach(waitForAsync( () => {
-        TestBed.configureTestingModule({
-            declarations: [DotCrumbtrailComponent],
-            imports: [BreadcrumbModule],
-            providers: [
-                {
-                    provide: DotCrumbtrailService,
-                    useValue: dotCrumbtrailService
-                }
-            ]
-        }).compileComponents();
-    }));
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                declarations: [DotCrumbtrailComponent],
+                imports: [BreadcrumbModule],
+                providers: [
+                    {
+                        provide: DotCrumbtrailService,
+                        useValue: dotCrumbtrailService
+                    }
+                ]
+            }).compileComponents();
+        })
+    );
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotCrumbtrailComponent);

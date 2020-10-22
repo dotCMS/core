@@ -5,26 +5,26 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ButtonModule } from 'primeng/button';
 
 export default {
-  title: 'PrimeNG/Overlay/Dialog',
-  parameters: {
-    docs: {
-      description: {
-        component:
-          'Dialog is a container to display content in an overlay window: https://primefaces.org/primeng/showcase/#/dialog',
-      },
+    title: 'PrimeNG/Overlay/Dialog',
+    parameters: {
+        docs: {
+            description: {
+                component:
+                    'Dialog is a container to display content in an overlay window: https://primefaces.org/primeng/showcase/#/dialog'
+            }
+        }
     },
-  },
-  decorators: [
-    moduleMetadata({
-      imports: [DialogModule, ButtonModule, BrowserAnimationsModule],
-    }),
-  ],
-  args: {
-    displayBasic: false,
-    showBasicDialog(): void {
-      this.displayBasic = true;
-    },
-  },
+    decorators: [
+        moduleMetadata({
+            imports: [DialogModule, ButtonModule, BrowserAnimationsModule]
+        })
+    ],
+    args: {
+        displayBasic: false,
+        showBasicDialog(): void {
+            this.displayBasic = true;
+        }
+    }
 } as Meta;
 
 const DialogTemplate = `
@@ -42,27 +42,27 @@ const DialogTemplate = `
 `;
 
 const Template: Story<any> = (props: any) => {
-  const template = DialogTemplate;
-  return {
-    props,
-    template,
-  };
+    const template = DialogTemplate;
+    return {
+        props,
+        template
+    };
 };
 
 export const Basic: Story = Template.bind({});
 
 Basic.argTypes = {
-  displayBasic: {
-    name: 'displayBasic',
-    description: 'display the modal',
-  },
+    displayBasic: {
+        name: 'displayBasic',
+        description: 'display the modal'
+    }
 };
 
 Basic.parameters = {
-  docs: {
-    source: {
-      code: DialogTemplate,
-    },
-    iframeHeight: 300,
-  },
+    docs: {
+        source: {
+            code: DialogTemplate
+        },
+        iframeHeight: 300
+    }
 };

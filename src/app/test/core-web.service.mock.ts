@@ -69,7 +69,6 @@ export class CoreWebServiceMock {
             });
         }
 
-
         return this._http
             .request(
                 new HttpRequest(options.method, options.url, options.body, {

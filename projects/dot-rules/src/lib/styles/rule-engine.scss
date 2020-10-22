@@ -2,7 +2,6 @@
 // @import "~primeng/resources/primeng.css";
 // @import "~primeng/resources/themes/nova-light/theme.css";
 
-
 $background-primary: #f2f2f2;
 $background-secondary: #dff1f9;
 $background-secondary-alternate: #d4efd5;
@@ -63,12 +62,11 @@ $spacing-4: 1.5rem;
 }
 
 @mixin invalid-and-pristine-or-untouched {
-
 }
 
-$finder-s-input: '.ui.input input';
+$finder-s-input: ".ui.input input";
 
-.rules__engine-container{
+.rules__engine-container {
     background-color: $gray-bg;
     display: flex;
     flex-grow: 1;
@@ -85,9 +83,9 @@ $finder-s-input: '.ui.input input';
 
     .cw-message {
         &.ui.message {
-        &:first-child {
-            margin: 2em 2em 1em;
-        }
+            &:first-child {
+                margin: 2em 2em 1em;
+            }
         }
     }
 
@@ -112,33 +110,35 @@ $finder-s-input: '.ui.input input';
     }
 
     .cw-rule-status-text {
-        margin-top: .2em;
+        margin-top: 0.2em;
         margin-right: 2em;
     }
 
     .cw-saved {
-        .ui.checkbox input:checked ~ .box:after, .ui.checkbox input:checked ~ label:after {
-        background-color: $brand-primary-one;
-        border: .5em solid white;
+        .ui.checkbox input:checked ~ .box:after,
+        .ui.checkbox input:checked ~ label:after {
+            background-color: $brand-primary-one;
+            border: 0.5em solid white;
         }
         .cw-rule-status-text {
-        opacity: 0;
-        transition-property: opacity;
-        transition-delay: 1s;
-        transition-duration: 2s;
-        transition-timing-function: cubic-bezier(1, 0.1, 0, 1);
+            opacity: 0;
+            transition-property: opacity;
+            transition-delay: 1s;
+            transition-duration: 2s;
+            transition-timing-function: cubic-bezier(1, 0.1, 0, 1);
         }
     }
 
     .cw-saving {
-        .ui.checkbox input:checked ~ .box:after, .ui.checkbox input:checked ~ label:after {
-        background-color: $background-tertiary;
+        .ui.checkbox input:checked ~ .box:after,
+        .ui.checkbox input:checked ~ label:after {
+            background-color: $background-tertiary;
         }
         .cw-rule-status-text {
-        opacity: 1;
-        transition-property: opacity;
-        transition-delay: 0s;
-        transition-duration: 0s;
+            opacity: 1;
+            transition-property: opacity;
+            transition-delay: 0s;
+            transition-duration: 0s;
         }
     }
 
@@ -150,7 +150,7 @@ $finder-s-input: '.ui.input input';
     .ng-dirty.ui.input input:focus.ng-valid,
     .ng-dirty.ng-valid .ui.input input:focus,
     p-dropdown.ng-dirty.ng-valid .ui-dropdown {
-        @include valid-and-dirty-or-touched-focused
+        @include valid-and-dirty-or-touched-focused;
     }
 
     .ng-dirty.ng-valid input,
@@ -160,7 +160,7 @@ $finder-s-input: '.ui.input input';
     .ng-dirty.ui.dropdown.ng-valid,
     .ng-dirty.ui.selection.dropdown.ng-valid,
     p-dropdown.ng-touched.ng-valid .ui-dropdown {
-        @include valid-and-dirty-or-touched
+        @include valid-and-dirty-or-touched;
     }
 
     // Untouched fields that aren't yet valid.
@@ -168,7 +168,7 @@ $finder-s-input: '.ui.input input';
         #{$finder-s-input}, // Text Input fields
         .ui-dropdown // Drop down fields
         {
-        @include invalid-and-pristine-or-untouched
+            @include invalid-and-pristine-or-untouched;
         }
     }
 
@@ -177,7 +177,7 @@ $finder-s-input: '.ui.input input';
         #{$finder-s-input}, // Text Input fields
         .ui-dropdown // Drop down fields
         {
-        @include invalid-and-dirty-or-touched
+            @include invalid-and-dirty-or-touched;
         }
     }
 
@@ -186,7 +186,7 @@ $finder-s-input: '.ui.input input';
         #{$finder-s-input}, // Text Input fields
         .ui-dropdown // Drop down fields
         {
-        @include invalid-and-dirty-or-touched
+            @include invalid-and-dirty-or-touched;
         }
     }
 
@@ -194,14 +194,14 @@ $finder-s-input: '.ui.input input';
         > .cw-header {
             padding-bottom: 2em;
 
-        .cw-button-add {
-            background-color: $background-tertiary;
-            color: $foreground-tertiary;
-        }
+            .cw-button-add {
+                background-color: $background-tertiary;
+                color: $foreground-tertiary;
+            }
         }
 
         .cw-btn-group .ui.basic.buttons .ui.button:focus {
-        border: 1px solid #96C8DA;
+            border: 1px solid #96c8da;
         }
     }
 
@@ -221,36 +221,34 @@ $finder-s-input: '.ui.input input';
         &:focus,
         &:hover,
         &:active {
-        box-shadow: none !important;
-        background-color: inherit;
+            box-shadow: none !important;
+            background-color: inherit;
         }
     }
 
     .cw-filter-links {
-        font-size: .8em;
+        font-size: 0.8em;
         color: $foreground-disabled;
 
         span:first-child {
-            padding:0 4px 0 0;
+            padding: 0 4px 0 0;
         }
 
         span {
-            padding:0 4px;
+            padding: 0 4px;
         }
     }
 
-
-
     .cw-filter-link {
         &.active {
-        &:hover {
+            &:hover {
+                color: $foreground-active;
+            }
+            font-weight: bold;
             color: $foreground-active;
         }
-        font-weight: bold;
-        color: $foreground-active;
-        }
         &:hover {
-        color: $foreground-disabled;
+            color: $foreground-disabled;
         }
         color: $foreground-disabled;
     }
@@ -258,11 +256,11 @@ $finder-s-input: '.ui.input input';
     .cw-rule {
         margin-bottom: 2em;
         border: 1px solid $background-primary;
-        border-radius: .5em;
+        border-radius: 0.5em;
         background-color: #fff;
 
         .cw-header-actions {
-            margin-right: .5em;
+            margin-right: 0.5em;
             position: relative;
 
             .cw-btn-group .ui.basic.buttons .ui.button:focus {
@@ -277,7 +275,7 @@ $finder-s-input: '.ui.input input';
             }
 
             p-inputSwitch {
-              margin: 4px 15px 0 0;
+                margin: 4px 15px 0 0;
             }
         }
 
@@ -285,10 +283,10 @@ $finder-s-input: '.ui.input input';
             max-height: 2em;
         }
         .cw-input-label-right {
-            margin-left: .25em;
+            margin-left: 0.25em;
         }
         .cw-input-label-left {
-            margin-right: .25em;
+            margin-right: 0.25em;
         }
         .cw-input,
         &.cw-last {
@@ -301,9 +299,9 @@ $finder-s-input: '.ui.input input';
 
         > .cw-header {
             background-color: #fff;
-            padding: .35em 0;
-            border-top-left-radius: .5em;
-            border-top-right-radius: .5em;
+            padding: 0.35em 0;
+            border-top-left-radius: 0.5em;
+            border-top-right-radius: 0.5em;
         }
 
         .cw-rule-caret {
@@ -313,10 +311,10 @@ $finder-s-input: '.ui.input input';
         }
 
         .cw-rule-cloud {
-            min-width: 1.0em;
-            max-width: 1.0em;
-            margin-left: .5em;
-            margin-right: .25em;
+            min-width: 1em;
+            max-width: 1em;
+            margin-left: 0.5em;
+            margin-right: 0.25em;
             color: white;
             text-shadow: 1px 1px 8px #555555;
             &.out-of-sync {
@@ -326,7 +324,7 @@ $finder-s-input: '.ui.input input';
         }
         .cw-fire-on-label {
             font-weight: bold;
-            margin-right: .5em;
+            margin-right: 0.5em;
             min-width: 4em;
             max-width: 4em;
         }
@@ -365,11 +363,12 @@ $finder-s-input: '.ui.input input';
         }
 
         cw-toggle-input.cw-input {
-            margin-top: .75em;
+            margin-top: 0.75em;
         }
 
-        .cw-condition-row, .cw-action-row {
-            margin-bottom: .5em;
+        .cw-condition-row,
+        .cw-action-row {
+            margin-bottom: 0.5em;
             min-height: 1em;
         }
 
@@ -377,19 +376,19 @@ $finder-s-input: '.ui.input input';
             // This is the width + margin of the condition toggle button
             padding-left: 6em;
         }
-
     }
 
     .cw-header-info-arrow {
         font-size: 16px;
         font-weight: bold;
-        padding: .5em;
+        padding: 0.5em;
     }
 
-    .cw-condition-group-separator, .cw-action-separator {
-        padding: .5em 1em;
+    .cw-condition-group-separator,
+    .cw-action-separator {
+        padding: 0.5em 1em;
         background-color: $background-secondary;
-        border-radius: .5em;
+        border-radius: 0.5em;
         width: 100%;
     }
 
@@ -398,7 +397,6 @@ $finder-s-input: '.ui.input input';
     }
 
     .cw-rule-group {
-
         .cw-header-text {
             width: 200em;
             margin-left: 2em;
@@ -411,13 +409,12 @@ $finder-s-input: '.ui.input input';
             height: 1.25em;
             width: 4em;
             vertical-align: middle;
-        div {
-            margin-top: -.5em;
-        }
-        &.ui.button:hover {
-            background-color: $background-primary !important;
-        }
-
+            div {
+                margin-top: -0.5em;
+            }
+            &.ui.button:hover {
+                background-color: $background-primary !important;
+            }
         }
     }
 
@@ -430,19 +427,19 @@ $finder-s-input: '.ui.input input';
         margin: 0;
     }
 
-    .cw-rule-actions, .cw-conditions {
-        padding: .5em 2em 0 2em;
+    .cw-rule-actions,
+    .cw-conditions {
+        padding: 0.5em 2em 0 2em;
 
         .cw-entry {
-        > div.buttons {
-            width: 100%;
-        }
+            > div.buttons {
+                width: 100%;
+            }
         }
         .cw-btn-group {
-        .ui.basic.buttons {
-            border: none;
-        }
-
+            .ui.basic.buttons {
+                border: none;
+            }
         }
 
         .cw-add-btn {
@@ -451,7 +448,7 @@ $finder-s-input: '.ui.input input';
         }
 
         .cw-delete-btn {
-            margin-right: .5em;
+            margin-right: 0.5em;
         }
 
         .trash {
@@ -464,7 +461,7 @@ $finder-s-input: '.ui.input input';
     }
 
     .cw-spacer.cw-condition-operator {
-        width: 4em
+        width: 4em;
     }
 
     .cw-spacer.cw-add-condition {
@@ -487,7 +484,7 @@ $finder-s-input: '.ui.input input';
     }
 
     .cw-name-field {
-        margin: .5em 2em .5em 2em;
+        margin: 0.5em 2em 0.5em 2em;
     }
 
     .cw-spacer {
@@ -501,7 +498,6 @@ $finder-s-input: '.ui.input input';
         &.cw-2em {
             width: 2em;
         }
-
     }
 
     .ui.modal.cw-modal-dialog2 {
@@ -527,9 +523,10 @@ $finder-s-input: '.ui.input input';
     }
 
     .cw-visitors-location {
-        .cw-latLong .ui.input input, .cw-radius .ui.input input {
-        text-align: right;
-        color: lightgray;
+        .cw-latLong .ui.input input,
+        .cw-radius .ui.input input {
+            text-align: right;
+            color: lightgray;
         }
     }
 
@@ -591,5 +588,4 @@ $finder-s-input: '.ui.input input';
             font-size: $font-size-x-large;
         }
     }
-
 }

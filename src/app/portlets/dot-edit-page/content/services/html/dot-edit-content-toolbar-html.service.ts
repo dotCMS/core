@@ -277,9 +277,9 @@ export class DotEditContentToolbarHtmlService {
                 ${items
                     .map((item: DotEditPopupMenuItem) => {
                         return `
-                            <li class="dotedit-menu__item ${item.disabled
-                                ? 'dotedit-menu__item--disabled'
-                                : ''}"
+                            <li class="dotedit-menu__item ${
+                                item.disabled ? 'dotedit-menu__item--disabled' : ''
+                            }"
                                 ${item.tooltip ? 'dot-title="' + item.tooltip + '"' : ''}">
                                     <a
                                         data-dot-object="popup-menu-item"
@@ -298,7 +298,7 @@ export class DotEditContentToolbarHtmlService {
 
     private getDotEditPopupMenuItemDataSet(datasets: { [propName: string]: string }): string {
         return Object.keys(datasets)
-            .map(key => `data-dot-${key}="${datasets[key]}"`)
+            .map((key) => `data-dot-${key}="${datasets[key]}"`)
             .join(' ');
     }
 }

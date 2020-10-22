@@ -13,9 +13,7 @@ export class DotAppsConfigurationHeaderComponent {
 
     @Input() app: DotApps;
 
-    constructor(
-        private dotRouterService: DotRouterService
-    ) {}
+    constructor(private dotRouterService: DotRouterService) {}
 
     /**
      * Redirects to app configuration listing page

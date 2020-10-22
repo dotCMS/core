@@ -28,42 +28,30 @@ describe('DotMaxlengthDirective', () => {
         fixture.detectChanges();
     });
 
-    it(
-        'should keep same text after event if max length is not reached',
-        fakeAsync(() => {
-            dispatchEvent(element, 'keypress', 'test');
-            tick(2);
-            expect(element.nativeElement.textContent).toBe('test');
-        })
-    );
+    it('should keep same text after event if max length is not reached', fakeAsync(() => {
+        dispatchEvent(element, 'keypress', 'test');
+        tick(2);
+        expect(element.nativeElement.textContent).toBe('test');
+    }));
 
-    it(
-        'should remove extra characters when length is more than max length on keypress',
-        fakeAsync(() => {
-            dispatchEvent(element, 'keypress', '1234567890remove');
-            tick(2);
-            expect(element.nativeElement.textContent).toBe('1234567890');
-        })
-    );
+    it('should remove extra characters when length is more than max length on keypress', fakeAsync(() => {
+        dispatchEvent(element, 'keypress', '1234567890remove');
+        tick(2);
+        expect(element.nativeElement.textContent).toBe('1234567890');
+    }));
 
-    it(
-        'should remove extra characters when length is more than max length on paste',
-        fakeAsync(() => {
-            dispatchEvent(element, 'paste', '1234567890remove');
-            tick(2);
-            expect(element.nativeElement.textContent).toBe('1234567890');
-        })
-    );
+    it('should remove extra characters when length is more than max length on paste', fakeAsync(() => {
+        dispatchEvent(element, 'paste', '1234567890remove');
+        tick(2);
+        expect(element.nativeElement.textContent).toBe('1234567890');
+    }));
 
-    it(
-        'should prevent default when max length is reached',
-        fakeAsync(() => {
-            const event = new Event('keypress');
-            spyOn(event, 'preventDefault');
-            element.nativeElement.textContent = '12345678901';
-            element.nativeElement.dispatchEvent(event);
-            tick(2);
-            expect(event.preventDefault).toHaveBeenCalled();
-        })
-    );
+    it('should prevent default when max length is reached', fakeAsync(() => {
+        const event = new Event('keypress');
+        spyOn(event, 'preventDefault');
+        element.nativeElement.textContent = '12345678901';
+        element.nativeElement.dispatchEvent(event);
+        tick(2);
+        expect(event.preventDefault).toHaveBeenCalled();
+    }));
 });

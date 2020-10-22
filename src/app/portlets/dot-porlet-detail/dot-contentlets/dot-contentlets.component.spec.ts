@@ -38,7 +38,7 @@ import { ConfirmationService } from 'primeng/api';
 import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
-import {DotDownloadBundleDialogService} from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
+import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 @Injectable()

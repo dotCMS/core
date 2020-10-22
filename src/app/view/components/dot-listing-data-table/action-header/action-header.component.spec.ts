@@ -15,33 +15,35 @@ xdescribe('ActionHeaderComponent', () => {
     let fixture: ComponentFixture<ActionHeaderComponent>;
     let de: DebugElement;
 
-    beforeEach(waitForAsync( () => {
-        const messageServiceMock = new MockDotMessageService({
-            selected: 'selected'
-        });
+    beforeEach(
+        waitForAsync(() => {
+            const messageServiceMock = new MockDotMessageService({
+                selected: 'selected'
+            });
 
-        DOTTestBed.configureTestingModule({
-            declarations: [ActionHeaderComponent],
-            imports: [
-                BrowserAnimationsModule,
-                DotActionButtonModule,
-                RouterTestingModule.withRoutes([
-                    {
-                        component: ActionHeaderComponent,
-                        path: 'test'
-                    }
-                ])
-            ],
-            providers: [
-                { provide: DotMessageService, useValue: messageServiceMock },
-                DotAlertConfirmService
-            ]
-        });
+            DOTTestBed.configureTestingModule({
+                declarations: [ActionHeaderComponent],
+                imports: [
+                    BrowserAnimationsModule,
+                    DotActionButtonModule,
+                    RouterTestingModule.withRoutes([
+                        {
+                            component: ActionHeaderComponent,
+                            path: 'test'
+                        }
+                    ])
+                ],
+                providers: [
+                    { provide: DotMessageService, useValue: messageServiceMock },
+                    DotAlertConfirmService
+                ]
+            });
 
-        fixture = DOTTestBed.createComponent(ActionHeaderComponent);
-        comp = fixture.componentInstance;
-        de = fixture.debugElement.query(By.css('.action-header'));
-    }));
+            fixture = DOTTestBed.createComponent(ActionHeaderComponent);
+            comp = fixture.componentInstance;
+            de = fixture.debugElement.query(By.css('.action-header'));
+        })
+    );
 
     it('should render default state correctly', () => {
         const actionButton: DebugElement = de.query(By.css('.action-header__primary-button'));

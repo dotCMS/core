@@ -56,13 +56,15 @@ export class ContentTypesFieldsListComponent implements OnInit {
                     };
                 });
                 let fieldsFiltered = mappedFields.filter(
-                    field => field.clazz !== LIVE_DIVIDER_CLAZZ
+                    (field) => field.clazz !== LIVE_DIVIDER_CLAZZ
                 );
                 if (this.baseType === 'FORM') {
-                    fieldsFiltered = fieldsFiltered.filter(field => this.isFormField(field));
+                    fieldsFiltered = fieldsFiltered.filter((field) => this.isFormField(field));
                 }
 
-                const LINE_DIVIDER = mappedFields.find(field => field.clazz === LIVE_DIVIDER_CLAZZ);
+                const LINE_DIVIDER = mappedFields.find(
+                    (field) => field.clazz === LIVE_DIVIDER_CLAZZ
+                );
 
                 const COLUMN_BREAK_FIELD = FieldUtil.createColumnBreak();
                 this.fieldTypes = [COLUMN_BREAK_FIELD, LINE_DIVIDER, ...fieldsFiltered];

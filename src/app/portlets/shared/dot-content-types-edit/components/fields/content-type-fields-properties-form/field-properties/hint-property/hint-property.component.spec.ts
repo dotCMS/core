@@ -15,16 +15,18 @@ describe('HintPropertyComponent', () => {
         Hint: 'Hint'
     });
 
-    beforeEach(waitForAsync( () => {
-        TestBed.configureTestingModule({
-            declarations: [HintPropertyComponent],
-            imports: [ReactiveFormsModule, DotPipesModule],
-            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-        }).compileComponents();
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                declarations: [HintPropertyComponent],
+                imports: [ReactiveFormsModule, DotPipesModule],
+                providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+            }).compileComponents();
 
-        fixture = TestBed.createComponent(HintPropertyComponent);
-        comp = fixture.componentInstance;
-    }));
+            fixture = TestBed.createComponent(HintPropertyComponent);
+            comp = fixture.componentInstance;
+        })
+    );
 
     it('should have a form', () => {
         const group = new FormGroup({});

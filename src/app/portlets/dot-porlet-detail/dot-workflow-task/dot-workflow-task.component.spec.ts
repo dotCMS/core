@@ -35,13 +35,13 @@ import { PushPublishService } from '@services/push-publish/push-publish.service'
 import { CoreWebServiceMock } from '../../../test/core-web.service.mock';
 import { DotCurrentUserService } from '@services/dot-current-user/dot-current-user.service';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import {DotWizardService} from '@services/dot-wizard/dot-wizard.service';
-import {DotHttpErrorManagerService} from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import {DotAlertConfirmService} from '@services/dot-alert-confirm';
-import {ConfirmationService} from 'primeng/api';
-import {DotWorkflowActionsFireService} from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
-import {DotGlobalMessageService} from '@components/_common/dot-global-message/dot-global-message.service';
-import {DotEventsService} from '@services/dot-events/dot-events.service';
+import { DotWizardService } from '@services/dot-wizard/dot-wizard.service';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { ConfirmationService } from 'primeng/api';
+import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 @Injectable()
 class MockDotWorkflowTaskDetailService {
@@ -65,7 +65,12 @@ describe('DotWorkflowTaskComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [DotWorkflowTaskComponent],
-            imports: [DotWorkflowTaskDetailModule, BrowserAnimationsModule, RouterTestingModule, HttpClientTestingModule],
+            imports: [
+                DotWorkflowTaskDetailModule,
+                BrowserAnimationsModule,
+                RouterTestingModule,
+                HttpClientTestingModule
+            ],
             providers: [
                 DotWorkflowTaskDetailService,
                 {
@@ -131,17 +136,14 @@ describe('DotWorkflowTaskComponent', () => {
         taskDetail = de.query(By.css('dot-workflow-task-detail'));
     });
 
-    it(
-        'should call workflow task modal',
-        async(() => {
-            const params = {
-                header: 'Task Detail',
-                id: '74cabf7a-0e9d-48b6-ab1c-8f76d0ad31e0'
-            };
+    it('should call workflow task modal', async(() => {
+        const params = {
+            header: 'Task Detail',
+            id: '74cabf7a-0e9d-48b6-ab1c-8f76d0ad31e0'
+        };
 
-            expect(dotWorkflowTaskDetailService.view).toHaveBeenCalledWith(params);
-        })
-    );
+        expect(dotWorkflowTaskDetailService.view).toHaveBeenCalledWith(params);
+    }));
 
     it('should redirect to /workflow and refresh data when modal closed', () => {
         taskDetail.triggerEventHandler('close', {});

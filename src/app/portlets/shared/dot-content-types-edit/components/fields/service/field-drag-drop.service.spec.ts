@@ -343,7 +343,7 @@ describe('FieldDragDropService', () => {
     });
 
     it('should emit fieldRowDropFromTarget', () => {
-        let result
+        let result;
         fieldDragDropService.fieldRowDropFromTarget$.subscribe(() => {
             result = true;
         });

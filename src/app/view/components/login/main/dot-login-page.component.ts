@@ -12,16 +12,15 @@ import { DotLoginPageStateService } from '@components/login/shared/services/dot-
  * The login component allows set the background image and background color.
  */
 export class DotLoginPageComponent implements OnInit {
-    constructor(
-        public loginPageStateService: DotLoginPageStateService
-    ) {}
+    constructor(public loginPageStateService: DotLoginPageStateService) {}
 
     ngOnInit(): void {
         this.loginPageStateService
             .get()
             .pipe(take(1), pluck('entity'))
             .subscribe((dotLoginUserSystemInformation: DotLoginUserSystemInformation) => {
-                document.body.style.backgroundColor = dotLoginUserSystemInformation.backgroundColor || '';
+                document.body.style.backgroundColor =
+                    dotLoginUserSystemInformation.backgroundColor || '';
                 document.body.style.backgroundImage = dotLoginUserSystemInformation.backgroundPicture
                     ? `url('${dotLoginUserSystemInformation.backgroundPicture}')`
                     : '';

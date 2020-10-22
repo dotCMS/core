@@ -21,8 +21,8 @@ describe('DotSecondaryToolbarComponent', () => {
     let fixture: ComponentFixture<HostTestComponent>;
     let dotToolbarComponent: DebugElement;
 
-   beforeEach(
-          waitForAsync(() => {
+    beforeEach(
+        waitForAsync(() => {
             TestBed.configureTestingModule({
                 declarations: [HostTestComponent, DotSecondaryToolbarComponent],
                 imports: [CommonModule]

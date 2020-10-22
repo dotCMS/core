@@ -25,7 +25,6 @@ describe('DotIconButtonComponent', () => {
         expect(icon.componentInstance.name).toBe('test');
     });
 
-
     it('should have type button', () => {
         const button = fixture.debugElement.query(By.css('button'));
         expect(button.attributes.type).toBe('button');

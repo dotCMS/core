@@ -15,149 +15,148 @@
  *
  */
 export class LazyVerify {
-  static exists(value) {
-    return !(value === null || value === undefined);
-  }
-
-  static empty(value) {
-    let empty = !LazyVerify.exists(value);
-    if (!empty) {
-      if (LazyVerify.isString(value)) {
-        empty = LazyVerify.maxLength(value, 0);
-      } else if (LazyVerify.isObject(value)) {
-        empty = LazyVerify.emptyObject(value);
-      }
+    static exists(value) {
+        return !(value === null || value === undefined);
     }
-    return empty;
-  }
 
-  static isObject(value) {
-    return (typeof value === 'object' || value.constructor === Object);
-  }
+    static empty(value) {
+        let empty = !LazyVerify.exists(value);
+        if (!empty) {
+            if (LazyVerify.isString(value)) {
+                empty = LazyVerify.maxLength(value, 0);
+            } else if (LazyVerify.isObject(value)) {
+                empty = LazyVerify.emptyObject(value);
+            }
+        }
+        return empty;
+    }
 
-  static isString(value) {
-    return (typeof value === 'string' || value instanceof String);
-  }
+    static isObject(value) {
+        return typeof value === 'object' || value.constructor === Object;
+    }
 
-  static isFunction(value) {
-    return (typeof value === 'function' || value instanceof Function);
-  }
+    static isString(value) {
+        return typeof value === 'string' || value instanceof String;
+    }
 
-  static isArray(value) {
-    return (Array.isArray(value) || value instanceof Array);
-  }
+    static isFunction(value) {
+        return typeof value === 'function' || value instanceof Function;
+    }
 
-  static emptyObject(value) {
-    return Object.getOwnPropertyNames(value).length === 0;
-  }
+    static isArray(value) {
+        return Array.isArray(value) || value instanceof Array;
+    }
 
-  /**
-   * The object has only the specified property keys, and by default must have all of the specified keys.
-   * Setting allowMissing to true
-   * @param object anything that works with Object.keys
-   * @param properties Array of strings that represent keys to check for
-   * @param allowMissing If true this test will fail if the object has a key that is not specified in properties,
-   * but will not fail if a key is not present on the object.
-   *
-   */
-  static hasOnly(object, properties = [], allowMissing = false ) {
-    let keys = Object.keys(object);
-    let has = { };
-    let count = 0;
-    keys.forEach((key) => {
-      has[key] = true;
-      count++;
-    });
-    let hasAllOfDems = properties.every((propKey) => {
-      count--;
-      let x = has[propKey];
-      return x === undefined || x === true;
-    });
-    return (hasAllOfDems && (allowMissing ? count <= 0 : count === 0));
-  }
+    static emptyObject(value) {
+        return Object.getOwnPropertyNames(value).length === 0;
+    }
 
-  /**
-   * The object has all the specified keys, and perhaps others.
-   * @param object anything that works with Object.keys
-   * @param properties Array of strings that represent keys to check for
-   *
-   */
-  static hasAll(object, properties= []) {
-    let keys = Object.keys(object);
-    let has = { };
-    keys.forEach((key) => {
-      has[key] = true;
-    });
-    let hasAllOfDems = properties.every((propKey) => {
-      return has[propKey];
-    });
-    return hasAllOfDems;
-  }
+    /**
+     * The object has only the specified property keys, and by default must have all of the specified keys.
+     * Setting allowMissing to true
+     * @param object anything that works with Object.keys
+     * @param properties Array of strings that represent keys to check for
+     * @param allowMissing If true this test will fail if the object has a key that is not specified in properties,
+     * but will not fail if a key is not present on the object.
+     *
+     */
+    static hasOnly(object, properties = [], allowMissing = false) {
+        let keys = Object.keys(object);
+        let has = {};
+        let count = 0;
+        keys.forEach((key) => {
+            has[key] = true;
+            count++;
+        });
+        let hasAllOfDems = properties.every((propKey) => {
+            count--;
+            let x = has[propKey];
+            return x === undefined || x === true;
+        });
+        return hasAllOfDems && (allowMissing ? count <= 0 : count === 0);
+    }
 
-  static maxLength(value, max) {
-    return value.length <= max;
-  }
+    /**
+     * The object has all the specified keys, and perhaps others.
+     * @param object anything that works with Object.keys
+     * @param properties Array of strings that represent keys to check for
+     *
+     */
+    static hasAll(object, properties = []) {
+        let keys = Object.keys(object);
+        let has = {};
+        keys.forEach((key) => {
+            has[key] = true;
+        });
+        let hasAllOfDems = properties.every((propKey) => {
+            return has[propKey];
+        });
+        return hasAllOfDems;
+    }
 
-  static minLength(value, min) {
-    return value.length >= min;
-  }
+    static maxLength(value, max) {
+        return value.length <= max;
+    }
 
-  static isNumber(value) {
-    return (typeof value === 'number' || value instanceof Number);
-  }
+    static minLength(value, min) {
+        return value.length >= min;
+    }
 
-  static isInteger(value) {
-    return (value % 1 === 0);
-  }
+    static isNumber(value) {
+        return typeof value === 'number' || value instanceof Number;
+    }
 
-  static min(value, min) {
-    return value >= min;
-  }
+    static isInteger(value) {
+        return value % 1 === 0;
+    }
 
-  static max(value, max) {
-    return value <= max;
-  }
+    static min(value, min) {
+        return value >= min;
+    }
 
-  static isBoolean(value) {
-    return value === true || value === false;
-  }
+    static max(value, max) {
+        return value <= max;
+    }
+
+    static isBoolean(value) {
+        return value === true || value === false;
+    }
 }
 
 export class Verify extends LazyVerify {
+    static isString(value, allowEmpty = false) {
+        return !LazyVerify.exists(value) ? allowEmpty === true : LazyVerify.isString(value);
+    }
 
-  static isString(value, allowEmpty = false) {
-    return (!LazyVerify.exists(value)) ? allowEmpty === true : LazyVerify.isString(value);
-  }
+    static maxLength(value, max) {
+        return Verify.isString(value) && LazyVerify.maxLength(value, max);
+    }
 
-  static maxLength(value, max) {
-    return Verify.isString(value) && LazyVerify.maxLength(value, max);
-  }
+    static minLength(value, min) {
+        return Verify.isString(value) && LazyVerify.minLength(value, min);
+    }
 
-  static minLength(value, min) {
-    return Verify.isString(value) && LazyVerify.minLength(value, min);
-  }
+    static isNumber(value) {
+        return LazyVerify.exists(value) && LazyVerify.isNumber(value);
+    }
 
-  static isNumber(value) {
-    return LazyVerify.exists(value) && LazyVerify.isNumber(value);
-  }
+    static isInteger(value) {
+        return Verify.isNumber(value) && LazyVerify.isInteger(value);
+    }
 
-  static isInteger(value) {
-    return Verify.isNumber(value) && LazyVerify.isInteger(value);
-  }
+    static min(value, min) {
+        return Verify.isNumber(value) && LazyVerify.min(value, min);
+    }
 
-  static min(value, min) {
-    return Verify.isNumber(value) && LazyVerify.min(value, min);
-  }
+    static max(value, max) {
+        return Verify.isNumber(value) && LazyVerify.max(value, max);
+    }
 
-  static max(value, max) {
-    return Verify.isNumber(value) && LazyVerify.max(value, max);
-  }
+    static isFunction(value) {
+        return LazyVerify.exists(value) && LazyVerify.isFunction(value);
+    }
 
-  static isFunction(value) {
-    return LazyVerify.exists(value) && LazyVerify.isFunction(value);
-  }
-
-  static isArray(value) {
-    return LazyVerify.exists(value) && LazyVerify.isArray(value);
-  }
+    static isArray(value) {
+        return LazyVerify.exists(value) && LazyVerify.isArray(value);
+    }
 }

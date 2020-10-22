@@ -5,8 +5,8 @@ export interface DotCMSFormConfig {
     workflowtoSubmit?: string;
     fieldsToShow?: string;
     labels?: {
-        submit?: string,
-        reset?: string
+        submit?: string;
+        reset?: string;
     };
     win?: Window;
     onSuccess?(data: any): any;

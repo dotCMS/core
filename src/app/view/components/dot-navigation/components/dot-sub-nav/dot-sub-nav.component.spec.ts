@@ -26,12 +26,14 @@ describe('DotSubNavComponent', () => {
     let fixture: ComponentFixture<DotSubNavComponent>;
     let de: DebugElement;
 
-    beforeEach(waitForAsync( () => {
-        TestBed.configureTestingModule({
-            declarations: [DotSubNavComponent],
-            imports: [RouterTestingModule, BrowserAnimationsModule]
-        }).compileComponents();
-    }));
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                declarations: [DotSubNavComponent],
+                imports: [RouterTestingModule, BrowserAnimationsModule]
+            }).compileComponents();
+        })
+    );
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotSubNavComponent);

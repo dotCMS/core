@@ -138,7 +138,10 @@ export class SiteService {
             .requestView({
                 url: `/api/content/render/false/query/+contentType:host%20+identifier:${id}`
             })
-            .pipe(pluck('contentlets'), map((sites: Site[]) => sites[0]));
+            .pipe(
+                pluck('contentlets'),
+                map((sites: Site[]) => sites[0])
+            );
     }
 
     /**

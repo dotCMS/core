@@ -91,8 +91,9 @@ class MockDotPageSelectorService {
             <dot-page-selector
                 [floatingLabel]="floatingLabel"
                 formControlName="page"
-                [style]="{'width': '100%'}"
-                label="Hello World">
+                [style]="{ width: '100%' }"
+                label="Hello World"
+            >
             </dot-page-selector>
         </form>
     `
@@ -117,7 +118,7 @@ const messageServiceMock = new MockDotMessageService({
     'page.selector.no.page.results': 'Search for pages have no results'
 });
 
-const config = host => {
+const config = (host) => {
     return {
         declarations: [host, DotPageSelectorComponent],
         imports: [DotDirectivesModule, DotFieldHelperModule],
@@ -142,8 +143,8 @@ describe('DotPageSelectorComponent', () => {
     const searchHostObj = { originalEvent: { target: { value: '//' } }, query: '//' };
     const specialSearchObj = { originalEvent: { target: { value: 'd#emo$%' } }, query: 'd#emo$%' };
 
-   beforeEach(
-          waitForAsync(() => {
+    beforeEach(
+        waitForAsync(() => {
             DOTTestBed.configureTestingModule(config(FakeFormComponent));
         })
     );
@@ -173,7 +174,9 @@ describe('DotPageSelectorComponent', () => {
     });
 
     it('should search for pages', () => {
-        spyOn(dotPageSelectorService, 'search').and.returnValue(observableOf({ ...mockDotSiteSelectorResults }));
+        spyOn(dotPageSelectorService, 'search').and.returnValue(
+            observableOf({ ...mockDotSiteSelectorResults })
+        );
         autocomplete.triggerEventHandler('completeMethod', searchPageObj);
         expect(dotPageSelectorService.search).toHaveBeenCalledWith(searchPageObj.query);
     });
@@ -189,7 +192,7 @@ describe('DotPageSelectorComponent', () => {
 
     it('should search for host', () => {
         spyOn(dotPageSelectorService, 'search').and.returnValue(
-            observableOf({...mockDotSiteSelectorResults})
+            observableOf({ ...mockDotSiteSelectorResults })
         );
         autocomplete.triggerEventHandler('completeMethod', searchHostObj);
         expect(dotPageSelectorService.search).toHaveBeenCalledWith(searchHostObj.query);
@@ -205,7 +208,9 @@ describe('DotPageSelectorComponent', () => {
     });
 
     it('should remove special characters when searching for pages', () => {
-        spyOn(dotPageSelectorService, 'search').and.returnValue(observableOf({ ...mockDotSiteSelectorResults }));
+        spyOn(dotPageSelectorService, 'search').and.returnValue(
+            observableOf({ ...mockDotSiteSelectorResults })
+        );
         autocomplete.triggerEventHandler('completeMethod', specialSearchObj);
         expect(dotPageSelectorService.search).toHaveBeenCalledWith('demo');
     });

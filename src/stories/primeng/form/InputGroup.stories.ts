@@ -10,31 +10,31 @@ import { moduleMetadata } from '@storybook/angular';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 export default {
-  title: 'PrimeNG/Form/InputText/InputGroup',
-  parameters: {
-    docs: {
-      description: {
-        component:
-          'Text, icon, buttons and other content can be grouped next to an input.: https://primefaces.org/primeng/showcase/#/inputgroup',
-      },
+    title: 'PrimeNG/Form/InputText/InputGroup',
+    parameters: {
+        docs: {
+            description: {
+                component:
+                    'Text, icon, buttons and other content can be grouped next to an input.: https://primefaces.org/primeng/showcase/#/inputgroup'
+            }
+        }
     },
-  },
-  decorators: [
-    moduleMetadata({
-      imports: [
-        FormsModule,
-        InputTextModule,
-        ButtonModule,
-        CheckboxModule,
-        RadioButtonModule,
-        RippleModule,
-        BrowserAnimationsModule,
-      ],
-    }),
-  ],
-  args: {
-    text: 'Placeholder text',
-  },
+    decorators: [
+        moduleMetadata({
+            imports: [
+                FormsModule,
+                InputTextModule,
+                ButtonModule,
+                CheckboxModule,
+                RadioButtonModule,
+                RippleModule,
+                BrowserAnimationsModule
+            ]
+        })
+    ],
+    args: {
+        text: 'Placeholder text'
+    }
 } as Meta;
 
 const InputGroupTemplate = `
@@ -121,18 +121,18 @@ const InputGroupTemplate = `
 `;
 
 const Template: Story<any> = (props: any) => {
-  const template = InputGroupTemplate;
-  return {
-    props,
-    template,
-  };
+    const template = InputGroupTemplate;
+    return {
+        props,
+        template
+    };
 };
 
 export const Primary: Story = Template.bind({});
 Primary.parameters = {
-  docs: {
-    source: {
-      code: InputGroupTemplate,
-    },
-  },
+    docs: {
+        source: {
+            code: InputGroupTemplate
+        }
+    }
 };

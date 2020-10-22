@@ -12,7 +12,8 @@ import {
     DotEventsSocket,
     DotEventsSocketURL,
     DotPushPublishDialogService,
-    LoggerService, LoginService,
+    LoggerService,
+    LoginService,
     StringUtils,
     UserModel
 } from 'dotcms-js';

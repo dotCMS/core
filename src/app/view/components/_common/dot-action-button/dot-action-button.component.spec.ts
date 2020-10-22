@@ -12,26 +12,28 @@ describe('ActionButtonComponent', () => {
     let fixture: ComponentFixture<DotActionButtonComponent>;
     let de: DebugElement;
 
-    beforeEach(waitForAsync( () => {
-        TestBed.configureTestingModule({
-            declarations: [DotActionButtonComponent],
-            imports: [
-                BrowserAnimationsModule,
-                MenuModule,
-                DotIconButtonModule,
-                RouterTestingModule.withRoutes([
-                    {
-                        component: DotActionButtonComponent,
-                        path: 'test'
-                    }
-                ])
-            ]
-        }).compileComponents();
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                declarations: [DotActionButtonComponent],
+                imports: [
+                    BrowserAnimationsModule,
+                    MenuModule,
+                    DotIconButtonModule,
+                    RouterTestingModule.withRoutes([
+                        {
+                            component: DotActionButtonComponent,
+                            path: 'test'
+                        }
+                    ])
+                ]
+            }).compileComponents();
 
-        fixture = TestBed.createComponent(DotActionButtonComponent);
-        de = fixture.debugElement;
-        comp = fixture.componentInstance;
-    }));
+            fixture = TestBed.createComponent(DotActionButtonComponent);
+            de = fixture.debugElement;
+            comp = fixture.componentInstance;
+        })
+    );
 
     it('should have no-label class by default', () => {
         fixture.detectChanges();

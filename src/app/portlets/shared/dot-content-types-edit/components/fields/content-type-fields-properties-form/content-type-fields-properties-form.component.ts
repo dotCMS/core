@@ -12,7 +12,7 @@ import {
 import { FormGroup, FormBuilder, AbstractControl } from '@angular/forms';
 import { DotCMSContentTypeField } from 'dotcms-models';
 import { FieldPropertyService } from '../service';
-import {  takeUntil } from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 import * as _ from 'lodash';
 import { Subject } from 'rxjs';
 
@@ -37,10 +37,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     private originalValue: any;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(
-        private fb: FormBuilder,
-        private fieldPropertyService: FieldPropertyService
-    ) {}
+    constructor(private fb: FormBuilder, private fieldPropertyService: FieldPropertyService) {}
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes.formFieldData.currentValue && this.formFieldData) {
@@ -68,7 +65,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
         if (this.form.valid) {
             this.saveField.emit(this.form.value);
         } else {
-            this.fieldProperties.forEach(property => this.form.get(property).markAsTouched());
+            this.fieldProperties.forEach((property) => this.form.get(property).markAsTouched());
         }
         this.valid.next(false);
     }
@@ -78,7 +75,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
 
         if (this.propertiesContainer) {
             const propertiesContainer = this.propertiesContainer.nativeElement;
-            propertiesContainer.childNodes.forEach(child => {
+            propertiesContainer.childNodes.forEach((child) => {
                 if (child.tagName) {
                     propertiesContainer.removeChild(child);
                 }
@@ -102,8 +99,8 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
 
         if (properties) {
             properties
-                .filter(property => this.fieldPropertyService.existsComponent(property))
-                .forEach(property => {
+                .filter((property) => this.fieldPropertyService.existsComponent(property))
+                .forEach((property) => {
                     formFields[property] = [
                         {
                             value:
@@ -129,7 +126,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     private notifyFormChanges() {
         this.originalValue = this.form.value;
         this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            this.valid.next(this.isFormValueUpdated() &&  this.form.valid);
+            this.valid.next(this.isFormValueUpdated() && this.form.valid);
         });
     }
 
@@ -146,7 +143,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
 
     private sortProperties(properties: string[]): void {
         this.fieldProperties = properties
-            .filter(property => this.fieldPropertyService.existsComponent(property))
+            .filter((property) => this.fieldPropertyService.existsComponent(property))
             .sort(
                 (property1, proeprty2) =>
                     this.fieldPropertyService.getOrder(property1) -
@@ -156,8 +153,8 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
 
     private setAutoCheckValues(): void {
         [this.form.get('searchable'), this.form.get('listed'), this.form.get('unique')]
-            .filter(checkbox => !!checkbox)
-            .forEach(checkbox => {
+            .filter((checkbox) => !!checkbox)
+            .forEach((checkbox) => {
                 this.handleCheckValues(checkbox);
             });
     }
@@ -170,7 +167,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
             this.handleDisabledIndexed(true);
         }
 
-        checkbox.valueChanges.subscribe(res => {
+        checkbox.valueChanges.subscribe((res) => {
             checkbox === this.form.get('unique')
                 ? this.handleUniqueValuesChecked(res)
                 : this.setIndexedValueChecked(res);

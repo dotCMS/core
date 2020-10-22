@@ -184,7 +184,7 @@ export class DotFormComponent {
     private runSuccessCallback(contentlet: DotCMSContentlet): void {
         const successCallback = this.getSuccessCallback();
         if (successCallback) {
-            return function() {
+            return function () {
                 // tslint:disable-next-line:no-eval
                 return eval(successCallback);
             }.call({ contentlet });

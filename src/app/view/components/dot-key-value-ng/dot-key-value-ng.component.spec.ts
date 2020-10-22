@@ -29,7 +29,10 @@ export const mockKeyValue = [
 @Component({
     selector: 'dot-test-host-component',
     template: `
-        <dot-key-value-ng [showHiddenField]="showHiddenField" [variables]="value"></dot-key-value-ng>
+        <dot-key-value-ng
+            [showHiddenField]="showHiddenField"
+            [variables]="value"
+        ></dot-key-value-ng>
     `
 })
 class TestHostComponent {

@@ -10,7 +10,6 @@ import { CardModule } from 'primeng/card';
 import { TooltipModule } from 'primeng/tooltip';
 import { Component } from '@angular/core';
 
-
 @Component({
     selector: 'markdown',
     template: `<ng-content></ng-content>`
@@ -38,9 +37,7 @@ describe('DotAppsCardComponent', () => {
                     DotPipesModule
                 ],
                 declarations: [DotAppsCardComponent, MockMarkdownComponent],
-                providers: [
-                    { provide: DotMessageService, useValue: messageServiceMock },
-                ]
+                providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
             }).compileComponents();
         })
     );

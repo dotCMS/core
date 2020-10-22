@@ -209,7 +209,7 @@ describe('DotContentTypesPortletComponent', () => {
         };
 
         const dotDialogService = fixture.debugElement.injector.get(DotAlertConfirmService);
-        spyOn(dotDialogService, 'confirm').and.callFake(conf => {
+        spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
             conf.accept();
         });
 
@@ -223,7 +223,7 @@ describe('DotContentTypesPortletComponent', () => {
 
     it('should have remove, push publish and Add to bundle actions to the list item', () => {
         fixture.detectChanges();
-        expect(comp.rowActions.map(action => action.menuItem.label)).toEqual([
+        expect(comp.rowActions.map((action) => action.menuItem.label)).toEqual([
             'Push Publish',
             'Add to bundle',
             'Delete'
@@ -235,7 +235,7 @@ describe('DotContentTypesPortletComponent', () => {
 
         fixture.detectChanges();
         expect(
-            comp.rowActions.map(action => {
+            comp.rowActions.map((action) => {
                 return {
                     label: action.menuItem.label,
                     icon: action.menuItem.icon
@@ -253,7 +253,7 @@ describe('DotContentTypesPortletComponent', () => {
         spyOn(pushPublishService, 'getEnvironments').and.returnValue(observableOf([]));
         fixture.detectChanges();
 
-        expect(comp.rowActions.map(action => action.menuItem.label)).toEqual([
+        expect(comp.rowActions.map((action) => action.menuItem.label)).toEqual([
             'Add to bundle',
             'Delete'
         ]);
@@ -359,7 +359,7 @@ describe('DotContentTypesPortletComponent', () => {
         };
 
         const dotDialogService = fixture.debugElement.injector.get(DotAlertConfirmService);
-        spyOn(dotDialogService, 'confirm').and.callFake(conf => {
+        spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
             conf.accept();
         });
 

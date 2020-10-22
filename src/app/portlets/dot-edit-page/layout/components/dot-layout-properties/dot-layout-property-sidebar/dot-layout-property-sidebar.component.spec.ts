@@ -11,8 +11,8 @@ import { By } from '@angular/platform-browser';
 @Component({
     selector: 'dot-test-host-component',
     template: `<form [formGroup]="group">
-                    <dot-layout-property-sidebar formControlName="sidebar"></dot-layout-property-sidebar>
-                </form>`
+        <dot-layout-property-sidebar formControlName="sidebar"></dot-layout-property-sidebar>
+    </form>`
 })
 class TestHostComponent {
     group: FormGroup;

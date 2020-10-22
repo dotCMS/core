@@ -3,6 +3,6 @@ import { NgModule } from '@angular/core';
 import { DotContentTypesRoutingModule } from './dot-content-types-routing.module';
 
 @NgModule({
-    imports: [CommonModule, DotContentTypesRoutingModule],
+    imports: [CommonModule, DotContentTypesRoutingModule]
 })
 export class DotContentTypesModule {}

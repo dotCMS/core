@@ -23,7 +23,7 @@ export const mockFieldVariables: DotFieldVariable[] = [
         id: '9671d2c3-793b-41af-a485-e2c5fcba5fc',
         key: 'Key3',
         value: 'Value3'
-    },
+    }
 ];
 
 export class DotFieldVariablesServiceMock {
@@ -38,5 +38,4 @@ export class DotFieldVariablesServiceMock {
     delete(): Observable<string> {
         return of('');
     }
-
 }

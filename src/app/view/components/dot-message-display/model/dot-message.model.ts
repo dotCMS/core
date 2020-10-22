@@ -1,7 +1,6 @@
 import { DotMessageSeverity } from './dot-message-severity.model';
 import { DotMessageType } from './dot-message-type.model';
 
-
 /**
  *Message send from the backend
  *

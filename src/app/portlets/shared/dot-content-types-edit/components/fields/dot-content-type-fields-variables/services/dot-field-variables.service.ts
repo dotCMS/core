@@ -38,10 +38,10 @@ export class DotFieldVariablesService {
         return this.coreWebService
             .requestView({
                 body: {
-                    'key': variable.key,
-                    'value': variable.value,
-                    'clazz': 'com.dotcms.contenttype.model.field.FieldVariable',
-                    'fieldId': field.id
+                    key: variable.key,
+                    value: variable.value,
+                    clazz: 'com.dotcms.contenttype.model.field.FieldVariable',
+                    fieldId: field.id
                 },
                 method: 'POST',
                 url: `v1/contenttype/${field.contentTypeId}/fields/id/${field.id}/variables`
@@ -57,7 +57,10 @@ export class DotFieldVariablesService {
      * @returns {Observable<DotFieldVariable>}
      * @memberof DotFieldVariablesService
      */
-    delete(field: DotCMSContentTypeField, variable: DotFieldVariable): Observable<DotFieldVariable> {
+    delete(
+        field: DotCMSContentTypeField,
+        variable: DotFieldVariable
+    ): Observable<DotFieldVariable> {
         return this.coreWebService
             .requestView({
                 method: 'DELETE',
@@ -65,5 +68,4 @@ export class DotFieldVariablesService {
             })
             .pipe(pluck('entity'));
     }
-
 }

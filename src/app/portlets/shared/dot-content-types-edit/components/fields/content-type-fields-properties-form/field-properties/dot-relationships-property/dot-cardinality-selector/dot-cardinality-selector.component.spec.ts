@@ -24,9 +24,8 @@ const cardinalities: DotRelationshipCardinality[] = [
 
 @Component({
     selector: 'dot-host-component',
-    template: `<dot-cardinality-selector [value] = "cardinalityIndex"
-                                         [disabled] = "disabled">
-               </dot-cardinality-selector>`
+    template: `<dot-cardinality-selector [value]="cardinalityIndex" [disabled]="disabled">
+    </dot-cardinality-selector>`
 })
 class HostTestComponent {
     @Input()
@@ -39,7 +38,6 @@ class HostTestComponent {
     change: EventEmitter<DotRelationshipCardinality> = new EventEmitter();
 }
 
-
 @Injectable()
 class MockRelationshipService {
     loadCardinalities(): Observable<DotRelationshipCardinality[]> {
@@ -48,32 +46,30 @@ class MockRelationshipService {
 }
 
 describe('DotCardinalitySelectorComponent', () => {
-
     let fixtureHostComponent: ComponentFixture<HostTestComponent>;
     let comp: DotCardinalitySelectorComponent;
     let de: DebugElement;
 
     const messageServiceMock = new MockDotMessageService({
-        'contenttypes.field.properties.relationship.cardinality.placeholder': 'Select Cardinality',
+        'contenttypes.field.properties.relationship.cardinality.placeholder': 'Select Cardinality'
     });
 
-    beforeEach(waitForAsync( () => {
-        DOTTestBed.configureTestingModule({
-            declarations: [
-                DotCardinalitySelectorComponent,
-                HostTestComponent
-            ],
-            imports: [],
-            providers: [
-                { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: DotRelationshipService, useClass: MockRelationshipService }
-            ]
-        });
+    beforeEach(
+        waitForAsync(() => {
+            DOTTestBed.configureTestingModule({
+                declarations: [DotCardinalitySelectorComponent, HostTestComponent],
+                imports: [],
+                providers: [
+                    { provide: DotMessageService, useValue: messageServiceMock },
+                    { provide: DotRelationshipService, useClass: MockRelationshipService }
+                ]
+            });
 
-        fixtureHostComponent = DOTTestBed.createComponent(HostTestComponent);
-        de = fixtureHostComponent.debugElement.query(By.css('dot-cardinality-selector'));
-        comp = de.componentInstance;
-    }));
+            fixtureHostComponent = DOTTestBed.createComponent(HostTestComponent);
+            de = fixtureHostComponent.debugElement.query(By.css('dot-cardinality-selector'));
+            comp = de.componentInstance;
+        })
+    );
 
     it('should have a p-dropdown with right attributes', () => {
         fixtureHostComponent.detectChanges();
@@ -99,11 +95,12 @@ describe('DotCardinalitySelectorComponent', () => {
         fixtureHostComponent.componentInstance.disabled = true;
         fixtureHostComponent.detectChanges();
 
-        const  dropdown = de.query(By.css('p-dropdown'));
+        const dropdown = de.query(By.css('p-dropdown'));
 
         expect(comp.options).toEqual(cardinalities);
-        expect(dropdown.componentInstance.options.map(option => option.value))
-            .toEqual(cardinalities);
+        expect(dropdown.componentInstance.options.map((option) => option.value)).toEqual(
+            cardinalities
+        );
     });
 
     it('should trigger a change event p-dropdown', (done) => {

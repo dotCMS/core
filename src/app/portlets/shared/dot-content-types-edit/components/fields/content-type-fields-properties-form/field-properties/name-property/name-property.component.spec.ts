@@ -29,25 +29,27 @@ describe('NamePropertyComponent', () => {
         'Default-Value': 'Default-Value'
     });
 
-    beforeEach(waitForAsync( () => {
-        TestBed.configureTestingModule({
-            declarations: [NamePropertyComponent, TestFieldValidationMessageComponent],
-            imports: [DotCopyButtonModule, ReactiveFormsModule, DotPipesModule],
-            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-        }).compileComponents();
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                declarations: [NamePropertyComponent, TestFieldValidationMessageComponent],
+                imports: [DotCopyButtonModule, ReactiveFormsModule, DotPipesModule],
+                providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+            }).compileComponents();
 
-        fixture = TestBed.createComponent(NamePropertyComponent);
-        de = fixture.debugElement;
-        comp = fixture.componentInstance;
+            fixture = TestBed.createComponent(NamePropertyComponent);
+            de = fixture.debugElement;
+            comp = fixture.componentInstance;
 
-        comp.property = {
-            name: 'name',
-            value: 'value',
-            field: {
-                ...dotcmsContentTypeFieldBasicMock
-            }
-        };
-    }));
+            comp.property = {
+                name: 'name',
+                value: 'value',
+                field: {
+                    ...dotcmsContentTypeFieldBasicMock
+                }
+            };
+        })
+    );
 
     it('should have a form', () => {
         const group = new FormGroup({});

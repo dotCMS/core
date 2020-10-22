@@ -140,8 +140,8 @@ describe('DotNavigationService', () => {
     let loginService: LoginServiceMock;
     let router;
 
-   beforeEach(
-          waitForAsync(() => {
+    beforeEach(
+        waitForAsync(() => {
             const testbed = DOTTestBed.configureTestingModule({
                 providers: [
                     DotNavigationService,

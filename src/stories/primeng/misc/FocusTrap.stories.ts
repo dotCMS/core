@@ -16,44 +16,44 @@ import { DropdownModule } from 'primeng/dropdown';
 import { moduleMetadata } from '@storybook/angular';
 
 export default {
-  title: 'PrimeNG/Misc/FocusTrap',
-  parameters: {
-    docs: {
-      description: {
-        component:
-          'Focus Trap keeps focus within a certain DOM element while tabbing: https://primefaces.org/primeng/showcase/#/focustrap',
-      },
+    title: 'PrimeNG/Misc/FocusTrap',
+    parameters: {
+        docs: {
+            description: {
+                component:
+                    'Focus Trap keeps focus within a certain DOM element while tabbing: https://primefaces.org/primeng/showcase/#/focustrap'
+            }
+        }
     },
-  },
-  decorators: [
-    moduleMetadata({
-      imports: [
-        BrowserModule,
-        BrowserAnimationsModule,
-        FormsModule,
-        DialogModule,
-        ButtonModule,
-        InputTextModule,
-        AccordionModule,
-        CodeHighlighterModule,
-        FocusTrapModule,
-        AutoCompleteModule,
-        CalendarModule,
-        MultiSelectModule,
-        DropdownModule,
-        HttpClientModule,
-      ],
-    }),
-  ],
-  args: {
-    cities: [
-      { name: 'New York', code: 'NY' },
-      { name: 'Rome', code: 'RM' },
-      { name: 'London', code: 'LDN' },
-      { name: 'Istanbul', code: 'IST' },
-      { name: 'Paris', code: 'PRS' },
+    decorators: [
+        moduleMetadata({
+            imports: [
+                BrowserModule,
+                BrowserAnimationsModule,
+                FormsModule,
+                DialogModule,
+                ButtonModule,
+                InputTextModule,
+                AccordionModule,
+                CodeHighlighterModule,
+                FocusTrapModule,
+                AutoCompleteModule,
+                CalendarModule,
+                MultiSelectModule,
+                DropdownModule,
+                HttpClientModule
+            ]
+        })
     ],
-  },
+    args: {
+        cities: [
+            { name: 'New York', code: 'NY' },
+            { name: 'Rome', code: 'RM' },
+            { name: 'London', code: 'LDN' },
+            { name: 'Istanbul', code: 'IST' },
+            { name: 'Paris', code: 'PRS' }
+        ]
+    }
 } as Meta;
 
 const FocusTrapTemplate = `
@@ -88,18 +88,18 @@ const FocusTrapTemplate = `
 `;
 
 const Template: Story<any> = (props: any) => {
-  const template = FocusTrapTemplate;
-  return {
-    props,
-    template,
-  };
+    const template = FocusTrapTemplate;
+    return {
+        props,
+        template
+    };
 };
 
 export const Primary: Story = Template.bind({});
 Primary.parameters = {
-  docs: {
-    source: {
-      code: FocusTrapTemplate,
-    },
-  },
+    docs: {
+        source: {
+            code: FocusTrapTemplate
+        }
+    }
 };

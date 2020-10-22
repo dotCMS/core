@@ -10,7 +10,9 @@
         .p-button {
             border: none;
 
-            &:hover, &:active, &:focus {
+            &:hover,
+            &:active,
+            &:focus {
                 border: none;
                 box-shadow: none;
                 background: $bg-hover;
@@ -36,12 +38,15 @@
             width: 100%;
         }
 
-        &:hover, &:focus, &:active {
+        &:hover,
+        &:focus,
+        &:active {
             border-color: $input-border-color-hover;
             background: none;
         }
 
-        &:focus, &:active {
+        &:focus,
+        &:active {
             box-shadow: $input-inset-shadow;
         }
 

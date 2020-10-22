@@ -94,7 +94,7 @@ describe('DotLayoutGridRow', () => {
     const rowClasses: string[] = ['test_column_class_1', 'test_column_class_2'];
 
     beforeEach(() => {
-        dotLayoutGrid = new DotLayoutGrid([ ...gridBoxes ], [ ...rowClasses ]);
+        dotLayoutGrid = new DotLayoutGrid([...gridBoxes], [...rowClasses]);
     });
 
     it('should get default box config object', () => {

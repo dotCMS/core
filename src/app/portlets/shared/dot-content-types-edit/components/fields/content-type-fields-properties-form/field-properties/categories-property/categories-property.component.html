@@ -1,6 +1,7 @@
 <div [formGroup]="group" class="p-field">
     <label class="form__label">{{ 'categories' | dm }} *</label>
-    <dot-searchable-dropdown #searchableDropdown
+    <dot-searchable-dropdown
+        #searchableDropdown
         [data]="categoriesCurrentPage"
         [formControlName]="property.name"
         [pageLinkSize]="paginationService.maxLinksPage"
@@ -9,11 +10,13 @@
         (filterChange)="handleFilterChange($event)"
         (pageChange)="handlePageChange($event)"
         labelPropertyName="categoryName"
-        placeholder="{{ placeholder }}">
+        placeholder="{{ placeholder }}"
+    >
     </dot-searchable-dropdown>
 
     <dot-field-validation-message
         [field]="group.controls[property.name]"
-        [message]="'contenttypes.field.properties.category.error.required' | dm">
+        [message]="'contenttypes.field.properties.category.error.required' | dm"
+    >
     </dot-field-validation-message>
 </div>

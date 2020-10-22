@@ -285,7 +285,6 @@ describe('DotDialogComponent', () => {
 
                 describe('keyboard events', () => {
                     it('should trigger cancel action and close the dialog on Escape', () => {
-
                         expect(component.visible).toBe(true);
 
                         dispatchKeydownEvent('Escape');

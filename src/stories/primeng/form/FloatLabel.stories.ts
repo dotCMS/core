@@ -3,23 +3,23 @@ import { moduleMetadata } from '@storybook/angular';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { InputTextModule } from 'primeng/inputtext';
 export default {
-  title: 'PrimeNG/Form/FloatLabel',
-  parameters: {
-    docs: {
-      description: {
-        component:
-          'All input text components support floating labels: https://primefaces.org/primeng/showcase/#/floatlabel',
-      },
+    title: 'PrimeNG/Form/FloatLabel',
+    parameters: {
+        docs: {
+            description: {
+                component:
+                    'All input text components support floating labels: https://primefaces.org/primeng/showcase/#/floatlabel'
+            }
+        }
     },
-  },
-  decorators: [
-    moduleMetadata({
-      imports: [BrowserAnimationsModule, InputTextModule],
-    }),
-  ],
-  args: {
-    checked: false,
-  },
+    decorators: [
+        moduleMetadata({
+            imports: [BrowserAnimationsModule, InputTextModule]
+        })
+    ],
+    args: {
+        checked: false
+    }
 } as Meta;
 
 const FloatLabelTemplate = `
@@ -29,21 +29,20 @@ const FloatLabelTemplate = `
   </span>
 `;
 
-
 const Template: Story<any> = (props: any) => {
-  const template = FloatLabelTemplate;
-  return {
-    props,
-    template,
-  };
+    const template = FloatLabelTemplate;
+    return {
+        props,
+        template
+    };
 };
 
 export const Basic: Story = Template.bind({});
 
 Basic.parameters = {
-  docs: {
-    source: {
-      code: FloatLabelTemplate,
-    },
-  },
+    docs: {
+        source: {
+            code: FloatLabelTemplate
+        }
+    }
 };

@@ -14,7 +14,7 @@ export interface DotContainer {
     source: CONTAINER_SOURCE;
     parentPermissionable: {
         hostname: string;
-    }
+    };
 }
 
 export interface DotContainerMap {

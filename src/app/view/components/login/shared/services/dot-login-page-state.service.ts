@@ -61,9 +61,7 @@ export class DotLoginPageStateService {
     }
 
     update(lang: string): void {
-        this.set(lang)
-            .pipe(take(1))
-            .subscribe();
+        this.set(lang).pipe(take(1)).subscribe();
     }
 
     private getUserNameLabel(loginInfo: DotLoginInformation): string {

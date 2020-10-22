@@ -7,6 +7,6 @@ import { DotSiteSelectorComponent } from './dot-site-selector.component';
 @NgModule({
     declarations: [DotSiteSelectorComponent],
     exports: [DotSiteSelectorComponent],
-    imports: [CommonModule, FormsModule, SearchableDropDownModule],
+    imports: [CommonModule, FormsModule, SearchableDropDownModule]
 })
 export class DotSiteSelectorModule {}

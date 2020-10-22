@@ -13,7 +13,9 @@
     [totalRecords]="paginationService.totalRecords"
     class="site-selector__field"
     labelPropertyName="hostname"
-    >
+>
 </dot-searchable-dropdown>
 
-<span *ngIf="totalRecords == 1" class="site-selector__title">{{ (currentSite| async)?.hostname }}</span>
+<span *ngIf="totalRecords == 1" class="site-selector__title">{{
+    (currentSite | async)?.hostname
+}}</span>

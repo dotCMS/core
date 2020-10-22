@@ -1,6 +1,7 @@
 @use "variables" as *;
 
-form, .custom-code {
+form,
+.custom-code {
     width: $form-width;
 }
 

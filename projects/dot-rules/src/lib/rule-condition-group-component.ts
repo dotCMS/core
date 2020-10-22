@@ -15,41 +15,55 @@ import { LoggerService } from 'dotcms-js';
 @Component({
     selector: 'condition-group',
     template: `<div class="cw-rule-group">
-  <div class="cw-condition-group-separator" *ngIf="groupIndex === 0">
-    {{rsrc('inputs.group.whenConditions.label') | async}}
-  </div>
-  <div class="cw-condition-group-separator" *ngIf="groupIndex !== 0">
-    <button pButton tiny class="p-button-secondary p-button-sm" (click)="toggleGroupOperator()" [label]="group.operator"></button>
-    <span flex class="cw-header-text">
-        {{rsrc('inputs.group.whenFurtherConditions.label') | async}}
-    </span>
-  </div>
-  <div flex layout="column" class="cw-conditions">
-    <div layout="row"
-         class="cw-condition-row"
-         *ngFor="let condition of group?._conditions; trackBy: trackByFn; let i=index">
-      <rule-condition flex layout="row"
-                      [condition]="condition"
-                      [conditionTypes]="conditionTypes"
-                      [conditionTypePlaceholder]="conditionTypePlaceholder"
-                      [index]="i"
-                      (deleteCondition)="deleteCondition.emit($event)"
-                      (updateConditionType)="updateConditionType.emit($event)"
-                      (updateConditionParameter)="updateConditionParameter.emit($event)"
-                      (updateConditionOperator)="updateConditionOperator.emit($event)"
-                      ></rule-condition>
-      <div class="cw-btn-group cw-add-btn">
-        <div class="ui basic icon buttons" *ngIf="i === (group?._conditions.length - 1)">
-          <button pButton type="button" icon="pi pi-plus" class="p-button-rounded p-button-success p-button-text" arial-label="Add Condition"
-            (click)="onCreateCondition()" [disabled]="!condition.isPersisted()">
-          </button>
+        <div class="cw-condition-group-separator" *ngIf="groupIndex === 0">
+            {{ rsrc('inputs.group.whenConditions.label') | async }}
         </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-`
+        <div class="cw-condition-group-separator" *ngIf="groupIndex !== 0">
+            <button
+                pButton
+                tiny
+                class="p-button-secondary p-button-sm"
+                (click)="toggleGroupOperator()"
+                [label]="group.operator"
+            ></button>
+            <span flex class="cw-header-text">
+                {{ rsrc('inputs.group.whenFurtherConditions.label') | async }}
+            </span>
+        </div>
+        <div flex layout="column" class="cw-conditions">
+            <div
+                layout="row"
+                class="cw-condition-row"
+                *ngFor="let condition of group?._conditions; trackBy: trackByFn; let i = index"
+            >
+                <rule-condition
+                    flex
+                    layout="row"
+                    [condition]="condition"
+                    [conditionTypes]="conditionTypes"
+                    [conditionTypePlaceholder]="conditionTypePlaceholder"
+                    [index]="i"
+                    (deleteCondition)="deleteCondition.emit($event)"
+                    (updateConditionType)="updateConditionType.emit($event)"
+                    (updateConditionParameter)="updateConditionParameter.emit($event)"
+                    (updateConditionOperator)="updateConditionOperator.emit($event)"
+                ></rule-condition>
+                <div class="cw-btn-group cw-add-btn">
+                    <div class="ui basic icon buttons" *ngIf="i === group?._conditions.length - 1">
+                        <button
+                            pButton
+                            type="button"
+                            icon="pi pi-plus"
+                            class="p-button-rounded p-button-success p-button-text"
+                            arial-label="Add Condition"
+                            (click)="onCreateCondition()"
+                            [disabled]="!condition.isPersisted()"
+                        ></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> `
 })
 export class ConditionGroupComponent implements OnChanges {
     private static I8N_BASE = 'api.sites.ruleengine.rules';

@@ -83,37 +83,39 @@ describe('DotToolbarComponent', () => {
     const siteServiceMock = new SiteServiceMock();
     const siteMock = mockSites[0];
 
-    beforeEach(waitForAsync( () => {
-        DOTTestBed.configureTestingModule({
-            declarations: [
-                DotToolbarComponent,
-                MockSiteSelectorComponent,
-                MockToolbarNotificationsComponent,
-                MockToolbarUsersComponent,
-                MockToolbarAddContentletComponent,
-                MockDotCrumbtrailComponent
-            ],
-            imports: [
-                BrowserAnimationsModule,
-                RouterTestingModule,
-                DotIconModule,
-                DotIconButtonModule
-            ],
-            providers: [
-                { provide: DotNavigationService, useClass: MockDotNavigationService },
-                { provide: SiteService, useValue: siteServiceMock },
-                { provide: ActivatedRoute, useClass: MockRouterService },
-                IframeOverlayService
-            ]
-        });
+    beforeEach(
+        waitForAsync(() => {
+            DOTTestBed.configureTestingModule({
+                declarations: [
+                    DotToolbarComponent,
+                    MockSiteSelectorComponent,
+                    MockToolbarNotificationsComponent,
+                    MockToolbarUsersComponent,
+                    MockToolbarAddContentletComponent,
+                    MockDotCrumbtrailComponent
+                ],
+                imports: [
+                    BrowserAnimationsModule,
+                    RouterTestingModule,
+                    DotIconModule,
+                    DotIconButtonModule
+                ],
+                providers: [
+                    { provide: DotNavigationService, useClass: MockDotNavigationService },
+                    { provide: SiteService, useValue: siteServiceMock },
+                    { provide: ActivatedRoute, useClass: MockRouterService },
+                    IframeOverlayService
+                ]
+            });
 
-        fixture = DOTTestBed.createComponent(DotToolbarComponent);
-        comp = fixture.componentInstance;
-        de = fixture.debugElement;
-        dotRouterService = de.injector.get(DotRouterService);
-        dotNavigationService = de.injector.get(DotNavigationService);
-        spyOn(comp, 'siteChange').and.callThrough();
-    }));
+            fixture = DOTTestBed.createComponent(DotToolbarComponent);
+            comp = fixture.componentInstance;
+            de = fixture.debugElement;
+            dotRouterService = de.injector.get(DotRouterService);
+            dotNavigationService = de.injector.get(DotNavigationService);
+            spyOn(comp, 'siteChange').and.callThrough();
+        })
+    );
 
     it(`should has a crumbtrail`, () => {
         fixture.detectChanges();

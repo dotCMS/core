@@ -20,11 +20,7 @@
 
 <form #form="ngForm" [formGroup]="myFormGroup" class="form__group" novalidate>
     <div #formContainer class="dot-apps-configuration-detail__form">
-        <div
-            class="p-field"
-            *ngFor="let field of formFields"
-            [ngSwitch]="field.type"
-        >
+        <div class="p-field" *ngFor="let field of formFields" [ngSwitch]="field.type">
             <ng-container *ngSwitchCase="'STRING'">
                 <ng-container
                     *ngTemplateOutlet="labelField; context: { field: field }"

@@ -48,7 +48,7 @@ export class ConditionGroupService {
     makeRequest(path: string): Observable<any> {
         return this.coreWebService
             .request({
-                url: path,
+                url: path
             })
             .pipe(
                 map((res: HttpResponse<any>) => {
@@ -122,7 +122,7 @@ export class ConditionGroupService {
             .request({
                 method: 'POST',
                 body: json,
-                url: path,
+                url: path
             })
             .pipe(
                 map((res: HttpResponse<any>) => {
@@ -151,7 +151,7 @@ export class ConditionGroupService {
                 .request({
                     method: 'PUT',
                     body: json,
-                    url: this._getPath(ruleId, model.key),
+                    url: this._getPath(ruleId, model.key)
                 })
                 .pipe(
                     tap(() => {
@@ -166,7 +166,7 @@ export class ConditionGroupService {
         const remove = this.coreWebService
             .request({
                 method: 'DELETE',
-                url: this._getPath(ruleId, model.key),
+                url: this._getPath(ruleId, model.key)
             })
             .pipe(
                 tap(() => {

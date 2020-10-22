@@ -1,6 +1,12 @@
-<dot-menu *ngIf="actions.length > 1 && filteredActions.length" [icon]="icon" [model]="filteredActions"></dot-menu>
-<dot-icon-button-tooltip *ngIf="actions.length === 1 && filteredActions.length === 1"
+<dot-menu
+    *ngIf="actions.length > 1 && filteredActions.length"
+    [icon]="icon"
+    [model]="filteredActions"
+></dot-menu>
+<dot-icon-button-tooltip
+    *ngIf="actions.length === 1 && filteredActions.length === 1"
     [icon]="filteredActions[0].icon"
     [tooltipText]="filteredActions[0].label"
-    (click)="filteredActions[0].command($event)">
+    (click)="filteredActions[0].command($event)"
+>
 </dot-icon-button-tooltip>

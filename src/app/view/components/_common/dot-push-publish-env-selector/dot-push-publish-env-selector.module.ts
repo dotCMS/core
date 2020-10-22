@@ -11,13 +11,7 @@ import { MultiSelectModule } from 'primeng/multiselect';
 @NgModule({
     declarations: [PushPublishEnvSelectorComponent],
     exports: [PushPublishEnvSelectorComponent],
-    imports: [
-        CommonModule,
-        ButtonModule,
-        FormsModule,
-        MultiSelectModule,
-        DotPipesModule
-    ],
+    imports: [CommonModule, ButtonModule, FormsModule, MultiSelectModule, DotPipesModule],
     providers: [PushPublishService, DotCurrentUserService]
 })
 export class PushPublishEnvSelectorModule {}

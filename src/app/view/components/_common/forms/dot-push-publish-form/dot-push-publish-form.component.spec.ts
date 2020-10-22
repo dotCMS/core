@@ -185,9 +185,7 @@ describe('DotPushPublishFormComponent', () => {
 
     describe('Push Action scenarios', () => {
         beforeEach(() => {
-            selectActionButtons = fixture.debugElement.queryAll(
-                By.css('p-selectButton .p-button')
-            );
+            selectActionButtons = fixture.debugElement.queryAll(By.css('p-selectButton .p-button'));
         });
 
         it('should disable publish date on select remove', () => {

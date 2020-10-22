@@ -22,32 +22,34 @@ describe('DotLayoutDesignerComponent', () => {
     let component: DotLayoutDesignerComponent;
     let fixture: ComponentFixture<DotLayoutDesignerComponent>;
 
-    beforeEach(waitForAsync( () => {
-        const messageServiceMock = new MockDotMessageService({
-            'editpage.layout.designer.header': 'HEADER',
-            'editpage.layout.designer.footer': 'FOOTER'
-        });
+    beforeEach(
+        waitForAsync(() => {
+            const messageServiceMock = new MockDotMessageService({
+                'editpage.layout.designer.header': 'HEADER',
+                'editpage.layout.designer.footer': 'FOOTER'
+            });
 
-        DOTTestBed.configureTestingModule({
-            imports: [
-                DotSidebarPropertiesModule,
-                DotActionButtonModule,
-                DotEditLayoutGridModule,
-                BrowserAnimationsModule,
-                DotEditLayoutSidebarModule
-            ],
-            declarations: [DotLayoutDesignerComponent],
-            providers: [
-                DotEditLayoutService,
-                TemplateContainersCacheService,
-                {
-                    provide: LoginService,
-                    useClass: LoginServiceMock
-                },
-                { provide: DotMessageService, useValue: messageServiceMock }
-            ]
-        });
-    }));
+            DOTTestBed.configureTestingModule({
+                imports: [
+                    DotSidebarPropertiesModule,
+                    DotActionButtonModule,
+                    DotEditLayoutGridModule,
+                    BrowserAnimationsModule,
+                    DotEditLayoutSidebarModule
+                ],
+                declarations: [DotLayoutDesignerComponent],
+                providers: [
+                    DotEditLayoutService,
+                    TemplateContainersCacheService,
+                    {
+                        provide: LoginService,
+                        useClass: LoginServiceMock
+                    },
+                    { provide: DotMessageService, useValue: messageServiceMock }
+                ]
+            });
+        })
+    );
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotLayoutDesignerComponent);

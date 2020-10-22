@@ -1,9 +1,6 @@
 # dot-textfield
 
-
-
 <!-- Auto Generated Below -->
-
 
 ## Properties
 
@@ -21,14 +18,12 @@
 | `validationMessage` | `validation-message` | (optional) Text that be shown when the Regular Expression condition not met                        | `string`  | `"The field doesn't comply with the specified format"` |
 | `value`             | `value`              | Value specifies the value of the <input> element                                                   | `string`  | `''`                                                   |
 
-
 ## Events
 
 | Event          | Description | Type                               |
 | -------------- | ----------- | ---------------------------------- |
 | `statusChange` |             | `CustomEvent<DotFieldStatusEvent>` |
 | `valueChange`  |             | `CustomEvent<DotFieldValueEvent>`  |
-
 
 ## Methods
 
@@ -40,9 +35,6 @@ Reset properties of the field, clear value and emit events.
 
 Type: `void`
 
+---
 
-
-
-----------------------------------------------
-
-*Built with [StencilJS](https://stenciljs.com/)*
+_Built with [StencilJS](https://stenciljs.com/)_

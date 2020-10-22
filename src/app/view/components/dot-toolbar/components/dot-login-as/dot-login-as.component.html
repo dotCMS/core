@@ -7,10 +7,17 @@
     <div class="login-as">
         <!--TODO: manage errors on required fields and errors messages -->
         <p class="login-as__error-message" *ngIf="errorMessage">{{ errorMessage }}</p>
-        <form [formGroup]="form" (ngSubmit)="doLoginAs()" id="login-as-form" #formEl="ngForm" novalidate>
+        <form
+            [formGroup]="form"
+            (ngSubmit)="doLoginAs()"
+            id="login-as-form"
+            #formEl="ngForm"
+            novalidate
+        >
             <div class="p-field">
                 <!--TODO: get rid of this let autoComplete when this is fixed: https://github.com/primefaces/primeng/issues/745-->
-                <dot-searchable-dropdown #searchableDropdown
+                <dot-searchable-dropdown
+                    #searchableDropdown
                     (change)="userSelectedHandler($event)"
                     (filterChange)="handleFilterChange($event)"
                     (pageChange)="handlePageChange($event)"
@@ -21,11 +28,21 @@
                     placeholder="{{ 'loginas.select.loginas.user' | dm }}"
                     formControlName="loginAsUser"
                     labelPropertyName="fullName"
-                    width="100%">
+                    width="100%"
+                >
                 </dot-searchable-dropdown>
             </div>
             <div class="p-field" *ngIf="needPassword">
-                <input pPassword #password [feedback]="false" formControlName="password" id="dot-login-as-password" type="password" placeholder="{{ 'loginas.input.loginas.password' | dm }}" floatingPlaceholder="false"/>
+                <input
+                    pPassword
+                    #password
+                    [feedback]="false"
+                    formControlName="password"
+                    id="dot-login-as-password"
+                    type="password"
+                    placeholder="{{ 'loginas.input.loginas.password' | dm }}"
+                    floatingPlaceholder="false"
+                />
             </div>
         </form>
     </div>

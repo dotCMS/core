@@ -42,10 +42,7 @@ export class DotMenuComponent {
         if (this.visible) {
             // Skip 1 because the event bubbling capture the document.click
             observableFromEvent(document, 'click')
-                .pipe(
-                    skip(1),
-                    take(1)
-                )
+                .pipe(skip(1), take(1))
                 .subscribe(() => {
                     this.visible = false;
                 });

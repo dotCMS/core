@@ -43,7 +43,10 @@ export class DotGlobalMessageComponent implements OnInit, OnDestroy {
     ngOnInit() {
         this.dotEventsService
             .listen('dot-global-message')
-            .pipe(filter((event: DotEvent) => !!event.data), takeUntil(this.destroy$))
+            .pipe(
+                filter((event: DotEvent) => !!event.data),
+                takeUntil(this.destroy$)
+            )
             .subscribe((event: DotEvent) => {
                 this.message = event.data;
                 this.visibility = true;

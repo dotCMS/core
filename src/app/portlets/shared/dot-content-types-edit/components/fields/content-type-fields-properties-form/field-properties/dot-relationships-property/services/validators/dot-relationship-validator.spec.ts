@@ -2,7 +2,6 @@ import { validateRelationship } from './dot-relationship-validator';
 import { FormControl } from '@angular/forms';
 
 describe('validateRelationship', () => {
-
     it('should return true if both cardinality and velocityVarare set', () => {
         const formControl: FormControl = new FormControl({
             cardinality: 0,
@@ -17,11 +16,9 @@ describe('validateRelationship', () => {
             velocityVar: 'velocityVar'
         });
 
-        expect(validateRelationship(formControl)).toEqual(
-            {
-                valid: false
-            }
-        );
+        expect(validateRelationship(formControl)).toEqual({
+            valid: false
+        });
     });
 
     it('should return false if velocityVar is not set', () => {
@@ -29,10 +26,8 @@ describe('validateRelationship', () => {
             cardinality: 1
         });
 
-        expect(validateRelationship(formControl)).toEqual(
-            {
-                valid: false
-            }
-        );
+        expect(validateRelationship(formControl)).toEqual({
+            valid: false
+        });
     });
 });

@@ -1,9 +1,6 @@
 # dot-input-calendar
 
-
-
 <!-- Auto Generated Below -->
-
 
 ## Properties
 
@@ -18,14 +15,12 @@
 | `type`     | `type`     | type specifies the type of <input> element to display                                 | `string`  | `''`    |
 | `value`    | `value`    | Value specifies the value of the <input> element                                      | `string`  | `''`    |
 
-
 ## Events
 
 | Event           | Description | Type                                       |
 | --------------- | ----------- | ------------------------------------------ |
 | `_statusChange` |             | `CustomEvent<DotInputCalendarStatusEvent>` |
 | `_valueChange`  |             | `CustomEvent<DotFieldValueEvent>`          |
-
 
 ## Methods
 
@@ -37,9 +32,6 @@ Reset properties of the field, clear value and emit events.
 
 Type: `void`
 
+---
 
-
-
-----------------------------------------------
-
-*Built with [StencilJS](https://stenciljs.com/)*
+_Built with [StencilJS](https://stenciljs.com/)_

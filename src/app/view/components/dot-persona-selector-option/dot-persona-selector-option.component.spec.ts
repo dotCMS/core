@@ -43,7 +43,6 @@ describe('DotPersonaSelectorOptionComponent', () => {
             fixture.detectChanges();
         });
 
-
         it('should have dot-avatar with right properties', () => {
             const avatar: DebugElement = de.query(By.css('dot-avatar'));
             expect(avatar.componentInstance.label).toBe(mockDotPersona.name);

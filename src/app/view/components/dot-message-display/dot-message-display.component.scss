@@ -5,12 +5,23 @@
         .p-toast-message-content {
             display: flex;
 
-            h1, h2, h3, h4, h5, h6 {
+            h1,
+            h2,
+            h3,
+            h4,
+            h5,
+            h6 {
                 font-size: $font-size-large;
                 font-weight: bold;
             }
 
-            h1, h2, h3, h4, h5, h6, p {
+            h1,
+            h2,
+            h3,
+            h4,
+            h5,
+            h6,
+            p {
                 margin: 0;
             }
         }

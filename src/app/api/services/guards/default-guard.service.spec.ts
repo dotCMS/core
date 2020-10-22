@@ -9,9 +9,7 @@ describe('ValidDefaultGuardService', () => {
 
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
-            providers: [
-                DefaultGuardService
-            ]
+            providers: [DefaultGuardService]
         });
 
         defaultGuardService = TestBed.get(DefaultGuardService);

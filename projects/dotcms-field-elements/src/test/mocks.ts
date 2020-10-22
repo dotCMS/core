@@ -107,7 +107,7 @@ export const fieldMockNotRequired: DotCMSContentTypeLayoutRow[] = [
                         required: false,
                         variable: 'keyvalue2'
                     }
-                ],
+                ]
             }
         ]
     }

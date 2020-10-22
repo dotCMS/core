@@ -17,7 +17,7 @@ describe('DotWorkflowTaskDetailService', () => {
             providers: [
                 DotMenuService,
                 DotWorkflowTaskDetailService,
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                { provide: CoreWebService, useClass: CoreWebServiceMock }
             ]
         });
 

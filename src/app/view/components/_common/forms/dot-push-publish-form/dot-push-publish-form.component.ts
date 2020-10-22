@@ -137,7 +137,7 @@ export class DotPushPublishFormComponent
                     .map(({ key }: DotPushPublishFilter) => key)
                     .join();
             }),
-            catchError(error => {
+            catchError((error) => {
                 this.httpErrorManagerService.handle(error);
                 return of([]);
             })

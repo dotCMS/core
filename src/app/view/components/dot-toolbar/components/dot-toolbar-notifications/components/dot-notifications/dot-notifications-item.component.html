@@ -1,17 +1,47 @@
 <li class="notification-item {{ data.level | lowercase }}">
-    <button pButton icon="fa fa-times" (click)="onClear()" class="notification-item__close" title="{{ 'notifications_dismiss' | dm }}" id="{{ 'notification-item-button-close-' + data.id }}"></button>
+    <button
+        pButton
+        icon="fa fa-times"
+        (click)="onClear()"
+        class="notification-item__close"
+        title="{{ 'notifications_dismiss' | dm }}"
+        id="{{ 'notification-item-button-close-' + data.id }}"
+    ></button>
 
     <div class="notification-item__wrapper">
         <i [class]="getIconName(data.level)"></i>
         <div class="notification-item__content">
-            <h4 *ngIf="showTitleLinked" class="notification-item__title" id="{{ 'notification-item-title-' + data.id }}">
-                <a [href]="data.notificationData.actions[0].action" id="{{ 'notification-item-link-' + data.id }}">{{ data.notificationData.title }}</a>
+            <h4
+                *ngIf="showTitleLinked"
+                class="notification-item__title"
+                id="{{ 'notification-item-title-' + data.id }}"
+            >
+                <a
+                    [href]="data.notificationData.actions[0].action"
+                    id="{{ 'notification-item-link-' + data.id }}"
+                    >{{ data.notificationData.title }}</a
+                >
             </h4>
-            <h4 *ngIf="!showTitleLinked" class="notification-item__title" id="{{ 'notification-item-title-' + data.id }}">{{ data.notificationData.title }}</h4>
-            <p class="notification-item__message"  id="{{ 'notification-item-message-' + data.id }}">
+            <h4
+                *ngIf="!showTitleLinked"
+                class="notification-item__title"
+                id="{{ 'notification-item-title-' + data.id }}"
+            >
+                {{ data.notificationData.title }}
+            </h4>
+            <p class="notification-item__message" id="{{ 'notification-item-message-' + data.id }}">
                 {{ data.notificationData.message }}
-                <a *ngIf="showLinkAction" [href]="data.notificationData.actions[0].action" class="notification-item__link"  id="{{ 'notification-item-link-action' + data.id }}">{{ data.notificationData.actions[0].text }}</a>
-                <dot-custom-time time="{{ data.timeSent }}" id="{{ 'notification-item-date-' + data.id }}"></dot-custom-time>
+                <a
+                    *ngIf="showLinkAction"
+                    [href]="data.notificationData.actions[0].action"
+                    class="notification-item__link"
+                    id="{{ 'notification-item-link-action' + data.id }}"
+                    >{{ data.notificationData.actions[0].text }}</a
+                >
+                <dot-custom-time
+                    time="{{ data.timeSent }}"
+                    id="{{ 'notification-item-date-' + data.id }}"
+                ></dot-custom-time>
             </p>
             <!--TODO: handle more than one action-->
         </div>

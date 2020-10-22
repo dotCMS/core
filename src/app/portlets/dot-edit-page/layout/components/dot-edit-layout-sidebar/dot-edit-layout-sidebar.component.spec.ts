@@ -19,8 +19,8 @@ let fakeValue: DotLayoutSideBar;
 @Component({
     selector: 'dot-test-host-component',
     template: `<form [formGroup]="form">
-                    <dot-edit-layout-sidebar formControlName="sidebar"></dot-edit-layout-sidebar>
-                </form>`
+        <dot-edit-layout-sidebar formControlName="sidebar"></dot-edit-layout-sidebar>
+    </form>`
 })
 class TestHostComponent {
     form: FormGroup;

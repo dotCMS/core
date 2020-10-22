@@ -2,45 +2,45 @@
 
 .p-component {
     font-family: $body-text;
-  font-size: $font-size-medium;
-  font-weight: normal;
-  line-height: normal;
+    font-size: $font-size-medium;
+    font-weight: normal;
+    line-height: normal;
 }
 
 .p-component-overlay {
-  background-color: rgba(255,255,255, 0.6);
-  transition-duration: 0.2s;
+    background-color: rgba(255, 255, 255, 0.6);
+    transition-duration: 0.2s;
 }
 
-.p-disabled, .p-component:disabled {
-  opacity: 0.38;
+.p-disabled,
+.p-component:disabled {
+    opacity: 0.38;
 }
-
 
 .p-text-secondary {
-  color: $black;
+    color: $black;
 }
 
 .pi {
-  font-size: $font-size-medium;
+    font-size: $font-size-medium;
 }
 
 .p-link {
-  font-size: $font-size-medium;
-  font-family: $body-text;
-  border-radius: $border-radius;
+    font-size: $font-size-medium;
+    font-family: $body-text;
+    border-radius: $border-radius;
 }
 .p-link:focus {
-  outline: 0 none;
-  outline-offset: 0;
-  box-shadow: none;
+    outline: 0 none;
+    outline-offset: 0;
+    box-shadow: none;
 }
 
 .p-fluid .p-inputgroup .p-button {
-  width: auto;
+    width: auto;
 }
 .p-fluid .p-inputgroup .p-button.p-button-icon-only {
-  width: $spacing-6;
+    width: $spacing-6;
 }
 
 .p-field > label {

@@ -26,27 +26,29 @@ describe('RegexCheckPropertyComponent', () => {
         'contenttypes.field.properties.validation_regex.values.no_html': 'No HTML'
     });
 
-    beforeEach(waitForAsync( () => {
-        DOTTestBed.configureTestingModule({
-            declarations: [RegexCheckPropertyComponent],
-            imports: [NoopAnimationsModule],
-            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-        });
+    beforeEach(
+        waitForAsync(() => {
+            DOTTestBed.configureTestingModule({
+                declarations: [RegexCheckPropertyComponent],
+                imports: [NoopAnimationsModule],
+                providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+            });
 
-        fixture = DOTTestBed.createComponent(RegexCheckPropertyComponent);
-        comp = fixture.componentInstance;
+            fixture = DOTTestBed.createComponent(RegexCheckPropertyComponent);
+            comp = fixture.componentInstance;
 
-        comp.group = new FormGroup({
-            regexCheck: new FormControl('')
-        });
-        comp.property = {
-            name: 'regexCheck',
-            value: 'value',
-            field: {
-                ...dotcmsContentTypeFieldBasicMock
-            }
-        };
-    }));
+            comp.group = new FormGroup({
+                regexCheck: new FormControl('')
+            });
+            comp.property = {
+                name: 'regexCheck',
+                value: 'value',
+                field: {
+                    ...dotcmsContentTypeFieldBasicMock
+                }
+            };
+        })
+    );
 
     it('should have a form', () => {
         const group = new FormGroup({});

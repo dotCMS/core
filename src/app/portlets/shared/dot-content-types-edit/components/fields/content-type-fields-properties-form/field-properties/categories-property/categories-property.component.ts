@@ -56,7 +56,7 @@ export class CategoriesPropertyComponent implements OnInit {
 
     private getCategoriesList(filter = '', offset = 0): void {
         this.paginationService.filter = filter;
-        this.paginationService.getWithOffset(offset).subscribe(items => {
+        this.paginationService.getWithOffset(offset).subscribe((items) => {
             // items.splice(0) is used to return a new object and trigger the change detection in angular
             this.categoriesCurrentPage = items.splice(0);
         });

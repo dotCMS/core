@@ -36,7 +36,6 @@ export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
     ) {}
 
     ngOnInit() {
-
         this.route.data.pipe(pluck('data'), take(1)).subscribe((app: DotApps) => {
             this.apps = app;
             this.apps.sites = [];

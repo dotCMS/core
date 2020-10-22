@@ -6,7 +6,7 @@ import { CoreWebService } from '../core-web.service';
 import { Observable, of, throwError } from 'rxjs';
 import { ResponseView } from './response-view';
 
-class CoreWebServiceMock {
+class CoreWebServiceMock {
     public requestView(): Observable<ResponseView> {
         return null;
     }
@@ -29,7 +29,11 @@ describe('LongPollingProtocol', () => {
 
         const loggerService = injector.get(LoggerService);
 
-        longPollingProtocol = new LongPollingProtocol(url, loggerService, injector.get(CoreWebService));
+        longPollingProtocol = new LongPollingProtocol(
+            url,
+            loggerService,
+            injector.get(CoreWebService)
+        );
     });
 
     it('should connect', () => {

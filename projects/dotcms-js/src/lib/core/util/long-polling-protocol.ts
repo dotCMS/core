@@ -34,7 +34,8 @@ export class LongPollingProtocol extends Protocol {
     }
 
     private getLastCallback(data): number {
-        this.lastCallback = data.length > 0 ? data[data.length - 1].creationDate + 1 : this.lastCallback;
+        this.lastCallback =
+            data.length > 0 ? data[data.length - 1].creationDate + 1 : this.lastCallback;
         return this.lastCallback;
     }
 
@@ -45,12 +46,9 @@ export class LongPollingProtocol extends Protocol {
         this.coreWebService
             .requestView({
                 url: this.url,
-                params: lastCallBack ? {lastCallBack: lastCallBack} : {}
+                params: lastCallBack ? { lastCallBack: lastCallBack } : {}
             })
-            .pipe(
-                pluck('entity'),
-                take(1)
-            )
+            .pipe(pluck('entity'), take(1))
             .subscribe(
                 (data) => {
                     this.loggerService.debug('new Events', data);

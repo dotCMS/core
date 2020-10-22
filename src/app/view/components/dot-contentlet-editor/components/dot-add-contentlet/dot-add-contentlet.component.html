@@ -1,1 +1,6 @@
-<dot-contentlet-wrapper [url]="url$ | async" [header]="header$ | async" (close)="close.emit($event)" (custom)="custom.emit($event)"></dot-contentlet-wrapper>
+<dot-contentlet-wrapper
+    [url]="url$ | async"
+    [header]="header$ | async"
+    (close)="close.emit($event)"
+    (custom)="custom.emit($event)"
+></dot-contentlet-wrapper>

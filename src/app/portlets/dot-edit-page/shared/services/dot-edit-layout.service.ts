@@ -47,7 +47,10 @@ export class DotEditLayoutService {
             });
         });
 
-        return new DotLayoutGrid(grid, dotLayoutBody.rows.map((row: DotLayoutRow) => row.styleClass));
+        return new DotLayoutGrid(
+            grid,
+            dotLayoutBody.rows.map((row: DotLayoutRow) => row.styleClass)
+        );
     }
 
     /**
@@ -58,7 +61,9 @@ export class DotEditLayoutService {
      */
     getDotLayoutBody(grid: DotLayoutGrid): DotLayoutBody {
         return {
-            rows: grid.getRows().map((row: DotLayoutGridRow) => this.getLayoutRowFromLayoutGridBoxes(row))
+            rows: grid
+                .getRows()
+                .map((row: DotLayoutGridRow) => this.getLayoutRowFromLayoutGridBoxes(row))
         };
     }
 

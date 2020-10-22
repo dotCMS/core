@@ -3,7 +3,6 @@
 @import "dotcms-theme/utils/mixins";
 @import "mixins";
 
-
 #icon-button-tiny {
     height: 24px;
     width: 24px;
@@ -42,7 +41,7 @@
 
     &[big] button {
         ::ng-deep i {
-            font-size: $md-icon-size-big
+            font-size: $md-icon-size-big;
         }
     }
 

@@ -23,8 +23,7 @@
                 (keyup)="message = ''"
                 required
             />
-            <small class="p-invalid"
-                [hidden]="firstNameInput.valid || firstNameInput.pristine">
+            <small class="p-invalid" [hidden]="firstNameInput.valid || firstNameInput.pristine">
                 {{ getRequiredMessage('First-Name' | dm) }}
             </small>
         </div>
@@ -38,17 +37,17 @@
                 name="surname"
                 [(ngModel)]="accountUser.surname"
                 (keyup)="message = ''"
-                required/>
-            <small class="p-invalid"
-                [hidden]="lastNameInput.valid || lastNameInput.pristine"
-            >
+                required
+            />
+            <small class="p-invalid" [hidden]="lastNameInput.valid || lastNameInput.pristine">
                 {{ getRequiredMessage('Last-Name' | dm) }}
             </small>
         </div>
 
         <div class="p-field">
             <label for="dot-my-account-email-input">{{ 'email-address' | dm }}</label>
-            <input pInputText
+            <input
+                pInputText
                 id="dot-my-account-email-input"
                 #emailInput="ngModel"
                 name="email"
@@ -63,13 +62,13 @@
                     {{ getRequiredMessage('email-address' | dm) }}
                 </span>
                 <span *ngIf="emailInput.errors && emailInput.errors.pattern">
-                    {{ 'errors.email' | dm : ['email-address' | dm] }}
+                    {{ 'errors.email' | dm: ['email-address' | dm] }}
                 </span>
             </small>
         </div>
 
         <div class="p-field">
-            <label for="dot-my-account-current-password-input">{{'current-password' | dm}}</label>
+            <label for="dot-my-account-current-password-input">{{ 'current-password' | dm }}</label>
             <input
                 pPassword
                 id="dot-my-account-current-password-input"
@@ -105,7 +104,9 @@
             />
         </div>
         <div class="p-field">
-            <label for="dot-my-account-confirm-new-password-input">{{'re-enter-new-password' | dm}}</label>
+            <label for="dot-my-account-confirm-new-password-input">{{
+                're-enter-new-password' | dm
+            }}</label>
             <input
                 pPassword
                 id="dot-my-account-confirm-new-password-input"

@@ -22,37 +22,31 @@ describe('DotIframeService', () => {
                 DotIframeService,
                 DotUiColorsService,
                 { provide: DotRouterService, useClass: DotRouterServiceMock },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                { provide: CoreWebService, useClass: CoreWebServiceMock }
             ]
         });
 
         service = TestBed.get(DotIframeService);
     });
 
-    it(
-        'should trigger reload action',
-        async(() => {
-            service.reloaded().subscribe(res => {
-                expect(res).toEqual({ name: 'reload' });
-            });
+    it('should trigger reload action', async(() => {
+        service.reloaded().subscribe((res) => {
+            expect(res).toEqual({ name: 'reload' });
+        });
 
-            service.reload();
-        })
-    );
+        service.reload();
+    }));
 
-    it(
-        'should trigger reload colors action',
-        async(() => {
-            service.reloadedColors().subscribe(res => {
-                expect(res).toEqual({ name: 'colors' });
-            });
+    it('should trigger reload colors action', async(() => {
+        service.reloadedColors().subscribe((res) => {
+            expect(res).toEqual({ name: 'colors' });
+        });
 
-            service.reloadColors();
-        })
-    );
+        service.reloadColors();
+    }));
 
     it('should trigger ran action', () => {
-        service.ran().subscribe(res => {
+        service.ran().subscribe((res) => {
             expect(res).toEqual({ name: 'functionName' });
         });
 

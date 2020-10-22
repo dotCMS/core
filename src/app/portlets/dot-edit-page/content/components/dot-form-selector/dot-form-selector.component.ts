@@ -46,9 +46,11 @@ export class DotFormSelectorComponent implements OnInit, OnChanges {
             if (changes.show.currentValue) {
                 this.contentMinHeight =
                     this.paginatorService.totalRecords > this.paginatorService.paginationPerPage
-                        ? `${this.dotDialog.dialog.nativeElement
-                              .querySelector('.p-datatable')
-                              .getBoundingClientRect().height}px`
+                        ? `${
+                              this.dotDialog.dialog.nativeElement
+                                  .querySelector('.p-datatable')
+                                  .getBoundingClientRect().height
+                          }px`
                         : '';
             }
         }, 0);

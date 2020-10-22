@@ -18,7 +18,7 @@
 
 <div class="relationship__config">
     <dot-new-relationships
-        *ngIf="status === STATUS_NEW; else: existing"
+        *ngIf="status === STATUS_NEW; else existing"
         class="relationships__new"
         [velocityVar]="group.get(property.name).value.velocityVar"
         [cardinality]="group.get(property.name).value.cardinality"

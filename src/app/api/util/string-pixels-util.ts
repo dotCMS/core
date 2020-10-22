@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { Injectable } from "@angular/core";
+import { Injectable } from '@angular/core';
 @Injectable()
 export class StringPixels {
     private static readonly characterSize = 7;

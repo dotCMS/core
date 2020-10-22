@@ -24,8 +24,9 @@ export function getEsQuery(params: DotCMSElasticSearchParams): string {
             "bool": {
                 "must": {
                     "query_string" : {
-                        "query" : "+contentType:CONTENTTYPE +languageId:LANGUAGEIDVALUE ${detailedSearchQuery ||
-                            ''}"
+                        "query" : "+contentType:CONTENTTYPE +languageId:LANGUAGEIDVALUE ${
+                            detailedSearchQuery || ''
+                        }"
                     }
                 }
             }

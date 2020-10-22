@@ -78,8 +78,10 @@ export class DotCustomEventHandlerService {
     }
 
     private setDotcmsUiColors($event: CustomEvent): void {
-        this.dotUiColorsService.setColors(document.querySelector('html'), <DotUiColors>$event.detail
-            .payload.colors);
+        this.dotUiColorsService.setColors(
+            document.querySelector('html'),
+            <DotUiColors>$event.detail.payload.colors
+        );
         this.dotIframeService.reloadColors();
     }
 

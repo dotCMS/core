@@ -29,10 +29,7 @@ const DEFAULT_CONFIG_FOR_NOT_EMPTY_GRID_TEMPLATE: any = {
  */
 
 export class DotLayoutGrid {
-
-    constructor(private dotLayoutGridBoxs: DotLayoutGridBox[], private rowClasses: string[]) {
-
-    }
+    constructor(private dotLayoutGridBoxs: DotLayoutGridBox[], private rowClasses: string[]) {}
 
     static getDefaultConfig(): NgGridItemConfig {
         return {
@@ -48,7 +45,9 @@ export class DotLayoutGrid {
     static getDefaultGrid(): DotLayoutGrid {
         const defaultBox: DotLayoutGridBox[] = [
             {
-                config: <NgGridItemConfig> Object.assign({}, DOT_LAYOUT_GRID_DEFAULT_EMPTY_GRID_ROWS),
+                config: <NgGridItemConfig>(
+                    Object.assign({}, DOT_LAYOUT_GRID_DEFAULT_EMPTY_GRID_ROWS)
+                ),
                 containers: <DotContainerColumnBox[]>[]
             }
         ];
@@ -122,7 +121,10 @@ export class DotLayoutGrid {
         if (this.rowClasses.length > newNRows) {
             this.rowClasses = this.rowClasses.splice(0, this.rowClasses.length - newNRows);
         } else {
-            this.rowClasses = [...this.rowClasses, ...Array(newNRows - this.rowClasses.length).fill(null)];
+            this.rowClasses = [
+                ...this.rowClasses,
+                ...Array(newNRows - this.rowClasses.length).fill(null)
+            ];
         }
     }
 

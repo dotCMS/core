@@ -1,9 +1,17 @@
 <p-toolbar>
     <div class="p-toolbar-group-left">
         <div class="toolbar__button-wrapper">
-            <dot-icon-button big [icon]="(dotNavigationService.collapsed$ | async) ? 'menu' : 'arrow_back'" inverted (click)="handleMainButtonClick()"></dot-icon-button>
+            <dot-icon-button
+                big
+                [icon]="(dotNavigationService.collapsed$ | async) ? 'menu' : 'arrow_back'"
+                inverted
+                (click)="handleMainButtonClick()"
+            ></dot-icon-button>
         </div>
-        <div class="toolbar__logo-wrapper" [class.toolbar__logo-wrapper--collapsed]="dotNavigationService.collapsed$ | async">
+        <div
+            class="toolbar__logo-wrapper"
+            [class.toolbar__logo-wrapper--collapsed]="dotNavigationService.collapsed$ | async"
+        >
             <span class="toolbar__logo"></span>
             <span class="toolbar__logo-bg"></span>
         </div>
@@ -16,7 +24,8 @@
             (hide)="iframeOverlayService.hide()"
             (show)="iframeOverlayService.show()"
             [archive]="false"
-            class="toolbar__site-selector">
+            class="toolbar__site-selector"
+        >
         </dot-site-selector>
         <span class="toolbar__sep"></span>
         <dot-toolbar-notifications></dot-toolbar-notifications>

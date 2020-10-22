@@ -3,7 +3,8 @@
 .p-dropdown {
     background: $white;
     border: 1px solid $input-border-color;
-    transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s, background-size 0.2s cubic-bezier(0.64, 0.09, 0.08, 1);
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s,
+        background-size 0.2s cubic-bezier(0.64, 0.09, 0.08, 1);
     border-radius: $border-radius;
 }
 
@@ -54,7 +55,8 @@
     color: $black;
     border: 0 none;
     border-radius: $border-radius;
-    box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2), 0 8px 10px 1px rgba(0, 0, 0, 0.14), 0 3px 14px 2px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2), 0 8px 10px 1px rgba(0, 0, 0, 0.14),
+        0 3px 14px 2px rgba(0, 0, 0, 0.12);
 }
 
 .p-dropdown-panel .p-dropdown-header {
@@ -113,7 +115,8 @@
     font-weight: 400;
 }
 
-.p-dropdown-panel.p-error, .p-dropdown-panel.p-invalid {
+.p-dropdown-panel.p-error,
+.p-dropdown-panel.p-invalid {
     border-color: $error;
 }
 
@@ -121,7 +124,8 @@ p-dropdown.ng-dirty.ng-invalid > .p-dropdown {
     border-color: $error;
 }
 
-.p-dropdown .p-inputtext, .p-dropdown .p-dropdown-trigger {
+.p-dropdown .p-inputtext,
+.p-dropdown .p-dropdown-trigger {
     background-image: none;
     background: transparent;
 }

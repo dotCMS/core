@@ -7,7 +7,6 @@ import { TestBed, getTestBed } from '@angular/core/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 
-
 describe('DotMessageService', () => {
     let dotMessageService: DotMessageService;
     let coreWebService: CoreWebService;

@@ -16,8 +16,7 @@ export module DotPageRender {
 }
 
 export class DotPageRender {
-    constructor(private params: DotPageRender.Parameters) {
-    }
+    constructor(private params: DotPageRender.Parameters) {}
 
     get layout(): DotLayout {
         return this.params.layout;

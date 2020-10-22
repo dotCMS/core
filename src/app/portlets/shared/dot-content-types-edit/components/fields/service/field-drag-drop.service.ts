@@ -41,7 +41,6 @@ export class FieldDragDropService {
         private dotAlertConfirmService: DotAlertConfirmService,
         private dotMessageService: DotMessageService
     ) {
-
         const dragulaOver$ = dragulaService.over();
         const dragulaDropModel$ = dragulaService.dropModel();
 

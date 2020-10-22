@@ -72,13 +72,25 @@ export class NgGridPlaceholder implements OnInit {
             case 'up':
             case 'left':
             default:
-                this._renderer.setStyle(this._ngEl.nativeElement, 'transform', 'translate(' + x + 'px, ' + y + 'px)');
+                this._renderer.setStyle(
+                    this._ngEl.nativeElement,
+                    'transform',
+                    'translate(' + x + 'px, ' + y + 'px)'
+                );
                 break;
             case 'right':
-                this._renderer.setStyle(this._ngEl.nativeElement, 'transform', 'translate(' + -x + 'px, ' + y + 'px)');
+                this._renderer.setStyle(
+                    this._ngEl.nativeElement,
+                    'transform',
+                    'translate(' + -x + 'px, ' + y + 'px)'
+                );
                 break;
             case 'down':
-                this._renderer.setStyle(this._ngEl.nativeElement, 'transform', 'translate(' + x + 'px, ' + -y + 'px)');
+                this._renderer.setStyle(
+                    this._ngEl.nativeElement,
+                    'transform',
+                    'translate(' + x + 'px, ' + -y + 'px)'
+                );
                 break;
         }
     }

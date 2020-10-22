@@ -64,14 +64,16 @@ export class PushPublishService {
     ): Observable<DotAjaxActionResponseView> {
         this._lastEnvironmentPushed = pushPublishData.environment;
 
-        return this.coreWebService.request({
-            body: this.getPublishEnvironmentData(assetIdentifier, pushPublishData),
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            method: 'POST',
-            url: isBundle ? this.publishBundleURL : this.publishUrl
-        }).pipe(map((res: any) => <DotAjaxActionResponseView>res));
+        return this.coreWebService
+            .request({
+                body: this.getPublishEnvironmentData(assetIdentifier, pushPublishData),
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                method: 'POST',
+                url: isBundle ? this.publishBundleURL : this.publishUrl
+            })
+            .pipe(map((res: any) => <DotAjaxActionResponseView>res));
     }
 
     private getPublishEnvironmentData(

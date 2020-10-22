@@ -77,9 +77,11 @@ describe('DotIframeDialogComponent', () => {
         let hostComponent: TestHostComponent;
         let hostFixture: ComponentFixture<TestHostComponent>;
 
-        beforeEach(waitForAsync( () => {
-            DOTTestBed.configureTestingModule(getTestConfig(TestHostComponent));
-        }));
+        beforeEach(
+            waitForAsync(() => {
+                DOTTestBed.configureTestingModule(getTestConfig(TestHostComponent));
+            })
+        );
 
         beforeEach(() => {
             hostFixture = DOTTestBed.createComponent(TestHostComponent);
@@ -183,7 +185,9 @@ describe('DotIframeDialogComponent', () => {
                         });
 
                         expect(component.load.emit).toHaveBeenCalledWith(mockEvent);
-                        expect<any>(component.keydown.emit).toHaveBeenCalledWith({ hello: 'world' });
+                        expect<any>(component.keydown.emit).toHaveBeenCalledWith({
+                            hello: 'world'
+                        });
                         expect<any>(component.custom.emit).toHaveBeenCalledWith({
                             detail: {
                                 name: 'Hello World'
@@ -228,11 +232,11 @@ describe('DotIframeDialogComponent', () => {
         let hostFixture: ComponentFixture<TestHost2Component>;
         let hostComponent: TestHostComponent;
 
-        beforeEach(waitForAsync( () => {
-            DOTTestBed.configureTestingModule(
-                getTestConfig(TestHost2Component)
-            );
-        }));
+        beforeEach(
+            waitForAsync(() => {
+                DOTTestBed.configureTestingModule(getTestConfig(TestHost2Component));
+            })
+        );
 
         beforeEach(() => {
             hostFixture = DOTTestBed.createComponent(TestHost2Component);

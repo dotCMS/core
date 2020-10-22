@@ -38,9 +38,9 @@ export class ContentTypeFieldsRowComponent implements OnInit {
         document
             .querySelector('html')
             .style.setProperty(
-            '--empty-message',
-            `"${this.dotMessageService.get('contenttypes.dropzone.rows.empty.message')}"`
-        );
+                '--empty-message',
+                `"${this.dotMessageService.get('contenttypes.dropzone.rows.empty.message')}"`
+            );
     }
 
     /**
@@ -54,9 +54,9 @@ export class ContentTypeFieldsRowComponent implements OnInit {
             accept: () => {
                 this.removeField.emit(field);
             },
-            header: `${this.dotMessageService.get('contenttypes.action.delete')} ${
-                this.dotMessageService.get('contenttypes.content.field')
-            }`,
+            header: `${this.dotMessageService.get(
+                'contenttypes.action.delete'
+            )} ${this.dotMessageService.get('contenttypes.content.field')}`,
             message: this.dotMessageService.get(
                 'contenttypes.confirm.message.delete.field',
                 field.name

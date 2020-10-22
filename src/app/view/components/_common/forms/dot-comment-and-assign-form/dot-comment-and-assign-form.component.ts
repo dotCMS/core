@@ -35,7 +35,7 @@ export class DotCommentAndAssignFormComponent
                     .get(this.data.roleId, this.data.roleHierarchy)
                     .pipe(take(1))
                     .subscribe((items: DotRole[]) => {
-                        this.dotRoles = items.map(role => {
+                        this.dotRoles = items.map((role) => {
                             return { label: role.name, value: role.id };
                         });
                         this.initForm();

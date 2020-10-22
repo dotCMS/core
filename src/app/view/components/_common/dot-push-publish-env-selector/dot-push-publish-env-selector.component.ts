@@ -26,9 +26,7 @@ export class PushPublishEnvSelectorComponent implements OnInit, ControlValueAcce
     selectedEnvironmentIds: string[] = [];
     value: string[];
 
-    constructor(
-        private pushPublishService: PushPublishService
-    ) {}
+    constructor(private pushPublishService: PushPublishService) {}
 
     ngOnInit() {
         this.pushEnvironments$ = this.pushPublishService.getEnvironments();

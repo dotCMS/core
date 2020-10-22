@@ -62,7 +62,7 @@ export class ConditionService {
     makeRequest(childPath: string): Observable<any> {
         return this.coreWebService
             .request({
-                url: this._baseUrl + '/' + childPath,
+                url: this._baseUrl + '/' + childPath
             })
             .pipe(
                 catchError((err: any, _source: Observable<any>) => {
@@ -127,7 +127,7 @@ export class ConditionService {
             .request({
                 method: 'POST',
                 body: json,
-                url: this._baseUrl + '/',
+                url: this._baseUrl + '/'
             })
             .pipe(
                 map((res: HttpResponse<any>) => {
@@ -155,7 +155,7 @@ export class ConditionService {
                 .request({
                     method: 'PUT',
                     body: body,
-                    url: this._baseUrl + '/' + model.key,
+                    url: this._baseUrl + '/' + model.key
                 })
                 .pipe(
                     map((_res: HttpResponse<any>) => {
@@ -170,7 +170,7 @@ export class ConditionService {
         const remove = this.coreWebService
             .request({
                 method: 'DELETE',
-                url: this._baseUrl + '/' + model.key,
+                url: this._baseUrl + '/' + model.key
             })
             .pipe(
                 map((_res: HttpResponse<any>) => {

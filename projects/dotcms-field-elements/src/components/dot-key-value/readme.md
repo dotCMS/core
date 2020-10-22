@@ -1,9 +1,6 @@
 # dot-key-value
 
-
-
 <!-- Auto Generated Below -->
-
 
 ## Properties
 
@@ -23,14 +20,12 @@
 | `requiredMessage`      | `required-message`       | (optional) Text that will be shown when required is set and condition is not met | `string`  | `'This field is required'` |
 | `value`                | `value`                  | Value of the field                                                               | `string`  | `''`                       |
 
-
 ## Events
 
 | Event          | Description | Type                               |
 | -------------- | ----------- | ---------------------------------- |
 | `statusChange` |             | `CustomEvent<DotFieldStatusEvent>` |
 | `valueChange`  |             | `CustomEvent<DotFieldValueEvent>`  |
-
 
 ## Methods
 
@@ -42,9 +37,6 @@ Reset properties of the field, clear value and emit events.
 
 Type: `void`
 
+---
 
-
-
-----------------------------------------------
-
-*Built with [StencilJS](https://stenciljs.com/)*
+_Built with [StencilJS](https://stenciljs.com/)_

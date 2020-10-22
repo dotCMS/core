@@ -1,4 +1,17 @@
-import { Directive, ElementRef, EventEmitter, ComponentFactoryResolver, ComponentRef, KeyValueDiffer, KeyValueDiffers, OnInit, OnDestroy, DoCheck, Output, Renderer2 } from '@angular/core';
+import {
+    Directive,
+    ElementRef,
+    EventEmitter,
+    ComponentFactoryResolver,
+    ComponentRef,
+    KeyValueDiffer,
+    KeyValueDiffers,
+    OnInit,
+    OnDestroy,
+    DoCheck,
+    Output,
+    Renderer2
+} from '@angular/core';
 import { Observable, Subscription, fromEvent as observableFromEvent } from 'rxjs';
 
 import { NgGridPlaceholder } from '../components/NgGridPlaceholder';
@@ -863,13 +876,13 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
         let newW = resizeRight
             ? mousePos.left - itemPos.left + 1
             : resizeLeft
-                ? endCorner.left - mousePos.left + 1
-                : itemDims.width;
+            ? endCorner.left - mousePos.left + 1
+            : itemDims.width;
         let newH = resizeBottom
             ? mousePos.top - itemPos.top + 1
             : resizeTop
-                ? endCorner.top - mousePos.top + 1
-                : itemDims.height;
+            ? endCorner.top - mousePos.top + 1
+            : itemDims.height;
 
         if (newW < this.minWidth) newW = this.minWidth;
         if (newH < this.minHeight) newH = this.minHeight;
@@ -1301,7 +1314,10 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
                     // 	If not, try moving to the top of the column left of the smallest item in our way
                     newPos.col = Math.max(
                         newPos.col + 1,
-                        Math.min.apply(Math, itemsInPath.map((item) => item.col + item.sizex))
+                        Math.min.apply(
+                            Math,
+                            itemsInPath.map((item) => item.col + item.sizex)
+                        )
                     );
                     newPos.row = 1;
                 }
@@ -1328,7 +1344,10 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
                     // 	If not, try moving to the left of the row below the smallest item in our way
                     newPos.row = Math.max(
                         newPos.row + 1,
-                        Math.min.apply(Math, itemsInPath.map((item) => item.row + item.sizey))
+                        Math.min.apply(
+                            Math,
+                            itemsInPath.map((item) => item.row + item.sizey)
+                        )
                     );
                     newPos.col = 1;
                 }
@@ -1527,7 +1546,11 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
 
         this._renderer.setStyle(this._ngEl.nativeElement, 'width', '100%'); // (maxCol * (this.colWidth + this.marginLeft + this.marginRight))+'px');
         if (!this._elementBasedDynamicRowHeight) {
-            this._renderer.setStyle(this._ngEl.nativeElement, 'height', maxRow * (this.rowHeight + this.marginTop + this.marginBottom) + 'px');
+            this._renderer.setStyle(
+                this._ngEl.nativeElement,
+                'height',
+                maxRow * (this.rowHeight + this.marginTop + this.marginBottom) + 'px'
+            );
         }
     }
 
@@ -1554,7 +1577,8 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
     private _getMousePosition(e: any): NgGridRawPosition {
         if (
             ((window as any).TouchEvent && e instanceof TouchEvent) ||
-            (e.touches || e.changedTouches)
+            e.touches ||
+            e.changedTouches
         ) {
             e = e.touches.length > 0 ? e.touches[0] : e.changedTouches[0];
         }

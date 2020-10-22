@@ -25,7 +25,11 @@
 }
 
 @mixin button-state($props) {
-    @include button-base(map-get($props, background), map-get($props, border), map-get($props, shadow));
+    @include button-base(
+        map-get($props, background),
+        map-get($props, border),
+        map-get($props, shadow)
+    );
 
     [class^="ui-button-icon"],
     .ui-button-text,

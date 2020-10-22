@@ -78,11 +78,16 @@ xdescribe('IframePortletLegacyComponent', () => {
     let route: ActivatedRoute;
     const siteServiceMock = new SiteServiceMock();
 
-   beforeEach(
-          waitForAsync(() => {
+    beforeEach(
+        waitForAsync(() => {
             TestBed.configureTestingModule({
                 declarations: [],
-                imports: [IFrameModule, RouterTestingModule, DotDownloadBundleDialogModule, HttpClientTestingModule],
+                imports: [
+                    IFrameModule,
+                    RouterTestingModule,
+                    DotDownloadBundleDialogModule,
+                    HttpClientTestingModule
+                ],
                 providers: [
                     DotContentTypeService,
                     DotCustomEventHandlerService,
@@ -140,7 +145,7 @@ xdescribe('IframePortletLegacyComponent', () => {
         route.params = of({ id: 'portlet-id' });
 
         let src: string;
-        comp.url.subscribe(url => {
+        comp.url.subscribe((url) => {
             src = url;
         });
 
@@ -157,7 +162,7 @@ xdescribe('IframePortletLegacyComponent', () => {
 
         let src: string;
 
-        comp.url.subscribe(url => {
+        comp.url.subscribe((url) => {
             src = url;
         });
 

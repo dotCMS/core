@@ -3,7 +3,6 @@ import { FieldProperty } from '../field-properties.model';
 import { FormGroup } from '@angular/forms';
 import { DotTextareaContentComponent } from '@components/_common/dot-textarea-content/dot-textarea-content.component';
 
-
 @Component({
     selector: 'dot-values-property',
     templateUrl: './values-property.component.html',

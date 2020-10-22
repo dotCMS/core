@@ -49,8 +49,8 @@ describe('DotPortletDetailComponent', () => {
     let de: DebugElement;
     let router: ActivatedRoute;
 
-   beforeEach(
-          waitForAsync(() => {
+    beforeEach(
+        waitForAsync(() => {
             TestBed.configureTestingModule({
                 providers: [
                     DotMenuService,

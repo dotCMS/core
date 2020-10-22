@@ -1,9 +1,6 @@
 # dot-chip
 
-
-
 <!-- Auto Generated Below -->
-
 
 ## Properties
 
@@ -13,14 +10,12 @@
 | `disabled`    | `disabled`     | (optional) If is true disabled the delete button | `boolean` | `false`    |
 | `label`       | `label`        | Chip's label                                     | `string`  | `''`       |
 
-
 ## Events
 
 | Event    | Description | Type                  |
 | -------- | ----------- | --------------------- |
 | `remove` |             | `CustomEvent<String>` |
 
+---
 
-----------------------------------------------
-
-*Built with [StencilJS](https://stenciljs.com/)*
+_Built with [StencilJS](https://stenciljs.com/)_

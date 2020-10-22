@@ -1,5 +1,13 @@
-<span class="label" *ngIf="label; else button" (click)="copyUrlToClipboard($event)"
-      [pTooltip]='tooltipText' appendTo="body" tooltipPosition="bottom" hideDelay="800">{{label}}</span>
+<span
+    class="label"
+    *ngIf="label; else button"
+    (click)="copyUrlToClipboard($event)"
+    [pTooltip]="tooltipText"
+    appendTo="body"
+    tooltipPosition="bottom"
+    hideDelay="800"
+    >{{ label }}</span
+>
 <ng-template #button>
     <dot-icon-button icon="file_copy" (click)="copyUrlToClipboard($event)"></dot-icon-button>
 </ng-template>

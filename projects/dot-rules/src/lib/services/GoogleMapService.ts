@@ -19,7 +19,7 @@ export class GoogleMapService {
 
     constructor() {
         this.mapsApi$ = window['mapsApi$'];
-        this.mapsApi$.subscribe(gMapApi => {
+        this.mapsApi$.subscribe((gMapApi) => {
             if (gMapApi != null) {
                 this.apiReady = true;
             }
@@ -31,8 +31,7 @@ export class GoogleMapService {
             this.loadingApi = true;
             let url: string;
             if (this.apiKey) {
-                url = `https://maps.googleapis.com/maps/api/js?key=${this
-                    .apiKey}&callback=mapsApiReady`;
+                url = `https://maps.googleapis.com/maps/api/js?key=${this.apiKey}&callback=mapsApiReady`;
             } else {
                 url = `https://maps.googleapis.com/maps/api/js?callback=mapsApiReady`;
             }

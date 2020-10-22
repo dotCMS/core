@@ -25,7 +25,7 @@ import { SelectButtonModule } from 'primeng/selectbutton';
         DropdownModule,
         DotFieldValidationMessageModule,
         SelectButtonModule,
-        DotPipesModule,
+        DotPipesModule
     ],
     providers: [PushPublishService, DotParseHtmlService]
 })

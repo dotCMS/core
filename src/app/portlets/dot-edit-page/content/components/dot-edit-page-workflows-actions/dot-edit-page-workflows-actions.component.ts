@@ -1,5 +1,13 @@
 import { Observable } from 'rxjs';
-import { Component, Input, OnChanges, SimpleChanges, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
+import {
+    Component,
+    Input,
+    OnChanges,
+    SimpleChanges,
+    Output,
+    EventEmitter,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { MenuItem } from 'primeng/api';
 import { DotCMSWorkflowAction } from 'dotcms-models';
 import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
@@ -126,7 +134,7 @@ export class DotEditPageWorkflowsActionsComponent implements OnChanges {
                     this.fired.emit();
                     return this.getWorkflowActions(newInode);
                 }),
-                catchError(error => {
+                catchError((error) => {
                     this.httpErrorManagerService.handle(error);
                     return currentMenuActions;
                 })

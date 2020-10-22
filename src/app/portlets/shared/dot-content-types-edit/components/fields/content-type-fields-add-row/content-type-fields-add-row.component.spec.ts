@@ -29,13 +29,16 @@ describe('ContentTypeFieldsAddRowComponent', () => {
     });
 
     beforeEach(() => {
-
         DOTTestBed.configureTestingModule({
             declarations: [ContentTypeFieldsAddRowComponent],
-            imports: [TooltipModule, BrowserAnimationsModule, DotIconButtonModule, SplitButtonModule, RouterTestingModule],
-            providers: [
-                { provide: DotMessageService, useValue: messageServiceMock }
-            ]
+            imports: [
+                TooltipModule,
+                BrowserAnimationsModule,
+                DotIconButtonModule,
+                SplitButtonModule,
+                RouterTestingModule
+            ],
+            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         });
 
         fixture = DOTTestBed.createComponent(ContentTypeFieldsAddRowComponent);
@@ -112,7 +115,6 @@ describe('ContentTypeFieldsAddRowComponent', () => {
         expect(colsToEmit).toEqual(1);
     });
 
-
     it('should display add row when close button has been clicked', () => {
         comp.rowState = 'select';
         fixture.detectChanges();
@@ -123,14 +125,11 @@ describe('ContentTypeFieldsAddRowComponent', () => {
         expect(comp.selectedColumnIndex).toBe(0);
     });
 
-    it(
-        'should call setColumnSelect when "add-row" event received',
-        fakeAsync(() => {
-            fixture.detectChanges();
-            spyOn(comp, 'setColumnSelect');
-            dotEventsService.notify('add-row');
-            tick();
-            expect(comp.setColumnSelect).toHaveBeenCalled();
-        })
-    );
+    it('should call setColumnSelect when "add-row" event received', fakeAsync(() => {
+        fixture.detectChanges();
+        spyOn(comp, 'setColumnSelect');
+        dotEventsService.notify('add-row');
+        tick();
+        expect(comp.setColumnSelect).toHaveBeenCalled();
+    }));
 });

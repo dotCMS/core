@@ -4,7 +4,7 @@ export interface DotCMSWorkflowActionEvent {
     workflow: DotCMSWorkflowAction;
     callback: string;
     inode: string;
-    selectedInodes: string | string [];
+    selectedInodes: string | string[];
 }
 
 export interface DotCMSWorkflowAction {
@@ -22,7 +22,7 @@ export interface DotCMSWorkflowAction {
     roleHierarchyForAssign: boolean;
     schemeId: string;
     showOn: string[];
-    actionInputs: DotCMSWorkflowInput [];
+    actionInputs: DotCMSWorkflowInput[];
 }
 
 export enum DotCMSSystemActionType {

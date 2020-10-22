@@ -4,7 +4,6 @@ import { LoginService } from 'dotcms-js';
 import { Router, ActivatedRoute } from '@angular/router';
 import { waitForAsync, TestBed } from '@angular/core/testing';
 
-
 class RouterMock {
     url = '/c/test';
 
@@ -15,7 +14,7 @@ class RouterMock {
     };
 
     navigate = jasmine.createSpy('navigate').and.callFake(() => {
-        return new Promise(resolve => {
+        return new Promise((resolve) => {
             resolve(true);
         });
     });
@@ -39,29 +38,31 @@ describe('DotRouterService', () => {
     let service: DotRouterService;
     let router: Router;
 
-    beforeEach(waitForAsync(() => {
-        const testbed = TestBed.configureTestingModule({
-            providers: [
-                DotRouterService,
-                {
-                    provide: LoginService,
-                    useValue: {}
-                },
-                {
-                    provide: Router,
-                    useClass: RouterMock
-                },
-                {
-                    provide: ActivatedRoute,
-                    useClass: ActivatedRouteMock
-                }
-            ],
-            imports: [RouterTestingModule]
-        });
+    beforeEach(
+        waitForAsync(() => {
+            const testbed = TestBed.configureTestingModule({
+                providers: [
+                    DotRouterService,
+                    {
+                        provide: LoginService,
+                        useValue: {}
+                    },
+                    {
+                        provide: Router,
+                        useClass: RouterMock
+                    },
+                    {
+                        provide: ActivatedRoute,
+                        useClass: ActivatedRouteMock
+                    }
+                ],
+                imports: [RouterTestingModule]
+            });
 
-        service = testbed.get(DotRouterService);
-        router = testbed.get(Router);
-    }));
+            service = testbed.get(DotRouterService);
+            router = testbed.get(Router);
+        })
+    );
 
     it('should get queryParams from Router', () => {
         spyOn<any>(router, 'getCurrentNavigation').and.returnValue({

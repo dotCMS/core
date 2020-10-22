@@ -4,23 +4,23 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RadioButtonModule } from 'primeng/radiobutton';
 
 export default {
-  title: 'PrimeNG/Form/RadioButton',
-  parameters: {
-    docs: {
-      description: {
-        component:
-          'RadioButton is an extension to standard radio button element with theming: https://primefaces.org/primeng/showcase/#/radiobutton',
-      },
+    title: 'PrimeNG/Form/RadioButton',
+    parameters: {
+        docs: {
+            description: {
+                component:
+                    'RadioButton is an extension to standard radio button element with theming: https://primefaces.org/primeng/showcase/#/radiobutton'
+            }
+        }
     },
-  },
-  decorators: [
-    moduleMetadata({
-      imports: [RadioButtonModule, BrowserAnimationsModule],
-    }),
-  ],
-  args: {
-    selectedValue: '',
-  },
+    decorators: [
+        moduleMetadata({
+            imports: [RadioButtonModule, BrowserAnimationsModule]
+        })
+    ],
+    args: {
+        selectedValue: ''
+    }
 } as Meta;
 
 const RadioButtonTemplate = `
@@ -43,19 +43,19 @@ const RadioButtonTemplate = `
 `;
 
 const Template: Story<any> = (props: any) => {
-  const template = RadioButtonTemplate;
-  return {
-    props,
-    template,
-  };
+    const template = RadioButtonTemplate;
+    return {
+        props,
+        template
+    };
 };
 
 export const Basic: Story = Template.bind({});
 
 Basic.parameters = {
-  docs: {
-    source: {
-      code: RadioButtonTemplate,
-    },
-  },
+    docs: {
+        source: {
+            code: RadioButtonTemplate
+        }
+    }
 };

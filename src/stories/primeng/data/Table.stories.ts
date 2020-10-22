@@ -18,80 +18,79 @@ export default {
 } as Meta;
 
 const cars = [
-  {
-    vin: '123',
-    year: '2020',
-    brand: 'Hyundai',
-    color: 'Red',
-  },
-  {
-    vin: '456',
-    year: '2010',
-    brand: 'Kia',
-    color: 'Blue',
-  },
-  {
-    vin: '789',
-    year: '2008',
-    brand: 'Ford',
-    color: 'Gray',
-  },
-  {
-    vin: '987',
-    year: '2018',
-    brand: 'Fiat',
-    color: 'Green',
-  },
-  {
-    vin: '213',
-    year: '2020',
-    brand: 'Hyundai',
-    color: 'Red',
-  },
-  {
-    vin: '343',
-    year: '2010',
-    brand: 'Kia',
-    color: 'Blue',
-  },
-  {
-    vin: '454',
-    year: '2008',
-    brand: 'Ford',
-    color: 'Gray',
-  },
-  {
-    vin: '897',
-    year: '2018',
-    brand: 'Fiat',
-    color: 'Green',
-  },
-  {
-    vin: '234',
-    year: '2020',
-    brand: 'Hyundai',
-    color: 'Red',
-  },
-  {
-    vin: '892',
-    year: '2010',
-    brand: 'Kia',
-    color: 'Blue',
-  },
-  {
-    vin: '092',
-    year: '2008',
-    brand: 'Ford',
-    color: 'Gray',
-  },
-  {
-    vin: '567',
-    year: '2018',
-    brand: 'Fiat',
-    color: 'Green',
-  },
+    {
+        vin: '123',
+        year: '2020',
+        brand: 'Hyundai',
+        color: 'Red'
+    },
+    {
+        vin: '456',
+        year: '2010',
+        brand: 'Kia',
+        color: 'Blue'
+    },
+    {
+        vin: '789',
+        year: '2008',
+        brand: 'Ford',
+        color: 'Gray'
+    },
+    {
+        vin: '987',
+        year: '2018',
+        brand: 'Fiat',
+        color: 'Green'
+    },
+    {
+        vin: '213',
+        year: '2020',
+        brand: 'Hyundai',
+        color: 'Red'
+    },
+    {
+        vin: '343',
+        year: '2010',
+        brand: 'Kia',
+        color: 'Blue'
+    },
+    {
+        vin: '454',
+        year: '2008',
+        brand: 'Ford',
+        color: 'Gray'
+    },
+    {
+        vin: '897',
+        year: '2018',
+        brand: 'Fiat',
+        color: 'Green'
+    },
+    {
+        vin: '234',
+        year: '2020',
+        brand: 'Hyundai',
+        color: 'Red'
+    },
+    {
+        vin: '892',
+        year: '2010',
+        brand: 'Kia',
+        color: 'Blue'
+    },
+    {
+        vin: '092',
+        year: '2008',
+        brand: 'Ford',
+        color: 'Gray'
+    },
+    {
+        vin: '567',
+        year: '2018',
+        brand: 'Fiat',
+        color: 'Green'
+    }
 ];
-
 
 const PrimaryTemplate = `
 <p-table
@@ -151,34 +150,64 @@ const PrimaryTemplate = `
 </p-table>
 `;
 export const Primary = (_args: Table) => {
-  return {
-      props: {
-          cars,
-          selectedCars: [],
-          car: {},
-          handleClick: (e) => {
-            console.log(e)
-          },
-          items: [
-              { label: 'Update', icon: 'pi pi-refresh', command: () => {console.log('update')} },
-              { label: 'Delete', icon: 'pi pi-times', command: () => {console.log('delete')} },
-              { label: 'Angular.io', icon: 'pi pi-info', command: () => {console.log('angular')} },
-              { separator: true },
-              { label: 'Setup', icon: 'pi pi-cog', command: () => {console.log('setup')} }
-          ]
-      },
-      moduleMetadata: {
-          imports: [TableModule, BrowserAnimationsModule, ButtonModule, MenuModule, InputTextModule]
-      },
-      template: PrimaryTemplate
-  };
+    return {
+        props: {
+            cars,
+            selectedCars: [],
+            car: {},
+            handleClick: (e) => {
+                console.log(e);
+            },
+            items: [
+                {
+                    label: 'Update',
+                    icon: 'pi pi-refresh',
+                    command: () => {
+                        console.log('update');
+                    }
+                },
+                {
+                    label: 'Delete',
+                    icon: 'pi pi-times',
+                    command: () => {
+                        console.log('delete');
+                    }
+                },
+                {
+                    label: 'Angular.io',
+                    icon: 'pi pi-info',
+                    command: () => {
+                        console.log('angular');
+                    }
+                },
+                { separator: true },
+                {
+                    label: 'Setup',
+                    icon: 'pi pi-cog',
+                    command: () => {
+                        console.log('setup');
+                    }
+                }
+            ]
+        },
+        moduleMetadata: {
+            imports: [
+                TableModule,
+                BrowserAnimationsModule,
+                ButtonModule,
+                MenuModule,
+                InputTextModule
+            ]
+        },
+        template: PrimaryTemplate
+    };
 };
 
 Primary.parameters = {
-  docs: {
-    source: {
-      code: PrimaryTemplate,
-    },
-    iframeHeight: 500,
-  },
+    docs: {
+        source: {
+            code: PrimaryTemplate
+        },
+        iframeHeight: 500
+    }
 };

@@ -30,8 +30,8 @@ describe('DotMessageDisplayComponent', () => {
     const dotMessageDisplayServiceMock: DotMessageDisplayServiceMock = new DotMessageDisplayServiceMock();
     let fixture: ComponentFixture<DotMessageDisplayComponent>;
 
-   beforeEach(
-          waitForAsync(() => {
+    beforeEach(
+        waitForAsync(() => {
             TestBed.configureTestingModule({
                 imports: [ToastModule, DotIconModule, DotIconButtonModule, BrowserAnimationsModule],
                 declarations: [DotMessageDisplayComponent],

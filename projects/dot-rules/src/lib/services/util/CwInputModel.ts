@@ -81,9 +81,9 @@ export class CwInputDefinition {
 
         if (!type) {
             const msg =
-                'No input definition registered for \'' +
+                "No input definition registered for '" +
                 (json.id || json.type) +
-                '\'. Using default.';
+                "'. Using default.";
             // tslint:disable-next-line:no-console
             console.error(msg, json);
             type = 'text';

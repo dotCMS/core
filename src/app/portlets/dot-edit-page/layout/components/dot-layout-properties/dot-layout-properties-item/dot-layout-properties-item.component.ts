@@ -1,12 +1,5 @@
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import {
-    Component,
-    Input,
-    Output,
-    EventEmitter,
-    forwardRef,
-    HostListener
-} from '@angular/core';
+import { Component, Input, Output, EventEmitter, forwardRef, HostListener } from '@angular/core';
 
 @Component({
     selector: 'dot-layout-properties-item',
@@ -18,7 +11,7 @@ import {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotLayoutPropertiesItemComponent)
         }
-    ],
+    ]
 })
 export class DotLayoutPropertiesItemComponent implements ControlValueAccessor {
     @Input()

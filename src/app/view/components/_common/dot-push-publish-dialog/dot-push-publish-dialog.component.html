@@ -2,14 +2,15 @@
     [(visible)]="dialogShow"
     [actions]="dialogActions"
     [header]="eventData?.title"
-    [hideButtons]="!! eventData?.customCode"
+    [hideButtons]="!!eventData?.customCode"
     (hide)="close()"
 >
     <dot-push-publish-form
         *ngIf="eventData"
         [data]="eventData"
         (value)="formData = $event"
-        (valid)="updateFormValid($event)" >
+        (valid)="updateFormValid($event)"
+    >
     </dot-push-publish-form>
-    <span *ngIf="errorMessage" class="dot-push-publish-dialog__error">{{errorMessage}}</span>
+    <span *ngIf="errorMessage" class="dot-push-publish-dialog__error">{{ errorMessage }}</span>
 </dot-dialog>

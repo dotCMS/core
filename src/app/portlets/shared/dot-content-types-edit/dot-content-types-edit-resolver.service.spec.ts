@@ -28,26 +28,28 @@ describe('DotContentTypeEditResolver', () => {
     let dotRouterService: DotRouterService;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
 
-    beforeEach(waitForAsync( () => {
-        const testbed = DOTTestBed.configureTestingModule({
-            providers: [
-                DotContentTypeEditResolver,
-                DotContentTypesInfoService,
-                DotHttpErrorManagerService,
-                { provide: DotCrudService, useClass: CrudServiceMock },
-                { provide: LoginService, useClass: LoginServiceMock },
-                {
-                    provide: ActivatedRouteSnapshot,
-                    useValue: activatedRouteSnapshotMock
-                }
-            ],
-            imports: [RouterTestingModule]
-        });
-        crudService = testbed.get(DotCrudService);
-        dotContentTypeEditResolver = testbed.get(DotContentTypeEditResolver);
-        dotRouterService = testbed.get(DotRouterService);
-        dotHttpErrorManagerService = testbed.get(DotHttpErrorManagerService);
-    }));
+    beforeEach(
+        waitForAsync(() => {
+            const testbed = DOTTestBed.configureTestingModule({
+                providers: [
+                    DotContentTypeEditResolver,
+                    DotContentTypesInfoService,
+                    DotHttpErrorManagerService,
+                    { provide: DotCrudService, useClass: CrudServiceMock },
+                    { provide: LoginService, useClass: LoginServiceMock },
+                    {
+                        provide: ActivatedRouteSnapshot,
+                        useValue: activatedRouteSnapshotMock
+                    }
+                ],
+                imports: [RouterTestingModule]
+            });
+            crudService = testbed.get(DotCrudService);
+            dotContentTypeEditResolver = testbed.get(DotContentTypeEditResolver);
+            dotRouterService = testbed.get(DotRouterService);
+            dotHttpErrorManagerService = testbed.get(DotHttpErrorManagerService);
+        })
+    );
 
     it('should get and return a content type', () => {
         activatedRouteSnapshotMock.paramMap.get = () => '123';
@@ -69,7 +71,7 @@ describe('DotContentTypeEditResolver', () => {
         expect(crudService.getDataById).toHaveBeenCalledWith('v1/contenttype', '123');
     });
 
-    it('should redirect to content-types if content type it\'s not found', () => {
+    it("should redirect to content-types if content type it's not found", () => {
         activatedRouteSnapshotMock.paramMap.get = () => 'invalid-id';
 
         spyOn<any>(dotHttpErrorManagerService, 'handle').and.returnValue(

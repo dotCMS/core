@@ -1,8 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { HttpClientModule } from '@angular/common/http'
-
+import { HttpClientModule } from '@angular/common/http';
 
 import { ActionService } from './services/Action';
 import { AddToBundleDialogComponent } from './push-publish/add-to-bundle-dialog-component';
@@ -39,7 +38,6 @@ import {
     BrowserUtil
 } from 'dotcms-js';
 
-
 import { DotAutocompleteTagsModule } from './components/dot-autocomplete-tags/dot-autocomplete-tags.module';
 import { AppRulesComponent } from './app.component';
 import { DotAutofocusModule } from './directives/dot-autofocus/dot-autofocus.module';
@@ -57,7 +55,6 @@ import { MessageModule } from 'primeng/message';
 import { MessagesModule } from 'primeng/messages';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { MenuModule } from 'primeng/menu';
-
 
 @NgModule({
     imports: [

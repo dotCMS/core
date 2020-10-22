@@ -36,19 +36,19 @@ describe('Integration.api.rule-engine.ConditionService', () => {
     let usersCountryConditionType;
     let requestHeaderConditionType;
 
-    beforeAll(done => {
+    beforeAll((done) => {
         ruleService = injector.get(RuleService);
         conditionGroupService = injector.get(ConditionGroupService);
         conditionService = injector.get(ConditionService);
         ruleService.getConditionTypes().subscribe((typesAry: ServerSideTypeModel[]) => {
-            typesAry.forEach(item => (conditionTypes[item.key] = item));
+            typesAry.forEach((item) => (conditionTypes[item.key] = item));
             usersCountryConditionType = conditionTypes['UsersCountryConditionlet'];
             requestHeaderConditionType = conditionTypes['RequestHeaderConditionlet'];
             done();
         });
     });
 
-    beforeEach(done => {
+    beforeEach((done) => {
         ruleUnderTest = null;
         groupUnderTest = null;
 
@@ -62,7 +62,7 @@ describe('Integration.api.rule-engine.ConditionService', () => {
         });
     });
 
-    afterEach(done => {
+    afterEach((done) => {
         ruleService.deleteRule(ruleUnderTest.key).subscribe(() => {
             ruleUnderTest = null;
             ruleOnAddSub.unsubscribe();
@@ -75,7 +75,7 @@ describe('Integration.api.rule-engine.ConditionService', () => {
         expect(groupUnderTest.isPersisted()).toBe(true);
     });
 
-    it('Can add a new Condition', done => {
+    it('Can add a new Condition', (done) => {
         const aCondition = new ConditionModel({ _type: usersCountryConditionType });
         aCondition.setParameter('sessionKey', 'foo');
         aCondition.setParameter('sessionValue', 'bar');
@@ -89,7 +89,7 @@ describe('Integration.api.rule-engine.ConditionService', () => {
             });
     });
 
-    it('Condition being added to the owning group is persisted to server.', done => {
+    it('Condition being added to the owning group is persisted to server.', (done) => {
         const aCondition = new ConditionModel({ _type: usersCountryConditionType });
         aCondition.setParameter('comparatorValue', 'is');
         aCondition.setParameter('isoCode', 'US');
@@ -108,7 +108,7 @@ describe('Integration.api.rule-engine.ConditionService', () => {
             });
     });
 
-    it('Will add new condition parameters to an existing condition.', done => {
+    it('Will add new condition parameters to an existing condition.', (done) => {
         console.log('will add new ', '', requestHeaderConditionType);
         const clientCondition = new ConditionModel({ type: requestHeaderConditionType });
         clientCondition.setParameter('browser-header', 'foo');
@@ -117,26 +117,28 @@ describe('Integration.api.rule-engine.ConditionService', () => {
         const key = 'browser-header';
         const value = 'aParamValue';
 
-        conditionService.add(groupUnderTest.key, clientCondition).subscribe(resultCondition => {
+        conditionService.add(groupUnderTest.key, clientCondition).subscribe((resultCondition) => {
             // serverCondition is the same instance as resultCondition
             expect(clientCondition.isPersisted()).toBe(true, 'Condition is not persisted!');
             clientCondition.setParameter(key, value);
-            conditionService.save(groupUnderTest.key, clientCondition).subscribe(savedCondition => {
-                // savedCondition is also the same instance as resultCondition
-                conditionService.get(clientCondition.key).subscribe(updatedCondition => {
-                    updatedCondition['abc123'] = 100;
-                    expect(clientCondition['abc123']).toBeUndefined(
-                        'updatedCondition and clientCondition SHOULD NOT be the same instance object.'
-                    );
-                    expect(clientCondition.getParameterValue(key)).toBe(value);
-                    expect(updatedCondition.getParameterValue(key)).toBe(value);
-                    done();
+            conditionService
+                .save(groupUnderTest.key, clientCondition)
+                .subscribe((savedCondition) => {
+                    // savedCondition is also the same instance as resultCondition
+                    conditionService.get(clientCondition.key).subscribe((updatedCondition) => {
+                        updatedCondition['abc123'] = 100;
+                        expect(clientCondition['abc123']).toBeUndefined(
+                            'updatedCondition and clientCondition SHOULD NOT be the same instance object.'
+                        );
+                        expect(clientCondition.getParameterValue(key)).toBe(value);
+                        expect(updatedCondition.getParameterValue(key)).toBe(value);
+                        done();
+                    });
                 });
-            });
         });
     });
 
-    it('Can update condition parameter values on existing condition.', done => {
+    it('Can update condition parameter values on existing condition.', (done) => {
         const param1 = { key: 'browser-header', v1: 'value1', v2: 'value2' };
         const param2 = { key: 'header-value', v1: 'abc123', v2: 'def456' };
 
@@ -144,15 +146,17 @@ describe('Integration.api.rule-engine.ConditionService', () => {
         clientCondition.setParameter(param1.key, param1.v1);
         clientCondition.setParameter(param2.key, param2.v1);
 
-        conditionService.add(groupUnderTest.key, clientCondition).subscribe(resultCondition => {
+        conditionService.add(groupUnderTest.key, clientCondition).subscribe((resultCondition) => {
             clientCondition.setParameter(param1.key, param1.v2);
-            conditionService.save(groupUnderTest.key, clientCondition).subscribe(savedCondition => {
-                conditionService.get(clientCondition.key).subscribe(updatedCondition => {
-                    expect(updatedCondition.getParameterValue(param1.key)).toBe(param1.v2);
-                    expect(updatedCondition.getParameterValue(param2.key)).toBe(param2.v1);
-                    done();
+            conditionService
+                .save(groupUnderTest.key, clientCondition)
+                .subscribe((savedCondition) => {
+                    conditionService.get(clientCondition.key).subscribe((updatedCondition) => {
+                        expect(updatedCondition.getParameterValue(param1.key)).toBe(param1.v2);
+                        expect(updatedCondition.getParameterValue(param2.key)).toBe(param2.v1);
+                        done();
+                    });
                 });
-            });
         });
     });
 });

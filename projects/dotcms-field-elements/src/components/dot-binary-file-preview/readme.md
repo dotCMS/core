@@ -1,9 +1,6 @@
 # dot-binary-file-preview
 
-
-
 <!-- Auto Generated Below -->
-
 
 ## Properties
 
@@ -13,14 +10,12 @@
 | `fileName`    | `file-name`    | file name to be displayed           | `string` | `''`       |
 | `previewUrl`  | `preview-url`  | (optional) file URL to be displayed | `string` | `''`       |
 
-
 ## Events
 
 | Event    | Description                   | Type                |
 | -------- | ----------------------------- | ------------------- |
 | `delete` | Emit when the file is deleted | `CustomEvent<void>` |
 
+---
 
-----------------------------------------------
-
-*Built with [StencilJS](https://stenciljs.com/)*
+_Built with [StencilJS](https://stenciljs.com/)_

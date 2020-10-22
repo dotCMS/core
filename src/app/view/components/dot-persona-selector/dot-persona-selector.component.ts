@@ -29,7 +29,8 @@ export class DotPersonaSelectorComponent implements OnInit {
 
     @Output() delete: EventEmitter<DotPersona> = new EventEmitter();
 
-    @ViewChild('searchableDropdown', { static: true }) searchableDropdown: SearchableDropdownComponent;
+    @ViewChild('searchableDropdown', { static: true })
+    searchableDropdown: SearchableDropdownComponent;
     @ViewChild('personaDialog', { static: true }) personaDialog: DotAddPersonaDialogComponent;
 
     addAction: (item: DotPersona) => void;
@@ -111,10 +112,7 @@ export class DotPersonaSelectorComponent implements OnInit {
      * @memberof DotPersonaSelectorComponent
      */
     reloadPersonasListCurrentPage(): void {
-        this.paginationService
-            .getCurrentPage()
-            .pipe(take(1))
-            .subscribe(this.setList.bind(this));
+        this.paginationService.getCurrentPage().pipe(take(1)).subscribe(this.setList.bind(this));
     }
 
     /**

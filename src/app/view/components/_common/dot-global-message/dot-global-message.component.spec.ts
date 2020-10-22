@@ -58,7 +58,7 @@ describe('DotGlobalMessageComponent', () => {
         expect(dotIcon).toBeDefined();
     });
 
-    it('should set visibility to false after 10 ms', done => {
+    it('should set visibility to false after 10 ms', (done) => {
         dotEventsService.notify('dot-global-message', { value: 'test', life: 10 });
         expect(component.classes).toContain('dot-global-message--visible');
         // TODO: Find a way to get rid of timeouts.

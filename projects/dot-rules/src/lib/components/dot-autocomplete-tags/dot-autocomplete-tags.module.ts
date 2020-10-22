@@ -7,8 +7,8 @@ import { AutoCompleteModule } from 'primeng/autocomplete';
 import { ChipsModule } from 'primeng/chips';
 
 @NgModule({
-  imports: [CommonModule, ChipsModule, AutoCompleteModule, FormsModule],
-  declarations: [DotAutocompleteTagsComponent],
-  exports: [DotAutocompleteTagsComponent, ChipsModule]
+    imports: [CommonModule, ChipsModule, AutoCompleteModule, FormsModule],
+    declarations: [DotAutocompleteTagsComponent],
+    exports: [DotAutocompleteTagsComponent, ChipsModule]
 })
 export class DotAutocompleteTagsModule {}

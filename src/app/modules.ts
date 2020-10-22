@@ -7,7 +7,6 @@ import { DotSiteSelectorModule } from './view/components/_common/dot-site-select
 import { SearchableDropDownModule } from './view/components/_common/searchable-dropdown';
 import { IFrameModule } from './view/components/_common/iframe';
 
-
 import { TableModule } from 'primeng/table';
 
 import { DotIconModule } from './view/components/_common/dot-icon/dot-icon.module';

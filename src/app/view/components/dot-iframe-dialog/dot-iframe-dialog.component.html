@@ -4,14 +4,16 @@
     #dialog
     (hide)="onDialogHide()"
     [(visible)]="show"
-    [contentStyle]="{'padding': '0'}"
-    [headerStyle]="{'background-color': '#f1f3f4'}"
-    [header]="header">
+    [contentStyle]="{ padding: '0' }"
+    [headerStyle]="{ 'background-color': '#f1f3f4' }"
+    [header]="header"
+>
     <dot-iframe
         class="dialog__iframe"
         [src]="url"
         (load)="onLoad($event)"
         (keydown)="onKeyDown($event)"
-        (custom)="custom.emit($event)">
+        (custom)="custom.emit($event)"
+    >
     </dot-iframe>
 </dot-dialog>

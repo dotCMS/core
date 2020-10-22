@@ -102,7 +102,7 @@ export class DotWorkflowEventHandlerService {
      * @memberof DotWorkflowEventHandlerService
      */
     containsPushPublish(inputs: DotCMSWorkflowInput[]): boolean {
-        return inputs.some(input => input.id === 'pushPublish');
+        return inputs.some((input) => input.id === 'pushPublish');
     }
 
     /**
@@ -158,13 +158,13 @@ export class DotWorkflowEventHandlerService {
     private mergeCommentAndAssign(workflow: DotCMSWorkflowAction): DotCMSWorkflowInput[] {
         const body = {};
         let workflows: DotCMSWorkflowInput[];
-        workflow.actionInputs.forEach(input => {
+        workflow.actionInputs.forEach((input) => {
             if (this.isCommentOrAssign(input.id)) {
                 body[input.id] = true;
             }
         });
         if (Object.keys(body).length) {
-            workflows = workflow.actionInputs.filter(input => !this.isCommentOrAssign(input.id));
+            workflows = workflow.actionInputs.filter((input) => !this.isCommentOrAssign(input.id));
             workflows.unshift({
                 id: DotActionInputs.COMMENTANDASSIGN,
                 body: { ...body, ...this.getAssignableData(workflow) }
@@ -196,7 +196,7 @@ export class DotWorkflowEventHandlerService {
                 .bulkFire(this.processBulkData(event, data))
                 .pipe(
                     take(1),
-                    catchError(error => {
+                    catchError((error) => {
                         return this.httpErrorManagerService.handle(error);
                     })
                 )
@@ -222,7 +222,7 @@ export class DotWorkflowEventHandlerService {
                         this.processWorkflowPayload(data, event.workflow.actionInputs)
                     )
                     .pipe(
-                        catchError(error => {
+                        catchError((error) => {
                             return this.httpErrorManagerService.handle(error);
                         }),
                         take(1)

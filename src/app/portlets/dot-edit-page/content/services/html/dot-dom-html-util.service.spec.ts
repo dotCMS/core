@@ -4,8 +4,8 @@ import { TestBed, waitForAsync } from '@angular/core/testing';
 describe('DotDOMHtmlUtilService', () => {
     let dotDOMHtmlUtilService: DotDOMHtmlUtilService;
 
-   beforeEach(
-          waitForAsync(() => {
+    beforeEach(
+        waitForAsync(() => {
             TestBed.configureTestingModule({
                 providers: [DotDOMHtmlUtilService],
                 imports: []

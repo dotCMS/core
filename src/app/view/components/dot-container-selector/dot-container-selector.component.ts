@@ -79,20 +79,20 @@ export class DotContainerSelectorComponent implements OnInit {
      */
     isContainerSelected(dotContainer: DotContainer): boolean {
         return this.data.some(
-            containerItem => containerItem.container.identifier === dotContainer.identifier
+            (containerItem) => containerItem.container.identifier === dotContainer.identifier
         );
     }
 
     private getContainersList(filter = '', offset = 0): void {
         this.paginationService.filter = filter;
-        this.paginationService.getWithOffset(offset).subscribe(items => {
+        this.paginationService.getWithOffset(offset).subscribe((items) => {
             this.currentContainers = this.setIdentifierReference(items.splice(0));
             this.totalRecords = this.totalRecords || this.paginationService.totalRecords;
         });
     }
 
     private setIdentifierReference(items: DotContainer[]): any {
-        return items.map(dotContainer => {
+        return items.map((dotContainer) => {
             dotContainer.identifier = this.templateContainersCacheService.getContainerReference(
                 dotContainer
             );

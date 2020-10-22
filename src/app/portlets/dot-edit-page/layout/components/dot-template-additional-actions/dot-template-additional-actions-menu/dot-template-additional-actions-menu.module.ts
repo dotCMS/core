@@ -7,6 +7,6 @@ import { ButtonModule } from 'primeng/button';
 @NgModule({
     declarations: [DotTemplateAdditionalActionsMenuComponent],
     imports: [MenuModule, ButtonModule, CommonModule],
-    exports: [DotTemplateAdditionalActionsMenuComponent],
+    exports: [DotTemplateAdditionalActionsMenuComponent]
 })
 export class DotTemplateAdditionalActionsMenuModule {}

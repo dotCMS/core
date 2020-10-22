@@ -52,19 +52,16 @@ describe('DotDialogService', () => {
     });
 
     describe('confirmation', () => {
-        it(
-            'should set model and call confirm method in primeng service',
-            fakeAsync(() => {
-                spyOn(confirmationService, 'confirm');
-                service.confirmDialogOpened$.pipe(take(1)).subscribe((response: boolean) => {
-                    expect(response).toBe(true);
-                });
-                service.confirm(mockData);
-                tick();
-                expect(service.confirmModel).toEqual(mockData);
-                expect(confirmationService.confirm).toHaveBeenCalledWith(mockData);
-            })
-        );
+        it('should set model and call confirm method in primeng service', fakeAsync(() => {
+            spyOn(confirmationService, 'confirm');
+            service.confirmDialogOpened$.pipe(take(1)).subscribe((response: boolean) => {
+                expect(response).toBe(true);
+            });
+            service.confirm(mockData);
+            tick();
+            expect(service.confirmModel).toEqual(mockData);
+            expect(confirmationService.confirm).toHaveBeenCalledWith(mockData);
+        }));
 
         it('should set model with default labels', () => {
             service.confirm({

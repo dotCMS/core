@@ -25,27 +25,29 @@ describe('DotWorkflowTaskDetailComponent', () => {
 
     let dotWorkflowTaskDetailService: DotWorkflowTaskDetailService;
 
-    beforeEach(waitForAsync( () => {
-        DOTTestBed.configureTestingModule({
-            declarations: [DotWorkflowTaskDetailComponent],
-            providers: [
-                DotWorkflowTaskDetailService,
-                {
-                    provide: LoginService,
-                    useClass: LoginServiceMock
-                },
-                {
-                    provide: DotMenuService,
-                    useValue: {
-                        getDotMenuId() {
-                            return observableOf('999');
+    beforeEach(
+        waitForAsync(() => {
+            DOTTestBed.configureTestingModule({
+                declarations: [DotWorkflowTaskDetailComponent],
+                providers: [
+                    DotWorkflowTaskDetailService,
+                    {
+                        provide: LoginService,
+                        useClass: LoginServiceMock
+                    },
+                    {
+                        provide: DotMenuService,
+                        useValue: {
+                            getDotMenuId() {
+                                return observableOf('999');
+                            }
                         }
                     }
-                }
-            ],
-            imports: [DotIframeDialogModule, RouterTestingModule, BrowserAnimationsModule]
-        });
-    }));
+                ],
+                imports: [DotIframeDialogModule, RouterTestingModule, BrowserAnimationsModule]
+            });
+        })
+    );
 
     beforeEach(() => {
         fixture = DOTTestBed.createComponent(DotWorkflowTaskDetailComponent);

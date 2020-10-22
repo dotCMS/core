@@ -236,7 +236,10 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
     private initWorkflowField(): void {
         this.dotLicenseService
             .isEnterprise()
-            .pipe(take(1), filter((isEnterpriseLicense: boolean) => isEnterpriseLicense))
+            .pipe(
+                take(1),
+                filter((isEnterpriseLicense: boolean) => isEnterpriseLicense)
+            )
             .subscribe(() => {
                 this.enableWorkflowFormControls();
             });

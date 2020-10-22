@@ -42,8 +42,8 @@ describe('ContentTypesFieldsListComponent', () => {
     let de: DebugElement;
     let items: DebugElement[];
 
-   beforeEach(
-          waitForAsync(() => {
+    beforeEach(
+        waitForAsync(() => {
             TestBed.configureTestingModule({
                 declarations: [ContentTypesFieldsListComponent],
                 imports: [DragulaModule, DotIconModule],

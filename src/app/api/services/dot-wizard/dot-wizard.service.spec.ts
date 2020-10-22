@@ -18,7 +18,7 @@ describe('DotWizardService', () => {
 
     it('should receive the steps', () => {
         let data: DotWizardInput;
-        service.showDialog$.subscribe(result => {
+        service.showDialog$.subscribe((result) => {
             data = result;
         });
         service.open(mockWizardInput);
@@ -27,7 +27,7 @@ describe('DotWizardService', () => {
 
     it('should receive output on open subscription', () => {
         let outputData = null;
-        service.open(mockWizardInput).subscribe(data => {
+        service.open(mockWizardInput).subscribe((data) => {
             outputData = data;
         });
         service.output$(mockOutput);

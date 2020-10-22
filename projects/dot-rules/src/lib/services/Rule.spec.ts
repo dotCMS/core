@@ -5,7 +5,7 @@ import { UserModel } from 'dotcms-js';
 describe('Unit.api.rule-engine.Rule', () => {
     beforeEach(() => {});
 
-    it('Isn\'t valid when new.', () => {
+    it("Isn't valid when new.", () => {
         const foo = new RuleModel({});
         expect(foo.isValid()).toEqual(false);
     });

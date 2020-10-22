@@ -38,8 +38,11 @@ export class PushPublishServiceMock {
 @Component({
     selector: 'dot-test-host-component',
     template: `<form [formGroup]="group">
-                    <dot-push-publish-env-selector showList="true" formControlName="environment" ></dot-push-publish-env-selector>
-                </form>`
+        <dot-push-publish-env-selector
+            showList="true"
+            formControlName="environment"
+        ></dot-push-publish-env-selector>
+    </form>`
 })
 class TestHostComponent {
     group: FormGroup;
@@ -131,7 +134,7 @@ describe('PushPublishEnvSelectorComponent', () => {
 
     it('should get environments from PushPublishService', () => {
         fixture.detectChanges();
-        comp.pushEnvironments$.subscribe(environments => {
+        comp.pushEnvironments$.subscribe((environments) => {
             expect(environments).toEqual([
                 {
                     id: '22e332',

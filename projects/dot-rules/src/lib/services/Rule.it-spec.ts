@@ -47,7 +47,7 @@ describe('Integration.api.rule-engine.RuleService', () => {
         rulesToRemove = [];
     });
 
-    afterAll(done => {
+    afterAll((done) => {
         Observable.from(rulesToRemove)
             .flatMap((ruleId: string) => {
                 console.log('Removing rule: ', ruleId);
@@ -55,7 +55,7 @@ describe('Integration.api.rule-engine.RuleService', () => {
             })
             .subscribe(
                 () => {},
-                e => {
+                (e) => {
                     console.error('Error deleting rules after test', e);
                 },
                 () => {
@@ -63,7 +63,7 @@ describe('Integration.api.rule-engine.RuleService', () => {
                 }
             );
     });
-    it('can create a rule when only name is specified.', done => {
+    it('can create a rule when only name is specified.', (done) => {
         const clientRule: IRule = {
             name: `Test-Rule-${new Date().getTime()}`
         };
@@ -80,12 +80,12 @@ describe('Integration.api.rule-engine.RuleService', () => {
                     'The object provided by the observer is not the same instance as the one added.';
                 expect(clientRule[randomKey]).not.toBe(serverRule[randomKey]);
             },
-            e => console.error('error', e),
+            (e) => console.error('error', e),
             done
         );
     });
 
-    it('can update a rule\'s name.', done => {
+    it("can update a rule's name.", (done) => {
         const clientRule: IRule = {
             name: `Test-Rule-${new Date().getTime()}`
         };
@@ -105,12 +105,12 @@ describe('Integration.api.rule-engine.RuleService', () => {
                     expect(serverRule2.name).toBe(name2);
                     console.log('yay', serverRule2);
                 },
-                e => console.error('error', e),
+                (e) => console.error('error', e),
                 done
             );
     });
 
-    it('can remove a rule.', done => {
+    it('can remove a rule.', (done) => {
         const clientRule: IRule = {
             name: `Test-Rule-${new Date().getTime()}`
         };
@@ -119,14 +119,14 @@ describe('Integration.api.rule-engine.RuleService', () => {
             .flatMap((serverRule1: RuleModel) => ruleService.deleteRule(serverRule1.key))
             .subscribe(
                 (result: any) => {
-                    expect(result.success).toBeTruthy('Result should be \'success:true\'');
+                    expect(result.success).toBeTruthy("Result should be 'success:true'");
                 },
-                e => console.error('error', e),
+                (e) => console.error('error', e),
                 done
             );
     });
 
-    it('can load a rule.', done => {
+    it('can load a rule.', (done) => {
         const clientRule: IRule = {
             name: `Test-Rule-${new Date().getTime()}`
         };
@@ -143,12 +143,12 @@ describe('Integration.api.rule-engine.RuleService', () => {
                     expect(result.key).toBe(id);
                     expect(result.name).toBe(clientRule.name);
                 },
-                e => console.error('error', e),
+                (e) => console.error('error', e),
                 done
             );
     });
 
-    it('can load all rules.', done => {
+    it('can load all rules.', (done) => {
         const clientRule1: IRule = {
             name: `Test-Rule-${new Date().getTime()}`
         };
@@ -164,7 +164,7 @@ describe('Integration.api.rule-engine.RuleService', () => {
             .bufferCount(2, 0)
             .flatMap((ourRules: RuleModel[]) => {
                 ourSavedRules = ourRules;
-                ourRules.forEach(r => {
+                ourRules.forEach((r) => {
                     rulesToRemove.push(r.key);
                 });
                 return ruleService.loadRules();
@@ -182,12 +182,12 @@ describe('Integration.api.rule-engine.RuleService', () => {
                     );
                     done();
                 },
-                e => console.error('error', e),
+                (e) => console.error('error', e),
                 done
             );
     });
 
-    it('Can create a rule for each fireOn type.', done => {
+    it('Can create a rule for each fireOn type.', (done) => {
         const fireOns = ['EVERY_PAGE', 'ONCE_PER_VISIT', 'ONCE_PER_VISITOR', 'EVERY_REQUEST'];
 
         Observable.from(fireOns).subscribe((fireOn: string) => {
@@ -209,7 +209,7 @@ describe('Integration.api.rule-engine.RuleService', () => {
                         expect(serverRule.name).toBe(name);
                         expect(serverRule.fireOn).toBe(fireOn);
                     },
-                    e => {
+                    (e) => {
                         expect(true).toBe(false, 'Should not throw an error.');
                         done();
                     },
@@ -220,7 +220,7 @@ describe('Integration.api.rule-engine.RuleService', () => {
         });
     });
 
-    it('Provides an error if no name specified.', done => {
+    it('Provides an error if no name specified.', (done) => {
         const name = '';
         ruleService
             .createRule(
@@ -237,13 +237,13 @@ describe('Integration.api.rule-engine.RuleService', () => {
                     done();
                 },
                 (e: CwError) => {
-                    expect(e.message).toContain('\'name\' may not be empty');
+                    expect(e.message).toContain("'name' may not be empty");
                     done();
                 }
             );
     });
 
-    it('Provides an error if no fireOn specified.', done => {
+    it('Provides an error if no fireOn specified.', (done) => {
         const name = `ErrorIfNoFireOn-${new Date().getTime()}`;
         ruleService
             .createRule(
@@ -261,14 +261,14 @@ describe('Integration.api.rule-engine.RuleService', () => {
                 },
                 (e: CwError) => {
                     expect(e.message).toContain(
-                        '\'fireOn\' {javax.validation.constraints.FireOn.message}'
+                        "'fireOn' {javax.validation.constraints.FireOn.message}"
                     );
                     done();
                 }
             );
     });
 
-    it('Can delete a persisted rule.', done => {
+    it('Can delete a persisted rule.', (done) => {
         const name = 'CanDelete-' + new Date().getTime();
         ruleService
             .createRule(
@@ -286,7 +286,7 @@ describe('Integration.api.rule-engine.RuleService', () => {
                         expect(result.success).toBe(true);
                         done();
                     },
-                    e => {
+                    (e) => {
                         fail(e);
                         done();
                     },
@@ -295,7 +295,7 @@ describe('Integration.api.rule-engine.RuleService', () => {
             });
     });
 
-    xit('can create an action.', done => {
+    xit('can create an action.', (done) => {
         const clientRule: IRule = {
             name: `Test-Rule-${new Date().getTime()}`
         };
@@ -325,7 +325,7 @@ describe('Integration.api.rule-engine.RuleService', () => {
                     expect(serverRule.ruleActions[action.key]).toBeTruthy();
                     done();
                 },
-                e => {
+                (e) => {
                     fail(e);
                     done();
                 },
@@ -333,7 +333,7 @@ describe('Integration.api.rule-engine.RuleService', () => {
             );
     });
 
-    xit('can update an action.', done => {
+    xit('can update an action.', (done) => {
         const clientRule: IRule = {
             name: `Test-Rule-${new Date().getTime()}`
         };
@@ -376,7 +376,7 @@ describe('Integration.api.rule-engine.RuleService', () => {
                     );
                     done();
                 },
-                e => {
+                (e) => {
                     fail(e);
                     done();
                 },
@@ -384,7 +384,7 @@ describe('Integration.api.rule-engine.RuleService', () => {
             );
     });
 
-    it('can create a condition group.', done => {
+    it('can create a condition group.', (done) => {
         const clientRule: IRule = {
             name: `Test-Rule-${new Date().getTime()}`
         };
@@ -410,7 +410,7 @@ describe('Integration.api.rule-engine.RuleService', () => {
                         'Group should have been assigned an ID by the PUT response.'
                     );
                 },
-                e => {
+                (e) => {
                     fail(e);
                     done();
                 },
@@ -418,7 +418,7 @@ describe('Integration.api.rule-engine.RuleService', () => {
             );
     });
 
-    it('adds the conditionGroup to the owning rule.', done => {
+    it('adds the conditionGroup to the owning rule.', (done) => {
         const aConditionGroup = new ConditionGroupModel({ operator: 'OR', priority: 99 });
         const clientRule: IRule = {
             name: `Test-Rule-${new Date().getTime()}`
@@ -437,7 +437,7 @@ describe('Integration.api.rule-engine.RuleService', () => {
             })
             .subscribe((conditionGroup: ConditionGroupModel) => {
                 ruleService.loadRule(serverRule.key).subscribe((rule: RuleModel) => {
-                    expect(rule.conditionGroups[conditionGroup.key]).toBeDefined('Well that\'s odd');
+                    expect(rule.conditionGroups[conditionGroup.key]).toBeDefined("Well that's odd");
                     expect(rule.conditionGroups[conditionGroup.key].operator).toEqual('OR');
                     /* Now read the ConditionGroups off the rule we just got back. Add listener first, then trigger call. */
                     conditionGroupService
@@ -451,7 +451,7 @@ describe('Integration.api.rule-engine.RuleService', () => {
             });
     });
 
-    it('Can list condition types, and they are all persisted and valid.', done => {
+    it('Can list condition types, and they are all persisted and valid.', (done) => {
         const count = 0;
         const subscription = ruleService.getConditionTypes().subscribe(
             (types: ServerSideTypeModel[]) => {
@@ -466,7 +466,7 @@ describe('Integration.api.rule-engine.RuleService', () => {
                 });
                 done();
             },
-            err => {
+            (err) => {
                 expect(err).toBeUndefined('error was thrown creating Rule.');
                 done();
             },
@@ -474,7 +474,7 @@ describe('Integration.api.rule-engine.RuleService', () => {
         );
     });
 
-    it('There are (n) active condition types.', done => {
+    it('There are (n) active condition types.', (done) => {
         const implementedConditionTypeCount = 19;
         ruleService.getConditionTypes().subscribe((types: ServerSideTypeModel[]) => {
             expect(types.length).toEqual(
@@ -485,7 +485,7 @@ describe('Integration.api.rule-engine.RuleService', () => {
         });
     });
 
-    it('There are (n) active rule action types.', done => {
+    it('There are (n) active rule action types.', (done) => {
         const implementedActionTypeCount = 6;
         ruleService.getRuleActionTypes().subscribe((types: ServerSideTypeModel[]) => {
             expect(types.length).toEqual(

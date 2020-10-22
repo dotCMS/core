@@ -37,14 +37,13 @@ export class DotGravatarService {
      * @memberof DotGravatarService
      */
     getPhoto(hash: string): Observable<string> {
-        return this.http.jsonp(`//www.gravatar.com/${hash}.json?`, 'JSONP_CALLBACK')
-            .pipe(
-                pluck('_body'),
-                pluck('entry'),
-                map((profiles: DotProfile[]) => profiles[0].photos[0].value),
-                catchError(() => {
-                    return of(null);
-                })
-            );
+        return this.http.jsonp(`//www.gravatar.com/${hash}.json?`, 'JSONP_CALLBACK').pipe(
+            pluck('_body'),
+            pluck('entry'),
+            map((profiles: DotProfile[]) => profiles[0].photos[0].value),
+            catchError(() => {
+                return of(null);
+            })
+        );
     }
 }

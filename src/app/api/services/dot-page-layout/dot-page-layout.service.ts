@@ -6,7 +6,6 @@ import { pluck, map } from 'rxjs/operators';
 import { CoreWebService } from 'dotcms-js';
 import { DotLayout, DotPageRender } from '@portlets/dot-edit-page/shared/models';
 
-
 /**
  * Provide util methods interact with layout API
  *
@@ -34,7 +33,10 @@ export class DotPageLayoutService {
             })
             .pipe(
                 pluck('entity'),
-                map((dotPageRenderResponse: DotPageRender.Parameters) => new DotPageRender(dotPageRenderResponse))
+                map(
+                    (dotPageRenderResponse: DotPageRender.Parameters) =>
+                        new DotPageRender(dotPageRenderResponse)
+                )
             );
     }
 }

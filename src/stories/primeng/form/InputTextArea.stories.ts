@@ -6,26 +6,21 @@ import { moduleMetadata } from '@storybook/angular';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 export default {
-  title: 'PrimeNG/Form/InputTextArea',
-  component: InputTextareaModule,
-  parameters: {
-    docs: {
-      description: {
-        component:
-          'Textarea is a multi-line text input element.: https://primefaces.org/primeng/showcase/#/inputtextarea',
-      },
+    title: 'PrimeNG/Form/InputTextArea',
+    component: InputTextareaModule,
+    parameters: {
+        docs: {
+            description: {
+                component:
+                    'Textarea is a multi-line text input element.: https://primefaces.org/primeng/showcase/#/inputtextarea'
+            }
+        }
     },
-  },
-  decorators: [
-    moduleMetadata({
-      imports: [
-        BrowserModule,
-        BrowserAnimationsModule,
-        InputTextareaModule,
-        FormsModule,
-      ],
-    }),
-  ],
+    decorators: [
+        moduleMetadata({
+            imports: [BrowserModule, BrowserAnimationsModule, InputTextareaModule, FormsModule]
+        })
+    ]
 } as Meta;
 
 const InputTextAreaTemplate = `
@@ -37,29 +32,28 @@ const InputTextAreaTemplateAutoRezise = `
 `;
 
 const Template: Story<any> = (props: any) => {
-  const template = InputTextAreaTemplate;
-  return {
-    props,
-    template,
-  };
+    const template = InputTextAreaTemplate;
+    return {
+        props,
+        template
+    };
 };
 
 export const Basic: Story = Template.bind({});
 export const AutoRezise: Story = Template.bind({});
 
 Basic.parameters = {
-  docs: {
-    source: {
-      code: InputTextAreaTemplate,
-    },
-  },
-
+    docs: {
+        source: {
+            code: InputTextAreaTemplate
+        }
+    }
 };
 
 AutoRezise.parameters = {
-  docs: {
-    source: {
-      code: InputTextAreaTemplateAutoRezise,
-    },
-  },
+    docs: {
+        source: {
+            code: InputTextAreaTemplateAutoRezise
+        }
+    }
 };

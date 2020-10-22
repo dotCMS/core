@@ -19,9 +19,7 @@ const messageServiceMock = new MockDotMessageService({
 
 @Component({
     selector: 'dot-test-host-component',
-    template: `
-        <dot-language-selector [value]="value"></dot-language-selector>
-    `
+    template: ` <dot-language-selector [value]="value"></dot-language-selector> `
 })
 class TestHostComponent {
     value: DotLanguage = mockDotLanguage;

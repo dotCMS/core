@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { CoreWebService } from 'dotcms-js';
 import { Observable } from 'rxjs';
-import { pluck, take, } from 'rxjs/operators';
+import { pluck, take } from 'rxjs/operators';
 import { DotRelationshipCardinality } from '../model/dot-relationship-cardinality.model';
 
 /**
@@ -12,7 +12,6 @@ import { DotRelationshipCardinality } from '../model/dot-relationship-cardinalit
  */
 @Injectable()
 export class DotRelationshipService {
-
     constructor(private coreWebService: CoreWebService) {}
 
     /**
@@ -26,9 +25,6 @@ export class DotRelationshipService {
             .requestView({
                 url: 'v1/relationships/cardinalities'
             })
-            .pipe(
-                take(1),
-                pluck('entity'),
-            );
+            .pipe(take(1), pluck('entity'));
     }
 }

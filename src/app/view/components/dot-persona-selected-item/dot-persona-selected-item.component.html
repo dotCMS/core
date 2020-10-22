@@ -3,7 +3,6 @@
     [pTooltip]="disabled ? ('editpage.personalization.content.add.message' | dm) : null"
     [tooltipPosition]="disabled ? 'bottom' : null"
 >
-
     <dot-avatar
         [label]="persona?.name || ('modes.persona.no.persona' | dm)"
         [showDot]="persona?.personalized || false"
@@ -24,7 +23,6 @@
         <span class="dot-persona-selector__name">{{
             persona?.name || ('modes.persona.no.persona' | dm)
         }}</span>
-
     </div>
     <dot-icon name="arrow_drop_down"></dot-icon>
 </div>

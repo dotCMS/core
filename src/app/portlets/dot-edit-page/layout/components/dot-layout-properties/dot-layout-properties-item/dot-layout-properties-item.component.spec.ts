@@ -8,12 +8,13 @@ import { By } from '@angular/platform-browser';
 @Component({
     selector: 'dot-test-host-component',
     template: `<form [formGroup]="group">
-                    <dot-layout-properties-item formControlName="header" ></dot-layout-properties-item>
-                </form>`
+        <dot-layout-properties-item formControlName="header"></dot-layout-properties-item>
+    </form>`
 })
 class TestHostComponent {
     group: FormGroup;
-f;    constructor() {
+    f;
+    constructor() {
         this.group = new FormGroup({
             header: new FormControl({
                 header: true

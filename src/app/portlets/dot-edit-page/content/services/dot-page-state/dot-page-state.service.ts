@@ -128,7 +128,7 @@ export class DotPageStateService {
      * @memberof DotPageStateService
      */
     setLanguage(language: number): void {
-        this.dotRouterService.replaceQueryParams({language_id: language});
+        this.dotRouterService.replaceQueryParams({ language_id: language });
     }
 
     /**

@@ -38,7 +38,13 @@ describe('DotPersonaSelectedItemComponent', () => {
                     useValue: messageServiceMock
                 }
             ],
-            imports: [BrowserAnimationsModule, DotIconModule, DotAvatarModule, TooltipModule, DotPipesModule]
+            imports: [
+                BrowserAnimationsModule,
+                DotIconModule,
+                DotAvatarModule,
+                TooltipModule,
+                DotPipesModule
+            ]
         }).compileComponents();
 
         fixture = TestBed.createComponent(DotPersonaSelectedItemComponent);

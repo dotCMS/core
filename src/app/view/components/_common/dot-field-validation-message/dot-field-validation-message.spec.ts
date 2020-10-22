@@ -9,11 +9,13 @@ describe('FieldValidationComponent', () => {
     let fixture: ComponentFixture<DotFieldValidationMessageComponent>;
     let component: DotFieldValidationMessageComponent;
 
-    beforeEach(waitForAsync( () => {
-        TestBed.configureTestingModule({
-            declarations: [DotFieldValidationMessageComponent]
-        }).compileComponents();
-    }));
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                declarations: [DotFieldValidationMessageComponent]
+            }).compileComponents();
+        })
+    );
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotFieldValidationMessageComponent);

@@ -29,7 +29,7 @@
     top: 5vh;
     transform: translate(-50%, 0);
 
-    &.paginator ::ng-deep .p-datatable{
+    &.paginator ::ng-deep .p-datatable {
         padding-bottom: 3.5rem;
     }
 }
@@ -48,7 +48,6 @@
     &::-webkit-scrollbar-thumb {
         border-radius: $spacing-1;
         background-color: $gray-light;
-
     }
 }
 

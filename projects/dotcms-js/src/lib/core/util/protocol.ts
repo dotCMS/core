@@ -7,9 +7,7 @@ export abstract class Protocol {
     protected _message: Subject<any> = new Subject<any>();
     protected _error: Subject<any> = new Subject<any>();
 
-    constructor(protected loggerService: LoggerService) {
-
-    }
+    constructor(protected loggerService: LoggerService) {}
 
     abstract connect(): void;
     abstract close(): void;
@@ -32,7 +30,9 @@ export abstract class Protocol {
 
     reconnect(): void {
         this.close();
-        setTimeout(() => { this.connect(); }, 0);
+        setTimeout(() => {
+            this.connect();
+        }, 0);
     }
 
     destroy(): void {

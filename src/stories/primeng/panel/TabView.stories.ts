@@ -2,20 +2,20 @@
 import { Meta } from '@storybook/angular/types-6-0';
 import { Menu } from 'primeng/menu';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { TabViewModule, TabView} from 'primeng/tabview';
+import { TabViewModule, TabView } from 'primeng/tabview';
 import { ButtonModule } from 'primeng/button';
 
 export default {
-  title: 'PrimeNG/Tabs/TabView',
-  component: TabView,
-  parameters: {
-    docs: {
-      description: {
-        component:
-          'TabView is a container component to group content with tabs.: https://primefaces.org/primeng/showcase/#/tabview',
-      },
-    },
-  },
+    title: 'PrimeNG/Tabs/TabView',
+    component: TabView,
+    parameters: {
+        docs: {
+            description: {
+                component:
+                    'TabView is a container component to group content with tabs.: https://primefaces.org/primeng/showcase/#/tabview'
+            }
+        }
+    }
 } as Meta;
 
 const BasicTemplate = `
@@ -40,13 +40,13 @@ const BasicTemplate = `
 
 // tslint:disable-next-line: variable-name
 export const Basic = (_args: Menu) => {
-  return {
-    props: {
-      activeIndex: 0,
-    },
-    moduleMetadata: {
-      imports: [TabViewModule, ButtonModule, BrowserAnimationsModule],
-    },
-    template: BasicTemplate,
-  };
+    return {
+        props: {
+            activeIndex: 0
+        },
+        moduleMetadata: {
+            imports: [TabViewModule, ButtonModule, BrowserAnimationsModule]
+        },
+        template: BasicTemplate
+    };
 };

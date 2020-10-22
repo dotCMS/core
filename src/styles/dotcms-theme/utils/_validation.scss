@@ -1,73 +1,82 @@
 @use "variables" as *;
 
-.p-error, .p-invalid {
-  color: $error;
+.p-error,
+.p-invalid {
+    color: $error;
 }
 
 p-inputmask.ng-dirty.ng-invalid > .p-inputtext {
-  border-color: $error;
+    border-color: $error;
 }
 
 p-inputnumber.ng-dirty.ng-invalid > .p-inputnumber > .p-inputtext {
-  border-color: $error;
+    border-color: $error;
 }
 
-.p-inputswitch.p-error, .p-inputswitch.p-invalid {
-  border-color: $error;
+.p-inputswitch.p-error,
+.p-inputswitch.p-invalid {
+    border-color: $error;
 }
 
 p-inputswitch.ng-dirty.ng-invalid > .p-inputswitch {
-  border-color: $error;
+    border-color: $error;
 }
 
-.p-inputtext.p-error, .p-inputtext.p-invalid, .p-inputtext.ng-dirty.ng-invalid {
-  border-color: $error;
+.p-inputtext.p-error,
+.p-inputtext.p-invalid,
+.p-inputtext.ng-dirty.ng-invalid {
+    border-color: $error;
 }
 
 p-listbox.ng-dirty.ng-invalid > .p-listbox {
-  border-color: $error;
+    border-color: $error;
 }
 
-.p-listbox.p-error, .p-listbox.p-invalid {
-  border-color: $error;
+.p-listbox.p-error,
+.p-listbox.p-invalid {
+    border-color: $error;
 }
 
 p-multiselect.ng-dirty.ng-invalid > .p-multiselect {
-  border-color: $error;
+    border-color: $error;
 }
 
-.p-radiobutton.p-error > .p-radiobutton-box, .p-radiobutton.p-invalid > .p-radiobutton-box {
-  border-color: $error;
+.p-radiobutton.p-error > .p-radiobutton-box,
+.p-radiobutton.p-invalid > .p-radiobutton-box {
+    border-color: $error;
 }
 
 p-radiobutton.ng-dirty.ng-invalid > .p-radiobutton > .p-radiobutton-box {
-  border-color: $error;
+    border-color: $error;
 }
 
-.p-selectbutton.p-error > .p-button, .p-selectbutton.p-invalid > .p-button {
-  border-color: $error;
+.p-selectbutton.p-error > .p-button,
+.p-selectbutton.p-invalid > .p-button {
+    border-color: $error;
 }
 
 p-selectbutton.ng-dirty.ng-invalid > .p-selectbutton > .p-button {
-  border-color: $error;
+    border-color: $error;
 }
 
-.p-togglebutton.p-button.p-error, .p-togglebutton.p-button.p-invalid {
-  border-color: $error;
+.p-togglebutton.p-button.p-error,
+.p-togglebutton.p-button.p-invalid {
+    border-color: $error;
 }
 
 p-togglebutton.ng-dirty.ng-invalid > .p-togglebutton.p-button {
-  border-color: $error;
+    border-color: $error;
 }
 
-.p-multiselect.p-error, .p-multiselect.p-invalid {
-  border-color: $error;
+.p-multiselect.p-error,
+.p-multiselect.p-invalid {
+    border-color: $error;
 }
 
 .p-rating .p-rating-icon.p-rating-cancel {
-  color: $error;
+    color: $error;
 }
 
 .p-rating:not(.p-disabled):not(.p-readonly) .p-rating-icon.p-rating-cancel:hover {
-  color: $error;
+    color: $error;
 }

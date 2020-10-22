@@ -22,15 +22,13 @@ export class DotToolbarComponent implements OnInit {
     ) {}
 
     ngOnInit(): void {
-        this.dotcmsEventsService
-            .subscribeTo<Site>('ARCHIVE_SITE')
-            .subscribe((data: Site) => {
-                if (data.hostname === this.siteService.currentSite.hostname && data.archived) {
-                    this.siteService.switchToDefaultSite().subscribe((defaultSite: Site) => {
-                        this.siteChange(defaultSite);
-                    });
-                }
-            });
+        this.dotcmsEventsService.subscribeTo<Site>('ARCHIVE_SITE').subscribe((data: Site) => {
+            if (data.hostname === this.siteService.currentSite.hostname && data.archived) {
+                this.siteService.switchToDefaultSite().subscribe((defaultSite: Site) => {
+                    this.siteChange(defaultSite);
+                });
+            }
+        });
     }
 
     siteChange(site: Site): void {

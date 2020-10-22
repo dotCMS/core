@@ -112,7 +112,7 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
                             throw new Error('Indexing... site still present');
                         }
                     }),
-                    retryWhen(error => error.pipe(delay(1000)))
+                    retryWhen((error) => error.pipe(delay(1000)))
                 )
                 .subscribe((items: Site[]) => {
                     this.updateValues(items);
@@ -127,7 +127,7 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
                             throw new Error('Indexing... site not present');
                         }
                     }),
-                    retryWhen(error => error.pipe(delay(1000)))
+                    retryWhen((error) => error.pipe(delay(1000)))
                 )
                 .subscribe(() => {
                     this.paginationService
@@ -167,7 +167,7 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
     getSitesList(filter = '', offset = 0): void {
         // Set filter if undefined
         this.paginationService.filter = filter;
-        this.paginationService.getWithOffset(offset).subscribe(items => {
+        this.paginationService.getWithOffset(offset).subscribe((items) => {
             this.sitesCurrentPage = [...items];
             this.totalRecords = this.totalRecords || this.paginationService.totalRecords;
 
@@ -189,7 +189,7 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
     private getSiteByIdFromCurrentPage(siteId: string): Site {
         return (
             this.sitesCurrentPage &&
-            this.sitesCurrentPage.filter(site => site.identifier === siteId)[0]
+            this.sitesCurrentPage.filter((site) => site.identifier === siteId)[0]
         );
     }
 

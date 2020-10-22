@@ -133,7 +133,6 @@ describe('dot-time', () => {
                 expect(await dotTestUtil.getHint(page)).toBeNull();
                 expect(inputCalendar.getAttribute('aria-describedby')).toBeNull();
                 expect(inputCalendar.getAttribute('tabIndex')).toBeNull();
-
             });
         });
 

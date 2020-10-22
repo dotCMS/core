@@ -18,15 +18,9 @@
                         "outputPath": "dist",
                         "polyfills": "src/polyfills.ts",
                         "tsConfig": "src/tsconfig.app.json",
-                        "allowedCommonJsDependencies": [
-                            "lodash",
-                            "dragula",
-                            "md5"
-                        ],
+                        "allowedCommonJsDependencies": ["lodash", "dragula", "md5"],
                         "stylePreprocessorOptions": {
-                            "includePaths": [
-                                "src/styles"
-                            ]
+                            "includePaths": ["src/styles"]
                         },
                         "assets": [
                             "src/assets",
@@ -43,9 +37,7 @@
                             "node_modules/primeng/resources/primeng.min.css",
                             "src/styles.scss"
                         ],
-                        "scripts": [
-                            "node_modules/marked/lib/marked.js"
-                        ]
+                        "scripts": ["node_modules/marked/lib/marked.js"]
                     },
                     "configurations": {
                         "development": {
@@ -111,30 +103,18 @@
                         "polyfills": "src/polyfills.ts",
                         "tsConfig": "src/tsconfig.spec.json",
                         "scripts": [],
-                        "styles": [
-                            "src/styles.scss"
-                        ],
+                        "styles": ["src/styles.scss"],
                         "stylePreprocessorOptions": {
-                            "includePaths": [
-                                "src/styles"
-                            ]
+                            "includePaths": ["src/styles"]
                         },
-                        "assets": [
-                            "src/assets",
-                            "src/favicon.ico"
-                        ]
+                        "assets": ["src/assets", "src/favicon.ico"]
                     }
                 },
                 "lint": {
                     "builder": "@angular-devkit/build-angular:tslint",
                     "options": {
-                        "tsConfig": [
-                            "src/tsconfig.app.json",
-                            "src/tsconfig.spec.json"
-                        ],
-                        "exclude": [
-                            "**/node_modules/**"
-                        ]
+                        "tsConfig": ["src/tsconfig.app.json", "src/tsconfig.spec.json"],
+                        "exclude": ["**/node_modules/**"]
                     }
                 }
             }
@@ -154,12 +134,8 @@
                 "lint": {
                     "builder": "@angular-devkit/build-angular:tslint",
                     "options": {
-                        "tsConfig": [
-                            "e2e/tsconfig.e2e.json"
-                        ],
-                        "exclude": [
-                            "**/node_modules/**"
-                        ]
+                        "tsConfig": ["e2e/tsconfig.e2e.json"],
+                        "exclude": ["**/node_modules/**"]
                     }
                 }
             }
@@ -198,9 +174,7 @@
                             "projects/dot-layout-grid/tsconfig.lib.json",
                             "projects/dot-layout-grid/tsconfig.spec.json"
                         ],
-                        "exclude": [
-                            "**/node_modules/**"
-                        ]
+                        "exclude": ["**/node_modules/**"]
                     }
                 }
             }
@@ -239,9 +213,7 @@
                             "projects/dotcms-js/tsconfig.lib.json",
                             "projects/dotcms-js/tsconfig.spec.json"
                         ],
-                        "exclude": [
-                            "**/node_modules/**"
-                        ]
+                        "exclude": ["**/node_modules/**"]
                     }
                 }
             }
@@ -279,9 +251,7 @@
                             "projects/dot-rules/tsconfig.lib.json",
                             "projects/dot-rules/tsconfig.spec.json"
                         ],
-                        "exclude": [
-                            "**/node_modules/**"
-                        ]
+                        "exclude": ["**/node_modules/**"]
                     }
                 }
             }
@@ -319,9 +289,7 @@
                             "projects/dotcms/tsconfig.lib.json",
                             "projects/dotcms/tsconfig.spec.json"
                         ],
-                        "exclude": [
-                            "**/node_modules/**"
-                        ]
+                        "exclude": ["**/node_modules/**"]
                     }
                 }
             }
@@ -359,9 +327,7 @@
                             "projects/dotcms-models/tsconfig.lib.json",
                             "projects/dotcms-models/tsconfig.spec.json"
                         ],
-                        "exclude": [
-                            "**/node_modules/**"
-                        ]
+                        "exclude": ["**/node_modules/**"]
                     }
                 }
             }

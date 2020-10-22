@@ -24,7 +24,8 @@ $brand-secondary_rgb: var(--color-sec_rgb);
 $brand-background: var(--color-background);
 
 $input-border-color-hover: $brand-primary;
-$input-inset-shadow: inset 0 0 0 1px $brand-primary, inset 0 0 0 1px $brand-primary, inset 0 0 0 1px $brand-primary, inset 0 0 0 1px $brand-primary;
+$input-inset-shadow: inset 0 0 0 1px $brand-primary, inset 0 0 0 1px $brand-primary,
+    inset 0 0 0 1px $brand-primary, inset 0 0 0 1px $brand-primary;
 $input-border-color: $gray-light;
 $input-border-color-focus: $gray-light;
 $input-bg-color: $gray-light;
@@ -129,7 +130,6 @@ $screen-sm-max: $screen-md-min - 1;
 $screen-md-max: $screen-lg-min - 1;
 $screen-lg-max: $screen-xl-min - 1;
 $screen-device-container-max: 1545px;
-
 
 // MATERIAL DESIGN
 $md-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);

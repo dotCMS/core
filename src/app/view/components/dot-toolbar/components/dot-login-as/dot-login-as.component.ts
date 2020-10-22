@@ -22,7 +22,6 @@ import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { LOCATION_TOKEN } from 'src/app/providers';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 
-
 @Component({
     selector: 'dot-login-as',
     styleUrls: ['./dot-login-as.component.scss'],
@@ -87,7 +86,7 @@ export class DotLoginAsComponent implements OnInit, OnDestroy {
             },
             cancel: {
                 label: this.dotMessageService.get('cancel')
-            },
+            }
         };
     }
 
@@ -129,7 +128,9 @@ export class DotLoginAsComponent implements OnInit, OnDestroy {
                     if (response.errorsMessages) {
                         this.errorMessage = response.errorsMessages;
                     } else {
-                        this.errorMessage = this.dotMessageService.get('loginas.error.wrong-credentials');
+                        this.errorMessage = this.dotMessageService.get(
+                            'loginas.error.wrong-credentials'
+                        );
                         this.passwordElem.nativeElement.focus();
                     }
                 }

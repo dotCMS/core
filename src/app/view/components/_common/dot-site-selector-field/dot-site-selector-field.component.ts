@@ -85,7 +85,6 @@ export class DotSiteSelectorFieldComponent implements ControlValueAccessor {
     }
 
     private propagateCurrentSiteId(): void {
-
         if (this.siteService.currentSite) {
             this.value = this.value || this.siteService.currentSite.identifier;
             this.propagateChange(this.value);

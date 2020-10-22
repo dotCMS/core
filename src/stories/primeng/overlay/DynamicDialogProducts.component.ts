@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
-import { ProductService  } from './SharedProducts.service';
-import { Product  } from './Product.interface';
+import { ProductService } from './SharedProducts.service';
+import { Product } from './Product.interface';
 import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
 
 export const ProductsTableTemplate = `
@@ -27,25 +27,23 @@ export const ProductsTableTemplate = `
 `;
 
 @Component({
-  selector: 'app-p-dynamic-dialog',
-  template: ProductsTableTemplate,
+    selector: 'app-p-dynamic-dialog',
+    template: ProductsTableTemplate
 })
 export class DynamicDialogProductsComponent {
-  products: Product[];
+    products: Product[];
 
-  constructor(
-    private productService: ProductService,
-    public ref: DynamicDialogRef,
-    public config: DynamicDialogConfig
-  ) {}
+    constructor(
+        private productService: ProductService,
+        public ref: DynamicDialogRef,
+        public config: DynamicDialogConfig
+    ) {}
 
-  ngOnInit() {
-    this.productService
-      .getProductsSmall()
-      .then((products) => (this.products = products));
-  }
+    ngOnInit() {
+        this.productService.getProductsSmall().then((products) => (this.products = products));
+    }
 
-  selectProduct(product: Product) {
-    this.ref.close(product);
-  }
+    selectProduct(product: Product) {
+        this.ref.close(product);
+    }
 }

@@ -8,13 +8,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @NgModule({
-    imports: [
-        CommonModule,
-        DotIconButtonModule,
-        DotIconModule,
-        TooltipModule,
-        DotPipesModule
-    ],
+    imports: [CommonModule, DotIconButtonModule, DotIconModule, TooltipModule, DotPipesModule],
     declarations: [DotAppsConfigurationItemComponent],
     exports: [DotAppsConfigurationItemComponent]
 })

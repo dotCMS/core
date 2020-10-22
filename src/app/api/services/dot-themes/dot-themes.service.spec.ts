@@ -14,10 +14,7 @@ describe('DotThemesService', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             imports: [HttpClientTestingModule],
-            providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                DotThemesService
-            ]
+            providers: [{ provide: CoreWebService, useClass: CoreWebServiceMock }, DotThemesService]
         });
         injector = getTestBed();
         dotThemesService = injector.get(DotThemesService);

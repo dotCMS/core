@@ -4,7 +4,7 @@ import { Protocol } from './protocol';
 
 enum WEB_SOCKET_PROTOCOL_CODE {
     NORMAL_CLOSE_CODE = 1000,
-    GO_AWAY_CODE = 1001,
+    GO_AWAY_CODE = 1001
 }
 export class WebSocketProtocol extends Protocol {
     dataStream: Subject<{}> = new Subject();
@@ -55,7 +55,6 @@ export class WebSocketProtocol extends Protocol {
             this.loggerService.debug('Web EventsSocket connection error', error);
             this._error.next(error);
         }
-
     }
 
     close(): void {

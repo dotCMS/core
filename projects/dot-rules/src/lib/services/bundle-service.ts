@@ -113,28 +113,48 @@ export class BundleService {
         ruleId: string,
         bundle: IBundle
     ): Observable<{ errorMessages: string[]; total: number; errors: number }> {
-        return this.coreWebService.request({
-            body: `assetIdentifier=${ruleId}&bundleName=${bundle.name}&bundleSelect=${bundle.id}`,
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            method: 'POST',
-            url: this._addToBundleUrl
-        }).pipe(map((res: HttpResponse<any>) => <{ errorMessages: string[]; total: number; errors: number }><unknown>res));
+        return this.coreWebService
+            .request({
+                body: `assetIdentifier=${ruleId}&bundleName=${bundle.name}&bundleSelect=${bundle.id}`,
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                method: 'POST',
+                url: this._addToBundleUrl
+            })
+            .pipe(
+                map(
+                    (res: HttpResponse<any>) =>
+                        <{ errorMessages: string[]; total: number; errors: number }>(<unknown>res)
+                )
+            );
     }
 
     pushPublishRule(
         ruleId: string,
         environmentId: string
     ): Observable<{ errorMessages: string[]; total: number; bundleId: string; errors: number }> {
-        return this.coreWebService.request({
-            body: this.getPublishRuleData(ruleId, environmentId),
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            method: 'POST',
-            url: this._pushRuleUrl
-        }).pipe(map((res: HttpResponse<any>) => <{ errorMessages: string[]; total: number; bundleId: string; errors: number }><unknown>res));
+        return this.coreWebService
+            .request({
+                body: this.getPublishRuleData(ruleId, environmentId),
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                method: 'POST',
+                url: this._pushRuleUrl
+            })
+            .pipe(
+                map(
+                    (res: HttpResponse<any>) => <
+                            {
+                                errorMessages: string[];
+                                total: number;
+                                bundleId: string;
+                                errors: number;
+                            }
+                        >(<unknown>res)
+                )
+            );
     }
 
     private getFormattedDate(date: Date): string {

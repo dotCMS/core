@@ -93,8 +93,8 @@ export class DOTTestBed {
         for (const property in DOTTestBed.DEFAULT_CONFIG) {
             if (config[property]) {
                 DOTTestBed.DEFAULT_CONFIG[property]
-                    .filter(provider => !config[property].includes(provider))
-                    .forEach(item => config[property].unshift(item));
+                    .filter((provider) => !config[property].includes(provider))
+                    .forEach((item) => config[property].unshift(item));
             } else {
                 config[property] = DOTTestBed.DEFAULT_CONFIG[property];
             }
@@ -113,9 +113,9 @@ export class DOTTestBed {
     public static resolveAndCreate(providers: Provider[], parent?: Injector): ReflectiveInjector {
         const finalProviders = [];
 
-        DOTTestBed.DEFAULT_CONFIG.providers.forEach(provider => finalProviders.push(provider));
+        DOTTestBed.DEFAULT_CONFIG.providers.forEach((provider) => finalProviders.push(provider));
 
-        providers.forEach(provider => finalProviders.push(provider));
+        providers.forEach((provider) => finalProviders.push(provider));
 
         return ReflectiveInjector.resolveAndCreate(finalProviders, parent);
     }

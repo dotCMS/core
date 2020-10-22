@@ -40,10 +40,7 @@ export class RestDropdown implements AfterViewInit, OnChanges, ControlValueAcces
     private _modelValue: string[] | string;
     private _options: Observable<any[]>;
 
-    constructor(
-        private coreWebService: CoreWebService,
-        @Optional() public control: NgControl
-    ) {
+    constructor(private coreWebService: CoreWebService, @Optional() public control: NgControl) {
         if (control) {
             control.valueAccessor = this;
         }
@@ -100,7 +97,7 @@ export class RestDropdown implements AfterViewInit, OnChanges, ControlValueAcces
         if (change.optionUrl) {
             this._options = this.coreWebService
                 .request({
-                    url: change.optionUrl.currentValue,
+                    url: change.optionUrl.currentValue
                 })
                 .pipe(map((res: any) => this.jsonEntriesToOptions(res)));
         }

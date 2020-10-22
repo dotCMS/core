@@ -61,11 +61,12 @@ export class DotContentTypesPortletComponent implements OnInit {
         forkJoin(
             this.dotContentTypeService.getAllContentTypes(),
             this.dotLicenseService.isEnterprise(),
-            this.pushPublishService
-                .getEnvironments()
-                .pipe(map((environments: DotEnvironment[]) => !!environments.length), take(1)),
+            this.pushPublishService.getEnvironments().pipe(
+                map((environments: DotEnvironment[]) => !!environments.length),
+                take(1)
+            ),
             this.route.data.pipe(pluck('filterBy'), take(1))
-        ).subscribe(([ contentTypes, isEnterprise, environments, filterBy]) => {
+        ).subscribe(([contentTypes, isEnterprise, environments, filterBy]) => {
             const baseTypes: StructureTypeView[] = contentTypes;
             const rowActionsMap = {
                 pushPublish: isEnterprise && environments,
@@ -103,7 +104,7 @@ export class DotContentTypesPortletComponent implements OnInit {
         this.filterBy = _.startCase(_.toLower(contentType));
         this.listing.paginatorService.setExtraParams('type', this.filterBy);
 
-        this.actionHeaderOptions.primary.command = $event => {
+        this.actionHeaderOptions.primary.command = ($event) => {
             this.createContentType(null, $event);
         };
         this.actionHeaderOptions.primary.model = null;
@@ -119,7 +120,7 @@ export class DotContentTypesPortletComponent implements OnInit {
             actions.push({
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.content.push_publish'),
-                    command: item => this.pushPublishContentType(item)
+                    command: (item) => this.pushPublishContentType(item)
                 }
             });
         }
@@ -128,7 +129,7 @@ export class DotContentTypesPortletComponent implements OnInit {
             actions.push({
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.content.add_to_bundle'),
-                    command: item => this.addToBundleContentType(item)
+                    command: (item) => this.addToBundleContentType(item)
                 }
             });
         }
@@ -144,10 +145,10 @@ export class DotContentTypesPortletComponent implements OnInit {
         listingActions.push({
             menuItem: {
                 label: this.dotMessageService.get('contenttypes.action.delete'),
-                command: item => this.removeConfirmation(item),
+                command: (item) => this.removeConfirmation(item),
                 icon: 'delete'
             },
-            shouldShow: item => !item.fixed && !item.defaultType
+            shouldShow: (item) => !item.fixed && !item.defaultType
         });
 
         /*
@@ -169,7 +170,7 @@ export class DotContentTypesPortletComponent implements OnInit {
     private setContentTypes(s: StructureTypeView[]): ButtonModel[] {
         return s.map((structureTypeView: StructureTypeView) => {
             return {
-                command: $event => {
+                command: ($event) => {
                     this.createContentType(structureTypeView.name.toLocaleLowerCase(), $event);
                 },
                 icon: this.contentTypesInfoService.getIcon(`${structureTypeView.name}_old`),
@@ -248,11 +249,7 @@ export class DotContentTypesPortletComponent implements OnInit {
                 () => {
                     this.listing.loadCurrentPage();
                 },
-                error =>
-                    this.httpErrorManagerService
-                        .handle(error)
-                        .pipe(take(1))
-                        .subscribe()
+                (error) => this.httpErrorManagerService.handle(error).pipe(take(1)).subscribe()
             );
     }
 

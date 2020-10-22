@@ -7,7 +7,6 @@ import { Injectable } from '@angular/core';
  * @deprecated We don't support IE11 anymore
  */
 @Injectable()
-
 export class BrowserUtil {
     public isIE11(): boolean {
         return navigator.appName === 'Netscape' && navigator.appVersion.indexOf('Trident') !== -1;

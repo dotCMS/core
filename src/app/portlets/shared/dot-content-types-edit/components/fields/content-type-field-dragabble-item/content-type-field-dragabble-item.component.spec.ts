@@ -25,17 +25,22 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         'contenttypes.field.atributes.listed': 'Show on list'
     });
 
-    beforeEach(waitForAsync( () => {
-        DOTTestBed.configureTestingModule({
-            declarations: [ContentTypesFieldDragabbleItemComponent],
-            imports: [DotIconButtonTooltipModule, DotIconModule, DotCopyButtonModule],
-            providers: [{ provide: DotMessageService, useValue: messageServiceMock }, FieldService]
-        });
+    beforeEach(
+        waitForAsync(() => {
+            DOTTestBed.configureTestingModule({
+                declarations: [ContentTypesFieldDragabbleItemComponent],
+                imports: [DotIconButtonTooltipModule, DotIconModule, DotCopyButtonModule],
+                providers: [
+                    { provide: DotMessageService, useValue: messageServiceMock },
+                    FieldService
+                ]
+            });
 
-        fixture = DOTTestBed.createComponent(ContentTypesFieldDragabbleItemComponent);
-        comp = fixture.componentInstance;
-        de = fixture.debugElement;
-    }));
+            fixture = DOTTestBed.createComponent(ContentTypesFieldDragabbleItemComponent);
+            comp = fixture.componentInstance;
+            de = fixture.debugElement;
+        })
+    );
 
     it('should have a name & variable', () => {
         const field = {

@@ -65,11 +65,7 @@ export class DotMenuService {
                 .requestView({
                     url: this.urlMenus
                 })
-                .pipe(
-                    publishLast(),
-                    refCount(),
-                    pluck('entity')
-                );
+                .pipe(publishLast(), refCount(), pluck('entity'));
         }
 
         return this.menu$;

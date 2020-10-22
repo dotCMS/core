@@ -17,28 +17,29 @@ describe('DotAppsConfigurationDetailResolver', () => {
     let dotAppsServices: DotAppsService;
     let dotAppsConfigurationDetailResolver: DotAppsConfigurationDetailResolver;
 
-
-    beforeEach(waitForAsync( () => {
-        const testbed = TestBed.configureTestingModule({
-            providers: [
-                DotAppsConfigurationDetailResolver,
-                { provide: DotAppsService, useClass: AppsServicesMock },
-                {
-                    provide: ActivatedRouteSnapshot,
-                    useValue: activatedRouteSnapshotMock
-                }
-            ]
-        });
-        dotAppsServices = testbed.get(DotAppsService);
-        dotAppsConfigurationDetailResolver = testbed.get(DotAppsConfigurationDetailResolver);
-    }));
+    beforeEach(
+        waitForAsync(() => {
+            const testbed = TestBed.configureTestingModule({
+                providers: [
+                    DotAppsConfigurationDetailResolver,
+                    { provide: DotAppsService, useClass: AppsServicesMock },
+                    {
+                        provide: ActivatedRouteSnapshot,
+                        useValue: activatedRouteSnapshotMock
+                    }
+                ]
+            });
+            dotAppsServices = testbed.get(DotAppsService);
+            dotAppsConfigurationDetailResolver = testbed.get(DotAppsConfigurationDetailResolver);
+        })
+    );
 
     it('should get and return app with configurations', () => {
         const response = {
             integrationsCount: 2,
             appKey: 'google-calendar',
             name: 'Google Calendar',
-            description: 'It\'s a tool to keep track of your life\'s events',
+            description: "It's a tool to keep track of your life's events",
             iconUrl: '/dA/d948d85c-3bc8-4d85-b0aa-0e989b9ae235/photo/surfer-profile.jpg',
             hosts: [
                 {

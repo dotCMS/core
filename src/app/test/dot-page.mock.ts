@@ -1,5 +1,5 @@
-import { DotPage } from "@portlets/dot-edit-page/shared/models";
-import { dotcmsContentTypeBasicMock } from "./dot-content-types.mock";
+import { DotPage } from '@portlets/dot-edit-page/shared/models';
+import { dotcmsContentTypeBasicMock } from './dot-content-types.mock';
 
 export const mockDotPage: DotPage = {
     canEdit: true,

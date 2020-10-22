@@ -47,9 +47,7 @@ export class DotEventsSocket {
         private dotcmsConfigService: DotcmsConfigService,
         private loggerService: LoggerService,
         private coreWebService: CoreWebService
-    ) {
-
-    }
+    ) {}
 
     /**
      * Connect to a Event socket using  Web Socket protocol,
@@ -116,8 +114,10 @@ export class DotEventsSocket {
             pluck('websocket'),
             tap((webSocketConfigParams: WebSocketConfigParams) => {
                 this.webSocketConfigParams = webSocketConfigParams;
-                this.protocolImpl = this.isWebSocketsBrowserSupport() && !webSocketConfigParams.disabledWebsockets ?
-                this.getWebSocketProtocol() : this.getLongPollingProtocol();
+                this.protocolImpl =
+                    this.isWebSocketsBrowserSupport() && !webSocketConfigParams.disabledWebsockets
+                        ? this.getWebSocketProtocol()
+                        : this.getLongPollingProtocol();
             })
         );
     }
@@ -138,13 +138,10 @@ export class DotEventsSocket {
                 this.protocolImpl = this.getLongPollingProtocol();
                 this.connectProtocol();
             } else {
-                setTimeout(
-                () => {
-                        this.status = this.getAfterErrorStatus();
-                        this.protocolImpl.connect();
-                    },
-                    this.webSocketConfigParams.websocketReconnectTime
-                );
+                setTimeout(() => {
+                    this.status = this.getAfterErrorStatus();
+                    this.protocolImpl.connect();
+                }, this.webSocketConfigParams.websocketReconnectTime);
             }
         });
 
@@ -152,26 +149,27 @@ export class DotEventsSocket {
             this.status = ConnectionStatus.CLOSED;
         });
 
-        this.protocolImpl
-            .message$()
-            .subscribe(
-                (res) => this._message.next(res),
-                (e) =>
-                    this.loggerService.debug(
-                        'Error in the System Events service: ' + e.message
-                    ),
-                () => this.loggerService.debug('Completed')
-            );
+        this.protocolImpl.message$().subscribe(
+            (res) => this._message.next(res),
+            (e) => this.loggerService.debug('Error in the System Events service: ' + e.message),
+            () => this.loggerService.debug('Completed')
+        );
 
         this.protocolImpl.connect();
     }
 
     private getAfterErrorStatus(): ConnectionStatus {
-        return this.status === ConnectionStatus.CONNECTING ? ConnectionStatus.CONNECTING : ConnectionStatus.RECONNECTING;
+        return this.status === ConnectionStatus.CONNECTING
+            ? ConnectionStatus.CONNECTING
+            : ConnectionStatus.RECONNECTING;
     }
 
     private shouldTryWithLongPooling(): boolean {
-        return this.isWebSocketProtocol() && this.status !== ConnectionStatus.CONNECTED && this.status !== ConnectionStatus.RECONNECTING;
+        return (
+            this.isWebSocketProtocol() &&
+            this.status !== ConnectionStatus.CONNECTED &&
+            this.status !== ConnectionStatus.RECONNECTING
+        );
     }
 
     private getWebSocketProtocol(): WebSocketProtocol {

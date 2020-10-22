@@ -32,17 +32,19 @@ describe('DotWhatsChangedComponent', () => {
     let de: DebugElement;
     let dotIframe: IframeComponent;
 
-    beforeEach(waitForAsync( () => {
-        TestBed.configureTestingModule({
-            declarations: [DotWhatsChangedComponent, TestDotIframeComponent, TestHostComponent],
-            providers: [
-                {
-                    provide: LoginService,
-                    useClass: LoginServiceMock
-                }
-            ]
-        }).compileComponents();
-    }));
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                declarations: [DotWhatsChangedComponent, TestDotIframeComponent, TestHostComponent],
+                providers: [
+                    {
+                        provide: LoginService,
+                        useClass: LoginServiceMock
+                    }
+                ]
+            }).compileComponents();
+        })
+    );
 
     beforeEach(() => {
         fixture = TestBed.createComponent(TestHostComponent);
@@ -62,9 +64,7 @@ describe('DotWhatsChangedComponent', () => {
 
     it('should set url based on the page id', () => {
         expect(dotIframe.src).toEqual(
-            `/html/portlet/ext/htmlpages/view_live_working_diff.jsp?id=${
-                component.pageId
-            }&pageLang=${component.languageId}`
+            `/html/portlet/ext/htmlpages/view_live_working_diff.jsp?id=${component.pageId}&pageLang=${component.languageId}`
         );
     });
 

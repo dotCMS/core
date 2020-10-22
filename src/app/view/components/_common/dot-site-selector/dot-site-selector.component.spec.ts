@@ -45,27 +45,29 @@ describe('SiteSelectorComponent', () => {
     let siteService: SiteService;
     const siteServiceMock = new SiteServiceMock();
 
-    beforeEach(waitForAsync( () => {
-        const messageServiceMock = new MockDotMessageService({
-            search: 'Search'
-        });
-        DOTTestBed.configureTestingModule({
-            declarations: [DotSiteSelectorComponent],
-            imports: [SearchableDropDownModule, BrowserAnimationsModule],
-            providers: [
-                { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: SiteService, useValue: siteServiceMock },
-                IframeOverlayService,
-                PaginatorService
-            ]
-        });
+    beforeEach(
+        waitForAsync(() => {
+            const messageServiceMock = new MockDotMessageService({
+                search: 'Search'
+            });
+            DOTTestBed.configureTestingModule({
+                declarations: [DotSiteSelectorComponent],
+                imports: [SearchableDropDownModule, BrowserAnimationsModule],
+                providers: [
+                    { provide: DotMessageService, useValue: messageServiceMock },
+                    { provide: SiteService, useValue: siteServiceMock },
+                    IframeOverlayService,
+                    PaginatorService
+                ]
+            });
 
-        fixture = DOTTestBed.createComponent(DotSiteSelectorComponent);
-        comp = fixture.componentInstance;
-        de = fixture.debugElement;
-        paginatorService = de.injector.get(PaginatorService);
-        siteService = de.injector.get(SiteService);
-    }));
+            fixture = DOTTestBed.createComponent(DotSiteSelectorComponent);
+            comp = fixture.componentInstance;
+            de = fixture.debugElement;
+            paginatorService = de.injector.get(PaginatorService);
+            siteService = de.injector.get(SiteService);
+        })
+    );
 
     it('should send notification when login-as/logout-as', fakeAsync(() => {
         const dotEventsService = de.injector.get(DotEventsService);

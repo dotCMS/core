@@ -34,11 +34,7 @@ describe('DotAppsConfigurationListComponent', () => {
     beforeEach(
         waitForAsync(() => {
             DOTTestBed.configureTestingModule({
-                imports: [
-                    CommonModule,
-                    ButtonModule,
-                    DotAppsConfigurationItemModule
-                ],
+                imports: [CommonModule, ButtonModule, DotAppsConfigurationItemModule],
                 declarations: [DotAppsConfigurationListComponent],
                 providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
             });

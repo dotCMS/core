@@ -50,7 +50,13 @@
     margin-right: $spacing-1;
 }
 
-.p-tree .p-tree-container .p-treenode .p-treenode-content .p-checkbox .p-indeterminate .p-checkbox-icon {
+.p-tree
+    .p-tree-container
+    .p-treenode
+    .p-treenode-content
+    .p-checkbox
+    .p-indeterminate
+    .p-checkbox-icon {
     color: $black;
 }
 
@@ -70,7 +76,10 @@
     color: $text-color-highlight;
 }
 
-.p-tree .p-tree-container .p-treenode .p-treenode-content.p-treenode-selectable:not(.p-highlight):hover {
+.p-tree
+    .p-tree-container
+    .p-treenode
+    .p-treenode-content.p-treenode-selectable:not(.p-highlight):hover {
     background: $bg-hover;
     color: $text-color-hover;
 }
@@ -141,12 +150,17 @@
     color: $brand-primary;
 }
 
-.p-tree.p-tree-horizontal .p-treenode .p-treenode-content .p-treenode-label:not(.p-highlight):hover {
+.p-tree.p-tree-horizontal
+    .p-treenode
+    .p-treenode-content
+    .p-treenode-label:not(.p-highlight):hover {
     background-color: inherit;
     color: inherit;
 }
 
-.p-tree.p-tree-horizontal .p-treenode .p-treenode-content.p-treenode-selectable:not(.p-highlight):hover {
+.p-tree.p-tree-horizontal
+    .p-treenode
+    .p-treenode-content.p-treenode-selectable:not(.p-highlight):hover {
     background: $bg-hover;
     color: $text-color-hover;
 }

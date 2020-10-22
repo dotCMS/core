@@ -143,10 +143,13 @@ xdescribe('DotAddToBundleComponent', () => {
 
         const form = fixture.debugElement.query(By.css('form'));
         form.nativeElement.dispatchEvent(new Event('submit'));
-        expect<any>(addToBundleServiceMock.addToBundle).toHaveBeenCalledWith('123ad979-89a-123456', {
-            id: 'my new bundle',
-            name: 'my new bundle'
-        });
+        expect<any>(addToBundleServiceMock.addToBundle).toHaveBeenCalledWith(
+            '123ad979-89a-123456',
+            {
+                id: 'my new bundle',
+                name: 'my new bundle'
+            }
+        );
     });
 
     it('should set placeholder "Type bundle name" if NO bundles exist', async(() => {

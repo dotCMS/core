@@ -209,7 +209,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         this.dotRouterService.goToSiteBrowser();
     }
 
-
     /**
      * Handle the custom events emmited by the Edit Contentlet
      *

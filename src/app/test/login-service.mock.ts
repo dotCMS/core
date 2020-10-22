@@ -9,7 +9,7 @@ export const mockUser = () => {
         loggedInDate: 123456789,
         userId: '123',
         languageId: 'en_US'
-    }
+    };
 };
 
 export const mockLoginFormResponse = {
@@ -39,16 +39,16 @@ export const mockLoginFormResponse = {
     },
     messages: [],
     i18nMessagesMap: {
-        'cancel': 'Cancel',
+        cancel: 'Cancel',
         'sign-in': 'Sign In',
         'angular.login.component.community.licence.message':
             '<a href="https://dotcms.com/features" target="_blank">upgrade</a>',
         'email-address': 'Email Address',
-        'Server': 'Server',
+        Server: 'Server',
         'a-new-password-has-been-sent-to-x': 'An Email with instructions has been sent to {0}.',
         'user-id': 'User ID',
         'remember-me': 'Remember Me',
-        'password': 'Password',
+        password: 'Password',
         'get-new-password': 'Recover Password',
         'error.form.mandatory': 'The field {0} is required',
         'reset-password-success': 'Your password has been successfully changed',
@@ -58,7 +58,7 @@ export const mockLoginFormResponse = {
         're-enter-password': 'Confirm Password',
         'change-password': 'Change Password',
         'welcome-login': 'Welcome!',
-        'Logout': 'Logout',
+        Logout: 'Logout',
         'message.successfully.logout': 'You are logout successfully, click the button to login'
     },
     permissions: []
@@ -74,7 +74,7 @@ export const mockAuth: Auth = {
     user: mockUser()
 };
 
-export class  LoginServiceMock {
+export class LoginServiceMock {
     _auth: Subject<Auth> = new Subject();
     private watchUserFunc: Function;
 

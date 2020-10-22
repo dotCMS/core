@@ -25,30 +25,32 @@ describe('DataTypePropertyComponent', () => {
 
     let group;
 
-    beforeEach(waitForAsync(() => {
-        DOTTestBed.configureTestingModule({
-            declarations: [DataTypePropertyComponent],
-            imports: [],
-            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-        });
+    beforeEach(
+        waitForAsync(() => {
+            DOTTestBed.configureTestingModule({
+                declarations: [DataTypePropertyComponent],
+                imports: [],
+                providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+            });
 
-        fixture = DOTTestBed.createComponent(DataTypePropertyComponent);
-        comp = fixture.componentInstance;
+            fixture = DOTTestBed.createComponent(DataTypePropertyComponent);
+            comp = fixture.componentInstance;
 
-        group = new FormGroup({
-            name: new FormControl('')
-        });
+            group = new FormGroup({
+                name: new FormControl('')
+            });
 
-        comp.group = group;
-        comp.property = {
-            field: {
-                ...dotcmsContentTypeFieldBasicMock,
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField'
-            },
-            name: 'name',
-            value: 'value'
-        };
-    }));
+            comp.group = group;
+            comp.property = {
+                field: {
+                    ...dotcmsContentTypeFieldBasicMock,
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField'
+                },
+                name: 'name',
+                value: 'value'
+            };
+        })
+    );
 
     it('should have a form', () => {
         fixture.detectChanges();

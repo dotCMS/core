@@ -72,9 +72,7 @@ class MockPaginatorService {
     public maxLinksPage: 5;
     public totalRecords: 40;
 
-    setExtraParams(): void {
-
-    }
+    setExtraParams(): void {}
 
     public getWithOffset(): Observable<any[]> {
         return null;
@@ -99,7 +97,7 @@ describe('DotEditRelationshipsComponent', () => {
         name: 'content type name',
         owner: 'user',
         system: true,
-        id: '1',
+        id: '1'
     };
 
     let comp: DotEditRelationshipsComponent;
@@ -111,34 +109,33 @@ describe('DotEditRelationshipsComponent', () => {
 
     const messageServiceMock = new MockDotMessageService({
         'contenttypes.field.properties.relationship.existing.label': 'existing',
-        'contenttypes.field.properties.relationship.existing.placeholder': 'Select Relationship',
+        'contenttypes.field.properties.relationship.existing.placeholder': 'Select Relationship'
     });
 
-    beforeEach(waitForAsync( () => {
-        DOTTestBed.configureTestingModule({
-            declarations: [
-                DotEditRelationshipsComponent,
-                MockSearchableDropdownComponent
-            ],
-            imports: [],
-            providers: [
-                DotEditContentTypeCacheService,
-                { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: PaginatorService, useClass: MockPaginatorService },
-                { provide: DotRelationshipService, useClass: MockRelationshipService }
-            ]
-        });
+    beforeEach(
+        waitForAsync(() => {
+            DOTTestBed.configureTestingModule({
+                declarations: [DotEditRelationshipsComponent, MockSearchableDropdownComponent],
+                imports: [],
+                providers: [
+                    DotEditContentTypeCacheService,
+                    { provide: DotMessageService, useValue: messageServiceMock },
+                    { provide: PaginatorService, useClass: MockPaginatorService },
+                    { provide: DotRelationshipService, useClass: MockRelationshipService }
+                ]
+            });
 
-        fixture = DOTTestBed.createComponent(DotEditRelationshipsComponent);
-        comp = fixture.componentInstance;
-        de = fixture.debugElement;
+            fixture = DOTTestBed.createComponent(DotEditRelationshipsComponent);
+            comp = fixture.componentInstance;
+            de = fixture.debugElement;
 
-        paginatorService = de.injector.get(PaginatorService);
-        spyOn(paginatorService, 'setExtraParams').and.callThrough();
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(of(mockRelationships));
+            paginatorService = de.injector.get(PaginatorService);
+            spyOn(paginatorService, 'setExtraParams').and.callThrough();
+            spyOn(paginatorService, 'getWithOffset').and.returnValue(of(mockRelationships));
 
-        dotEditContentTypeCacheService = de.injector.get(DotEditContentTypeCacheService);
-    }));
+            dotEditContentTypeCacheService = de.injector.get(DotEditContentTypeCacheService);
+        })
+    );
 
     it('should set url to get relationships', () => {
         fixture.detectChanges();
@@ -148,12 +145,18 @@ describe('DotEditRelationshipsComponent', () => {
     it('should has a dot-searchable-dropdown and it should has the right attributes values', () => {
         fixture.detectChanges();
 
-        const  dotSearchableDropdown = de.query(By.css('dot-searchable-dropdown'));
+        const dotSearchableDropdown = de.query(By.css('dot-searchable-dropdown'));
 
         expect(dotSearchableDropdown).not.toBeUndefined();
-        expect(dotSearchableDropdown.componentInstance.pageLinkSize).toBe(paginatorService.maxLinksPage);
-        expect(dotSearchableDropdown.componentInstance.rows).toBe(paginatorService.paginationPerPage);
-        expect(dotSearchableDropdown.componentInstance.totalRecords).toBe(paginatorService.totalRecords);
+        expect(dotSearchableDropdown.componentInstance.pageLinkSize).toBe(
+            paginatorService.maxLinksPage
+        );
+        expect(dotSearchableDropdown.componentInstance.rows).toBe(
+            paginatorService.paginationPerPage
+        );
+        expect(dotSearchableDropdown.componentInstance.totalRecords).toBe(
+            paginatorService.totalRecords
+        );
         expect(dotSearchableDropdown.componentInstance.labelPropertyName).toBe('label');
         expect(dotSearchableDropdown.componentInstance.placeholder).toBe('Select Relationship');
     });
@@ -169,7 +172,10 @@ describe('DotEditRelationshipsComponent', () => {
         dotSearchableDropdown.triggerEventHandler('filterChange', newFilter);
 
         expect(paginatorService.filter).toBe(newFilter);
-        expect(paginatorService.setExtraParams).toHaveBeenCalledWith('contentTypeId', contentTypeMock.id);
+        expect(paginatorService.setExtraParams).toHaveBeenCalledWith(
+            'contentTypeId',
+            contentTypeMock.id
+        );
 
         fixture.detectChanges();
 
@@ -201,7 +207,10 @@ describe('DotEditRelationshipsComponent', () => {
         dotSearchableDropdown.triggerEventHandler('pageChange', event);
 
         expect(paginatorService.filter).toBe(event.filter);
-        expect(paginatorService.setExtraParams).toHaveBeenCalledWith('contentTypeId', contentTypeMock.id);
+        expect(paginatorService.setExtraParams).toHaveBeenCalledWith(
+            'contentTypeId',
+            contentTypeMock.id
+        );
 
         fixture.detectChanges();
 
@@ -222,13 +231,10 @@ describe('DotEditRelationshipsComponent', () => {
         fixture.detectChanges();
 
         comp.change.subscribe((relationshipSelect: any) => {
-
-            expect(relationshipSelect).toEqual(
-                {
-                    cardinality: 1,
-                    velocityVar: 'a'
-                }
-            );
+            expect(relationshipSelect).toEqual({
+                cardinality: 1,
+                velocityVar: 'a'
+            });
             done();
         });
 

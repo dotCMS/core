@@ -10,7 +10,7 @@ import { take } from 'rxjs/operators';
 })
 export class DotLogOutContainerComponent {
     constructor(loginService: LoginService, router: DotRouterService) {
-        loginService.isLogin$.pipe(take(1)).subscribe(isLogin => {
+        loginService.isLogin$.pipe(take(1)).subscribe((isLogin) => {
             if (isLogin) {
                 window.location.href = '/dotAdmin/logout';
             } else {

@@ -30,8 +30,7 @@ export class DotContentletEditorService {
     private _load: ($event: any) => void;
     private _keyDown: ($event: KeyboardEvent) => void;
 
-    constructor(
-    ) {}
+    constructor() {}
 
     get addUrl$(): Observable<string> {
         return this.data.pipe(
@@ -144,9 +143,7 @@ export class DotContentletEditorService {
     private geAddtUrl(action: DotEditorAction): string {
         return action === null
             ? ''
-            : `/html/ng-contentlet-selector.jsp?ng=true&container_id=${action.data.container}&add=${
-                  action.data.baseTypes
-              }`;
+            : `/html/ng-contentlet-selector.jsp?ng=true&container_id=${action.data.container}&add=${action.data.baseTypes}`;
     }
 
     private getCreateUrl(action: DotEditorAction): string {
@@ -154,16 +151,17 @@ export class DotContentletEditorService {
     }
 
     private getEditUrl(action: DotEditorAction): string {
-        return action === null ? '' :
-            [
-                `/c/portal/layout`,
-                `?p_p_id=content`,
-                `&p_p_action=1`,
-                `&p_p_state=maximized`,
-                `&p_p_mode=view`,
-                `&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet`,
-                `&_content_cmd=edit&inode=${action.data.inode}`
-            ].join('');
+        return action === null
+            ? ''
+            : [
+                  `/c/portal/layout`,
+                  `?p_p_id=content`,
+                  `&p_p_action=1`,
+                  `&p_p_state=maximized`,
+                  `&p_p_mode=view`,
+                  `&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet`,
+                  `&_content_cmd=edit&inode=${action.data.inode}`
+              ].join('');
     }
 
     private isAddUrl(action: DotEditorAction): boolean {

@@ -19,13 +19,19 @@ const PORTLETS_ANGULAR = [
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         path: 'content-types-angular',
-        loadChildren: () => import('@portlets/dot-content-types/dot-content-types.module').then(m => m.DotContentTypesModule)
+        loadChildren: () =>
+            import('@portlets/dot-content-types/dot-content-types.module').then(
+                (m) => m.DotContentTypesModule
+            )
     },
     {
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         path: 'forms',
-        loadChildren: () => import('@portlets/dot-form-builder/dot-form-builder.module').then(m => m.DotFormBuilderModule),
+        loadChildren: () =>
+            import('@portlets/dot-form-builder/dot-form-builder.module').then(
+                (m) => m.DotFormBuilderModule
+            ),
         data: {
             filterBy: 'FORM'
         }
@@ -34,27 +40,34 @@ const PORTLETS_ANGULAR = [
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         path: 'rules',
-        loadChildren: () => import('@portlets/dot-rules/dot-rules.module').then(m => m.DotRulesModule)
+        loadChildren: () =>
+            import('@portlets/dot-rules/dot-rules.module').then((m) => m.DotRulesModule)
     },
     {
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         path: 'dot-browser',
-        loadChildren: () => import('@portlets/dot-site-browser/dot-site-browser.module').then(m => m.DotSiteBrowserModule)
+        loadChildren: () =>
+            import('@portlets/dot-site-browser/dot-site-browser.module').then(
+                (m) => m.DotSiteBrowserModule
+            )
     },
     {
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         path: 'apps',
-        loadChildren: () => import('@portlets/dot-apps/dot-apps.module').then(m => m.DotAppsModule)
+        loadChildren: () =>
+            import('@portlets/dot-apps/dot-apps.module').then((m) => m.DotAppsModule)
     },
     {
         path: 'notLicensed',
-        loadChildren: () => import('@components/not-licensed/not-licensed.module').then(m => m.NotLicensedModule)
+        loadChildren: () =>
+            import('@components/not-licensed/not-licensed.module').then((m) => m.NotLicensedModule)
     },
     {
         path: 'edit-page',
-        loadChildren: () => import('@portlets/dot-edit-page/dot-edit-page.module').then(m => m.DotEditPageModule)
+        loadChildren: () =>
+            import('@portlets/dot-edit-page/dot-edit-page.module').then((m) => m.DotEditPageModule)
     },
     {
         canActivate: [MenuGuardService],
@@ -72,8 +85,10 @@ const PORTLETS_IFRAME = [
                 path: ':id',
                 children: [
                     {
-                        loadChildren:
-                            () => import('@portlets/dot-porlet-detail/dot-portlet-detail.module').then(m => m.DotPortletDetailModule),
+                        loadChildren: () =>
+                            import('@portlets/dot-porlet-detail/dot-portlet-detail.module').then(
+                                (m) => m.DotPortletDetailModule
+                            ),
                         path: ':asset'
                     }
                 ],
@@ -111,14 +126,16 @@ const appRoutes: Routes = [
         resolve: {
             loginFormInfo: DotLoginPageResolver
         },
-        loadChildren: () => import('@components/login/dot-login-page.module').then(m => m.DotLoginPageModule)
+        loadChildren: () =>
+            import('@components/login/dot-login-page.module').then((m) => m.DotLoginPageModule)
     },
     {
         canActivate: [AuthGuardService],
         children: [
             {
                 path: 'rules',
-                loadChildren: () => import('@portlets/dot-rules/dot-rules.module').then(m => m.DotRulesModule),
+                loadChildren: () =>
+                    import('@portlets/dot-rules/dot-rules.module').then((m) => m.DotRulesModule),
                 canActivate: [AuthGuardService]
             }
         ],

@@ -18,7 +18,6 @@ import {
 import { LoggerService } from 'dotcms-js';
 import { HttpCode } from 'dotcms-js';
 
-
 @Injectable()
 export class ActionService {
     private _typeName = 'Action';
@@ -63,7 +62,7 @@ export class ActionService {
         }
         return this.coreWebService
             .request({
-                url: path,
+                url: path
             })
             .pipe(
                 catchError((err: any, _source: Observable<any>) => {
@@ -139,7 +138,7 @@ and should provide the info needed to make the user aware of the fix.`);
             .request({
                 method: 'POST',
                 body: json,
-                url: path,
+                url: path
             })
             .pipe(
                 map((res: HttpResponse<any>) => {
@@ -166,7 +165,7 @@ and should provide the info needed to make the user aware of the fix.`);
                 .request({
                     method: 'PUT',
                     body: json,
-                    url: this._getPath(ruleId, model.key),
+                    url: this._getPath(ruleId, model.key)
                 })
                 .pipe(
                     map((_res: HttpResponse<any>) => {
@@ -181,7 +180,7 @@ and should provide the info needed to make the user aware of the fix.`);
         const remove = this.coreWebService
             .request({
                 method: 'DELETE',
-                url: this._getPath(ruleId, model.key),
+                url: this._getPath(ruleId, model.key)
             })
             .pipe(
                 map((_res: HttpResponse<any>) => {
@@ -203,8 +202,6 @@ and should provide the info needed to make the user aware of the fix.`);
         _operation
     ): (response: HttpResponse<any>, original: Observable<any>) => Observable<any> {
         return (response: HttpResponse<any>): Observable<any> => {
-
-
             if (response) {
                 if (response.status === HttpCode.SERVER_ERROR) {
                     if (response.body && response.body.indexOf('ECONNREFUSED') >= 0) {

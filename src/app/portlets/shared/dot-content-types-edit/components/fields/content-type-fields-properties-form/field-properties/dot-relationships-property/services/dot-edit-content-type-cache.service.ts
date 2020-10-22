@@ -12,7 +12,6 @@ import * as _ from 'lodash';
 export class DotEditContentTypeCacheService {
     private currentContentType: DotCMSContentType;
 
-
     /**
      *Strore the current {@see ContentTye} in cache
      *

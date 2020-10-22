@@ -69,9 +69,7 @@ xdescribe('Directive: DynamicFieldPropertyDirective', () => {
         const fieldPropertyService = new TestFieldPropertyService();
         componentFactory = {};
 
-        getComponent = spyOn(fieldPropertyService, 'getComponent').and.returnValue(
-            TestComponent
-        );
+        getComponent = spyOn(fieldPropertyService, 'getComponent').and.returnValue(TestComponent);
         resolveComponentFactory = spyOn(resolver, 'resolveComponentFactory').and.returnValue(
             componentFactory
         );

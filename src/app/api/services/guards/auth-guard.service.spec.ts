@@ -24,10 +24,7 @@ describe('ValidAuthGuardService', () => {
 
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
-            providers: [
-                AuthGuardService,
-                { provide: LoginService, useClass: MockLoginService }
-            ]
+            providers: [AuthGuardService, { provide: LoginService, useClass: MockLoginService }]
         });
 
         authGuardService = TestBed.get(AuthGuardService);

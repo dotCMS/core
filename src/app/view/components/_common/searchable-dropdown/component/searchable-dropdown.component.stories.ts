@@ -21,7 +21,6 @@ class DotMessagePipe implements PipeTransform {
     }
 }
 
-
 export default {
     title: 'DotCMS/Searchable Dropdown',
     component: SearchableDropdownComponent,
@@ -131,7 +130,3 @@ export const Secondary = (props: SearchableDropdownComponent) => ({
     props,
     template: getTemplate(`class="d-secondary"`)
 });
-
-
-
-

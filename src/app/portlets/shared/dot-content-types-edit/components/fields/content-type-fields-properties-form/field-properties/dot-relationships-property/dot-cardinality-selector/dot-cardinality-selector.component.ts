@@ -1,4 +1,12 @@
-import { Component, Input, EventEmitter, Output, OnInit, SimpleChanges, OnChanges } from '@angular/core';
+import {
+    Component,
+    Input,
+    EventEmitter,
+    Output,
+    OnInit,
+    SimpleChanges,
+    OnChanges
+} from '@angular/core';
 import { DotRelationshipCardinality } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
 import { DotRelationshipService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';
 
@@ -30,17 +38,18 @@ export class DotCardinalitySelectorComponent implements OnInit, OnChanges {
 
     cardinality: DotRelationshipCardinality;
 
-    constructor(
-        private dotRelationshipService: DotRelationshipService) {}
+    constructor(private dotRelationshipService: DotRelationshipService) {}
 
     ngOnInit() {
-        this.dotRelationshipService.loadCardinalities().subscribe((cardinalities: DotRelationshipCardinality[]) => {
-            this.options = cardinalities;
+        this.dotRelationshipService
+            .loadCardinalities()
+            .subscribe((cardinalities: DotRelationshipCardinality[]) => {
+                this.options = cardinalities;
 
-            if (this.value) {
-                this.cardinality = this.options[this.value];
-            }
-        });
+                if (this.value) {
+                    this.cardinality = this.options[this.value];
+                }
+            });
     }
 
     ngOnChanges(changes: SimpleChanges): void {

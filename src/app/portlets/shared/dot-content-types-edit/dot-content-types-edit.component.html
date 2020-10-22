@@ -1,4 +1,8 @@
-<dot-content-type-layout [contentType]="data" (openEditDialog)="startFormDialog()"  *ngIf="isEditMode()">
+<dot-content-type-layout
+    [contentType]="data"
+    (openEditDialog)="startFormDialog()"
+    *ngIf="isEditMode()"
+>
     <dot-content-type-fields-drop-zone
         #fieldsDropZone
         *ngIf="data.id"

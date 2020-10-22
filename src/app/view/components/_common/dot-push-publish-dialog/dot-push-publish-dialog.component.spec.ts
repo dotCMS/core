@@ -133,7 +133,7 @@ describe('DotPushPublishDialogComponent', () => {
         });
 
         it('should update formData on value emit', () => {
-            pushPublishForm.value.emit({...mockFormValue});
+            pushPublishForm.value.emit({ ...mockFormValue });
             expect(comp.formData).toEqual(mockFormValue);
         });
 
@@ -160,7 +160,7 @@ describe('DotPushPublishDialogComponent', () => {
             fixture.detectChanges();
             pushPublishForm = fixture.debugElement.query(By.css('dot-push-publish-form'))
                 .componentInstance;
-            pushPublishForm.value.emit({...mockFormValue});
+            pushPublishForm.value.emit({ ...mockFormValue });
             acceptButton = fixture.debugElement.query(By.css('.dialog__button-accept'));
             closeButton = fixture.debugElement.query(By.css('.dialog__button-cancel'));
             pushPublishForm.valid.emit(true);

@@ -36,7 +36,6 @@ import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 
 import cleanUpDialog from '@tests/clean-up-dialog';
 
-
 @Component({
     selector: 'dot-template-addtional-actions-menu',
     template: ''

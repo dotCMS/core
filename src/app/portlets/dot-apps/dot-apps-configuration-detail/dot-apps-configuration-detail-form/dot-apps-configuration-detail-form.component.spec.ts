@@ -121,9 +121,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         });
 
         it('should load form components', () => {
-            expect(de.queryAll(By.css('.p-field')).length).toBe(
-                secrets.length
-            );
+            expect(de.queryAll(By.css('.p-field')).length).toBe(secrets.length);
         });
 
         it('should not have warning icon', () => {

@@ -34,8 +34,7 @@ export class DotEditPageInfoComponent implements OnInit {
 
     ngOnInit() {
         this.url$ = this.getFullUrl(this.pageState.page.pageURI);
-        this.apiLink = `api/v1/page/render${this.pageState.page.pageURI}?language_id=${this
-            .pageState.page.languageId}`;
+        this.apiLink = `api/v1/page/render${this.pageState.page.pageURI}?language_id=${this.pageState.page.languageId}`;
     }
 
     /**

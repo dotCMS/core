@@ -4,7 +4,7 @@
     (close)="editForm = false"
 ></dot-form-selector>
 
-<dot-add-contentlet (custom)="onCustomEvent($event)" ></dot-add-contentlet>
+<dot-add-contentlet (custom)="onCustomEvent($event)"></dot-add-contentlet>
 <dot-edit-contentlet (custom)="onCustomEvent($event)"></dot-edit-contentlet>
 <dot-reorder-menu [url]="reorderMenuUrl" (close)="onCloseReorderDialog()"></dot-reorder-menu>
 
@@ -50,7 +50,7 @@
                     [ngStyle]="{
                         visibility: showWhatsChanged ? 'hidden' : '',
                         position: showWhatsChanged ? 'absolute' : ''
-                     }"
+                    }"
                 ></iframe>
             </div>
         </div>

@@ -23,10 +23,9 @@ export class DotChipComponent {
         const label = this.label ? `${this.deleteLabel} ${this.label}` : null;
         return (
             <Fragment>
-                <span>
-                    {this.label}
-                </span>
-                <button type="button"
+                <span>{this.label}</span>
+                <button
+                    type="button"
                     aria-label={label}
                     disabled={this.disabled}
                     onClick={() => this.remove.emit(this.label)}

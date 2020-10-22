@@ -89,4 +89,3 @@ interface Relationships {
     cardinality: number;
     velocityVar: string;
 }
-

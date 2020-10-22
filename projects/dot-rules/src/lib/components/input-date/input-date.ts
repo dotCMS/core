@@ -10,17 +10,22 @@ import {
 import { NgControl, ControlValueAccessor } from '@angular/forms';
 import * as _ from 'lodash';
 
-
 // @dynamic
 @Component({
     changeDetection: ChangeDetectionStrategy.OnPush,
     // host: { role: 'text' },
     selector: 'cw-input-date',
-    template: `<p-calendar [(ngModel)]="modelValue" [showTime]="true" hourFormat="12"
-                (onBlur)="onBlur($event)"
-                (onSelect)="updateValue($event)"
-                showButtonBar="true"
-                [placeholder]="placeholder" [disabled]="disabled" [tabindex]="tabIndex || ''"></p-calendar>`
+    template: `<p-calendar
+        [(ngModel)]="modelValue"
+        [showTime]="true"
+        hourFormat="12"
+        (onBlur)="onBlur($event)"
+        (onSelect)="updateValue($event)"
+        showButtonBar="true"
+        [placeholder]="placeholder"
+        [disabled]="disabled"
+        [tabindex]="tabIndex || ''"
+    ></p-calendar>`
 })
 export class InputDate implements ControlValueAccessor {
     private static DEFAULT_VALUE: Date;

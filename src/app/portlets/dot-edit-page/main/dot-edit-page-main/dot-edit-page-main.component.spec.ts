@@ -65,7 +65,9 @@ class MockDotPageStateService {
     state$ = new Subject();
     get(): void {}
     reload(): void {
-        this.reload$.next(new DotPageRenderState(mockUser(), new DotPageRender(mockDotRenderedPage())));
+        this.reload$.next(
+            new DotPageRenderState(mockUser(), new DotPageRender(mockDotRenderedPage()))
+        );
     }
 }
 
@@ -97,8 +99,8 @@ describe('DotEditPageMainComponent', () => {
         new DotPageRender(mockDotRenderedPage())
     );
 
-   beforeEach(
-          waitForAsync(() => {
+    beforeEach(
+        waitForAsync(() => {
             TestBed.configureTestingModule({
                 imports: [
                     RouterTestingModule.withRoutes([
@@ -201,7 +203,7 @@ describe('DotEditPageMainComponent', () => {
     it('should call reload pageSte when IframeClose evt happens', () => {
         spyOn(dotPageStateService, 'get').and.callThrough();
 
-        component.pageState$.subscribe(res => {
+        component.pageState$.subscribe((res) => {
             expect(res).toEqual(
                 new DotPageRenderState(mockUser(), new DotPageRender(mockDotRenderedPage()))
             );

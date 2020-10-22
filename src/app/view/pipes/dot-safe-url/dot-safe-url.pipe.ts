@@ -25,8 +25,9 @@ export class DotSafeUrlPipe implements PipeTransform {
         urlWithParameters += url.indexOf('?') === -1 ? '?' : '&';
         urlWithParameters +=
             urlWithParameters.indexOf('in_frame') === -1
-                ? `in_frame=true&frame=detailFrame&container=true&angularCurrentPortlet=${this
-                      .dotRouterService.currentPortlet.id}${this.addQueryParams()}`
+                ? `in_frame=true&frame=detailFrame&container=true&angularCurrentPortlet=${
+                      this.dotRouterService.currentPortlet.id
+                  }${this.addQueryParams()}`
                 : '';
 
         return urlWithParameters;
@@ -34,7 +35,7 @@ export class DotSafeUrlPipe implements PipeTransform {
 
     private addQueryParams(): string {
         let params = '';
-        Object.keys(this.activatedRoute.snapshot.queryParams).map(attr => {
+        Object.keys(this.activatedRoute.snapshot.queryParams).map((attr) => {
             params += `&${attr}=${this.activatedRoute.snapshot.queryParams[attr]}`;
         });
         return params;

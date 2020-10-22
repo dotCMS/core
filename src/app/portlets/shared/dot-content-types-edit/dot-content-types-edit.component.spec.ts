@@ -43,7 +43,6 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 import cleanUpDialog from '@tests/clean-up-dialog';
 
-
 @Component({
     selector: 'dot-content-type-fields-drop-zone',
     template: ''
@@ -171,29 +170,31 @@ describe('DotContentTypesEditComponent', () => {
     };
 
     describe('create mode', () => {
-        beforeEach(waitForAsync( () => {
-            const configCreateMode = getConfig({
-                contentType: {
-                    baseType: 'CONTENT'
-                }
-            });
+        beforeEach(
+            waitForAsync(() => {
+                const configCreateMode = getConfig({
+                    contentType: {
+                        baseType: 'CONTENT'
+                    }
+                });
 
-            TestBed.configureTestingModule(configCreateMode);
+                TestBed.configureTestingModule(configCreateMode);
 
-            fixture = TestBed.createComponent(DotContentTypesEditComponent);
-            comp = fixture.componentInstance;
-            de = fixture.debugElement;
+                fixture = TestBed.createComponent(DotContentTypesEditComponent);
+                comp = fixture.componentInstance;
+                de = fixture.debugElement;
 
-            crudService = de.injector.get(DotCrudService);
-            location = de.injector.get(Location);
-            dotRouterService = de.injector.get(DotRouterService);
-            dotHttpErrorManagerService = de.injector.get(DotHttpErrorManagerService);
+                crudService = de.injector.get(DotCrudService);
+                location = de.injector.get(Location);
+                dotRouterService = de.injector.get(DotRouterService);
+                dotHttpErrorManagerService = de.injector.get(DotHttpErrorManagerService);
 
-            fixture.detectChanges();
-            dialog = de.query(By.css('dot-dialog'));
+                fixture.detectChanges();
+                dialog = de.query(By.css('dot-dialog'));
 
-            spyOn(comp, 'onDialogHide').and.callThrough();
-        }));
+                spyOn(comp, 'onDialogHide').and.callThrough();
+            })
+        );
 
         it('should have dialog opened by default & has css base-type class', () => {
             expect(dialog).not.toBeNull();
@@ -429,24 +430,26 @@ describe('DotContentTypesEditComponent', () => {
     });
 
     describe('edit mode', () => {
-        beforeEach(waitForAsync( () => {
-            TestBed.configureTestingModule(configEditMode);
+        beforeEach(
+            waitForAsync(() => {
+                TestBed.configureTestingModule(configEditMode);
 
-            fixture = TestBed.createComponent(DotContentTypesEditComponent);
-            comp = fixture.componentInstance;
-            de = fixture.debugElement;
+                fixture = TestBed.createComponent(DotContentTypesEditComponent);
+                comp = fixture.componentInstance;
+                de = fixture.debugElement;
 
-            crudService = fixture.debugElement.injector.get(DotCrudService);
-            location = fixture.debugElement.injector.get(Location);
-            dotRouterService = fixture.debugElement.injector.get(DotRouterService);
-            dotHttpErrorManagerService = fixture.debugElement.injector.get(
-                DotHttpErrorManagerService
-            );
+                crudService = fixture.debugElement.injector.get(DotCrudService);
+                location = fixture.debugElement.injector.get(Location);
+                dotRouterService = fixture.debugElement.injector.get(DotRouterService);
+                dotHttpErrorManagerService = fixture.debugElement.injector.get(
+                    DotHttpErrorManagerService
+                );
 
-            fixture.detectChanges();
+                fixture.detectChanges();
 
-            spyOn(comp, 'onDialogHide').and.callThrough();
-        }));
+                spyOn(comp, 'onDialogHide').and.callThrough();
+            })
+        );
 
         const clickEditButton = () => {
             const contentTypeLayout = de.query(By.css('dot-content-type-layout'));
@@ -520,7 +523,9 @@ describe('DotContentTypesEditComponent', () => {
             const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
             contentTypeFieldsDropZone.componentInstance.saveFields.emit([fieldToUpdate]);
 
-            expect<any>(fieldService.saveFields).toHaveBeenCalledWith('1234567890', [fieldToUpdate]);
+            expect<any>(fieldService.saveFields).toHaveBeenCalledWith('1234567890', [
+                fieldToUpdate
+            ]);
             expect(comp.layout).toEqual(layout);
         });
 
@@ -711,7 +716,10 @@ describe('DotContentTypesEditComponent', () => {
             contentTypeFieldsDropZone.componentInstance.removeFields.emit(fieldToRemove);
 
             // then: the saveFields method has to be called in FileService ...
-            expect<any>(fieldService.deleteFields).toHaveBeenCalledWith('1234567890', fieldToRemove);
+            expect<any>(fieldService.deleteFields).toHaveBeenCalledWith(
+                '1234567890',
+                fieldToRemove
+            );
             // ...and the comp.data.fields has to be set to the fields return by the service
             expect(comp.layout).toEqual(layout);
         });

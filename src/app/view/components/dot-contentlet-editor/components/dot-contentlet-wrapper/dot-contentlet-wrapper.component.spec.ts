@@ -33,31 +33,33 @@ describe('DotContentletWrapperComponent', () => {
     let dotAlertConfirmService: DotAlertConfirmService;
     let dotRouterService: DotRouterService;
 
-    beforeEach(waitForAsync( () => {
-        DOTTestBed.configureTestingModule({
-            declarations: [DotContentletWrapperComponent],
-            providers: [
-                DotContentletEditorService,
-                {
-                    provide: LoginService,
-                    useClass: LoginServiceMock
-                },
-                {
-                    provide: DotMenuService,
-                    useValue: {
-                        getDotMenuId() {
-                            return observableOf('999');
+    beforeEach(
+        waitForAsync(() => {
+            DOTTestBed.configureTestingModule({
+                declarations: [DotContentletWrapperComponent],
+                providers: [
+                    DotContentletEditorService,
+                    {
+                        provide: LoginService,
+                        useClass: LoginServiceMock
+                    },
+                    {
+                        provide: DotMenuService,
+                        useValue: {
+                            getDotMenuId() {
+                                return observableOf('999');
+                            }
                         }
+                    },
+                    {
+                        provide: DotMessageService,
+                        useValue: messageServiceMock
                     }
-                },
-                {
-                    provide: DotMessageService,
-                    useValue: messageServiceMock
-                }
-            ],
-            imports: [DotIframeDialogModule, RouterTestingModule, BrowserAnimationsModule]
-        });
-    }));
+                ],
+                imports: [DotIframeDialogModule, RouterTestingModule, BrowserAnimationsModule]
+            });
+        })
+    );
 
     beforeEach(() => {
         fixture = DOTTestBed.createComponent(DotContentletWrapperComponent);

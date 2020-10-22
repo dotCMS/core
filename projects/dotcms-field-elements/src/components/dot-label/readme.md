@@ -1,9 +1,6 @@
 # dot-label
 
-
-
 <!-- Auto Generated Below -->
-
 
 ## Properties
 
@@ -13,7 +10,6 @@
 | `name`     | `name`     | (optional) Field name                   | `string`  | `''`    |
 | `required` | `required` | (optional) Determine if it is mandatory | `boolean` | `false` |
 
+---
 
-----------------------------------------------
-
-*Built with [StencilJS](https://stenciljs.com/)*
+_Built with [StencilJS](https://stenciljs.com/)_

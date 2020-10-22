@@ -33,7 +33,6 @@ describe('DotFieldHelperComponent', () => {
         iconButton.dispatchEvent(new MouseEvent('click'));
 
         // expect(overlayPanel.visible).toEqual(true);
-
     });
 
     it('should hide the overlay panel on click', () => {

@@ -8,31 +8,31 @@ import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 
 export default {
-  title: 'PrimeNG/Form/KeyFilter',
-  parameters: {
-    docs: {
-      description: {
-        component:
-          'KeyFilter directive restricts user input based on a regular expression.: https://primefaces.org/primeng/showcase/#/keyfilter',
-      },
+    title: 'PrimeNG/Form/KeyFilter',
+    parameters: {
+        docs: {
+            description: {
+                component:
+                    'KeyFilter directive restricts user input based on a regular expression.: https://primefaces.org/primeng/showcase/#/keyfilter'
+            }
+        }
     },
-  },
-  decorators: [
-    moduleMetadata({
-      imports: [
-        BrowserModule,
-        BrowserAnimationsModule,
-        KeyFilterModule,
-        InputTextModule,
-        MessageModule,
-        FormsModule,
-      ],
-    }),
-  ],
-  args: {
-    ccRegex: /^[^<>*!]+$/,
-    inputValue: '',
-  },
+    decorators: [
+        moduleMetadata({
+            imports: [
+                BrowserModule,
+                BrowserAnimationsModule,
+                KeyFilterModule,
+                InputTextModule,
+                MessageModule,
+                FormsModule
+            ]
+        })
+    ],
+    args: {
+        ccRegex: /^[^<>*!]+$/,
+        inputValue: ''
+    }
 } as Meta;
 
 const KeyFilterTemplate = `
@@ -55,19 +55,19 @@ const KeyFilterTemplate = `
 `;
 
 const Template: Story<any> = (props: any) => {
-  const template = KeyFilterTemplate;
-  return {
-    props,
-    template,
-  };
+    const template = KeyFilterTemplate;
+    return {
+        props,
+        template
+    };
 };
 
 export const Basic: Story = Template.bind({});
 
 Basic.parameters = {
-  docs: {
-    source: {
-      code: KeyFilterTemplate,
-    },
-  },
+    docs: {
+        source: {
+            code: KeyFilterTemplate
+        }
+    }
 };

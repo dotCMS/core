@@ -5,21 +5,22 @@ import { moduleMetadata } from '@storybook/angular';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 export default {
-  title: 'PrimeNG/Form/Checkbox',
-  parameters: {
-    docs: {
-      description: {
-        component: 'Basic checkbox with label, more information: https://primefaces.org/primeng/showcase/#/checkbox',
-      },
+    title: 'PrimeNG/Form/Checkbox',
+    parameters: {
+        docs: {
+            description: {
+                component:
+                    'Basic checkbox with label, more information: https://primefaces.org/primeng/showcase/#/checkbox'
+            }
+        }
     },
-  },
-  component: Checkbox,
-  decorators: [
-    moduleMetadata({
-      imports: [CheckboxModule, BrowserAnimationsModule],
-    }),
-  ],
-  args: {},
+    component: Checkbox,
+    decorators: [
+        moduleMetadata({
+            imports: [CheckboxModule, BrowserAnimationsModule]
+        })
+    ],
+    args: {}
 } as Meta;
 
 const CheckboxTemplate = `
@@ -39,20 +40,20 @@ const CheckboxTemplate = `
   <p-checkbox name="group1" value="Chicago" inputId="ch"></p-checkbox>
   <label for="ch">Chicago</label>
 </div>
-`
+`;
 const Template: Story<Checkbox> = (props: Checkbox) => {
-  const template = CheckboxTemplate;
-  return {
-    props,
-    template,
-  };
+    const template = CheckboxTemplate;
+    return {
+        props,
+        template
+    };
 };
 
 export const Primary: Story = Template.bind({});
 Primary.parameters = {
-  docs: {
-    source: {
-      code: CheckboxTemplate,
-    },
-  },
+    docs: {
+        source: {
+            code: CheckboxTemplate
+        }
+    }
 };

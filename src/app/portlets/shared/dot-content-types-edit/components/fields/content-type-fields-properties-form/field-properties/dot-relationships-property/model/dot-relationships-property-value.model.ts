@@ -1,4 +1,3 @@
-
 /**
  *Value return by {@see DotRelationshipsPropertyComponent}
  *

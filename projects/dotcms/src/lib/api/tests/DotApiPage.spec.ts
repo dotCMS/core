@@ -16,13 +16,13 @@ describe('DotApiPage', () => {
         appLanguage = new DotApiLanguage(null);
         dotApiPage = new DotApiPage(httpClient, appLanguage);
 
-        spyOn(appLanguage, 'getId').and.returnValue(new Promise(resolve => resolve('1')));
+        spyOn(appLanguage, 'getId').and.returnValue(new Promise((resolve) => resolve('1')));
         const data = {
             entity: 'test'
         };
 
         spyOn(httpClient, 'request').and.returnValue(
-            new Promise(resolve =>
+            new Promise((resolve) =>
                 resolve({
                     status: 200,
                     json: () => data

@@ -112,15 +112,14 @@ describe('MainLegacyComponent', () => {
                 LoggerService,
                 StringUtils,
 
-
                 DotWorkflowEventHandlerService,
-                    ApiRoot,
-                    UserModel,
-                    DotMessageDisplayService,
-                    DotHttpErrorManagerService,
-                    DotWorkflowActionsFireService,
-                    DotGlobalMessageService,
-                    DotEventsService
+                ApiRoot,
+                UserModel,
+                DotMessageDisplayService,
+                DotHttpErrorManagerService,
+                DotWorkflowActionsFireService,
+                DotGlobalMessageService,
+                DotEventsService
             ],
             declarations: [
                 MainComponentLegacyComponent,

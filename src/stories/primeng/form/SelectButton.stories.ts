@@ -73,28 +73,28 @@ export const Primary: Story<SelectButton> = () => {
             ]
         }
     };
-  };
+};
 
 Primary.parameters = {
     docs: {
         source: {
-        code: PrimaryTemplate,
-        },
-    },
+            code: PrimaryTemplate
+        }
+    }
 };
 
 export const Tabbed: Story<SelectButton> = () => {
-  return {
-      template: TabbedTemplate,
-      props: {
-          options: [
-              { label: 'Push', value: 'push' },
-              { label: 'Remove', value: 'remove' },
-              { label: 'Push Publish', value: 'push-publish' }
-          ],
-          selectedOption: 'push'
-      }
-  };
+    return {
+        template: TabbedTemplate,
+        props: {
+            options: [
+                { label: 'Push', value: 'push' },
+                { label: 'Remove', value: 'remove' },
+                { label: 'Push Publish', value: 'push-publish' }
+            ],
+            selectedOption: 'push'
+        }
+    };
 };
 
 Tabbed.parameters = {

@@ -29,15 +29,12 @@ export class DotFormResolver implements Resolve<DotUnlicensedPortlet> {
     ) {}
 
     resolve(_route: ActivatedRouteSnapshot): Observable<DotUnlicensedPortlet> {
-        return this.dotLicenseService
-            .isEnterprise()
-            .pipe(
-                switchMap(
-                    (isEnterprise: boolean) =>
-                        isEnterprise ? of(null) : this.getUnlicensePortlet()
-                ),
-                take(1)
-            );
+        return this.dotLicenseService.isEnterprise().pipe(
+            switchMap((isEnterprise: boolean) =>
+                isEnterprise ? of(null) : this.getUnlicensePortlet()
+            ),
+            take(1)
+        );
     }
 
     private getUnlicensePortlet(): Observable<DotUnlicensedPortlet> {

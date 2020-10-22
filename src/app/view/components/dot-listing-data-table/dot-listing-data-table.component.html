@@ -1,34 +1,41 @@
 <dot-action-header [options]="actionHeaderOptions">
-    <input #gf pInputText type="text"
-           (input)="dataTable.filterGlobal($event.target.value, 'contains')"
-           placeholder="{{ 'global-search' | dm }}"
-           [(ngModel)]="filter"
-           (keydown.arrowdown)="focusFirstRow()"
+    <input
+        #gf
+        pInputText
+        type="text"
+        (input)="dataTable.filterGlobal($event.target.value, 'contains')"
+        placeholder="{{ 'global-search' | dm }}"
+        [(ngModel)]="filter"
+        (keydown.arrowdown)="focusFirstRow()"
     />
     <ng-content></ng-content>
 </dot-action-header>
-<p-table #dataTable
-        (onLazyLoad)="loadDataPaginationEvent($event)"
-        (onRowSelect)="handleRowClick($event)"
-        [columns]="columns"
-        [lazy]="true"
-        [loading]="loading" loadingIcon="fa fa-circle-o-notch fa-spin"
-        [pageLinks]="paginatorService.maxLinksPage"
-        [paginator]="true"
-        [rows]="paginationPerPage"
-        [sortOrder]="sortOrder && sortOrder.toLowerCase() === 'desc' ? -1 : 1"
-        [totalRecords]="paginatorService.totalRecords"
-        [value]="items"
-        dataKey="id"
-        selectionMode="single">
-
+<p-table
+    #dataTable
+    (onLazyLoad)="loadDataPaginationEvent($event)"
+    (onRowSelect)="handleRowClick($event)"
+    [columns]="columns"
+    [lazy]="true"
+    [loading]="loading"
+    loadingIcon="fa fa-circle-o-notch fa-spin"
+    [pageLinks]="paginatorService.maxLinksPage"
+    [paginator]="true"
+    [rows]="paginationPerPage"
+    [sortOrder]="sortOrder && sortOrder.toLowerCase() === 'desc' ? -1 : 1"
+    [totalRecords]="paginatorService.totalRecords"
+    [value]="items"
+    dataKey="id"
+    selectionMode="single"
+>
     <ng-template pTemplate="header" let-columns>
         <tr>
-            <th *ngFor="let col of columns"
-                [ngStyle]="{'width': col.width, 'text-align': getAlign(col)}"
+            <th
+                *ngFor="let col of columns"
+                [ngStyle]="{ width: col.width, 'text-align': getAlign(col) }"
                 [pSortableColumn]="col.fieldName"
-                [pSortableColumnDisabled]="!col.sortable">
-                {{col.header}}
+                [pSortableColumnDisabled]="!col.sortable"
+            >
+                {{ col.header }}
                 <p-sortIcon *ngIf="col.sortable" [field]="col.fieldName"></p-sortIcon>
             </th>
             <th style="width: 5%"></th>
@@ -37,26 +44,35 @@
 
     <ng-template pTemplate="body" let-rowData let-columns="columns">
         <tr [pSelectableRow]="rowData">
-            <td *ngFor="let col of columns"
-                [ngStyle]="{'width': col.width, 'text-align': getAlign(col)}">
-                <div class="listing-datatable__column-icon"  *ngIf="col.icon">
+            <td
+                *ngFor="let col of columns"
+                [ngStyle]="{ width: col.width, 'text-align': getAlign(col) }"
+            >
+                <div class="listing-datatable__column-icon" *ngIf="col.icon">
                     <dot-icon name="{{ col.icon(rowData) }}"></dot-icon>
                     <span>{{ col.textContent || rowData[col.fieldName] }}</span>
                 </div>
-                <span *ngIf="!col.icon && col.fieldName !== 'nEntries'">{{ rowData[col.fieldName] }}</span>
-                <a *ngIf="col.fieldName === 'nEntries'"
-                   [routerLink]="rowData.variable === 'Host' ? '/c/sites' : '/c/content'"
-                   [queryParams]="rowData.variable === 'Host' ? {} : {filter: rowData.variable}">
-                    {{ col.textContent ?
-                        (col.textContent | dotStringFormat: [rowData[col.fieldName]])
-                        : rowData[col.fieldName] }}
+                <span *ngIf="!col.icon && col.fieldName !== 'nEntries'">{{
+                    rowData[col.fieldName]
+                }}</span>
+                <a
+                    *ngIf="col.fieldName === 'nEntries'"
+                    [routerLink]="rowData.variable === 'Host' ? '/c/sites' : '/c/content'"
+                    [queryParams]="rowData.variable === 'Host' ? {} : { filter: rowData.variable }"
+                >
+                    {{
+                        col.textContent
+                            ? (col.textContent | dotStringFormat: [rowData[col.fieldName]])
+                            : rowData[col.fieldName]
+                    }}
                 </a>
             </td>
             <td class="listing-datatable__action-column" style="width: 5%">
                 <dot-action-menu-button
                     class="listing-datatable__action-button"
                     [actions]="actions"
-                    [item]="rowData">
+                    [item]="rowData"
+                >
                 </dot-action-menu-button>
             </td>
         </tr>

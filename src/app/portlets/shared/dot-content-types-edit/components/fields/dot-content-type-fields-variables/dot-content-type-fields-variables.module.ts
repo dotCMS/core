@@ -4,9 +4,7 @@ import { DotContentTypeFieldsVariablesComponent } from './dot-content-type-field
 import { DotKeyValueModule } from '@components/dot-key-value-ng/dot-key-value-ng.module';
 
 @NgModule({
-    imports: [
-        DotKeyValueModule,
-    ],
+    imports: [DotKeyValueModule],
     exports: [DotContentTypeFieldsVariablesComponent],
     providers: [DotFieldVariablesService],
     declarations: [DotContentTypeFieldsVariablesComponent]

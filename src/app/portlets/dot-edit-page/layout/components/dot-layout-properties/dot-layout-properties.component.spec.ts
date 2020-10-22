@@ -12,8 +12,8 @@ import { ButtonModule } from 'primeng/button';
 @Component({
     selector: 'dot-test-host-component',
     template: `<form [formGroup]="group">
-                    <dot-layout-properties></dot-layout-properties>
-                </form>`
+        <dot-layout-properties></dot-layout-properties>
+    </form>`
 })
 class TestHostComponent {
     group: FormGroup;

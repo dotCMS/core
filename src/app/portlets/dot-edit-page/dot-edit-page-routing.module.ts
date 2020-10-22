@@ -20,17 +20,22 @@ const dotEditPage: Routes = [
                 redirectTo: './content'
             },
             {
-                loadChildren:
-                    () => import('@portlets/dot-edit-page/content/dot-edit-content.module').then(m => m.DotEditContentModule),
+                loadChildren: () =>
+                    import('@portlets/dot-edit-page/content/dot-edit-content.module').then(
+                        (m) => m.DotEditContentModule
+                    ),
                 path: 'content'
             },
             {
-                loadChildren:
-                    () => import('@portlets/dot-edit-page/layout/dot-edit-layout.module').then(m => m.DotEditLayoutModule),
+                loadChildren: () =>
+                    import('@portlets/dot-edit-page/layout/dot-edit-layout.module').then(
+                        (m) => m.DotEditLayoutModule
+                    ),
                 path: 'layout'
             },
             {
-                loadChildren: () => import('@portlets/dot-rules/dot-rules.module').then(m => m.DotRulesModule),
+                loadChildren: () =>
+                    import('@portlets/dot-rules/dot-rules.module').then((m) => m.DotRulesModule),
                 path: 'rules/:pageId'
             }
         ]

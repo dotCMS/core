@@ -19,21 +19,23 @@ let mapIdCounter = 1;
     selector: 'cw-area-picker-dialog-component',
     styles: [
         `
-  .g-map {
-    height:500px;
-    width:100%;
-  }`
+            .g-map {
+                height: 500px;
+                width: 100%;
+            }
+        `
     ],
     template: `<cw-modal-dialog
-                 [headerText]="headerText"
-                 [hidden]="hidden"
-                 [okEnabled]="true"
-                 (ok)="onOkAction($event)"
-                 (cancel)="onCancelAction($event)">
-  <div *ngIf="!hidden" class="cw-dialog-body">
-    <div id="{{mapId}}" class="g-map" *ngIf="!hidden" > </div>
-  </div>
-</cw-modal-dialog>`
+        [headerText]="headerText"
+        [hidden]="hidden"
+        [okEnabled]="true"
+        (ok)="onOkAction($event)"
+        (cancel)="onCancelAction($event)"
+    >
+        <div *ngIf="!hidden" class="cw-dialog-body">
+            <div id="{{ mapId }}" class="g-map" *ngIf="!hidden"></div>
+        </div>
+    </cw-modal-dialog>`
 })
 export class AreaPickerDialogComponent implements OnChanges {
     @Input() apiKey = '';
@@ -59,7 +61,7 @@ export class AreaPickerDialogComponent implements OnChanges {
     ngOnChanges(change): void {
         if (!this.hidden && this.map == null) {
             this.mapsService.mapsApi$.subscribe(
-                _x => {},
+                (_x) => {},
                 () => {},
                 () => {
                     if (this.mapsService.apiReady) {
@@ -78,12 +80,12 @@ export class AreaPickerDialogComponent implements OnChanges {
                 this.map.getDiv()['style']['height']
             );
             /**
-       *
-       * Angular2 has a bug? Google Maps? Chrome? For whatever reason, loading a second map without forcing a reload
-       * will cause the first map loaded to always display, despite the maps actually living in separate
-       * divs, and the 'hidden' map divs actually not being in the active DOM (they have been cut out / moved into the
-       * shadow dom by the ngIf).
-       */
+             *
+             * Angular2 has a bug? Google Maps? Chrome? For whatever reason, loading a second map without forcing a reload
+             * will cause the first map loaded to always display, despite the maps actually living in separate
+             * divs, and the 'hidden' map divs actually not being in the active DOM (they have been cut out / moved into the
+             * shadow dom by the ngIf).
+             */
             this.map = null;
         }
         if (change.hidden && !this.hidden && this.map) {
@@ -120,7 +122,7 @@ export class AreaPickerDialogComponent implements OnChanges {
                 strokeWeight: 2
             });
 
-            this.map.addListener('click', e => {
+            this.map.addListener('click', (e) => {
                 circle.setCenter(e.latLng);
                 this.map.panTo(e.latLng);
                 const ll = circle.getCenter();

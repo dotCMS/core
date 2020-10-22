@@ -2,7 +2,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgModule } from '@angular/core';
 
-
 import { DotMyAccountComponent } from './dot-my-account.component';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotPipesModule } from '@pipes/dot-pipes.module';

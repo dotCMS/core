@@ -11,18 +11,26 @@
             [minLength]="2"
             field="label"
             [ngModel]="val"
-            [suggestions]="results.data">
-            <ng-template let-item pTemplate="item" >
-                <div class='dot-page-selector__item'>
+            [suggestions]="results.data"
+        >
+            <ng-template let-item pTemplate="item">
+                <div class="dot-page-selector__item">
                     <span *ngIf="results.type === 'site'">{{ item.label }}</span>
-                    <span class="dot-page-selector__item-url" *ngIf="results.type === 'page'" style=" ">{{ item.payload.path }}</span>
-                    <span class="dot-page-selector__item-host" *ngIf="results.type === 'page'" >{{ item.payload.hostName }}</span>
+                    <span
+                        class="dot-page-selector__item-url"
+                        *ngIf="results.type === 'page'"
+                        style=""
+                        >{{ item.payload.path }}</span
+                    >
+                    <span class="dot-page-selector__item-host" *ngIf="results.type === 'page'">{{
+                        item.payload.hostName
+                    }}</span>
                 </div>
             </ng-template>
         </p-autoComplete>
     </span>
-    <small *ngIf="message" class="p-invalid" [textContent]="message" ></small>
-    <dot-field-helper [message]="'page.selector.hint' | dm "></dot-field-helper>
+    <small *ngIf="message" class="p-invalid" [textContent]="message"></small>
+    <dot-field-helper [message]="'page.selector.hint' | dm"></dot-field-helper>
 </div>
 
 <ng-template #placeholded>
@@ -36,12 +44,20 @@
         [minLength]="3"
         field="label"
         [ngModel]="val"
-        [suggestions]="results.data">
-        <ng-template let-item pTemplate="item" >
-            <div class='dot-page-selector__item'>
+        [suggestions]="results.data"
+    >
+        <ng-template let-item pTemplate="item">
+            <div class="dot-page-selector__item">
                 <span *ngIf="results.type === 'site'">{{ item.label }}</span>
-                <span class="dot-page-selector__item-url" *ngIf="results.type === 'page'" style=" ">{{ item.payload.path }}</span>
-                <span class="dot-page-selector__item-host" *ngIf="results.type === 'page'" >{{ item.payload.hostName }}</span>
+                <span
+                    class="dot-page-selector__item-url"
+                    *ngIf="results.type === 'page'"
+                    style=""
+                    >{{ item.payload.path }}</span
+                >
+                <span class="dot-page-selector__item-host" *ngIf="results.type === 'page'">{{
+                    item.payload.hostName
+                }}</span>
             </div>
         </ng-template>
     </p-autoComplete>

@@ -18,7 +18,7 @@ export interface DotCMSEditPageEvent {
     templateUrl: './dot-contentlet-wrapper.component.html',
     styleUrls: ['./dot-contentlet-wrapper.component.scss']
 })
-export class DotContentletWrapperComponent{
+export class DotContentletWrapperComponent {
     @Input()
     header = '';
 

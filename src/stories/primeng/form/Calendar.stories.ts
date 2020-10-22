@@ -5,37 +5,38 @@ import { moduleMetadata } from '@storybook/angular';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 export default {
-  title: 'PrimeNG/Form/Calendar',
-  component: Calendar,
-  decorators: [
-    moduleMetadata({
-      imports: [CalendarModule, BrowserAnimationsModule],
-    }),
-  ],
-  parameters: {
-    docs: {
-      description: {
-        component: 'Calendar is an input component to select a date: https://primefaces.org/primeng/showcase/#/calendar',
-      },
-    },
-  }
+    title: 'PrimeNG/Form/Calendar',
+    component: Calendar,
+    decorators: [
+        moduleMetadata({
+            imports: [CalendarModule, BrowserAnimationsModule]
+        })
+    ],
+    parameters: {
+        docs: {
+            description: {
+                component:
+                    'Calendar is an input component to select a date: https://primefaces.org/primeng/showcase/#/calendar'
+            }
+        }
+    }
 } as Meta;
 
 const CalendarTemplate = `<p-calendar [showTime]="true" inputId="time" showButtonBar="true"></p-calendar>`;
 const Template: Story<Calendar> = (props: Calendar) => {
-  const template = CalendarTemplate;
-  return {
-    props,
-    template,
-  };
+    const template = CalendarTemplate;
+    return {
+        props,
+        template
+    };
 };
 
 export const Primary: Story = Template.bind({});
 Primary.parameters = {
-  docs: {
-    source: {
-      code: CalendarTemplate,
-    },
-    iframeHeight: 700,
-  },
+    docs: {
+        source: {
+            code: CalendarTemplate
+        },
+        iframeHeight: 700
+    }
 };

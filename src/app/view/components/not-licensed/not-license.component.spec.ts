@@ -10,7 +10,10 @@ import { NotLicensedComponent } from './not-licensed.component';
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
-import { DotLicenseService, DotUnlicensedPortletData } from '@services/dot-license/dot-license.service';
+import {
+    DotLicenseService,
+    DotUnlicensedPortletData
+} from '@services/dot-license/dot-license.service';
 
 const messageServiceMock = new MockDotMessageService({
     'portlet.title': 'Enterprise Portlet',
@@ -59,7 +62,9 @@ describe('NotLicensedComponent', () => {
             messageServiceMock.get('portlet.title')
         );
         expect(de.query(By.css('h4 ~ p')).nativeElement.innerText).toEqual(
-            `${messageServiceMock.get('portlet.title')} ${messageServiceMock.get('only-available-in-enterprise')}`
+            `${messageServiceMock.get('portlet.title')} ${messageServiceMock.get(
+                'only-available-in-enterprise'
+            )}`
         );
         expect(links[0].nativeElement.innerText).toEqual(
             messageServiceMock.get('Learn-more-about-dotCMS-Enterprise')

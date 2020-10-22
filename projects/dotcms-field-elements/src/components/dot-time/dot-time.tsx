@@ -16,15 +16,8 @@ import {
     DotFieldValueEvent,
     DotInputCalendarStatusEvent
 } from '../../models';
-import {
-    checkProp,
-    getClassNames,
-    getTagError,
-    getTagHint,
-    getHintId,
-} from '../../utils';
+import { checkProp, getClassNames, getTagError, getTagHint, getHintId } from '../../utils';
 import { setDotAttributesToElement, getDotAttributesFromElement } from '../dot-form/utils';
-
 
 @Component({
     tag: 'dot-time',

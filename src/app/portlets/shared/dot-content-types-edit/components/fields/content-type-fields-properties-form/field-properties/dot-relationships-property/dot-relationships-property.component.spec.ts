@@ -42,13 +42,11 @@ class TestNewRelationshipsComponent {
     template: ''
 })
 class TestEditRelationshipsComponent {
-
     @Output()
     change: EventEmitter<any> = new EventEmitter();
 }
 
 describe('DotRelationshipsPropertyComponent', () => {
-
     let comp: DotRelationshipsPropertyComponent;
     let fixture: ComponentFixture<DotRelationshipsPropertyComponent>;
     let de: DebugElement;
@@ -60,39 +58,38 @@ describe('DotRelationshipsPropertyComponent', () => {
         'contenttypes.field.properties.relationships.edit.error.required': 'Edit validation error'
     });
 
-    beforeEach(waitForAsync( () => {
-        DOTTestBed.configureTestingModule({
-            declarations: [
-                DotRelationshipsPropertyComponent,
-                TestFieldValidationMessageComponent,
-                TestNewRelationshipsComponent,
-                TestEditRelationshipsComponent
-            ],
-            imports: [],
-            providers: [
-                { provide: DotMessageService, useValue: messageServiceMock }
-            ]
-        });
+    beforeEach(
+        waitForAsync(() => {
+            DOTTestBed.configureTestingModule({
+                declarations: [
+                    DotRelationshipsPropertyComponent,
+                    TestFieldValidationMessageComponent,
+                    TestNewRelationshipsComponent,
+                    TestEditRelationshipsComponent
+                ],
+                imports: [],
+                providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+            });
 
-        fixture = DOTTestBed.createComponent(DotRelationshipsPropertyComponent);
-        de = fixture.debugElement;
-        comp = fixture.componentInstance;
+            fixture = DOTTestBed.createComponent(DotRelationshipsPropertyComponent);
+            de = fixture.debugElement;
+            comp = fixture.componentInstance;
 
-        comp.property = {
-            name: 'relationship',
-            value: {},
-            field: {
-                ...dotcmsContentTypeFieldBasicMock,
-            }
-        };
+            comp.property = {
+                name: 'relationship',
+                value: {},
+                field: {
+                    ...dotcmsContentTypeFieldBasicMock
+                }
+            };
 
-        comp.group = new FormGroup({
-            'relationship': new FormControl('')
-        });
-    }));
+            comp.group = new FormGroup({
+                relationship: new FormControl('')
+            });
+        })
+    );
 
     describe('not editing mode', () => {
-
         beforeEach(() => {
             fixture.detectChanges();
         });
@@ -101,7 +98,10 @@ describe('DotRelationshipsPropertyComponent', () => {
             const radios = de.queryAll(By.css('p-radioButton'));
 
             expect(radios.length).toBe(2);
-            expect(radios.map(radio => radio.componentInstance.label)).toEqual(['New', 'Existing']);
+            expect(radios.map((radio) => radio.componentInstance.label)).toEqual([
+                'New',
+                'Existing'
+            ]);
         });
 
         it('should show dot-new-relationships in new state', () => {
@@ -124,15 +124,11 @@ describe('DotRelationshipsPropertyComponent', () => {
         });
 
         it('should clean the relationships property value', () => {
-            comp.group.setValue(
-                {
-                    'relationship': new FormControl(
-                        {
-                            velocityVar: 'velocityVar'
-                        }
-                    )
-                }
-            );
+            comp.group.setValue({
+                relationship: new FormControl({
+                    velocityVar: 'velocityVar'
+                })
+            });
 
             const radio = de.query(By.css('p-radioButton'));
             radio.triggerEventHandler('click', {});
@@ -155,7 +151,7 @@ describe('DotRelationshipsPropertyComponent', () => {
             };
 
             comp.group = new FormGroup({
-                'relationship': new FormControl(comp.property.value)
+                relationship: new FormControl(comp.property.value)
             });
         });
 
@@ -176,7 +172,6 @@ describe('DotRelationshipsPropertyComponent', () => {
 
         describe('with inverse relationship', () => {
             it('should not have existing and new radio buttonand should show dot-new-relationships', () => {
-
                 comp.property.value.velocityVar = 'contentType.fieldName';
 
                 fixture.detectChanges();
@@ -188,7 +183,9 @@ describe('DotRelationshipsPropertyComponent', () => {
                 expect(dotNewRelationships).toBeDefined();
                 expect(de.query(By.css('dot-edit-relationships'))).toBeNull();
 
-                expect(dotNewRelationships.componentInstance.velocityVar).toEqual('contentType.fieldName');
+                expect(dotNewRelationships.componentInstance.velocityVar).toEqual(
+                    'contentType.fieldName'
+                );
                 expect(dotNewRelationships.componentInstance.cardinality).toEqual(1);
             });
         });

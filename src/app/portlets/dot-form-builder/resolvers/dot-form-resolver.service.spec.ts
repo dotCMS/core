@@ -15,29 +15,31 @@ const messageServiceMock = new MockDotMessageService({
     'Forms-and-Form-Builder': 'Form',
     'Forms-and-Form-Builder-in-Enterprise': 'This a description',
     'Learn-more-about-dotCMS-Enterprise': 'Link 1',
-    'Contact-Us-for-more-Information': 'Link 2',
+    'Contact-Us-for-more-Information': 'Link 2'
 });
 
 describe('DotFormResolver', () => {
     let dotLicenseService: DotLicenseService;
     let service: DotFormResolver;
 
-    beforeEach(waitForAsync( () => {
-        const testbed = DOTTestBed.configureTestingModule({
-            providers: [
-                DotFormResolver,
-                DotLicenseService,
-                {
-                    provide: DotMessageService,
-                    useValue: messageServiceMock
-                }
-            ],
-            imports: []
-        });
+    beforeEach(
+        waitForAsync(() => {
+            const testbed = DOTTestBed.configureTestingModule({
+                providers: [
+                    DotFormResolver,
+                    DotLicenseService,
+                    {
+                        provide: DotMessageService,
+                        useValue: messageServiceMock
+                    }
+                ],
+                imports: []
+            });
 
-        dotLicenseService = testbed.get(DotLicenseService);
-        service = testbed.get(DotFormResolver);
-    }));
+            dotLicenseService = testbed.get(DotLicenseService);
+            service = testbed.get(DotFormResolver);
+        })
+    );
 
     it('should return resolve null when license is enterprise', () => {
         spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));

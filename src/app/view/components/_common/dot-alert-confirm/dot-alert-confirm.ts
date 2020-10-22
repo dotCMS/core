@@ -14,9 +14,7 @@ export class DotAlertConfirmComponent implements OnInit, OnDestroy {
     @ViewChild('confirmBtn') confirmBtn: ElementRef;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(
-        public dotAlertConfirmService: DotAlertConfirmService
-    ) {}
+    constructor(public dotAlertConfirmService: DotAlertConfirmService) {}
 
     ngOnInit(): void {
         this.dotAlertConfirmService.confirmDialogOpened$

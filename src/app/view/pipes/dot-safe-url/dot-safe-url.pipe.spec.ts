@@ -17,7 +17,7 @@ const fakeActivatedRoute = {
 };
 
 const fakeDomSanitizer = {
-    bypassSecurityTrustResourceUrl: param => param
+    bypassSecurityTrustResourceUrl: (param) => param
 };
 
 const URL_WITH_PARAMS =
@@ -38,7 +38,7 @@ describe('DotSafeUrlPipe', () => {
                     provide: DomSanitizer,
                     useValue: fakeDomSanitizer
                 },
-                { provide: DotRouterService, useClass: MockDotRouterService },
+                { provide: DotRouterService, useClass: MockDotRouterService }
             ],
             imports: [BrowserAnimationsModule]
         }).compileComponents();

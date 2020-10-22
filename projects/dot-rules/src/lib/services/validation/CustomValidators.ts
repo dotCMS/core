@@ -23,7 +23,7 @@ export class CustomValidators {
         return (control: NgControl): { [key: string]: any } => {
             const v: string = control.value;
             let failed = false;
-            if (!Verify.empty(v) && (v.indexOf('"') !== -1 || v.indexOf('\'') !== -1)) {
+            if (!Verify.empty(v) && (v.indexOf('"') !== -1 || v.indexOf("'") !== -1)) {
                 failed = true;
             }
             return failed ? { noQuotes: true } : null;

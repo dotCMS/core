@@ -36,8 +36,8 @@ export class DotToolbarNotificationsComponent implements OnInit {
     }
 
     dismissAllNotifications(): void {
-        const items = this.notifications.map(item => item.id);
-        this.notificationService.dismissNotifications({ items: items }).subscribe(res => {
+        const items = this.notifications.map((item) => item.id);
+        this.notificationService.dismissNotifications({ items: items }).subscribe((res) => {
             // TODO: I think we should get here res and err
             if (res.errors.length) {
                 return;
@@ -52,12 +52,12 @@ export class DotToolbarNotificationsComponent implements OnInit {
 
         this.notificationService
             .dismissNotifications({ items: [notificationId] })
-            .subscribe(res => {
+            .subscribe((res) => {
                 if (res.errors.length) {
                     return;
                 }
 
-                this.notifications = this.notifications.filter(item => {
+                this.notifications = this.notifications.filter((item) => {
                     return item.id !== notificationId;
                 });
 
@@ -72,7 +72,7 @@ export class DotToolbarNotificationsComponent implements OnInit {
     }
 
     loadMore(): void {
-        this.notificationService.getAllNotifications().subscribe(res => {
+        this.notificationService.getAllNotifications().subscribe((res) => {
             this.notificationsUnreadCount = res.entity.count;
             this.notifications = res.entity.notifications;
             this.existsMoreToLoad = false;
@@ -95,7 +95,7 @@ export class DotToolbarNotificationsComponent implements OnInit {
     }
 
     private getNotifications(): void {
-        this.notificationService.getLastNotifications().subscribe(res => {
+        this.notificationService.getLastNotifications().subscribe((res) => {
             this.notificationsUnreadCount = res.entity.totalUnreadNotifications;
             this.notifications = res.entity.notifications;
             this.existsMoreToLoad = res.entity.total > res.entity.notifications.length;

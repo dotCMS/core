@@ -48,7 +48,7 @@ describe('DotParseHtmlService', () => {
     it('should append content ', () => {
         const code = '<span>last Content</span>';
         dotParseHtmlService.parse(code, target, false);
-        console.log(target)
+        console.log(target);
         expect(target.childNodes.length).toEqual(1);
     });
 });

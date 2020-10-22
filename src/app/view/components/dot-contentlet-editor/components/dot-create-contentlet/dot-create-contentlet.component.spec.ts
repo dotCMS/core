@@ -21,20 +21,22 @@ describe('DotCreateContentletComponent', () => {
     let dotContentletEditorService: DotContentletEditorService;
     let component: DotCreateContentletComponent;
 
-    beforeEach(waitForAsync( () => {
-        DOTTestBed.configureTestingModule({
-            declarations: [DotCreateContentletComponent, DotContentletWrapperComponent],
-            providers: [
-                DotContentletEditorService,
-                DotMenuService,
-                {
-                    provide: LoginService,
-                    useClass: LoginServiceMock
-                }
-            ],
-            imports: [DotIframeDialogModule, BrowserAnimationsModule, RouterTestingModule]
-        });
-    }));
+    beforeEach(
+        waitForAsync(() => {
+            DOTTestBed.configureTestingModule({
+                declarations: [DotCreateContentletComponent, DotContentletWrapperComponent],
+                providers: [
+                    DotContentletEditorService,
+                    DotMenuService,
+                    {
+                        provide: LoginService,
+                        useClass: LoginServiceMock
+                    }
+                ],
+                imports: [DotIframeDialogModule, BrowserAnimationsModule, RouterTestingModule]
+            });
+        })
+    );
 
     beforeEach(() => {
         fixture = DOTTestBed.createComponent(DotCreateContentletComponent);

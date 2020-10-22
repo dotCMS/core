@@ -106,49 +106,51 @@ describe('DotEditPageViewAsControllerComponent', () => {
     let personaSelector: DotPersonaSelectorComponent;
     let dotLicenseService: DotLicenseService;
 
-    beforeEach(waitForAsync( () => {
-        DOTTestBed.configureTestingModule({
-            declarations: [
-                DotTestHostComponent,
-                DotEditPageViewAsControllerComponent,
-                MockDotPersonaSelectorComponent,
-                MockDotDeviceSelectorComponent,
-                MockDotLanguageSelectorComponent
-            ],
-            imports: [BrowserAnimationsModule, TooltipModule, DotPipesModule],
-            providers: [
-                DotLicenseService,
-                {
-                    provide: DotMessageService,
-                    useValue: messageServiceMock
-                },
-                {
-                    provide: DotDevicesService,
-                    useClass: DotDevicesServiceMock
-                },
-                {
-                    provide: DotPersonasService,
-                    useClass: DotPersonasServiceMock
-                },
-                {
-                    provide: DotLanguagesService,
-                    useClass: DotLanguagesServiceMock
-                },
-                {
-                    provide: LoginService,
-                    useClass: LoginServiceMock
-                },
-                {
-                    provide: DotPageStateService,
-                    useClass: DotPageStateServiceMock
-                },
-                {
-                    provide: DotPersonalizeService,
-                    useClass: DotPersonalizeServiceMock
-                }
-            ]
-        });
-    }));
+    beforeEach(
+        waitForAsync(() => {
+            DOTTestBed.configureTestingModule({
+                declarations: [
+                    DotTestHostComponent,
+                    DotEditPageViewAsControllerComponent,
+                    MockDotPersonaSelectorComponent,
+                    MockDotDeviceSelectorComponent,
+                    MockDotLanguageSelectorComponent
+                ],
+                imports: [BrowserAnimationsModule, TooltipModule, DotPipesModule],
+                providers: [
+                    DotLicenseService,
+                    {
+                        provide: DotMessageService,
+                        useValue: messageServiceMock
+                    },
+                    {
+                        provide: DotDevicesService,
+                        useClass: DotDevicesServiceMock
+                    },
+                    {
+                        provide: DotPersonasService,
+                        useClass: DotPersonasServiceMock
+                    },
+                    {
+                        provide: DotLanguagesService,
+                        useClass: DotLanguagesServiceMock
+                    },
+                    {
+                        provide: LoginService,
+                        useClass: LoginServiceMock
+                    },
+                    {
+                        provide: DotPageStateService,
+                        useClass: DotPageStateServiceMock
+                    },
+                    {
+                        provide: DotPersonalizeService,
+                        useClass: DotPersonalizeServiceMock
+                    }
+                ]
+            });
+        })
+    );
 
     beforeEach(() => {
         fixtureHost = DOTTestBed.createComponent(DotTestHostComponent);
@@ -163,10 +165,7 @@ describe('DotEditPageViewAsControllerComponent', () => {
             spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
             // spyOn(component.changeViewAs, 'emit');
 
-            componentHost.pageState = new DotPageRenderState(
-                mockUser(),
-                mockDotRenderedPage()
-            );
+            componentHost.pageState = new DotPageRenderState(mockUser(), mockDotRenderedPage());
 
             fixtureHost.detectChanges();
         });
@@ -186,10 +185,7 @@ describe('DotEditPageViewAsControllerComponent', () => {
             spyOn(component, 'changeDeviceHandler').and.callThrough();
             spyOn(component, 'changeLanguageHandler').and.callThrough();
 
-            componentHost.pageState = new DotPageRenderState(
-                mockUser(),
-                mockDotRenderedPage()
-            );
+            componentHost.pageState = new DotPageRenderState(mockUser(), mockDotRenderedPage());
 
             fixtureHost.detectChanges();
 
@@ -234,7 +230,7 @@ describe('DotEditPageViewAsControllerComponent', () => {
         });
 
         it('should have Device selector with tooltip', () => {
-            const deviceSelectorDe =  de.query(By.css('dot-device-selector'));
+            const deviceSelectorDe = de.query(By.css('dot-device-selector'));
             expect(deviceSelector).not.toBeNull();
             expect(deviceSelectorDe.attributes.appendTo).toBe('target');
             expect(deviceSelectorDe.attributes['ng-reflect-text']).toBe('Default Device');
@@ -254,7 +250,7 @@ describe('DotEditPageViewAsControllerComponent', () => {
         });
 
         it('should have Language selector', () => {
-            const languageSelectorDe =  de.query(By.css('dot-language-selector'));
+            const languageSelectorDe = de.query(By.css('dot-language-selector'));
             expect(languageSelector).not.toBeNull();
             expect(languageSelectorDe.attributes.appendTo).toBe('target');
             expect(languageSelectorDe.attributes['ng-reflect-tooltip-position']).toBe('bottom');

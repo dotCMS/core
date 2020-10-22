@@ -53,9 +53,9 @@ export class DotAppsConfigurationItemComponent {
             },
             reject: () => {},
             header: this.dotMessageService.get('apps.confirmation.title'),
-            message: `${this.dotMessageService.get(
-                'apps.confirmation.delete.message'
-            )} <b>${site.name}</b> ?`,
+            message: `${this.dotMessageService.get('apps.confirmation.delete.message')} <b>${
+                site.name
+            }</b> ?`,
             footerLabel: {
                 accept: this.dotMessageService.get('apps.confirmation.accept')
             }

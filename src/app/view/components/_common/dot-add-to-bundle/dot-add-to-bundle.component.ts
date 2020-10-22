@@ -1,5 +1,14 @@
 import { Observable, Subject } from 'rxjs';
-import { Component, Input, Output, EventEmitter, ViewChild, AfterViewInit, OnInit, OnDestroy } from '@angular/core';
+import {
+    Component,
+    Input,
+    Output,
+    EventEmitter,
+    ViewChild,
+    AfterViewInit,
+    OnInit,
+    OnDestroy
+} from '@angular/core';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { LoggerService } from 'dotcms-js';
@@ -139,7 +148,7 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy
     private getDefaultBundle(bundles: DotBundle[]): DotBundle {
         const lastBundle: DotBundle = JSON.parse(sessionStorage.getItem(LAST_BUNDLE_USED));
         // return lastBundle ? this.bundle$.find(bundle => bundle.name === lastBundle.name) : null;
-        return lastBundle ? bundles.find(bundle => bundle.name === lastBundle.name) : null;
+        return lastBundle ? bundles.find((bundle) => bundle.name === lastBundle.name) : null;
     }
 
     private setDialogConfig(form: FormGroup): void {

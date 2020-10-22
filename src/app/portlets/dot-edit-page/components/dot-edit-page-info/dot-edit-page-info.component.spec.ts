@@ -27,8 +27,8 @@ describe('DotEditPageInfoComponent', () => {
     let de: DebugElement;
     let siteService: SiteService;
 
-   beforeEach(
-          waitForAsync(() => {
+    beforeEach(
+        waitForAsync(() => {
             TestBed.configureTestingModule({
                 declarations: [DotEditPageInfoComponent],
                 imports: [DotApiLinkModule, DotCopyButtonModule, DotPipesModule],
@@ -65,10 +65,7 @@ describe('DotEditPageInfoComponent', () => {
             spyOnProperty(siteService, 'currentSite', 'get').and.returnValue({
                 name: 'demo.dotcms.com'
             });
-            component.pageState = new DotPageRenderState(
-                mockUser(),
-                mockDotRenderedPage()
-            );
+            component.pageState = new DotPageRenderState(mockUser(), mockDotRenderedPage());
             fixture.detectChanges();
         });
 

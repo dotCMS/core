@@ -49,7 +49,7 @@ export class DotWizardComponent implements OnInit, OnDestroy {
     ) {}
 
     ngOnInit() {
-        this.dotWizardService.showDialog$.pipe(takeUntil(this.destroy$)).subscribe(data => {
+        this.dotWizardService.showDialog$.pipe(takeUntil(this.destroy$)).subscribe((data) => {
             this.data = data;
             // need to wait to render the dotContainerReference.
             setTimeout(() => {
@@ -119,8 +119,8 @@ export class DotWizardComponent implements OnInit, OnDestroy {
             componentRef.instance.data = step.data;
             componentRef.instance.value
                 .pipe(takeUntil(this.destroy$))
-                .subscribe(data => this.consolidateValues(data, index));
-            componentRef.instance.valid.pipe(takeUntil(this.destroy$)).subscribe(valid => {
+                .subscribe((data) => this.consolidateValues(data, index));
+            componentRef.instance.valid.pipe(takeUntil(this.destroy$)).subscribe((valid) => {
                 this.setValid(valid, index);
             });
         });

@@ -28,9 +28,7 @@
                     <span *ngIf="variableCopy.value && !variableCopy.hidden">
                         {{ variableCopy.value }}
                     </span>
-                    <span *ngIf="variableCopy.hidden">
-                        ********
-                    </span>
+                    <span *ngIf="variableCopy.hidden"> ******** </span>
                     <span class="empty-placeholder" *ngIf="!variableCopy.value">
                         {{ 'keyValue.value_input.placeholder' | dm }}
                     </span>

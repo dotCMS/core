@@ -18,7 +18,6 @@ import { DotMessage } from './model/dot-message.model';
     templateUrl: 'dot-message-display.component.html'
 })
 export class DotMessageDisplayComponent implements OnInit, OnDestroy {
-
     constructor(
         private dotMessageDisplayService: DotMessageDisplayService,
         private messageService: MessageService

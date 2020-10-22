@@ -69,7 +69,7 @@ describe('dot-binary-file-preview', () => {
             it('should render default value correctly with the button type', async () => {
                 element.setProperty('fileName', FILE_MOCK.fileName);
                 await page.waitForChanges();
-                const button= (await page.find('button'));
+                const button = await page.find('button');
 
                 expect(button.innerText).toBe('Delete');
                 expect(button.getAttribute('type')).toEqual('button');
