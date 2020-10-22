@@ -15,6 +15,18 @@ export default {
             }
         }
     },
+    argTypes: {
+        width: {
+            name: 'width',
+            type: { name: 'string', required: true },
+            defaultValue: '300',
+            description:
+                "Setting a width prevents the dropdown from jumping when an option is larger than the dropdown's width",
+            control: {
+                type: 'text'
+            }
+        }
+    },
     args: {
         options: [
             { label: 'Select City', value: null },
@@ -23,15 +35,16 @@ export default {
             { label: 'London', value: { id: 3, name: 'London', code: 'LDN' } },
             { label: 'Istanbul', value: { id: 4, name: 'Istanbul', code: 'IST' } },
             { label: 'Paris', value: { id: 5, name: 'Paris', code: 'PRS' } }
-        ]
+        ],
+        width: '300'
     }
 } as Meta;
 
 const DropdownTemplate = `
-    <p><p-dropdown [options]="options" showClear="true"></p-dropdown></p>
-    <p><p-dropdown [options]="options" disabled="true"></p-dropdown></p>
+    <p><p-dropdown [options]="options" showClear="true" [style]="{'width': width + 'px'}"></p-dropdown></p>
+    <p><p-dropdown [options]="options" disabled="true" [style]="{'width': width + 'px'}"></p-dropdown></p>
     <hr />
-    <p><p-dropdown class="p-dropdown-sm" [options]="options"></p-dropdown></p>
+    <p><p-dropdown class="p-dropdown-sm" [options]="options" [style]="{'width': width + 'px'}"></p-dropdown></p>
 `;
 const Template: Story<Dropdown> = (args: Dropdown) => {
     return {

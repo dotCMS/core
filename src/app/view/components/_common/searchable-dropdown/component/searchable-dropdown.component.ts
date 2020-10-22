@@ -168,10 +168,15 @@ export class SearchableDropdownComponent
      * @memberof SearchableDropdownComponent
      */
     showOverlayHandler(): void {
-        this.cssClass +=
+        const cssClass =
             this.totalRecords > this.rows
                 ? ' searchable-dropdown paginator'
                 : ' searchable-dropdown';
+        if (typeof this.cssClass === 'undefined') {
+            this.cssClass = cssClass;
+        } else {
+            this.cssClass += cssClass;
+        }
         setTimeout(() => {
             if (!this.overlayPanelMinHeight) {
                 this.overlayPanelMinHeight = this.searchPanelRef.container

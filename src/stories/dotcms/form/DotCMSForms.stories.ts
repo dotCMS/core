@@ -81,7 +81,8 @@ export default {
                 { name: 'Blogs', id: 1 },
                 { name: 'System Workflow', id: 2 }
             ];
-        }
+        },
+        width: '200'
     }
 } as Meta;
 
@@ -252,6 +253,7 @@ const HorizontalTemplate = `
             inputId="dropdown"
             selectId="dropdown"
             [options]="options"
+            [style]="{'width': width + 'px'}"
         ></p-dropdown>
     </div>
     <div class="p-field">
