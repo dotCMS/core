@@ -21,11 +21,11 @@ public class TemplateSQL {
                     "template.inode = template_1_.inode and " +
                     "template.inode=vi.working_inode ";
 
-    public static final String SELECT_ALL_FIELDS = "select inode, show_on_menu, title, mod_date, mod_user, " +
-            "sort_order, friendly_name, body, header, footer, image, identifier, drawed, drawed_body, " +
-            "add_container_links, containers_added, head_code, theme from " + Type.TEMPLATE.getTableName();
+//    public static final String SELECT_ALL_FIELDS = "select inode, show_on_menu, title, mod_date, mod_user, " +
+//            "sort_order, friendly_name, body, header, footer, image, identifier, drawed, drawed_body, " +
+//            "add_container_links, containers_added, head_code, theme from " + Type.TEMPLATE.getTableName();
 
-    public static final String FIND_BY_INODE = SELECT_ALL_FIELDS + " where inode = ?";
+    public static final String FIND_BY_INODE = "select template.* from template where inode = ?";
 
     public static final String INSERT_INODE = "insert into inode (inode, idate, owner, type) values (?,?,?,'template')";
 
@@ -43,5 +43,6 @@ public class TemplateSQL {
 
     public static final String DELETE_TEMPLATE_BY_INODE = "delete from template where inode = ?";
 
-
+    public static final String FIND_TEMPLATES_BY_CONTAINER_INODE = "SELECT template.* from template template, tree tree, inode inode "
+            + "where tree.parent = ? and tree.child = template.inode and inode.inode = template.inode and inode.type = 'template'";
 }

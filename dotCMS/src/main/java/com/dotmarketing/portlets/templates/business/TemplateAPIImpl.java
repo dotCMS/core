@@ -563,4 +563,11 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		}
 		return templateAllVersions;
 	}
+
+	@Override
+	@CloseDBIfOpened
+	public List<Template> findTemplatesByContainerInode(final String containerInode)
+			throws DotDataException {
+		return templateFactory.findTemplatesByContainerInode(containerInode);
+	}
 }

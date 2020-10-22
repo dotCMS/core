@@ -611,7 +611,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		    if(identifier!=null && UtilMethods.isSet(identifier.getId())) {
 		        if(!existingInode) {
         		    currentContainer = getWorkingContainerById(container.getIdentifier(), user, respectFrontendRoles);
-        			currentTemplates = InodeFactory.getChildrenClass(currentContainer, Template.class);
+        			currentTemplates = APILocator.getTemplateAPI().findTemplatesByContainerInode(currentContainer.getInode());
 		        }
 		    }
 		    else {

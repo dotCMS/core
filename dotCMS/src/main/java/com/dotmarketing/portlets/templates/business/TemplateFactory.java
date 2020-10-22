@@ -79,7 +79,7 @@ public interface TemplateFactory {
 
 	/**
 	 * Brings the versions of a specific template, if bringOldVersions is true brings all the versions,
-	 * 	 * if is set to false, only brings the working and the live version
+	 * if is set to false, only brings the working and the live version
 	 * @param identifier id of the template
 	 * @param bringOldVersions true = all versions, false = only live and working
 	 * @return
@@ -94,4 +94,14 @@ public interface TemplateFactory {
 	 * @throws DotDataException
 	 */
 	void deleteTemplateByInode(final String templateInode) throws DotDataException;
+
+	/**
+	 * Finds the templates where the containerInode is set as a parent in the tree table.
+	 * Was created to recreate InodeFactory.getChildrenClass(Inode p, Class c) since it uses Hibernate
+	 * and Templates were remove from the hbm files.
+	 * @param containerInode
+	 * @return
+	 * @throws DotDataException
+	 */
+	List<Template> findTemplatesByContainerInode(final String containerInode) throws DotDataException;
 }

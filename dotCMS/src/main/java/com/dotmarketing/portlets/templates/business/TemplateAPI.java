@@ -328,5 +328,15 @@ public interface TemplateAPI {
 	 */
 	List<Template> findAllVersions(final Identifier identifier, final User user, final boolean respectFrontendRoles, final boolean bringOldVersions)
 			throws DotDataException, DotSecurityException;
+
+	/**
+	 * Finds the templates where the containerInode is set as a parent in the tree table.
+	 * Was created to recreate InodeFactory.getChildrenClass(Inode p, Class c) since it uses Hibernate
+	 * and Templates were remove from the hbm files.
+	 * @param containerInode
+	 * @return
+	 * @throws DotDataException
+	 */
+	List<Template> findTemplatesByContainerInode(final String containerInode) throws DotDataException;
 	
 }

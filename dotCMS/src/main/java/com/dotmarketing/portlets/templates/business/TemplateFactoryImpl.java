@@ -675,4 +675,11 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		dc.addParam(inode);
 		dc.loadResult();
 	}
+
+	public List<Template> findTemplatesByContainerInode(final String containerInode) throws DotDataException{
+		DotConnect dc = new DotConnect();
+		dc.setSQL(templateSQL.FIND_TEMPLATES_BY_CONTAINER_INODE);
+		dc.addParam(containerInode);
+		return TransformerLocator.createTemplateTransformer(dc.loadObjectResults()).asList();
+	}
 }
