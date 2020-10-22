@@ -199,6 +199,11 @@ public class VersionableFactoryImpl extends VersionableFactory {
 
 			return new ArrayList<Versionable>(1);
 		}
+		if(clazz.equals(Template.class)){
+			final List<Versionable> templateAllVersions = new ArrayList<>();
+			templateAllVersions.addAll(FactoryLocator.getTemplateFactory().findAllVersions(identifier,true));
+			return templateAllVersions;
+		}
 
 		final HibernateUtil dh = new HibernateUtil(clazz);
 		dh.setQuery("from inode in class " + clazz.getName() + " where inode.identifier = ? and inode.type='" + identifier.getAssetType() + "' order by mod_date desc");
