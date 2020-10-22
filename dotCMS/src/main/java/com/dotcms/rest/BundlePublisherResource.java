@@ -4,8 +4,7 @@ package com.dotcms.rest;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditStatus;
@@ -67,7 +66,7 @@ public class BundlePublisherResource {
 	) throws Exception {
 
 
-		if (LicenseUtil.getLevel() == LicenseLevel.COMMUNITY.level) {
+		if (LicenseManager.getInstance().isCommunity()) {
 			throw new InvalidLicenseException("License required");
 		}
 

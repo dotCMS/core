@@ -3,6 +3,7 @@ package com.dotcms.rest;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.integritycheckers.IntegrityType;
 import com.dotcms.integritycheckers.IntegrityUtil;
@@ -197,7 +198,7 @@ public class IntegrityResource {
     @Produces("text/plain")
     public Response generateIntegrityData(@Context HttpServletRequest request)  {
 
-        if (LicenseUtil.getLevel() == LicenseLevel.COMMUNITY.level) {
+        if (LicenseManager.getInstance().isCommunity()) {
             throw new InvalidLicenseException("License required");
         }
 
@@ -798,7 +799,7 @@ public class IntegrityResource {
                                              @FormDataParam("TYPE") String type ) throws JSONException {
 
 
-        if (LicenseUtil.getLevel() == LicenseLevel.COMMUNITY.level) {
+        if (LicenseManager.getInstance().isCommunity()) {
             throw new InvalidLicenseException("License required");
         }
 
