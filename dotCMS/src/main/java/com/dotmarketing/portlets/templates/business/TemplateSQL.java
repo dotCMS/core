@@ -27,6 +27,8 @@ public class TemplateSQL {
 
     public static final String FIND_BY_INODE = "select template.* from template where inode = ?";
 
+    public static final String FIND_IDATE_OWNER_FROM_INODE_BY_INODE = "select idate,owner from inode where inode = ?";
+
     public static final String INSERT_INODE = "insert into inode (inode, idate, owner, type) values (?,?,?,'template')";
 
     public static final String INSERT_TEMPLATE = "insert into template (inode, show_on_menu, title, mod_date, mod_user, " +
@@ -45,4 +47,17 @@ public class TemplateSQL {
 
     public static final String FIND_TEMPLATES_BY_CONTAINER_INODE = "SELECT template.* from template template, tree tree, inode inode "
             + "where tree.parent = ? and tree.child = template.inode and inode.inode = template.inode and inode.type = 'template'";
+
+    public static final String FIND_ALL_VERSIONS_BY_IDENTIFIER = "SELECT inode FROM template WHERE identifier=? order by mod_date desc";
+
+    public static final String FIND_WORKING_LIVE_VERSION_BY_IDENTIFIER = "SELECT inode FROM template t INNER JOIN template_version_info tvi "
+            + "ON (t.inode = tvi.working_inode OR t.inode = tvi.live_inode) "
+            + "WHERE t.identifier=? order by t.mod_date desc";
+
+    public static final String FIND_TEMPLATES_BY_MOD_USER="select inode from template where mod_user = ?";
+
+    public static final String UPDATE_MOD_USER_BY_MOD_USER = "UPDATE template set mod_user = ? where mod_user = ?";
+
+    public static final String UPDATE_LOCKED_BY = "update " + Type.TEMPLATE.getVersionTableName() + " set locked_by=? where locked_by  = ?";
+
 }

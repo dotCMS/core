@@ -38,15 +38,22 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		Template template = templateCache.get(inode);
 
 		if(template==null){
-			final List<Map<String, Object>> results = new DotConnect()
+			final List<Map<String, Object>> templateResults = new DotConnect()
 					.setSQL(templateSQL.FIND_BY_INODE)
 					.addParam(inode)
 					.loadObjectResults();
-			if (results.isEmpty()) {
+			if (templateResults.isEmpty()) {
 				Logger.debug(this, "Template with inode: " + inode + " not found");
 				return null;
 			}
-			template = (Template) TransformerLocator.createTemplateTransformer(results).findFirst();
+			//This probably can be deleted when we add the iDate and Owner to the template table
+			final List<Map<String, Object>> inodeResults = new DotConnect()
+					.setSQL(templateSQL.FIND_IDATE_OWNER_FROM_INODE_BY_INODE)
+					.addParam(inode)
+					.loadObjectResults();
+			templateResults.get(0).putAll(inodeResults.get(0));
+			//
+			template = (Template) TransformerLocator.createTemplateTransformer(templateResults).findFirst();
 
 			if(template != null && template.getInode() != null) {
 				templateCache.add(inode, template);
@@ -602,16 +609,16 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		DotConnect dc = new DotConnect();
        
        try {
-          dc.setSQL("select inode from " + Type.TEMPLATE.getTableName() + " where mod_user = ?");
+          dc.setSQL(templateSQL.FIND_TEMPLATES_BY_MOD_USER);
           dc.addParam(userId);
           List<HashMap<String, String>> templates = dc.loadResults();
           
-          dc.setSQL("UPDATE " + Type.TEMPLATE.getTableName() + " set mod_user = ? where mod_user = ? ");
+          dc.setSQL(templateSQL.UPDATE_MOD_USER_BY_MOD_USER);
           dc.addParam(replacementUserId);
           dc.addParam(userId);
           dc.loadResult();
           
-          dc.setSQL("update " + Type.TEMPLATE.getVersionTableName() + " set locked_by=? where locked_by  = ?");
+          dc.setSQL(templateSQL.UPDATE_LOCKED_BY);
           dc.addParam(replacementUserId);
           dc.addParam(userId);
           dc.loadResult();
@@ -638,12 +645,10 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		final StringBuffer query = new StringBuffer();
 
 		if(bringOldVersions) {
-			query.append("SELECT inode FROM template WHERE identifier=? order by mod_date desc");
+			query.append(templateSQL.FIND_ALL_VERSIONS_BY_IDENTIFIER);
 
 		} else {//This only brings the inode of the working and live version
-			query.append("SELECT inode FROM template t INNER JOIN template_version_info tvi "
-					+ "ON (t.inode = tvi.working_inode OR t.inode = tvi.live_inode) "
-					+ "WHERE t.identifier=? order by t.mod_date desc ");
+			query.append(templateSQL.FIND_WORKING_LIVE_VERSION_BY_IDENTIFIER);
 		}
 
 		dc.setSQL(query.toString());
