@@ -3,9 +3,11 @@ package com.dotcms.publisher.pusher;
 import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
+
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import io.jsonwebtoken.*;
@@ -70,7 +72,7 @@ public enum AuthCredentialPushPublishUtil {
     public PushPublishAuthenticationToken processAuthHeader(final HttpServletRequest request) {
         final boolean useJWTToken = isJWTAvailable();
 
-        try{
+        try {
             if (useJWTToken) {
                 final PushPublishAuthenticationToken pushPublishAuthenticationToken = getFromJWTToken(request);
 
@@ -85,7 +87,6 @@ public enum AuthCredentialPushPublishUtil {
         } catch (DotDataException | IOException e) {
             return PushPublishAuthenticationToken.INVALID_TOKEN;
         }
-
     }
 
     private PushPublishAuthenticationToken getFromEndPointAuthKey(HttpServletRequest request) throws DotDataException, IOException {

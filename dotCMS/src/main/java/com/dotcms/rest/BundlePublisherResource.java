@@ -4,6 +4,8 @@ package com.dotcms.rest;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditStatus;
@@ -19,6 +21,7 @@ import javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
@@ -62,6 +65,12 @@ public class BundlePublisherResource {
 			@Context final HttpServletRequest  request,
 			@Context final HttpServletResponse response
 	) throws Exception {
+
+
+		if (LicenseUtil.getLevel() == LicenseLevel.COMMUNITY.level) {
+			throw new InvalidLicenseException("License required");
+		}
+
 		final ResourceResponse responseResource = new ResourceResponse(
 				CollectionsUtils.map("type", type, "callback", callback));
 		final String remoteIP = UtilMethods.isSet(request.getRemoteHost())?
