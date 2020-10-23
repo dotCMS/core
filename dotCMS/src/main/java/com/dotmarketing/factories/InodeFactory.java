@@ -948,12 +948,7 @@ public class InodeFactory {
 			throw new DotStateException("Relationship mapping was deleted from hibernate files");
 		}
 		if(c.equals(Template.class)){
-			Logger.info(Template.class,"Template mapping was deleted from hibernate files, using factory instead");
-			try {
-				return FactoryLocator.getTemplateFactory().find(x);
-			} catch (DotDataException e) {
-				Logger.debug(Template.class, "Unable to find template with inode : " + x, e);
-			}
+			throw new DotStateException("Relationship mapping was deleted from hibernate files");
 		}
 		
 		
