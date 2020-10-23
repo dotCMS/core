@@ -29,7 +29,7 @@ public class WebPImageFilter extends ImageFilter {
 	    Float quality = new Float(qualityParam);
 	    quality = quality/100;
 
-	    final File resultFile = getResultsFile(file, parameters, "webp");
+	    final File resultFile = getResultsFile(file, parameters, file.getName().endsWith("gif") ? FILE_EXT : "webp");
 
 	    if(!overwrite(resultFile,parameters)){
 	        return resultFile;
