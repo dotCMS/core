@@ -5,6 +5,7 @@ import static org.junit.Assert.assertTrue;
 
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import java.sql.SQLException;
 import org.junit.BeforeClass;
@@ -20,6 +21,12 @@ public class Task201013AddNewColumnsToIdentifierTableTest {
 
     private void dropColumns() throws SQLException {
         final DotConnect dotConnect = new DotConnect();
+
+        if (DbConnectionFactory.isMsSql()) {
+            dotConnect.executeStatement(
+                    "DROP INDEX if exists idx_identifier_asset_subtype ON identifier");
+        }
+
         dotConnect.executeStatement("ALTER TABLE identifier DROP COLUMN owner");
         dotConnect.executeStatement("ALTER TABLE identifier DROP COLUMN create_date");
         dotConnect.executeStatement("ALTER TABLE identifier DROP COLUMN asset_subtype");
