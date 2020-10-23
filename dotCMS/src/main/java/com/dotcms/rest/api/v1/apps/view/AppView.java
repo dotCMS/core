@@ -1,10 +1,9 @@
 package com.dotcms.rest.api.v1.apps.view;
 
-import com.dotcms.rendering.velocity.util.VelocityUtil;
+import static com.dotcms.rest.api.v1.apps.view.ViewUtil.interpolateValues;
+
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
-import com.dotcms.rest.api.v1.apps.view.ViewStack.StackContext;
 import com.dotcms.security.apps.AppDescriptor;
-import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -13,18 +12,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.io.IOException;
-import java.io.StringReader;
-import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.beanutils.BeanUtils;
-import org.apache.velocity.Template;
-import org.apache.velocity.VelocityContext;
-import org.apache.velocity.runtime.RuntimeServices;
-import org.apache.velocity.runtime.RuntimeSingleton;
-import org.apache.velocity.runtime.parser.ParseException;
-import org.apache.velocity.runtime.parser.node.SimpleNode;
 
 /**
  * Represents a service integration. Which serves as the top level entry for all the endpoints. The
@@ -162,75 +152,17 @@ public class AppView {
                 map.put("sitesWithWarnings", appView.sitesWithWarnings);
             }
 
-            ViewStack.createStack(map);
+            ViewUtil.newStackContext(appView);
 
             final String json = mapper.writeValueAsString(map);
 
-            final StackContext currentStack = ViewStack.getCurrentStack();
-
-            final String interpolationAppliedJson = applyInterpolation(json, currentStack);
+            final String interpolationAppliedJson = interpolateValues(json);
 
             jsonGenerator.writeRawValue(interpolationAppliedJson);
 
-            ViewStack.dispose();
+            ViewUtil.disposeStackContext();
 
         }
-    }
-
-    static String applyInterpolation(final String inputJson, final StackContext stackContext) {
-        try {
-            final RuntimeServices runtimeServices = RuntimeSingleton.getRuntimeServices();
-            final StringReader stringReader = new StringReader(inputJson);
-            final SimpleNode simpleNode = runtimeServices.parse(stringReader, "app template");
-
-            final Template template = new Template();
-            template.setData(simpleNode);
-            template.initDocument();
-
-            final VelocityContext velocityContext = new VelocityContext();
-
-            final String appPrefix = "app.";
-
-            stackContext.app.forEach((key, value) -> {
-                velocityContext.put(appPrefix + key, value);
-            });
-
-            final String secretsPrefix = appPrefix + "secrets.";
-
-            stackContext.secretsBySite.forEach((siteId, secrets) -> {
-                for (Map<String, Object> mapSecret : secrets) {
-                    final String secretName = (String) mapSecret.get("name");
-                    final Object hidden = mapSecret.get("hidden");
-                    final Object type = mapSecret.get("type");
-                    final Object value = mapSecret.get("value");
-
-                    velocityContext.put(secretsPrefix + secretName, secretName);
-                    velocityContext.put(secretsPrefix + secretName + ".name", secretName);
-                    velocityContext.put(secretsPrefix + secretName + ".hidden", hidden);
-                    velocityContext.put(secretsPrefix + secretName + ".type", type);
-                    velocityContext.put(secretsPrefix + secretName + ".value", value);
-                }
-            });
-
-            final String sitesPrefix = appPrefix + "sites['%s']";
-
-            stackContext.sites.forEach((site, mapSite) -> {
-                final String id = (String) mapSite.get("id");
-                final String siteName = (String) mapSite.get("name");
-                final Object configured = mapSite.get("configured");
-                final String sitePrefix = String.format(sitesPrefix, id);
-                velocityContext.put(sitePrefix + ".id", id);
-                velocityContext.put(sitePrefix + ".name", siteName);
-                velocityContext.put(sitePrefix + ".configured", configured);
-            });
-
-            final StringWriter stringWriter = new StringWriter();
-            template.merge(velocityContext, stringWriter);
-            return stringWriter.toString();
-        } catch (ParseException e) {
-            Logger.error(AppView.class, "Error Parsing ", e);
-        }
-        return inputJson;
     }
 
 }

@@ -116,8 +116,7 @@ public class SecretView {
                 }
             }
 
-            ViewStack.pushSecret(map);
-
+            ViewUtil.pushSecret(map);
             final String json = mapper.writeValueAsString(map);
             jsonGenerator.writeRawValue(json);
 

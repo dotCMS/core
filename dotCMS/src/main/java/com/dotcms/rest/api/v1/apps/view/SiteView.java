@@ -120,10 +120,11 @@ public class SiteView {
                map.put("secretsWithWarnings", siteView.secretsWithWarnings);
             }
 
-            ViewStack.pushSite(siteView.id, map);
-
+            ViewUtil.currentSite(siteView.id);
             final String json = mapper.writeValueAsString(map);
-            jsonGenerator.writeRawValue(json);
+            final String interpolatedJson = ViewUtil.interpolateValues(json);
+            ViewUtil.currentSite(null);
+            jsonGenerator.writeRawValue(interpolatedJson);
         }
     }
 }
