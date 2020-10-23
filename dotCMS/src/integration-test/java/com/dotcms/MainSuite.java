@@ -25,6 +25,7 @@ import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateToolTest;
 import com.dotcms.rest.BundleResourceTest;
 import com.dotcms.rest.api.v1.apps.AppsResourceTest;
+import com.dotcms.rest.api.v1.apps.view.AppsInterpolationTest;
 import com.dotcms.rest.api.v1.folder.FolderResourceTest;
 import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResourceTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
@@ -348,7 +349,8 @@ import org.junit.runners.Suite.SuiteClasses;
         FileMetadataAPITest.class,
         StartupTasksExecutorTest.class,
         Task201013AddNewColumnsToIdentifierTableTest.class,
-        Task201014UpdateColumnsValuesInIdentifierTableTest.class
+        Task201014UpdateColumnsValuesInIdentifierTableTest.class,
+        AppsInterpolationTest.class
 })
 public class MainSuite {
 
