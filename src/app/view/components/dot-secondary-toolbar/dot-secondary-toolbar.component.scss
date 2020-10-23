@@ -1,46 +1,51 @@
 @use "variables" as *;
 
-:host {
-    .dot-secondary-toolbar__main,
-    .dot-secondary-toolbar__lower:empty {
-        display: none;
-    }
+.dot-secondary-toolbar__main,
+.dot-secondary-toolbar__lower:empty {
+    display: none;
+}
 
-    .dot-secondary-toolbar__main {
-        background-color: $white;
-        border-bottom: solid 1px $gray-light;
+.dot-secondary-toolbar__main {
+    background-color: $white;
+    border-bottom: solid 1px $gray-light;
+    display: flex;
+    padding: $spacing-3;
+}
+
+.dot-secondary-toolbar__lower {
+    display: flex;
+    padding: 0 $spacing-3;
+    flex-wrap: wrap;
+}
+
+::ng-deep {
+    .main-toolbar-left,
+    .lower-toolbar-left {
         display: flex;
-        padding: $spacing-3;
+        flex-grow: 1;
     }
 
-    .dot-secondary-toolbar__lower {
+    .main-toolbar-right,
+    .lower-toolbar-right {
+        align-items: center;
         display: flex;
-        padding: 0 $spacing-3;
-        flex-wrap: wrap;
     }
 
-    ::ng-deep {
-        .main-toolbar-left,
-        .lower-toolbar-left {
-            display: flex;
-            flex-grow: 1;
-        }
+    .lower-toolbar-left,
+    .lower-toolbar-right {
+        height: $dot-secondary-toolbar-height;
+    }
 
-        .main-toolbar-right,
+    @media only screen and (max-width: $screen-device-container-max) {
         .lower-toolbar-right {
-            align-items: center;
-            display: flex;
+            flex-flow: row-reverse;
         }
+    }
 
-        .lower-toolbar-left,
-        .lower-toolbar-right {
-            height: $dot-secondary-toolbar-height;
-        }
-
-        @media only screen and (max-width: $screen-device-container-max) {
-            .lower-toolbar-right {
-                flex-flow: row-reverse;
-            }
-        }
+    .toolbar__sep {
+        border-left: solid 1px $gray-bg;
+        margin: 0 $spacing-3 0 $spacing-2;
+        display: block;
+        height: 40px;
     }
 }

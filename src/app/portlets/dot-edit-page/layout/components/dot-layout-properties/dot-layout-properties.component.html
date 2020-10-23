@@ -16,5 +16,11 @@
         <dot-layout-property-sidebar formControlName="sidebar"></dot-layout-property-sidebar>
     </div>
 </p-overlayPanel>
-
-<dot-icon-button icon="view_quilt" (click)="op.toggle($event)"></dot-icon-button>
+<button
+    pButton
+    type="button"
+    class="p-button-text p-button-vertical"
+    label="{{'editpage.layout.theme.button.label' | dm }}"
+    (click)="op.toggle($event)">
+    <span class="p-button-icon material-icons">view_quilt</span>
+</button>

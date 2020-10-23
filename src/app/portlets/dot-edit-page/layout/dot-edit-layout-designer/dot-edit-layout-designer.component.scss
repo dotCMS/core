@@ -3,21 +3,35 @@
 
 :host {
     min-width: 750px;
-}
 
-dot-layout-properties {
-    margin-right: $spacing-1;
+    dot-icon-button {
+        margin-left: $spacing-2;
+    }
+
+    ::ng-deep {
+        .p-button-vertical {
+            .p-button-label {
+                text-transform: capitalize !important;
+            }
+        }
+
+        dot-secondary-toolbar .dot-secondary-toolbar__main {
+            padding: 0 $spacing-3;
+        }
+    }
+
+
 }
 
 dot-layout-designer {
     background-color: $white;
     box-shadow: $md-shadow-1;
     flex-grow: 1;
-    margin: 0 $spacing-3;
+    margin: $spacing-3 $spacing-3 0;
     padding: $spacing-6;
     // This canculating the space of the layout editor
     // based on the toolbars and required margin
-    height: calc(100vh - 60px - 68px - 48px - 16px);
+    height: calc(100vh - 60px - 4rem - 2rem);
     overflow: auto;
 }
 
