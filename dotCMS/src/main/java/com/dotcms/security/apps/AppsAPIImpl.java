@@ -704,11 +704,7 @@ public class AppsAPIImpl implements AppsAPI {
            if(null == paramAppKeysBySite || paramAppKeysBySite.isEmpty()){
               throw new IllegalArgumentException("No `AppKeysBySite` param wasn't specified.");
            }
-            //This does transform all keys into their lowe case version
-            Map<String, Set<String>> paramAppKeysBySiteLC = paramAppKeysBySite.entrySet().stream()
-                    .collect(Collectors.toMap(entry -> entry.getKey().toLowerCase(),
-                            Entry::getValue));
-           exportedSecrets = collectSecretsForExport(paramAppKeysBySiteLC, user);
+           exportedSecrets = collectSecretsForExport(paramAppKeysBySite, user);
         }
 
         Logger.info(AppsAPIImpl.class," exporting : "+exportedSecrets);
@@ -735,9 +731,9 @@ public class AppsAPIImpl implements AppsAPI {
         }
 
         for (final Entry<String, Set<String>> entry : paramAppKeysBySite.entrySet()) {
-            final String siteId = entry.getKey();
+            final String siteId =  Host.SYSTEM_HOST.equalsIgnoreCase(entry.getKey()) ? Host.SYSTEM_HOST : entry.getKey();
             final Host site = hostAPI.find(siteId, user, false);
-            if (null != site) {
+            if (null != site ) {
                 final Set<String> appKeysBySiteId = paramAppKeysBySite.get(siteId);
                 if (isSet(appKeysBySiteId)) {
                     for (final String appKey : appKeysBySiteId) {
