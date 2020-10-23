@@ -1,6 +1,7 @@
 package com.dotcms.rest;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.integritycheckers.IntegrityType;
 import com.dotcms.integritycheckers.IntegrityUtil;
@@ -15,6 +16,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.util.*;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJob;
@@ -193,6 +195,10 @@ public class IntegrityResource {
     @Path("/_generateintegritydata")
     @Produces("text/plain")
     public Response generateIntegrityData(@Context HttpServletRequest request)  {
+
+        if (LicenseManager.getInstance().isCommunity()) {
+            throw new InvalidLicenseException("License required");
+        }
 
         final String localAddress = RestEndPointIPUtil.getFullLocalIp(request);
         final String remoteIp = RestEndPointIPUtil.resolveRemoteIp(request);
@@ -789,6 +795,10 @@ public class IntegrityResource {
     public Response fixConflictsFromRemote ( @Context final HttpServletRequest request,
                                              @FormDataParam("DATA_TO_FIX") InputStream dataToFix,
                                              @FormDataParam("TYPE") String type ) throws JSONException {
+
+        if (LicenseManager.getInstance().isCommunity()) {
+            throw new InvalidLicenseException("License required");
+        }
 
         final AuthCredentialPushPublishUtil.PushPublishAuthenticationToken pushPublishAuthenticationToken
                 = AuthCredentialPushPublishUtil.INSTANCE.processAuthHeader(request);
