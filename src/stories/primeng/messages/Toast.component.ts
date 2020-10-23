@@ -8,14 +8,18 @@ import { MessageService } from 'primeng/api';
         <p-toast position="top-left" key="tl"></p-toast>
         <p-toast position="top-center" key="tc"></p-toast>
         <p-toast position="bottom-center" key="bc"></p-toast>
-        <button
-            type="button"
-            pButton
-            pRipple
-            (click)="showSuccess()"
-            label="Success"
-            class="p-button-success"
-        ></button>
+        <p>
+            <button type="button" pButton pRipple (click)="showSuccess()" label="Success"></button>
+        </p>
+        <p>
+            <button type="button" pButton pRipple (click)="showError()" label="Error"></button>
+        </p>
+        <p>
+            <button type="button" pButton pRipple (click)="showInfo()" label="Info"></button>
+        </p>
+        <p>
+            <button type="button" pButton pRipple (click)="showWarn()" label="Warning"></button>
+        </p>
     `
 })
 export class ToastComponent {
@@ -28,32 +32,28 @@ export class ToastComponent {
     showSuccess() {
         this.messageService.add({
             severity: 'success',
-            summary: 'Success',
-            detail: 'Message Content'
+            detail: 'The action "Publish" was executed succesfully'
         });
     }
 
     showInfo() {
         this.messageService.add({
             severity: 'info',
-            summary: 'Info',
-            detail: 'Message Content'
+            detail: 'Make sure you add the width of the element'
         });
     }
 
     showWarn() {
         this.messageService.add({
             severity: 'warn',
-            summary: 'Warn',
-            detail: 'Message Content'
+            detail: 'Make sure you add the width of the element'
         });
     }
 
     showError() {
         this.messageService.add({
             severity: 'error',
-            summary: 'Error',
-            detail: 'Message Content'
+            detail: 'Something went wrong, please try again.'
         });
     }
 
@@ -61,7 +61,6 @@ export class ToastComponent {
         this.messageService.add({
             key: 'tl',
             severity: 'info',
-            summary: 'Info',
             detail: 'Message Content'
         });
     }
@@ -70,7 +69,6 @@ export class ToastComponent {
         this.messageService.add({
             key: 'tc',
             severity: 'info',
-            summary: 'Info',
             detail: 'Message Content'
         });
     }
@@ -79,7 +77,6 @@ export class ToastComponent {
         this.messageService.add({
             key: 'bc',
             severity: 'info',
-            summary: 'Info',
             detail: 'Message Content'
         });
     }
