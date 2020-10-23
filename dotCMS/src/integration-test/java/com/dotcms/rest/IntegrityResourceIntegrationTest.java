@@ -31,7 +31,7 @@ public class IntegrityResourceIntegrationTest extends IntegrationTestBase {
 
     }
 
-    @Test(expected = InvalidLicenseException.class)
+    @Test
     public void fixConflictsShouldReturnLicenseException() throws Exception {
 
         runNoLicense(()-> {
