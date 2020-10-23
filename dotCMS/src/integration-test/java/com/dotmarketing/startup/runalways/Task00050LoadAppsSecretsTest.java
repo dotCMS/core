@@ -21,7 +21,6 @@ import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.startup.runalways.Task00050LoadAppsSecrets;
 import com.dotmarketing.util.Config;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;

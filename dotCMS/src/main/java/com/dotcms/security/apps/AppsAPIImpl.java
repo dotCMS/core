@@ -731,10 +731,10 @@ public class AppsAPIImpl implements AppsAPI {
         }
 
         for (final Entry<String, Set<String>> entry : paramAppKeysBySite.entrySet()) {
-            final String siteId =  Host.SYSTEM_HOST.equalsIgnoreCase(entry.getKey()) ? Host.SYSTEM_HOST : entry.getKey();
+            final String siteId = Host.SYSTEM_HOST.equalsIgnoreCase(entry.getKey()) ? Host.SYSTEM_HOST : entry.getKey();
             final Host site = hostAPI.find(siteId, user, false);
             if (null != site ) {
-                final Set<String> appKeysBySiteId = paramAppKeysBySite.get(siteId);
+                final Set<String> appKeysBySiteId = paramAppKeysBySite.get(siteId.toLowerCase());
                 if (isSet(appKeysBySiteId)) {
                     for (final String appKey : appKeysBySiteId) {
                         final Optional<AppSecrets> optional = getSecrets(appKey, site, user);
@@ -753,7 +753,7 @@ public class AppsAPIImpl implements AppsAPI {
             }
         }
         if(exportedSecrets.isEmpty()){
-            throw new IllegalArgumentException(String.format("Unable to collect any secrets for export with the given params `%s` ", paramAppKeysBySite));
+            throw new IllegalArgumentException("Unable to collect any secrets for the given params. The result would be an empty file.");
         }
         return new AppsSecretsImportExport(exportedSecrets);
     }
