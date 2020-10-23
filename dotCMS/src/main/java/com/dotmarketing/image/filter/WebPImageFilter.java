@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Map;
 
 import javax.imageio.IIOImage;
@@ -49,10 +50,14 @@ public class WebPImageFilter extends ImageFilter {
 	            writeParam.setCompressionQuality(quality);
 	        }
 
+			Logger.info(this.getClass(), "PROBANDO");
+			Logger.info(this.getClass(), Arrays.asList(ImageIO.getReaderFormatNames()).toString());
+
 	        writer.setOutput(new FileImageOutputStream(resultFile));
 	        writer.write(null, new IIOImage(ImageIO.read(new FileInputStream(file)), null, null), writeParam);
 	        writer.dispose();
 	    } catch (IOException e) {
+	    	e.printStackTrace();
 	        Logger.error(this.getClass(), e.getMessage());
 	    }
 
