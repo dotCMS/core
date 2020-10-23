@@ -1,6 +1,7 @@
 package com.dotmarketing.image.filter;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Map;
@@ -49,7 +50,7 @@ public class WebPImageFilter extends ImageFilter {
 	        }
 
 	        writer.setOutput(new FileImageOutputStream(resultFile));
-	        writer.write(null, new IIOImage(ImageIO.read(file), null, null), writeParam);
+	        writer.write(null, new IIOImage(ImageIO.read(new FileInputStream(file)), null, null), writeParam);
 	        writer.dispose();
 	    } catch (IOException e) {
 	        Logger.error(this.getClass(), e.getMessage());
