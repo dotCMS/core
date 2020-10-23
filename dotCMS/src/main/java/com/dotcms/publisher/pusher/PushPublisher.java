@@ -541,7 +541,7 @@ public class  PushPublisher extends Publisher {
 	 */
 	private void updateJobDataMap(DeliveryStrategy deliveryStrategy) {
 		try {
-			Scheduler sched = QuartzUtils.getStandardScheduler();
+			Scheduler sched = QuartzUtils.getScheduler();
 			JobDetail job = sched.getJobDetail("PublishQueueJob", "dotcms_jobs");
 			if (job == null) {
 				return;

@@ -1005,14 +1005,13 @@ public class HostAPIImpl implements HostAPI {
 
         Host host = null;
 
-        final ContentletVersionInfo vinfo = HibernateUtil.load(ContentletVersionInfo.class,
-                "from "+ContentletVersionInfo.class.getName()+" where identifier=?", id);
+        final Optional<ContentletVersionInfo> vinfo = APILocator.getVersionableAPI().getContentletVersionInfo(id, APILocator.getLanguageAPI()
+                .getDefaultLanguage().getId());
 
-        if(vinfo!=null && UtilMethods.isSet(vinfo.getIdentifier())) {
-
+        if(vinfo.isPresent()) {
             User systemUser = APILocator.systemUser();
 
-            String hostInode=vinfo.getWorkingInode();
+            String hostInode=vinfo.get().getWorkingInode();
             final Contentlet cont= APILocator.getContentletAPI().find(hostInode, systemUser, respectFrontendRoles);
             final ContentType type =APILocator.getContentTypeAPI(systemUser, respectFrontendRoles).find(Host.HOST_VELOCITY_VAR_NAME);
             if(cont.getStructureInode().equals(type.inode())) {

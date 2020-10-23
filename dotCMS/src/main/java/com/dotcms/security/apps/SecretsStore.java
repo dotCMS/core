@@ -79,7 +79,7 @@ public interface SecretsStore {
 
         private static SecretsStore loadSecretsApi() {
             return (SecretsStore) Try.of(() -> Class
-                            .forName(Config.getStringProperty("SECRETS_STORE_IMPL", SecretsStoreKeyStoreImpl.class.getCanonicalName()))
+                            .forName(Config.getStringProperty("SECRETS_STORE_IMPL", SecretCachedKeyStoreImpl.class.getCanonicalName()))
                             .newInstance()).getOrNull();
 
         }

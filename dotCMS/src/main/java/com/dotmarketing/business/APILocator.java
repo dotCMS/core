@@ -63,6 +63,10 @@ import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPI;
 import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPIFactory;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.security.apps.AppsAPI;
+import com.dotcms.storage.FileMetadataAPI;
+import com.dotcms.storage.FileMetadataAPIImpl;
+import com.dotcms.storage.FileStorageAPI;
+import com.dotcms.storage.FileStorageAPIImpl;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPIFactory;
 import com.dotcms.timemachine.business.TimeMachineAPI;
@@ -526,6 +530,22 @@ public class APILocator extends Locator<APIIndex>{
 	 */
 	public static FileAssetAPI getFileAssetAPI(){
 		return (FileAssetAPI) getInstance(APIIndex.FILEASSET_API);
+	}
+
+	/**
+	 * Creates the {@link FileStorageAPI}
+	 * @return FileStorageAPI
+	 */
+	public static FileStorageAPI getFileStorageAPI(){
+		return (FileStorageAPI) getInstance(APIIndex.FILESTORAGE_API);
+	}
+
+	/**
+	 * Creates the {@link FileStorageAPI}
+	 * @return FileStorageAPI
+	 */
+	public static FileMetadataAPI getContentletMetadataAPI(){
+		return (FileMetadataAPI) getInstance(APIIndex.CONTENTLET_METADATA_API);
 	}
 
 	/**
@@ -1134,6 +1154,8 @@ enum APIIndex
 	APPS_API,
 	DOT_ASSET_API,
 	BROWSER_API,
+	FILESTORAGE_API,
+	CONTENTLET_METADATA_API,
 	DEVICE_API;
 
 
@@ -1216,6 +1238,8 @@ enum APIIndex
 			case APPS_API: return AppsAPI.INSTANCE.get();
 			case DOT_ASSET_API: return new DotAssetAPIImpl();
 			case BROWSER_API: return new BrowserAPIImpl();
+			case FILESTORAGE_API: return new FileStorageAPIImpl();
+			case CONTENTLET_METADATA_API: return new FileMetadataAPIImpl();
 			case DEVICE_API: return new DeviceAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);

@@ -82,7 +82,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	@SuppressWarnings("unchecked")
 	public List<Template> findTemplatesUserCanUse(User user, String hostId, String query,boolean searchHost ,int offset, int limit) throws DotDataException, DotSecurityException {
 		return findTemplates(user, false,
-				UtilMethods.isSet(query) ? Collections.singletonMap("title", query.toLowerCase())
+				UtilMethods.isSet(query) ? Collections.singletonMap("filter", query.toLowerCase())
 						: null, hostId, null, null, null, offset, limit, "title");
 	}
 
@@ -171,57 +171,9 @@ public class TemplateFactoryImpl implements TemplateFactory {
 				: " asset.inode=versioninfo.working_inode  ";
 		conditionBuffer.append(condition);
 
-		List<Object> paramValues =null;
 		if(params!=null && params.size()>0){
-			conditionBuffer.append(" and (");
-			paramValues = new ArrayList<>();
-			int counter = 0;
-			for (Map.Entry<String, Object> entry : params.entrySet()) {
-				if(counter==0){
-					if(entry.getValue() instanceof String){
-						if(entry.getKey().equalsIgnoreCase("inode")){
-							conditionBuffer.append(" asset.");
-							conditionBuffer.append(entry.getKey());
-							conditionBuffer.append(" = '");
-							conditionBuffer.append(entry.getValue());
-							conditionBuffer.append("'");
-						}else{
-							conditionBuffer.append(" lower(asset.");
-							conditionBuffer.append(entry.getKey());
-							conditionBuffer.append(") like ? ");
-							paramValues.add("%"+ ((String)entry.getValue()).toLowerCase()+"%");
-						}
-					}else{
-						conditionBuffer.append(" asset.");
-						conditionBuffer.append(entry.getKey());
-						conditionBuffer.append(" = ");
-						conditionBuffer.append(entry.getValue());
-					}
-				}else{
-					if(entry.getValue() instanceof String){
-						if(entry.getKey().equalsIgnoreCase("inode")){
-							conditionBuffer.append(" OR asset.");
-							conditionBuffer.append(entry.getKey());
-							conditionBuffer.append(" = '");
-							conditionBuffer.append(entry.getValue());
-							conditionBuffer.append("'");
-						}else{
-							conditionBuffer.append(" OR lower(asset.");
-							conditionBuffer.append(entry.getKey());
-							conditionBuffer.append(") like ? ");
-							paramValues.add("%"+ ((String)entry.getValue()).toLowerCase()+"%");
-						}
-					}else{
-						conditionBuffer.append(" OR asset.");
-						conditionBuffer.append(entry.getKey());
-						conditionBuffer.append(" = ");
-						conditionBuffer.append(entry.getValue());
-					}
-				}
-
-				counter+=1;
-			}
-			conditionBuffer.append(" ) ");
+					conditionBuffer
+							.append(" and ( asset.inode like ? or asset.identifier like ? or lower(asset.title) like ? )");
 		}
 
 		StringBuffer query = new StringBuffer();
@@ -270,10 +222,11 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			query.append(orderBy);
 			dc.setSQL(query.toString());
 
-			if(paramValues!=null && paramValues.size()>0){
-				for (Object value : paramValues) {
-					dc.addParam((String)value);
-				}
+			if(params!=null && params.size()>0){
+				final String filter = "%"+params.get("filter").toString().toLowerCase()+"%";
+				dc.addParam(filter);
+				dc.addParam(filter);
+				dc.addParam(filter);
 			}
 
 			while(!done) {

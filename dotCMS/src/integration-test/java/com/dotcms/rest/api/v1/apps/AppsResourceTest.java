@@ -25,6 +25,7 @@ import com.dotcms.rest.api.v1.apps.view.AppView;
 import com.dotcms.rest.api.v1.apps.view.SecretView;
 import com.dotcms.rest.api.v1.apps.view.SecretView.SecretViewSerializer;
 import com.dotcms.rest.api.v1.apps.view.SiteView;
+import com.dotcms.security.apps.AppDescriptorHelper;
 import com.dotcms.security.apps.AppsAPI;
 import com.dotcms.security.apps.AppsAPIImpl;
 import com.dotcms.security.apps.ParamDescriptor;
@@ -114,6 +115,7 @@ public class AppsResourceTest extends IntegrationTestBase {
                 APILocator.getHostAPI(), APILocator.getContentletAPI(),
                 SecretsStore.INSTANCE.get(), CacheLocator.getAppsCache(),
                 APILocator.getLocalSystemEventsAPI(),
+                new AppDescriptorHelper(),
                 new LicenseValiditySupplier() {
                     @Override
                     public boolean hasValidLicense() {

@@ -79,6 +79,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 @Path("/v1/templates")
 public class TemplateResource {
 
+    private static final String ARCHIVE_PARAM = "archive";
     private final PaginationUtil paginationUtil;
     private final WebResource    webResource;
     private final TemplateAPI    templateAPI;
@@ -161,10 +162,11 @@ public class TemplateResource {
                                         @Context final HttpServletResponse httpResponse,
                                         @QueryParam(PaginationUtil.FILTER)   final String filter,
                                         @QueryParam(PaginationUtil.PAGE)     final int page,
-                                        @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+                                        @DefaultValue("40") @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
                                         @DefaultValue("title") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
                                         @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION)  final String direction,
-                                        @QueryParam(ContainerPaginator.HOST_PARAMETER_ID)           final String hostId) {
+                                        @QueryParam(ContainerPaginator.HOST_PARAMETER_ID)           final String hostId,
+                                        @QueryParam(ARCHIVE_PARAM)                                  final boolean archive) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
@@ -175,6 +177,7 @@ public class TemplateResource {
         Logger.debug(this, ()-> "Getting the List of templates");
 
         final Map<String, Object> extraParams = Maps.newHashMap();
+        extraParams.put(ARCHIVE_PARAM, archive);
         checkedHostId.ifPresent(checkedHostIdentifier -> extraParams.put(ContainerPaginator.HOST_PARAMETER_ID, checkedHostIdentifier));
         return this.paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy, OrderDirection.valueOf(direction),
                 extraParams);

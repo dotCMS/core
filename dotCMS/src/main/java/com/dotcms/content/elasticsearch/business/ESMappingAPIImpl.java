@@ -225,8 +225,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                         .getIdentifier());
                 throw new DotDataException(errorMsg);
             }
-			final ContentletVersionInfo versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(contentIdentifier.getId(), contentlet.getLanguageId());
-            if (null == versionInfo || !UtilMethods.isSet(versionInfo.getIdentifier())) {
+			final Optional<ContentletVersionInfo> versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(contentIdentifier.getId(), contentlet.getLanguageId());
+            if (!versionInfo.isPresent()) {
                 final String errorMsg = String.format("Version Info for Identifier '%s' and Language '%s' was not" +
                         " found via API.", contentIdentifier.getId(), contentlet.getLanguageId());
                 throw new DotDataException(errorMsg);
@@ -291,9 +291,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				contentletMap.put(ESMappingConstants.PUBLISH_DATE + TEXT,
 						datetimeFormat.format(contentIdentifier.getSysPublishDate()));
 			}else {
-				contentletMap.put(ESMappingConstants.PUBLISH_DATE, elasticSearchDateTimeFormat.format(versionInfo.getVersionTs()));
+				contentletMap.put(ESMappingConstants.PUBLISH_DATE,
+						elasticSearchDateTimeFormat.format(versionInfo.get().getVersionTs()));
 				contentletMap.put(ESMappingConstants.PUBLISH_DATE + TEXT,
-						datetimeFormat.format(versionInfo.getVersionTs()));
+						datetimeFormat.format(versionInfo.get().getVersionTs()));
 			}
 
 			if(UtilMethods.isSet(contentIdentifier.getSysExpireDate())) {
@@ -305,8 +306,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				contentletMap.put(ESMappingConstants.EXPIRE_DATE + TEXT, "29990101000000");
 			}
 
-			contentletMap.put(ESMappingConstants.VERSION_TS, elasticSearchDateTimeFormat.format(versionInfo.getVersionTs()));
-			contentletMap.put(ESMappingConstants.VERSION_TS + TEXT, datetimeFormat.format(versionInfo.getVersionTs()));
+			contentletMap.put(ESMappingConstants.VERSION_TS, elasticSearchDateTimeFormat.format(versionInfo.get().getVersionTs()));
+			contentletMap.put(ESMappingConstants.VERSION_TS + TEXT, datetimeFormat.format(versionInfo.get().getVersionTs()));
 
 			String urlMap;
 			try{
