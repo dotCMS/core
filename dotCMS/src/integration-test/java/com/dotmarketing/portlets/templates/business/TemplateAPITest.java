@@ -1,6 +1,8 @@
 package com.dotmarketing.portlets.templates.business;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.util.IntegrationTestInitService;
@@ -657,6 +659,11 @@ public class TemplateAPITest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Method to test: {@link TemplateAPI#find(String, User, boolean)}
+     * Given Scenario: find a template by inode
+     * ExpectedResult: the template of the specific inode
+     */
     @Test
     public void test_find_success() throws Exception{
         final String title = "testFindTemplate_" + System.currentTimeMillis();
@@ -671,6 +678,11 @@ public class TemplateAPITest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Method to test: {@link TemplateAPI#find(String, User, boolean)}
+     * Given Scenario: tries to find a template, but the inode does not exists.
+     * ExpectedResult: null
+     */
     @Test
     public void test_find_inode_not_exist_return_NotFoundInDBException() throws Exception{
        final Template templateFound = templateAPI.find(UUIDGenerator.generateUuid(),user,false);
