@@ -702,7 +702,7 @@ public class AppsAPIImpl implements AppsAPI {
             exportedSecrets = collectSecretsForExport(appKeysByHost(), user);
         } else {
            if(null == paramAppKeysBySite || paramAppKeysBySite.isEmpty()){
-              throw new IllegalArgumentException("No `AppKeysBySite` param wasn't specified.");
+              throw new IllegalArgumentException("No `AppKeysBySite` param was specified.");
            }
            exportedSecrets = collectSecretsForExport(paramAppKeysBySite, user);
         }
@@ -731,10 +731,10 @@ public class AppsAPIImpl implements AppsAPI {
         }
 
         for (final Entry<String, Set<String>> entry : paramAppKeysBySite.entrySet()) {
-            final String siteId = Host.SYSTEM_HOST.equalsIgnoreCase(entry.getKey()) ? Host.SYSTEM_HOST : entry.getKey();
-            final Host site = hostAPI.find(siteId, user, false);
+            final String siteId = entry.getKey();
+            final Host site = Host.SYSTEM_HOST.equalsIgnoreCase(siteId) ? hostAPI.findSystemHost() : hostAPI.find(siteId, user, false);
             if (null != site ) {
-                final Set<String> appKeysBySiteId = paramAppKeysBySite.get(siteId.toLowerCase());
+                final Set<String> appKeysBySiteId = paramAppKeysBySite.get(siteId);
                 if (isSet(appKeysBySiteId)) {
                     for (final String appKey : appKeysBySiteId) {
                         final Optional<AppSecrets> optional = getSecrets(appKey, site, user);
