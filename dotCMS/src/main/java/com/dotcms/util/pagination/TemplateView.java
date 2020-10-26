@@ -1,5 +1,9 @@
 package com.dotcms.util.pagination;
 
+import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
+import com.dotmarketing.util.UtilMethods;
+
 import java.util.Date;
 
 public class TemplateView {
@@ -36,6 +40,7 @@ public class TemplateView {
     private final boolean canRead;
     private final boolean canWrite;
     private final boolean canPublish;
+    private final TemplateLayout layout;
 
     private TemplateView(final Builder builder) {
 
@@ -71,6 +76,12 @@ public class TemplateView {
         this.canRead = builder.canRead;
         this.canWrite = builder.canWrite;
         this.canPublish = builder.canPublish;
+        this.layout = UtilMethods.isSet(this.drawedBody)?
+                DotTemplateTool.getTemplateLayout(this.drawedBody): null;
+    }
+
+    public TemplateLayout getLayout() {
+        return layout;
     }
 
     public String getIdentifier() {
