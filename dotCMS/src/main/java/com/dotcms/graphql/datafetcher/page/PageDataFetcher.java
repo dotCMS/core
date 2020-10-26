@@ -64,6 +64,7 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
                     .setUser(user)
                     .setPageUri(url)
                     .setPageMode(mode)
+                    .setGraphQL(true)
                     .build();
 
             HTMLPageUrl pageUrl;

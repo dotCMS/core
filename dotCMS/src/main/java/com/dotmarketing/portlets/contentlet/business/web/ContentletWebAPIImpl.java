@@ -272,11 +272,11 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 								&& (htmlContentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE)) {
 							String pageIdentifier = htmlContentlet.getIdentifier();
 							long contentletLang = contentlet.getLanguageId();
-							ContentletVersionInfo versionInfo = APILocator
+							Optional<ContentletVersionInfo> versionInfo = APILocator
 									.getVersionableAPI()
 									.getContentletVersionInfo(pageIdentifier,
 											contentletLang);
-							if (versionInfo != null) {
+							if (versionInfo.isPresent()) {
 							    APILocator.getMultiTreeAPI().saveMultiTree(mTree);
 							} else {
 								// The language in the page and the contentlet 

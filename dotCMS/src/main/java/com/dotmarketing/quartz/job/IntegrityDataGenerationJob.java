@@ -16,7 +16,6 @@ import org.quartz.JobExecutionContext;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.SimpleTrigger;
-import org.quartz.UnableToInterruptJobException;
 
 import java.util.Date;
 
@@ -26,7 +25,7 @@ import java.util.Date;
  *
  * It also implements the {@link InterruptableJob} interface to support cancellation at any time.
  */
-public class IntegrityDataGenerationJob extends DotStatefulJob implements InterruptableJob {
+public class IntegrityDataGenerationJob extends DotStatefulJob {
 
     public static final String JOB_NAME = "IntegrityDataGenerationJob";
     public static final String JOB_GROUP = "dotcms_jobs";
@@ -80,31 +79,6 @@ public class IntegrityDataGenerationJob extends DotStatefulJob implements Interr
     }
 
     /**
-     * Logic to execute when interrupted is detected.
-     * Sets the current status of job execution so CANCELLED.
-     *
-     * @throws UnableToInterruptJobException
-     */
-    @Override
-    public void interrupt() throws UnableToInterruptJobException {
-        if (jobContext == null) {
-            throw new UnableToInterruptJobException(String.format("Could not find a job detail for %s", JOB_NAME));
-        }
-
-        Logger.debug(
-                IntegrityDataGenerationJob.class,
-                "Requested interruption of generation of data to check by the user");
-        final JobDataMap jobDataMap = this.jobContext.getJobDetail().getJobDataMap();
-        final String requesterKey = (String) jobDataMap.get(IntegrityUtil.REQUESTER_KEY);
-        final String requestId = (String) jobDataMap.get(IntegrityUtil.INTEGRITY_DATA_REQUEST_ID);
-
-        IntegrityUtil.saveIntegrityDataStatus(
-                requesterKey,
-                requestId,
-                IntegrityResource.ProcessStatus.CANCELLED);
-    }
-
-    /**
      * Creates {@link JobDataMap} and {@link JobDetail} instances with integrity check data to trigger actual job.
      *
      * @param key JWT token key if you are using JWT token in Push Publish, otherwise end point id
@@ -137,7 +111,7 @@ public class IntegrityDataGenerationJob extends DotStatefulJob implements Interr
      * @throws SchedulerException
      */
     public static Scheduler getJobScheduler() throws SchedulerException {
-        return QuartzUtils.getStandardScheduler();
+        return QuartzUtils.getScheduler();
     }
 
 }
