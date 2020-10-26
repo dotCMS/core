@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
-import org.openjdk.jol.info.ClassLayout;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -24,7 +23,9 @@ public class CacheSizingUtil {
 
     final int standardSampleSize = Config.getIntProperty("CACHE_SIZER_SAMPLE_SIZE", 20);
     
-    final static int maxRecusionDepth = 10;
+    final int maxRecusionDepth = 10;
+    
+    final boolean useCompressedOops = true;
     
     public String averageSizePretty(final Map<String, Object> cacheMap) {
 
@@ -125,20 +126,10 @@ public class CacheSizingUtil {
 
     }
 
-    /**
-     * returns the size of an objects class, based on the classes properties
-     * 
-     * @param object
-     * @return
-     */
-    long sizeOfClass(Object object) {
 
-        return ClassLayout.parseClass(object.getClass()).instanceSize();
-    }
 
-    public static boolean useCompressedOops = true;
 
-    public static int retainedSize(Object obj) {
+    public int retainedSize(Object obj) {
         return retainedSize(obj, new HashMap<>(), 0);
     }
 
@@ -146,7 +137,7 @@ public class CacheSizingUtil {
 
 
     @SuppressWarnings("restriction")
-    private static int retainedSize(Object obj, HashMap<Object, Object> calculated, final int depth) {
+    private int retainedSize(Object obj, HashMap<Object, Object> calculated, final int depth) {
         Object ref = null;
         try {
             if (obj == null)
@@ -187,7 +178,7 @@ public class CacheSizingUtil {
     }
 
     @SuppressWarnings("restriction")
-    public static int sizeof(Class<?> cls) {
+    public int sizeof(Class<?> cls) {
 
         if (cls == null) {
             throw new NullPointerException();
@@ -222,7 +213,7 @@ public class CacheSizingUtil {
         return 16;
     }
 
-    private static Field[] getAllNonStaticFields(Class<?> cls) {
+    private Field[] getAllNonStaticFields(Class<?> cls) {
         if (cls == null) {
             throw new NullPointerException();
         }
@@ -241,12 +232,12 @@ public class CacheSizingUtil {
         return fs;
     }
 
-    private static boolean isCalculated(HashMap<Object, Object> calculated, Object test) {
+    private boolean isCalculated(HashMap<Object, Object> calculated, Object test) {
         Object that = calculated.get(test);
         return that != null && that == test;
     }
 
-    private static int primsize(Class<?> cls) {
+    private int primsize(Class<?> cls) {
         if (cls == byte.class) {
             return 1;
         }
@@ -276,7 +267,7 @@ public class CacheSizingUtil {
         }
     }
 
-    private static int modulo8(int value) {
+    private int modulo8(int value) {
         return (value & 0x7) > 0 ? (value & ~0x7) + 8 : value;
     }
 
