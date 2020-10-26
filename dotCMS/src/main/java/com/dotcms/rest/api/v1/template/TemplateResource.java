@@ -301,7 +301,7 @@ public class TemplateResource {
     }
 
     /**
-     * Save a single template
+     * Save an existing template
      * @param request       {@link HttpServletRequest}
      * @param response      {@link HttpServletResponse}
      * @param templateForm  {@link TemplateForm}
@@ -337,6 +337,94 @@ public class TemplateResource {
     }
 
     /**
+     * Save and publish a new template
+     * @param request        {@link HttpServletResponse}
+     * @param response       {@link HttpServletResponse}
+     * @param templateForm   {@link TemplateForm}
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @POST
+    @Path("/_savepublish")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response saveNewAndPublish(@Context final HttpServletRequest  request,
+                                  @Context final HttpServletResponse response,
+                                  final TemplateForm templateForm) throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+        final User user         = initData.getUser();
+        final Host host         = this.hostWebAPI.getCurrentHostNoThrow(request);
+        final PageMode pageMode = PageMode.get(request);
+
+        Logger.debug(this, ()-> "Saving and Publishing new template: " + templateForm.getTitle());
+        if(!permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, pageMode.respectAnonPerms)) {
+
+            Logger.error(this, "The user: " + user.getUserId() + " does not have permission to add a template");
+            throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
+        }
+
+        return Response.ok(new ResponseEntityView(this.templateHelper.toTemplateView(
+                this.saveAndPublish(templateForm, user, host, pageMode, new Template()), user))).build();
+    }
+
+    /**
+     * Save and publish an existing template
+     * @param request       {@link HttpServletRequest}
+     * @param response      {@link HttpServletResponse}
+     * @param templateForm  {@link TemplateForm}
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @PUT
+    @Path("/_savepublish")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response saveAndPublish(@Context final HttpServletRequest  request,
+                               @Context final HttpServletResponse response,
+                               final TemplateForm templateForm) throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+        final User user         = initData.getUser();
+        final Host host         = this.hostWebAPI.getCurrentHostNoThrow(request);
+        final PageMode pageMode = PageMode.get(request);
+        final Template currentTemplate = this.templateAPI.find(templateForm.getInode(), user, pageMode.respectAnonPerms);
+
+        if (null == currentTemplate || UtilMethods.isNotSet(currentTemplate.getIdentifier())
+                || !InodeUtils.isSet(currentTemplate.getInode())) {
+
+            throw new DoesNotExistException("The working template inode: " + templateForm.getInode() + " does not exists");
+        }
+
+        this.templateHelper.checkPermission(user, currentTemplate, PERMISSION_WRITE);
+
+        return Response.ok(new ResponseEntityView(this.templateHelper.toTemplateView(
+                this.saveAndPublish(templateForm, user, host, pageMode, currentTemplate), user))).build();
+    }
+
+    @WrapInTransaction
+    private Template saveAndPublish (final TemplateForm templateForm,
+                                     final User user,
+                                     final Host host,
+                                     final PageMode pageMode,
+                                     final Template template) throws DotDataException, DotSecurityException {
+
+        final Template savedTemplate = this.fillAndSaveTemplate(templateForm, user, host, pageMode, template);
+        if (!this.templateAPI.publishTemplate(savedTemplate, user, pageMode.respectAnonPerms)) {
+
+            throw new DotStateException("Can not publish the template: " + templateForm.getTitle());
+        }
+
+        return savedTemplate;
+    }
+
+    /**
      * Publish a list of template inodes
      * Return the list of a success published and failed
      * @param request            {@link HttpServletRequest}
@@ -351,7 +439,7 @@ public class TemplateResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response PUBLISH(@Context final HttpServletRequest  request,
+    public final Response publish(@Context final HttpServletRequest  request,
                                @Context final HttpServletResponse response,
                                final List<String> templatesToPublish) throws DotDataException, DotSecurityException {
 
@@ -676,6 +764,77 @@ public class TemplateResource {
         return this.canTemplateBeDeleted(template, user, error)?
              Response.ok(new ResponseEntityView(this.templateAPI.deleteTemplate(template,user, pageMode.respectAnonPerms))).build():
              Response.status(Response.Status.BAD_REQUEST).entity(map("message", error)).build();
+    }
+
+    /**
+     * Deletes a template
+     * Pre: template must not has dependencies
+     * @param request            {@link HttpServletRequest}
+     * @param response           {@link HttpServletResponse}
+     * @param templatesInodesToPublish {@link String} template inodes to look for the template and then, delete it
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @DELETE
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response deleteTemplates(@Context final HttpServletRequest  request,
+                                 @Context final HttpServletResponse response,
+                                 final List<String> templatesInodesToPublish) throws Exception {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+        final User user         = initData.getUser();
+        final PageMode pageMode = PageMode.get(request);
+        final List<String> deletedInodes  = new ArrayList<>();
+        final List<String> failedInodes   = new ArrayList<>();
+        final List<String> notFoundInodes = new ArrayList<>();
+        final List<String> canNotInodes   = new ArrayList<>();
+
+        Logger.debug(this, ()->"Deleting the Templates: " + templatesInodesToPublish);
+
+        for (final String templateInode : templatesInodesToPublish) {
+
+            final Template template = this.templateAPI.find(templateInode, user, pageMode.respectAnonPerms);
+
+            if (null == template || !InodeUtils.isSet(template.getInode())) {
+
+                Logger.info(this, ()->"The  template inode: " + templateInode + " does not exists");
+                notFoundInodes.add(templateInode);
+                continue;
+            }
+
+            final Map<String, String> resultMap = this.templateAPI.checkPageDependencies(
+                    template, user, false);
+            if (resultMap != null && !resultMap.isEmpty()) {
+
+                Logger.info(this, ()->"The  template inode: " + templateInode +
+                        " can not be deleted.  checkPageDependencies: " + resultMap);
+                canNotInodes.add(templateInode);
+                continue;
+            }
+
+            if (!Try.of(()->this.templateAPI.deleteTemplate(template, user, pageMode.respectAnonPerms))
+                    .onFailure(e -> Logger.error(TemplateResource.class, e.getMessage(), e)).getOrElse(false)) {
+
+                Logger.info(this, ()->"The  template inode: " + templateInode + " deletion failed");
+                failedInodes.add(templateInode);
+            } else {
+
+                Logger.info(this, ()->"The  template inode: " + templateInode + ", deletion successful");
+                deletedInodes.add(templateInode);
+            }
+        }
+
+        return Response.ok(new ResponseEntityView(
+                CollectionsUtils.map(
+                        "deletedInodes",  deletedInodes,
+                        "notFoundInodes", notFoundInodes,
+                        "canNotInodes",   canNotInodes,
+                        "failedInodes",   failedInodes
+                ))).build();
     }
 
     @WrapInTransaction
