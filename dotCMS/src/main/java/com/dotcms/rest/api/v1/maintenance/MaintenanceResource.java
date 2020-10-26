@@ -68,7 +68,7 @@ public class MaintenanceResource implements Serializable {
                         .rejectWhenNoUser(true).requiredPortlet("maintenance").init();
 
 
-        Logger.info(this.getClass(), "User:" + initData.getUser() + " is shutting down dotCMS!");
+        Logger.info(this.getClass(), "User:" + initData.getUser() + " is shutting down dotCMS!"); 
         SecurityLogger.logInfo(this.getClass(),
                         "User:" + initData.getUser() + " is shutting down dotCMS from ip:" + request.getRemoteAddr());
 
