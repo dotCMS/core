@@ -22,8 +22,7 @@ public class CacheStats {
   public final static String REGION_MEM_PER_OBJECT_PRETTY="cache.stats.region.mem.per.object";
   public final static String REGION_AVG_LOAD_TIME="cache.stats.region.load.time.avg";
   public final static String REGION_EVICTIONS="cache.stats.region.evictions";
-  
-  
+
     Map<String, String> stats = new LinkedHashMap<>();
 
     public CacheStats(){}

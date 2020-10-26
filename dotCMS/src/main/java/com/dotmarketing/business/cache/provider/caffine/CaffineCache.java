@@ -12,12 +12,15 @@ import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
+import com.dotmarketing.business.cache.provider.CacheSizingUtil;
 import com.dotmarketing.business.cache.provider.CacheStats;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.ImmutableSet;
+import io.vavr.control.Try;
 
 
 public class CaffineCache extends CacheProvider {
@@ -170,19 +173,23 @@ public class CaffineCache extends CacheProvider {
 
         Set<String> currentGroups = new HashSet<>();
         currentGroups.addAll(getGroups());
-        Cache<String, Object> defaultCache = getCache(DEFAULT_CACHE);
         NumberFormat nf = DecimalFormat.getInstance();
         DecimalFormat pf = new DecimalFormat("##.##%");
+        
+        CacheSizingUtil sizer = new CacheSizingUtil();
+        
+        
+        
         for (String group : currentGroups) {
-            CacheStats stats = new CacheStats();
+            final CacheStats stats = new CacheStats();
 
-            Cache<String, Object> foundCache = getCache(group);
-
-
-            boolean isDefault = (Config.getIntProperty("cache." + group + ".size", -1) == -1);
+            final Cache<String, Object> foundCache = getCache(group);
 
 
-            int configured = isDefault ? Config.getIntProperty("cache." + DEFAULT_CACHE + ".size")
+            final boolean isDefault = (Config.getIntProperty("cache." + group + ".size", -1) == -1);
+
+
+            final int configured = isDefault ? Config.getIntProperty("cache." + DEFAULT_CACHE + ".size")
                 : (Config.getIntProperty("cache." + group + ".size", -1) != -1)
                   ? Config.getIntProperty("cache." + group + ".size")
                       : Config.getIntProperty("cache." + DEFAULT_CACHE + ".size");
@@ -199,7 +206,11 @@ public class CaffineCache extends CacheProvider {
             stats.addStat(CacheStats.REGION_AVG_LOAD_TIME, nf.format(cstats.averageLoadPenalty()/1000000) + " ms");
             stats.addStat(CacheStats.REGION_EVICTIONS, nf.format(cstats.evictionCount()));
             
-
+            long averageObjectSize = Try.of(()-> sizer.averageSize(foundCache.asMap())).getOrElse(-1L);
+            long totalObjectSize = averageObjectSize * foundCache.estimatedSize();
+            
+            stats.addStat(CacheStats.REGION_MEM_PER_OBJECT, "<div class='hideSizer'>" + String.format("%010d", averageObjectSize) + "</div>" + UtilMethods.prettyByteify(averageObjectSize));
+            stats.addStat(CacheStats.REGION_MEM_TOTAL_PRETTY, "<div class='hideSizer'>" + String.format("%010d", totalObjectSize) + "</div>" + UtilMethods.prettyByteify(totalObjectSize));
             ret.addStatRecord(stats);
         }
 
