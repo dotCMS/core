@@ -72,7 +72,13 @@ public class CacheSizingUtil {
      * @return
      */
     public long sizeOf(Object object) {
-        long retainedSize = Try.of(() -> retainedSize(object)).getOrElse(0);
+        long retainedSize = 0;
+        try{
+            retainedSize  = retainedSize(object);
+        }
+        catch(Throwable t) {
+            Logger.infoEvery(this.getClass(), "Unable to use the Unsafe.class to size cache objects, falling back to serialization:" + t.getMessage(),60000 );
+        }
 
         return retainedSize > 0 ? retainedSize : sizeOfSerialized(object);
 
@@ -106,7 +112,6 @@ public class CacheSizingUtil {
         byteOutputStream.reset();
         try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteOutputStream)) {
             objectOutputStream.writeObject(object);
-            objectOutputStream.flush();
             objectOutputStream.close();
 
             return byteOutputStream.toByteArray().length;
@@ -131,11 +136,14 @@ public class CacheSizingUtil {
     public static boolean useCompressedOops = true;
 
     public static int retainedSize(Object obj) {
-        return retainedSize(obj, new HashMap<>());
+        return retainedSize(obj, new HashMap<>(), 0);
     }
 
+    final static int maxDepth=10;
+    
+    
     @SuppressWarnings("restriction")
-    private static int retainedSize(Object obj, HashMap<Object, Object> calculated) {
+    private static int retainedSize(Object obj, HashMap<Object, Object> calculated, final int depth) {
         Object ref = null;
         try {
             if (obj == null)
@@ -148,8 +156,8 @@ public class CacheSizingUtil {
                 if (!cls.getComponentType().isPrimitive()) {
                     Object[] arr = (Object[]) obj;
                     for (Object comp : arr) {
-                        if (comp != null && !isCalculated(calculated, comp))
-                            arraysize += retainedSize(comp, calculated);
+                        if (comp != null && !isCalculated(calculated, comp) && depth<maxDepth)
+                            arraysize += retainedSize(comp, calculated, depth+1);
                     }
                 }
                 return arraysize;
@@ -161,9 +169,9 @@ public class CacheSizingUtil {
                         continue;
                     f.setAccessible(true);
                     ref = f.get(obj);
-                    if (ref != null && !isCalculated(calculated, ref)) {
+                    if (ref != null && !isCalculated(calculated, ref) && depth<maxDepth) {
                         calculated.put(ref, ref);
-                        int referentSize = retainedSize(ref, calculated);
+                        int referentSize = retainedSize(ref, calculated,depth+1);
                         objectsize += referentSize;
                     }
                 }
