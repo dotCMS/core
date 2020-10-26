@@ -1,22 +1,16 @@
 package com.dotmarketing.portlets.fileassets.business;
 
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import org.jetbrains.annotations.NotNull;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import java.util.List;
+import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * {@link FileAssetFactory} default implementation

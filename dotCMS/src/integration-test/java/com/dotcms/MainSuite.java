@@ -41,7 +41,6 @@ import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStr
 import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPIImplIntegrationTest;
 import com.dotmarketing.portlets.contentlet.model.IntegrationResourceLinkTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegrationTest;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryIntegrationTest;
 import com.dotmarketing.portlets.folders.business.FolderFactoryImplTest;
 import com.dotmarketing.portlets.folders.model.FolderTest;

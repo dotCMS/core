@@ -1,16 +1,16 @@
 package com.dotmarketing.portlets.folders.business;
 
+import static org.junit.Assert.assertEquals;
+
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.datagen.ContainerDataGen;
-import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
-import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
@@ -50,14 +50,12 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import static org.junit.Assert.assertEquals;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
