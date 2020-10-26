@@ -17,14 +17,15 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.github.benmanes.caffeine.base.UnsafeAccess;
-import io.vavr.control.Try;
 
 
 public class CacheSizingUtil {
 
 
     final int standardSampleSize = Config.getIntProperty("CACHE_SIZER_SAMPLE_SIZE", 20);
-
+    
+    final static int maxRecusionDepth = 10;
+    
     public String averageSizePretty(final Map<String, Object> cacheMap) {
 
         return UtilMethods.prettyByteify(averageSize(cacheMap));
@@ -73,11 +74,13 @@ public class CacheSizingUtil {
      */
     public long sizeOf(Object object) {
         long retainedSize = 0;
-        try{
-            retainedSize  = retainedSize(object);
-        }
-        catch(Throwable t) {
-            Logger.infoEvery(this.getClass(), "Unable to use the Unsafe.class to size cache objects, falling back to serialization:" + t.getMessage(),60000 );
+        try {
+            retainedSize = retainedSize(object);
+        } catch (Throwable t) {
+            Logger.infoEvery(this.getClass(),
+                            "Unable to use the Unsafe.class to size cache objects, falling back to serialization:"
+                                            + t.getMessage(),
+                            60000);
         }
 
         return retainedSize > 0 ? retainedSize : sizeOfSerialized(object);
@@ -139,9 +142,9 @@ public class CacheSizingUtil {
         return retainedSize(obj, new HashMap<>(), 0);
     }
 
-    final static int maxDepth=10;
-    
-    
+
+
+
     @SuppressWarnings("restriction")
     private static int retainedSize(Object obj, HashMap<Object, Object> calculated, final int depth) {
         Object ref = null;
@@ -156,8 +159,9 @@ public class CacheSizingUtil {
                 if (!cls.getComponentType().isPrimitive()) {
                     Object[] arr = (Object[]) obj;
                     for (Object comp : arr) {
-                        if (comp != null && !isCalculated(calculated, comp) && depth<maxDepth)
-                            arraysize += retainedSize(comp, calculated, depth+1);
+                        if (comp != null && !isCalculated(calculated, comp) && depth < maxRecusionDepth) {
+                            arraysize += retainedSize(comp, calculated, depth + 1);
+                        }
                     }
                 }
                 return arraysize;
@@ -169,9 +173,9 @@ public class CacheSizingUtil {
                         continue;
                     f.setAccessible(true);
                     ref = f.get(obj);
-                    if (ref != null && !isCalculated(calculated, ref) && depth<maxDepth) {
+                    if (ref != null && !isCalculated(calculated, ref) && depth < maxRecusionDepth) {
                         calculated.put(ref, ref);
-                        int referentSize = retainedSize(ref, calculated,depth+1);
+                        int referentSize = retainedSize(ref, calculated, depth + 1);
                         objectsize += referentSize;
                     }
                 }
@@ -185,21 +189,25 @@ public class CacheSizingUtil {
     @SuppressWarnings("restriction")
     public static int sizeof(Class<?> cls) {
 
-        if (cls == null)
+        if (cls == null) {
             throw new NullPointerException();
+        }
 
-        if (cls.isArray())
+        if (cls.isArray()) {
             throw new IllegalArgumentException();
+        }
 
-        if (cls.isPrimitive())
+        if (cls.isPrimitive()) {
             return primsize(cls);
+        }
 
         int lastOffset = Integer.MIN_VALUE;
         Class<?> lastClass = null;
 
         for (Field f : getAllNonStaticFields(cls)) {
-            if (Modifier.isStatic(f.getModifiers()))
+            if (Modifier.isStatic(f.getModifiers())) {
                 continue;
+            }
 
             int offset = (int) UnsafeAccess.UNSAFE.objectFieldOffset(f);
             if (offset > lastOffset) {
@@ -207,21 +215,24 @@ public class CacheSizingUtil {
                 lastClass = f.getClass();
             }
         }
-        if (lastOffset > 0)
+        if (lastOffset > 0) {
             return modulo8(lastOffset + primsize(lastClass));
-        else
-            return 16;
+        }
+
+        return 16;
     }
 
     private static Field[] getAllNonStaticFields(Class<?> cls) {
-        if (cls == null)
+        if (cls == null) {
             throw new NullPointerException();
+        }
 
         List<Field> fieldList = new ArrayList<Field>();
         while (cls != Object.class) {
             for (Field f : cls.getDeclaredFields()) {
-                if (!Modifier.isStatic(f.getModifiers()))
+                if (!Modifier.isStatic(f.getModifiers())) {
                     fieldList.add(f);
+                }
             }
             cls = cls.getSuperclass();
         }
@@ -236,24 +247,33 @@ public class CacheSizingUtil {
     }
 
     private static int primsize(Class<?> cls) {
-        if (cls == byte.class)
+        if (cls == byte.class) {
             return 1;
-        if (cls == boolean.class)
+        }
+        if (cls == boolean.class) {
             return 1;
-        if (cls == char.class)
+        }
+        if (cls == char.class) {
             return 2;
-        if (cls == short.class)
+        }
+        if (cls == short.class) {
             return 2;
-        if (cls == int.class)
+        }
+        if (cls == int.class) {
             return 4;
-        if (cls == float.class)
+        }
+        if (cls == float.class) {
             return 4;
-        if (cls == long.class)
+        }
+        if (cls == long.class) {
             return 8;
-        if (cls == double.class)
+        }
+        if (cls == double.class) {
             return 8;
-        else
+        }
+        else {
             return useCompressedOops ? 4 : 8;
+        }
     }
 
     private static int modulo8(int value) {
