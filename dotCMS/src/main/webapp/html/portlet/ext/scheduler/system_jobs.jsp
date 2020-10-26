@@ -39,11 +39,11 @@ function deleteJobWithError(name,group) {
 	}
 }
 </script>
-<%String[] groups = QuartzUtils.getSequentialScheduler().getJobGroupNames(); %>
+<%String[] groups = QuartzUtils.getScheduler().getJobGroupNames(); %>
 
 <%for(String myGroup : groups) {%>
-	<%String[] tasks =  QuartzUtils.getSequentialScheduler().getJobNames(myGroup);%>
-	<%String[] localTasks =  QuartzUtils.getLocalScheduler().getJobNames(myGroup);%>
+	<%String[] tasks =  QuartzUtils.getScheduler().getJobNames(myGroup);%>
+
 	<div style="padding:10px;">
 		<h3><%= LanguageUtil.get(pageContext, "Group") %>: <%=myGroup %></h3>
 	</div>
@@ -62,9 +62,9 @@ function deleteJobWithError(name,group) {
 
 	<%for(String t : tasks){%>
 	<%try{ %>
-		<%JobDetail d = QuartzUtils.getSequentialScheduler().getJobDetail(t, myGroup);  %>
+		<%JobDetail d = QuartzUtils.getScheduler().getJobDetail(t, myGroup);  %>
 		<% Trigger trig  =null;%>
-		<%for(Trigger x :  QuartzUtils.getSequentialScheduler().getTriggersOfJob(t, myGroup) ) {trig=x;break;}%>
+		<%for(Trigger x :  QuartzUtils.getScheduler().getTriggersOfJob(t, myGroup) ) {trig=x;break;}%>
 
 
 
@@ -85,10 +85,12 @@ function deleteJobWithError(name,group) {
 				<%=d.isVolatile()%>
 			</td>
 
-			<td align="right">
+			<td>
 				<%if(trig !=null && trig.getNextFireTime()!=null){ %>
 					<%=new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss  z").format( trig.getNextFireTime()) %>
-				<%} %>
+				<%}%>
+		
+
 			</td>
 			<td>
 				<%if(trig !=null){ %>
@@ -113,54 +115,6 @@ function deleteJobWithError(name,group) {
 		<%} %>
 	<%} %>
 
-        <%--++++++++++++++++++++++++++++++++++++++--%>
-        <%--Local JOBS--%>
-        <%
-            for ( String localTask : localTasks ) {
-                try {
-                    JobDetail d = QuartzUtils.getLocalScheduler().getJobDetail( localTask, myGroup );
-                    Trigger trig = null;
-                    for ( Trigger x : QuartzUtils.getLocalScheduler().getTriggersOfJob( localTask, myGroup ) ) {
-                        trig = x;
-                        break;
-                    }
-        %>
-
-        <tr>
-            <td><%=d.getJobClass() %></td>
-            <td><%=LanguageUtil.get( pageContext, "False" )%></td>
-            <td><%=LanguageUtil.get( pageContext, "False" )%></td>
-            <td><%=LanguageUtil.get( pageContext, "False" )%></td>
-
-            <td align="right">
-                <%if ( trig != null && trig.getNextFireTime() != null ) { %>
-                <%=new SimpleDateFormat( "yyyy-MM-dd 'at' HH:mm:ss  z" ).format( trig.getNextFireTime() ) %>
-                <%} %>
-            </td>
-            <td>
-                <%if ( trig != null ) {
-                    if ( CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING == trig.getMisfireInstruction() ) { %>
-                        <%= LanguageUtil.get( pageContext, "scheduler.job.misfire.donothing" ) %>
-                    <%} else if ( CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW == trig.getMisfireInstruction() ) { %>
-                        <%= LanguageUtil.get( pageContext, "scheduler.job.misfire.fireOnce" ) %>
-                    <%}
-                } %>
-            </td>
-        </tr>
-
-        <%} catch ( Exception e ) {%>
-            <tr>
-                <td><%=localTask%></td>
-                <td colspan="6"
-                    class="red"><%=LanguageUtil.get( pageContext, "an-unexpected-error-occurred" ) + "<br/>" + e.getMessage() %>
-                </td>
-            </tr>
-        <%
-            }
-        }
-        %>
-        <%--Local JOBS--%>
-        <%--++++++++++++++++++++++++++++++++++++++--%>
 
 	</table>
 	<html:form action="/ext/scheduler/edit_scheduler" styleId="deleteJobForm" style="display:hidden">

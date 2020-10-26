@@ -12,18 +12,18 @@ public class AppSecretSavedEvent implements Serializable, KeyFilterable {
 
    private final AppSecrets appSecrets;
 
-   private final Host host;
+   private final String hostIdentifier;
 
    private final String userId;
 
     /**
      * Event constructor
      * @param appSecrets
-     * @param host
+     * @param hostIdentifier
      */
-   AppSecretSavedEvent(final AppSecrets appSecrets, final Host host, final String userId) {
+   AppSecretSavedEvent(final AppSecrets appSecrets, final String hostIdentifier, final String userId) {
         this.appSecrets = appSecrets;
-        this.host = host;
+        this.hostIdentifier = hostIdentifier;
         this.userId = userId;
    }
 
@@ -39,8 +39,8 @@ public class AppSecretSavedEvent implements Serializable, KeyFilterable {
      * Host Getter
      * @return
      */
-    public Host getHost() {
-        return host;
+    public String getHostIdentifier() {
+        return hostIdentifier;
     }
 
     public String getUserId() {

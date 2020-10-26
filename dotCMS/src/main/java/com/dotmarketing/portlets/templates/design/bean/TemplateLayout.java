@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -27,6 +28,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableSet;
 
 /**
  * Class that represents the javascript parameter for edit the drawed template.
@@ -198,7 +200,7 @@ public class TemplateLayout implements Serializable {
             final FileAssetContainer fileAssetContainer = (FileAssetContainer) container;
             final String containerPath = fileAssetContainer.getPath();
 
-            return this.getContainers().stream()
+            return this.getContainersUUID().stream()
                     .anyMatch((ContainerUUID containerUUID) -> {
                         final String relativePath = instance.isFullPath(containerUUID.getIdentifier()) ?
                                 instance.getRelativePath(containerUUID.getIdentifier()) :
@@ -209,7 +211,7 @@ public class TemplateLayout implements Serializable {
                     }
                     );
         } else {
-            return this.getContainers().stream()
+            return this.getContainersUUID().stream()
                     .anyMatch(containerUUID ->
                             containerUUID.getIdentifier().equals(container.getIdentifier())
                                     && isTheSameUUID(containerUUID.getUUID(), uuid)
@@ -222,51 +224,37 @@ public class TemplateLayout implements Serializable {
     @JsonIgnore
     public Set<String> getContainersIdentifierOrPath() {
 
-        final Set<String> containersIdOrPath = this.getBody()
-                .getRows()
+        return this.getContainersUUID()
                 .stream()
-                .flatMap(row -> row.getColumns().stream())
-                .flatMap(column -> column.getContainers().stream())
                 .map(ContainerUUID::getIdentifier)
                 .collect(Collectors.toSet());
-
-        if (null != layout && null != this.getSidebar()) {
-            containersIdOrPath.addAll(this.getSidebar().getContainers().stream()
-                    .map(ContainerUUID::toString)
-                    .collect(Collectors.toSet()));
-        }
-
-        return containersIdOrPath;
     }
 
     @JsonIgnore
     public Set<ContainerUUID> getContainersUUID() {
 
-        final Set<ContainerUUID> uuids = this.getBody()
-                .getRows()
-                .stream()
+        final Set<ContainerUUID> bodyContainers = body.getRows().stream()
                 .flatMap(row -> row.getColumns().stream())
                 .flatMap(column -> column.getContainers().stream())
                 .collect(Collectors.toSet());
 
-        if (null != layout && null != this.getSidebar()) {
-            uuids.addAll(this.getSidebar().getContainers());
+        if (null != this.getSidebar()) {
+            final List<ContainerUUID> sideBarContainers = this.getSidebar().getContainers();
+            return ImmutableSet.<ContainerUUID> builder()
+                    .addAll(sideBarContainers)
+                    .addAll(bodyContainers)
+                    .build();
+        } else {
+            return ImmutableSet.<ContainerUUID> builder()
+                    .addAll(bodyContainers)
+                    .build();
         }
-
-        return uuids;
     }
 
     private boolean isTheSameUUID(final String uuid1, final String uuid2) {
         return ContainerUUID.UUID_LEGACY_VALUE.equals(uuid1) || ContainerUUID.UUID_START_VALUE.equals(uuid1)
             ? ContainerUUID.UUID_LEGACY_VALUE.equals(uuid2) || ContainerUUID.UUID_START_VALUE.equals(uuid2)
-            : uuid1.equals(uuid1);
-    }
-
-    private Collection<ContainerUUID> getContainers() {
-        return body.getRows().stream()
-                .flatMap(row -> row.getColumns().stream())
-                .flatMap(column -> column.getContainers().stream())
-                .collect(Collectors.toSet());
+            : uuid1.equals(uuid2);
     }
 
 }

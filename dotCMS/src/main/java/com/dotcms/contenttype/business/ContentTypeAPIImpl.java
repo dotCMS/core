@@ -536,7 +536,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
         field = this.checkContentTypeFields(contentTypeToSave, field);
         if (!varNamesCantDelete.containsKey(field.variable())) {
-          fieldAPI.save(field, APILocator.systemUser());
+          fieldAPI.save(field, APILocator.systemUser(), false);
         } else {
           // We replace the newField-ID with the oldField-ID in order to be able to update the
           // Field
@@ -547,7 +547,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
             // Create a copy of the new Field with the oldField-ID,
             field = FieldBuilder.builder(field).id(oldField.id()).build();
-            fieldAPI.save(field, APILocator.systemUser());
+            fieldAPI.save(field, APILocator.systemUser(), false);
           } else {
             // If the field don't match on VariableName and DBColumn we log an error.
             Logger.error(this, "Can't save Field with already existing VariableName: " + field.variable() + ", id: "

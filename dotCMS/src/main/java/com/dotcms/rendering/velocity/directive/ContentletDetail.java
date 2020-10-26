@@ -12,6 +12,7 @@ import com.dotmarketing.util.PageMode;
 import java.io.File;
 import java.io.Writer;
 
+import java.util.Optional;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
@@ -32,20 +33,25 @@ public class ContentletDetail extends DotDirective {
 
 
     private long resolveLang(final String identifier, final RenderParams params) {
-        ContentletVersionInfo cv;
+        Optional<ContentletVersionInfo> versionInfo;
         long tryingLang = params.language.getId();
         long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
         if(tryingLang==defaultLang) {
             return tryingLang;
         }
         try {
-            cv = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, tryingLang);
-            if (cv != null) {
+            versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, tryingLang);
+            if (versionInfo.isPresent()) {
                 return tryingLang;
             }
-            else if (defaultLang != tryingLang) {
-                cv = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, defaultLang);
-                String inode = (params.mode.showLive) ? cv.getLiveInode() : cv.getWorkingInode();
+            else {
+                versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, defaultLang);
+
+                if(!versionInfo.isPresent()) {
+                    throw new ResourceNotFoundException("cannnot find contentlet id " + identifier + " lang:" + defaultLang);
+                }
+
+                String inode = params.mode.showLive ? versionInfo.get().getLiveInode() : versionInfo.get().getWorkingInode();
                 Contentlet test = APILocator.getContentletAPI().find(inode, params.user, params.mode.respectAnonPerms);
                 ContentType type = test.getContentType();
                 if (type.baseType() == BaseContentType.FORM || type.baseType() == BaseContentType.PERSONA

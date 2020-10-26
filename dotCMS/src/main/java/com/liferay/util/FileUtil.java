@@ -22,6 +22,7 @@
 
 package com.liferay.util;
 
+import com.dotcms.publisher.pusher.PushUtils;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.filefilter.TrueFileFilter;
 import com.dotmarketing.business.DotStateException;
@@ -933,13 +934,26 @@ public class FileUtil {
 	 */
 	public static InputStream createInputStream(final Path path, final StreamCompressorType type) throws IOException {
 
+		return wrapCompressedInputStream(Files.newInputStream(path), type);
+	}
+
+	/**
+	 * Wraps the original input stream into a compress indicated on type {@link StreamCompressorType}
+	 * Does not wrap anything if the type is not supported
+	 * @param stream {@link InputStream}
+	 * @param type   {@link StreamCompressorType}
+	 * @return InputStream
+	 * @throws IOException
+	 */
+	public static InputStream wrapCompressedInputStream (final InputStream stream, final StreamCompressorType type) throws IOException {
+
 		switch (type) {
 			case GZIP:
-				return new GZIPInputStream(Files.newInputStream(path));
+				return new GZIPInputStream(stream);
 			case BZIP2:
-				return new BZip2CompressorInputStream(Files.newInputStream(path));
+				return new BZip2CompressorInputStream(stream);
 			default:
-				return Files.newInputStream(path);
+				return stream;
 		}
 	}
 
@@ -1011,5 +1025,19 @@ public class FileUtil {
 
 		GZIP, BZIP2, NONE;
 	}
+	
+	/**
+	 * Convienience Method to access .tar.gz functionality
+	 * @param directory
+	 * @return
+	 * @throws IOException
+	 */
+    public static File tarGzipDirectory(final File directory) throws IOException {
+	    return PushUtils.tarGzipDirectory(directory);
+	    
+	}
+	
+	
+	
 
 }

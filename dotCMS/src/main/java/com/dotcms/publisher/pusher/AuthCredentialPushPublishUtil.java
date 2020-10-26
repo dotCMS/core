@@ -5,10 +5,9 @@ import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import io.jsonwebtoken.*;
 import org.apache.commons.lang.StringUtils;
@@ -72,6 +71,8 @@ public enum AuthCredentialPushPublishUtil {
     public PushPublishAuthenticationToken processAuthHeader(final HttpServletRequest request) {
         final boolean useJWTToken = isJWTAvailable();
 
+        Logger.info(AuthCredentialPushPublishUtil.class, String.format("Is JWT in Push publish avaible?: %s", useJWTToken));
+
         try{
             if (useJWTToken) {
                 final PushPublishAuthenticationToken pushPublishAuthenticationToken = getFromJWTToken(request);
@@ -91,7 +92,6 @@ public enum AuthCredentialPushPublishUtil {
     }
 
     private PushPublishAuthenticationToken getFromEndPointAuthKey(HttpServletRequest request) throws DotDataException, IOException {
-
         final Optional<PublishingEndPoint> publishingEndPointOptional = getPublishingEndPointDotCMSToken(request);
         return publishingEndPointOptional.isPresent() ?
                 new PushPublishAuthenticationToken(publishingEndPointOptional.get()) :
@@ -103,17 +103,21 @@ public enum AuthCredentialPushPublishUtil {
             final Optional<JWToken> jwTokenOptional =
                     JsonWebTokenAuthCredentialProcessorImpl.getInstance().processJWTAuthHeader(request);
 
+            Logger.info(AuthCredentialPushPublishUtil.class, String.format("Token from request?: %s", jwTokenOptional));
+
             if (!jwTokenOptional.isPresent()){
                 return PushPublishAuthenticationToken.INVALID_TOKEN;
             }
 
             final Optional<User> optionalUser = jwTokenOptional.get().getActiveUser();
+            Logger.info(AuthCredentialPushPublishUtil.class, String.format("User from token?: %s", optionalUser));
             if (!optionalUser.isPresent()){
                 return PushPublishAuthenticationToken.INVALID_TOKEN;
             }
 
             return new PushPublishAuthenticationToken(jwTokenOptional.get());
         } catch(IncorrectClaimException e){
+            Logger.info(AuthCredentialPushPublishUtil.class, String.format("IncorrectClaimException?: %s", e));
             final String claimName = e.getClaimName();
 
             return Claims.EXPIRATION.equals(claimName) ? PushPublishAuthenticationToken.EXPIRE_TOKEN :
@@ -127,13 +131,18 @@ public enum AuthCredentialPushPublishUtil {
         final PublishingEndPoint publishingEndPoint =
                 APILocator.getPublisherEndPointAPI().findEnabledSendingEndPointByAddress(remoteIP);
 
+        Logger.info(AuthCredentialPushPublishUtil.class, String.format("PublishingEndPoint: %s", publishingEndPoint != null ? publishingEndPoint.getServerName() : "null"));
+
         Optional<String> key = PushPublisher.retriveEndpointKeyDigest(publishingEndPoint);
+
+        Logger.info(AuthCredentialPushPublishUtil.class, String.format("PublishingEndPoint key: %s", key));
+
         if(!key.isPresent()) {
             return Optional.empty();
         }
 
         final String token = getTokenFromRequest(request);
-
+        Logger.info(AuthCredentialPushPublishUtil.class, String.format("Token from request: %s", token));
         return token.equals( key.get() ) ? Optional.of(publishingEndPoint) : Optional.empty();
     }
 
