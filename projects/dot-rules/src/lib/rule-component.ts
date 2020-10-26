@@ -126,34 +126,31 @@ const I8N_BASE = 'api.sites.ruleengine';
                         [ngModelOptions]="{ standalone: true }"
                     ></p-inputSwitch>
                     <div class="cw-btn-group">
-                        <div class="ui basic icon buttons">
-                            <span class="p-buttonset">
-                                <button
-                                    pButton
-                                    class="p-button-secondary"
-                                    icon="pi pi-ellipsis-v"
-                                    (click)="ruleOptions.toggle($event); $event.stopPropagation()"
-                                ></button>
-                                <button
-                                    pButton
-                                    class="p-button-secondary"
-                                    icon="pi pi-plus"
-                                    arial-label="Add Group"
-                                    (click)="
-                                        onCreateConditionGroupClicked();
-                                        setRuleExpandedState(true);
-                                        $event.stopPropagation()
-                                    "
-                                    [disabled]="!rule.isPersisted()"
-                                ></button>
-                            </span>
-                            <p-menu
-                                #ruleOptions
-                                appendTo="body"
-                                popup="true"
-                                [model]="ruleActionOptions"
-                            ></p-menu>
-                        </div>
+                        <button
+                            pButton
+                            class="p-button-secondary"
+                            icon="pi pi-ellipsis-v"
+                            (click)="ruleOptions.toggle($event); $event.stopPropagation()"
+                        ></button>
+                        <button
+                            style="margin-left:0.5rem"
+                            pButton
+                            class="p-button-secondary"
+                            icon="pi pi-plus"
+                            arial-label="Add Group"
+                            (click)="
+                                onCreateConditionGroupClicked();
+                                setRuleExpandedState(true);
+                                $event.stopPropagation()
+                            "
+                            [disabled]="!rule.isPersisted()"
+                        ></button>
+                        <p-menu
+                            #ruleOptions
+                            appendTo="body"
+                            popup="true"
+                            [model]="ruleActionOptions"
+                        ></p-menu>
                     </div>
                 </div>
             </div>

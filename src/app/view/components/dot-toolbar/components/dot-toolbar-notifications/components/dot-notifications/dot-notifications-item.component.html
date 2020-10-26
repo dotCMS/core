@@ -1,12 +1,13 @@
 <li class="notification-item {{ data.level | lowercase }}">
-    <button
-        pButton
-        icon="fa fa-times"
+    <dot-icon-button
+        tiny
+        icon="clear"
         (click)="onClear()"
+        id="{{ 'notification-item-button-close-' + data.id }}"
         class="notification-item__close"
         title="{{ 'notifications_dismiss' | dm }}"
-        id="{{ 'notification-item-button-close-' + data.id }}"
-    ></button>
+    >
+    </dot-icon-button>
 
     <div class="notification-item__wrapper">
         <i [class]="getIconName(data.level)"></i>

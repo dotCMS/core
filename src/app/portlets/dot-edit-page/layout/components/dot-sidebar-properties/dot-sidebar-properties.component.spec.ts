@@ -46,14 +46,14 @@ describe('DotSidebarPropertiesComponent', () => {
     });
 
     it('should has 3 radio buttons', () => {
-        const radioButtons = fixture.debugElement.query(
-            By.css('.dot-sidebar-properties__radio-buttons-container')
+        const radioButtons = fixture.debugElement.queryAll(
+            By.css('.dot-sidebar-properties__radio-buttons-container p-radioButton')
         );
 
-        expect(radioButtons.children.length).toEqual(3);
-        expect(radioButtons.children[0].attributes.value).toEqual('small');
-        expect(radioButtons.children[1].attributes.value).toEqual('medium');
-        expect(radioButtons.children[2].attributes.value).toEqual('large');
+        expect(radioButtons.length).toEqual(3);
+        expect(radioButtons[0].attributes.value).toEqual('small');
+        expect(radioButtons[1].attributes.value).toEqual('medium');
+        expect(radioButtons[2].attributes.value).toEqual('large');
     });
 
     it('should toggle overlay panel', () => {
@@ -66,20 +66,20 @@ describe('DotSidebarPropertiesComponent', () => {
 
     it('should hide overlay panel when a sidebar size property is clicked', () => {
         spyOn(component.overlay, 'hide');
-        const radioButtons = fixture.debugElement.query(
-            By.css('.dot-sidebar-properties__radio-buttons-container')
+        const radioButtons = fixture.debugElement.queryAll(
+            By.css('.dot-sidebar-properties__radio-buttons-container p-radioButton')
         );
-        radioButtons.children[0].nativeElement.click();
+        radioButtons[0].nativeElement.click();
         expect(component.overlay.hide).toHaveBeenCalledTimes(1);
     });
 
     it('should send a layout-sidebar-change notification when a sidebar size property is updated', () => {
         spyOn(component.change, 'emit');
         spyOn(dotEventsService, 'notify');
-        const radioButtons = fixture.debugElement.query(
-            By.css('.dot-sidebar-properties__radio-buttons-container')
+        const radioButtons = fixture.debugElement.queryAll(
+            By.css('.dot-sidebar-properties__radio-buttons-container p-radioButton')
         );
-        radioButtons.children[0].nativeElement.click();
+        radioButtons[0].nativeElement.click();
         expect(dotEventsService.notify).toHaveBeenCalledWith('layout-sidebar-change');
         expect(component.change.emit).toHaveBeenCalled();
     });

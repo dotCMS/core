@@ -8,7 +8,7 @@
     width: 100%;
 
     &:hover {
-        background-color: $gray-bg;
+        background-color: $bg-hover;
     }
 
     dot-avatar {
@@ -16,7 +16,6 @@
     }
 
     .dot-persona-selector-option__label {
-        color: $gray;
         display: -webkit-box;
         display: -moz-box;
         flex: 1;

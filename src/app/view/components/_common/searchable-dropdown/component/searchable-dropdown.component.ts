@@ -75,7 +75,7 @@ export class SearchableDropdownComponent
     width = '300';
 
     @Input()
-    optionsWidth = '300';
+    overlayWidth;
 
     @Input()
     multiple: boolean;
@@ -119,7 +119,6 @@ export class SearchableDropdownComponent
 
     constructor() {}
 
-    // tslint:disable-next-line:no-shadowed-variable
     propagateChange = (_: any) => {};
 
     ngOnChanges(changes: SimpleChanges): void {

@@ -1,15 +1,14 @@
 import { Observable, of, Subject } from 'rxjs';
 import {
     Component,
-    ViewEncapsulation,
-    ViewChild,
-    Output,
     EventEmitter,
     Input,
-    OnInit,
-    SimpleChanges,
     OnChanges,
-    OnDestroy
+    OnDestroy,
+    OnInit,
+    Output,
+    SimpleChanges,
+    ViewChild
 } from '@angular/core';
 import { Site, SiteService } from 'dotcms-js';
 import { PaginatorService } from '@services/paginator';
@@ -28,7 +27,6 @@ import { delay, retryWhen, take, takeUntil, tap } from 'rxjs/operators';
  */
 @Component({
     providers: [PaginatorService],
-    encapsulation: ViewEncapsulation.None,
     selector: 'dot-site-selector',
     styleUrls: ['./dot-site-selector.component.scss'],
     templateUrl: 'dot-site-selector.component.html'
@@ -38,6 +36,8 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
     @Input() id: string;
     @Input() live: boolean;
     @Input() system: boolean;
+    @Input() cssClass: string;
+    @Input() width: string;
 
     @Output() change: EventEmitter<Site> = new EventEmitter();
     @Output() hide: EventEmitter<any> = new EventEmitter();

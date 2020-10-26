@@ -41,12 +41,21 @@ class MockRouterService {
 class MockSiteSelectorComponent {
     @Input()
     archive = false;
+
     @Input()
     id = '';
+
     @Input()
     live = true;
+
     @Input()
     system = true;
+
+    @Input()
+    cssClass;
+
+    @Input()
+    width;
 }
 
 @Component({
@@ -144,6 +153,12 @@ describe('DotToolbarComponent', () => {
 
         expect(dotRouterService.goToSiteBrowser).toHaveBeenCalled();
         expect<any>(comp.siteChange).toHaveBeenCalledWith({ value: siteMock });
+    });
+
+    it(`should pass class and width`, () => {
+        const siteSelector: DebugElement = fixture.debugElement.query(By.css('dot-site-selector'));
+        expect(siteSelector.componentInstance.cssClass).toBe('d-secondary');
+        expect(siteSelector.componentInstance.width).toBe('200');
     });
 
     it('should toggle menu and update icon on click', () => {

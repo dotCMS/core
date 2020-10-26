@@ -10,9 +10,17 @@ import {
 import { DotDropdownModule } from '@components/_common/dot-dropdown-component/dot-dropdown.module';
 import { DotCustomTimeModule } from '@components/_common/dot-custom-time.component/dot-custom-time.module';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 
 @NgModule({
-    imports: [CommonModule, DotDropdownModule, ButtonModule, DotCustomTimeModule, DotPipesModule],
+    imports: [
+        CommonModule,
+        DotDropdownModule,
+        ButtonModule,
+        DotCustomTimeModule,
+        DotPipesModule,
+        DotIconButtonModule
+    ],
     exports: [DotToolbarNotificationsComponent],
     declarations: [
         DotToolbarNotificationsComponent,

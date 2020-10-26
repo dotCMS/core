@@ -51,7 +51,7 @@ const I8N_BASE = 'api.sites.ruleengine';
         ></dot-unlicense>
         <div class="cw-rule-engine" *ngIf="!loading && showRules">
             <div class="cw-header">
-                <div flex layout="row">
+                <div flex layout="row" style="align-items:center">
                     <input
                         pInputText
                         placeholder="{{ rsrc('inputs.filter.placeholder') | async }}"

@@ -8,51 +8,57 @@
 <dot-edit-contentlet (custom)="onCustomEvent($event)"></dot-edit-contentlet>
 <dot-reorder-menu [url]="reorderMenuUrl" (close)="onCloseReorderDialog()"></dot-reorder-menu>
 
-<dot-loading-indicator fullscreen="true"></dot-loading-indicator>
-<ng-container *ngIf="pageState$ | async as pageState">
-    <dot-edit-page-toolbar
-        (cancel)="onCancelToolbar()"
-        (actionFired)="reload()"
-        (whatschange)="showWhatsChanged = $event"
-        [pageState]="pageState"
-        class="dot-edit__toolbar"
-    ></dot-edit-page-toolbar>
+<div class="dot-edit-content__wrapper">
+    <dot-loading-indicator fullscreen="true"></dot-loading-indicator>
+    <ng-container *ngIf="pageState$ | async as pageState">
+        <dot-edit-page-toolbar
+            (cancel)="onCancelToolbar()"
+            (actionFired)="reload()"
+            (whatschange)="showWhatsChanged = $event"
+            [pageState]="pageState"
+            class="dot-edit__toolbar"
+        ></dot-edit-page-toolbar>
 
-    <div
-        class="dot-edit__page-wrapper"
-        [class.dot-edit__page-wrapper--deviced]="pageState.viewAs.device"
-    >
         <div
-            class="dot-edit__device-wrapper"
-            [ngStyle]="{
-                width: pageState.viewAs.device ? pageState.viewAs.device.cssWidth + 'px' : '100%',
-                height: pageState.viewAs.device ? pageState.viewAs.device.cssHeight + 'px' : '100%'
-            }"
+            class="dot-edit__page-wrapper"
+            [class.dot-edit__page-wrapper--deviced]="pageState.viewAs.device"
         >
-            <div class="dot-edit__iframe-wrapper">
-                <dot-overlay-mask
-                    *ngIf="showOverlay"
-                    (click)="iframeOverlayService.hide()"
-                ></dot-overlay-mask>
-                <dot-whats-changed
-                    [pageId]="pageState.page.identifier"
-                    [languageId]="pageState.viewAs.language.id"
-                    *ngIf="showWhatsChanged"
-                ></dot-whats-changed>
-                <iframe
-                    *ngIf="showIframe"
-                    #iframe
-                    width="100%"
-                    height="100%"
-                    frameborder="0"
-                    class="dot-edit__iframe"
-                    (load)="onLoad($event)"
-                    [ngStyle]="{
-                        visibility: showWhatsChanged ? 'hidden' : '',
-                        position: showWhatsChanged ? 'absolute' : ''
-                    }"
-                ></iframe>
+            <div
+                class="dot-edit__device-wrapper"
+                [ngStyle]="{
+                    width: pageState.viewAs.device
+                        ? pageState.viewAs.device.cssWidth + 'px'
+                        : '100%',
+                    height: pageState.viewAs.device
+                        ? pageState.viewAs.device.cssHeight + 'px'
+                        : '100%'
+                }"
+            >
+                <div class="dot-edit__iframe-wrapper">
+                    <dot-overlay-mask
+                        *ngIf="showOverlay"
+                        (click)="iframeOverlayService.hide()"
+                    ></dot-overlay-mask>
+                    <dot-whats-changed
+                        [pageId]="pageState.page.identifier"
+                        [languageId]="pageState.viewAs.language.id"
+                        *ngIf="showWhatsChanged"
+                    ></dot-whats-changed>
+                    <iframe
+                        *ngIf="showIframe"
+                        #iframe
+                        width="100%"
+                        height="100%"
+                        frameborder="0"
+                        class="dot-edit__iframe"
+                        (load)="onLoad($event)"
+                        [ngStyle]="{
+                            visibility: showWhatsChanged ? 'hidden' : '',
+                            position: showWhatsChanged ? 'absolute' : ''
+                        }"
+                    ></iframe>
+                </div>
             </div>
         </div>
-    </div>
-</ng-container>
+    </ng-container>
+</div>

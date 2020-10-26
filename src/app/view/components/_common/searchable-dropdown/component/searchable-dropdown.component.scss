@@ -53,6 +53,9 @@
         &::ng-deep {
             .p-button-label {
                 margin-right: 2rem;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
             }
 
             .p-button-label,
@@ -104,7 +107,7 @@
             }
 
             &:hover {
-                background-color: $gray-bg;
+                background-color: $bg-hover;
             }
         }
     }

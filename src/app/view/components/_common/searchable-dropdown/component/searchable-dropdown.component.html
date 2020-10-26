@@ -28,7 +28,7 @@
     (onShow)="showOverlayHandler()"
     [dismissable]="true"
     [styleClass]="cssClass"
-    [style]="{ 'min-height': overlayPanelMinHeight + 'px', width: width + 'px' }"
+    [style]="{ 'min-height': overlayPanelMinHeight + 'px', width: (overlayWidth || width) + 'px' }"
     appendTo="body"
 >
     <header class="searchable-dropdown__search">
@@ -61,7 +61,6 @@
         [pageLinks]="pageLinkSize"
         [paginator]="totalRecords > rows"
         [rows]="rows"
-        [style]="{ width: optionsWidth + 'px' }"
         [totalRecords]="totalRecords"
         [value]="options"
         class="searchable-dropdown__data-list"

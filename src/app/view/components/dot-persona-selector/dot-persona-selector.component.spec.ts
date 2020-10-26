@@ -131,7 +131,7 @@ describe('DotPersonaSelectorComponent', () => {
 
     it('should set dot-searchable-dropdown with right attributes', () => {
         expect(dropdown.componentInstance.labelPropertyName).toBe('name');
-        expect(dropdown.componentInstance.optionsWidth).toBe(448);
+        expect(dropdown.componentInstance.width).toBe(448);
         expect(dropdown.componentInstance.rows).toBe(10);
         expect(dropdown.componentInstance.totalRecords).toBe(1);
     });

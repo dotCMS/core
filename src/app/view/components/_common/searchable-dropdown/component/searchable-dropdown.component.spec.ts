@@ -24,7 +24,7 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
         [rows]="rows"
         [totalRecords]="totalRecords"
         [valuePropertyName]="valuePropertyName"
-        [optionsWidth]="optionsWidth"
+        [overlayWidth]="overlayWidth"
         [width]="width"
         [disabled]="disabled"
     >
@@ -64,7 +64,7 @@ class HostTestComponent {
     width: string;
 
     @Input()
-    optionsWidth: string;
+    overlayWidth: string;
 
     @Input()
     multiple: boolean;
@@ -187,14 +187,15 @@ describe('SearchableDropdownComponent', () => {
     it('should set CSS class, width', fakeAsync(() => {
         hostFixture.componentInstance.data = data;
         hostFixture.componentInstance.cssClass = 'testClass';
-        hostFixture.componentInstance.optionsWidth = '650';
+        hostFixture.componentInstance.overlayWidth = '650';
         hostFixture.detectChanges();
+        tick();
+
         const overlay = de.query(By.css('.p-overlaypanel'));
-        const pdataview = de.query(By.css('.p-dataview')).componentInstance;
-        tick(100);
         expect(comp.cssClass).toContain('searchable-dropdown paginator');
+
         expect(overlay.componentInstance.styleClass).toBe('testClass');
-        expect(pdataview.style).toEqual({ width: '650px' });
+        expect(overlay.componentInstance.style.width).toEqual('650px');
     }));
 
     it('should reset Panel Min Height', () => {
