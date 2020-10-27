@@ -100,7 +100,10 @@ public class Task201014UpdateColumnsValuesInIdentifierTable extends AbstractJDBC
                 .append("where temp.identifier=custom_select.identifier\n")
                 .append("and inode.inode=temp.inode and inode.idate=custom_select.idate \n")
                 .append("and temp.structure_inode = struc.inode)\n")
-                .append("st ON (ident.id = st.myID) \n");
+                .append("st ON (ident.id = st.myID) \n")
+                .append("WHEN MATCHED THEN\n")
+                .append("    UPDATE SET ident.owner = st.mod_user,\n")
+                .append("               ident.create_date = st.idate;\n").toString();
 
         return query.toString();
     }
