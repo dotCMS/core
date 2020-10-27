@@ -51,7 +51,7 @@ public class TemplateFactoryImplTest extends IntegrationTestBase {
     public void testFindWorkingTemplateByName_SQL_INJECTIION() throws Exception {
         Template template = new Template();
         final TemplateFactory templateFactory = new TemplateFactoryImpl();
-        template.setTitle(SQLUtilTest.MALICIOUS_SQL_CONDITION + "'\" ;" + UUIDGenerator.generateUuid());
+        template.setTitle(UUIDGenerator.generateUuid() + SQLUtilTest.MALICIOUS_SQL_CONDITION );
         template.setBody("<html><body> I'm mostly empty </body></html>");
         template.setOwner("template's owner");
 
