@@ -1,17 +1,33 @@
 package com.dotcms.rest.api.v1.template;
 
+import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.util.pagination.TemplateView;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.business.ContainerAPI;
+import com.dotmarketing.portlets.containers.business.ContainerFinderByIdOrPathStrategy;
+import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
+import com.dotmarketing.portlets.containers.business.LiveContainerFinderByIdOrPathStrategyResolver;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.ContainerView;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * Helper for templates
@@ -21,21 +37,28 @@ public class TemplateHelper {
 
     private final PermissionAPI  permissionAPI;
     private final RoleAPI roleAPI;
+    private final ContainerAPI containerAPI;
 
     public TemplateHelper() {
         this(APILocator.getPermissionAPI(),
-                APILocator.getRoleAPI());
+                APILocator.getRoleAPI(),
+                APILocator.getContainerAPI());
     }
 
     @VisibleForTesting
     public TemplateHelper(final PermissionAPI  permissionAPI,
-                          final RoleAPI        roleAPI) {
+                          final RoleAPI        roleAPI,
+                          final ContainerAPI containerAPI) {
 
         this.permissionAPI  = permissionAPI;
         this.roleAPI        = roleAPI;
+        this.containerAPI   = containerAPI;
     }
 
     public TemplateView toTemplateView(final Template template, final User user) {
+
+        final TemplateLayout layout = UtilMethods.isSet(template.getDrawedBody())?
+                DotTemplateTool.getTemplateLayout(template.getDrawedBody()): null;
 
         return new TemplateView.Builder()
                 .name(template.getName())
@@ -74,7 +97,45 @@ public class TemplateHelper {
                 .owner(template.getOwner())
                 .showOnMenu(template.isShowOnMenu())
                 .sortOrder(template.getSortOrder())
+                .layout(layout)
+                .containers(this.findContainerInLayout(layout))
                 .build();
+    }
+
+    private Set<ContainerView> findContainerInLayout (final TemplateLayout templateLayout) {
+
+        final Set<ContainerView> containers = new HashSet<>();
+        final User user = APILocator.systemUser();
+        final LiveContainerFinderByIdOrPathStrategyResolver strategyResolver =
+                LiveContainerFinderByIdOrPathStrategyResolver.getInstance();
+        final Supplier<Host> resourceHost = ()-> Try.of(()-> APILocator.getHostAPI().findDefaultHost(user, false)).getOrNull();
+
+        if (null != templateLayout) {
+
+            final Set<String> containerIdSet = templateLayout.getContainersIdentifierOrPath();
+            if (null != containerIdSet) {
+
+                for (final String containerIdOrPath : containerIdSet) {
+
+                    final Optional<ContainerFinderByIdOrPathStrategy> strategyOpt = strategyResolver.get(containerIdOrPath);
+                    final ContainerFinderByIdOrPathStrategy containerStrategy     = strategyOpt.isPresent()?strategyOpt.get(): strategyResolver.getDefaultStrategy();
+                    final Container container = Try.of(()->containerStrategy.apply(containerIdOrPath, user, false, resourceHost))
+                            .onFailure(e -> Logger.error(TemplateHelper.class, e.getMessage(), e))
+                            .getOrNull();
+
+                    if (null != container) {
+
+                        containers.add(new ContainerView(container));
+                    } else {
+
+                        Logger.info(this, ()-> "The container id: " + containerIdOrPath +
+                                " is on the layout: " + templateLayout.getTitle() + " does not exists!");
+                    }
+                }
+            }
+        }
+
+        return containers;
     }
 
     public void checkPermission(final User user, final Template currentTemplate, final int permissionType) throws DotDataException, DotSecurityException {

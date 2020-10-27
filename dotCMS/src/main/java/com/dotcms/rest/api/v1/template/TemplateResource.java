@@ -25,6 +25,7 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.WebAssetFactory;
+import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
@@ -87,8 +88,6 @@ public class TemplateResource {
     private final FolderAPI      folderAPI;
     private final HostWebAPI     hostWebAPI;
     private final PermissionAPI  permissionAPI;
-    private final RoleAPI        roleAPI;
-    private final HTMLPageAssetAPI htmlPageAssetAPI;
     private final TemplateHelper templateHelper;
 
 
@@ -96,14 +95,16 @@ public class TemplateResource {
 
         this(new WebResource(),
                 new PaginationUtil(new TemplatePaginator(APILocator.getTemplateAPI(),
-                        new TemplateHelper(APILocator.getPermissionAPI(), APILocator.getRoleAPI()))),
+                        new TemplateHelper(APILocator.getPermissionAPI(),
+                                APILocator.getRoleAPI(),
+                                APILocator.getContainerAPI()))),
                 APILocator.getTemplateAPI(),
                 APILocator.getVersionableAPI(),
                 APILocator.getFolderAPI(),
                 APILocator.getPermissionAPI(),
                 WebAPILocator.getHostWebAPI(),
                 APILocator.getRoleAPI(),
-                APILocator.getHTMLPageAssetAPI());
+                APILocator.getContainerAPI());
     }
 
     @VisibleForTesting
@@ -115,7 +116,7 @@ public class TemplateResource {
                              final PermissionAPI  permissionAPI,
                              final HostWebAPI     hostWebAPI,
                              final RoleAPI        roleAPI,
-                             final HTMLPageAssetAPI htmlPageAssetAPI) {
+                             final ContainerAPI   containerAPI) {
 
         this.webResource    = webResource;
         this.templateAPI    = templateAPI;
@@ -123,9 +124,7 @@ public class TemplateResource {
         this.folderAPI      = folderAPI;
         this.permissionAPI  = permissionAPI;
         this.hostWebAPI     = hostWebAPI;
-        this.roleAPI        = roleAPI;
-        this.htmlPageAssetAPI = htmlPageAssetAPI;
-        this.templateHelper = new TemplateHelper(permissionAPI, roleAPI);
+        this.templateHelper = new TemplateHelper(permissionAPI, roleAPI, containerAPI);
         this.paginationUtil = templatePaginator;
     }
 

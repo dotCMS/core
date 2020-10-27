@@ -40,7 +40,9 @@ public class TemplatePaginator implements PaginatorOrdered<TemplateView> {
 
     public TemplatePaginator() {
         this(APILocator.getTemplateAPI(),
-                new TemplateHelper(APILocator.getPermissionAPI(), APILocator.getRoleAPI()));
+                new TemplateHelper(APILocator.getPermissionAPI(),
+                        APILocator.getRoleAPI(),
+                        APILocator.getContainerAPI()));
     }
 
     @VisibleForTesting

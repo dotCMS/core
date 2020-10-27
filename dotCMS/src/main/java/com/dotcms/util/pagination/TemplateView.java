@@ -1,10 +1,12 @@
 package com.dotcms.util.pagination;
 
-import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.ContainerView;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
-import com.dotmarketing.util.UtilMethods;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Set;
 
 public class TemplateView {
 
@@ -41,6 +43,7 @@ public class TemplateView {
     private final boolean canWrite;
     private final boolean canPublish;
     private final TemplateLayout layout;
+    private final Set<ContainerView> containers;
 
     private TemplateView(final Builder builder) {
 
@@ -76,8 +79,12 @@ public class TemplateView {
         this.canRead = builder.canRead;
         this.canWrite = builder.canWrite;
         this.canPublish = builder.canPublish;
-        this.layout = UtilMethods.isSet(this.drawedBody)?
-                DotTemplateTool.getTemplateLayout(this.drawedBody): null;
+        this.layout = builder.layout;
+        this.containers = builder.containers;
+    }
+
+    public Set<ContainerView> getContainers() {
+        return containers;
     }
 
     public TemplateLayout getLayout() {
@@ -246,6 +253,20 @@ public class TemplateView {
         private  boolean canRead;
         private  boolean canWrite;
         private  boolean canPublish;
+        private  TemplateLayout layout;
+        private  Set<ContainerView> containers;
+
+        public Builder containers (final Set<ContainerView> containers) {
+
+            this.containers = containers;
+            return this;
+        }
+
+        public Builder layout (final TemplateLayout layout) {
+
+            this.layout = layout;
+            return this;
+        }
 
         public Builder identifier (final String identifier) {
 
