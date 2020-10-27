@@ -115,8 +115,11 @@ public class SecretView {
                     buildParam(paramDescriptor, map);
                 }
             }
+
+            ViewUtil.pushSecret(map);
             final String json = mapper.writeValueAsString(map);
             jsonGenerator.writeRawValue(json);
+
         }
 
         private void buildCommonJson(final AbstractProperty property,
