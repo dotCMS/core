@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.apps;
 import com.dotcms.rest.api.Validated;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.ImmutableList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -46,10 +47,11 @@ public class ExportSecretForm extends Validated {
 
     @Override
     public String toString() {
-        final List<String> stringsList = appKeysBySite.entrySet().stream()
-                .map(entry -> "Site " + entry.getKey() + " keys: " + String
-                        .join(",", entry.getValue())).collect(
-                        Collectors.toList());
+        final List<String> stringsList =
+                appKeysBySite == null ? ImmutableList.of() : appKeysBySite.entrySet().stream()
+                        .map(entry -> "Site " + entry.getKey() + " keys: " + String
+                                .join(",", entry.getValue())).collect(
+                                Collectors.toList());
 
         return String.format("ExportSecretForm{ all={%s} {%s}}", exportAll,
                 String.join("\n", stringsList));

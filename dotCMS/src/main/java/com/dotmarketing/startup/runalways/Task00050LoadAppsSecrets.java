@@ -1,4 +1,4 @@
-package com.dotmarketing.startup.runonce;
+package com.dotmarketing.startup.runalways;
 
 import static com.dotcms.security.apps.AppsUtil.APPS_IMPORT_EXPORT_DEFAULT_PASSWORD;
 import static com.dotcms.security.apps.AppsUtil.generateKey;
@@ -40,7 +40,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class Task201008LoadAppsSecrets implements StartupTask {
+public class Task00050LoadAppsSecrets implements StartupTask {
 
     private static final Pattern importFilePattern = Pattern
             .compile("^dotSecrets-import\\.([a-zA-Z0-9-_]+)", Pattern.CASE_INSENSITIVE);
