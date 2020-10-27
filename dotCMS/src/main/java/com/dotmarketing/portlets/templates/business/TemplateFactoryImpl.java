@@ -136,7 +136,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 	@SuppressWarnings("unchecked")
 	public Template findWorkingTemplateByName(String name, Host host) throws DotDataException {
-	    name = SQLUtil.sanitizeCondition(name);
+
 		DotConnect dc = new DotConnect();
 		dc.setSQL(templateWithNameSQL);
 		dc.addParam(host.getIdentifier());
@@ -232,7 +232,8 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			additionalParams.add(identifier);
 		}
 		
-		final String orderBy = UtilMethods.isSet(orderByIncoming) ? SQLUtil.sanitizeSortBy(orderByIncoming) : "mod_date desc";
+		String orderBy = SQLUtil.sanitizeSortBy(orderByIncoming) ;
+		orderBy = UtilMethods.isSet(orderBy) ? orderBy : "mod_date desc";
 		
 
 		List<Template> resultList;

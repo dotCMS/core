@@ -298,7 +298,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		int     internalLimit                      = 500;
 		int     internalOffset                     = 0;
 		boolean done                               = false;
-		String  orderBy                            = SQLUtil.sanitizeSortBy(orderByParam);
+		String  orderBy                            = SQLUtil.sanitizeSortBy(orderByParam) ;
 		final StringBuilder query 				   = new StringBuilder().append("select asset.*, inode.* from ")
 				.append(Type.CONTAINERS.getTableName()).append(" asset, inode, identifier, ")
 				.append(Type.CONTAINERS.getVersionTableName()).append(" vinfo");
@@ -306,9 +306,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		this.buildFindContainersQuery(includeArchived, hostId, inode,
 				identifier, parent, contentTypeAPI, query);
 
-		if(!UtilMethods.isSet(orderBy)) {
-			orderBy = "mod_date desc";
-		}
+		orderBy = UtilMethods.isEmpty(orderBy) ? "mod_date desc" : orderBy;
 
 		List<Container> resultList;
 		final DotConnect dotConnect  = new DotConnect();
