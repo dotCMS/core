@@ -1,11 +1,15 @@
 package com.dotcms.util.pagination;
 
+import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.ContainerView;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
+import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 
 import java.util.Date;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 public class TemplateView {
@@ -83,8 +87,21 @@ public class TemplateView {
         this.containers = builder.containers;
     }
 
-    public Set<ContainerView> getContainers() {
-        return containers;
+    public Map<String, ContainerView> getContainers() {
+
+        final Map<String, ContainerView> containerMap = new HashMap<>();
+
+        containers.stream().forEach(containerView -> {
+
+            final Container container = containerView.getContainer();
+            final String containerId  = container instanceof FileAssetContainer?
+                    FileAssetContainerUtil.getInstance().getFullPath((FileAssetContainer) container):
+                    container.getIdentifier();
+
+            containerMap.put(containerId, containerView);
+        });
+
+        return containerMap;
     }
 
     public TemplateLayout getLayout() {
