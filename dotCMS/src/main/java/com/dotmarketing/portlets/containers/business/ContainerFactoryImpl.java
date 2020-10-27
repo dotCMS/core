@@ -22,6 +22,7 @@ import com.dotmarketing.business.IdentifierCache;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -297,7 +298,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		int     internalLimit                      = 500;
 		int     internalOffset                     = 0;
 		boolean done                               = false;
-		String  orderBy                            = orderByParam;
+		String  orderBy                            = SQLUtil.sanitizeSortBy(orderByParam);
 		final StringBuilder query 				   = new StringBuilder().append("select asset.*, inode.* from ")
 				.append(Type.CONTAINERS.getTableName()).append(" asset, inode, identifier, ")
 				.append(Type.CONTAINERS.getVersionTableName()).append(" vinfo");
