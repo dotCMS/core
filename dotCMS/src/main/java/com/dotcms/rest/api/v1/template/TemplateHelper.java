@@ -106,9 +106,6 @@ public class TemplateHelper {
 
         final Set<ContainerView> containers = new HashSet<>();
         final User user = APILocator.systemUser();
-        final LiveContainerFinderByIdOrPathStrategyResolver strategyResolver =
-                LiveContainerFinderByIdOrPathStrategyResolver.getInstance();
-        final Supplier<Host> resourceHost = ()-> Try.of(()-> APILocator.getHostAPI().findDefaultHost(user, false)).getOrNull();
 
         if (null != templateLayout) {
 
@@ -117,15 +114,13 @@ public class TemplateHelper {
 
                 for (final String containerIdOrPath : containerIdSet) {
 
-                    final Optional<ContainerFinderByIdOrPathStrategy> strategyOpt = strategyResolver.get(containerIdOrPath);
-                    final ContainerFinderByIdOrPathStrategy containerStrategy     = strategyOpt.isPresent()?strategyOpt.get(): strategyResolver.getDefaultStrategy();
-                    final Container container = Try.of(()->containerStrategy.apply(containerIdOrPath, user, false, resourceHost))
+                    final Optional<Container> container = Try.of(()->this.containerAPI.findContainer(containerIdOrPath, user, false, false))
                             .onFailure(e -> Logger.error(TemplateHelper.class, e.getMessage(), e))
-                            .getOrNull();
+                            .getOrElse(Optional.empty());
 
-                    if (null != container) {
+                    if (container.isPresent()) {
 
-                        containers.add(new ContainerView(container));
+                        containers.add(new ContainerView(container.get()));
                     } else {
 
                         Logger.info(this, ()-> "The container id: " + containerIdOrPath +
