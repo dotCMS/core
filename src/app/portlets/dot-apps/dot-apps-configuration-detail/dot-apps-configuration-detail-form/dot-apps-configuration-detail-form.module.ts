@@ -11,9 +11,11 @@ import { InputTextareaModule } from 'primeng/inputtextarea';
 import { InputTextModule } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
 import { MarkdownModule } from 'ngx-markdown';
+import { ButtonModule } from 'primeng/button';
 
 @NgModule({
     imports: [
+        ButtonModule,
         CheckboxModule,
         CommonModule,
         DotIconModule,

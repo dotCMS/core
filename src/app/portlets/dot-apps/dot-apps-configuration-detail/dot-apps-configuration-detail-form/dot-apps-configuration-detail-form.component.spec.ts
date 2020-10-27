@@ -13,6 +13,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
 import { MarkdownModule, MarkdownService } from 'ngx-markdown';
 import { DebugElement } from '@angular/core';
+import { ButtonModule } from 'primeng/button';
 
 const secrets = [
     {
@@ -64,6 +65,16 @@ const secrets = [
         required: true,
         type: 'SELECT',
         value: '1'
+    },
+    {
+        dynamic: false,
+        name: 'integration',
+        hidden: false,
+        hint: 'This is Integration!',
+        label: 'Integration:',
+        required: false,
+        type: 'BUTTON',
+        value: 'urlLink'
     }
 ];
 
@@ -71,7 +82,8 @@ const formState = {
     name: secrets[0].value,
     password: secrets[1].value,
     enabled: JSON.parse(secrets[2].value),
-    select: secrets[3].options[0].value
+    select: secrets[3].options[0].value,
+    integration: secrets[4].value
 };
 
 describe('DotAppsConfigurationDetailFormComponent', () => {
@@ -79,6 +91,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         TestBed.configureTestingModule({
             imports: [
                 HttpClientTestingModule,
+                ButtonModule,
                 CommonModule,
                 CheckboxModule,
                 DropdownModule,
@@ -191,6 +204,28 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             expect(row.query(By.css('.p-field-hint')).nativeElement.textContent).toBe(
                 secrets[3].hint
             );
+        });
+
+        it('should load Label, Button & Hint with right attributes', () => {
+            const row = de.queryAll(By.css('.p-field'))[4];
+            expect(row.query(By.css('label')).nativeElement.textContent).toBe(secrets[4].label);
+            expect(
+                row.query(By.css('label')).nativeElement.classList.contains('form__label')
+            ).toBeTruthy();
+            expect(row.query(By.css('button')).nativeElement.id).toBe(secrets[4].name);
+            expect(row.query(By.css('.form__group-hint')).nativeElement.textContent).toBe(
+                secrets[4].hint
+            );
+        });
+
+        it('should Button open link on new tab when clicked', () => {
+            const openMock = jasmine.createSpy();
+            window.open = openMock;
+            const row = de.queryAll(By.css('.p-field'))[4];
+            const button = row.query(By.css('button')).nativeElement;
+
+            button.click();
+            expect(openMock).toHaveBeenCalledWith(secrets[4].value, '_blank');
         });
 
         it('should emit form state when loaded', () => {

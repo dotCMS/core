@@ -21,6 +21,24 @@
 <form #form="ngForm" [formGroup]="myFormGroup" class="p-fluid" novalidate>
     <div #formContainer class="dot-apps-configuration-detail__form">
         <div class="p-field" *ngFor="let field of formFields" [ngSwitch]="field.type">
+            <ng-container *ngSwitchCase="'BUTTON'">
+                <ng-container
+                    *ngTemplateOutlet="labelField; context: { field: field }"
+                ></ng-container>
+                <button
+                    pButton
+                    type="button"
+                    (click)="onIntegrate(field.value)"
+                    [id]="field.name"
+                    [label]="field.label"
+                ></button>
+                <ng-container
+                    *ngTemplateOutlet="warningIcon; context: { field: field }"
+                ></ng-container>
+                <span class="form__group-hint"
+                    ><markdown>{{ field.hint }}</markdown></span
+                >
+            </ng-container>
             <ng-container *ngSwitchCase="'STRING'">
                 <ng-container
                     *ngTemplateOutlet="labelField; context: { field: field }"

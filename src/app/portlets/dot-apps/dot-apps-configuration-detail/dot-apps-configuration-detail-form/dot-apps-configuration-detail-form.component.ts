@@ -56,6 +56,15 @@ export class DotAppsConfigurationDetailFormComponent implements OnInit {
         }, 0);
     }
 
+    /**
+     * Handle integration action of third parties in a new window
+     * @param {string} url
+     * @memberof DotAppsConfigurationDetailFormComponent
+     */
+    onIntegrate(url: string): void {
+        window.open(url, '_blank');
+    }
+
     private getFieldValue(field: DotAppsSecrets): string | boolean {
         return getFieldValueFn[field.type] ? getFieldValueFn[field.type](field) : field.value;
     }
