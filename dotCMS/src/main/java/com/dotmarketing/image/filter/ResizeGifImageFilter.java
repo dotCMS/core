@@ -55,7 +55,7 @@ public class ResizeGifImageFilter extends ImageFilter {
       final int width = (int) w;
       final int height = (int) h;
 
-      readWriteGIF(file, resultFile, maxFrames, loop, width, height);
+      readWriteGIF(file, resultFile, maxFrames, loop, width, height, src);
       return resultFile;
     } catch (Exception e) {
       Logger.warnAndDebug(this.getClass(), "error:" + e.getStackTrace()[0].getClassName() + " " + e.getMessage(), e);
@@ -64,13 +64,14 @@ public class ResizeGifImageFilter extends ImageFilter {
     return file;
   }
 
-  private void readWriteGIF(File inputFile, File outputFile, final int maxFrames, final int loop, int width, int height)
+  private void readWriteGIF(File inputFile, File outputFile, final int maxFrames, final int loop, int width, int height,
+          BufferedImage bufferedImage)
       throws IOException {
     final BufferedImageOp resampler = new ResampleOp(width, height, ResampleOp.FILTER_TRIANGLE);
     final GifDecoder decoder = new GifDecoder();
     decoder.read(inputFile.getAbsolutePath());
     if(decoder.getFrameCount()==1) {
-      BufferedImage dst = resampler.filter(ImageIO.read(inputFile), null);
+      BufferedImage dst = resampler.filter(bufferedImage, null);
       ImageIO.write(dst, "png", outputFile);
       dst.flush();
       return;
