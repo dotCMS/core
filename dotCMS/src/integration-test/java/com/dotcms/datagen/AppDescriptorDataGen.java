@@ -229,10 +229,23 @@ public class AppDescriptorDataGen extends AbstractDataGen<AppDescriptor> {
      * @param name
      * @param hidden
      * @param required
+     * @param value
+     * @return
+     */
+    public AppDescriptorDataGen stringParam(final String name, final Boolean hidden, final Boolean required, final Object value, final String label, final String hint) {
+        return param(name, ParamDescriptor.newParam(value, hidden, Type.STRING, label, hint, required));
+    }
+
+
+    /**
+     * Param builder method
+     * @param name
+     * @param hidden
+     * @param required
      * @return
      */
     public AppDescriptorDataGen boolParam(final String name, final Boolean hidden, final Boolean required) {
-        return param(name, ParamDescriptor.newParam(Boolean.TRUE.toString(), hidden, Type.STRING, "label", "hint", required));
+        return param(name, ParamDescriptor.newParam(Boolean.TRUE.toString(), hidden, Type.BOOL, "label", "hint", required));
     }
 
     /**
@@ -243,5 +256,17 @@ public class AppDescriptorDataGen extends AbstractDataGen<AppDescriptor> {
      */
     public AppDescriptorDataGen selectParam(final String name, final Boolean required, final List<Map<String,String>> items) {
         return param(name, ParamDescriptor.newParam(items, false, Type.SELECT, "label", "hint", required));
+    }
+
+    /**
+     *
+     * @param name
+     * @param url
+     * @param label
+     * @param hint
+     * @return
+     */
+    public AppDescriptorDataGen buttonParam(final String name,  final String url, final String label, final String hint) {
+        return param(name, ParamDescriptor.newParam(url, false, Type.BUTTON, label, hint, false));
     }
 }

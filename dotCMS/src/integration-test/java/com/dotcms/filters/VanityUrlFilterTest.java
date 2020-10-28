@@ -17,9 +17,11 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.vanityurl.business.VanityUrlAPI;
 import com.dotcms.vanityurl.cache.VanityUrlCache;
 import com.dotcms.vanityurl.filters.VanityURLFilter;
+import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -98,6 +100,44 @@ public class VanityUrlFilterTest {
 
     }
 
+    /**
+     * this tests that a vanity url that has been run gets added to the request attributes
+     * @throws Exception
+     */
+    @Test
+    public void test_that_vanity_url_filter_adds_vanity_as_request_attribute() throws Exception {
+
+
+        String title = "VanityURL"  + System.currentTimeMillis();
+        String site = defaultHost.getIdentifier();
+        String uri = "/testing_request_attribute" + System.currentTimeMillis();
+        String forwardTo = "https://google.com";
+        int action = 200;
+        int order = 1;
+
+        Contentlet contentlet1 = filtersUtil.createVanityUrl(title, site, uri,
+                forwardTo, action, order, defaultLanguage.getId());
+        filtersUtil.publishVanityUrl(contentlet1);
+
+        final HttpServletRequest request = new MockHttpRequest(defaultHost.getHostname(), uri).request();
+
+        final HttpServletResponse response = new MockHttpResponse().response();
+
+        final VanityURLFilter filter = new VanityURLFilter();
+        
+        filter.doFilter(request, response, null);
+        
+        final CachedVanityUrl resolvedVanity = (CachedVanityUrl) request.getAttribute(Constants.VANITY_URL_OBJECT);
+        assert(resolvedVanity!=null);
+        
+        
+        assert(resolvedVanity.vanityUrlId .equals(contentlet1.getIdentifier() ));
+        
+
+
+    }
+    
+    
     /**
      * this tests that vanity url redirects work as expected
      * @throws Exception

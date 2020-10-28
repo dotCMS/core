@@ -66,6 +66,7 @@ import java.util.Map;
 
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
+import java.util.Optional;
 
 /**
  *
@@ -333,9 +334,8 @@ public class WebAssetFactory {
 		}
 
 		// if it is locked then we compare lockedBy with userId from the user that wants to edit the asset
-		String currUserId=APILocator.getVersionableAPI().getLockedBy(currWebAsset);
-
-		return currUserId.equals(userId);
+		Optional<String> lockedByOptional = APILocator.getVersionableAPI().getLockedBy(currWebAsset);
+		return lockedByOptional.map(lockedBy -> lockedBy.equals(userId)).orElse(false);
 	}
 
 	public static WebAsset getBackAssetVersion(WebAsset versionWebAsset) throws Exception {
@@ -1029,7 +1029,7 @@ public class WebAssetFactory {
 		AssetType type = AssetType.getObject(tableName.toUpperCase());
 		java.util.List<? extends Permissionable> elements = null;
 		Map<String,Object> params = new HashMap<String, Object>();
-		if(UtilMethods.isSet(query)){
+		if(UtilMethods.isSet(query) && !type.equals(AssetType.TEMPLATE)){
 			params.put("title", query.toLowerCase().replace("\'","\\\'"));
 		}
 		try {
@@ -1039,9 +1039,7 @@ public class WebAssetFactory {
 			}
 			elements = containerAPI.findContainers(user, includeArchived, params, hostId, null, null, parent, offset, limit, orderBy);
 		}else if (type.equals(AssetType.TEMPLATE)){
-			if(APILocator.getIdentifierAPI().isIdentifier(query)){
-				params.put("identifier", query);
-			}
+			params.put("filter",query.toLowerCase());
 			elements = templateAPI.findTemplates(user, includeArchived, params, hostId, null, null,  parent, offset, limit, orderBy);
 		}else if (type.equals(AssetType.LINK)){
 			elements = linksAPI.findLinks(user, includeArchived, params, hostId, null, null, parent, offset, limit, orderBy);

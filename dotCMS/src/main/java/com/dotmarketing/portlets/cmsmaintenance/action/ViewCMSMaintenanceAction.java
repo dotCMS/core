@@ -4,6 +4,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
+import com.dotcms.publishing.PushPublishFiltersInitializer;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
@@ -233,6 +234,10 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 				final String msgLogger = isAllCachesFlush ? "Flushing All Caches" : "Flushing " + cacheToFlush +" Cache";
 				Logger.info(this, msgLogger);
 				_flush(cacheToFlush);
+				//Reloads PushPublishing Filters if all cache or system cache is flushed
+				if(isAllCachesFlush || cacheToFlush.equalsIgnoreCase("system")){
+					new PushPublishFiltersInitializer().init();
+				}
 				message = isAllCachesFlush ? "message.cmsmaintenance.cache.flushallcache" : "message.cmsmaintenance.cache.flushcache";
 			} else {
 				Logger.info(this, "Flushing Live and Working File Cache");

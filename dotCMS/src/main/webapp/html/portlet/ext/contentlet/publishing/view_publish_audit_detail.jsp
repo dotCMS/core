@@ -129,7 +129,7 @@
     </tr>
     <tr>
         <th><b><%= LanguageUtil.get(pageContext, "contenttypes.content.push_publish.filters") %>: </b></th>
-        <td style="background: white"><%if ( UtilMethods.isSet(bundle) && UtilMethods.isSet(bundle.getFilterKey()) ) {%><%=bundle.getFilterKey() %><%}%></td>
+        <td style="background: white"><%if ( UtilMethods.isSet(bundle) && UtilMethods.isSet(bundle.getFilterKey()) ) {%><%=APILocator.getPublisherAPI().getFilterDescriptorByKey(bundle.getFilterKey()).getTitle() %><%}%></td>
 
     </tr>
     <tr>

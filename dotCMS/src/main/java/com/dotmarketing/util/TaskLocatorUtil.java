@@ -1,5 +1,6 @@
 package com.dotmarketing.util;
 
+import com.dotmarketing.startup.runalways.Task00050LoadAppsSecrets;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -285,8 +286,11 @@ public class TaskLocatorUtil {
 		.add(Task05370AddAppsPortletToLayout.class)
 		.add(Task05370AddAppsPortletToLayout.class)
     	.add(Task05380ChangeContainerPathToAbsolute.class)
-		.add(Task05390RemoveEndpointIdForeignKeyInIntegrityResolverTables.class)
-
+    	.add(Task05390MakeRoomForLongerJobDetail.class)
+		.add(Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTables.class)
+		//New task date-based naming convention starts here
+        .add(Task201013AddNewColumnsToIdentifierTable.class)
+        .add(Task201014UpdateColumnsValuesInIdentifierTable.class)
         .build();
         
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
@@ -321,6 +325,7 @@ public class TaskLocatorUtil {
 		ret.add(Task00002LoadClusterLicenses.class);
 		//ret.add(Task00030ClusterInitialize.class);
 		ret.add(Task00040CheckAnonymousUser.class);
+		ret.add(Task00050LoadAppsSecrets.class);
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 

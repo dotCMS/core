@@ -1,16 +1,11 @@
 package com.dotcms.rest;
 
 import com.dotcms.publisher.pusher.AuthCredentialPushPublishUtil;
-import com.dotcms.repackage.org.apache.http.HttpStatus;
 import com.dotcms.util.CollectionsUtils;
-import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import java.util.Optional;
 

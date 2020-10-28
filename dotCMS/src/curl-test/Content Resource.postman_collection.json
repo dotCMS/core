@@ -1,0 +1,233 @@
+{
+	"info": {
+		"_postman_id": "19017026-e6fe-41fa-ba0b-8899a6d076a4",
+		"name": "Content Resource",
+		"description": "Content Resource test",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Anonymous Request",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "56968bb3-843e-4f6d-ac02-e82b300f652d",
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Checking the results \" , function(){",
+							"        ",
+							"    var jsonData = JSON.parse(responseBody);",
+							"    ",
+							"    if(jsonData.entity.contentTook<0){",
+							"        throw new Error(\"contentTook should be >= 0\");",
+							"    } ",
+							"",
+							"    if(jsonData.entity.jsonObjectView.contentlets.length<=0){",
+							"        throw new Error(\"contentlets should be > 0\");",
+							"    } else {",
+							"",
+							"        for (var i in jsonData.entity.jsonObjectView.contentlets) {",
+							"",
+							"            let contentlet = jsonData.entity.jsonObjectView.contentlets[i];",
+							"            console.log(jsonData.entity.jsonObjectView.contentlets[i]);",
+							"            if(!contentlet.hasOwnProperty('hostName')) {",
+							"                throw new Error(\"contentlet: \" + contentlet + \" should has hostName\");",
+							"            }",
+							"",
+							"            if(!contentlet.hasOwnProperty('inode')) {",
+							"                throw new Error(\"contentlet: \" + contentlet + \" should has inode\");",
+							"            }",
+							"",
+							"            if(!contentlet.hasOwnProperty('identifier')) {",
+							"                throw new Error(\"contentlet: \" + contentlet + \" should has identifier\");",
+							"            }",
+							"        }",
+							"    }",
+							"        ",
+							"",
+							" });",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n     \t \"query\": \"+structurename:webpagecontent\",\n      \t \"sort\":\"modDate\",\n      \t \"limit\":20,\n      \t \"offset\":1\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/content/_search",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"content",
+						"_search"
+					]
+				},
+				"description": "This is an annonymous request"
+			},
+			"response": []
+		},
+		{
+			"name": "Admin Request",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "cce2d347-8751-4452-98bb-918cd67b3460",
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Checking the results \" , function(){",
+							"        ",
+							"    var jsonData = JSON.parse(responseBody);",
+							"    ",
+							"    if(jsonData.entity.contentTook<0){",
+							"        throw new Error(\"contentTook should be >= 0\");",
+							"    } ",
+							"",
+							"    if(jsonData.entity.jsonObjectView.contentlets.length<=0){",
+							"        throw new Error(\"contentlets should be > 0\");",
+							"    } else {",
+							"",
+							"        for (var i in jsonData.entity.jsonObjectView.contentlets) {",
+							"",
+							"            let contentlet = jsonData.entity.jsonObjectView.contentlets[i];",
+							"            console.log(jsonData.entity.jsonObjectView.contentlets[i]);",
+							"            if(!contentlet.hasOwnProperty('hostName')) {",
+							"                throw new Error(\"contentlet: \" + contentlet + \" should has hostName\");",
+							"            }",
+							"",
+							"            if(!contentlet.hasOwnProperty('inode')) {",
+							"                throw new Error(\"contentlet: \" + contentlet + \" should has inode\");",
+							"            }",
+							"",
+							"            if(!contentlet.hasOwnProperty('identifier')) {",
+							"                throw new Error(\"contentlet: \" + contentlet + \" should has identifier\");",
+							"            }",
+							"        }",
+							"    }",
+							"        ",
+							"",
+							" });",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n     \t \"query\": \"+structurename:webpagecontent\",\n      \t \"sort\":\"modDate\",\n      \t \"limit\":20,\n      \t \"offset\":1\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/content/_search",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"content",
+						"_search"
+					]
+				},
+				"description": "Just an admin request"
+			},
+			"response": []
+		},
+		{
+			"name": "Admin Request + Invalid User",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "1d5c377e-8173-4a8a-be36-1f3787d49cbc",
+						"exec": [
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n     \t \"query\": \"+structurename:webpagecontent\",\n      \t \"sort\":\"modDate\",\n      \t \"limit\":20,\n      \t \"offset\":1,\n         \"userId\":\"xxx\"  \n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/content/_search",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"content",
+						"_search"
+					]
+				},
+				"description": "using an admin user but with invalid user"
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}

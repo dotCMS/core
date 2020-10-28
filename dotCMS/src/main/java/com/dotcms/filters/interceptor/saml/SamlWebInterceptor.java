@@ -458,7 +458,7 @@ public class SamlWebInterceptor implements WebInterceptor {
         User user       = null;
 
         final HttpSession session = request.getSession(false);
-        if (session == null || request.isRequestedSessionIdValid()) {
+        if (session == null) {
 
             Logger.error(this, "Could not retrieve user from session as the session doesn't exist!");
             return null;
@@ -580,7 +580,10 @@ public class SamlWebInterceptor implements WebInterceptor {
                     uriWithoutQueryString.endsWith(".png")  ||
                     uriWithoutQueryString.endsWith(".gif")  ||
                     uriWithoutQueryString.endsWith(".css")  ||
-                    uriWithoutQueryString.endsWith(".js");
+                    uriWithoutQueryString.endsWith(".js")   ||
+                    uriWithoutQueryString.endsWith(".js.map")         ||
+                    uriWithoutQueryString.endsWith("manifest.json")   ||
+                    uriWithoutQueryString.endsWith(".ttf");
         }
 
         return true;

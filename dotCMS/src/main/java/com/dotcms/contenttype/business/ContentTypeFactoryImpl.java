@@ -23,10 +23,12 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.util.*;
 import com.google.common.collect.ImmutableSet;
+import io.vavr.control.Try;
 import org.apache.commons.lang.time.DateUtils;
 
 import java.util.*;
 import java.util.Calendar;
+import java.util.stream.Collectors;
 
 public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
@@ -535,14 +537,19 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     dc.setSQL(this.contentTypeSql.DELETE_INODE_BY_INODE).addParam(type.id()).loadResult();
     return true;
   }
-
+  
+  final boolean LOAD_FROM_CACHE=Config.getBooleanProperty("LOAD_CONTENTTYPE_DETAILS_FROM_CACHE", true);
+  
   private List<ContentType> dbSearch(String search, int baseType, String orderBy, int limit, int offset)
       throws DotDataException {
-    int bottom = (baseType == 0) ? 0 : baseType;
-    int top = (baseType == 0) ? 100000 : baseType;
+    final int bottom = (baseType == 0) ? 0 : baseType;
+    final int top = (baseType == 0) ? 100000 : baseType;
     if (limit == 0)
       throw new DotDataException("limit param must be more than 0");
     limit = (limit < 0) ? 10000 : limit;
+
+    
+    
     // our legacy code passes in raw sql conditions and so we need to detect
     // and handle those
     SearchCondition searchCondition = new SearchCondition(search);
@@ -551,7 +558,12 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     	orderBy = "mod_date";
     }
     DotConnect dc = new DotConnect();
-    dc.setSQL( String.format( this.contentTypeSql.SELECT_QUERY_CONDITION, SQLUtil.sanitizeCondition( searchCondition.condition ), orderBy ) );
+    
+    if(LOAD_FROM_CACHE) {
+        dc.setSQL( String.format( this.contentTypeSql.SELECT_INODE_ONLY_QUERY_CONDITION, SQLUtil.sanitizeCondition( searchCondition.condition ), orderBy ) );
+    }else {
+        dc.setSQL( String.format( this.contentTypeSql.SELECT_QUERY_CONDITION, SQLUtil.sanitizeCondition( searchCondition.condition ), orderBy ) );
+    }
     dc.setMaxRows(limit);
     dc.setStartRow(offset);
     dc.addParam( searchCondition.search );
@@ -562,8 +574,17 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     
     Logger.debug(this, "QUERY " + dc.getSQL());
 
-    return new DbContentTypeTransformer(dc.loadObjectResults()).asList();
-
+    if(LOAD_FROM_CACHE) {
+        return dc.loadObjectResults()
+                    .stream()
+                    .map(m-> Try.of(()->find((String) m.get("inode")))
+                            .onFailure(e->Logger.warnAndDebug(ContentTypeFactoryImpl.class,e))
+                            .getOrNull())
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+    }else {
+        return new DbContentTypeTransformer(dc.loadObjectResults()).asList();
+    }
   }
 
   private int dbCount(String search, int baseType) throws DotDataException {

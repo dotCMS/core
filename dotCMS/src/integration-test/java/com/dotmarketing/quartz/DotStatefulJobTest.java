@@ -4,7 +4,7 @@ import static com.dotmarketing.quartz.DotStatefulJob.getJobDescription;
 import static com.dotmarketing.quartz.DotStatefulJob.getJobGroupName;
 import static com.dotmarketing.quartz.DotStatefulJob.getJobName;
 import static com.dotmarketing.quartz.DotStatefulJob.getTriggerGroupName;
-import static com.dotmarketing.quartz.QuartzUtils.getSequentialScheduler;
+
 import static java.util.Objects.requireNonNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -41,7 +41,7 @@ public class DotStatefulJobTest extends IntegrationTestBase {
     public static void prepare() throws Exception {
         // Setting web app environment
         IntegrationTestInitService.getInstance().init();
-        getSequentialScheduler().start();
+        QuartzUtils.startSchedulers();
     }
 
     /**
@@ -110,7 +110,7 @@ public class DotStatefulJobTest extends IntegrationTestBase {
     private Optional<JobExecutionContext> getJobExecutionContext(){
         final String jobName = getJobName(MyStatefulJob.class);
         try {
-            final Scheduler sequentialScheduler = getSequentialScheduler();
+            final Scheduler sequentialScheduler = QuartzUtils.getScheduler();
             @SuppressWarnings("unchecked")
             final List<JobExecutionContext> executingJobs = sequentialScheduler.getCurrentlyExecutingJobs();
             return executingJobs.stream().filter(jobExecutionContext -> {
@@ -193,7 +193,7 @@ public class DotStatefulJobTest extends IntegrationTestBase {
                 groupName, description,
                 MyStatefulJob.class.getCanonicalName(), false,
                 nextTriggerName, triggerGroup, startDate, null,
-                SimpleTrigger.MISFIRE_INSTRUCTION_FIRE_NOW, 10, true, jobProperties,
+                SimpleTrigger.MISFIRE_INSTRUCTION_FIRE_NOW, 10, jobProperties,
                 cronString);
         task.setDurability(true);
         return task;

@@ -31,6 +31,7 @@ import java.io.StringWriter;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -278,6 +279,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		if(versionable instanceof Folder) {
 			identifier.setAssetType(Identifier.ASSET_TYPE_FOLDER);
 			identifier.setAssetName(((Folder) versionable).getName());
+            identifier.setOwner(((Folder) versionable).getOwner());
 		} else {
 			String uri = versionable.getVersionType() + "." + versionable.getInode();
 			if(versionable instanceof Contentlet){
@@ -308,6 +310,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 				identifier.setAssetType(Identifier.ASSET_TYPE_CONTENTLET);
 				identifier.setParentPath(parentId.getPath());
 				identifier.setAssetName(uri);
+				identifier.setAssetSubType(contentlet.getContentType().variable());
 			} else if (versionable instanceof WebAsset) {
 				identifier.setURI(((WebAsset) versionable).getURI(folder));
 				identifier.setAssetType(versionable.getVersionType());
@@ -317,6 +320,9 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 				identifier.setURI(uri);
 				identifier.setAssetType(versionable.getVersionType());
 			}
+
+            identifier.setOwner((versionable instanceof WebAsset)
+                    ? ((WebAsset) versionable).getOwner() : versionable.getModUser());
 		}
 		Host site;
 		try {
@@ -331,6 +337,19 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		}
 		identifier.setHostId(site.getIdentifier());
 		identifier.setParentPath(parentId.getPath());
+
+        final Inode inode;
+        try {
+            if (versionable.getInode() != null) {
+                inode = InodeUtils.getInode(versionable.getInode());
+                identifier.setCreateDate(inode.getIDate());
+            } else {
+                identifier.setCreateDate(new Date());
+            }
+        } catch (DotSecurityException e) {
+            throw new DotStateException(e.getMessage(), e);
+        }
+
 
 		saveIdentifier(identifier);
 
@@ -356,6 +375,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
             identifier.setAssetType(Identifier.ASSET_TYPE_FOLDER);
 			identifier.setAssetName(((Folder) versionable).getName());
             identifier.setParentPath( "/" );
+            identifier.setOwner(((Folder) versionable).getOwner());
         } else {
             String uri = versionable.getVersionType() + "." + versionable.getInode();
             if ( versionable instanceof Contentlet) {
@@ -378,6 +398,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
                 identifier.setAssetType(Identifier.ASSET_TYPE_CONTENTLET);
                 identifier.setParentPath( "/" );
                 identifier.setAssetName( uri );
+                identifier.setAssetSubType(cont.getContentType().variable());
             } else if ( versionable instanceof Link ) {
                 identifier.setAssetName( versionable.getInode() );
                 identifier.setParentPath("/");
@@ -385,11 +406,27 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 				identifier.setAssetName(versionable.getInode());
 				identifier.setAssetType(Identifier.ASSET_TYPE_CONTENTLET);
 				identifier.setParentPath("/");
+				identifier.setAssetSubType(Host.HOST_VELOCITY_VAR_NAME);
 			} else {
                 identifier.setURI( uri );
             }
+
+            identifier.setOwner((versionable instanceof WebAsset)
+                    ? ((WebAsset) versionable).getOwner() : versionable.getModUser());
         }
         identifier.setHostId( site != null ? site.getIdentifier() : null );
+
+        final Inode inode;
+        try {
+            if (versionable.getInode() != null) {
+                inode = InodeUtils.getInode(versionable.getInode());
+                identifier.setCreateDate(inode.getIDate());
+            } else {
+                identifier.setCreateDate(new Date());
+            }
+        } catch (DotSecurityException e) {
+            throw new DotDataException(e.getMessage(), e);
+        }
 
         saveIdentifier( identifier );
 
@@ -447,13 +484,13 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			if (UtilMethods.isSet(id.getId())) {
 
 				if (isIdentifier(id.getId())) {
-					query = "UPDATE identifier set parent_path=?, asset_name=?, host_inode=?, asset_type=?, syspublish_date=?, sysexpire_date=? where id=?";
+                    query = "UPDATE identifier set parent_path=?, asset_name=?, host_inode=?, asset_type=?, syspublish_date=?, sysexpire_date=?, owner=?, create_date=?, asset_subtype=? where id=?";
 				} else{
-					query = "INSERT INTO identifier (parent_path,asset_name,host_inode,asset_type,syspublish_date,sysexpire_date,id) values (?,?,?,?,?,?,?)";
+					query = "INSERT INTO identifier (parent_path,asset_name,host_inode,asset_type,syspublish_date,sysexpire_date,owner,create_date,asset_subtype,id) values (?,?,?,?,?,?,?,?,?,?)";
 				}
 			} else {
 				id.setId(UUIDGenerator.generateUuid());
-				query = "INSERT INTO identifier (parent_path,asset_name,host_inode,asset_type,syspublish_date,sysexpire_date,id) values (?,?,?,?,?,?,?)";
+				query = "INSERT INTO identifier (parent_path,asset_name,host_inode,asset_type,syspublish_date,sysexpire_date,owner,create_date,asset_subtype,id) values (?,?,?,?,?,?,?,?,?,?)";
 			}
 
 			DotConnect dc = new DotConnect();
@@ -465,7 +502,11 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			dc.addParam(id.getAssetType());
 			dc.addParam(id.getSysPublishDate());
 			dc.addParam(id.getSysExpireDate());
-			dc.addParam(id.getId());
+
+            dc.addParam(id.getOwner());
+            dc.addParam(id.getCreateDate());
+            dc.addParam(id.getAssetSubType());
+            dc.addParam(id.getId());
 
 			try{
 				dc.loadResult();

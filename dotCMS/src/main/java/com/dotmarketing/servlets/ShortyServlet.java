@@ -382,12 +382,12 @@ public class ShortyServlet extends HttpServlet {
         if (field instanceof ImageField || field instanceof FileField) {
 
             final String relatedImageId = contentlet.getStringProperty(field.variable());
-            final ContentletVersionInfo contentletVersionInfo =
+            final Optional<ContentletVersionInfo> contentletVersionInfo =
                     this.versionableAPI.getContentletVersionInfo(relatedImageId, contentlet.getLanguageId());
 
-            if (contentletVersionInfo != null) {
-
-                final String inode = live ? contentletVersionInfo.getLiveInode() : contentletVersionInfo.getWorkingInode();
+            if (contentletVersionInfo.isPresent()) {
+                final String inode = live ? contentletVersionInfo.get().getLiveInode()
+                        : contentletVersionInfo.get().getWorkingInode();
                 return new StringBuilder(StringPool.FORWARD_SLASH).append(inode)
                         .append(StringPool.FORWARD_SLASH).append(FILE_ASSET_DEFAULT).toString();
             }
