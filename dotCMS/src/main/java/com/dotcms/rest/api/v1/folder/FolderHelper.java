@@ -1,19 +1,21 @@
 package com.dotcms.rest.api.v1.folder;
 
-import com.dotcms.rest.ErrorEntity;
 import com.dotcms.util.TreeableNameComparator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -25,7 +27,6 @@ public class FolderHelper {
 
     private final HostAPI hostAPI;
     private final FolderAPI folderAPI;
-    private final UserAPI userAPI;
 
     private final static TreeableNameComparator TREEABLE_NAME_COMPARATOR =
             new TreeableNameComparator();
@@ -33,85 +34,49 @@ public class FolderHelper {
     private FolderHelper() {
         this.hostAPI = APILocator.getHostAPI();
         this.folderAPI = APILocator.getFolderAPI();
-        this.userAPI = APILocator.getUserAPI();
     }
 
     private static class SingletonHolder {
         private static final FolderHelper INSTANCE = new FolderHelper();
     }
 
-    protected class FolderResults {
-
-        protected FolderResults(List<Folder> folders, List<Map<String, String>> errors) {
-            this.setErrors(errors);
-            this.setFolders(folders);
-        }
-
-        List<Folder> folders;
-        /**
-         * Map of any errors found while saving a folder.  The map has 2 attributes. failedPath and errorMessage
-         */
-        List<Map<String, String>> errors;
-
-        protected List<String> getErrorKeys() {
-            List<String> keys = new ArrayList<String>();
-            keys.add("failedPath");
-            keys.add("errorMessage");
-            return keys;
-        }
-
-        protected List<Folder> getFolders() {
-            return folders
-                    .stream()
-                    .collect(Collectors.toList());
-        }
-
-        protected void setFolders(List<Folder> folders) {
-            this.folders = folders;
-        }
-
-        protected List<ErrorEntity> getErrorEntities() {
-            List<ErrorEntity> ret = new ArrayList<ErrorEntity>();
-            for (Map<String,String> error : errors) {
-                ErrorEntity ee = new ErrorEntity(error.get("failedPath"),error.get("errorMessage"));
-                ret.add(ee);
-            }
-            return ret;
-        }
-
-        protected void setErrors(List<Map<String, String>> errors) {
-            this.errors = errors;
-        }
-    }
-
     /**
      * Get the instance.
      *
-     * @return BrowserTreeHelper
+     * @return FolderHelper
      */
     public static FolderHelper getInstance() {
 
         return FolderHelper.SingletonHolder.INSTANCE;
     } // getInstance.
 
-    public FolderResults createFolders(List<String> paths, String siteName, User user) throws DotDataException, DotSecurityException {
+    /**
+     * Creates all folders and subfolders passed in the list.
+     *
+     * @param paths List of folders to create
+     * @param siteName siteName where the folders are gonna be created
+     * @param user user to create folders
+     * @return list of folders created
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public List createFolders(final List<String> paths, final String siteName, final User user) throws DotDataException, DotSecurityException {
 
-        List<Folder> savedFolders = new ArrayList<Folder>();
-        List<Map<String, String>> errors = new ArrayList<Map<String, String>>();
-        Host host = hostAPI.findByName(siteName, user, true);
-
-        for (String path : paths) {
-            try {
-                savedFolders.add(folderAPI.createFolders(path, host, user, true));
-            } catch (Exception e) {
-                Logger.error(this, e.getMessage(), e);
-                Map<String, String> error = new HashMap<String, String>();
-                error.put("failedPath",path);
-                error.put("errorMessage",e.getMessage());
-                errors.add(error);
-            }
+        final Host host = hostAPI.findByName(siteName, user, true);
+        if(!UtilMethods.isSet(host)) {
+            throw new IllegalArgumentException(String.format(" Couldn't find any host with name `%s` ",siteName));
         }
-        return new FolderResults(savedFolders, errors);
+
+        final List<Folder> savedFolders = new ArrayList<Folder>();
+        for (final String path : paths) {
+            savedFolders.add(folderAPI.createFolders(path, host, user, true));
+        }
+        return savedFolders.stream().map(this::folderToMap).collect(Collectors.toList());
+    }
+
+    private Map folderToMap (final Folder folder) {
+
+        return Try.of(()-> folder.getMap()).getOrElse(Collections.emptyMap());
     }
 
     /**
@@ -133,6 +98,58 @@ public class FolderHelper {
             ret = folderAPI.findFolderByPath(uri,host,user,true);
         }
         return ret;
+    }
+
+    /**
+     *
+     * @param hostId hostId where the folder lives
+     * @param folder parent folder to find
+     * @param user user making the request
+     * @return FolderView with the info of the folder requested and the subFolders
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public FolderView loadFolderAndSubFoldersByPath(final String hostId, final String folder, final User user)
+            throws DotSecurityException, DotDataException {
+        final String uriParam = !folder.startsWith(StringPool.FORWARD_SLASH) ? StringPool.FORWARD_SLASH.concat(folder) : folder;
+        final Host host = APILocator.getHostAPI().find(hostId,user,false);
+        final Folder folderByPath = APILocator.getFolderAPI().findFolderByPath(uriParam, host, user, false);
+        if(!UtilMethods.isSet(host)) {
+            throw new IllegalArgumentException(String.format(" Couldn't find any host with id `%s` ",hostId));
+        }
+        if(!UtilMethods.isSet(folderByPath) || !UtilMethods.isSet(folderByPath.getInode())) {
+            throw new IllegalArgumentException(String.format(" Couldn't find any folder with name `%s` in the host `%s`",folder,hostId));
+        }
+
+        return getFolders(folderByPath,user);
+    }
+
+    /**
+     * This method returns a folder structure with their children recursively based on
+     * the folder returned by findFolderByPath
+     *
+     * @param folder  parent folder to  find
+     * @param user user
+     * @return FolderView a folder structure with their children recursively
+     */
+    private final FolderView getFolders(final Folder folder, final User user){
+
+        final List<FolderView> foldersChildCustoms = new LinkedList<>();
+        List<Folder> children = null;
+        try {
+            children = APILocator.getFolderAPI().findSubFolders(folder, user, false);
+        } catch (Exception e) {
+            Logger.error(this, "Error getting findSubFolders for folder "+folder.getPath(), e);
+        }
+
+        if(children != null && !children.isEmpty()){
+            for(final Folder child : children){
+                final FolderView recursiveFolder = getFolders(child, user);
+                foldersChildCustoms.add(recursiveFolder);
+            }
+        }
+
+        return new FolderView(folder,foldersChildCustoms);
     }
 
 }

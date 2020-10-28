@@ -34,6 +34,15 @@ public interface FieldFactory {
      */
     List<FieldVariable> byFieldVariableKey(String key) throws DotDataException;
 
+    /**
+     * Searches for a field variable whose key match the parameter
+     * @param fieldId {@link String}
+     * @param key {@link String}
+     * @return FieldVariable
+     * @throws DotDataException
+     */
+    Optional<FieldVariable>  byFieldVariableKey(String fieldId, String key) throws DotDataException;
+
     void delete(Field field) throws DotDataException;
 
     List<Field> byContentTypeId(String id) throws DotDataException;
@@ -50,8 +59,17 @@ public interface FieldFactory {
 
     List<Field> selectByContentTypeInDb(String id) throws DotDataException;
 
+    /**
+     * Given an initial variable to try, it returns a version of it that sticks to the naming
+     * conventions for field variable names and avoiding using the names in the provided list.
+     *
+     * @param tryVar the initial variable to try
+     * @param takenFieldsVariables a list of field variable names to avoid using
+     * @return
+     * @throws DotDataException
+     */
 
-    String suggestVelocityVar(String tryVar, List<Field> takenFields) throws DotDataException;
+    String suggestVelocityVar(String tryVar, Field field, List<String> takenFieldsVariables) throws DotDataException;
 
 
     FieldVariable save(FieldVariable fieldVar) throws DotDataException;

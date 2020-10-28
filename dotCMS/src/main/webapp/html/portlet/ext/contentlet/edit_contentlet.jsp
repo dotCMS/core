@@ -179,10 +179,14 @@
 	boolean canEditAsset = conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user);
 	final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
     boolean canSeeRules = layoutAPI.doesUserHaveAccessToPortlet("rules", user)
-            && conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_USE, user)
-               && conPerAPI.doesUserHavePermissions(contentlet.getParentPermissionable(), "RULES: " + PermissionAPI.PERMISSION_USE, user);
+            && conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_USE, user, PageMode.get(request).respectAnonPerms)
+            && conPerAPI.doesUserHavePermissions(contentlet.getParentPermissionable(), "RULES: " + PermissionAPI.PERMISSION_USE, user);
+    
+    boolean hasViewPermision = layoutAPI.doesUserHaveAccessToPortlet("permissions", user)
+            && conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_USE, user, PageMode.get(request).respectAnonPerms)
+            && conPerAPI.doesUserHavePermissions(contentlet.getParentPermissionable(), "PERMISSIONS: " + PermissionAPI.PERMISSION_USE, user);
 
-	Boolean isContentEditable = (Boolean) request.getAttribute(com.dotmarketing.util.WebKeys.CONTENT_EDITABLE);
+    Boolean isContentEditable = (Boolean) request.getAttribute(com.dotmarketing.util.WebKeys.CONTENT_EDITABLE);
 	isContentEditable = isContentEditable != null ? isContentEditable : false;
 	boolean contentEditable = (UtilMethods.isSet(contentlet.getInode()) ? isContentEditable : false);
 
@@ -194,7 +198,8 @@
 	   targetFrame = (String)request.getSession().getAttribute(WebKeys.FRAME);
 	}
 
-	boolean isLocked=(request.getParameter("sibbling") != null) ? false : contentlet.isLocked();
+    boolean isLocked=(request.getParameter("sibbling") != null) ? false : contentlet.isLocked();
+
 %>
 
 <!-- global included dependencies -->
@@ -215,6 +220,8 @@
 	<input name="wfExpireTime" id="wfExpireTime" type="hidden" value="">
 	<input name="wfNeverExpire" id="wfNeverExpire" type="hidden" value="">
 	<input name="whereToSend" id="wfWhereToSend" type="hidden" value="">
+	<input name="wfiWantTo" id="wfiWantTo" type="hidden" value="">
+	<input name="wfFilterKey" id="wfFilterKey" type="hidden" value="">
 
 
 	<div dojoAttachPoint="cmsFileBrowserImage" currentView="thumbnails" jsId="cmsFileBrowserImage" onFileSelected="addFileImageCallback" mimeTypes="image" sortBy="modDate" sortByDesc="true" dojoType="dotcms.dijit.FileBrowserDialog"></div>
@@ -225,13 +232,13 @@
 	<!--  START TABS -->
 	<div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer" class="content-edit__main">
 		<!--  IF THE FIRST FIELD IS A TAB-->
-		<% if(fields != null &&
+        <% if(fields != null &&
 			fields.size()>0 &&
 			fields.get(0) != null &&
 			fields.get(0).getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())){
 				Field f0 = fields.get(0);
 				fields.remove(0);%>
-			<div id="<%=f0.getVelocityVarName()%>" dojoType="dijit.layout.ContentPane" title="<%=f0.getFieldName()%>">
+			<div id="tab_<%=f0.getVelocityVarName()%>" dojoType="dijit.layout.ContentPane" title="<%=f0.getFieldName()%>">
 		<%} else {	%>
 			<div id="properties" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Content") %>">
 		<%}%>
@@ -307,7 +314,7 @@
 							</div>
 						</div>
 
-                        <div id="<%=f.getVelocityVarName()%>" class="custom-tab" dojoType="dijit.layout.ContentPane" title="<%=f.getFieldName()%>">
+                        <div id="tab_<%=f.getVelocityVarName()%>" class="custom-tab" dojoType="dijit.layout.ContentPane" title="<%=f.getFieldName()%>">
                             <div class="content-edit__advaced-form">
 
                     <%}else if(f.getFieldType().equals(Field.FieldType.CATEGORIES_TAB.toString()) && !categoriesTabFieldExists) {
@@ -468,10 +475,11 @@
 									endDateField = f;
 									%>
 								    <jsp:include page="/html/portlet/ext/contentlet/field/edit_field.jsp" />
-									<%@ include file="/html/portlet/ext/calendar/edit_event_recurrence_inc.jsp" %>
 									<%
 								}
-
+                                if (startDateField != null && endDateField != null){%>
+                                    <%@ include file="/html/portlet/ext/calendar/edit_event_recurrence_inc.jsp" %>
+                                <%}
 						} else {
 								%>
 								<jsp:include page="/html/portlet/ext/contentlet/field/edit_field.jsp" />
@@ -523,13 +531,14 @@
 	<% } %>
 
 
-	<!-- Permissions -->
-	
+    <!-- Permissions -->
+    <% if (hasViewPermision) { %>
 		<div id="permissionsTab" disabled="<%=!UtilMethods.isSet(contentlet.getInode()) %>" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Permissions") %>" onShow="refreshPermissionsTab()">
 			<div id="permissionsTabDiv">
                 <%-- This loads the edit_permission_tab_inc_wrapper.jsp passing in the contentletId as a request parameter --%>
 			</div>
-		</div>
+        </div>
+    <% } %>
 
 
 

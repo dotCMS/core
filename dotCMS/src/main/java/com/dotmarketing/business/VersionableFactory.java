@@ -115,7 +115,7 @@ public abstract class VersionableFactory {
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 */
-	protected abstract ContentletVersionInfo getContentletVersionInfo(String identifier, long lang) throws DotDataException, DotStateException;
+	protected abstract Optional<ContentletVersionInfo> getContentletVersionInfo(String identifier, long lang) throws DotDataException, DotStateException;
 
 	/**
 	 * The method will load from Hibernate and NOT use cache
@@ -124,7 +124,7 @@ public abstract class VersionableFactory {
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 */
-	protected abstract ContentletVersionInfo findContentletVersionInfoInDB(String identifier, long lang) throws DotDataException, DotStateException;
+	protected abstract Optional<ContentletVersionInfo> findContentletVersionInfoInDB(String identifier, long lang) throws DotDataException, DotStateException;
 
 	/**
 	 * 

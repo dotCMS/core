@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.directive;
 
+import static com.dotcms.rendering.velocity.services.ContainerLoader.*;
 import static com.dotmarketing.util.StringUtils.builder;
 import static com.liferay.util.StringPool.FORWARD_SLASH;
 import static com.liferay.util.StringPool.PERIOD;
@@ -20,6 +21,7 @@ import com.liferay.util.StringPool;
 import java.util.List;
 import java.util.Optional;
 import org.apache.velocity.context.Context;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Subscribe Strategies and get the strategy for a set of arguments if applies
@@ -137,46 +139,30 @@ public class TemplatePathStrategyResolver {
         }
 
         private String getPath(final RenderParams params, final String path, final String uid) {
-
-
-            final Host host     = params.currentHost;
-            String templatePath = path;
-
-
             try {
+                String fileContainerPathToVelocityPath = null;
 
-                templatePath =(!templatePath.startsWith(HOST_INDICATOR))?
-                        builder(FORWARD_SLASH, params.mode.name(), FORWARD_SLASH, HOST_INDICATOR,
-                            this.getHost(host).getHostname(), path.startsWith(FORWARD_SLASH)? StringPool.BLANK:FORWARD_SLASH,
-                            path, FORWARD_SLASH, uid, PERIOD, VelocityType.CONTAINER.fileExtension).toString():
+                if (FileAssetContainerUtil.getInstance().isFullPath(path)) {
+                    fileContainerPathToVelocityPath =
+                            path.replaceAll(FORWARD_SLASH, FILE_CONTAINER_PATH_SEPARATOR_IN_VELOCITY_KEY)
+                                    .replaceAll("\\" + PERIOD, HOST_NAME_SEPARATOR_IN_VELOCITY_KEY);
+                } else {
+                    final String fullPath = FileAssetContainerUtil.getInstance().getFullPath(path);
+                    fileContainerPathToVelocityPath = RESOLVE_RELATIVE + FILE_CONTAINER_PATH_SEPARATOR_IN_VELOCITY_KEY +
+                            fullPath.replaceAll(FORWARD_SLASH, FILE_CONTAINER_PATH_SEPARATOR_IN_VELOCITY_KEY)
+                                    .replaceAll("\\" + PERIOD, HOST_NAME_SEPARATOR_IN_VELOCITY_KEY);
+                }
 
-                        builder(FORWARD_SLASH, params.mode.name(), FORWARD_SLASH,
-                            path, FORWARD_SLASH, uid, PERIOD, VelocityType.CONTAINER.fileExtension).toString();
+                return builder(FORWARD_SLASH, params.mode.name(), FORWARD_SLASH, fileContainerPathToVelocityPath,
+                        FORWARD_SLASH, uid, PERIOD, VelocityType.CONTAINER.fileExtension).toString();
             } catch (Exception e) {
 
-                Logger.warn(this.getClass(), " - unable to resolve " + templatePath + " getting this: "+ e.getMessage() );
+                Logger.warn(this.getClass(), " - unable to resolve " + path + " getting this: "+ e.getMessage() );
                 if(e.getStackTrace().length>0) {
                     Logger.warn(this.getClass(), " - at " + e.getStackTrace()[0]);
                 }
                 throw new DotStateException(e);
             }
-
-            return templatePath;
-        }
-
-        private Host getHost(final Host host) {
-
-            if (null == host) {
-
-                try {
-                    return APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
-                } catch (DotDataException  | DotSecurityException e) {
-
-                    return APILocator.systemHost();
-                }
-            }
-
-            return host;
         }
     } // PathTemplatePathStrategyImpl.
 

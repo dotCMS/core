@@ -22,9 +22,9 @@
 
 package com.liferay.util;
 
+import com.dotcms.publisher.pusher.PushUtils;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.filefilter.TrueFileFilter;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -38,6 +38,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -54,13 +55,15 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
-import java.util.stream.Collectors;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import javax.servlet.ServletContext;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 
 /**
  * <a href="FileUtil.java.html"><b><i>View Source</i></b></a>
@@ -152,7 +155,7 @@ public class FileUtil {
         
         if (source.length() == 0) {
             Logger.warn(FileUtil.class, source.getAbsolutePath() + " is empty");
-            if (!Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false) && !(source.getAbsolutePath()
+            if (!Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", true) && !(source.getAbsolutePath()
                 .endsWith(metaDataPath) || source.getAbsolutePath().contains(languagePropertyPath))) {
                 throw new IOException("Source file is 0 length, failing " + source);
             }
@@ -869,5 +872,172 @@ public class FileUtil {
 		}
 		return folder;
 	} //mkDirsIfNeeded.
+
+	/**
+	 * Creates an input stream without compression
+	 * @param path {@link File}
+	 * @return InputStream
+	 * @throws IOException
+	 */
+	public static InputStream createInputStream(final File path) throws IOException {
+
+		return createInputStream(path.toPath(), StreamCompressorType.NONE);
+	}
+
+	/**
+	 * Creates an input stream without compression
+	 * @param path {@link Path}
+	 * @return InputStream
+	 * @throws IOException
+	 */
+	public static InputStream createInputStream(final Path path) throws IOException {
+
+		return createInputStream(path, StreamCompressorType.NONE);
+	}
+
+	/**
+	 * Create an input stream and a compression based on the type argument such as "gzip", "bzip2"
+	 * @param path {@link File}
+	 * @param type {@link String}
+	 * @return InputStream
+	 * @throws IOException
+	 */
+	public static InputStream createInputStream(final File path, final String type) throws IOException {
+
+		return createInputStream(path.toPath(), type);
+	}
+
+	/**
+	 * Create an input stream and a compression based on the type argument such as "gzip", "bzip2"
+	 * @param path {@link Path}
+	 * @param type {@link String}
+	 * @return InputStream
+	 * @throws IOException
+	 */
+	public static InputStream createInputStream(final Path path, final String type) throws IOException {
+
+		final StreamCompressorType streamCompressorType = "gzip".equalsIgnoreCase(type)?
+				StreamCompressorType.GZIP:
+				"bzip2".equalsIgnoreCase(type)?
+						StreamCompressorType.BZIP2:StreamCompressorType.NONE;
+
+		return createInputStream(path, streamCompressorType);
+
+	}
+
+	/**
+	 * Create an input stream and a compression based on the type argument such as StreamCompressorType.GZIP, StreamCompressorType.BZIP2
+	 * @param path {@link Path}
+	 * @param type {@link StreamCompressorType}
+	 * @return InputStream
+	 * @throws IOException
+	 */
+	public static InputStream createInputStream(final Path path, final StreamCompressorType type) throws IOException {
+
+		return wrapCompressedInputStream(Files.newInputStream(path), type);
+	}
+
+	/**
+	 * Wraps the original input stream into a compress indicated on type {@link StreamCompressorType}
+	 * Does not wrap anything if the type is not supported
+	 * @param stream {@link InputStream}
+	 * @param type   {@link StreamCompressorType}
+	 * @return InputStream
+	 * @throws IOException
+	 */
+	public static InputStream wrapCompressedInputStream (final InputStream stream, final StreamCompressorType type) throws IOException {
+
+		switch (type) {
+			case GZIP:
+				return new GZIPInputStream(stream);
+			case BZIP2:
+				return new BZip2CompressorInputStream(stream);
+			default:
+				return stream;
+		}
+	}
+
+	/**
+	 * Creates an output stream without compression
+	 * @param path {@link File}
+	 * @return InputStream
+	 * @throws IOException
+	 */
+	public static OutputStream createOutputStream(final File path) throws IOException {
+
+		return createOutputStream(path.toPath(), StreamCompressorType.NONE);
+	}
+
+	/**
+	 * Creates an output stream without compression
+	 * @param path {@link Path}
+	 * @return InputStream
+	 * @throws IOException
+	 */
+	public static OutputStream createOutputStream(final Path path) throws IOException {
+
+		return createOutputStream(path, StreamCompressorType.NONE);
+	}
+
+	/**
+	 * Create an output stream and a compression based on the type argument such as "gzip", "bzip2"
+	 * @param path {@link File}
+	 * @param type {@link String}
+	 * @return InputStream
+	 * @throws IOException
+	 */
+	public static OutputStream createOutputStream(final File path, final String type) throws IOException {
+
+		return createOutputStream(path.toPath(), type);
+	}
+
+	/**
+	 * Create an output stream and a compression based on the type argument such as "gzip", "bzip2"
+	 * @param path {@link Path}
+	 * @param type {@link String}
+	 * @return InputStream
+	 * @throws IOException
+	 */
+	public static OutputStream createOutputStream(final Path path, final String type) throws IOException {
+
+		final StreamCompressorType streamCompressorType = "gzip".equalsIgnoreCase(type)?
+				StreamCompressorType.GZIP:
+				"bzip2".equalsIgnoreCase(type)?
+						StreamCompressorType.BZIP2:StreamCompressorType.NONE;
+
+		return createOutputStream(path, streamCompressorType);
+
+	}
+
+	public static OutputStream createOutputStream(final Path path, final StreamCompressorType type) throws IOException {
+
+		switch (type) {
+			case GZIP:
+				return new GZIPOutputStream(Files.newOutputStream(path));
+			case BZIP2:
+				return new BZip2CompressorOutputStream(Files.newOutputStream(path));
+			default:
+				return Files.newOutputStream(path);
+		}
+	}
+
+	public static enum StreamCompressorType {
+
+		GZIP, BZIP2, NONE;
+	}
+	
+	/**
+	 * Convienience Method to access .tar.gz functionality
+	 * @param directory
+	 * @return
+	 * @throws IOException
+	 */
+    public static File tarGzipDirectory(final File directory) throws IOException {
+	    return PushUtils.tarGzipDirectory(directory);
+	    
+	}
+	
+	
+	
 
 }

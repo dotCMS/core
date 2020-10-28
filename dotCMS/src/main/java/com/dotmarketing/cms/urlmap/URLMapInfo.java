@@ -9,10 +9,12 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 public class URLMapInfo {
     final Contentlet contentlet;
     final Identifier identifier;
+    final String urlMapped;
 
-    URLMapInfo(final Contentlet contentlet, final Identifier identifier) {
+    URLMapInfo(final Contentlet contentlet, final Identifier identifier, String urlMapped) {
         this.contentlet = contentlet;
         this.identifier = identifier;
+        this.urlMapped = urlMapped;
     }
 
     /**
@@ -39,5 +41,13 @@ public class URLMapInfo {
      */
     public Identifier getIdentifier() {
         return identifier;
+    }
+
+    /**
+     * Return the URL Mapped, this is the original URL requested
+     * @return
+     */
+    public String getUrlMapped() {
+        return urlMapped;
     }
 }

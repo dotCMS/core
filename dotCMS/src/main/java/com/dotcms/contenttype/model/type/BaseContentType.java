@@ -2,6 +2,9 @@ package com.dotcms.contenttype.model.type;
 
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Provides the different Content Types that can be used inside dotCMS. A
@@ -15,15 +18,16 @@ import com.dotmarketing.util.UtilMethods;
  */
 public enum BaseContentType {
 
-	ANY(0, ContentType.class),
-	CONTENT(1, SimpleContentType.class),
-	WIDGET(2, WidgetContentType.class),
-	FORM(3, FormContentType.class),
-	FILEASSET(4, FileAssetContentType.class, "File"),
-	HTMLPAGE(5, PageContentType.class, "Page"),
-	PERSONA(6, PersonaContentType.class),
+	ANY(0,        ContentType.class),
+	CONTENT(1,    SimpleContentType.class),
+	WIDGET(2,     WidgetContentType.class),
+	FORM(3,       FormContentType.class, "Form"),
+	FILEASSET(4,  FileAssetContentType.class, "File"),
+	HTMLPAGE(5,   PageContentType.class, "Page"),
+	PERSONA(6,    PersonaContentType.class, "Persona"),
 	VANITY_URL(7, VanityUrlContentType.class, "VanityURL"),
-	KEY_VALUE(8, KeyValueContentType.class, "KeyValue");
+	KEY_VALUE(8,  KeyValueContentType.class, "KeyValue"),
+	DOTASSET(9,   DotAssetContentType.class, "DotAsset");
 
 
 	final int type;
@@ -56,6 +60,14 @@ public enum BaseContentType {
 
 	public int getType() {
 		return type;
+	}
+
+	/**
+	 * Gets the alternate name
+	 * @return String
+	 */
+	public String getAlternateName() {
+		return alternateName != null ? alternateName : name();
 	}
 
 	/**
@@ -102,7 +114,7 @@ public enum BaseContentType {
     }
 
     private static boolean isAnAlternateName(final BaseContentType type, final String name) {
-	return UtilMethods.isSet(type.alternateName) && type.alternateName.equalsIgnoreCase(name);
+		return UtilMethods.isSet(type.alternateName) && type.alternateName.equalsIgnoreCase(name);
     }
 
 	/**
@@ -124,6 +136,12 @@ public enum BaseContentType {
 			}
 		}
 		return ANY.immutableClass;
+	}
+
+	public static List<BaseContentType> getEnterpriseBaseTypes() {
+		return Arrays.stream(BaseContentType.values()).filter(baseType ->
+				EnterpriseType.class.isAssignableFrom(baseType.immutableClass()))
+				.collect(Collectors.toList());
 	}
 
 }

@@ -63,7 +63,7 @@ public class ContainerRenderedBuilder {
     }
 
 
-    private Map<String, String> render(final Context velocityContext, final PageMode mode, final ContainerRaw containerRaw) {
+    public static Map<String, String> render(final Context velocityContext, final PageMode mode, final ContainerRaw containerRaw) {
 
         final Map<String, String> rendered = Maps.newHashMap();
         for (final String uuid : containerRaw.getContentlets().keySet()) {
@@ -71,7 +71,7 @@ public class ContainerRenderedBuilder {
             try {
                 rendered.put(uuid, VelocityUtil.getInstance().mergeTemplate(key.path, velocityContext));
             } catch (Exception e) {
-                Logger.warn(this.getClass(), e.getMessage());
+                Logger.warn(ContainerRenderedBuilder.class, e.getMessage());
             }
         }
         return rendered;

@@ -131,14 +131,14 @@ public class WorkflowImportExportUtil {
 
 			for (final WorkflowScheme scheme : importer.getSchemes()) {
 
-				Logger.info(this,"Importing scheme: " + scheme);
+				Logger.debug(this, () -> "Importing scheme: " + scheme);
 				workflowAPI.saveScheme(scheme, user);
 			}
 
 			List<Tuple2<String, String>> stepsWithActions = new ArrayList<>();
 			for (final WorkflowStep step : importer.getSteps()) {
 
-				Logger.info(this, "Importing step: " + step);
+				Logger.debug(this, () -> "Importing step: " + step);
 			    if(step.getEscalationAction()!=null) {
 			        stepsWithActions.add(new Tuple2<String, String>(step.getId(), step.getEscalationAction()));
 			        step.setEscalationAction(null);
@@ -148,7 +148,7 @@ public class WorkflowImportExportUtil {
 
 			for (final WorkflowAction action : importer.getActions()) {
 
-				Logger.info(this, "Importing action: " + action);
+				Logger.debug(this, () -> "Importing action: " + action);
 				workflowAPI.saveAction(action, null, user);
 			}
 			
@@ -162,7 +162,7 @@ public class WorkflowImportExportUtil {
 			
 			for(final Map<String, String> actionStepMap : importer.getActionSteps()){
 
-				Logger.info(this, "Importing actionStepMap: " + actionStepMap);
+				Logger.debug(this, () -> "Importing actionStepMap: " + actionStepMap);
 				workflowAPI.saveAction(actionStepMap.get(ACTION_ID),
 						actionStepMap.get(STEP_ID),
 						user,
@@ -171,14 +171,14 @@ public class WorkflowImportExportUtil {
 
  			for (final WorkflowActionClass actionClass : importer.getActionClasses()) {
 
-				Logger.info(this, "Importing actionClass: " + actionClass);
+				Logger.debug(this, () -> "Importing actionClass: " + actionClass);
 				workflowAPI.saveActionClass(actionClass, user);
 			}
 
 			if (UtilMethods.isSet(importer.getWorkflowStructures())) {
 				for (final Map<String, String> map : importer.getWorkflowStructures()) {
 
-					Logger.info(this, "Importing WorkflowStructures: " + map);
+					Logger.debug(this, () -> "Importing WorkflowStructures: " + map);
 					DotConnect dc = new DotConnect();
 					dc.setSQL("delete from workflow_scheme_x_structure where id=?");
 					dc.addParam(map.get("id"));
@@ -192,7 +192,8 @@ public class WorkflowImportExportUtil {
 				}
 			}
 
-			Logger.info(this, "Importing ActionClassParams: " + importer.getActionClassParams());
+			Logger.debug(this,
+					() -> "Importing ActionClassParams: " + importer.getActionClassParams());
 			workflowAPI.saveWorkflowActionClassParameters(importer.getActionClassParams(), user);
 
 			this.saveSchemeSystemActionMappings      (workflowAPI, importer.getSchemeSystemActionWorkflowActionMappings());

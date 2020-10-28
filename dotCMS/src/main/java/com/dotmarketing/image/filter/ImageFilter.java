@@ -1,8 +1,5 @@
 package com.dotmarketing.image.filter;
 
-import java.awt.Dimension;
-import java.awt.Point;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.security.MessageDigest;
@@ -11,24 +8,26 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Map.Entry;
-
-import com.dotmarketing.business.APILocator;
+import java.util.Optional;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.image.focalpoint.FocalPoint;
 import com.dotmarketing.image.focalpoint.FocalPointAPIImpl;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.WebKeys;
-import io.vavr.Tuple2;
-import io.vavr.control.Try;
+import io.vavr.Lazy;
 
 public abstract class ImageFilter implements ImageFilterIf {
 	protected final static String FILE_EXT = "png";
+	public    static final String CROP     = "crop";
 
+
+	
+	
 	/**
 	 * the value of this field is used to insure that the generated cache files
 	 * 1) do not overwrite each other.
@@ -79,8 +78,8 @@ public abstract class ImageFilter implements ImageFilterIf {
 				}
 			}
 			
-            if ("crop".equals(thisFilter)) {
-                Optional<FocalPoint> optPoint =new FocalPointAPIImpl().parseFocalPointFromParams(parameters);
+            if (CROP.equals(thisFilter)) {
+                Optional<FocalPoint> optPoint = new FocalPointAPIImpl().parseFocalPointFromParams(parameters);
                 if(!optPoint.isPresent()) {
                     String fieldVar = parameters.get("fieldVarName")[0];
                     optPoint =new FocalPointAPIImpl().readFocalPoint(inode, fieldVar);
@@ -103,13 +102,13 @@ public abstract class ImageFilter implements ImageFilterIf {
 
 
 
-			Logger.debug(this.getClass(), "");
-			Logger.debug(this.getClass(), "------------------------------------------------------------------");
-			Logger.debug(this.getClass(), "   for : " + file.getAbsolutePath()+" " + sb);
-			Logger.debug(this.getClass(), "   with vars: + " + sb);
-			Logger.debug(this.getClass(), "   unique key: " + ret.toString());
-			Logger.debug(this.getClass(), "------------------------------------------------------------------");
-			Logger.debug(this.getClass(), "");
+			Logger.debug(this.getClass(), ()->"");
+			Logger.debug(this.getClass(), ()->"------------------------------------------------------------------");
+			Logger.debug(this.getClass(), ()->"   for : " + file.getAbsolutePath()+" " + sb);
+			Logger.debug(this.getClass(), ()->"   with vars: + " + sb);
+			Logger.debug(this.getClass(), ()->"   unique key: " + ret.toString());
+			Logger.debug(this.getClass(), ()->"------------------------------------------------------------------");
+			Logger.debug(this.getClass(), ()->"");
 
 			return ret.toString();
 		} catch (NoSuchAlgorithmException e) {
@@ -198,8 +197,8 @@ public abstract class ImageFilter implements ImageFilterIf {
 				catch (Exception e){
 					inode = parameters.get("assetInodeOrIdentifier")[0];
 				}
-				String realAssetPath = APILocator.getFileAssetAPI().getRealAssetsRootPath();
-				File dirs = new File(realAssetPath + File.separator + "dotGenerated" + File.separator + inode.charAt(0) + File.separator + inode.charAt(1));
+
+				File dirs = new File(ConfigUtils.getDotGeneratedPath()  + File.separator + inode.charAt(0) + File.separator + inode.charAt(1));
 				if(!dirs.exists()){
 				    dirs.mkdirs();
 				}

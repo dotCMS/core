@@ -27,24 +27,30 @@ public class PublishThread implements Runnable {
      * @see BundlePublisher
      */
     public void run() {
-    	//Configure and Invoke the Publisher
-    	Logger.info(PublishThread.class, "Started bundle publish process");
+		processBundle();
+    }
+
+    public PublisherConfig processBundle() {
+		//Configure and Invoke the Publisher
+		Logger.info(PublishThread.class, "Started bundle publish process");
 		PushPublishLogger.log(PublishThread.class, "Started bundle publish process", bundleName);
 
-		PublisherConfig pconf = new PublisherConfig();
+		PublisherConfig config = new PublisherConfig();
 		BundlePublisher bundlePublisher = new BundlePublisher();
-		pconf.setId(bundleName);
-		pconf.setEndpoint(endpointId);
-		pconf.setGroupId(groupId);
-		pconf.setPublishAuditStatus(status);
+		config.setId(bundleName);
+		config.setEndpoint(endpointId);
+		config.setGroupId(groupId);
+		config.setPublishAuditStatus(status);
 		try {
-			bundlePublisher.init(pconf);
-			bundlePublisher.process(null);
+			bundlePublisher.init(config);
+			config = bundlePublisher.process(null);
 		} catch (DotPublishingException e) {
 			Logger.error("Failed to publish because an error occurred: ", e.getMessage());
 		}
 
 		PushPublishLogger.log(PublishThread.class, "Finished bundle publish process", bundleName);
 		Logger.info(PublishThread.class, "Finished bundle publish process");
-    }
+
+		return config;
+	}
 }

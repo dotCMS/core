@@ -208,6 +208,31 @@ public interface ReindexQueueAPI {
      */
     int addIdentifierDelete(String id) throws DotDataException;
 
+    
     void deleteReindexEntry(String identiferToDelete) throws DotDataException;
+
+    /**
+     * returns if there are any records that have been marked as failed
+     * @return
+     * @throws DotDataException
+     */
+    long failedRecordCount() throws DotDataException;
+
+    /**
+     * This method specifically deletes reindex records in the queue - It does not include structure or
+     * host reindex records
+     * 
+     * @throws DotDataException
+     */
+    void deleteReindexRecords() throws DotDataException;
+
+    
+    /**
+     * This method specifically returns if there are reindex records in the queue - meaning a reindex
+     * has been fired. It does not include structure or host reindex records
+     * 
+     * @throws DotDataException
+     */
+    boolean hasReindexRecords() throws DotDataException;
 
 }

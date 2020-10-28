@@ -213,7 +213,7 @@ public class UserAPITest extends IntegrationTestBase {
 		 */
 		List<Layout> layouts = layoutAPI.findAllLayouts();
 		for(Layout l : layouts){
-			if(l.getName().equals("Site Browser") || l.getName().equals("Content") || l.getName().equals("Content Types")){
+			if(l.getName().equals("Site") || l.getName().equals("Content") || l.getName().contains("Types")){
 				roleAPI.addLayoutToRole(l, newRole);
 			}
 		}

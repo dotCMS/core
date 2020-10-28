@@ -1,28 +1,15 @@
-<%@page import="com.dotmarketing.util.StringUtils"%>
-<%@page import="java.net.URLDecoder"%>
-<%@page import="com.dotcms.enterprise.publishing.sitesearch.SiteSearchResult"%>
-<%@page import="com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults"%>
-<%@page import="com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo"%>
-<%@page import="com.dotmarketing.sitesearch.business.SiteSearchAPI"%>
-<%@page import="com.dotcms.content.elasticsearch.business.ContentletIndexAPI"%>
-<%@page import="com.dotmarketing.util.Logger"%>
-<%@page import="com.dotmarketing.exception.DotSecurityException"%>
-<%@page import="org.elasticsearch.cluster.health.ClusterIndexHealth"%>
-<%@page import="com.dotcms.content.elasticsearch.util.ESClient"%>
-<%@page import="org.elasticsearch.action.admin.indices.stats.IndexStats"%>
-<%@page import="com.dotcms.content.elasticsearch.util.ESUtils"%>
-<%@page import="com.dotmarketing.business.APILocator"%>
-<%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
-<%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ESIndexAPI"%>
-<%@page import="com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory"%>
+<%@page import="com.dotcms.content.elasticsearch.business.IndiciesInfo"%>
+<%@page import="com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults"%>
+<%@page import="com.dotmarketing.business.APILocator"%>
+<%@page import="com.dotmarketing.exception.DotSecurityException"%>
 <%@page import="com.dotmarketing.portlets.structure.factories.StructureFactory"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
-<%@page import="java.util.ArrayList"%>
-<%@page import="com.dotmarketing.business.CacheLocator"%>
-<%@page import="java.util.Map"%>
+<%@page import="com.dotmarketing.sitesearch.business.SiteSearchAPI"%>
+<%@page import="com.dotmarketing.util.Logger"%>
+<%@page import="org.elasticsearch.cluster.health.ClusterIndexHealth"%>
+<%@ page import="com.dotcms.content.elasticsearch.business.IndexStats" %>
 <%@ include file="/html/common/init.jsp"%>
-<%@page import="java.util.List"%>
 <%
 
 List<Structure> structs = StructureFactory.getStructures();
@@ -32,7 +19,7 @@ IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
 
 
 
-String testIndex = (request.getParameter("testIndex") == null) ? info.site_search : request.getParameter("testIndex");
+String testIndex = (request.getParameter("testIndex") == null) ? info.getSiteSearch() : request.getParameter("testIndex");
 String testQuery = request.getParameter("testQuery");
 
 
@@ -70,7 +57,7 @@ try {
 
 List<String> indices=ssapi.listIndices();
 Map<String,String> alias=esapi.getIndexAlias(indices);
-Map<String, IndexStats> indexInfo = esapi.getIndicesAndStatus();
+Map<String, IndexStats> indexInfo = esapi.getIndicesStats();
 
 SimpleDateFormat dater = APILocator.getContentletIndexAPI().timestampFormatter;
 
@@ -121,7 +108,7 @@ dojo.connect(dijit.byId("testQuery"), 'onkeypress', function (evt) {
 				
 				<select id="testIndex" name="testIndex" dojoType="dijit.form.FilteringSelect" style="width:250px;">
 					<%for(String x : indices){ %>
-						<option value="<%=x%>" <%=(x.equals(testIndex)) ? "selected='true'": ""%>><%=alias.get(x) == null ? x:alias.get(x)%> <%=(x.equals(APILocator.getIndiciesAPI().loadIndicies().site_search)) ? "(" +LanguageUtil.get(pageContext, "Default") +") " : ""  %></option>
+						<option value="<%=x%>" <%=(x.equals(testIndex)) ? "selected='true'": ""%>><%=alias.get(x) == null ? x:alias.get(x)%> <%=(x.equals(APILocator.getIndiciesAPI().loadIndicies().getSiteSearch())) ? "(" +LanguageUtil.get(pageContext, "Default") +") " : ""  %></option>
 					<%} %>
 				</select>
 				

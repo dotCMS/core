@@ -1,28 +1,33 @@
 package com.dotmarketing.util;
 
 import com.dotcms.util.CloseUtils;
+import com.liferay.util.Encryptor;
+import com.liferay.util.HashBuilder;
+import org.apache.commons.lang3.RandomStringUtils;
+
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URLDecoder;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.commons.lang3.RandomStringUtils;
-
 public class FileUtil {
 
-	private static Set<String> extensions = new HashSet<String>();
+	private static final int BUFFER_SIZE = Config.getIntProperty("FILE_BUFFER", 4096);
+	private static Set<String> extensions = new HashSet<>();
 
 	/**
 	 * Creates a temporal file with unique name
@@ -30,21 +35,63 @@ public class FileUtil {
 	 * @return File
 	 * @throws IOException
 	 */
-	public static File createTemporalFile (final String prefix) throws IOException {
-
-		return createTemporalFile(prefix, null);
+	public static File createTemporaryFile(final String prefix) throws IOException {
+		return createTemporaryFile(prefix, null);
 	}
 
 	/**
-	 * Creates a temporal file with unique name
+	 * Creates a temporary file with unique name
 	 * @param prefix String name
 	 * @param extension String optional extension, if null "tmp" will be use
 	 * @return File
 	 * @throws IOException
 	 */
-	public static File createTemporalFile (final String prefix, final String extension) throws IOException {
+	public static File createTemporaryFile(final String prefix, final String extension) throws IOException {
+		return createTemporaryFile(prefix, extension, false);
+	}
 
-		return File.createTempFile(prefix + System.currentTimeMillis(), UtilMethods.isSet(extension)?extension:"tmp");
+	/**
+	 * Creates a temporary file with unique name
+	 * @param prefix String name
+	 * @param extension String optional extension, if null "tmp" will be use
+	 * @param useDotGeneratedPath the file will be written under dotGeneratedPath
+	 * @return File
+	 * @throws IOException
+	 */
+	public static File createTemporaryFile(final String prefix, final String extension,
+			final boolean useDotGeneratedPath) throws IOException {
+		if (useDotGeneratedPath) {
+			final String dotGeneratedPath = ConfigUtils.getDotGeneratedPath();
+			final File dotGeneratedDir = Paths.get(dotGeneratedPath).normalize().toFile();
+			if (!dotGeneratedDir.exists()) {
+				dotGeneratedDir.mkdir();
+			}
+			return File.createTempFile(prefix + System.currentTimeMillis(),
+					UtilMethods.isSet(extension) ? extension : "tmp", dotGeneratedDir);
+		}
+		return File.createTempFile(prefix + System.currentTimeMillis(),
+				UtilMethods.isSet(extension) ? extension : "tmp");
+	}
+
+	/**
+	 * Creates a temporal file with unique name, in case you have a small initial content to write, you can include as a third parameter
+	 * In case you need to write a long string, use another strategy
+	 * @param prefix String name
+	 * @param extension String optional extension, if null "tmp" will be use
+	 * @param initialContent String small content to add to the file.
+	 *
+	 * @return File
+	 * @throws IOException
+	 */
+	public static File createTemporaryFile(final String prefix, final String extension, final String initialContent) throws IOException {
+
+		final File file = createTemporaryFile(prefix, extension);
+		try (final FileWriter fileWriter = new FileWriter(file)) {
+
+			fileWriter.write(initialContent);
+		}
+
+		return file;
 	}
 
 	/**
@@ -212,6 +259,45 @@ public class FileUtil {
             }
         };
     }
+
+	/**
+	 * Figure out the sha256 of the file content, assumes that the file exists and can be read
+	 * @param file {@link File}
+	 * @return String  just as unix sha returns
+	 * @throws NoSuchAlgorithmException
+	 * @throws IOException
+	 */
+	public static String sha256toUnixHash (final File file) throws NoSuchAlgorithmException, IOException {
+
+		return sha256toUnixHash(file.toPath());
+	} // sha256toUnixHash.
+
+	/**
+	 * Figure out the sha256 of the file content, assumes that the file exists and can be read
+	 * @param path {@link Path}
+	 * @return String just as unix sha returns
+	 * @throws NoSuchAlgorithmException
+	 * @throws IOException
+	 */
+    public static String sha256toUnixHash(final Path path) throws NoSuchAlgorithmException, IOException {
+
+		final HashBuilder sha256Builder = Encryptor.Hashing.sha256();
+		final byte[] buffer             = new byte[BUFFER_SIZE];
+		int countBytes 					= 0;
+
+		try (InputStream inputStream = new BufferedInputStream(Files.newInputStream(path))) {
+
+			countBytes = inputStream.read(buffer);
+			while (countBytes > 0) {
+
+				sha256Builder.append(buffer, countBytes);
+				countBytes = inputStream.read(buffer);
+			}
+		}
+
+		return sha256Builder.buildUnixHash();
+	} // sha256toUnixHash.
+
 }
 
 final class PNGFileNameFilter implements FilenameFilter {

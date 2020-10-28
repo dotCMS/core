@@ -1,25 +1,23 @@
 package com.dotcms.graphql.datafetcher;
 
+import static com.dotcms.graphql.business.GraphqlAPIImpl.TYPES_AND_FIELDS_VALID_NAME_REGEX;
+import static com.dotcms.graphql.util.TypeUtil.BASE_TYPE_SUFFIX;
+
 import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.graphql.DotGraphQLContext;
 import com.dotcms.graphql.util.TypeUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.transform.ContentletToMapTransformer;
+import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
+import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
-import java.util.List;
-import java.util.stream.Collectors;
-
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLFieldDefinition;
-
-import static com.dotcms.graphql.business.GraphqlAPIImpl.TYPES_AND_FIELDS_VALID_NAME_REGEX;
-import static com.dotcms.graphql.util.TypeUtil.BASE_TYPE_SUFFIX;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class ContentletDataFetcher implements DataFetcher<List<Contentlet>> {
     @Override
@@ -57,8 +55,12 @@ public class ContentletDataFetcher implements DataFetcher<List<Contentlet>> {
                 .filter(contentlet -> contentlet.getContentType().variable().matches(TYPES_AND_FIELDS_VALID_NAME_REGEX))
                 .collect(Collectors.toList());
 
+            ((DotGraphQLContext) environment.getContext()).addFieldCount(queriedFieldName,
+                    filteredContentletList.size());
 
-            return new ContentletToMapTransformer(filteredContentletList).hydrate();
+            final DotContentletTransformer transformer = new DotTransformerBuilder()
+                    .graphQLDataFetchOptions().content(filteredContentletList).build();
+            return transformer.hydrate();
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
             throw e;

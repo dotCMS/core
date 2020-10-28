@@ -2,14 +2,16 @@ package com.dotmarketing.portlets.htmlpageasset.business.render;
 
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl.HTMLPageUrl;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRendered;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
+import com.dotmarketing.portlets.htmlpageasset.business.render.page.ViewAsPageStatus;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
-
+import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 
 /**
  * Provides utility methods to render a {@link com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset}
@@ -41,7 +43,7 @@ public interface HTMLPageAssetRenderedAPI {
             final User user,
             final String uri,
             final PageMode mode)
-                throws DotSecurityException, DotDataException;
+            throws DotSecurityException, DotDataException;
 
     /**
      * Returns the rendered version of an HTML Page, i.e., the HTML code that will be rendered in
@@ -57,11 +59,25 @@ public interface HTMLPageAssetRenderedAPI {
      * @throws DotDataException     An error occurred when accessing the data source.
      * @throws IOException
      */
-     PageView getPageMetadata(
+    PageView getPageMetadata(
             final PageContext context,
             final HttpServletRequest request,
             final HttpServletResponse response)
-                throws DotSecurityException, DotDataException;
+            throws DotSecurityException, DotDataException;
+
+    /**
+     * Returns a {@link HTMLPageUrl} given a {@link PageContext}
+     *
+     * @param context {@link PageContext} object with the request parameters
+     * @param request servlet request
+     * @return the resulting HTMLPageURL
+     * @throws DotSecurityException The user does not have the specified permissions to perform
+     * this action.
+     * @throws DotDataException
+     */
+
+    HTMLPageUrl getHtmlPageAsset(PageContext context,
+            HttpServletRequest request) throws DotSecurityException, DotDataException;
 
     /***
      * Returns the rendered version of an HTML Page, i.e., the HTML code that will be rendered in
@@ -87,7 +103,7 @@ public interface HTMLPageAssetRenderedAPI {
             final User user,
             final String pageUri,
             final PageMode pageMode)
-                throws DotDataException, DotSecurityException;
+            throws DotDataException, DotSecurityException;
     /***
      * Returns the rendered version of an HTML Page, i.e., the HTML code that will be rendered in
      * the browser.
@@ -104,7 +120,7 @@ public interface HTMLPageAssetRenderedAPI {
             final PageContext context,
             final HttpServletRequest request,
             final HttpServletResponse response)
-                throws DotDataException, DotSecurityException;
+            throws DotDataException, DotSecurityException;
 
     /**
      * Return the Page's html string
@@ -120,7 +136,7 @@ public interface HTMLPageAssetRenderedAPI {
      * @deprecated deprecated since 5.1, use {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)} instead
      */
     public String getPageHtml(final HttpServletRequest request, final HttpServletResponse response, final User user,
-                              final String uri, final PageMode mode) throws DotSecurityException, DotDataException;
+            final String uri, final PageMode mode) throws DotSecurityException, DotDataException;
 
     /**
      * Return the Page's html string
@@ -137,7 +153,6 @@ public interface HTMLPageAssetRenderedAPI {
             final HttpServletRequest request,
             final HttpServletResponse response) throws DotSecurityException, DotDataException;
 
-
     /**
      * Return the page's default mode for edit page portlet, if user have the page's lock then return
      * {@link PageMode#EDIT_MODE}, in other case return {@link PageMode#PREVIEW_MODE}
@@ -147,9 +162,21 @@ public interface HTMLPageAssetRenderedAPI {
      * @param pageUri
      * @return
      */
-     PageMode getDefaultEditPageMode(
-             final User user,
-             final HttpServletRequest request,
-             final String pageUri
-     );
+    PageMode getDefaultEditPageMode(
+            final User user,
+            final HttpServletRequest request,
+            final String pageUri
+    );
+
+    /**
+     * Returns the {@link ViewAsPageStatus} for the given {@link HTMLPageAsset} and {@link PageMode}
+     *
+     * @param pageMode
+     * @param htmlpage
+     * @return
+     */
+
+    ViewAsPageStatus getViewAsStatus(final HttpServletRequest request,
+            final PageMode pageMode, final HTMLPageAsset htmlpage, final User user)
+            throws DotDataException;
 }

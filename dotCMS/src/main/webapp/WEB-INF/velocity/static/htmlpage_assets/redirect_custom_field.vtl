@@ -4,23 +4,23 @@
 		pageSelector.show();
 	}
 	function redirectPageSelected(page) {
-		dijit.byId('text8').set('value', page.pageURI);
+		dijit.byId('redirectURLBox').set('value', page.pageURI);
 	}
 
 	function updateRedirectValue() {
-		dojo.byId('redirecturl').value=dijit.byId('text8').get('value');
+		dojo.byId('redirecturl').value=dijit.byId('redirectURLBox').get('value');
 	}
 
 	dojo.ready(function() {
-		dijit.byId('text8').set('value', dojo.byId('redirecturl').value);
-		dojo.connect(dijit.byId('text8'),"onchange",updateRedirectValue);
+		dijit.byId('redirectURLBox').set('value', dojo.byId('redirecturl').value);
+		dojo.connect(dijit.byId('redirectURLBox'),"onChange",updateRedirectValue);
 	});
 
 </script>
 
 
 <input type="text" dojoType="dijit.form.TextBox" style="width:275px;" 
-       id="text8" name="text8" />
+       id="redirectURLBox" name="redirectURLBox" />
 
 <button dojoType="dijit.form.Button" onClick="browseRedirectPage();return false;" type="button">
 	$text.get("select-link")

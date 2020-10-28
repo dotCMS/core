@@ -4,6 +4,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
+import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.util.CollectionsUtils;
@@ -16,13 +17,18 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-
+import io.vavr.control.Try;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * This class is deprecated as it has proven to lack flexibility
+ * @deprecated As of 5.3.1 instead use {@link DotContentletTransformerImpl}
+ */
+@Deprecated
 public class ContentletToMapTransformer {
 
     private static final String NA = "N/A";
@@ -107,7 +113,7 @@ public class ContentletToMapTransformer {
                 properties.put(HTMLPageAssetAPI.URL_FIELD, url);
             }
         }
-
+        addConstants(contentlet);
         setAdditionalProperties(contentlet);
         clean(contentlet);
         return contentlet.getMap();
@@ -150,13 +156,29 @@ public class ContentletToMapTransformer {
         return contentlet;
     }
 
+    
+    /**
+     * Use this method to add any additional property
+     * @param contentlet Same contentlet with any additional property added
+     */
+    private void addConstants(final Contentlet contentlet){
+        try {
+            contentlet.getContentType().fields(ConstantField.class)
+            .stream()
+            .filter(f->f.values()!=null)
+            .forEach(f-> contentlet.getMap().put(f.variable(), f.values()));
+        } catch (Exception e) {
+            Logger.warnAndDebug(getClass(),"Error Populating Constant Field: "  + e.getMessage(), e);
+        }
+    }
+    
     /**
      * Use this method to add any additional property
      * @param contentlet Same contentlet with any additional property added
      */
     private void setAdditionalProperties(final Contentlet contentlet){
         try {
-            final User modUser = userAPI.loadUserById(contentlet.getModUser());
+            final User modUser = Try.of(()->userAPI.loadUserById(contentlet.getModUser())).getOrElse(APILocator.systemUser());
             contentlet.getMap().put("modUserName", null != modUser ? modUser.getFullName() : NA );
             contentlet.getMap().put(Contentlet.WORKING_KEY, contentlet.isWorking());
             contentlet.getMap().put(Contentlet.LIVE_KEY, contentlet.isLive());

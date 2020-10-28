@@ -188,6 +188,8 @@ public abstract class Publisher implements IPublisher {
             return false;
         } else if ( config.getStartDate() != null && assetFile.lastModified() < config.getStartDate().getTime() ) {
             return false;
+        } else if (!doesPathContainLanguageId(assetFile)) {
+            return false;
         }
 
         String filePath = getUriFromFilePath( assetFile );
@@ -225,7 +227,12 @@ public abstract class Publisher implements IPublisher {
         return true;
     }
 
-	public Set<String> getProtocols(){
+    private boolean doesPathContainLanguageId(File assetFile) {
+        return assetFile.getPath().contains(
+                File.separatorChar + Long.toString(config.getLanguage()) + File.separatorChar);
+    }
+
+    public Set<String> getProtocols(){
     	return new HashSet<>();
 	}
 

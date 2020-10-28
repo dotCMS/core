@@ -49,6 +49,7 @@ public class HsbImageFilter extends ImageFilter {
 
 			BufferedImage dst = filter.filter(src, null);
 			ImageIO.write(dst, "png", resultFile);
+			dst.flush();
 		} catch (IOException e) {
 			Logger.error(this.getClass(), e.getMessage());
 		}

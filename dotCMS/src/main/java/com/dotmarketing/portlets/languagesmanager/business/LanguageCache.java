@@ -13,7 +13,9 @@ import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
 public abstract class LanguageCache implements Cachable{
 
     protected abstract void addLanguage(Language l);
-    
+
+    protected abstract void add404Language(String languageCode, String countryCode);
+
     protected abstract Language getLanguageById(long id);
 
     protected abstract Language getLanguageById(String id);

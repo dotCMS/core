@@ -29,7 +29,7 @@ List<WorkflowAction> wfActionsAll = null;
 try{
 	wfSteps = APILocator.getWorkflowAPI().findStepsByContentlet(contentlet);
 	wfActions = APILocator.getWorkflowAPI().findAvailableActionsEditing(contentlet, user);
-	wfActionsAll= APILocator.getWorkflowAPI().findActions(wfSteps, user);
+	wfActionsAll= APILocator.getWorkflowAPI().findActions(wfSteps, user, contentlet);
 	if(null != wfSteps && !wfSteps.isEmpty() && wfSteps.size() == 1) {
 		wfStep = wfSteps.get(0);
 		scheme = APILocator.getWorkflowAPI().findScheme(wfStep.getSchemeId());
@@ -48,7 +48,14 @@ catch(Exception e){
 		}
 	}
 %>
+<%@page import="com.dotmarketing.business.web.WebAPILocator"%>
+<%@ page import="java.util.Optional" %>
+<% com.dotmarketing.beans.Host myHost =  WebAPILocator.getHostWebAPI().getCurrentHost(request); %>
+
 <script>
+
+var myHostId = '<%= (myHost != null) ? myHost.getIdentifier() : "" %>';
+
 function setMyWorkflowScheme(){
 	var schemeId=dijit.byId("select-workflow-scheme-dropdown").getValue();
    document.querySelectorAll('.content-edit-actions .schemeActionsDiv').forEach(function(ele) {
@@ -65,13 +72,14 @@ function setMyWorkflowScheme(){
 	});
 }
 
-function editPage(url, language_id) {
+function editPage(url, languageId) {
     var customEvent = document.createEvent("CustomEvent");
     customEvent.initCustomEvent("ng-event", false, false,  {
         name: 'edit-page',
 		data: {
             url,
-            language_id
+            languageId,
+            hostId: myHostId
         }
     });
     document.dispatchEvent(customEvent);
@@ -134,16 +142,21 @@ function editPage(url, language_id) {
 				<%}%>
 			<%} else if (InodeUtils.isSet(contentlet.getInode())) {
 
-				final ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
-				final String 				latestInode		  	  = contentletVersionInfo.getWorkingInode();
-			%>
-				<a  onClick="editVersion('<%=latestInode%>');">
-					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "See-Latest-Version")) %>
-				</a>
-				<a  onClick="selectVersion('<%=contentlet.getInode()%>');">
-					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Bring-Back-Version")) %>
-				</a>
-			<%} %>
+				final Optional<ContentletVersionInfo> contentletVersionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
+
+				if(contentletVersionInfo.isPresent()) {
+					final String 				latestInode		  	  = contentletVersionInfo.get().getWorkingInode();
+				%>
+					<a  onClick="editVersion('<%=latestInode%>');">
+						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "See-Latest-Version")) %>
+					</a>
+					<a  onClick="selectVersion('<%=contentlet.getInode()%>');">
+						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Bring-Back-Version")) %>
+					</a>
+				<%} else {
+					Logger.error(this, "Can't find ContentletVersionInfo. Identifier: " + contentlet.getIdentifier() + ". Lang: " + contentlet.getLanguageId());
+				}
+			} %>
 		<%}else if(!isContLocked &&  !contentlet.isNew()) {%>
 
 			<%if((null != scheme ) || ( wfActionsAll != null && wfActionsAll.size() > 0)){ %>
@@ -220,8 +233,15 @@ function editPage(url, language_id) {
             <%if(contentlet != null && InodeUtils.isSet(contentlet.getInode()) && isContLocked){ %>
                 <th style="vertical-align: top"><%= LanguageUtil.get(pageContext, "Locked") %>:</th>
                 <td id="lockedTextInfoDiv">
-                    <%=APILocator.getUserAPI().loadUserById(APILocator.getVersionableAPI().getLockedBy(contentlet), APILocator.getUserAPI().getSystemUser(), false).getFullName() %>
-                    <span class="lockedAgo">(<%=UtilMethods.capitalize( DateUtil.prettyDateSince(APILocator.getVersionableAPI().getLockedOn(contentlet), user.getLocale())) %>)</span>
+					<% Optional<String> lockedBy = APILocator.getVersionableAPI().getLockedBy(contentlet);
+					   Optional<Date> lockedOn = APILocator.getVersionableAPI().getLockedOn(contentlet);
+					   if(lockedBy.isPresent() && lockedOn.isPresent()) { %>
+						<%=APILocator.getUserAPI().loadUserById(lockedBy.get(), APILocator.getUserAPI().getSystemUser(), false).getFullName() %>
+						<span class="lockedAgo">(<%=UtilMethods.capitalize( DateUtil.prettyDateSince(lockedOn.get(), user.getLocale())) %>)</span>
+					<% } else {
+						Logger.error(this, "Can't find either LockedBy or LockedOn for Contentlet. Identifier: "
+								+ contentlet.getIdentifier() + ". Lang: " + contentlet.getLanguageId());
+					} %>
                 </td>
             <%} %>
         </tr>

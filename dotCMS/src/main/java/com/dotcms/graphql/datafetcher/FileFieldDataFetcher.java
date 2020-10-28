@@ -3,17 +3,14 @@ package com.dotcms.graphql.datafetcher;
 import com.dotcms.graphql.DotGraphQLContext;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.portlets.contentlet.transform.ContentletToMapTransformer;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
-import java.util.Collections;
-import java.util.Optional;
-
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import java.util.Optional;
 
 public class FileFieldDataFetcher implements DataFetcher<Contentlet> {
     @Override
@@ -36,7 +33,8 @@ public class FileFieldDataFetcher implements DataFetcher<Contentlet> {
 
             if(fileAsContentOptional.isPresent()) {
                 final Contentlet fileAsContent =
-                    new ContentletToMapTransformer(Collections.singletonList(fileAsContentOptional.get())).hydrate().get(0);
+                new DotTransformerBuilder().defaultOptions().content(fileAsContentOptional.get()).build().hydrate().get(0);
+
                 fileAsset = APILocator.getFileAssetAPI().fromContentlet(fileAsContent);
             }
 

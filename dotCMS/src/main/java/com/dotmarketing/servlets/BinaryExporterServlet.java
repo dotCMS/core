@@ -3,20 +3,18 @@ package com.dotmarketing.servlets;
 import static com.liferay.util.HttpHeaders.CACHE_CONTROL;
 import static com.liferay.util.HttpHeaders.EXPIRES;
 
+import com.liferay.portal.util.PortalUtil;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -51,8 +49,6 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.image.focalpoint.FocalPoint;
-import com.dotmarketing.image.focalpoint.FocalPointAPIImpl;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporter;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporterException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -241,12 +237,12 @@ public class BinaryExporterServlet extends HttpServlet {
 			boolean isTempBinaryImage = tempBinaryImageInodes.contains(assetInode);
 
 
-			User user = userWebAPI.getLoggedInUser(req);
+			final User user = PortalUtil.getUser(req);
 
-			PageMode mode = PageMode.get(req);
+			final PageMode mode = PageMode.get(req);
 
 			String downloadName = "file_asset";
-			long lang = WebAPILocator.getLanguageWebAPI().getLanguage(req).getId();
+			final long lang = WebAPILocator.getLanguageWebAPI().getLanguage(req).getId();
 
 
 			if (isContent){
@@ -261,16 +257,13 @@ public class BinaryExporterServlet extends HttpServlet {
 						} catch(DotSecurityException e) {
 							if (!mode.respectAnonPerms) {
 								content = getContentletLiveVersion(assetInode, user, lang);
+							} else {
+								throw e;
 							}
 						}
 					}
 				} else {
-				    boolean live=userWebAPI.isLoggedToFrontend(req);
-
-					//GIT-4506
-					if(WebAPILocator.getUserWebAPI().isLoggedToBackend(req)){
-					    live = mode.showLive;
-					}
+				    boolean live=mode.showLive;
 
 				    if (req.getSession(false) != null && req.getSession().getAttribute("tm_date")!=null) {
 				        live=true;
@@ -327,7 +320,7 @@ public class BinaryExporterServlet extends HttpServlet {
                 // If the user is NOT logged in the backend then we cannot show content that is NOT live.
                 // Temporal files should be allowed any time
                 if(!isTempBinaryImage && !WebAPILocator.getUserWebAPI().isLoggedToBackend(req)) {
-                    if (content==null || !APILocator.getVersionableAPI().hasLiveVersion(content) && mode.respectAnonPerms) {
+                    if (!APILocator.getVersionableAPI().hasLiveVersion(content) && mode.respectAnonPerms) {
 						Logger.debug(this, "Content '" + fieldVarName + "' with inode: " + content.getInode() + " is not published");
 						resp.sendError(HttpServletResponse.SC_NOT_FOUND);
                         return;
@@ -377,15 +370,13 @@ public class BinaryExporterServlet extends HttpServlet {
         inputFile = APILocator.getTempFileAPI().getTempFile(req, shorty.longId).get().file;
       }
       
-      final String[] val = params.get("filter");
-      if(val!=null && val[0].contains("Quality")) {
+
+      if(params.get("quality_q")!=null) {
       	final UserAgent userAgent = new UserAgent(req.getHeader("user-agent"));
         if(userAgent.getBrowser() == Browser.SAFARI || userAgent.getOperatingSystem().getGroup() == OperatingSystem.IOS){
-          params.put("filter", new String[] {val[0].replace("Quality","Jpeg")});
           params.put("jpeg_q", params.get("quality_q"));
           params.put("jpeg_p",  new String[] {"1"});
         }else {
-          params.put("filter", new String[] {val[0].replace("Quality","WebP")});
           params.put("webp_q", params.get("quality_q"));
         }
       }
@@ -403,10 +394,6 @@ public class BinaryExporterServlet extends HttpServlet {
       // this creates a temp resource using the altered file
       if (req.getParameter(WebKeys.IMAGE_TOOL_SAVE_FILES) != null && user!=null && !user.equals(APILocator.getUserAPI().getAnonymousUser())) {
         final DotTempFile temp = APILocator.getTempFileAPI().createEmptyTempFile(inputFile.getName(), req);
-        Optional<FocalPoint> fp = new FocalPointAPIImpl().readFocalPoint(uuid, fieldVarName);
-        if(fp.isPresent()) {
-            new FocalPointAPIImpl().writeFocalPoint(temp.id, fieldVarName, fp.get());
-        }
         FileUtil.copyFile(data.getDataFile(), temp.file);
         resp.getWriter().println(DotObjectMapperProvider.getInstance().getDefaultObjectMapper().writeValueAsString(temp));
         resp.getWriter().close();
@@ -616,42 +603,68 @@ public class BinaryExporterServlet extends HttpServlet {
 	            }
 	            
 			}
-
-        } catch (DotSecurityException e) {
-            try {
-                if (req.getSession() != null) {
-                    if (WebAPILocator.getUserWebAPI().isLoggedToBackend(req)) {
-                        req.getSession().removeAttribute(com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN);
-                        resp.sendError(HttpServletResponse.SC_FORBIDDEN);
-                    } else {
-                        req.getSession().setAttribute(com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN,
-                                        req.getAttribute("javax.servlet.forward.request_uri"));
-                        resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-                    }
-                }
-            } catch (Exception e1) {
-                Logger.error(BinaryExporterServlet.class, "An error occurred when accessing '" + uri + "': " + e1.getMessage(),
-                                e1);
-                if (!resp.isCommitted()) {
-                    resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-                }
+            
+		} catch (DotRuntimeException e) {
+			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
+            if(!resp.isCommitted()){
+              resp.sendError(HttpServletResponse.SC_NOT_FOUND);
             }
-
-
-        } catch (Exception e) {
-            Logger.warn(BinaryExporterServlet.class, e.getMessage(), e);
-            Logger.warnAndDebug(BinaryExporterServlet.class,
-                            "[Exception] An error occurred when accessing '" + uri + "': " + e.getMessage(), e);
-            if (!resp.isCommitted()) {
-                resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+		} catch (PortalException e) {
+			Logger.error(BinaryExporterServlet.class, "[PortalException] An error occurred when accessing '" + uri + "': " + e.getMessage());
+			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
+            if(!resp.isCommitted()){
+              resp.sendError(HttpServletResponse.SC_NOT_FOUND);
             }
-        }
-        // close our resources no matter what
-        finally {
+		} catch (SystemException e) {
+			Logger.error(BinaryExporterServlet.class, "[SystemException] An error occurred when accessing '" + uri + "': " + e.getMessage());
+			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
+            if(!resp.isCommitted()){
+              resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+            }
+		} catch (DotDataException e) {
+			Logger.error(BinaryExporterServlet.class, "[DotDataException] An error occurred when accessing '" + uri + "': " + e.getMessage());
+			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
+	         if(!resp.isCommitted()){
+	           resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+	         }
+		} catch (DotSecurityException e) {
+			try {
+			  if(req.getSession()!=null){
+				if(WebAPILocator.getUserWebAPI().isLoggedToBackend(req)){
+				    req.getSession().removeAttribute(com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN);
+					resp.sendError(HttpServletResponse.SC_FORBIDDEN);
+				}else{
+					final String requestUri = (String) req.getAttribute("javax.servlet.forward.request_uri");
+					Logger.debug(this, "Setting redirect after login to requested uri: " + requestUri);
+				    req.getSession().setAttribute(com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN, requestUri);
+					resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+				}
+			  }
+			} catch (Exception e1) {
+				Logger.error(BinaryExporterServlet.class, "An error occurred when accessing '" + uri + "': " + e1.getMessage(), e1);
+	            if(!resp.isCommitted()){
+	              resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+	            }
+			}
+		} catch (BinaryContentExporterException e) {
+			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
+			Logger.error(BinaryExporterServlet.class, "[BinaryContentExporterException] An error occurred when accessing '" + uri + "': " + e.getMessage());
+			if(!resp.isCommitted()){
+			  resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+			}
+		}catch (Exception e) {
+			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
+			Logger.error(BinaryExporterServlet.class, "[Exception] An error occurred when accessing '" + uri + "': " + e.getMessage());
+            if(!resp.isCommitted()){
+              resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+            }
+		}
+		// close our resources no matter what
+		finally{
+			
+		  CloseUtils.closeQuietly(input, is, out);
 
-            CloseUtils.closeQuietly(input, is, out);
-
-        }
+		}
 		
 	}
 

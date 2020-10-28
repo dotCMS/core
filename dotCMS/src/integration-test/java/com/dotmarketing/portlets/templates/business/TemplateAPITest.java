@@ -238,6 +238,116 @@ public class TemplateAPITest extends IntegrationTestBase {
         assertEquals(template.getBody(),"updated body!"); // make sure it took our changes
     }
 
+    /**
+     * Method to test: publishTemplate
+     * Given Scenario: Create a template, publish it
+     * ExpectedResult: Template should be live true
+     *
+     */
+    @Test
+    public void publishTemplate_expects_live_true() throws Exception {
+
+        final Host host    = hostAPI.findDefaultHost(user, false);
+        final String body  = "<html><body> I'm mostly empty </body></html>";
+        final String title = "empty test template "+UUIDGenerator.generateUuid();
+        final Template template = new Template();
+        template.setTitle(title);
+        template.setBody(body);
+        final Template templateSaved = templateAPI.saveTemplate(template, host, user, false);
+        assertTrue(UtilMethods.isSet(templateSaved.getInode()));
+        assertTrue(UtilMethods.isSet(templateSaved.getIdentifier()));
+        assertEquals(templateSaved.getBody(), body);
+        assertEquals(templateSaved.getTitle(), title);
+        assertFalse(templateSaved.isLive());
+
+        assertTrue(templateAPI.publishTemplate(templateSaved, user, false));
+        assertTrue(templateSaved.isLive());
+    }
+
+    /**
+     * Method to test: unpublishTemplate
+     * Given Scenario: Create a template, publish and unpublish it
+     * ExpectedResult: Template should be live false at the end
+     *
+     */
+    @Test
+    public void unpublishTemplate_expects_live_false() throws Exception {
+
+        final Host host    = hostAPI.findDefaultHost(user, false);
+        final String body  = "<html><body> I'm mostly empty </body></html>";
+        final String title = "empty test template "+UUIDGenerator.generateUuid();
+        final Template template = new Template();
+        template.setTitle(title);
+        template.setBody(body);
+        final Template templateSaved = templateAPI.saveTemplate(template, host, user, false);
+        assertTrue(UtilMethods.isSet(templateSaved.getInode()));
+        assertTrue(UtilMethods.isSet(templateSaved.getIdentifier()));
+        assertEquals(templateSaved.getBody(), body);
+        assertEquals(templateSaved.getTitle(), title);
+        assertFalse(templateSaved.isLive());
+
+        assertTrue(templateAPI.publishTemplate(templateSaved, user, false));
+        assertTrue(templateSaved.isLive());
+
+        assertTrue(templateAPI.unpublishTemplate(templateSaved, user, false));
+        assertFalse(templateSaved.isLive());
+    }
+
+    /**
+     * Method to test: archive
+     * Given Scenario: Create a template, archive
+     * ExpectedResult: Template should be archive true
+     *
+     */
+    @Test
+    public void archiveTemplate_expects_archive_true() throws Exception {
+
+        final Host host    = hostAPI.findDefaultHost(user, false);
+        final String body  = "<html><body> I'm mostly empty </body></html>";
+        final String title = "empty test template "+UUIDGenerator.generateUuid();
+        final Template template = new Template();
+        template.setTitle(title);
+        template.setBody(body);
+        final Template templateSaved = templateAPI.saveTemplate(template, host, user, false);
+        assertTrue(UtilMethods.isSet(templateSaved.getInode()));
+        assertTrue(UtilMethods.isSet(templateSaved.getIdentifier()));
+        assertEquals(templateSaved.getBody(), body);
+        assertEquals(templateSaved.getTitle(), title);
+        assertFalse(templateSaved.isLive());
+
+        assertTrue(templateAPI.archive(templateSaved, user, false));
+        assertTrue(templateSaved.isArchived());
+    }
+
+    /**
+     * Method to test:  unarchive
+     * Given Scenario: Create a template, archive and unarchive
+     * ExpectedResult: Template should be archive false
+     *
+     */
+    @Test
+    public void archiveTemplate_expects_unarchive_true() throws Exception {
+
+        final Host host    = hostAPI.findDefaultHost(user, false);
+        final String body  = "<html><body> I'm mostly empty </body></html>";
+        final String title = "empty test template "+UUIDGenerator.generateUuid();
+        final Template template = new Template();
+        template.setTitle(title);
+        template.setBody(body);
+        final Template templateSaved = templateAPI.saveTemplate(template, host, user, false);
+        assertTrue(UtilMethods.isSet(templateSaved.getInode()));
+        assertTrue(UtilMethods.isSet(templateSaved.getIdentifier()));
+        assertEquals(templateSaved.getBody(), body);
+        assertEquals(templateSaved.getTitle(), title);
+        assertFalse(templateSaved.isLive());
+
+        assertTrue(templateAPI.archive(templateSaved, user, false));
+        assertTrue(templateSaved.isArchived());
+
+        templateAPI.unarchive(templateSaved);
+        assertFalse(templateSaved.isArchived());
+    }
+
     @Test
     public void delete() throws Exception {
         Host host= hostAPI.findDefaultHost(user, false);

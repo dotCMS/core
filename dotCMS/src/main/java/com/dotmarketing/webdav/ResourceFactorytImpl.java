@@ -27,10 +27,10 @@ import com.liferay.util.FileUtil;
 public class ResourceFactorytImpl implements ResourceFactory, Initable {
 
 	private DotWebdavHelper dotDavHelper;
-	private static final String AUTOPUB_PATH = "/webdav/autopub";
-	private static final String NONPUB_PATH = "/webdav/nonpub";
-	private static final String LIVE_PATH = "/webdav/live";
-	private static final String WORKING_PATH = "/webdav/working";
+	static final String AUTOPUB_PATH = "/webdav/autopub";
+	static final String NONPUB_PATH = "/webdav/nonpub";
+	static final String LIVE_PATH = "/webdav/live";
+	static final String WORKING_PATH = "/webdav/working";
 	private HostAPI hostAPI = APILocator.getHostAPI();
 	
 	public ResourceFactorytImpl() {
@@ -43,26 +43,30 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 	 */
     @WrapInTransaction
 	public Resource getResource(String davHost, String url) {
+		return getResource(davHost, url, dotDavHelper, hostAPI);
+	}
+
+	public static Resource getResource(final String davHost, String url, final DotWebdavHelper dotDavHelper, final HostAPI hostAPI) {
 		url = url.toLowerCase();
-    	Logger.debug(this, "WebDav ResourceFactory: Host is " + davHost + " and the url is " + url);
+		Logger.debug(ResourceFactorytImpl.class, "WebDav ResourceFactory: Host is " + davHost + " and the url is " + url);
 		try{
 			dotDavHelper.stripMapping(url);//method also sets the language
 			boolean isFolder = false;
 			boolean isResource = false;
-			boolean isWebDavRoot = url.equals(AUTOPUB_PATH) || url.equals(NONPUB_PATH) || url.equals(LIVE_PATH + "/" +dotDavHelper.getLanguage()) || url.equals(WORKING_PATH + "/" +dotDavHelper.getLanguage()) 
+			boolean isWebDavRoot = url.equals(AUTOPUB_PATH) || url.equals(NONPUB_PATH) || url.equals(LIVE_PATH + "/" +dotDavHelper.getLanguage()) || url.equals(WORKING_PATH + "/" +dotDavHelper.getLanguage())
 					|| url.equals(AUTOPUB_PATH + "/") || url.equals(NONPUB_PATH + "/") || url.equals(LIVE_PATH + "/" +dotDavHelper.getLanguage() + "/") || url.equals(WORKING_PATH + "/" +dotDavHelper.getLanguage() + "/") ;
 			boolean live = url.startsWith(AUTOPUB_PATH) || url.startsWith(LIVE_PATH);
 			boolean working = url.startsWith(NONPUB_PATH) || url.startsWith(WORKING_PATH);
 			Host host =null;
-			String actualPath = url; 
-			
+			String actualPath = url;
+
 			// DAV ROOT
 			if(isWebDavRoot){
 				WebdavRootResourceImpl wr = new WebdavRootResourceImpl(url);
 				return wr;
 			}
-			
-			
+
+
 			//SETUP
 			if(live){
 				actualPath = actualPath.replaceAll(AUTOPUB_PATH, "");
@@ -79,54 +83,54 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 			}else{
 				return null;
 			}
-			
+
 			if(!Config.getBooleanProperty("WEBDAV_LEGACY_PATHING", false)){
 				actualPath = actualPath.substring(String.valueOf(dotDavHelper.getLanguage()).length()+1);
 			}
-			
+
 			String[] splitPath = actualPath.split("/");
-			
-			
+
+
 			User user=APILocator.getUserAPI().getSystemUser();
-			
-			
+
+
 			// Handle root SYSTEM or Root Host view
 			if(splitPath != null && splitPath.length == 1){
-			    if(dotDavHelper.isTempResource(url)){ 
-			        return null;
-			    }
-			    else {
-    				host = hostAPI.findByName(splitPath[0], user, false);
-    				if(splitPath[0].equalsIgnoreCase("system")){
-    					SystemRootResourceImpl sys = new SystemRootResourceImpl();
-    					return sys;
-    				}else{
-    					HostResourceImpl hr = new HostResourceImpl(url);
-    					return hr;
-    				}
-			    }
+				if(dotDavHelper.isTempResource(url)){
+					return null;
+				}
+				else {
+					host = hostAPI.findByName(splitPath[0], user, false);
+					if(splitPath[0].equalsIgnoreCase("system")){
+						SystemRootResourceImpl sys = new SystemRootResourceImpl();
+						return sys;
+					}else{
+						HostResourceImpl hr = new HostResourceImpl(url);
+						return hr;
+					}
+				}
 			}
-		
-			
+
+
 			// handle crappy dav clients temp files
 			if(dotDavHelper.isTempResource(url)){
 				java.io.File tempFile = dotDavHelper.loadTempFile(url);
 				if(tempFile == null || !tempFile.exists()){
 					return null;
 				}else if(tempFile.isDirectory()){
-						TempFolderResourceImpl tr = new TempFolderResourceImpl(url,tempFile,dotDavHelper.isAutoPub(url));
-						return tr;
+					TempFolderResourceImpl tr = new TempFolderResourceImpl(url,tempFile,dotDavHelper.isAutoPub(url));
+					return tr;
 				}else{
 					TempFileResourceImpl tr = new TempFileResourceImpl(tempFile,url,dotDavHelper.isAutoPub(url));
 					return tr;
 				}
 			}
-			
-			
+
+
 			// handle language files
-			if(actualPath.endsWith("system/languages") || actualPath.endsWith("system/languages/") 
+			if(actualPath.endsWith("system/languages") || actualPath.endsWith("system/languages/")
 					|| actualPath.endsWith("system/languages/archived") || actualPath.endsWith("system/languages/archived/")){
-		        java.io.File file = new java.io.File(FileUtil.getRealPath("/assets/messages"));
+				java.io.File file = new java.io.File(FileUtil.getRealPath("/assets/messages"));
 				if(file.exists() && file.isDirectory()){
 					if(actualPath.contains("/archived") && actualPath.endsWith("/")){
 						actualPath = actualPath.replace("system/languages/", "");
@@ -141,7 +145,7 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 					}
 				}
 			}
-			
+
 			// handle the language files
 			if(actualPath.endsWith("/")){
 				actualPath = actualPath.substring(0, actualPath.length()-1);
@@ -170,22 +174,22 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 					return lfr;
 				}
 			}
-			
+
 			if(dotDavHelper.isResource(url,user)){
 				isResource = true;
 			}
-			
+
 			if(dotDavHelper.isFolder(url,user)){
 				isFolder = true;
 			}
 			if(!isFolder && !isResource){
 				return null;
 			}
-			
+
 			if(!isFolder && isResource){
 				IFileAsset file = dotDavHelper.loadFile(url,user);
 				if(file == null || !InodeUtils.isSet(file.getInode())){
-					Logger.debug(this, "The file for url " + url + " returned null or not in db");
+					Logger.debug(ResourceFactorytImpl.class, "The file for url " + url + " returned null or not in db");
 					return null;
 				}
 				FileResourceImpl fr = new FileResourceImpl(file,url);
@@ -193,17 +197,18 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 			}else{
 				Folder folder = dotDavHelper.loadFolder(url,user);
 				if(folder == null || !InodeUtils.isSet(folder.getInode())){
-					Logger.debug(this, "The folder for url " + url + " returned null or not in db");
+					Logger.debug(ResourceFactorytImpl.class, "The folder for url " + url + " returned null or not in db");
 					return null;
 				}
 				FolderResourceImpl fr = new FolderResourceImpl(folder, url);
 				return fr;
 			}
 		} catch (Exception e) {
-			Logger.error(this, e.getMessage(), e);
+			Logger.error(ResourceFactorytImpl.class, e.getMessage(), e);
 			return null;
 		}
 	}
+
 
 	/* (non-Javadoc)
 	 * @see com.dotcms.repackage.com.bradmcevoy.http.ResourceFactory#getSupportedLevels()

@@ -1,12 +1,15 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
@@ -15,14 +18,6 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import java.io.File;
-import java.io.Serializable;
-import java.lang.reflect.InvocationTargetException;
-import java.sql.Timestamp;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.PropertyUtils;
@@ -30,6 +25,14 @@ import org.apache.commons.beanutils.converters.DateConverter;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ToStringBuilder;
+
+import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
+import java.sql.Timestamp;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /** @author Hibernate CodeGenerator */
 public class Contentlet extends WebAsset implements Serializable {
@@ -43,7 +46,6 @@ public class Contentlet extends WebAsset implements Serializable {
 
     private FieldAPI fAPI = APILocator.getFieldAPI();
 
-    /** identifier field */
     private String structureInode;
 
     private long languageId;
@@ -219,36 +221,6 @@ public class Contentlet extends WebAsset implements Serializable {
     private boolean bool24;
     private boolean bool25;
 
-    //private String folder;
-
-    private File binary1;
-    private File binary2;
-    private File binary3;
-    private File binary4;
-    private File binary5;
-    private File binary6;
-    private File binary7;
-    private File binary8;
-    private File binary9;
-    private File binary10;
-    private File binary11;
-    private File binary12;
-    private File binary13;
-    private File binary14;
-    private File binary15;
-    private File binary16;
-    private File binary17;
-    private File binary18;
-    private File binary19;
-    private File binary20;
-    private File binary21;
-    private File binary22;
-    private File binary23;
-    private File binary24;
-    private File binary25;
-
-
-
     public String getURI(Folder folder) {
         return folder.getInode() +":"+ this.getInode();
     }
@@ -277,18 +249,67 @@ public class Contentlet extends WebAsset implements Serializable {
         this.languageId = languageId;
     }
 
+    /**
+     * @deprecated Use the method {@link #getContentTypeId()}
+     *
+     * @return
+     */
     public String getStructureInode() {
         return structureInode;
     }
 
+    /**
+     * Returns the ID of the Content Type that this Contentlet belongs to.
+     *
+     * @return The Content Type ID.
+     */
+    public String getContentTypeId() {
+        return this.structureInode;
+    }
+
+    /**
+     * @deprecated Use the method {@link #setContentTypeId(String)}
+     *
+     * @param structureInode
+     */
     public void setStructureInode(String structureInode) {
         this.structureInode = structureInode;
     }
+
     /**
+     * Sets the Content Type ID that this Contentlet belongs to.
+     *
+     * @param contentTypeId The Content Type ID.
+     */
+    public void setContentTypeId(final String contentTypeId) {
+        this.structureInode = contentTypeId;
+    }
+
+    /**
+     * @deprecated Use the method {@link #getContentType()}
+     *
+     * @return
      */
     public Structure getStructure() {
         Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(structureInode);
         return structure;
+    }
+
+    /**
+     * Returns the Content Type that this Contentlet belongs to.
+     *
+     * @return The {@link ContentType} object.
+     */
+    public ContentType getContentType() {
+        final ContentType contentType;
+        try {
+            contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(structureInode);
+            return contentType;
+        } catch (final DotSecurityException | DotDataException e) {
+            Logger.error(this, String.format("An error occurred when returning the Content Type associated to " +
+                    "Contentlet '%s'", this.getIdentifier()));
+        }
+        return null;
     }
 
     public Date getLastReview() {
@@ -338,8 +359,6 @@ public class Contentlet extends WebAsset implements Serializable {
 
         // This method copy the whole fields
         try {
-            //BeanUtils.copyProperties(this, currentContentlet);
-
         	java.util.Map properties = BeanUtils.describe(currentContentlet);
         	properties.remove("inode");
         	properties.remove("identifier");
@@ -363,7 +382,6 @@ public class Contentlet extends WebAsset implements Serializable {
         } catch (NoSuchMethodException e) {
         	Logger.error(this, e.toString());
 		}
-        // this.setStructure_inode(currentContentlet.getStructure_inode());
         Logger.debug(this, "Calling Contentlet Copy Method");
         super.copy(currentContentlet);
 
@@ -1590,7 +1608,6 @@ public class Contentlet extends WebAsset implements Serializable {
         this.text_area9 = text_area9;
     }
 
-
 	public String getDisabledWysiwyg() {
 		return disabledWysiwyg;
 	}
@@ -1599,159 +1616,97 @@ public class Contentlet extends WebAsset implements Serializable {
 		this.disabledWysiwyg = disabledWysiwyg;
 	}
 
-	/*public String getFolder() {
-		return folder;
-	}
-
-	public void setFolder(String folder) {
-		this.folder = folder;
-	}*/
-
 	/**
 	 *
-	 * @param f
+	 * @param field
 	 * @param value
 	 */
-	public void setField(Field f, Object value) throws DotRuntimeException {
+	public void setField(final Field field, Object value) throws DotRuntimeException {
 		try {
 			if(value != null && value instanceof Timestamp){
 				value = new Date(((Timestamp)value).getTime());
 			}
-
-			/* This code is not being used anymore - issue 10529
-			if(value!=null && value instanceof String && ((String)value).indexOf("\\u")>-1) {
-				value = ((String)value).replace("\\u", "${esc.b}u");
-			}
-			*/
-			BeanUtils.setProperty(this, f.getFieldContentlet(), value);
-		}catch(IllegalArgumentException iae){
-			Logger.error(this, "Unable to set the contentlet field.");
-			throw new DotRuntimeException("Unable to set the contentlet field.", iae);
-		} catch (IllegalAccessException e) {
-			Logger.error(this, "Unable to set the contentlet field.");
-			throw new DotRuntimeException("Unable to set the contentlet field.", e);
-		} catch (InvocationTargetException e) {
-			Logger.error(this, "Unable to set the contentlet field.");
-			throw new DotRuntimeException("Unable to set the contentlet field.", e);
-		}
-	}
-
-
-	/**
-	 *
-	 * @param fieldVarName velocityVarName
-	 * @param value
-	 * @throws DotRuntimeException if the field doesn't exist or it's not accesible
-	 */
-	public void setField(String fieldVarName, Object value) throws DotRuntimeException {
-		Structure st = CacheLocator.getContentTypeCache().getStructureByInode(this.structureInode);
-		Field f = st.getFieldVar(fieldVarName);
-		if(f == null)
-			throw new DotRuntimeException("Field: " + fieldVarName + " doesn't exist.");
-		setField(f, value);
-	}
+			BeanUtils.setProperty(this, field.getFieldContentlet(), value);
+        } catch (final IllegalArgumentException | IllegalAccessException | InvocationTargetException iae) {
+            final String errorMsg = String.format("Unable to set value [ %s ] contentlet field [ %s ]: %s", (null !=
+                    value ? value.toString() : "null"), (null != field ? field.getFieldName() : "null"), iae
+                    .getMessage());
+            Logger.error(this, errorMsg);
+            throw new DotRuntimeException(errorMsg, iae);
+        }
+    }
 
 	/**
 	 * Returns a map of the contentlet properties based on the fields of the structure
 	 * The keys used in the map will be the velocity variables names
 	 */
 	public Map<String, Object> getMap() throws DotRuntimeException {
-		Map<String, Object> myMap = new HashMap<String, Object>();
+		final Map<String, Object> myMap = new HashMap<>();
 		try{
-        final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(structureInode);
-		List<Field> fields = new LegacyFieldTransformer(contentType.fields()).asOldFieldList();
-		for (Field f : fields) {
-			if(!APILocator.getFieldAPI().valueSettable(f)){
-				continue;
-			}
-			if (Field.FieldType.HOST_OR_FOLDER.toString().equals(f.getFieldType())) {
-				continue;
-			}
-			if (Field.FieldType.TAG.toString().equals(f.getFieldType())) {
-				continue;
-			}
-			// https://github.com/dotCMS/core/issues/10245
-			if (f.getFieldContentlet() != null && f.getFieldContentlet().startsWith("system_field") &&
-				! Field.FieldType.BINARY.toString().equals(f.getFieldType())) {
-				continue;
-			}
-			// http://jira.dotmarketing.net/browse/DOTCMS-1073
-			// skip binary
-			/*if(f.getFieldContentlet().startsWith("binary")){
-				continue;
-			}*/
-
-			Object value;
-			if(fAPI.isElementConstant(f)){
-				value = f.getValues();
-			}else{
-				try {
-
-                   if (UtilMethods.isSet(getIdentifier())
-                       && contentType instanceof FileAssetContentType
-                       && FileAssetAPI.FILE_NAME_FIELD.equals(f.getVelocityVarName())) {
-                        value = APILocator.getIdentifierAPI().find(this).getAssetName();
-                    } else {
-                        // http://jira.dotmarketing.net/browse/DOTCMS-3463
-                        /*** THIS LOGIC IS DUPED IN THE CONTENTLETAPI.  IF YOU CHANGE HERE, CHANGE THERE **/
-                        if (Field.FieldType.BINARY.toString().equals(f.getFieldType())) {
-                            java.io.File binaryFile = null;
-                            java.io.File binaryFilefolder = new java.io.File(
-                                    APILocator.getFileAssetAPI().getRealAssetsRootPath()
-                                            + java.io.File.separator
-                                            + getInode().charAt(0)
-                                            + java.io.File.separator
-                                            + getInode().charAt(1)
-                                            + java.io.File.separator
-                                            + getInode()
-                                            + java.io.File.separator
-                                            + f.getVelocityVarName());
-                            if (binaryFilefolder.exists()) {
-                                java.io.File[] files = binaryFilefolder
-                                        .listFiles(new BinaryFileFilter());
-                                if (files.length > 0) {
-                                    binaryFile = files[0];
-                                }
-                            }
-                            value = binaryFile;
+            final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(structureInode);
+            final List<Field> fields = new LegacyFieldTransformer(contentType.fields()).asOldFieldList();
+            for (final Field field : fields) {
+                // DO NOT map these types of fields
+                if (!this.fAPI.valueSettable(field) ||
+                        LegacyFieldTypes.HOST_OR_FOLDER.legacyValue().equals(field.getFieldType()) ||
+                        LegacyFieldTypes.TAG.legacyValue().equals(field.getFieldType()) ||
+                        (field.getFieldContentlet() != null && field.getFieldContentlet().startsWith("system_field") &&
+                        !LegacyFieldTypes.BINARY.legacyValue().equals(field.getFieldType()))) {
+                    continue;
+                }
+                Object value;
+                if (this.fAPI.isElementConstant(field)) {
+                    value = field.getValues();
+                } else {
+                    try {
+                       if (UtilMethods.isSet(getIdentifier())
+                           && contentType instanceof FileAssetContentType
+                           && FileAssetAPI.FILE_NAME_FIELD.equals(field.getVelocityVarName())) {
+                            value = APILocator.getIdentifierAPI().find(this).getAssetName();
                         } else {
-                            value = PropertyUtils.getProperty(this, f.getFieldContentlet());
+                            if (LegacyFieldTypes.BINARY.legacyValue().equals(field.getFieldType())) {
+                                java.io.File binaryFile = null;
+                                final java.io.File binaryFilefolder = new java.io.File(
+                                        APILocator.getFileAssetAPI().getRealAssetsRootPath()
+                                                + java.io.File.separator
+                                                + getInode().charAt(0)
+                                                + java.io.File.separator
+                                                + getInode().charAt(1)
+                                                + java.io.File.separator
+                                                + getInode()
+                                                + java.io.File.separator
+                                                + field.getVelocityVarName());
+                                if (binaryFilefolder.exists()) {
+                                    java.io.File[] files = binaryFilefolder
+                                            .listFiles(new BinaryFileFilter());
+                                    if (files.length > 0) {
+                                        binaryFile = files[0];
+                                    }
+                                }
+                                value = binaryFile;
+                            } else {
+                                value = PropertyUtils.getProperty(this, field.getFieldContentlet());
+                            }
                         }
+                    } catch (final Exception e) {
+                        final String errorMsg = String.format("Unable to obtain property value for field '%s' in " +
+                                "Contentlet with ID='%s', Inode='%s', Content Type '%s': %s", field
+                                .getFieldContentlet(), this.getIdentifier(), this.getInode(), structureInode, e
+                                .getMessage());
+                        Logger.error(this, errorMsg, e);
+                        throw new DotRuntimeException(errorMsg, e);
                     }
-				} catch (Exception e) {
-					Logger.error(this, "Unable to obtain contentlet property value for: " + f.getFieldContentlet(), e);
-					throw new DotRuntimeException("Unable to obtain contentlet property value for: " + f.getFieldContentlet(), e);
-				}
-			}
-			myMap.put(f.getVelocityVarName(), value);
-
+                }
+                myMap.put(field.getVelocityVarName(), value);
+            }
+            return myMap;
+		} catch (final Exception e) {
+            final String errorMsg = String.format("An error occurred when mapping the properties for Contentlet with " +
+                    "ID='%s', Inode='%s', Content Type '%s': %s", this.getIdentifier(), this.getInode(), structureInode, e
+                    .getMessage());
+            Logger.error(this, errorMsg, e);
+            throw new DotRuntimeException(errorMsg, e);
 		}
-		return myMap;
-		}
-		catch(Exception e){
-			throw new DotRuntimeException(e);
-		}
-	}
-
-	/**
-	 * This method returns the value for any of the generic fields
-	 * of the contentlet, given a fieldName using reflection, invoking the
-	 * getter of the field.
-	 * @param fieldName
-	 * @return
-	 */
-
-	public Object getFieldValueByContentletName(String fieldName){
-
-		Object value = null;
-		try{
-			value = org.apache.commons.beanutils.PropertyUtils.getProperty(this, fieldName);
-		}catch(Exception e){
-			Logger
-			.error(this,
-					"An error has ocurred trying to get the value for the field: " + fieldName );
-		}
-		return value;
 	}
 
 	public int compareTo(Object compObject) {
@@ -1764,155 +1719,5 @@ public class Contentlet extends WebAsset implements Serializable {
         	return -1;
         }
     }
-   //http://jira.dotmarketing.net/browse/DOTCMS-3463
-	public File getBinary1() {
-		return binary1;
-	}
-	public void setBinary1(File binary1) {
-		this.binary1 = binary1;
-	}
-	public File getBinary2() {
-		return binary2;
-	}
-	public void setBinary2(File binary2) {
-		this.binary2 = binary2;
-	}
-	public File getBinary3() {
-		return binary3;
-	}
-	public void setBinary3(File binary3) {
-		this.binary3 = binary3;
-	}
-	public File getBinary4() {
-		return binary4;
-	}
-	public void setBinary4(File binary4) {
-		this.binary4 = binary4;
-	}
-	public File getBinary5() {
-		return binary5;
-	}
-	public void setBinary5(File binary5) {
-		this.binary5 = binary5;
-	}
-	public File getBinary6() {
-		return binary6;
-	}
-	public void setBinary6(File binary6) {
-		this.binary6 = binary6;
-	}
-	public File getBinary7() {
-		return binary7;
-	}
-	public void setBinary7(File binary7) {
-		this.binary7 = binary7;
-	}
-	public File getBinary8() {
-		return binary8;
-	}
-	public void setBinary8(File binary8) {
-		this.binary8 = binary8;
-	}
-	public File getBinary9() {
-		return binary9;
-	}
-	public void setBinary9(File binary9) {
-		this.binary9 = binary9;
-	}
-	public File getBinary10() {
-		return binary10;
-	}
-	public void setBinary10(File binary10) {
-		this.binary10 = binary10;
-	}
-	public File getBinary11() {
-		return binary11;
-	}
-	public void setBinary11(File binary11) {
-		this.binary11 = binary11;
-	}
-	public File getBinary12() {
-		return binary12;
-	}
-	public void setBinary12(File binary12) {
-		this.binary12 = binary12;
-	}
-	public File getBinary13() {
-		return binary13;
-	}
-	public void setBinary13(File binary13) {
-		this.binary13 = binary13;
-	}
-	public File getBinary14() {
-		return binary14;
-	}
-	public void setBinary14(File binary14) {
-		this.binary14 = binary14;
-	}
-	public File getBinary15() {
-		return binary15;
-	}
-	public void setBinary15(File binary15) {
-		this.binary15 = binary15;
-	}
-	public File getBinary16() {
-		return binary16;
-	}
-	public void setBinary16(File binary16) {
-		this.binary16 = binary16;
-	}
-	public File getBinary17() {
-		return binary17;
-	}
-	public void setBinary17(File binary17) {
-		this.binary17 = binary17;
-	}
-	public File getBinary18() {
-		return binary18;
-	}
-	public void setBinary18(File binary18) {
-		this.binary18 = binary18;
-	}
-	public File getBinary19() {
-		return binary19;
-	}
-	public void setBinary19(File binary19) {
-		this.binary19 = binary19;
-	}
-	public File getBinary20() {
-		return binary20;
-	}
-	public void setBinary20(File binary20) {
-		this.binary20 = binary20;
-	}
-	public File getBinary21() {
-		return binary21;
-	}
-	public void setBinary21(File binary21) {
-		this.binary21 = binary21;
-	}
-	public File getBinary22() {
-		return binary22;
-	}
-	public void setBinary22(File binary22) {
-		this.binary22 = binary22;
-	}
-	public File getBinary23() {
-		return binary23;
-	}
-	public void setBinary23(File binary23) {
-		this.binary23 = binary23;
-	}
-	public File getBinary24() {
-		return binary24;
-	}
-	public void setBinary24(File binary24) {
-		this.binary24 = binary24;
-	}
-	public File getBinary25() {
-		return binary25;
-	}
-	public void setBinary25(File binary25) {
-		this.binary25 = binary25;
-	}
+
 }

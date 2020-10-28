@@ -13,7 +13,7 @@
 
 
 #set($session = $request.getSession())
-#set($user = $session.getAttribute("cms.user"))
+#set($user = $session.getAttribute("USER"))
 
 #if($UtilMethods.isSet($user))
 	#set($_redirectPage = $request.session.getAttribute("REDIRECT_AFTER_LOGIN"))

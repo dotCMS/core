@@ -3,7 +3,6 @@ package com.dotmarketing.portlets.fileassets.business;
 import com.dotcms.util.Loadable;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.exception.DotDataException;
@@ -17,6 +16,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.Lazy;
 import java.awt.Dimension;
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -119,28 +119,29 @@ public class FileAsset extends Contentlet implements IFileAsset, Loadable {
 	private Dimension fileDimension = null;
 
 	public int getHeight() {
-		if (null == fileDimension) {
-			fileDimension = computeFileDimension(getFileAsset());
-		}
-		return  fileDimension == null ? 0 : fileDimension.height;
+		final Dimension fileDimension = lazyComputeDimensions.get();
+		return fileDimension == null ? 0 : fileDimension.height;
 	}
 
 	public int getWidth() {
-		if (null == fileDimension) {
-			fileDimension = computeFileDimension(getFileAsset());
-		}
+		final Dimension fileDimension = lazyComputeDimensions.get();
 		return fileDimension == null ? 0 : fileDimension.width;
 	}
 
 	private Dimension computeFileDimension(final File file) {
-		try {
-			return (fileDimension = ImageUtil.getInstance().getDimension(file));
-		} catch (Exception e) {
-			Logger.debug(this,
-					"Error computing dimensions for file asset with id: " + getIdentifier(), e);
+		if (fileDimension == null) {
+			try {
+    				return (fileDimension = ImageUtil.getInstance().getDimension(file));
+			} catch (Throwable e) {
+				Logger.debug(this,
+						"Error computing dimensions for file asset with id: " + getIdentifier(), e);
+			}
 		}
 		return null;
 	}
+
+    //Lazy Suppliers are memoized. Meaning that this truly guarantees the computation takes place once.
+    private Lazy<Dimension> lazyComputeDimensions = Lazy.of(() -> computeFileDimension(getFileAsset()));
 
   /**
    * This access the physical file on disk

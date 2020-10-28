@@ -1266,6 +1266,9 @@ create table identifier (
    syspublish_date datetime null,
    sysexpire_date datetime null,
    full_path_lc  as CASE WHEN parent_path = 'System folder' THEN '/' ELSE LOWER(CONCAT(parent_path, asset_name)) END,
+   owner NVARCHAR(255),
+   create_date datetime,
+   asset_subtype NVARCHAR(255),
    primary key (id),
    unique (parent_path, asset_name, host_inode)
 );
@@ -1796,6 +1799,7 @@ alter table analytic_summary_visits add constraint fk9eac9733b7b46300 foreign ke
 create index idx_preference_1 on user_preferences (preference);
 create index idx_identifier_pub on identifier (syspublish_date);
 create index idx_identifier_exp on identifier (sysexpire_date);
+create index idx_identifier_asset_subtype on identifier (asset_subtype);
 create index idx_user_clickstream11 on clickstream (host_id);
 create index idx_user_clickstream12 on clickstream (last_page_id);
 create index idx_user_clickstream15 on clickstream (browser_name);
@@ -2063,21 +2067,6 @@ BEGIN
       END
   END
 fetch next from cur_Inserted into @newFolder,@newHost
-END;
-
-CREATE PROCEDURE load_records_to_index(@server_id NVARCHAR(100), @records_to_fetch INT, @priority_level INT)
-AS
-BEGIN
-WITH cte AS (
-  SELECT TOP(@records_to_fetch) *
-  FROM dist_reindex_journal WITH (ROWLOCK, READPAST, UPDLOCK)
-  WHERE serverid IS NULL
-  AND priority <= @priority_level
-  ORDER BY priority ASC)
-UPDATE cte
-  SET serverid=@server_id
-OUTPUT
-  INSERTED.*
 END;
 
 CREATE Trigger check_content_versions
@@ -2458,7 +2447,6 @@ delete from workflow_task;
 
 ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_task_language FOREIGN KEY (language_id) REFERENCES language(id);
 ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_assign FOREIGN KEY (assigned_to) REFERENCES cms_role (id);
-ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_task_asset FOREIGN KEY (webasset) REFERENCES identifier (id);
 ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_step FOREIGN KEY (status) REFERENCES workflow_step (id);
 ALTER TABLE workflow_task ADD CONSTRAINT unique_workflow_task unique (webasset,language_id);
 
@@ -2481,7 +2469,7 @@ alter table tag alter column user_id NVARCHAR(MAX);
 
 -- ****** Indicies Data Storage *******
 create table indicies (
-  index_name NVARCHAR(30) primary key,
+  index_name NVARCHAR(100) primary key,
   index_type NVARCHAR(16) not null unique
 );
 -- ****** Log Console Table *******
@@ -2578,7 +2566,9 @@ create table publishing_bundle(
     name NVARCHAR(255) NOT NULL,
     publish_date DATETIME,
     expire_date DATETIME,
-    owner NVARCHAR(100)
+    owner NVARCHAR(100),
+    force_push tinyint,
+    filter_key NVARCHAR(100)
 );
 
 ALTER TABLE publishing_bundle ADD CONSTRAINT FK_publishing_bundle_owner FOREIGN KEY (owner) REFERENCES user_(userid);
@@ -2606,13 +2596,11 @@ CREATE INDEX idx_pushed_assets_1 ON publishing_pushed_assets (bundle_id);
 CREATE INDEX idx_pushed_assets_2 ON publishing_pushed_assets (environment_id);
 CREATE INDEX idx_pushed_assets_3 ON publishing_pushed_assets (asset_id, environment_id);
 
-alter table publishing_bundle add force_push tinyint ;
-
 CREATE INDEX idx_pub_qa_1 ON publishing_queue_audit (status);
 
 --Cluster Tables
 
-CREATE TABLE dot_cluster(cluster_id NVARCHAR(36), PRIMARY KEY (cluster_id) );
+CREATE TABLE dot_cluster(cluster_id NVARCHAR(36), cluster_salt VARCHAR(256) ,PRIMARY KEY (cluster_id) );
 CREATE TABLE cluster_server(server_id NVARCHAR(36) NOT NULL, cluster_id NVARCHAR(36) NOT NULL, name NVARCHAR(100), ip_address NVARCHAR(39) NOT NULL, host NVARCHAR(255), cache_port SMALLINT, es_transport_tcp_port SMALLINT, es_network_port SMALLINT, es_http_port SMALLINT, key_ NVARCHAR(100), PRIMARY KEY (server_id) );
 ALTER TABLE cluster_server add constraint fk_cluster_id foreign key (cluster_id) REFERENCES dot_cluster(cluster_id);
 CREATE TABLE cluster_server_uptime(id NVARCHAR(36) NOT NULL, server_id NVARCHAR(36) NOT NULL, startup datetime null, heartbeat datetime null, PRIMARY KEY (id) );
@@ -2714,3 +2702,37 @@ CREATE TABLE api_token_issued(
 create index idx_api_token_issued_user ON api_token_issued (token_userid);
 
 CREATE UNIQUE INDEX idx_ident_uniq_asset_name on identifier (full_path_lc,host_inode);
+
+create table storage_group (
+    group_name varchar(255)  not null,
+    mod_date   datetime NOT NULL DEFAULT GETDATE(),
+    PRIMARY KEY (group_name)
+);
+
+create table storage (
+    path       varchar(255) not null,
+    group_name varchar(255) not null,
+    hash       varchar(64) not null,
+    metadata   text not null,
+    mod_date   datetime  NOT NULL DEFAULT GETDATE(),
+    PRIMARY KEY (path, group_name),
+    FOREIGN KEY (group_name) REFERENCES storage_group (group_name)
+);
+
+CREATE INDEX idx_storage_hash ON storage (hash);
+
+create table storage_data (
+    hash_id  varchar(64) not null,
+    data     varbinary(max) not null,
+    mod_date datetime NOT NULL DEFAULT GETDATE(),
+    PRIMARY KEY (hash_id)
+);
+
+create table storage_x_data (
+    storage_hash varchar(64)                 not null,
+    data_hash    varchar(64)                 not null,
+    data_order   integer                     not null,
+    mod_date     datetime NOT NULL DEFAULT GETDATE(),
+    PRIMARY KEY (storage_hash, data_hash),
+    FOREIGN KEY (data_hash) REFERENCES storage_data (hash_id)
+);

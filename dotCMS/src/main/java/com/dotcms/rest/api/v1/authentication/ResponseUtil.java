@@ -1,9 +1,13 @@
 package com.dotcms.rest.api.v1.authentication;
 
+import static com.dotcms.exception.ExceptionUtil.BAD_REQUEST_EXCEPTIONS;
+import static com.dotcms.exception.ExceptionUtil.NOT_FOUND_EXCEPTIONS;
+import static com.dotcms.exception.ExceptionUtil.SECURITY_EXCEPTIONS;
+import static com.dotcms.exception.ExceptionUtil.causedBy;
+import static com.dotcms.exception.ExceptionUtil.getRootCause;
+
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.core.Response;
 import com.dotcms.rest.ErrorResponseHelper;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.exception.SecurityException;
@@ -15,8 +19,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.Locale;
@@ -24,8 +26,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.function.Function;
 import java.util.function.Supplier;
-
-import static com.dotcms.exception.ExceptionUtil.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.core.Response;
 
 /**
  * Just a helper to encapsulate AuthenticationResource functionality.
@@ -119,7 +122,7 @@ public class ResponseUtil implements Serializable {
             return ExceptionMapperUtil.createResponse(Response.Status.BAD_REQUEST, ve);
         }
 
-        return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        return ExceptionMapperUtil.createResponse(rootCause, Response.Status.INTERNAL_SERVER_ERROR);
     }
 
     /**

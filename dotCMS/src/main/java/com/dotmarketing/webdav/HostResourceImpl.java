@@ -1,15 +1,5 @@
 package com.dotmarketing.webdav;
 
-import com.dotmarketing.portlets.folders.business.FolderAPIImpl;
-import com.dotmarketing.portlets.folders.exception.InvalidFolderNameException;
-import com.dotmarketing.util.UtilMethods;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
 import com.dotcms.repackage.com.bradmcevoy.http.Auth;
 import com.dotcms.repackage.com.bradmcevoy.http.CollectionResource;
 import com.dotcms.repackage.com.bradmcevoy.http.FolderResource;
@@ -18,7 +8,6 @@ import com.dotcms.repackage.com.bradmcevoy.http.LockInfo;
 import com.dotcms.repackage.com.bradmcevoy.http.LockResult;
 import com.dotcms.repackage.com.bradmcevoy.http.LockTimeout;
 import com.dotcms.repackage.com.bradmcevoy.http.LockToken;
-import com.dotcms.repackage.com.bradmcevoy.http.LockableResource;
 import com.dotcms.repackage.com.bradmcevoy.http.LockingCollectionResource;
 import com.dotcms.repackage.com.bradmcevoy.http.MakeCollectionableResource;
 import com.dotcms.repackage.com.bradmcevoy.http.PropFindableResource;
@@ -27,7 +16,6 @@ import com.dotcms.repackage.com.bradmcevoy.http.Request.Method;
 import com.dotcms.repackage.com.bradmcevoy.http.Resource;
 import com.dotcms.repackage.com.bradmcevoy.http.exceptions.BadRequestException;
 import com.dotcms.repackage.com.bradmcevoy.http.exceptions.ConflictException;
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.LockedException;
 import com.dotcms.repackage.com.bradmcevoy.http.exceptions.NotAuthorizedException;
 import com.dotcms.repackage.com.bradmcevoy.http.exceptions.PreConditionFailedException;
 import com.dotmarketing.beans.Host;
@@ -39,11 +27,17 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.folders.exception.InvalidFolderNameException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 public class HostResourceImpl extends BasicFolderResourceImpl implements Resource, CollectionResource, FolderResource, PropFindableResource, MakeCollectionableResource, LockingCollectionResource{
 
@@ -118,20 +112,24 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 	}
 
 	public Resource child(String childName) {
-	    User user=(User)HttpManager.request().getAuthorization().getTag();
-		String uri="/"+childName;
+		if (dotDavHelper.isSameTargetAndDestinationResourceOnMove(childName)) {
+			//This a small hack that prevents Milton's MoveHandler from removing the destination folder when the source and destination are the same.
+			return null;
+		}
+	    final User user = (User)HttpManager.request().getAuthorization().getTag();
+		final String uri="/"+childName;
 		
 		try {
-		    Identifier ident=APILocator.getIdentifierAPI().find(host, uri);
+		    final Identifier ident = APILocator.getIdentifierAPI().find(host, uri);
 		    if(ident!=null && InodeUtils.isSet(ident.getInode())) {
 		        if(ident.getAssetType().equals("folder")) {
-		            Folder folder = APILocator.getFolderAPI().findFolderByPath(uri, host, user, false);
+		            final Folder folder = APILocator.getFolderAPI().findFolderByPath(uri, host, user, false);
 		            if(folder!=null && InodeUtils.isSet(folder.getInode())) {
 		                return new FolderResourceImpl(folder,path+folder.getPath());
 		            }
 		        }
 		        else if(ident.getAssetType().equals("contentlet")) {
-		            Contentlet cont=APILocator.getContentletAPI().findContentletByIdentifier(ident.getId(), false, 1, user, false);
+					final Contentlet cont=APILocator.getContentletAPI().findContentletByIdentifier(ident.getId(), false, 1, user, false);
 		            if(cont!=null && InodeUtils.isSet(cont.getInode())) {
 		                return new FileResourceImpl(APILocator.getFileAssetAPI().fromContentlet(cont),path+uri);
 		            }

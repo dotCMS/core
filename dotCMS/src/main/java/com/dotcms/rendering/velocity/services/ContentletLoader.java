@@ -559,17 +559,22 @@ public class ContentletLoader implements DotLoader {
             throws DotStateException, DotDataException, DotSecurityException {
 
         long language = new Long(key.language);
-        ContentletVersionInfo info = APILocator.getVersionableAPI().getContentletVersionInfo(key.id1, language);
-        if (info == null && language != defaultLang && APILocator.getLanguageAPI().canDefaultContentToDefaultLanguage()) {
+        Optional<ContentletVersionInfo> info = APILocator.getVersionableAPI().getContentletVersionInfo(key.id1, language);
+
+        if ((!info.isPresent() || key.mode.showLive && !UtilMethods.isSet(info.get().getLiveInode()))
+                && shouldCheckForVersionInfoInDefaultLanguage(language)) {
             info = APILocator.getVersionableAPI().getContentletVersionInfo(key.id1, defaultLang);
         }
 
-        if (info == null || key.mode.showLive && info.getLiveInode() == null) {
+        if (!info.isPresent() || key.mode.showLive && !UtilMethods.isSet(info.get().getLiveInode())) {
             throw new ResourceNotFoundException("cannot find content for: " + key);
         }
-        Contentlet contentlet =
-                (key.mode.showLive) ? APILocator.getContentletAPI().find(info.getLiveInode(), APILocator.systemUser(), false)
-                        : APILocator.getContentletAPI().find(info.getWorkingInode(), APILocator.systemUser(), false);
+
+        Contentlet contentlet = (key.mode.showLive)
+                ? APILocator.getContentletAPI().find(info.get().getLiveInode(),
+                        APILocator.systemUser(), false)
+                : APILocator.getContentletAPI().find(info.get().getWorkingInode(),
+                        APILocator.systemUser(), false);
 
         Logger.debug(this, "DotResourceLoader:\tWriting out contentlet inode = " + contentlet.getInode());
         if (null == contentlet) {
@@ -580,6 +585,14 @@ public class ContentletLoader implements DotLoader {
 
     }
 
+    private boolean shouldCheckForVersionInfoInDefaultLanguage(long language) {
+        return language != defaultLang && APILocator.getLanguageAPI()
+                .canDefaultContentToDefaultLanguage();
+    }
+
+    private boolean isLiveVersionNotAvailable(VelocityResourceKey key, ContentletVersionInfo info) {
+        return info == null || key.mode.showLive && !UtilMethods.isSet(info.getLiveInode());
+    }
 
 
     @Override

@@ -1,15 +1,40 @@
 package com.dotmarketing.util;
 
-import org.junit.Test;
+import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 import com.dotcms.UnitTestBase;
-
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 /**
  * Unit test for {@link UtilMethods}
  */
 public class UtilMethodsTest extends UnitTestBase {
+
+	@Test
+	public void testIsValidURL_Valid() {
+
+		final String url = "https://demo.dotcms.com";
+
+		assertTrue(UtilMethods.isValidURL(url));
+	}
+
+	@Test
+	public void testIsValidURL_NULL() {
+
+		final String url = null;
+
+		assertFalse(UtilMethods.isValidURL(url));
+	}
+
+	@Test
+	public void testIsValidURL_Invalid() {
+
+		final String url = "xxx";
+
+		assertFalse(UtilMethods.isValidURL(url));
+	}
 
 	@Test
     public void testValidateFileName_Valid() {
@@ -52,4 +77,22 @@ public class UtilMethodsTest extends UnitTestBase {
 
 		UtilMethods.getValidFileName(fileName);
     }
+
+	@Test
+	public void test_CharArrayIsSet_Valid() {
+		assertFalse(UtilMethods.isSet("null".toCharArray()));
+		assertFalse(UtilMethods.isSet(new char[]{}));
+		assertFalse(UtilMethods.isSet((char[]) null));
+
+		assertTrue(UtilMethods.isNotSet("null".toCharArray()));
+		assertTrue(UtilMethods.isNotSet(new char[]{}));
+		assertTrue(UtilMethods.isNotSet((char[]) null));
+		assertTrue(UtilMethods.isNotSet("".toCharArray()));
+
+		assertTrue(UtilMethods.isSet("abcdefghijklmnopqrstuvwxyz".toCharArray()));
+		assertTrue(UtilMethods.isSet(new char[]{'1','2','3'}));
+
+		assertFalse(UtilMethods.isNotSet("abcdefghijklmnopqrstuvwxyz".toCharArray()));
+		assertFalse(UtilMethods.isNotSet(new char[]{'1','2','3'}));
+	}
 }

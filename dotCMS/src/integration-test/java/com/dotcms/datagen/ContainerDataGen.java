@@ -6,6 +6,10 @@ import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.WebAssetException;
+import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
@@ -256,6 +260,13 @@ public class ContainerDataGen extends AbstractDataGen<Container> {
         }
 
         return container;
+    }
+
+    @WrapInTransaction
+    public static void publish(final Container container)
+            throws DotSecurityException, WebAssetException, DotDataException {
+        PublishFactory.publishAsset(container, APILocator.systemUser(),
+                false, false);
     }
 
     /**

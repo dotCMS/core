@@ -1,9 +1,11 @@
 package com.dotmarketing.util;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.image.filter.ImageFilter;
 import com.liferay.util.FileUtil;
+import io.vavr.Lazy;
+import io.vavr.control.Try;
 import java.io.File;
-import java.util.UUID;
 
 /**
  * Generic class to get return configuration parameters, and any logic required
@@ -21,6 +23,8 @@ public class ConfigUtils {
      */
     public static final String DEV_MODE_KEY = "dotcms.dev.mode";
 
+    private final static String DEFAULT_RELATIVE_ASSET_PATH = "/assets";
+
 	/**
 	 * Returns true if app is running on dev mode.
 	 * @return boolean
@@ -33,10 +37,11 @@ public class ConfigUtils {
 	}
 
 	public static String getDynamicContentPath() {
-		String realPath = Config.getStringProperty("DYNAMIC_CONTENT_PATH");
-		if (!UtilMethods.isSet(realPath)) {
-			realPath = com.liferay.util.FileUtil.getRealPath("/dotsecure");
-		}
+		String realPath = Try.of(()->
+				Config.getStringProperty("DYNAMIC_CONTENT_PATH",
+						com.liferay.util.FileUtil.getRealPath("/dotsecure")))
+				.getOrElse("." + File.separator + "dotsecure");
+		
 		return (realPath.endsWith(File.separator)) ?
 		                realPath.substring(0, realPath.length()-1)
 		                :realPath;
@@ -73,7 +78,8 @@ public class ConfigUtils {
 	}
 
 	public static String getIntegrityPath() {
-		String path=APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator + "integrity";
+		String path=APILocator.getFileAssetAPI().getRealAssetsRootPath();
+		path += (path.endsWith(File.separator) ? "" : File.separator) + "integrity";
 		File pathDir=new File(path);
 		if(!pathDir.exists())
 		    pathDir.mkdirs();
@@ -117,4 +123,40 @@ public class ConfigUtils {
 	}
 
 
+    /**
+     * This method returns the absolute root path for assets
+     *
+     * @return the root folder of where assets are stored
+     */
+    public static String getAbsoluteAssetsRootPath() {
+        String realPath = Config.getStringProperty("ASSET_REAL_PATH", null);
+        if (UtilMethods.isSet(realPath) && !realPath.endsWith(File.separator)) {
+            realPath = realPath + File.separator;
+        }
+        if (!UtilMethods.isSet(realPath)) {
+            final String path = Try
+                    .of(() -> Config.getStringProperty("ASSET_PATH", DEFAULT_RELATIVE_ASSET_PATH))
+                    .getOrElse(DEFAULT_RELATIVE_ASSET_PATH);
+            return FileUtil.getRealPath(path);
+        } else {
+            return realPath;
+        }
+    }
+    
+    
+
+    private static final String LOCAL = "LOCAL";
+    public static String getDotGeneratedPath() {
+        return dotGeneratedPath.get() + File.separator + "dotGenerated";
+    }
+    
+    private static Lazy<String> dotGeneratedPath =Lazy.of(()->{
+        return LOCAL.equalsIgnoreCase(Config.getStringProperty("DOTGENERATED_DEFAULT_PATH", LOCAL))
+                    ? ConfigUtils.getDynamicContentPath()
+                    : ConfigUtils.getAbsoluteAssetsRootPath();
+            });
+
+    
+    
+    
 }

@@ -7,6 +7,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.browser.BrowserQueryForm;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.I18NUtil;
@@ -33,7 +34,9 @@ import org.glassfish.jersey.server.JSONP;
 
 /**
  * Created by jasontesser on 9/28/16.
+ * @deprecated see {@link com.dotcms.rest.api.v1.browser.BrowserResource#getFolderContent(HttpServletRequest, HttpServletResponse, BrowserQueryForm)}
  */
+@Deprecated
 @Path("/v1/browsertree")
 public class BrowserTreeResource implements Serializable {
     private final WebResource webResource;
@@ -56,6 +59,14 @@ public class BrowserTreeResource implements Serializable {
         this.i18NUtil    = i18NUtil;
     }
 
+    /**
+     * @deprecated see {@link com.dotcms.rest.api.v1.browser.BrowserResource#getFolderContent(HttpServletRequest, HttpServletResponse, BrowserQueryForm)}
+     * @param httpRequest
+     * @param httpResponse
+     * @param sitename
+     * @return
+     */
+    @Deprecated
     @GET
     @Path ("/sitename/{sitename}/uri/")
     @JSONP
@@ -101,6 +112,15 @@ public class BrowserTreeResource implements Serializable {
         return response;
     }
 
+    /**
+     * @deprecated see {@link com.dotcms.rest.api.v1.browser.BrowserResource#getFolderContent(HttpServletRequest, HttpServletResponse, BrowserQueryForm)}
+     * @param httpRequest
+     * @param httpResponse
+     * @param sitename
+     * @param uri
+     * @return
+     */
+    @Deprecated
     @GET
     @Path ("/sitename/{sitename}/uri/{uri : .+}")
     @JSONP

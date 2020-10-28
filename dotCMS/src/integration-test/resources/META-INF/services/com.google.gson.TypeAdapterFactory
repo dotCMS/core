@@ -6,3 +6,4 @@ com.dotcms.contenttype.model.type.GsonAdaptersPageContentType
 com.dotcms.contenttype.model.type.GsonAdaptersWidgetContentType
 com.dotcms.contenttype.model.type.GsonAdaptersFileAssetContentType
 com.dotcms.contenttype.model.type.GsonAdaptersFormContentType
+com.dotcms.contenttype.model.type.GsonAdaptersDotAssetContentType

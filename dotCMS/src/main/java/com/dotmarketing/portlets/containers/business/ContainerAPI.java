@@ -15,6 +15,7 @@ import com.liferay.portal.model.User;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
@@ -47,6 +48,9 @@ public interface ContainerAPI {
 	 * @throws DotSecurityException
 	 */
 	public Container copy(Container source, Host destination, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+	public Optional<Container> findContainer(String idOrPath, User user, boolean live, boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException;
 
 	/**
 	 * Returns the working container by the id

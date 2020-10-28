@@ -390,6 +390,7 @@ public abstract class WorkflowTestUtil {
     static List<WorkflowAction> getAllWorkflowActions(final BulkWorkflowSchemeView workflowScheme) {
         final List<WorkflowAction> workflowActions = new ArrayList<>();
         final List<BulkWorkflowStepView> systemWorkflowSteps = workflowScheme.getSteps();
+
         for (final BulkWorkflowStepView stepView : systemWorkflowSteps) {
             final CountWorkflowStep countWorkflowStep = stepView.getStep();
             assertTrue(countWorkflowStep.getCount() > 0);

@@ -88,6 +88,11 @@ public class TagAPITest extends IntegrationTestBase {
 	@Test
 	public void getAllTags () throws Exception {
 
+		// let's create some tags
+		for(int i=0; i<5; i++) {
+			saveTag("tagByName" + i + System.currentTimeMillis());
+		}
+
 		List<Tag> tags = tagAPI.getAllTags();
 		assertNotNull( tags );
 		assertFalse( tags.isEmpty() );

@@ -84,6 +84,13 @@ public class LayoutAPIImpl implements LayoutAPI {
     return Optional.ofNullable(layout);
 
   }
+
+	@Override
+	@CloseDBIfOpened
+	public Optional<LayoutsRoles> findLayoutByRole(final Layout layout, final Role role) {
+
+		return FactoryLocator.getRoleFactory().findLayoutsRole(layout, role);
+	}
 	
 	
 	

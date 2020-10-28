@@ -18,17 +18,27 @@ import com.dotmarketing.quartz.ScheduledTask;
 
 
 public interface SiteSearchAPI {
-    public static final String ES_SITE_SEARCH_NAME = "sitesearch";
-    public static final String ES_SITE_SEARCH_MAPPING = "dot_site_search";
+	public static final String ES_SITE_SEARCH_NAME = "sitesearch";
+	public static final String ES_SITE_SEARCH_MAPPING = "_doc";
     public static final String ES_SITE_SEARCH_EXECUTE_JOB_NAME = "runningOnce";
 
 	List<String> listIndices();
+
+	/**
+	 * This basically tells you if the index passed as parameter is the default site search index or not
+	 * @param indexName
+	 * @return
+	 * @throws DotDataException
+	 */
+    boolean isDefaultIndex(String indexName) throws DotDataException;
 
 	void activateIndex(String indexName) throws DotDataException;
 
 	void deactivateIndex(String indexName) throws DotDataException, IOException;
 
 	boolean createSiteSearchIndex(String indexName, String alias, int shards) throws ElasticsearchException, IOException;
+
+	boolean setAlias(String indexName, final String alias);
 
 	List<ScheduledTask> getTasks() throws SchedulerException;
 

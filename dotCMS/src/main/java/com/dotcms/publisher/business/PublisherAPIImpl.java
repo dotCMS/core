@@ -30,11 +30,20 @@ import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
-import org.apache.commons.lang.StringUtils;
-import org.quartz.*;
-
-import java.util.*;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.apache.commons.lang.StringUtils;
+import org.quartz.JobDataMap;
+import org.quartz.JobDetail;
+import org.quartz.ObjectAlreadyExistsException;
+import org.quartz.Scheduler;
+import org.quartz.SimpleTrigger;
+import org.quartz.Trigger;
 
 /**
  * Provides utility methods to interact with asset information added to the
@@ -308,7 +317,7 @@ public class PublisherAPIImpl extends PublisherAPI{
     @Override
     public void firePublisherQueueNow(Map<String, Object> dataMap){
 		try {
-		    Scheduler sched = QuartzUtils.getStandardScheduler();
+		    Scheduler sched = QuartzUtils.getScheduler();
 		    JobDetail job = sched.getJobDetail("PublishQueueJob"  , "dotcms_jobs");
 			if(job==null) {
 				return;
@@ -900,7 +909,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			Bundle publishBundle = APILocator.getBundleAPI().getBundleById(bundleId);
 			List<Environment> envsToSendTo = APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(bundleId);
 
-			Bundle deleteBundle = new Bundle(publishBundle.getName(), publishDate, expireDate, user.getUserId(), publishBundle.isForcePush());
+			Bundle deleteBundle = new Bundle(publishBundle.getName(), publishDate, expireDate, user.getUserId(), publishBundle.isForcePush(),publishBundle.getFilterKey());
 	    	APILocator.getBundleAPI().saveBundle(deleteBundle, envsToSendTo);
 
 	        addContentsToUnpublish( ids, deleteBundle.getId(), expireDate, user );

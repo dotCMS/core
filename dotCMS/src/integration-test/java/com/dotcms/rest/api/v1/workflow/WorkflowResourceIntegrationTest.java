@@ -1,23 +1,91 @@
 package com.dotcms.rest.api.v1.workflow;
 
-import com.dotcms.business.WrapInTransaction;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.ADMIN_DEFAULT_ID;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.ADMIN_DEFAULT_MAIL;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.ADMIN_NAME;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.CURRENT_STEP;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.DM_WORKFLOW;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.PUBLISH;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SAVE;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SYSTEM_WORKFLOW;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.actionName;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.addSteps;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.collectSampleContent;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createScheme;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createWorkflowActions;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.doCleanUp;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.findSchemes;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.findSteps;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.getAllWorkflowActions;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.schemeName;
+import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.ACTION_ID;
+import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.ACTION_ORDER;
+import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.STEP_ID;
+import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.getInstance;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
-import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.CheckboxField;
+import com.dotcms.contenttype.model.field.CustomField;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.DateField;
+import com.dotcms.contenttype.model.field.DateTimeField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.ImageField;
+import com.dotcms.contenttype.model.field.ImmutableBinaryField;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.KeyValueField;
+import com.dotcms.contenttype.model.field.MultiSelectField;
+import com.dotcms.contenttype.model.field.RadioField;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.SelectField;
+import com.dotcms.contenttype.model.field.TextAreaField;
+import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.TimeField;
+import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.datagen.*;
+import com.dotcms.datagen.CategoryDataGen;
+import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.TestWorkflowUtils;
+import com.dotcms.datagen.WorkflowDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockAsyncResponse;
-import com.dotcms.rest.*;
+import com.dotcms.rest.ContentHelper;
+import com.dotcms.rest.EmptyHttpResponse;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotcms.workflow.form.*;
+import com.dotcms.workflow.form.BulkActionForm;
+import com.dotcms.workflow.form.FireActionForm;
+import com.dotcms.workflow.form.FireBulkActionsForm;
+import com.dotcms.workflow.form.WorkflowActionForm;
+import com.dotcms.workflow.form.WorkflowActionStepForm;
+import com.dotcms.workflow.form.WorkflowSchemeForm;
+import com.dotcms.workflow.form.WorkflowSchemeImportObjectForm;
+import com.dotcms.workflow.form.WorkflowStepUpdateForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -27,7 +95,6 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -49,8 +116,35 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
-import com.liferay.portal.util.WebKeys;
-import org.apache.commons.io.IOUtils;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringReader;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.commons.lang.RandomStringUtils;
 import org.glassfish.jersey.internal.util.Base64;
@@ -60,28 +154,6 @@ import org.glassfish.jersey.media.multipart.FormDataBodyPart;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import java.io.*;
-import java.nio.charset.Charset;
-import java.util.*;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.*;
-import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.*;
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest {
 
@@ -914,8 +986,6 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
         //step 1 System Workflow Actions.
         assertTrue(systemActions.stream().anyMatch(action -> SAVE.equals(action.getName())));
-        assertTrue(systemActions.stream()
-               .anyMatch(action -> SAVE_PUBLISH.equals(action.getName())));
         return systemActions;
     }
 
@@ -1576,10 +1646,10 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 final ResponseEntityView fireEntityView1 = ResponseEntityView.class
                         .cast(response1.getEntity());
                 brandNewContentlet = new Contentlet(Map.class.cast(fireEntityView1.getEntity()));
-                checkBrandNewContentlet(fieldNameTitle, fieldNameFile1, fieldNameFile2, inputFile1Text, inputFile2Text, brandNewContentlet);
+                checkBrandNewContentlet(fieldNameTitle, fieldNameFile1, fieldNameFile2, brandNewContentlet);
 
                 // update existing by content inode.
-                formDataMultiPart = this.createFormMultiPart(contentType, inputFile1Text, inputFile2Text);
+                formDataMultiPart = this.createFormMultiPart(contentType, inputFile1Text,inputFile2Text);
                 final HttpServletRequest request2 = mock(HttpServletRequest.class);
                 final Response response2 = workflowResource
                         .fireActionMultipart(request2, new EmptyHttpResponse(), SAVE_ACTION_ID, brandNewContentlet.getInode(),null,"-1", formDataMultiPart);
@@ -1589,7 +1659,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                         .cast(response2.getEntity());
                 String identifier = brandNewContentlet.getIdentifier();
                 brandNewContentlet = new Contentlet(Map.class.cast(fireEntityView2.getEntity()));
-                checkBrandNewContentlet(fieldNameTitle, fieldNameFile1, fieldNameFile2, inputFile1Text, inputFile2Text, brandNewContentlet);
+                checkBrandNewContentlet(fieldNameTitle, fieldNameFile1, fieldNameFile2, brandNewContentlet);
                 assertEquals(identifier, brandNewContentlet.getIdentifier());
 
                 // update existing by identifier
@@ -1603,7 +1673,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 final ResponseEntityView fireEntityView3 = ResponseEntityView.class
                         .cast(response3.getEntity());
                 brandNewContentlet = new Contentlet(Map.class.cast(fireEntityView3.getEntity()));
-                checkBrandNewContentlet(fieldNameTitle, fieldNameFile1, fieldNameFile2, inputFile1Text, inputFile2Text, brandNewContentlet);
+                checkBrandNewContentlet(fieldNameTitle, fieldNameFile1, fieldNameFile2, brandNewContentlet);
                 assertEquals(identifier, brandNewContentlet.getIdentifier());
             } finally {
                 if(null != brandNewContentlet){
@@ -1621,50 +1691,67 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
     private FormDataMultiPart createFormMultiPart(final ContentType contentType, final String inputFile1Text,
                                                   final String inputFile2Text) {
         final Charset           charset              = Charset.defaultCharset();
+
         final FormDataMultiPart formDataMultiPart    = mock(FormDataMultiPart.class);
+
         final BodyPart          bodyPart             = mock(BodyPart.class);
         final ContentDisposition contentDisposition1 = mock(ContentDisposition.class);
         final ContentDisposition contentDisposition2 = mock(ContentDisposition.class);
         final ContentDisposition contentDisposition3 = mock(ContentDisposition.class);
+
         final ImmutableMap<String, String> params    = ImmutableMap.of("name", "json");
+
         final FormDataBodyPart formDataBodyPart1     = mock(FormDataBodyPart.class);
         final FormDataBodyPart formDataBodyPart2     = mock(FormDataBodyPart.class);
+
         when(formDataMultiPart.getBodyParts()).thenReturn(Arrays.asList(bodyPart));
         when(formDataMultiPart.getFields("file")).thenReturn(Arrays.asList(formDataBodyPart1, formDataBodyPart2));
+
         when(bodyPart.getContentDisposition()).thenReturn(contentDisposition1);
         when(bodyPart.getMediaType()).thenReturn(MediaType.APPLICATION_JSON_TYPE);
+
         final String jsonBody = String.format(MULTIPART_JSON, contentType.variable());
         when(bodyPart.getEntityAs(InputStream.class))
                 .thenReturn(new ReaderInputStream(new StringReader(jsonBody), charset));
+
         when(contentDisposition1.getParameters()).thenReturn(params);
         when(contentDisposition2.getFileName()).thenReturn("file1.txt");
-        when(formDataBodyPart1.getContentDisposition()).thenReturn(contentDisposition2);
         when(contentDisposition3.getFileName()).thenReturn("file2.txt");
+
+        when(formDataBodyPart1.getContentDisposition()).thenReturn(contentDisposition2);
         when(formDataBodyPart2.getContentDisposition()).thenReturn(contentDisposition3);
+
         when(formDataBodyPart1.getEntityAs(InputStream.class))
                 .thenReturn(new ReaderInputStream(new StringReader(inputFile1Text), charset));
+
         when(formDataBodyPart2.getEntityAs(InputStream.class))
                 .thenReturn(new ReaderInputStream(new StringReader(inputFile2Text), charset));
+
         return formDataMultiPart;
     }
 
-    private void checkBrandNewContentlet(String fieldNameTitle, String fieldNameFile1, String fieldNameFile2, String inputFile1Text, String inputFile2Text, Contentlet brandNewContentlet) throws IOException {
+    private void checkBrandNewContentlet(String fieldNameTitle, String fieldNameFile1, String fieldNameFile2, Contentlet brandNewContentlet) throws IOException {
         assertNotNull(brandNewContentlet);
         assertNotNull(brandNewContentlet.getMap());
         assertTrue(brandNewContentlet.getMap().containsKey(fieldNameTitle));
         assertTrue(brandNewContentlet.getMap().containsKey(fieldNameFile1));
         assertTrue(brandNewContentlet.getMap().containsKey(fieldNameFile2));
         assertEquals("Test", brandNewContentlet.getMap().get("title"));
-        final File file1 = brandNewContentlet.getBinary("file1");
-        final File file2 = brandNewContentlet.getBinary("file2");
-        assertNotNull(file1);
-        assertNotNull(file1);
-        final String fileString1 = IOUtils.toString(new FileReader(file1));
-        final String fileString2 = IOUtils.toString(new FileReader(file2));
-        assertNotNull(fileString1);
-        assertNotNull(fileString2);
-        assertEquals(inputFile1Text, fileString1);
-        assertEquals(inputFile2Text, fileString2);
+
+        final String dAPath1 =  (String)brandNewContentlet.get("file1");
+        final String dAPath2 =  (String)brandNewContentlet.get("file2");
+
+        final String dAPathFormat = "/dA/%s/%s/%s";
+
+        assertEquals("File dAPath don't match",dAPath1,String.format(dAPathFormat, brandNewContentlet.getIdentifier(), "file1", FilenameUtils.getName(dAPath1)));
+        assertEquals("File dAPath don't match",dAPath2,String.format(dAPathFormat, brandNewContentlet.getIdentifier(), "file2", FilenameUtils.getName(dAPath2)));
+
+        final String dAPathVersion1 =  (String)brandNewContentlet.get("file1Version");
+        final String dAPathVersion2 =  (String)brandNewContentlet.get("file2Version");
+
+        assertEquals("Version file don't match",dAPathVersion1,String.format(dAPathFormat, brandNewContentlet.getInode(), "file1", FilenameUtils.getName(dAPathVersion1)));
+        assertEquals("Version file don't match",dAPathVersion2,String.format(dAPathFormat, brandNewContentlet.getInode(), "file2", FilenameUtils.getName(dAPathVersion2)));
+
     }
 
     @Test

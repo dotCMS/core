@@ -98,9 +98,9 @@
 			</div>
          
             <div style="padding:10px;margin:auto;width:80%;">
-                <label for="showAllUsers"><input type="radio" onclick="filterUsers(this)" dojoType="dijit.form.CheckBox" value="all" checked="true" name="showUsers" id="showAllUsers"> <%= LanguageUtil.get(pageContext, "All") %> </label>&nbsp; &nbsp;
-                <label for="showFrontEndUsers"><input type="radio" onclick="filterUsers(this)" dojoType="dijit.form.CheckBox" value="frontEnd" name="showUsers" id="showFrontEndUsers"> <%= LanguageUtil.get(pageContext, "user.list.filter.frontend") %> </label>&nbsp; &nbsp;
-                <label for="showBackEndUsers"><input type="radio" onclick="filterUsers(this)" dojoType="dijit.form.CheckBox" value="backEnd" name="showUsers" id="showBackEndUsers"> <%= LanguageUtil.get(pageContext, "user.list.filter.backend") %> </label>
+                <label for="showAllUsers"><input type="radio" onclick="filterUsers(this)" dojoType="dijit.form.RadioButton" value="all" checked="true" name="showUsers" id="showAllUsers"> <%= LanguageUtil.get(pageContext, "All") %> </label>&nbsp; &nbsp;
+                <label for="showFrontEndUsers"><input type="radio" onclick="filterUsers(this)" dojoType="dijit.form.RadioButton" value="frontEnd" name="showUsers" id="showFrontEndUsers"> <%= LanguageUtil.get(pageContext, "user.list.filter.frontend") %> </label>&nbsp; &nbsp;
+                <label for="showBackEndUsers"><input type="radio" onclick="filterUsers(this)" dojoType="dijit.form.RadioButton" value="backEnd" name="showUsers" id="showBackEndUsers"> <%= LanguageUtil.get(pageContext, "user.list.filter.backend") %> </label>
             </div>
          
          
@@ -212,11 +212,11 @@
                                       </tr>
                                       <tr>
                                           <th><%= LanguageUtil.get(pageContext, "Password") %>:</th>
-                                          <td><input id="password" type="password" onkeyup="userPasswordChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" autocomplete="off" /></td>
+                                          <td><input id="password" type="password" onkeyup="userPasswordChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" autocomplete="new-password" /></td>
                                       </tr>
                                       <tr>
                                           <th><%= LanguageUtil.get(pageContext, "Password-Again") %>:</th>
-                                          <td><input id="passwordCheck" type="password" onkeyup="userPasswordChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" autocomplete="off"/></td>
+                                          <td><input id="passwordCheck" type="password" onkeyup="userPasswordChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" autocomplete="new-password" /></td>
                                       </tr>
                                     <tr>
                                         <th><%= LanguageUtil.get(pageContext, "Last-Login") %>:</th>

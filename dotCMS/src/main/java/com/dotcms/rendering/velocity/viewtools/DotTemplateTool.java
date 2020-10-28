@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.viewtools;
 
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
@@ -27,6 +28,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
@@ -118,12 +120,16 @@ public class DotTemplateTool implements ViewTool {
         }
 
         TemplateLayout layout = layoutCache.getIfPresent(key);
-
         if(layout == null) {
             layout = getLayout(themeInode, isPreview, getDrawedBody(themeInode, user));
         }
 
         return layout;
+    }
+
+    public static void removeFromLayoutCache(final String templateInode){
+        layoutCache.invalidate(templateInode + false);
+        layoutCache.invalidate(templateInode + true);
     }
 
     private static DrawedBody getDrawedBody(String themeInode, User user) throws DotDataException, DotSecurityException {
@@ -186,15 +192,31 @@ public class DotTemplateTool implements ViewTool {
             throw new RuntimeException("Template with inode: " + themeInode + " has not drawedBody");
         }
 
+        layout = getTemplateLayout(isPreview, drawedBodyAsString);
+
+        layout.setTitle(drawedBody.getTitle());
+        layoutCache.put(key, layout);
+
+        return layout;
+    }
+
+    public static TemplateLayout getTemplateLayout(String drawedBodyAsString) {
+        TemplateLayout layout;
+        try {
+            layout = getTemplateLayoutFromJSON(drawedBodyAsString);
+        } catch (IOException e) {
+            layout = DesignTemplateUtil.getDesignParameters(drawedBodyAsString, false);
+        }
+        return layout;
+    }
+
+    private static TemplateLayout getTemplateLayout(Boolean isPreview, String drawedBodyAsString) {
+        TemplateLayout layout;
         try {
             layout = getTemplateLayoutFromJSON(drawedBodyAsString);
         } catch (IOException e) {
             layout = DesignTemplateUtil.getDesignParameters(drawedBodyAsString, isPreview);
         }
-
-        layout.setTitle(drawedBody.getTitle());
-        layoutCache.put(key, layout);
-
         return layout;
     }
 
@@ -330,4 +352,32 @@ public class DotTemplateTool implements ViewTool {
         return themeMap;
     }
 
+    public static Map<String, Long> getMaxUUID(final Template template){
+        if (template.isDrawed()) {
+
+            if (template.getDrawedBody() == null) {
+                return new HashMap<>();
+            }
+
+            final TemplateLayout templateLayout = DotTemplateTool.getTemplateLayout(template.getDrawedBody());
+            final Set<ContainerUUID> containersUUID = templateLayout.getContainersUUID();
+
+            final Map<String, Long> result = new HashMap<>();
+
+            for (final ContainerUUID containerUUID : containersUUID) {
+                final Long maxUUID = result.get(containerUUID.getIdentifier());
+                final long uuid = Long.parseLong(containerUUID.getUUID());
+
+                if (maxUUID == null ) {
+                    result.put(containerUUID.getIdentifier(), uuid);
+                } else {
+                    result.put(containerUUID.getIdentifier(), maxUUID > uuid ? maxUUID : uuid);
+                }
+            }
+
+            return result;
+        } else {
+            return new HashMap<>();
+        }
+    }
 }

@@ -4,7 +4,6 @@ import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.util.WebKeys.DOTCMS_PAGINATION_LINKS;
 import static com.dotmarketing.util.WebKeys.DOTCMS_PAGINATION_ROWS;
 
-import javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.Paginator;
@@ -13,11 +12,18 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import com.liferay.util.StringUtil;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.Response;
 import org.apache.commons.lang.StringUtils;
 
 /**
@@ -134,6 +140,56 @@ public class PaginationUtil {
 
 		return Response.
 				ok(new ResponseEntityView((Object) items))
+				.header(LINK_HEADER_NAME, linkHeaderValue)
+				.header(PAGINATION_PER_PAGE_HEADER_NAME, perPageValue)
+				.header(PAGINATION_CURRENT_PAGE_HEADER_NAME, pageValue)
+				.header(PAGINATION_MAX_LINK_PAGES_HEADER_NAME, nLinks)
+				.header(PAGINATION_TOTAL_ENTRIES_HEADER_NAME, totalRecords)
+				.build();
+	}
+
+	/**
+	 * Typically our Pagination is directly wrapped into a ResponseEntityView
+	 * But if we had a more complex situation where the paginated item are meant to live within a nested level in our json object?
+	 * This Method comes to solve that problem.
+	 * Return a pagination's response
+	 *
+	 * @param req
+	 * @param user Login User
+	 * @param filter
+	 * @param page Page to return
+	 * @param perPage Number of items by page
+	 * @param orderBy Field name to order by
+	 * @param direction Order direction (ASC, DESC)
+	 * @param function This is function must feed the items into whatever json we want to use.
+	 * @return
+	 */
+	public <T,R> Response getPage(final HttpServletRequest req, final User user, final String filter, final int page,
+			final int perPage, final String orderBy, final OrderDirection direction,
+			final Map<String, Object> extraParams,
+			final Function<PaginatedArrayList<T>, R> function) {
+
+		final int pageValue = page == 0 ? FIRST_PAGE_INDEX : page;
+		final int perPageValue = perPage == 0 ? perPageDefault : perPage;
+		final int minIndex = getMinIndex(pageValue, perPageValue);
+
+		final String sanitizeFilter = filter != null ? SQLUtil.sanitizeParameter(filter) : StringPool.BLANK;
+
+		final Map<String, Object> params = getParameters(sanitizeFilter, orderBy, direction, extraParams);
+
+		PaginatedArrayList items = paginator.getItems(user, perPageValue, minIndex, params);
+
+		if (!UtilMethods.isSet(items)){
+			items = new PaginatedArrayList();
+		}
+
+		final long totalRecords = items.getTotalResults();
+
+		final String linkHeaderValue = getHeaderValue(req.getRequestURI(), sanitizeFilter, pageValue, perPageValue,
+				totalRecords, orderBy, direction, extraParams);
+
+		return Response.
+				ok(new ResponseEntityView(function.apply(items)))
 				.header(LINK_HEADER_NAME, linkHeaderValue)
 				.header(PAGINATION_PER_PAGE_HEADER_NAME, perPageValue)
 				.header(PAGINATION_CURRENT_PAGE_HEADER_NAME, pageValue)

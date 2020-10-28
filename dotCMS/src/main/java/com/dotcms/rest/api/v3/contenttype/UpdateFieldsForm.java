@@ -3,9 +3,9 @@ package com.dotcms.rest.api.v3.contenttype;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotmarketing.util.json.JSONArray;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;

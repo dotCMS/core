@@ -7,6 +7,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -58,6 +59,7 @@ public class SaveContentActionlet extends WorkFlowActionlet {
 
 			final Contentlet contentlet =
 					processor.getContentlet();
+			final User user = processor.getUser();
 
 			Logger.debug(this,
 					()->"Saving the content of the contentlet: " + contentlet.getIdentifier());
@@ -66,9 +68,13 @@ public class SaveContentActionlet extends WorkFlowActionlet {
 
 			checkoutContentlet.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
 
-			final Contentlet contentletNew = (null != processor.getContentletDependencies())?
-					this.contentletAPI.checkin(checkoutContentlet, processor.getContentletDependencies()):
-					this.contentletAPI.checkin(checkoutContentlet, processor.getUser(), false);
+			final ContentletDependencies contentletDependencies = processor.getContentletDependencies();
+			final boolean respectFrontendPermission = contentletDependencies != null ?
+					contentletDependencies.isRespectAnonymousPermissions() : user.isFrontendUser();
+
+			final Contentlet contentletNew = (null != contentletDependencies)?
+					this.contentletAPI.checkin(checkoutContentlet, contentletDependencies):
+					this.contentletAPI.checkin(checkoutContentlet, processor.getUser(), respectFrontendPermission);
 
 			this.setIndexPolicy(contentlet, contentletNew);
 			this.setSpecialVariables(contentlet, contentletNew);

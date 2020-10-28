@@ -4,13 +4,10 @@ import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.util.NumberUtil.toInt;
 
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.license.LicenseLevel;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
@@ -18,7 +15,6 @@ import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.rest.*;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -49,6 +45,10 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 	 *         2 --> The contentlet object will contain the related contentlets, which in turn will contain the identifiers of their related contentlets
 	 *         3 --> The contentlet object will contain the related contentlets, which in turn will contain a list of their related contentlets
 	 *         null --> Relationships will not be sent in the response
+	 * @param liveParam
+	 * @param allCategoriesInfo <code>true</code> to return all fields for
+	 * the categories associated to the content (key, name, description), <code>false</code>
+	 * to return only categories names.
 	 * @return
 	 * @throws DotDataException
 	 * @throws DotSecurityException
@@ -59,7 +59,8 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 	public Response search(@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response, final String esQueryStr,
 			@QueryParam("depth") final String depthParam,
-			@QueryParam("live") final boolean liveParam)
+			@QueryParam("live") final boolean liveParam,
+			@QueryParam("allCategoriesInfo") final boolean allCategoriesInfo)
 			throws DotDataException, DotSecurityException {
 
 		final InitDataObject initData = webResource.init(null, true, request, false, null);
@@ -102,15 +103,16 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 				try {
 
 					final JSONObject jsonObject = ContentResource
-							.contentletToJSON(c, request, response, "false", user);
+							.contentletToJSON(c, request, response,
+									"false", user, allCategoriesInfo);
 					jsonCons.put(jsonObject);
 
 					//load relationships
 					if (depth!= -1){
 						ContentResource
-								.addRelationshipsToJSON(request, response, "false", user, depth,
-										true, c,
-										jsonObject, null, -1, liveParam);
+								.addRelationshipsToJSON(request, response,
+										"false", user, depth, true, c,
+										jsonObject, null, -1, liveParam, allCategoriesInfo);
 					}
 
 				} catch (Exception e) {
@@ -146,9 +148,11 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 	@Path("search")
 	public Response searchPost(@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response, final String esQuery,
-			@QueryParam("depth") final String depthParam, @QueryParam("live") final boolean liveParam)
+			@QueryParam("depth") final String depthParam,
+			@QueryParam("live") final boolean liveParam,
+			@QueryParam("allCategoriesInfo") final boolean allCategoriesInfo)
 			throws DotDataException, DotSecurityException {
-		return search(request, response, esQuery, depthParam, liveParam);
+		return search(request, response, esQuery, depthParam, liveParam, allCategoriesInfo);
 	}
 	
 	@GET

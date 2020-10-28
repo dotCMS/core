@@ -33,6 +33,8 @@ import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
 import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.model.transform.WorkflowSchemeTransformer;
+import com.dotmarketing.portlets.workflows.model.transform.WorkflowTaskTransformer;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
@@ -204,11 +206,11 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		} else if (obj instanceof WorkflowActionClassParameter) {
 			return this.convertActionClassParameter(map);
 		} else if (obj instanceof WorkflowScheme) {
-			return this.convertScheme(map);
+			return WorkflowSchemeTransformer.transform(map);
 		} else if (obj instanceof WorkflowHistory) {
 			return this.convertHistory(map);
 		} else if (obj instanceof WorkflowTask) {
-			return this.convertTask(map);
+			return WorkflowTaskTransformer.transform(map);
 		} else {
 			return this.convert(obj, map);
 		}
@@ -493,6 +495,30 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		db.setSQL("delete from workflow_history where id = ?");
 		db.addParam(history.getId());
 		db.loadResult();
+	}
+
+	@Override
+	public int deleteWorkflowHistoryOldVersions(final Date olderThan) throws DotDataException {
+
+		DotConnect dotConnect = new DotConnect();
+
+		//Get the count of the workflow history records before deleting.
+		String countSQL = "select count(*) as count from workflow_history";
+		dotConnect.setSQL(countSQL);
+		List<Map<String, String>> result = dotConnect.loadResults();
+		final int before = Integer.parseInt(result.get(0).get("count"));
+
+		// Delete the records using a given date
+		dotConnect.setSQL("delete from workflow_history where creation_date < ?");
+		dotConnect.addParam(olderThan);
+		dotConnect.loadResult();
+
+		//Get the count of the workflow history records after deleting.
+		dotConnect.setSQL(countSQL);
+		result = dotConnect.loadResults();
+		final int after = Integer.parseInt(result.get(0).get("count"));
+
+		return before - after;
 	}
 
 	@Override
@@ -2175,7 +2201,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	private void setHistoryDBParams(WorkflowHistory history, DotConnect db) {
 		db.addParam(history.getCreationDate());
 		db.addParam(history.getMadeBy());
-		db.addParam(history.getChangeDescription());
+		db.addParam(history.getRawChangeDescription());
 		db.addParam(history.getWorkflowtaskId());
 		db.addParam(history.getActionId());
 		db.addParam(history.getStepId());

@@ -412,8 +412,8 @@ public final class WebKeys {
 	public static final String REDIRECT_AFTER_LOGIN = "REDIRECT_AFTER_LOGIN";
     public static final String DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE = "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE";
 
-	// CMS USER LOGIN
-    public static final String CMS_USER = "cms.user";
+	
+    public static final String CMS_USER = com.liferay.portal.util.WebKeys.USER;
     public static final String CMS_PERSONALIZATION_BEAN = "cms.user.personalization";
     public static final String CMS_USER_REGISTRATIONS = "cms.user.registrations";
     public static final String CMS_CURRENT_PAGE = "cms.current.page";

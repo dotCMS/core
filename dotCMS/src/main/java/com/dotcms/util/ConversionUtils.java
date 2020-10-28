@@ -138,6 +138,39 @@ public class ConversionUtils implements Serializable {
 	}
 
 	/**
+	 * Converts 1kb to 1024
+	 * Converts 1mb to 1024 * 1024
+	 * Converts 1gb to 1024 * 1024 * 1024
+	 * @param humanDisplaySize String human display size such as 100, 1kb, 2mb, 3gb, etc
+	 * @param defaultLong long default long in case the humanDisplaySize can not be parsed
+	 * @return long
+	 */
+	public static long toLongFromByteCountHumanDisplaySize (final String humanDisplaySize, final long defaultLong) {
+
+		if (UtilMethods.isSet(humanDisplaySize) && humanDisplaySize.length() > 2) {
+
+			final String postfix     = humanDisplaySize.substring(humanDisplaySize.length()-2);
+			final String stringValue = humanDisplaySize.substring(0, humanDisplaySize.length()-2);
+			final long  value        = toLong(stringValue, defaultLong);
+			switch (postfix.toLowerCase()) {
+
+				case "kb":
+					return value != defaultLong?  value * 1024: defaultLong;
+
+				case "mb":
+					return value != defaultLong?  value * 1024 * 1024: defaultLong;
+
+				case "gb":
+					return value != defaultLong?  value * 1024 * 1024 * 1024: defaultLong;
+				default:
+					return toLong(humanDisplaySize, defaultLong);
+			}
+		}
+
+		return toLong(humanDisplaySize, defaultLong);
+	}
+
+	/**
 	 * Converts the specified input value into an {@code long}. The input value
 	 * can be a String or an instance of {@link Number}.
 	 * @param input
@@ -204,6 +237,30 @@ public class ConversionUtils implements Serializable {
 				return Integer.parseInt(CharSequence.class.cast(input).toString());
 			} else if (input instanceof Number) {
 				return Number.class.cast(input).intValue();
+			} else {
+				return defaultInt;
+			}
+		} catch (NumberFormatException e) {
+			return defaultInt;
+		}
+	}
+
+	/**
+	 * Converts the specified input value into an {@code float}. The input value
+	 * can be a String or an instance of {@link Number}.
+	 *
+	 * @param input
+	 *            - The value to convert.
+	 * @param defaultInt
+	 *            - The default value in case the input cannot be converted.
+	 * @return The input as {@code int}, or the default value.
+	 */
+	public static float toFloat(final Object input, final float defaultInt) {
+		try {
+			if (input instanceof CharSequence) {
+				return Float.parseFloat(CharSequence.class.cast(input).toString());
+			} else if (input instanceof Number) {
+				return Number.class.cast(input).floatValue();
 			} else {
 				return defaultInt;
 			}

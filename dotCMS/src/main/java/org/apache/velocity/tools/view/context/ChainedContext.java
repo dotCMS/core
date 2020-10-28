@@ -26,6 +26,7 @@ import javax.servlet.ServletContext;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
+import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
 
 /**
  * <p>Velocity context implementation specific to the Servlet environment.</p>
@@ -72,8 +73,6 @@ public class ChainedContext extends VelocityContext implements ViewContext
     private HttpServletResponse response;
     private HttpSession session;
 
-    /* the servlet context */
-    private ServletContext application;
 
     /* the velocity engine being used */
     private VelocityEngine velocity;
@@ -87,31 +86,34 @@ public class ChainedContext extends VelocityContext implements ViewContext
                           HttpServletResponse response,
                           ServletContext application)
     {
-        this(ctx, null, request, response, application);
+        this(ctx, null, request, response);
     }
 
 
     public ChainedContext(VelocityEngine velocity,
                           HttpServletRequest request,
-                          HttpServletResponse response,
-                          ServletContext application)
+                          HttpServletResponse response)
     {
-        this(null, velocity, request, response, application);
+        this(null, velocity, request, response );
     }
-    
+    public ChainedContext(VelocityEngine velocity,
+                    HttpServletRequest request,
+                    HttpServletResponse response,ServletContext application)
+    {
+        this(null, velocity, request, response );
+    }
     public ChainedContext(Context ctx,
                           VelocityEngine velocity,
                           HttpServletRequest request,
-                          HttpServletResponse response,
-                          ServletContext application)
+                          HttpServletResponse response)
     {
         super(null, ctx);
 
         this.velocity = velocity;
-        this.request = request;
+        this.request = VelocityRequestWrapper.wrapVelocityRequest(request);
         this.response = response;
         this.session = request.getSession(false);
-        this.application = application;
+
     }
 
 
@@ -173,10 +175,7 @@ public class ChainedContext extends VelocityContext implements ViewContext
         {
             return session;
         }
-        else if (key.equals(APPLICATION))
-        {
-            return application;
-        }
+
 
         /* try the local hashtable */
         o = super.internalGet(key);
@@ -215,10 +214,7 @@ public class ChainedContext extends VelocityContext implements ViewContext
                 }
             }
 
-            if (o == null)
-            {
-                o = application.getAttribute(key);
-            }
+
         }
         return o;
     }
@@ -245,7 +241,7 @@ public class ChainedContext extends VelocityContext implements ViewContext
      */
     public ServletContext getServletContext()
     {
-        return application;
+        return null;
     }
 
     /**

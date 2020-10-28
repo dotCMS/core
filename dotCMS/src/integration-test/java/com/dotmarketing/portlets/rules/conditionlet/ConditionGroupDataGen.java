@@ -5,6 +5,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.LogicalOperator;
+import com.dotmarketing.portlets.rules.model.Rule;
 import com.liferay.portal.model.User;
 
 /**
@@ -48,6 +49,12 @@ public class ConditionGroupDataGen {
         }
         return group;
     }
+
+    public ConditionGroupDataGen rule(final Rule rule) {
+        this.ruleId = rule.getId();
+        return this;
+    }
+
 
     public ConditionGroupDataGen ruleId(String ruleId) {
         this.ruleId = ruleId;

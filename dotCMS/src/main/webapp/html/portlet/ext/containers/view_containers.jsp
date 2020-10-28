@@ -420,9 +420,9 @@ function processDelete(inode, referer) {
 	<div class="yui-u" style="text-align:center;">
 		<%= LanguageUtil.get(pageContext, "Viewing") %>  <%= minIndex+1 %> -
 		<%
-			if (maxIndex > (minIndex + containersSize)) {
+			if (maxIndex > containersSize) {
 		%>
-			<%= minIndex + containersSize %>
+			<%= containersSize %>
 		<%
 			} else {
 		%>
@@ -438,14 +438,14 @@ function processDelete(inode, referer) {
 		<%
 			} else {
 		%>
-			<%= minIndex + containersSize %>
+			<%= containersSize %>
 		<%
 			}
 		%>
 	</div>
 
 	<div class="yui-u" style="text-align:right;">
-		<% if (maxIndex < (minIndex + containersSize)) { %>
+		<% if (maxIndex < containersSize) { %>
 			<button dojoType="dijit.form.Button" onClick="window.location.href = '<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/containers/view_containers" /><portlet:param name="pageNumber" value="<%= String.valueOf(pageNumber + 1) %>" /><portlet:param name="orderby" value="<%= orderby %>" /><portlet:param name="fromAssetId" value="<%= ((com.dotmarketing.beans.PermissionAsset) containers.get(containers.size() - 1)).getAsset().getIdentifier() %>" /><portlet:param name="show" value="next" /></portlet:renderURL>';" iconClass="nextIcon">
 				<%= LanguageUtil.get(pageContext, "Next") %>
 			</button>

@@ -68,9 +68,6 @@ public class Event extends Contentlet {
     	
     }
     
-	public String getTitle() {
-		return getStringProperty("title");
-	}
 
 	public void setTitle(String title) {
 		setStringProperty("title", title);

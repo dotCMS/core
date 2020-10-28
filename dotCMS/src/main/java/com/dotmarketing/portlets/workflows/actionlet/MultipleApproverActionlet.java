@@ -1,12 +1,5 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.StringTokenizer;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.workflows.model.MultiEmailParameter;
@@ -14,17 +7,27 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistoryState;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistoryType;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.portlets.workflows.util.WorkflowEmailUtil;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import com.liferay.util.Validator;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
+
+/**
+ * Based on a list of email, userid or roles won't continue the pipeline until all necessary users approve the workflow
+ */
 public class MultipleApproverActionlet extends WorkFlowActionlet {
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 
 	public String getName() {
@@ -43,17 +46,16 @@ public class MultipleApproverActionlet extends WorkFlowActionlet {
 	public void executeAction(WorkflowProcessor processor, Map<String, WorkflowActionClassParameter> params)
 			throws WorkflowActionFailureException {
 
-		String userIds = (params.get("approvers") == null) ? "" : params.get("approvers").getValue();
-
-		String emailSubject = null;
-		String emailBody = null;
-		boolean isHtml = false;
+		final String userIds = (params.get("approvers") == null) ? "" : params.get("approvers").getValue();
+		String emailSubject  = null;
+		String emailBody     = null;
+		boolean isHtml       = false;
 
 		if (params.get("emailSubject") != null) {
 			emailSubject = params.get("emailSubject").getValue();
 		}
 		if (params.get("emailBody") != null) {
-			emailBody = params.get("emailBody").getValue();
+			emailBody    = params.get("emailBody").getValue();
 		}
 
 		if (params.get("isHtml") != null) {
@@ -64,54 +66,60 @@ public class MultipleApproverActionlet extends WorkFlowActionlet {
 			}
 		}
 
-		Set<User> requiredApprovers = new HashSet<User>();
-		Set<User> hasApproved = new HashSet<User>();
-		StringTokenizer st = new StringTokenizer(userIds, ", ");
-		while (st.hasMoreTokens()) {
-			String x = st.nextToken();
+		final Set<User> requiredApprovers = new HashSet<>();
+		final Set<User> hasApproved       = new HashSet<>();
+		final StringTokenizer userIdTokenizer = new StringTokenizer(userIds, StringPool.COMMA);
+		while (userIdTokenizer.hasMoreTokens()) {
 
-			if (Validator.isEmailAddress(x)) {
+			final String userIdToken = userIdTokenizer.nextToken();
+
+			if (Validator.isEmailAddress(userIdToken)) {
 				try {
-					User u = APILocator.getUserAPI().loadByUserByEmail(x, APILocator.getUserAPI().getSystemUser(), false);
 
-					requiredApprovers.add(u);
+					final User user = APILocator.getUserAPI().loadByUserByEmail(userIdToken,
+							APILocator.getUserAPI().getSystemUser(), false);
+
+					requiredApprovers.add(user);
 				} catch (Exception e) {
-					Logger.error(this.getClass(), "Unable to find user with email:" + x);
+
+					Logger.warnAndDebug(this.getClass(), "Unable to find user with email:" + userIdToken
+							+ ", message: " + e.getMessage(), e);
 				}
 			} else {
 				try {
 
-					User u = APILocator.getUserAPI().loadUserById(x, APILocator.getUserAPI().getSystemUser(), false);
-					requiredApprovers.add(u);
+					final User user = APILocator.getUserAPI().loadUserById(userIdToken,
+							APILocator.getUserAPI().getSystemUser(), false);
+					requiredApprovers.add(user);
 				} catch (Exception e) {
-					Logger.error(this.getClass(), "Unable to find user with userID:" + x);
+					Logger.error(this.getClass(), "Unable to find user with userID:" + userIdToken);
 				}
 
 			}
 		}
+
 		List<WorkflowHistory> histories = processor.getHistory();
 		
 		// add this approval to the history
-		WorkflowHistory h = new WorkflowHistory();
-		h.setActionId(processor.getAction().getId());
-		h.setMadeBy(processor.getUser().getUserId());
-		if(histories == null){
-			histories = new ArrayList<WorkflowHistory>();
-			histories.add(h);
-		}else histories.add(h);
+		final WorkflowHistory workflowHistory = new WorkflowHistory();
+		workflowHistory.setActionId(processor.getAction().getId());
+		workflowHistory.setMadeBy(processor.getUser().getUserId());
+		histories = histories == null?new ArrayList<>():histories;
+		histories.add(workflowHistory);
 		
-		for (User u : requiredApprovers) {
+		for (final User requiredApprover : requiredApprovers) {
+			for (final WorkflowHistory history : histories) {
 
-			for (WorkflowHistory history : histories) {
-				if (history.getActionId().equals(processor.getAction().getId())) {
-					if (u.getUserId().equals(history.getMadeBy())) {
-						hasApproved.add(u);
+				final Map<String, Object> changeMap = history.getChangeMap();
+				if (history.getActionId().equals(processor.getAction().getId()) && // if it is the action id and it is not reset.
+						!WorkflowHistoryState.RESET.name().equals(changeMap.get("state"))) {
+
+					if (requiredApprover.getUserId().equals(history.getMadeBy())) {
+
+						hasApproved.add(requiredApprover);
 					}
-
 				}
-
 			}
-
 		}
 		
 		if (hasApproved.size() < requiredApprovers.size()) {
@@ -119,40 +127,33 @@ public class MultipleApproverActionlet extends WorkFlowActionlet {
 			shouldStop = true;
 			// keep the workflow process on the same step
 			processor.setNextStep( processor.getStep());
-			
-			
+
 			// only send emails to users who have not approved
-			List<String> emails = new ArrayList<String>();
-			for (User u : requiredApprovers) {
-				if(!hasApproved.contains(u)){
-					emails.add(u.getEmailAddress());					
+			final List<String> emails = new ArrayList<>();
+			for (final User user : requiredApprovers) {
+				if(!hasApproved.contains(user)){
+					emails.add(user.getEmailAddress());
 				}
 			}
 			
 			// to assign it for next assignee
-			for (User u : requiredApprovers) {
-				if(!hasApproved.contains(u)){					
+			for (final User requiredApprover : requiredApprovers) {
+				if(!hasApproved.contains(requiredApprover)){
 					try {
-	                   processor.setNextAssign(APILocator.getRoleAPI().getUserRole(u));
+	                   processor.setNextAssign(APILocator.getRoleAPI().getUserRole(requiredApprover));
 	                   break;
 	                } catch (DotDataException e) {
 	                   Logger.error(MultipleApproverActionlet.class,e.getMessage(),e);
 	                }
 				}
 			}
-			
-			
-			
-			
-			String[] emailsToSend = (String[]) emails.toArray(new String[emails.size()]);
 
-			
+			final String[] emailsToSend = emails.toArray(new String[emails.size()]);
 			processor.setWorkflowMessage(emailSubject);
-			
 			WorkflowEmailUtil.sendWorkflowEmail(processor, emailsToSend, emailSubject, emailBody, isHtml);
-
 		}
 
+		processor.getContextMap().put("type", WorkflowHistoryType.APPROVAL);
 	}
 
 	@Override
@@ -167,7 +168,7 @@ public class MultipleApproverActionlet extends WorkFlowActionlet {
 		if (paramList == null) {
 			synchronized (this.getClass()) {
 				if (paramList == null) {
-					paramList = new ArrayList<WorkflowActionletParameter>();
+					paramList = new ArrayList<>();
 					paramList.add(new MultiEmailParameter("approvers", "User IDs or Emails", null, true));
 					paramList.add(new WorkflowActionletParameter("emailSubject", "Email Subject", "Multiple Approval Required", false));
 					paramList.add(new WorkflowActionletParameter("emailBody", "Email Message", null, false));

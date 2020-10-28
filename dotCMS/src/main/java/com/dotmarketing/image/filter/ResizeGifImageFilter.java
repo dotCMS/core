@@ -70,8 +70,9 @@ public class ResizeGifImageFilter extends ImageFilter {
     final GifDecoder decoder = new GifDecoder();
     decoder.read(inputFile.getAbsolutePath());
     if(decoder.getFrameCount()==1) {
-      BufferedImage output = resampler.filter(ImageIO.read(inputFile), null);
-      ImageIO.write(output, "png", outputFile);
+      BufferedImage dst = resampler.filter(ImageIO.read(inputFile), null);
+      ImageIO.write(dst, "png", outputFile);
+      dst.flush();
       return;
     }
     

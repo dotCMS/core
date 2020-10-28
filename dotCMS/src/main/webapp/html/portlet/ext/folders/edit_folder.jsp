@@ -60,10 +60,6 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 				alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.folder.name.required.url")) %>');
 				return false;
 			}
-			else if (document.getElementById("titleField").value.indexOf(" ")>-1) {
-				alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.folder.name.no.space.in.url")) %>');
-				return false;
-			}
 		}
 		form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/folders/edit_folder" /></portlet:actionURL>';
 		submitForm(form);
@@ -84,9 +80,9 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 		title = title.replace(/-{2,}/g, "-");
 		ele.value = title;
 		<% if (parentFolder != null) { %>
-		 	dojo.byId("pathToFolder").value = "<%= APILocator.getIdentifierAPI().find(parentFolder).getPath() %>"+title;
+		 	dojo.byId("pathToFolder").innerText = "<%= APILocator.getIdentifierAPI().find(parentFolder).getPath() %>"+title;
 		<% } else { %>
-		 	dojo.byId("pathToFolder").value = "/"+title;
+		 	dojo.byId("pathToFolder").innerText = "/"+title;
 		<% } %>
 	}
 
@@ -164,21 +160,21 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 				<dl>
 					<%if(InodeUtils.isSet(folder.getInode())){%>
 						<dt><%= LanguageUtil.get(pageContext, "Path-To-Folder") %>:</dt>
-						<dd>
+						<dd style="width:80%">
 							<% if (parentFolder != null) { %>
-								<input id="pathToFolder" readonly="true" style="width:250px;border:0;" value="<%= APILocator.getIdentifierAPI().find(parentFolder).getPath() %><%= folder.getName() %>" />
+								<div id="pathToFolder" style="word-break: break-all;"><%= APILocator.getIdentifierAPI().find(parentFolder).getPath() %><%= folder.getName() %></div>
 							<% } else { %>
-								<input id="pathToFolder" readonly="true" style="width:250px;border:0;" value="/<%= folder.getName() %>" />
+								<div id="pathToFolder" style="word-break: break-all;">/<%= folder.getName() %></div>
 							<% } %>
 							<!--<html:hidden property="name" />-->
 						</dd>
 					<%}else{%>
 						<dt><%= LanguageUtil.get(pageContext, "Path-To-Folder") %>:</dt>
-							<dd>
+							<dd style="width:80%">
 								<% if (parentFolder != null) { %>
-									<input id="pathToFolder" readonly="true" style="width:250px;border:0;" value="<%= APILocator.getIdentifierAPI().find(parentFolder).getPath() %>" />
+									<div id="pathToFolder" style="word-break: break-all;"><%= APILocator.getIdentifierAPI().find(parentFolder).getPath() %></div>
 								<% } else { %>
-									<input id="pathToFolder" readonly="true" style="width:250px;border:0;" value="/" />
+									<div id="pathToFolder" style="word-break: break-all;">/</div>
 								<% } %>
 								<!--<html:hidden property="name" />-->
 							</dd>
@@ -272,4 +268,3 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 
 </liferay:box>
 </html:form>
-

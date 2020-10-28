@@ -90,7 +90,9 @@
 		relationName = relationship.getParentRelationName();
         isParent="no";
 	}
-	
+
+	// issue-19204
+	double randomNumber = Math.random();
 %>
     <style type="text/css" media="all">
         @import url(/html/portlet/ext/contentlet/field/relationship_field.css);
@@ -144,14 +146,14 @@
 
 		//Function used to render language id
 		function <%= relationJsName %>_lang(o) {
-			var contentletLangCode = '<%= langAPI.getLanguageCodeAndCountry(contentlet.getLanguageId(),null)%>';
-            var currentLanguageIndex = getCurrentLanguageIndex(o);
-			var lang = '';
-			var result = '';
-            var anchorValue = "";
-            var imgLangName = '';
+			if (o != null  && dijit.byId("langcombo")) {
+			    var contentletLangCode = '<%= langAPI.getLanguageCodeAndCountry(contentlet.getLanguageId(),null)%>';
+                var currentLanguageIndex = getCurrentLanguageIndex(o);
+                var lang = '';
+                var result = '';
+                var anchorValue = "";
+                var imgLangName = '';
 
-			if (o != null) {
                 result = '<div class="relationLanguageFlag" id="' + o.id + '"><div value="' + currentLanguageIndex + '" data-dojo-type="dijit/form/Select">';
 
 				for(var sibIndex = 0; sibIndex < o['siblings'].length ; sibIndex++){
@@ -456,11 +458,13 @@
             var langTD = document.createElement("td");
             row.appendChild(langTD);
             // displays the publish/unpublish/archive status of the content and language flag, if multiple languages exists.
-			<%if(langs.size() > 1) {%>	
-			    langTD.style.whiteSpace="nowrap";
-                langTD.style.textAlign = 'right';
-				langTD.innerHTML = <%= relationJsName %>_lang(item);
-                setTimeout(function () { dojo.parser.parse(item.id); }, 0);
+			<%if(langs.size() > 1) {%>
+			    if(dijit.byId("langcombo")){
+                    langTD.style.whiteSpace="nowrap";
+                    langTD.style.textAlign = 'right';
+                    langTD.innerHTML = <%= relationJsName %>_lang(item);
+                    setTimeout(function () { dojo.parser.parse(item.id); }, 0);
+                }
 			<%}%>
 		    
 			// displays the publish/unpublish/archive status of the content only.
@@ -702,10 +706,10 @@
          useRelateContentOnSelect="true"
 		 selectButtonLabel='<%= LanguageUtil.get(pageContext, "Relate")%>'
 	     title="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %>" 
-	     counter_radio="<%= System.currentTimeMillis() %>" 
-	     searchCounter="<%= System.currentTimeMillis() %>" 
+	     counter_radio="<%= randomNumber %>"
+	     searchCounter="<%= randomNumber %>"
 	     contentletLanguageId="<%=contentlet.getLanguageId() %>"
-	     dialogCounter="<%= System.currentTimeMillis() %>">
+	     dialogCounter="<%= randomNumber %>">
 	 </div>
 
 

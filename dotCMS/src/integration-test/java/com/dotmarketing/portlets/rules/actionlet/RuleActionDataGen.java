@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.rules.actionlet;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotcms.enterprise.rules.RulesAPI;
+import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.liferay.portal.model.User;
 
@@ -62,6 +63,11 @@ public class RuleActionDataGen {
 
     public RuleActionDataGen ruleId(String ruleId) {
         this.ruleId = ruleId;
+        return this;
+    }
+
+    public RuleActionDataGen rule(final Rule rule) {
+        this.ruleId = rule.getId();
         return this;
     }
 }

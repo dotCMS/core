@@ -1,0 +1,27 @@
+---
+name: "app-descriptor"
+description: "App descriptor."
+iconUrl: "/test.png"
+allowExtraParameters: false
+params:
+  param1:
+    value: "default-value"
+    hidden: false
+    type: "STRING"
+    label: "label"
+    hint: "hint"
+    required: true
+  param2:
+    value: "v2"
+    hidden: false
+    type: "STRING"
+    label: "label"
+    hint: "hint"
+    required: true
+  hiddenParam:
+    value: "default-value"
+    hidden: true
+    type: "STRING"
+    label: "label"
+    hint: "hint"
+    required: true

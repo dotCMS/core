@@ -1,10 +1,21 @@
 package com.dotmarketing.filters;
 
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.filters.Constants.CMS_FILTER_QUERY_STRING_OVERRIDE;
+import static com.dotmarketing.filters.Constants.CMS_FILTER_URI_OVERRIDE;
+import static java.util.stream.Collectors.toSet;
+
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.Versionable;
 import com.dotmarketing.cms.urlmap.UrlMapContext;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.CMSFilter.IAm;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -17,20 +28,20 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.Xss;
-
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.util.List;
-
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.filters.Constants.CMS_FILTER_QUERY_STRING_OVERRIDE;
-import static com.dotmarketing.filters.Constants.CMS_FILTER_URI_OVERRIDE;
-
-import com.dotcms.contenttype.model.type.BaseContentType;
 
 /**
  * Utilitary class used by the CMS Filter
@@ -45,8 +56,10 @@ public class CMSUrlUtil {
 	private static final String NOT_FOUND = "NOTFOUND";
 	private static final String UNABLE_TO_FIND = "Unable to find ";
 
-	private static final String [] VANITY_FILTERED_LIST_ARRAY =
-			new String[] {"/html","/api","/dotAdmin","/dwr","/webdav","/dA","/contentAsset","/c/","/DOTSASS","/DOTLESS"};
+	public static final Set<String> BACKEND_FILTERED_COLLECTION =
+			Stream.of("/api", "/webdav", "/dA", "/c/", "/contentAsset", "/DOTSASS", "/DOTLESS",
+					"/html", "/dotAdmin", "/custom-elements","/dotcms-webcomponents","/dwr")
+					.collect(Collectors.collectingAndThen(toSet(), Collections::unmodifiableSet));
 
 	/**
 	 * Get the CmsUrlUtil singleton instance
@@ -147,9 +160,9 @@ public class CMSUrlUtil {
 				List<Language> languages = APILocator.getLanguageAPI().getLanguages();
 
 				//First try with the given language
-				ContentletVersionInfo cinfo = APILocator.getVersionableAPI()
+				Optional<ContentletVersionInfo> cinfo = APILocator.getVersionableAPI()
 						.getContentletVersionInfo(id.getId(), languageId);
-				if (cinfo == null || cinfo.getWorkingInode().equals(NOT_FOUND)) {
+				if (!cinfo.isPresent() || cinfo.get().getWorkingInode().equals(NOT_FOUND)) {
 
 					for (Language language : languages) {
                         /*
@@ -160,7 +173,7 @@ public class CMSUrlUtil {
 						if (languageId != language.getId()) {
 							cinfo = APILocator.getVersionableAPI()
 									.getContentletVersionInfo(id.getId(), language.getId());
-							if (cinfo != null && !cinfo.getWorkingInode().equals(NOT_FOUND)) {
+							if (cinfo.isPresent() && !cinfo.get().getWorkingInode().equals(NOT_FOUND)) {
 								//Found it
 								break;
 							}
@@ -168,11 +181,11 @@ public class CMSUrlUtil {
 					}
 
 				}
-				if (cinfo == null || cinfo.getWorkingInode().equals(NOT_FOUND)) {
+				if (!cinfo.isPresent() || cinfo.get().getWorkingInode().equals(NOT_FOUND)) {
 					return false;//At this point we know is not a page
 				} else {
 					Contentlet c = APILocator.getContentletAPI()
-							.find(cinfo.getWorkingInode(), APILocator.getUserAPI().getSystemUser(),
+							.find(cinfo.get().getWorkingInode(), APILocator.getUserAPI().getSystemUser(),
 									false);
 					return (c.getStructure().getStructureType()
 							== Structure.STRUCTURE_TYPE_HTMLPAGE);
@@ -192,7 +205,7 @@ public class CMSUrlUtil {
 					APILocator.getUserAPI().getSystemUser());
 
 			return APILocator.getURLMapAPI().isUrlPattern(urlMapContext);
-		} catch (final DotDataException e){
+		} catch (final DotDataException | DotSecurityException e){
 			Logger.error(this.getClass(), e.getMessage());
 			return false;
 		}
@@ -226,10 +239,10 @@ public class CMSUrlUtil {
 
 		if (CONTENTLET.equals(id.getAssetType())) {
 			try {
-				ContentletVersionInfo cinfo = APILocator.getVersionableAPI()
+				Optional<ContentletVersionInfo> cinfo = APILocator.getVersionableAPI()
 						.getContentletVersionInfo(id.getId(), languageId);
 
-				if ((cinfo == null || cinfo.getWorkingInode().equals(NOT_FOUND)) && Config
+				if ((!cinfo.isPresent() || cinfo.get().getWorkingInode().equals(NOT_FOUND)) && Config
 						.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)) {
 					//Get the Default Language
 					Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
@@ -238,11 +251,11 @@ public class CMSUrlUtil {
 							.getContentletVersionInfo(id.getId(), defaultLang.getId());
 				}
 
-				if (cinfo == null || cinfo.getWorkingInode().equals(NOT_FOUND)) {
+				if (!cinfo.isPresent() || cinfo.get().getWorkingInode().equals(NOT_FOUND)) {
 					return false;//At this point we know is not a File Asset
 				} else {
 					Contentlet c = APILocator.getContentletAPI()
-							.find(cinfo.getWorkingInode(), APILocator.getUserAPI().getSystemUser(),
+							.find(cinfo.get().getWorkingInode(), APILocator.getUserAPI().getSystemUser(),
 									false);
 					return (c.getContentType().baseType() == BaseContentType.FILEASSET);
 				}
@@ -288,7 +301,13 @@ public class CMSUrlUtil {
 
 		return false;
 	}
-
+	
+  public boolean isVanityUrl(final String uri,
+      final Host host,
+      final long languageId) {
+    
+    return isVanityUrl(uri, host, APILocator.getLanguageAPI().getLanguage(languageId));
+  }
 	/**
 	 * Indicates if the uri belongs to a VanityUrl
 	 *
@@ -299,9 +318,9 @@ public class CMSUrlUtil {
 	 */
 	public boolean isVanityUrl(final String uri,
 							   final Host host,
-							   final long languageId) {
+							   final Language language) {
 
-		return APILocator.getVanityUrlAPI().isVanityUrl(uri, host, languageId);
+		return APILocator.getVanityUrlAPI().resolveVanityUrl(uri, host, language).isPresent();
 	} // isVanityUrl.
 
 	/**
@@ -315,13 +334,7 @@ public class CMSUrlUtil {
 	public boolean isVanityUrlFiltered(final String url) {
 
 		if (null != url) {
-			for (final String vanityFiltered : VANITY_FILTERED_LIST_ARRAY) {
-
-				if (url.startsWith(vanityFiltered)) {
-
-					return true;
-				}
-			}
+			return BACKEND_FILTERED_COLLECTION.stream().anyMatch(url::startsWith);
 		}
 
 		return false;
@@ -341,23 +354,26 @@ public class CMSUrlUtil {
 		}
 		if (ident.getAssetType().equals(CONTENTLET)) {
 			try {
-				ContentletVersionInfo cinfo = APILocator.getVersionableAPI()
+				Optional<ContentletVersionInfo> cinfo = APILocator.getVersionableAPI()
 						.getContentletVersionInfo(ident.getId(), languageId);
 
 				// If we did not find a version with for given
 				// language lets try with the default language
-				if (cinfo == null && languageId != APILocator.getLanguageAPI().getDefaultLanguage()
+				if (!cinfo.isPresent() && languageId != APILocator.getLanguageAPI().getDefaultLanguage()
 						.getId()) {
 					languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 					cinfo = APILocator.getVersionableAPI()
 							.getContentletVersionInfo(ident.getId(), languageId);
 				}
 
-				Contentlet proxy = new Contentlet();
+				if(!cinfo.isPresent()) {
+					throw new DotDataException("Unable to find file asset contentlet with identifier: "+ ident.getId() + ". Lang:" + languageId);
+				}
 
-				proxy.setInode(cinfo.getWorkingInode());
-				proxy.setIdentifier(cinfo.getIdentifier());
-				proxy.setLanguageId(cinfo.getLang());
+				Contentlet proxy = new Contentlet();
+				proxy.setInode(cinfo.get().getWorkingInode());
+				proxy.setIdentifier(cinfo.get().getIdentifier());
+				proxy.setLanguageId(cinfo.get().getLang());
 				return APILocator.getPermissionAPI()
 						.doesUserHavePermission(proxy, PermissionAPI.PERMISSION_READ, user, true);
 			} catch (Exception e) {
@@ -412,13 +428,27 @@ public class CMSUrlUtil {
 	 * Search for an overridden URI by a filter and if nothing is found the URI will be read from
 	 * the request.
 	 */
-	public String getURIFromRequest(HttpServletRequest request)
-			throws UnsupportedEncodingException {
-
-		return (request.getAttribute(CMS_FILTER_URI_OVERRIDE) != null) ? (String) request
+	public String getURIFromRequest(final HttpServletRequest request) {
+        return (request.getAttribute(CMS_FILTER_URI_OVERRIDE) != null) ? (String) request
 				.getAttribute(CMS_FILTER_URI_OVERRIDE)
-				: URLDecoder.decode(request.getRequestURI(), "UTF-8");
+				: getRequestPath(request);
 	}
+
+    /**
+     * Returns path from request URI
+     * @param request - HttpServletRequest
+     * @return String containing the path from the request URI
+     */
+	private String getRequestPath(final HttpServletRequest request){
+        String requestPath = request.getRequestURI();
+        try {
+            final URI requestURI = new URI(requestPath);
+            requestPath = requestURI.getPath();
+        } catch (URISyntaxException e) {
+            Logger.error(this, "Couldn't get URL from request " + requestPath, e);
+        }
+        return requestPath;
+    }
 
 	/**
 	 * Verifies if the URI was overridden by a filter
@@ -515,5 +545,16 @@ public class CMSUrlUtil {
 		return (-1 != indexOf && indexOf+1 < uri.length())?
 				uri.substring(indexOf+1):
 				null;
+	}
+
+	public static String getCurrentURI(final HttpServletRequest request)  {
+		try {
+			return URLDecoder.decode((request.getAttribute(CMS_FILTER_URI_OVERRIDE) != null)
+					? (String) request.getAttribute(CMS_FILTER_URI_OVERRIDE)
+					: request.getRequestURI(), "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			Logger.debug(CMSUrlUtil.class, e.getMessage(), e);
+			throw new DotRuntimeException(e);
+		}
 	}
 }

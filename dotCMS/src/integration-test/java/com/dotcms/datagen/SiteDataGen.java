@@ -14,9 +14,21 @@ public class SiteDataGen extends AbstractDataGen<Host> {
     private final long currentTime = System.currentTimeMillis();
 
     private String name = "test" + currentTime + ".dotcms.com";
+    private String aliases;
+    private boolean isDefault;
 
     public SiteDataGen name(final String name) {
         this.name = name;
+        return this;
+    }
+
+    public SiteDataGen aliases(final String aliases) {
+        this.aliases = aliases;
+        return this;
+    }
+
+    public SiteDataGen setDefault(final boolean isDefault) {
+        this.isDefault = isDefault;
         return this;
     }
 
@@ -25,10 +37,14 @@ public class SiteDataGen extends AbstractDataGen<Host> {
 
         final Host site = new Host();
         site.setHostname(name);
-        site.setDefault(false);
+        site.setDefault(isDefault);
         site.setLanguageId(language.getId());
         site.setIndexPolicy(IndexPolicy.WAIT_FOR);
         site.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+
+        if (aliases != null) {
+            site.setAliases(aliases);
+        }
 
         return site;
     }

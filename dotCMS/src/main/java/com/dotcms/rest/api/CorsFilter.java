@@ -24,8 +24,8 @@ import com.google.common.collect.ImmutableMap;
 public class CorsFilter implements ContainerResponseFilter {
 
 
-    final private static String CORS_PREFIX = "api.cors";
-    final private static String CORS_DEFAULT = "default";
+    final public static String CORS_PREFIX = "api.cors";
+    final public static String CORS_DEFAULT = "default";
     final private Map<String, List<String[]>> headerMap;
 
     public CorsFilter() {

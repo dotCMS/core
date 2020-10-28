@@ -194,10 +194,7 @@ public class JsonWebTokenFactory implements Serializable {
             .findFirst()
             .get();
         }
-        
-        
-        
-        
+
         @Override
         public String generateUserToken(final UserToken jwtBean) {
 
@@ -223,7 +220,6 @@ public class JsonWebTokenFactory implements Serializable {
         
         @Override
         public JWToken parseToken(final String jsonWebToken, final String requestingIp) {
-
             final Jws<Claims> jws = Jwts.parser().setSigningKey(this.getSigningKey()).parseClaimsJws(jsonWebToken);
             
             return validateToken(jws, resolveJWTokenType(jws), requestingIp);
@@ -239,15 +235,12 @@ public class JsonWebTokenFactory implements Serializable {
                 claimException.setClaimValue(body.getSubject());
                 throw claimException;
             }
-            
-            
+
             // Insure that we do not accept null or NONE algo and that it matches the
             final String algo = jws.getHeader().getAlgorithm();
             if(algo==null || algo.equalsIgnoreCase("none") || ! algo.equalsIgnoreCase(signatureAlgorithm().getValue())) {
               throw new SignatureException( "Invalid JWT Signature Algorithm");
             }
-            
-            
 
             // Validate the issuer is correct, meaning the same cluster id
             if (!this.getIssuer().equals(body.getIssuer())) {
@@ -256,6 +249,7 @@ public class JsonWebTokenFactory implements Serializable {
                 claimException.setClaimValue(body.getIssuer());
                 throw claimException;
             }
+
             if(jwtToken.isExpired()) {
                 IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "Token Expired:" + jwtToken.getExpiresDate());
                 claimException.setClaimName(Claims.EXPIRATION);
@@ -273,13 +267,17 @@ public class JsonWebTokenFactory implements Serializable {
             }
             
             if(jwtToken.getTokenType() == TokenType.USER_TOKEN) {
-                if(jwtToken.getModificationDate().before(user.getModificationDate())) {
-                    IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "JWT Token user: " + jwtToken.getUserId() + " has been modified, old tokens are invalid");
+
+                final String uuid = jwtToken.getId();
+
+                if (null == uuid || !uuid.equals(user.getRememberMeToken())) {
+                    final IncorrectClaimException claimException = new IncorrectClaimException(jws.getHeader(), body, "JWT Token user: " + jwtToken.getUserId() + " has been modified, old tokens are invalid");
                     claimException.setClaimName(Claims.SUBJECT);
                     claimException.setClaimValue(body.getSubject());
                     throw claimException;
                 }
-                return jwtToken;    
+
+                return jwtToken;
             }
 
             ApiToken apiToken = (ApiToken) jwtToken;
@@ -312,13 +310,12 @@ public class JsonWebTokenFactory implements Serializable {
 
            final Claims body = jws.getBody();
            return TokenType.getTokenType(body.getSubject()) == TokenType.USER_TOKEN ? 
-                    new UserToken(body.getId(),
-                            body.getSubject(),
-                            body.getIssuer(),
-                            body.get(CLAIM_UPDATED_AT, Date.class),
-                            (null != body.getExpiration()) ? body.getExpiration().getTime() : 0, 
-                            body
-                            )
+                    new UserToken.Builder().id(body.getId())
+                            .subject(body.getSubject())
+                            .issuer(body.getIssuer())
+                            .modificationDate(body.get(CLAIM_UPDATED_AT, Date.class))
+                            .expiresDate(null != body.getExpiration()? body.getExpiration().getTime() : 0)
+                            .claims(body).build()
                    : APILocator.getApiTokenAPI().findApiToken(body.getSubject()).orElseGet(()->null);
         }
 

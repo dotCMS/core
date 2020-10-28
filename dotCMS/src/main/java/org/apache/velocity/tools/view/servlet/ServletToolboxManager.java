@@ -20,6 +20,7 @@ package org.apache.velocity.tools.view.servlet;
 
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.util.WebKeys;
+import io.vavr.control.Try;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -150,45 +151,37 @@ public class ServletToolboxManager extends XMLToolboxManager
      * This method will ensure there is exactly one ServletToolboxManager
      * per xml toolbox configuration file.
      */
-    public static synchronized ServletToolboxManager getInstance(ServletContext servletContext,
-                                                                 String toolboxFile)
+    public static synchronized ServletToolboxManager getInstance(final ServletContext servletContext,
+                                                                 final String toolboxFile)
     {
-        // little fix up
-        if (!toolboxFile.startsWith("/"))
-        {
-            toolboxFile = "/" + toolboxFile;
-        }
 
         // get config file pathname
         String pathname = servletContext.getRealPath(toolboxFile);
 
         // check if a previous instance exists
-        ServletToolboxManager toolboxManager = 
-            (ServletToolboxManager)managersMap.get(pathname);
+        ServletToolboxManager toolboxManager = (ServletToolboxManager) managersMap.get(pathname);
 
         if (toolboxManager == null)
         {
             // if not, build one
-            InputStream is = null;
+            LOG.info("Trying config file '" + toolboxFile +"'");
+            InputStream is = Try.of(()->servletContext.getResourceAsStream(toolboxFile)).getOrNull();
             try
             {
-                // get the bits
-                is = servletContext.getResourceAsStream(toolboxFile);
+
 
                 // if not under WEB-INF/toolbox.xml, try the classpath
                 if(is==null) {
+                    LOG.info("Trying config file 'toolbox.xml'");
                     is= ServletToolboxManager.class.getClassLoader().getResourceAsStream("toolbox.xml");
                 }
                 if (is != null)
                 {
-                    LOG.info("Using config file '" + toolboxFile +"'");
+                    
 
                     toolboxManager = new ServletToolboxManager(servletContext);
                     toolboxManager.load(is);
-                    
 
-                    
-                    
                     // remember it
                     managersMap.put(pathname, toolboxManager);
 

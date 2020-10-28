@@ -169,12 +169,8 @@ public class CircuitBreakerUrl {
                                 case 200:
                                     IOUtils.copy(response.getEntity().getContent(), out);
                                     break;
-                                case 400:
-                                case 401:
-                                case 404:
-                                    throw new BadRequestException("got invalid response for url: " + this.proxyUrl + " response:" + this.response);
                                 default:
-                                    throw new DotRuntimeException("got invalid response for url: " + this.proxyUrl + " response:" + this.response);
+                                    throw new BadRequestException("got invalid response for url: " + this.proxyUrl + " response:" + this.response);
                             }
                         }
                     });

@@ -59,6 +59,7 @@ public class ScaleImageFilter extends ImageFilter {
 
 			 dst = filter.filter(src, dst);
 			ImageIO.write(dst, "png", resultFile);
+			dst.flush();
 			return resultFile;
 
 		} catch (FileNotFoundException e) {

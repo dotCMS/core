@@ -185,17 +185,36 @@ ol.wfStepsList li{padding:8px 16px;margin:0 10px; list-style:decimal;  list-styl
 	margin:auto;
 }
 
+.schemeTitle {
+    display: flex;
+}
+
+.schemeTitle div {
+    margin-right: 18px;
+}
+
+.showPointer i {
+    padding-top: 3px;
+}
+
+.schemeTitle .api-link {
+    margin-top: 2px;
+}
+
 .portlet-toolbar {
 	background-color: #fff; 
 	margin: 0 0 0 0; 
-	padding: 32px 16px 16px 24px;
+	padding: 0 16px;
 	border-bottom: #e3e3e3;
 	box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 3px 1px -2px rgba(0, 0, 0, 0.12), 0 1px 5px 0 rgba(0, 0, 0, 0.2);
 	position: absolute;
 	z-index: 10;
 	top: 0;
 	width: 100%;
-	height: 92px;
+    height: 92px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 #hangWorkflowMainHere,

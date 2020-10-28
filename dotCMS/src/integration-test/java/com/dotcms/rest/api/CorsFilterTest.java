@@ -38,9 +38,9 @@ public class CorsFilterTest {
         
 
         
-        final String[] contentResourceKeyValue = new String[] {"api.cors.contentresource.access-control-allow-origin", "https://demo.dotcms.com"};
-        final String[] defaultKeyValue1 = new String[] {"api.cors.default.access-control-allow-origin", "https://test2"};
-        final String[] defaultKeyValue2 = new String[] {"api.cors.default.access-control-allow-methods", "GET,HEAD,POST,PUT,DELETE,OPTIONS"};
+        final String[] contentResourceKeyValue = new String[] {"api.cors.contentresource.Access-Control-Allow-Origin", "https://demo.dotcms.com"};
+        final String[] defaultKeyValue1 = new String[] {"api.cors.default.Access-Control-Allow-Origin", "https://test2"};
+        final String[] defaultKeyValue2 = new String[] {"api.cors.default.Access-Control-Allow-Methods", "GET,HEAD,POST,PUT,DELETE,OPTIONS"};
         
 
         
@@ -58,11 +58,11 @@ public class CorsFilterTest {
 
         // Make sure we get the defaults if resource does not exist
         results = corsFilter.getHeaders("this-does-not-exist");
-        assertTrue(results.size()==2);
-        assertEquals(results.get(0)[0], "Access-Control-Allow-Origin");
-        assertEquals(results.get(0)[1], "https://test2");
-        assertEquals(results.get(1)[0], "Access-Control-Allow-Methods");
-        assertEquals(results.get(1)[1], "GET,HEAD,POST,PUT,DELETE,OPTIONS");
+        assertTrue(results.size()>=2);
+        assertEquals(results.get(3)[0], "Access-Control-Allow-Origin");
+        assertEquals(results.get(3)[1], "https://test2");
+        assertEquals(results.get(4)[0], "Access-Control-Allow-Methods");
+        assertEquals(results.get(4)[1], "GET,HEAD,POST,PUT,DELETE,OPTIONS");
         
         
     }

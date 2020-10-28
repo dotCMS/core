@@ -75,6 +75,9 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.Month;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -3609,6 +3612,13 @@ public class WorkflowAPITest extends IntegrationTestBase {
                         .workflowActionId(action.getId()) //Return for Editing
                         .workflowActionComments(comment)
                         .workflowAssignKey(workflowAssignKey)
+                        .workflowPublishDate("2020-08-11")
+                        .workflowPublishTime("10-35")
+                        .workflowExpireDate("2020-08-12")
+                        .workflowExpireTime("18-35")
+                        .workflowFilterKey("Yaml File")
+                        .workflowWhereToSend("environment")
+                        .workflowIWantTo("publish")
                         .categories(Collections.emptyList())
                         .generateSystemEvent(Boolean.FALSE).build());
 
@@ -3766,5 +3776,155 @@ public class WorkflowAPITest extends IntegrationTestBase {
         contentletAPI.checkin(out, user, false);
     }
 
+    /**
+     * Tests the {@link WorkflowAPI#deleteWorkflowHistoryOldVersions(Date)} method
+     */
+    @Test
+    public void deleteWorkflowHistoryOldVersions() throws DotDataException {
+
+        final User systemUser = APILocator.systemUser();
+        final Language language = APILocator.getLanguageAPI().getDefaultLanguage();
+        final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+
+        final WorkflowScheme systemWorkflowScheme = workflowAPI.findSystemWorkflowScheme();
+        final ContentType contentType = new ContentTypeDataGen()
+                .workflowId(systemWorkflowScheme.getId())
+                .nextPersisted();
+
+        //Create a dummy contentlet
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .languageId(language.getId())
+                .nextPersisted();
+
+        assertNotNull(contentlet);
+
+        //Saving a dummy workflow task
+        final WorkflowTask workflowTask = workflowAPI.findTaskByContentlet(contentlet);
+        assertNotNull(workflowTask);
+
+        //Get the count of the workflow history records before the inserts
+        final int initial = workflowHistoryCount(workflowTask.getId());
+        assertEquals(0, initial);
+
+        // Saving workflow history records with a 2019 creation date
+        LocalDate date1 = LocalDate.of(2019, Month.DECEMBER, 15);
+        final Date pastDate1 = Date.from(date1.atStartOfDay(ZoneId.systemDefault()).toInstant());
+
+        for (int i = 0; i < 5; i++) {
+            final WorkflowHistory workflowHistory = new WorkflowHistory();
+            workflowHistory.setChangeDescription("workflow history description");
+            workflowHistory.setCreationDate(pastDate1);
+            workflowHistory.setMadeBy(systemUser.getUserId());
+            workflowHistory.setWorkflowtaskId(workflowTask.getId());
+            workflowAPI.saveWorkflowHistory(workflowHistory);
+        }
+
+        // Saving workflow history records with a 2018 creation date
+        LocalDate date2 = LocalDate.of(2018, Month.DECEMBER, 15);
+        final Date pastDate2 = Date.from(date2.atStartOfDay(ZoneId.systemDefault()).toInstant());
+
+        // Saving workflow history records
+        for (int i = 0; i < 5; i++) {
+            final WorkflowHistory workflowHistory = new WorkflowHistory();
+            workflowHistory.setChangeDescription("workflow history description");
+            workflowHistory.setCreationDate(pastDate2);
+            workflowHistory.setMadeBy(systemUser.getUserId());
+            workflowHistory.setWorkflowtaskId(workflowTask.getId());
+            workflowAPI.saveWorkflowHistory(workflowHistory);
+        }
+
+        //Get the count of the workflow history records before deleting
+        final int before = workflowHistoryCount(workflowTask.getId());
+        assertEquals(10, before);
+
+        // Now we will try to delete and validate the deletes with different dates
+        LocalDate date3 = LocalDate.of(2018, Month.DECEMBER, 16);
+        final Date pastDate3 = Date.from(date3.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        int deleted = workflowAPI.deleteWorkflowHistoryOldVersions(pastDate3);
+        assertTrue(deleted > 0);
+        final int left = workflowHistoryCount(workflowTask.getId());
+        assertEquals(5, left);
+
+        LocalDate date4 = LocalDate.of(2019, Month.DECEMBER, 16);
+        final Date pastDate4 = Date.from(date4.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        deleted = workflowAPI.deleteWorkflowHistoryOldVersions(pastDate4);
+        assertTrue(deleted > 0);
+
+        final int finalCount = workflowHistoryCount(workflowTask.getId());
+        assertEquals(0, finalCount);
+    }
+
+    private int workflowHistoryCount(final String workflowTaskId) throws DotDataException {
+
+        DotConnect dotConnect = new DotConnect();
+        //Get the count of the workflow history records before deleting.
+        String countSQL = "select count(*) as count from workflow_history where workflowtask_id = ?";
+        dotConnect.setSQL(countSQL);
+        dotConnect.addParam(workflowTaskId);
+        List<Map<String, String>> result = dotConnect.loadResults();
+
+        return Integer.parseInt(result.get(0).get("count"));
+    }
+
+    /**
+     * Copy Properties: The idea is to check if the transient variables on the contentlet such as workflow attributes are being copied after save
+     * Given Scenario: Create a content, fires a save and checks if the new checkout still having the workflow attributes
+     * ExpectedResult: The workflow attributes still there after the save
+     *
+     */
+    @Test
+    public void fireWorkflowAction_checkPropertiesAreCopied_successfully()
+            throws DotDataException, DotSecurityException, AlreadyExistException, ExecutionException, InterruptedException {
+        WorkflowScheme workflowScheme = null;
+        ContentType contentType = null;
+        try {
+
+            contentType = generateContentTypeAndAssignPermissions("KeepWfTaskStatus",
+                    BaseContentType.CONTENT, editPermission, contributor.getId());
+
+            // Create testing workflows
+            workflowScheme = createDocumentManagentReplica(
+                    DOCUMENT_MANAGEMENT_WORKFLOW_NAME + "_5_" + UtilMethods
+                            .dateToHTMLDate(new Date(), DATE_FORMAT));
+
+            final Set<String> schemeIds = new HashSet<>();
+            schemeIds.add(workflowScheme.getId());
+            workflowAPI.saveSchemeIdsForContentType(contentType, schemeIds);
+
+            //Add Workflow Task
+            //Contentlet1 on published step
+            Contentlet contentlet = createContent("testCacheFindStepsByContentlet", contentType);
+
+            List<WorkflowAction> actions = workflowAPI
+                    .findAvailableActions(contentlet, joeContributor);
+            final WorkflowAction saveAsDraft = actions.get(0);
+
+            //As Contributor - Save as Draft
+            final ContentletRelationships contentletRelationships = APILocator.getContentletAPI()
+                    .getAllRelationships(contentlet);
+            //save as Draft
+            contentlet = fireWorkflowAction(contentlet, contentletRelationships, saveAsDraft,
+                    StringPool.BLANK, StringPool.BLANK, joeContributor);
+
+            Assert.assertTrue(UtilMethods.isSet(contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE)));
+            Assert.assertTrue(UtilMethods.isSet(contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME)));
+            Assert.assertTrue(UtilMethods.isSet(contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE)));
+            Assert.assertTrue(UtilMethods.isSet(contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME)));
+            Assert.assertTrue(UtilMethods.isSet(contentlet.getStringProperty(Contentlet.WHERE_TO_SEND)));
+            Assert.assertTrue(UtilMethods.isSet(contentlet.getStringProperty(Contentlet.FILTER_KEY)));
+            Assert.assertTrue(UtilMethods.isSet(contentlet.getStringProperty(Contentlet.I_WANT_TO)));
+            Assert.assertTrue(UtilMethods.isNotSet(contentlet.getStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY)));
+            Assert.assertTrue(UtilMethods.isNotSet(contentlet.getStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY)));
+
+        } finally {
+            //clean test
+            //delete content type
+            contentTypeAPI.delete(contentType);
+
+            workflowScheme.setArchived(true);
+            workflowAPI.saveScheme(workflowScheme, user);
+            workflowAPI.deleteScheme(workflowScheme, user).get();
+        }
+    }
 
 }

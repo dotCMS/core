@@ -12,6 +12,7 @@
 <%@ page import="com.dotcms.enterprise.LicenseUtil" %>
 <%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@ page import="com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher" %>
+<%@ page import="com.dotcms.publisher.pusher.AuthCredentialPushPublishUtil" %>
 
 <%	if( LicenseUtil.getLevel()<LicenseLevel.PROFESSIONAL.level){ %>
 <%@ include file="/html/portlet/ext/cmsconfig/publishing/not_licensed.jsp" %>
@@ -151,16 +152,12 @@ function checkIntegrity(identifier) {
     var buttonId = 'checkIntegrityButton' + identifier;
     var resultsButtonId = 'getIntegrityResultsButton' + identifier;
     var loadingId = 'loadingContent' + identifier;
-    var cancelCheckIntegrityButtonId = 'cancelCheckIntegrityButton' + identifier;
 
     require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
         domStyle.set(registry.byId(buttonId).domNode, 'display', 'none');
     });
     require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
         domStyle.set(registry.byId(resultsButtonId).domNode, 'display', 'none');
-    });
-    require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
-        domStyle.set(registry.byId(cancelCheckIntegrityButtonId).domNode, 'display', '');
     });
     dojo.byId(loadingId).show();
 
@@ -184,9 +181,6 @@ function checkIntegrity(identifier) {
                 require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
                     domStyle.set(registry.byId(resultsButtonId).domNode, 'display', 'none');
                 });
-                require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
-                    domStyle.set(registry.byId(cancelCheckIntegrityButtonId).domNode, 'display', 'none');
-                });
                 dojo.byId(loadingId).hide();
                 return;
             }
@@ -205,67 +199,7 @@ function checkIntegrity(identifier) {
             require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
                 domStyle.set(registry.byId(resultsButtonId).domNode, 'display', 'none');
             });
-            require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
-                domStyle.set(registry.byId(cancelCheckIntegrityButtonId).domNode, 'display', 'none');
-            });
             dojo.byId(loadingId).hide();
-        }
-    };
-    dojo.xhrGet(xhrArgs);
-}
-
-/**
- * Verifies the status of a check integrity process for a given server
- * @param identifier
- */
-function cancelIntegrityCheck(identifier, callback) {
-
-    var buttonId = 'checkIntegrityButton' + identifier;
-    var resultsButtonId = 'getIntegrityResultsButton' + identifier;
-    var loadingId = 'loadingContent' + identifier;
-    var cancelCheckIntegrityButtonId = 'cancelCheckIntegrityButton' + identifier;
-
-    require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
-        domStyle.set(registry.byId(buttonId).domNode, 'display', 'none');
-    });
-    require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
-        domStyle.set(registry.byId(resultsButtonId).domNode, 'display', 'none');
-    });
-    require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
-        domStyle.set(registry.byId(cancelCheckIntegrityButtonId).domNode, 'display', '');
-    });
-    dojo.byId(loadingId).hide();
-
-    //Displaying the loading dialog
-    dijit.byId('processingDialog').show();
-
-    var xhrArgs = {
-        url: "/api/integrity/cancelIntegrityProcess/endPoint/" + identifier,
-        handleAs: "json",
-        preventCache: true,
-        load: function (data) {
-
-            var isError = false;
-            if (data.success == false || data.success == "false") {
-                isError = true;
-            }
-
-            if (isError) {
-                showDotCMSSystemMessage(data.message, isError);
-            }
-            //Lets start checking every 30 seconds the status of this integrity check
-            checkIntegrityProcessStatus(identifier, function (status) {
-                if (status != "processing") {
-                    //Hiding the loading dialog
-                    dijit.byId('processingDialog').hide();
-                }
-            });
-        },
-        error: function (error) {
-            showDotCMSSystemMessage(error.responseText, true);
-
-            //Hiding the loading dialog
-            dijit.byId('processingDialog').hide();
         }
     };
     dojo.xhrGet(xhrArgs);
@@ -276,16 +210,12 @@ var displayLoadingOnly = function (identifier) {
     var buttonId = 'checkIntegrityButton' + identifier;
     var resultsButtonId = 'getIntegrityResultsButton' + identifier;
     var loadingId = 'loadingContent' + identifier;
-    var cancelCheckIntegrityButtonId = 'cancelCheckIntegrityButton' + identifier;
 
     require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
         domStyle.set(registry.byId(buttonId).domNode, 'display', 'none');
     });
     require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
         domStyle.set(registry.byId(resultsButtonId).domNode, 'display', 'none');
-    });
-    require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
-        domStyle.set(registry.byId(cancelCheckIntegrityButtonId).domNode, 'display', 'none');
     });
     dojo.byId(loadingId).show();
 };
@@ -299,8 +229,6 @@ function checkIntegrityProcessStatus(identifier, callback) {
     var buttonId = 'checkIntegrityButton' + identifier;
     var resultsButtonId = 'getIntegrityResultsButton' + identifier;
     var loadingId = 'loadingContent' + identifier;
-    var cancelCheckIntegrityButtonId = 'cancelCheckIntegrityButton' + identifier;
-
     var xhrArgs = {
         url: "/api/integrity/checkIntegrityProcessStatus/endPoint/" + identifier,
         handleAs: "json",
@@ -321,20 +249,12 @@ function checkIntegrityProcessStatus(identifier, callback) {
                 require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
                     domStyle.set(registry.byId(resultsButtonId).domNode, 'display', 'none');
                 });
-                require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
-                    domStyle.set(registry.byId(cancelCheckIntegrityButtonId).domNode, 'display', 'none');
-                });
                 dojo.byId(loadingId).hide();
                 return;
             }
 
             var status = data.status;
             if (status == "processing") {//Still processing, check again in 30 seconds
-
-                require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
-                    domStyle.set(registry.byId(cancelCheckIntegrityButtonId).domNode, 'display', '');
-                });
-
                 //Verify again in 30 seconds
                 setTimeout(function () {
                     checkIntegrityProcessStatus(identifier, callback)
@@ -348,9 +268,6 @@ function checkIntegrityProcessStatus(identifier, callback) {
                 require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
                     domStyle.set(registry.byId(resultsButtonId).domNode, 'display', '');
                 });
-                require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
-                    domStyle.set(registry.byId(cancelCheckIntegrityButtonId).domNode, 'display', 'none');
-                });
                 dojo.byId(loadingId).hide();
             } else if (status == "noConflicts") {//We found no conflicts
                 showDotCMSSystemMessage(data.message, true);
@@ -360,9 +277,6 @@ function checkIntegrityProcessStatus(identifier, callback) {
                 });
                 require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
                     domStyle.set(registry.byId(resultsButtonId).domNode, 'display', 'none');
-                });
-                require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
-                    domStyle.set(registry.byId(cancelCheckIntegrityButtonId).domNode, 'display', 'none');
                 });
                 dojo.byId(loadingId).hide();
             } else if (status == "error") {//Some error happened,display the error a buttons to normal
@@ -374,22 +288,6 @@ function checkIntegrityProcessStatus(identifier, callback) {
                 require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
                     domStyle.set(registry.byId(resultsButtonId).domNode, 'display', 'none');
                 });
-                require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
-                    domStyle.set(registry.byId(cancelCheckIntegrityButtonId).domNode, 'display', 'none');
-                });
-                dojo.byId(loadingId).hide();
-            } else if (status == "canceled") {//The process was cancelled
-                showDotCMSSystemMessage(data.message, true);
-
-                require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
-                    domStyle.set(registry.byId(buttonId).domNode, 'display', '');
-                });
-                require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
-                    domStyle.set(registry.byId(resultsButtonId).domNode, 'display', 'none');
-                });
-                require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
-                    domStyle.set(registry.byId(cancelCheckIntegrityButtonId).domNode, 'display', 'none');
-                });
                 dojo.byId(loadingId).hide();
             } else {//No process at all, just make sure buttons are in their initial status
                 require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
@@ -397,9 +295,6 @@ function checkIntegrityProcessStatus(identifier, callback) {
                 });
                 require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
                     domStyle.set(registry.byId(resultsButtonId).domNode, 'display', 'none');
-                });
-                require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
-                    domStyle.set(registry.byId(cancelCheckIntegrityButtonId).domNode, 'display', 'none');
                 });
                 dojo.byId(loadingId).hide();
             }
@@ -437,16 +332,12 @@ function getIntegrityResult(identifier) {
     var buttonId = 'checkIntegrityButton' + identifier;
     var resultsButtonId = 'getIntegrityResultsButton' + identifier;
     var loadingId = 'loadingContent' + identifier;
-    var cancelCheckIntegrityButtonId = 'cancelCheckIntegrityButton' + identifier;
 
     require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
         domStyle.set(registry.byId(buttonId).domNode, 'display', 'none');
     });
     require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
         domStyle.set(registry.byId(resultsButtonId).domNode, 'display', 'none');
-    });
-    require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
-        domStyle.set(registry.byId(cancelCheckIntegrityButtonId).domNode, 'display', 'none');
     });
     dojo.byId(loadingId).show();
 
@@ -925,9 +816,6 @@ function deleteEnvPushHistory(envId) {
                                         <img src="/html/images/icons/processing.gif" /></font>
                                 </div>
                             <%} %>
-                            <button dojoType="dijit.form.Button" onClick="cancelIntegrityCheck('<%=endpoint.getId()%>');" id="cancelCheckIntegrityButton<%=endpoint.getId()%>" style="margin-left:10px; display:none;">
-                                <%= LanguageUtil.get( pageContext, "cancel" ) %>
-                            </button>
                             <button dojoType="dijit.form.Button" onclick="deleteEndpoint('<%=endpoint.getId()%>', false)" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Endpoint_Title") %>" iconClass="deleteIcon" class="dijitButtonDanger" style="margin-left: 8px">
                                 <%= LanguageUtil.get( pageContext, "delete" ) %>
                             </button>
@@ -1020,6 +908,7 @@ function deleteEnvPushHistory(envId) {
 <%--END OF ENVIROMENTS--%>
 <%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
 
+<%if (!AuthCredentialPushPublishUtil.isJWTAvailable()){%>
 <%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
 <%--START OF END POINTS--%>
 <%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
@@ -1079,7 +968,7 @@ function deleteEnvPushHistory(envId) {
 <%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
 <%--END OF END POINTS--%>
 <%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
-
+<%}%>
 
 <%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
 <%--INTEGRITY RESULTS DIALOG--%>

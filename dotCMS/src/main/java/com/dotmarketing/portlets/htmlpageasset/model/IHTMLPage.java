@@ -19,7 +19,8 @@ import com.dotmarketing.portlets.folders.model.Folder;
  */
 public interface IHTMLPage extends Serializable, Versionable, Permissionable,
 		Treeable, Ruleable {
-    
+
+    String getHost();
     String getIdentifier();
     void setIdentifier(String identifier);
    

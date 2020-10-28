@@ -68,9 +68,11 @@ public abstract class FileAssetContentType extends ContentType implements UrlMap
 				.fixed(true)
 				.required(true)
 				.readOnly(false)
+				.searchable(true)
+				.indexed(true)
 				.build()
 			);
-		
+
 		fields.add(
 				ImmutableTextField.builder()
 				.name("Title")

@@ -1,6 +1,8 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
@@ -39,7 +41,7 @@ public class PageView implements Serializable {
     private final Host site;
     private final Template template;
     private final Collection<? extends ContainerRaw> containers;
-    private final HTMLPageAssetInfo htmlPageAssetInfo;
+    private final HTMLPageAsset htmlPageAsset;
     private final TemplateLayout layout;
     private final ViewAsPageStatus viewAs;
     private final boolean canCreateTemplate;
@@ -58,7 +60,7 @@ public class PageView implements Serializable {
         this.site = builder.site;
         this.template =  builder.template;
         this.containers =  builder.containers;
-        this.htmlPageAssetInfo =  builder.page;
+        this.htmlPageAsset =  builder.page;
         this.layout =  builder.layout;
         this.viewAs =  builder.viewAs;
         this.canCreateTemplate =  builder.canCreateTemplate;
@@ -124,13 +126,15 @@ public class PageView implements Serializable {
 
         containers.stream().forEach(containerRaw -> {
 
-            if (containerRaw.getContainer() instanceof FileAssetContainer) {
+            final Container container = containerRaw.getContainer();
 
-                final String path = FileAssetContainer.class.cast(containerRaw.getContainer()).getPath();
+            if (container instanceof FileAssetContainer) {
+
+                final String path = FileAssetContainerUtil.getInstance().getFullPath((FileAssetContainer) container);
                 containerRawMap.put(path, containerRaw);
             } else {
 
-                final String identifier = containerRaw.getContainer().getIdentifier();
+                final String identifier = container.getIdentifier();
                 containerRawMap.put(identifier, containerRaw);
             }
         });
@@ -143,14 +147,14 @@ public class PageView implements Serializable {
      *
      * @return The {@link HTMLPageAsset}.
      */
-    public HTMLPageAssetInfo getPageInfo() {
-        return this.htmlPageAssetInfo;
+    public HTMLPageAsset getPage() {
+        return this.htmlPageAsset;
     }
 
     @Override
     public String toString() {
         return "PageView{" + "site=" + site + ", template=" + template + ", containers=" +
-                containers + ", page=" + htmlPageAssetInfo.getPage() + ", layout=" + layout + '}';
+                containers + ", page=" + htmlPageAsset + ", layout=" + layout + '}';
     }
     /**
      * returns ViewAs Information
@@ -188,7 +192,7 @@ public class PageView implements Serializable {
         private  Template template;
         // The map of Containers and their respective relationships with Content Types
         private  Collection<? extends ContainerRaw> containers;
-        private  HTMLPageAssetInfo page;
+        private  HTMLPageAsset page;
         // The {@link TemplateLayout} that specifies the design of the template
         private  TemplateLayout layout;
         private  ViewAsPageStatus viewAs;
@@ -214,7 +218,7 @@ public class PageView implements Serializable {
             return this;
         }
 
-        public Builder page(final HTMLPageAssetInfo page) {
+        public Builder page(final HTMLPageAsset page) {
             this.page = page;
             return this;
         }

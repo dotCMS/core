@@ -86,7 +86,7 @@ public class DotCustomLoginPostAction extends Action {
 			Logger.warn(this, "ERROR: "+e.getMessage());
 		}
 		
-		PageMode.setPageMode(request, PageMode.EDIT_MODE);
+
 		
 	}
 

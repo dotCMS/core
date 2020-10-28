@@ -6,17 +6,15 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistoryState;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.Validator;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.StringTokenizer;
+
+import java.util.*;
 
 /**
  * This utility class provides common-use methods that can be accessed by the different workflow
@@ -182,8 +180,12 @@ public class WorkflowActionletUtil {
         final Set<User> hasApproved = new HashSet<>();
         for (final User user : requiredApprovers) {
             for (final WorkflowHistory historyItem : historyList) {
-                if (historyItem.getActionId().equals(contentId) && user.getUserId()
-                        .equals(historyItem.getMadeBy())) {
+
+                final Map<String, Object> changeMap = historyItem.getChangeMap();
+                if (historyItem.getActionId().equals(contentId) &&
+                        user.getUserId().equals(historyItem.getMadeBy()) && // if it is the action id and it is not reset.
+                        !WorkflowHistoryState.RESET.name().equals(changeMap.get("state"))
+                ) {
                     hasApproved.add(user);
                     if (limit > 0 && hasApproved.size() >= limit) {
                         return hasApproved;

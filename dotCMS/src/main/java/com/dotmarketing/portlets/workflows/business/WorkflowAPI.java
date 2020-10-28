@@ -31,6 +31,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.portlets.workflows.model.WorkflowTimelineItem;
 import com.liferay.portal.model.User;
 import java.util.Collection;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -198,6 +199,11 @@ public interface WorkflowAPI {
 	 * @throws DotDataException
 	 */
 	public void deleteWorkflowHistory(WorkflowHistory history) throws DotDataException;
+
+	/**
+	 * Deletes the workflow history records older than the given date
+	 */
+	public int deleteWorkflowHistoryOldVersions(final Date olderThan) throws DotDataException;
 
 	/**
 	/**

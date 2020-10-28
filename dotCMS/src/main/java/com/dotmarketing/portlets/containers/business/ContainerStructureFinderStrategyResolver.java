@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.containers.business;
 
 import com.dotcms.contenttype.model.type.ContentType;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.business.APILocator;
@@ -159,7 +160,8 @@ public class ContainerStructureFinderStrategyResolver {
         }
     } // IdentifierContainerStructureFinderStrategyImpl
 
-    private class PathContainerStructureFinderStrategyImpl implements ContainerStructureFinderStrategy {
+    @VisibleForTesting
+    class PathContainerStructureFinderStrategyImpl implements ContainerStructureFinderStrategy {
 
         private final String FILE_EXTENSION = ".vtl";
 
@@ -229,9 +231,9 @@ public class ContainerStructureFinderStrategyResolver {
             return exists;
         }
 
-        private String getVelocityVarName(final FileAsset asset) {
+        String getVelocityVarName(final FileAsset asset) {
 
-            final String name = getName(asset);
+            final String name = asset.getFileName();
 
             return StringUtils.remove(name, FILE_EXTENSION);
         }
@@ -260,13 +262,6 @@ public class ContainerStructureFinderStrategyResolver {
     } // PathContainerStructureFinderStrategyImpl
 
 
-    private String getName(final FileAsset fileAsset){
-            try {
-                return APILocator.getContentletAPI().getName(fileAsset, APILocator.systemUser(), false);
-            } catch (DotSecurityException | DotDataException e) {
-                Logger.error(this, "Error determining contentlet name: ", e);
-            }
-            return fileAsset.getFileName();
-    }
+
 
 } // E:O:F:ContainerStructureFinderStrategyResolver.

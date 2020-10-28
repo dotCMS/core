@@ -15,6 +15,7 @@ import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -128,6 +129,6 @@ public class FieldLayoutColumnSerializerTest {
         verify(jsonGenerator).writeEndObject();
         verify(jsonGenerator).flush();
 
-        FieldUtil.setFieldInternationalization(formContentType, contentTypeInternationalization, fieldMap);
+        APILocator.getContentTypeFieldAPI().getFieldInternationalization(formContentType, contentTypeInternationalization, fieldMap);
     }
 }

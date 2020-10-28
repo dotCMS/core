@@ -21,6 +21,7 @@ import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.StringPool;
 import org.apache.velocity.runtime.resource.ResourceManager;
 
 import java.io.InputStream;
@@ -31,33 +32,39 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.liferay.util.StringPool.PERIOD;
+
 /**
  * @author will
  */
 public class ContainerLoader implements DotLoader {
 
     public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
+    public static final String FILE_CONTAINER_PATH_SEPARATOR_IN_VELOCITY_KEY = "%";
+    public static final String HOST_NAME_SEPARATOR_IN_VELOCITY_KEY = "#";
+    public static final String RESOLVE_RELATIVE = "resolve_relative";
 
     @Override
     public InputStream writeObject(final VelocityResourceKey key)
             throws DotDataException, DotSecurityException {
 
-        final ContainerFinderStrategyResolver resolver   =
-                ContainerFinderStrategyResolver.getInstance();
-        final Optional<ContainerFinderStrategy> strategy =
-                resolver.get(key);
-
         try {
-            final Container container = strategy.isPresent() ?
-                    strategy.get().apply(key) : resolver.getDefaultStrategy().apply(key);
+            final String containerIdOrPath = key.path.split(StringPool.FORWARD_SLASH)[2]
+                    .replaceAll(RESOLVE_RELATIVE + FILE_CONTAINER_PATH_SEPARATOR_IN_VELOCITY_KEY, "")
+                    .replaceAll(FILE_CONTAINER_PATH_SEPARATOR_IN_VELOCITY_KEY, StringPool.FORWARD_SLASH)
+                    .replaceAll(HOST_NAME_SEPARATOR_IN_VELOCITY_KEY, PERIOD);
 
-            if (null == container) {
+            final Optional<Container> optionalContainer =
+                    APILocator.getContainerAPI().findContainer(containerIdOrPath, APILocator.systemUser(), key.mode.showLive, key.mode.respectAnonPerms);
+
+            if (!optionalContainer.isPresent()) {
 
                 final DotStateException dotStateException = new DotStateException("Cannot find container for : " + key);
                 new ContainerExceptionNotifier(dotStateException, UtilMethods.isSet(key.id1) ? key.id1 : key.path).notifyUser();
                 throw dotStateException;
             }
 
+            final Container container = optionalContainer.get();
             if (container.isArchived()) {
 
                 throw new DotStateException("The container  : " + key  + " is archived");
@@ -153,8 +160,9 @@ public class ContainerLoader implements DotLoader {
     private String getDataDotIdentifier (final Container container) {
 
         return container instanceof FileAssetContainer?
-                FileAssetContainer.class.cast(container).getPath():
+                FileAssetContainerUtil.getInstance().getFullPath((FileAssetContainer) container):
                 container.getIdentifier();
+
     }
 
 
@@ -194,7 +202,6 @@ public class ContainerLoader implements DotLoader {
         velocityCodeBuilder.append("#set ($CONTENTLETS = ")
         .append(apiCall)
         .append(")");
-        
         velocityCodeBuilder.append("#set ($CONTAINER_NUM_CONTENTLETS = ${CONTENTLETS.size()})");
 
 

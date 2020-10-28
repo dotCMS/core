@@ -66,9 +66,13 @@ public class PageContainerForm {
                 final String containerUUID  = containerUUIDNode.asText();
                 final String personaTag     = personaTagNode != null? personaTagNode.asText():null;
                 final ContainerEntry containerEntry = new ContainerEntry(personaTag, containerId, containerUUID);
-                final JsonNode containerNode = jsonElement.get(CONTAINER_CONTENTLETSID_ATTRIBUTE_NAME);
+                final JsonNode contentletsNode = jsonElement.get(CONTAINER_CONTENTLETSID_ATTRIBUTE_NAME);
 
-                containerNode.forEach((JsonNode contentId) -> containerEntry.addContentId(contentId.textValue()));
+                if (contentletsNode == null) {
+                    throw new BadRequestException("Contentlets Ids are required");
+                }
+
+                contentletsNode.forEach((JsonNode contentId) -> containerEntry.addContentId(contentId.textValue()));
                 entries.add(containerEntry);
             }
 

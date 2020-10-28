@@ -1,7 +1,6 @@
 package com.dotmarketing.common.reindex;
 
-import com.dotmarketing.common.db.Params;
-import com.google.common.annotations.VisibleForTesting;
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -10,21 +9,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
-
+import java.util.stream.Collectors;
+import org.apache.commons.lang.StringUtils;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.Params;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-import java.util.stream.Collectors;
 
 
 /**
@@ -81,17 +82,6 @@ public class ReindexQueueFactory {
         }
     }
 
-    private String reindexSelectSQL() {
-        if (DbConnectionFactory.isOracle()) {
-            return "SELECT * FROM table(load_records_to_index(?, ?, ?))";
-        } else if (DbConnectionFactory.isMySql()) {
-            return "{call load_records_to_index(?,?,?)}";
-        } else {
-            return "SELECT * FROM load_records_to_index(?, ?, ?)";
-        }
-
-    }
-
     protected void addAllToReindexQueue() throws DotDataException {
         DotConnect dc = new DotConnect();
         try {
@@ -136,6 +126,37 @@ public class ReindexQueueFactory {
         dc.addParam(Priority.REINDEX.dbValue());
         dc.loadResult();
     }
+    
+
+    /**
+     * deletes reindex records (when a full reindex has been fired) - and excludes stucture or host index records.
+     * @throws DotDataException
+     */
+    protected void deleteReindexRecords() throws DotDataException {
+        DotConnect dc = new DotConnect();
+        dc.setSQL("DELETE From dist_reindex_journal where priority >= ? and  priority < ? ");
+        dc.addParam(Priority.REINDEX.dbValue());
+        dc.addParam(Priority.ERROR.dbValue());
+        dc.loadResult();
+    }
+    
+    /**
+     * returns if there are any reindex records in the queue
+     * @throws DotDataException
+     */
+    protected boolean hasReindexRecords() throws DotDataException {
+        DotConnect dc = new DotConnect();
+        String sql = DbConnectionFactory.isMsSql()
+                ? "SELECT TOP 1 id from dist_reindex_journal where priority >= ? and  priority < ?"
+                : DbConnectionFactory.isOracle() ?
+                        "select 1 from dist_reindex_journal where priority >= ? and  priority < ? and rownum=1"
+                        : "select 1 from dist_reindex_journal where priority >= ? and  priority < ? limit 1";
+        dc.setSQL(sql);
+        
+        dc.addParam(Priority.REINDEX.dbValue());
+        dc.addParam(Priority.ERROR.dbValue());
+        return !dc.loadResults().isEmpty();
+    }
 
     protected void deleteFailedRecords() throws DotDataException {
         DotConnect dc = new DotConnect();
@@ -144,26 +165,46 @@ public class ReindexQueueFactory {
         dc.loadResult();
     }
 
+
+    protected long failedRecordCount() throws DotDataException {
+        DotConnect dc = new DotConnect();
+        return dc.setSQL("SELECT count(*) as count from dist_reindex_journal where priority >= ? ").addParam(Priority.ERROR.dbValue()).getInt("count");
+    }
+    
+    
+    
     @CloseDBIfOpened
     protected List<ReindexEntry> getFailedReindexRecords() throws DotDataException {
-        DotConnect dc = new DotConnect();
-
-        dc.setSQL("SELECT id, ident_to_index, priority, index_val, time_entered FROM dist_reindex_journal WHERE priority >= ?");
+        final DotConnect dc = new DotConnect();
+        dc.setSQL("SELECT id, ident_to_index, priority, index_val, time_entered FROM dist_reindex_journal WHERE priority > ?");
         dc.addParam(ReindexQueueFactory.Priority.REINDEX.dbValue());
-        List<Map<String, Object>> failedRecords = dc.loadObjectResults();
-        List<ReindexEntry> failed = new ArrayList<>();
-        for (Map<String, Object> map : failedRecords) {
-            ReindexEntry ridx = new ReindexEntry()
-                    .setId(Long.parseLong((String) map.get("id")))
-                    .setIdentToIndex((String) map.get("ident_to_index"))
-                    .setPriority(Integer.parseInt((String) map.get("priority")))
-                    .setTimeEntered((Date) map.get("time_entered"))
-                    .setLastResult((String) map.get("index_val"));
-            failed.add(ridx);
+        final List<Map<String, Object>> failedRecords = dc.loadObjectResults();
+        final List<ReindexEntry> failed = new ArrayList<>();
+        long identifier;
+        int priority;
+        for (final Map<String, Object> map : failedRecords) {
+            final String indexVal = UtilMethods.isSet(map.get("index_val")) ? String.class.cast(map.get("index_val"))
+                    : StringUtils.EMPTY;
 
+            if (DbConnectionFactory.isOracle()) {
+                BigDecimal rowVal = (BigDecimal) map.get("id");
+                identifier = Long.valueOf(rowVal.toPlainString());
+                rowVal = (BigDecimal) map.get("priority");
+                priority = Integer.valueOf(rowVal.toPlainString());
+            } else {
+                identifier = (Long) map.get("id");
+                priority = Integer.parseInt(map.get("priority").toString());
+            }
+
+            final ReindexEntry ridx = new ReindexEntry()
+                    .setId(identifier)
+                    .setIdentToIndex((String) map.get("ident_to_index"))
+                    .setPriority(priority)
+                    .setTimeEntered((Date) map.get("time_entered"))
+                    .setLastResult(indexVal);
+            failed.add(ridx);
         }
         return failed;
-
     }
 
     protected void deleteReindexEntry(ReindexEntry iJournal) throws DotDataException {
@@ -304,7 +345,7 @@ public class ReindexQueueFactory {
 
     protected long recordsInQueue(final Connection conn) throws DotDataException {
         final DotConnect dc = new DotConnect();
-        dc.setSQL("select count(*) as count from dist_reindex_journal");
+        dc.setSQL("select count(*) as count from dist_reindex_journal where priority < ?").addParam(Priority.ERROR.dbValue());
         final List<Map<String, String>> results = dc.loadResults(conn);
         final String c = results.get(0).get("count");
         return Long.parseLong(c);
@@ -431,7 +472,7 @@ public class ReindexQueueFactory {
         final Date olderThan = new Date(System.currentTimeMillis() - (1000 * REQUEUE_REINDEX_RECORDS_OLDER_THAN_SEC));
 
         DotConnect dc = new DotConnect()
-                .setSQL("UPDATE dist_reindex_journal SET serverid=NULL where time_entered<? and serverid is not null").addParam(olderThan);
+                .setSQL("UPDATE dist_reindex_journal SET serverid=NULL where time_entered<? and serverid is not null and priority < ?").addParam(olderThan).addParam(Priority.ERROR.dbValue());
 
         dc.loadResult();
 

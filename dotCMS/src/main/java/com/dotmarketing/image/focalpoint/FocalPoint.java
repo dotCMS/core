@@ -1,6 +1,8 @@
 package com.dotmarketing.image.focalpoint;
 
 import java.io.Serializable;
+
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 
 public class FocalPoint implements Serializable {
@@ -13,9 +15,9 @@ public class FocalPoint implements Serializable {
         this.y = y;
     }
     
-    public FocalPoint(String focalPointStr) {
-        this.x=Try.of(()-> Float.parseFloat(focalPointStr.split(",")[0])).getOrElse(0f);
-        this.y=Try.of(()-> Float.parseFloat(focalPointStr.split(",")[1])).getOrElse(0f);
+    public FocalPoint(final String focalPointStr) {
+        this.x=Try.of(()-> Float.parseFloat(focalPointStr.split(StringPool.COMMA)[0])).getOrElse(0f);
+        this.y=Try.of(()-> Float.parseFloat(focalPointStr.split(StringPool.COMMA)[1])).getOrElse(0f);
     }
     
     @Override
@@ -25,6 +27,7 @@ public class FocalPoint implements Serializable {
 
     @Override
     public int hashCode() {
+
         final int prime = 31;
         int result = 1;
         result = prime * result + Float.floatToIntBits(x);
@@ -33,18 +36,30 @@ public class FocalPoint implements Serializable {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
+    public boolean equals(final Object obj) {
+
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+
+        if (getClass() != obj.getClass()) {
             return false;
-        FocalPoint other = (FocalPoint) obj;
-        if (Float.floatToIntBits(x) != Float.floatToIntBits(other.x))
+        }
+
+        final FocalPoint other = (FocalPoint) obj;
+
+        if (Float.floatToIntBits(x) != Float.floatToIntBits(other.x)) {
             return false;
-        if (Float.floatToIntBits(y) != Float.floatToIntBits(other.y))
+        }
+
+        if (Float.floatToIntBits(y) != Float.floatToIntBits(other.y)) {
             return false;
+        }
+
         return true;
     }
 

@@ -50,7 +50,6 @@
 					<strong>
 						<a onclick="this.parentNode.innerHTML='<%=scheme.getId()%>'; return false;" href="#"><%=schemeShortyId %></a>
 					</strong>
-					(<a href="/api/v1/workflow/schemes/<%=scheme.getId()%>/export" target="_blank" onclick="event.stopPropagation();">json</a>)
 				</dd>
 			</dl>
 		<%}%>

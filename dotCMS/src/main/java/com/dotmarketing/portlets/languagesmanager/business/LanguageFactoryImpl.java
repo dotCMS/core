@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.languagesmanager.business;
 
+import static com.dotmarketing.portlets.languagesmanager.business.LanguageCacheImpl.LANG_404;
+
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.business.CacheLocator;
@@ -588,13 +590,23 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	@Override
 	protected Language getFallbackLanguage(final String languageCode) {
 
+		Language lang = CacheLocator.getLanguageCache().getLanguageByCode(languageCode, "");
+		if (null != lang ) {
+			return (LANG_404.equals(lang)) ? null : lang;
+		}
+
 		try {
 
-			return fromDbMap(new DotConnect()
+			lang = fromDbMap(new DotConnect()
 					.setSQL(SELECT_LANGUAGE_BY_LANG_CODE_ONLY)
 					.addParam(languageCode.toLowerCase())
 					.loadObjectResults().stream().findFirst().orElse(null));
 
+			if(lang == null){
+				CacheLocator.getLanguageCache().add404Language(languageCode, "");
+			}
+
+			return lang;
 
 		} catch (DotDataException e) {
 
@@ -632,8 +644,10 @@ public class LanguageFactoryImpl extends LanguageFactory {
 			Logger.debug(this, ()-> "Deleting the language by id: " + id);
 			rowsAffected = new DotConnect().executeUpdate(DELETE_FROM_LANGUAGE_WHERE_ID, id);
 		} catch (DotDataException e) {
-			if(e.getMessage().contains("fk_contentlet_version_info_lang")
-					|| e.getMessage().contains("fk_con_lang_ver_info_lang")) {
+		    final String message  =e.getMessage().toLowerCase();
+			if(message.contains("fk_contentlet_version_info_lang")
+					|| message.contains("fk_con_lang_ver_info_lang")
+					|| message.contains("fk_contentlet_lang")) {
 				final String errorMsg = Sneaky.sneak(()->LanguageUtil.get("message.language.content"));
 				throw new DotStateException(errorMsg, e);
 			} else {

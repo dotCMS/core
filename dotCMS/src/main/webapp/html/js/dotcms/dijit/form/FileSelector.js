@@ -75,54 +75,54 @@ dojo.require("dotcms.dijit.FileBrowserDialog");
 dojo.declare("dotcms.dijit.form.FileSelector", [dijit._Widget, dijit._Templated], {
 	
 	templatePath: dojo.moduleUrl("dotcms", "dijit/form/FileSelector.jsp"),
-	fileInfoTemplate: '<div>\
-			<table class="listingTable">\
-				<tr class="alternate_1">\
-		    		<td><b>File Name</b></td>\
-					<td>{fileName}</td>\
-				</tr>\
-				<tr class="alternate_2">\
-		    		<td><b>Id</td>\
-					<td>{identifier}</td>\
-				</tr>\
-				<tr class="alternate_1">\
-		    		<td><b>Title</b></td>\
-					<td>{title}</td>\
-				</tr>\
-				<tr class="alternate_2">\
-		    		<td><b>File Link</b></td>\
-					<td><a target="_blank" href="{path}{fileName}">{path}{fileName}</a></td>\
-				</tr>\
-			</table>\
-		</div>',
-	pageInfoTemplate: '\
-			<table class="listingTable">\
-				<tr class="alternate_1">\
-		    		<td><b>Page</td>\
-					<td>{pageUrl}</td>\
-				</tr>\
-				<tr class="alternate_2">\
-		    		<td><b>Id</b></td>\
-					<td>{identifier}</td>\
-				</tr>\
-				<tr class="alternate_1">\
-		    		<td><b>Title</b></td>\
-					<td>{title}</td>\
-				</tr>\
-				<tr class="alternate_2">\
-		    		<td><b>Show on menu</b></td>\
-					<td>{showOnMenu}</td>\
-				</tr>\
-				<tr class="alternate_1">\
-		    		<td><b>Friendly Name</b></td>\
-					<td>{friendlyName}</td>\
-				</tr>\
-				<tr class="alternate_2">\
-		    		<td><b>Page Link</b></td>\
-					<td><a target="_blank" href="{pageURI}">{pageURI}</a></td>\
-				</tr>\
-			</table>\
-		',
+	fileInfoTemplate: `<div>
+			<table class="listingTable">
+				<tr class="alternate_1">
+		    		<td><b>File Name</b></td>
+					<td>{fileName}</td>
+				</tr>
+				<tr class="alternate_2">
+		    		<td><b>Id</td>
+					<td>{identifier}</td>
+				</tr>
+				<tr class="alternate_1">
+		    		<td><b>Title</b></td>
+					<td>{title}</td>
+				</tr>
+				<tr class="alternate_2">
+		    		<td><b>File Link</b></td>
+					<td><a target="_blank" href="{path}{fileName}">{path}{fileName}</a></td>
+				</tr>
+			</table>
+		</div>`,
+	pageInfoTemplate: `
+			<table class="listingTable">
+				<tr class="alternate_1">
+		    		<td><b>Page</td>
+					<td>{pageUrl}</td>
+				</tr>
+				<tr class="alternate_2">
+		    		<td><b>Id</b></td>
+					<td>{identifier}</td>
+				</tr>
+				<tr class="alternate_1">
+		    		<td><b>Title</b></td>
+					<td>{title}</td>
+				</tr>
+				<tr class="alternate_2">
+		    		<td><b>Show on menu</b></td>
+					<td>{showOnMenu}</td>
+				</tr>
+				<tr class="alternate_1">
+		    		<td><b>Friendly Name</b></td>
+					<td>{friendlyName}</td>
+				</tr>
+				<tr class="alternate_2">
+		    		<td><b>Page Link</b></td>
+					<td><a target="_blank" href="{pageURI}">{pageURI}</a></td>
+				</tr>
+			</table>
+		`,
 	widgetsInTemplate: true,
 	
 	style: "",
@@ -178,10 +178,10 @@ dojo.declare("dotcms.dijit.form.FileSelector", [dijit._Widget, dijit._Templated]
 			}
 
 			if(fileInfo.mimeType.indexOf('image/svg') <0 && fileInfo.mimeType.indexOf('image/x-icon')<0) {
-				this.thumbnailImage.src = "/contentAsset/image/" + fileInfo.identifier + "/fileAsset/filter/Thumbnail/thumbnail_w/" + this.thumbnailSize + "/rand/" + Math.random()+"?language_id="+this.contentLanguage;
+				this.thumbnailImage.src = "/dA/" + fileInfo.inode + "/" + this.thumbnailSize + "w/20q/rand/" + Math.random()+"?language_id="+this.contentLanguage;
 				this.thumbnailSizeSlider.attr('value', this.thumbnailSize);
 			}else{
-				this.thumbnailImage.src = '/contentAsset/image/' + fileInfo.identifier + '/fileAsset/'+fileInfo.inode+'?language_id='+this.contentLanguage;
+			    this.thumbnailImage.src = "/dA/" + fileInfo.inode + "/" + this.thumbnailSize + "w/20q/rand/" + Math.random()+"?language_id="+this.contentLanguage;
 			}
 
 	        dojo.style(this.thumbnailWrapper, { display : "" });
@@ -244,23 +244,29 @@ dojo.declare("dotcms.dijit.form.FileSelector", [dijit._Widget, dijit._Templated]
 	
 	_infoClicked : function () {
 		if(this.fileInfo.type == 'file_asset') {
-			var fileURL = '/contentAsset/raw-data/' + this.fileInfo.identifier + '/fileAsset';
+			var fileURL = '/dA/' + this.fileInfo.identifier + '/fileAsset';
 			var fullPath = this.fileInfo.path + this.fileInfo.fileName;
 			var fileName = this.fileInfo.fileName;
 			var html = dojo.replace(this.fileInfoTemplate, this.fileInfo);
-		}
-		if (this.fileInfo.type == 'htmlpage') {
+		}else if (this.fileInfo.type == 'htmlpage') {
 			var fileURL = this.fileInfo.pageURI;
 			var fullPath = this.fileInfo.pageURI;
 			var fileName = this.fileInfo.name;
 			var html = dojo.replace(this.pageInfoTemplate, this.fileInfo);
-		}
-		if (this.fileInfo.type == 'contentlet') {
+		}else if (this.fileInfo.type == 'dotasset') {
+            var fileURL = '/contentAsset/raw-data/' + this.fileInfo.identifier + '/fileAsset';
+            var fullPath = this.fileInfo.path + this.fileInfo.fileName;
+            var fileName = this.fileInfo.fileName;
+            var html = dojo.replace(this.fileInfoTemplate, this.fileInfo);
+        }else if(this.fileInfo.type == 'contentlet') {
 			var fileURL = '/contentAsset/raw-data/' + this.fileInfo.identifier + '/fileAsset';
 			var fullPath = this.fileInfo.path + this.fileInfo.fileName;
 			var fileName = this.fileInfo.fileName;
 			var html = dojo.replace(this.fileInfoTemplate, this.fileInfo);
 		}
+		
+		
+		
 		this.fileInfoDialog.title = fileName;
 		var domObj = dojo._toDom(html);
 		this.fileInfoDialog.setContent(domObj);

@@ -4,9 +4,11 @@ import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.XMLUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
@@ -15,6 +17,7 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.util.Calendar;
@@ -213,25 +216,33 @@ public class BundlerUtil {
     public static Object xmlToObject(File f){
     	XStream xstream = new XStream(new DomDriver("UTF-8"));
 
-    	BufferedInputStream input = null;
-		try {
-			input = new BufferedInputStream(Files.newInputStream(f.toPath()));
-			Object ret = xstream.fromXML(input);
-			return ret;
-		} catch (IOException e) {
-			Logger.error(BundlerUtil.class,e.getMessage(),e);
-			return null;
-		}finally{
-			try {
-				input.close();
-			}
-			catch(Exception e){
-
-			}
+        try (InputStream input = new BufferedInputStream(Files.newInputStream(f.toPath()))) {
+            return xstream.fromXML(input);
+		} catch (Exception e) {
+			Logger.warnAndDebug(BundlerUtil.class,e.getMessage(),e);
+			return xmlToObjectWithPrologue(f);
 		}
-
 	}
 
+    /**
+     * Adds a XML 1.1 Prologue before trying to deserialize
+     * @param file
+     * @return
+     */
+    private static Object xmlToObjectWithPrologue(File file) {
+        XStream xstream = new XStream(new DomDriver("UTF-8"));
+        XMLUtils.addPrologueIfNeeded(file);
+        try (InputStream input = new BufferedInputStream(Files.newInputStream(file.toPath()))) {
+            return xstream.fromXML(input);
+        } catch (Exception e) {
+           throw new DotRuntimeException("Unable to deserialize XML: " + file + " " + e.getMessage(), e);
+        }
+        
+
+
+    }
+    
+    
 
     /**
      * Deserialize an object back from JSON (using jackson)

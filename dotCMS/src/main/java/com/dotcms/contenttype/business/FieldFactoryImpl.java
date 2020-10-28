@@ -20,6 +20,7 @@ import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.DbFieldTransformer;
 import com.dotcms.contenttype.transform.field.DbFieldVariableTransformer;
+import com.dotcms.graphql.business.ContentAPIGraphQLTypesProvider;
 import com.dotcms.rendering.velocity.services.FieldLoader;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
@@ -28,6 +29,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -37,6 +39,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.apache.commons.lang.time.DateUtils;
 
 public class FieldFactoryImpl implements FieldFactory {
@@ -89,8 +92,19 @@ public class FieldFactoryImpl implements FieldFactory {
   public List<Field> byContentTypeVar(String var) throws DotDataException {
     return selectByContentTypeVarInDb(var);
   }
-    @Override
-    public List<FieldVariable> byFieldVariableKey(final String key) throws DotDataException {
+
+  @Override
+  public Optional<FieldVariable> byFieldVariableKey(final String fieldId, final String key) throws DotDataException {
+
+    final List<Map<String, Object>> results =
+            new DotConnect().setSQL(sql.selectFieldIdVarByKey)
+              .addParam(fieldId).addParam(key).loadObjectResults();
+
+    return results.isEmpty()?Optional.empty():Optional.ofNullable(new DbFieldVariableTransformer(results).from());
+  }
+
+  @Override
+  public List<FieldVariable> byFieldVariableKey(final String key) throws DotDataException {
         final DotConnect dc = new DotConnect();
         dc.setSQL(sql.selectFieldVarByKey);
         dc.addParam(key);
@@ -99,7 +113,7 @@ public class FieldFactoryImpl implements FieldFactory {
 
         return UtilMethods.isSet(results) ? new DbFieldVariableTransformer(dc.loadObjectResults())
                 .asList() : Collections.emptyList();
-    }
+  }
 
   @Override
   public void delete(Field field) throws DotDataException {
@@ -232,8 +246,11 @@ public class FieldFactoryImpl implements FieldFactory {
       }
 
       // normalize our velocityvar
-      String tryVar = (throwAwayField.variable() == null)
-          ? suggestVelocityVar(throwAwayField.name(), fieldsAlreadyAdded) : throwAwayField.variable();
+      final List<String> takenFieldVars = fieldsAlreadyAdded.stream().map(Field::variable).collect(
+              Collectors.toList());
+
+      String tryVar = getFieldVariable(throwAwayField, takenFieldVars);
+
       builder.variable(tryVar);
     }
     builder = FieldBuilder.builder(normalizeData(builder.build()));
@@ -258,7 +275,33 @@ public class FieldFactoryImpl implements FieldFactory {
 
     return retField;
   }
-  
+
+  /**
+   * Returns the field variable to use in the new field being saved
+   *
+   * If the field variable comes null, a new one will be generated based on the name
+   *
+   * If the field variable comes already set, via {@link Field#variable()}, it needs to be GraphQL-compatible
+   * otherwise a {@link DotDataException} is thrown.
+   *
+   * @param throwAwayField the field whose variable will be returned
+   * @param takenFieldVars a list of taken field vars
+   * @return the field variable for the field to be saved
+   * @throws DotDataException in case that the field variable is not valid
+   */
+  private String getFieldVariable(Field throwAwayField, List<String> takenFieldVars)
+          throws DotDataException {
+
+    String variable;
+
+    if(throwAwayField.variable() == null) {
+      variable = suggestVelocityVar(throwAwayField.name(), throwAwayField, takenFieldVars);
+    } else {
+       variable = throwAwayField.variable();
+    }
+    return variable;
+  }
+
   private void validateDbColumn(Field field) throws DotDataException {
     
 
@@ -578,8 +621,13 @@ public class FieldFactoryImpl implements FieldFactory {
 
 
   @Override
-public String suggestVelocityVar( String tryVar, List<Field> takenFields) throws DotDataException {
+public String suggestVelocityVar( String tryVar, Field field, List<String> takenFieldsVariables) throws DotDataException {
 
+    final List<String> forbiddenFieldVariables = new ArrayList<>(takenFieldsVariables);
+
+    if(! ContentAPIGraphQLTypesProvider.INSTANCE.isFieldVariableGraphQLCompatible(tryVar, field)) {
+      forbiddenFieldVariables.add(tryVar);
+    }
 
     String var = StringUtils.camelCaseLower(tryVar);
     // if we don't get a var back, we are looking at UTF-8 or worse
@@ -587,8 +635,8 @@ public String suggestVelocityVar( String tryVar, List<Field> takenFields) throws
     if (!UtilMethods.isSet(var)) {
         tryVar= "field";
     }
-    for (Field f : takenFields) {
-        if (var.equalsIgnoreCase(f.variable())) {
+    for (String fieldVar : forbiddenFieldVariables) {
+        if (var.equalsIgnoreCase(fieldVar)) {
             var= null;
             break;
         }
@@ -600,8 +648,8 @@ public String suggestVelocityVar( String tryVar, List<Field> takenFields) throws
 
     for (int i = 1; i < 100000; i++) {
         var = StringUtils.camelCaseLower(tryVar) + i;
-        for (Field f : takenFields) {
-            if (var.equalsIgnoreCase(f.variable())) {
+        for (String fieldVar : forbiddenFieldVariables) {
+            if (var.equalsIgnoreCase(fieldVar)) {
                 var = null;
                 break;
             }

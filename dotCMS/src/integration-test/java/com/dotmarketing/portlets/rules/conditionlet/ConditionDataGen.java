@@ -4,6 +4,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotmarketing.portlets.rules.model.Condition;
+import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.LogicalOperator;
 import com.liferay.portal.model.User;
 
@@ -50,6 +51,11 @@ public class ConditionDataGen {
             throw new RuntimeException(e);
         }
         return next;
+    }
+
+    public ConditionDataGen group(final ConditionGroup conditionGroup) {
+        this.groupId = conditionGroup.getId();
+        return this;
     }
 
     public ConditionDataGen groupId(String groupId) {

@@ -28,6 +28,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.util.*;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.SystemProperties;
 
@@ -35,6 +36,7 @@ import io.vavr.control.Try;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
@@ -321,28 +323,25 @@ public class VelocityUtil {
     return getWebContext(getBasicContext(), request, response);
   }
 
-	public static ChainedContext getWebContext(Context ctx, HttpServletRequest request, HttpServletResponse response) {
+	public static ChainedContext getWebContext(Context ctx, final HttpServletRequest requestIn, HttpServletResponse response) {
 
-        if ( ctx == null ) {
-            ctx = getBasicContext();
-        }
 
-        // http://jira.dotmarketing.net/browse/DOTCMS-2917
+        final VelocityRequestWrapper request = VelocityRequestWrapper.wrapVelocityRequest(requestIn );
 
-		//get the context from the request if possible
-        ChainedContext context;
+
         if ( request.getAttribute( com.dotcms.rendering.velocity.Constants.VELOCITY_CONTEXT ) != null && request.getAttribute( com.dotcms.rendering.velocity.Constants.VELOCITY_CONTEXT ) instanceof ChainedContext ) {
             return (ChainedContext) request.getAttribute( com.dotcms.rendering.velocity.Constants.VELOCITY_CONTEXT  );
-        } else {
-            VelocityRequestWrapper rw = new VelocityRequestWrapper( request );
-            if ( request.getAttribute( "User-Agent" ) != null && request.getAttribute( "User-Agent" ).equals( Constants.USER_AGENT_DOTCMS_BROWSER ) ) {
-                rw.setCustomUserAgentHeader( Constants.USER_AGENT_DOTCMS_BROWSER );
-            }
-            context = new ChainedContext( ctx, getEngine(), rw, response, Config.CONTEXT );
+        } 
+        
+        if ( request.getAttribute( "User-Agent" ) != null && request.getAttribute( "User-Agent" ).equals( Constants.USER_AGENT_DOTCMS_BROWSER ) ) {
+            request.setCustomUserAgentHeader( Constants.USER_AGENT_DOTCMS_BROWSER );
         }
-
+        
+        final ChainedContext context = new ChainedContext( ctx== null ? getBasicContext() : ctx , getEngine(), request, response );
+    
+        
         context.put("context", context);
-		Logger.debug(VelocityUtil.class, "ChainedContext=" + context);
+
 		/*
 		 * if we have a toolbox manager, get a toolbox from it See
 		 * /WEB-INF/toolbox.xml
@@ -373,32 +372,28 @@ public class VelocityUtil {
 		// put the list of languages on the page
 		context.put("languages", getLanguages());
 		
-		if(!UtilMethods.isSet(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)) && session!=null)
+		if(!UtilMethods.isSet(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)) && session!=null) {
 		    context.put("language", (String) session.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE));
-		else
+		}else {
 		    context.put("language", request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE));
-
-		try {
-			Host host;
-			host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
-			context.put("host", host);
-		} catch (Exception e) {
-			Logger.error(VelocityUtil.class,e.getMessage(),e);
 		}
+		
+
+		Host host= WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+		context.put("host", host);
+
 		context.put("pdfExport", false);
         context.put("dotPageMode", PageMode.get(request));
-		if(request.getSession(false)!=null){
-			try {
-				User user = (com.liferay.portal.model.User) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_USER);
-				context.put("user", user);
 
-				Visitor visitor = (Visitor) request.getSession().getAttribute(WebKeys.VISITOR);
-				context.put("visitor", visitor);
 
-			} catch (Exception nsue) {
-				Logger.error(VelocityUtil.class, nsue.getMessage(), nsue);
-			}
+		User user = PortalUtil.getUser(request);
+		context.put("user", user);
+
+		Optional<Visitor> visitor = APILocator.getVisitorAPI().getVisitor(request, false);
+		if(visitor.isPresent()){
+		    context.put("visitor", visitor.get());
 		}
+		
 		return context;
 
 	}

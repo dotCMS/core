@@ -1,4 +1,5 @@
-<%String contents =UtilMethods.htmlifyString(FileUtils.readFileToString(fa.getBinary(field.getVelocityVarName()))); %>
+<%String contents =UtilMethods.htmlifyString(FileUtils.readFileToString(contentlet.getBinary(field.getVelocityVarName()))); %>
+
 
 <style type="text/css">
     #editor {
@@ -111,5 +112,5 @@
 <input type="hidden" id="<%=field.getVelocityVarName()%>_hidden_field" value="<%=contents %>">
 
 <script>
-loadAce("<%=UtilMethods.getFileExtension(fa.getBinary(field.getVelocityVarName()).getName())%>")
+loadAce("<%=UtilMethods.getFileExtension(contentlet.getBinary(field.getVelocityVarName()).getName())%>")
 </script>

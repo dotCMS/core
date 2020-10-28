@@ -1,9 +1,9 @@
 package com.dotcms.util.network;
 
+import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-
-import java.net.UnknownHostException;
+import io.vavr.control.Try;
 
 public class IPUtils {
     /**
@@ -21,13 +21,7 @@ public class IPUtils {
         if (UtilMethods.isSet(ip) && UtilMethods.isSet(CIDR)) {
             final String[] netmaskParts = CIDR.split("/");
             if (netmaskParts != null && netmaskParts.length == 2) {
-                try{
-                    final CIDRUtils cidr = new CIDRUtils(CIDR);
-                    isMatching = cidr.isInRange(ip);
-                }
-                catch (UnknownHostException e) {
-                    Logger.error(IPUtils.class, "UnknownHostException resolving:"  + CIDR, e);
-                }
+                return Try.of(()->new SubnetUtils(CIDR).getInfo().isInRange(ip)).getOrElse(false);
             }
             else {
                 isMatching = CIDR.equals(ip);

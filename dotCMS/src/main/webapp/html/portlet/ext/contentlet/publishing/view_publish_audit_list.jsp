@@ -333,12 +333,14 @@
 				<td valign="top" nowrap="nowrap" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
 					<%=c.getBundleId().split("-")[0]%>...
 				</td>
+				<%--BundleName--%>
 				<td valign="top" nowrap="nowrap" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
 					<% Bundle bundle = APILocator.getBundleAPI().getBundleById(c.getBundleId()); %>
                     <%if ( bundle != null && bundle.getName() != null && (!bundle.getName().equals( bundle.getId() ))) { %>
                         <%=bundle.getName()%>
                     <%}%>
 				</td>
+				<%--BundleTitle--%>
 				<%try{ %>
 					<% if(bundleAssets.keySet().size()>0){ %>
 						<td valign="top" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
@@ -380,8 +382,11 @@
 					</td>
 
 				<%} %>
+				<%--BundleStatus--%>
 			    <td valign="top" nowrap="nowrap" align="center"><%=LanguageUtil.get(pageContext, "publisher_status_" + c.getStatus().toString()) %></td>
+				<%--BundleDateEntered--%>
 			    <td valign="top" nowrap="nowrap"><%=UtilMethods.dateToHTMLDate(c.getCreateDate(),"MM/dd/yyyy hh:mma") %></td>
+				<%--BundleDateUpdated--%>
 			    <td valign="top" nowrap="nowrap" align="right"><%=DateUtil.prettyDateSince(c.getStatusUpdated()) %></td>
 			</tr>
 		<%

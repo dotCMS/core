@@ -15,7 +15,6 @@
     "analyzer": {
       "standard_content": {
         "filter": [
-          "standard",
           "lowercase",
           "asciifolding",
           "content_stemmer"
@@ -25,7 +24,6 @@
       },
       "partial_content": {
         "filter": [
-          "standard",
           "lowercase",
           "asciifolding",
           "content_ngrams"

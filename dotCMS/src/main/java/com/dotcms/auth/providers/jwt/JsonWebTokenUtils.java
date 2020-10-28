@@ -90,14 +90,14 @@ public class JsonWebTokenUtils {
      */
     public String createUserToken(final User user, int jwtMaxAge) {
 
+        // private UserToken(String id, String subject, Date modificationDate, long ttlMillis, final String skinId) {
         return this.jsonWebTokenService.generateUserToken(
-                new UserToken(UUID.randomUUID().toString(),
-                        user.getUserId(),
-                        user.getModificationDate(),
-                        (jwtMaxAge > 0) ?
+                new UserToken.Builder().id(user.getRememberMeToken())
+                        .subject(user.getUserId())
+                        .modificationDate(user.getModificationDate())
+                        .expiresDate(jwtMaxAge > 0 ?
                                 DateUtil.daysToMillis(jwtMaxAge) :
-                                jwtMaxAge
-                )
+                                jwtMaxAge).build()
         );
 
     } // getUserIdFromJsonWebToken

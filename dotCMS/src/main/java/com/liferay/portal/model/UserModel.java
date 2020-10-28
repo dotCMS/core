@@ -22,11 +22,12 @@
 
 package com.liferay.portal.model;
 
-import java.util.Date;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.GetterUtil;
 import com.liferay.util.Xss;
+
+import java.util.Date;
 
 /**
  * <a href="UserModel.java.html"><b><i>View Source</i></b></a>
@@ -631,6 +632,15 @@ public class UserModel extends BaseModel {
 			_timeZoneId = timeZoneId;
 			setModified(true);
 		}
+	}
+
+	/**
+	 * Returns the token for the access user token, on remember me
+	 * @return String
+	 */
+	@JsonIgnore
+	public String getRememberMeToken() {
+		return _skinId;
 	}
 
 	public String getSkinId() {

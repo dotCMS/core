@@ -34,14 +34,17 @@ public class IdentifierTransformer implements DBTransformer {
 
     @NotNull
     private static Identifier transform(Map<String, Object> map)  {
-        final Identifier i = new Identifier();
-        i.setAssetName((String) map.get("asset_name"));
-        i.setAssetType((String) map.get("asset_type"));
-        i.setHostId((String) map.get("host_inode"));
-        i.setId((String) map.get("id"));
-        i.setParentPath((String) map.get("parent_path"));
-        i.setSysPublishDate((Date) map.get("syspublish_date"));
-        i.setSysExpireDate((Date) map.get("sysexpire_date"));
-        return i;
+        final Identifier identifier = new Identifier();
+        identifier.setAssetName((String) map.get("asset_name"));
+        identifier.setAssetType((String) map.get("asset_type"));
+        identifier.setHostId((String) map.get("host_inode"));
+        identifier.setId((String) map.get("id"));
+        identifier.setParentPath((String) map.get("parent_path"));
+        identifier.setSysPublishDate((Date) map.get("syspublish_date"));
+        identifier.setSysExpireDate((Date) map.get("sysexpire_date"));
+        identifier.setOwner((String) map.get("owner"));
+        identifier.setCreateDate((Date) map.get("create_date"));
+        identifier.setAssetSubType((String) map.get("asset_subtype"));
+        return identifier;
     }
 }

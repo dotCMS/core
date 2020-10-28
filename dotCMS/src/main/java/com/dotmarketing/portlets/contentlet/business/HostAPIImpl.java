@@ -75,7 +75,7 @@ public class HostAPIImpl implements HostAPI {
      * @throws DotSecurityException, DotDataException
      */
     @Override
-    @WrapInTransaction
+    @CloseDBIfOpened
     public Host findDefaultHost(User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
         Host host;
@@ -113,17 +113,14 @@ public class HostAPIImpl implements HostAPI {
         User systemUser = APILocator.systemUser();
 
         if(host == null){
+
             try {
-                host = resolveHostNameWithoutDefault(serverName, systemUser, respectFrontendRoles).get();
+                final Optional<Host> optional = resolveHostNameWithoutDefault(serverName, systemUser, respectFrontendRoles);
+                host = optional.isPresent() ? optional.get() : findDefaultHost(systemUser, respectFrontendRoles);
             } catch (Exception e) {
-                return findDefaultHost(systemUser, respectFrontendRoles);
-            }
-            
-            //If no host matches then we set the default host.
-            if(host == null){
                 host = findDefaultHost(systemUser, respectFrontendRoles);
             }
-            
+
             if(host != null){
                 hostCache.addHostAlias(serverName, host);
             }
@@ -257,6 +254,7 @@ public class HostAPIImpl implements HostAPI {
         Host host = null;
 
         try {
+
             StringBuilder queryBuffer = new StringBuilder();
             queryBuffer.append(String.format("%s:%s", CONTENT_TYPE_CONDITION, Host.HOST_VELOCITY_VAR_NAME ));
             queryBuffer.append(String.format(" +working:true +%s.aliases:%s", Host.HOST_VELOCITY_VAR_NAME, alias));
@@ -748,6 +746,12 @@ public class HostAPIImpl implements HostAPI {
                 // Remove Host
                 Contentlet c = contentAPI.find(host.getInode(), user, respectFrontendRoles);
                 contentAPI.delete(c, user, respectFrontendRoles);
+
+                try {
+                    APILocator.getAppsAPI().removeSecretsForSite(host, APILocator.systemUser());
+                }catch (Exception e){
+                    Logger.error(HostAPIImpl.class, "Error removing secrets for site",  e);
+                }
                 hostCache.remove(host);
                 hostCache.clearAliasCache();
             }
@@ -1001,14 +1005,13 @@ public class HostAPIImpl implements HostAPI {
 
         Host host = null;
 
-        final ContentletVersionInfo vinfo = HibernateUtil.load(ContentletVersionInfo.class,
-                "from "+ContentletVersionInfo.class.getName()+" where identifier=?", id);
+        final Optional<ContentletVersionInfo> vinfo = APILocator.getVersionableAPI().getContentletVersionInfo(id, APILocator.getLanguageAPI()
+                .getDefaultLanguage().getId());
 
-        if(vinfo!=null && UtilMethods.isSet(vinfo.getIdentifier())) {
-
+        if(vinfo.isPresent()) {
             User systemUser = APILocator.systemUser();
 
-            String hostInode=vinfo.getWorkingInode();
+            String hostInode=vinfo.get().getWorkingInode();
             final Contentlet cont= APILocator.getContentletAPI().find(hostInode, systemUser, respectFrontendRoles);
             final ContentType type =APILocator.getContentTypeAPI(systemUser, respectFrontendRoles).find(Host.HOST_VELOCITY_VAR_NAME);
             if(cont.getStructureInode().equals(type.inode())) {

@@ -1,5 +1,11 @@
 package com.dotcms.publishing;
 
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.liferay.portal.model.User;
+import java.util.List;
+import java.util.Map;
+
 public interface PublisherAPI {
 
     /**
@@ -39,4 +45,33 @@ public interface PublisherAPI {
      */
     public PublishStatus publish ( PublisherConfig config, PublishStatus status ) throws DotPublishingException;
 
+    /**
+     * Adds a filter to the map of filters, using the filterDescriptor.Key as the key
+     * @param filterDescriptor
+     */
+    void addFilterDescriptor(final FilterDescriptor filterDescriptor);
+
+    /**
+     * Gets all the filters that user has access to.
+     * @param user User that is trying to get the Filters.
+     * @return list of filterDescriptors that the user has access.
+     * @throws DotDataException
+     */
+    List<FilterDescriptor> getFiltersDescriptorsByRole(final User user) throws DotDataException;
+
+    /**
+     * Get a FilterDescriptor using the FilterDescriptor.Key as key
+     * @param filterKey key of the filterDescriptor
+     * @return filterDescriptor referenced to that key
+     */
+    FilterDescriptor getFilterDescriptorByKey(final String filterKey);
+
+    /**
+     * Creates and returns a PublisherFilter (that is an object that contains the filters of a filterDescriptor)
+     * @param bundleId BundleId of the bundle that is gonna be created.
+     * @return PublisherFilter with the filters of the FilterDescriptor that was selected for that bundle.
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    PublisherFilter createPublisherFilter(final String bundleId) throws DotDataException, DotSecurityException;
 }

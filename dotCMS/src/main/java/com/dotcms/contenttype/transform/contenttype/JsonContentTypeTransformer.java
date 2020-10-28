@@ -2,10 +2,10 @@ package com.dotcms.contenttype.transform.contenttype;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.layout.FieldLayout;
-import com.dotcms.contenttype.model.field.layout.FieldUtil;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.JsonTransformer;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
@@ -169,14 +169,19 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer, JsonT
 
   private List<Map<String, Object>> getFields(final ContentType type) {
     final List<Map<String, Object>> fieldsMap = new JsonFieldTransformer(type.fields()).mapList();
+    final List<Map<String, Object>> result = new ArrayList<>();
 
     if (contentTypeInternationalization != null) {
       for (final Map<String, Object> fieldMap : fieldsMap) {
-        FieldUtil.setFieldInternationalization(type, contentTypeInternationalization, fieldMap);
+        final Map<String, Object> fieldInternationalizationMap =
+                APILocator.getContentTypeFieldAPI().getFieldInternationalization(type, contentTypeInternationalization, fieldMap);
+        result.add(fieldInternationalizationMap);
       }
+    } else {
+      result.addAll(fieldsMap);
     }
 
-    return fieldsMap;
+    return result;
   }
 
   private FieldLayout getLayout(final ContentType type){

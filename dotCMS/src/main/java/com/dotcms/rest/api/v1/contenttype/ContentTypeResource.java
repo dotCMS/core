@@ -45,12 +45,28 @@ import org.glassfish.jersey.server.JSONP;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Path("/v1/contenttype")
@@ -120,7 +136,7 @@ public class ContentTypeResource implements Serializable {
 				final ContentType contentTypeSaved = tuple2._1;
 
 				ImmutableMap<Object, Object> responseMap = ImmutableMap.builder()
-						.putAll(new JsonContentTypeTransformer(contentTypeSaved).mapObject())
+							.putAll(new JsonContentTypeTransformer(contentTypeSaved).mapObject())
 						.put("workflows", this.workflowHelper.findSchemesByContentType(contentTypeSaved.id(), initData.getUser()))
 						.put("systemActionMappings", tuple2._2.stream()
 								.collect(Collectors.toMap(mapping-> mapping.getSystemAction(), mapping->mapping)))
@@ -303,7 +319,6 @@ public class ContentTypeResource implements Serializable {
 		}
 	}
 
-
 	@GET
 	@Path("/id/{idOrVar}")
 	@JSONP
@@ -379,6 +394,8 @@ public class ContentTypeResource implements Serializable {
 
 		return response;
 	} // getTypes.
+
+
 
 	/**
 	 * Return a list of {@link ContentType}, entity response syntax:.

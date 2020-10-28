@@ -3,8 +3,10 @@ package com.dotcms.rest.api.v1.portlet;
 import static com.dotcms.util.CollectionsUtils.map;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotmarketing.exception.DotDataException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -120,4 +122,21 @@ public class PortletResource implements Serializable {
     }
 
   }
+
+    @GET
+    @JSONP
+    @Path("/{portletId}/_doesuserhaveaccess")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response doesUserHaveAccessToPortlet(@Context final HttpServletRequest request,
+            @PathParam("portletId") final String portletId) throws DotDataException {
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, null)
+                .rejectWhenNoUser(true)
+                .init();
+        return Response.ok(new ResponseEntityView(map("response", APILocator.getLayoutAPI()
+                .doesUserHaveAccessToPortlet(portletId, initData.getUser())))).build();
+    }
 }

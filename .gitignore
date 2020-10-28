@@ -11,7 +11,10 @@ bin/*.sh
 *.ipr
 *.iws
 
-
+# none enterprise stuff should make it here #
+#######################################
+dotCMS/src/main/enterprise
+dotCMS/src/main/enterprise/*
 
 #Temporary Build Migration Ignores
 dotCMS/src/main/webapp/html/ng
@@ -47,7 +50,7 @@ dotCMS/src/integration-test/resources/starter.zip
 .gradle/
 /*.local.*
 dotCMS/src/main/webapp/dotAdmin
-dotCMS/src/main/webapp/custom-elements
+dotCMS/src/main/webapp/dotcms-webcomponents
 dotCMS/bin/*
 dotCMS/classes
 
@@ -72,3 +75,6 @@ dotCMS/src/main/generated/
 docker/tests/integration/output
 docker/tests/integration/license
 docker/tests/integration/backup
+
+dot-cicd/
+tmp/

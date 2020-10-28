@@ -33,6 +33,8 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
@@ -42,6 +44,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
 import com.dotcms.repackage.net.sf.hibernate.Query;
@@ -57,9 +60,9 @@ import com.dotcms.repackage.net.sf.hibernate.Session;
  */
 public class UserPersistence extends BasePersistence {
 
-	private static final String SEARCH_USER_BY_ID="select * from user_ where userid=?";
-	private static final UserTransformer userTransformer = new LiferayUserTransformer();
-
+	private final String SEARCH_USER_BY_ID="select * from user_ where userid=?";
+	private final UserTransformer userTransformer = new LiferayUserTransformer();
+    private final String SELECT_ALL_USERS="select * from user_ where companyid <> 'default' and delete_in_progress = " + DbConnectionFactory.getDBFalse() + " order by firstname, lastname";
 	protected com.liferay.portal.model.User create(String userId) {
 		return new com.liferay.portal.model.User(userId);
 	}
@@ -101,8 +104,6 @@ public class UserPersistence extends BasePersistence {
 	protected com.liferay.portal.model.User update(
 			com.liferay.portal.model.User user) throws SystemException {
 	
-
-
 			if (user.isNew() || user.isModified()) {
 	
 				UserHBM userHBM = null;
@@ -132,12 +133,21 @@ public class UserPersistence extends BasePersistence {
 							user.getAgreedToTermsOfUse(), user.getActive(),
 							user.getDeleteInProgress(), user.getDeleteDate());
 
+					userHBM.setSkinId(UUIDGenerator.generateUuid());
+				} else {
 
-				}
-				else {
 					try {
+
 						userHBM = (UserHBM)HibernateUtil.load(UserHBM.class,
 								user.getPrimaryKey());
+
+						if (this.diff(userHBM, user)) {
+
+							userHBM.setSkinId(UUIDGenerator.generateUuid()); // Id created for jwt user token
+						} else {
+							userHBM.setSkinId(user.getSkinId());
+						}
+
 						userHBM.setCompanyId(user.getCompanyId());
 						userHBM.setPassword(user.getPassword());
 						userHBM.setPasswordEncrypted(user.getPasswordEncrypted());
@@ -162,7 +172,6 @@ public class UserPersistence extends BasePersistence {
 						userHBM.setFavoriteMusic(user.getFavoriteMusic());
 						userHBM.setLanguageId(user.getLanguageId());
 						userHBM.setTimeZoneId(user.getTimeZoneId());
-						userHBM.setSkinId(user.getSkinId());
 						userHBM.setDottedSkins(user.getDottedSkins());
 						userHBM.setRoundedSkins(user.getRoundedSkins());
 						userHBM.setGreeting(user.getGreeting());
@@ -209,12 +218,11 @@ public class UserPersistence extends BasePersistence {
 								user.getFailedLoginAttempts(),
 								user.getAgreedToTermsOfUse(), user.getActive(),
 								user.getDeleteInProgress(), user.getDeleteDate());
-
-
-	
-					} 
+						userHBM.setSkinId(UUIDGenerator.generateUuid());
+					}
 				}
-                userHBM.setModDate(new Date());
+
+				userHBM.setModDate(new Date());
                 try {
                     com.dotmarketing.db.HibernateUtil.save(userHBM);
                 }
@@ -225,13 +233,49 @@ public class UserPersistence extends BasePersistence {
 				user.setModified(false);
 				user.protect();
 				UserPool.remove(user.getPrimaryKey());
-				UserPool.put(user.getPrimaryKey(), user);
+
 			}
 
 			return user;
-		
-	
+	}
 
+	protected boolean diff (final UserHBM userHBM, final User user) {
+		return !userHBM.getPassword().equals(user.getPassword()) ||
+				userHBM.getActive() != user.getActive() 		 ||
+				this.diff(userHBM.getCompanyId(), user.getCompanyId()) ||
+				this.diff(userHBM.getEmailAddress(), user.getEmailAddress()) ||
+				this.diff(userHBM.getLayoutIds(), user.getLayoutIds()) ||
+				this.diff(userHBM.getUserId(), user.getUserId());
+	}
+
+	private boolean diff (final String s1, final String s2) {
+
+		if (s1 != null && s2 != null) {
+
+			return !s1.equals(s2);
+		} else {
+
+			if (s1 != null || s2 != null) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private boolean diff (final Date date1, final Date date2) {
+
+		if (date1 != null && date2 != null) {
+
+			return !date1.equals(date2);
+		} else {
+
+			if (date1 != null || date2 != null) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	@CloseDBIfOpened
@@ -261,114 +305,29 @@ public class UserPersistence extends BasePersistence {
 	}
 
 	@CloseDBIfOpened
-	protected List findByCompanyId(String companyId) throws SystemException {
+	protected List<User> findByCompanyId(String companyId) throws SystemException {
 
 
-		try {
-
-
-			StringBuffer query = new StringBuffer();
-			query.append(
-					"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
-			query.append("companyId = ?");
-
-			query.append(" AND delete_in_progress = ");
-			query.append(DbConnectionFactory.getDBFalse());
-
-			query.append(" ORDER BY ");
-			query.append("firstName ASC").append(", ");
-			query.append("middleName ASC").append(", ");
-			query.append("lastName ASC");
-
-			HibernateUtil util = new HibernateUtil();
-			util.setQuery(query.toString());
-			util.setParam(companyId);
-			
-			
-
-
-			return util.list();
-		}
-		catch (DotHibernateException e) {
-		    throw new SystemException(e);
-        }
+		return findAll();
 
 	}
 
 	protected List findByCompanyId(String companyId, int begin, int end)
 			throws SystemException {
-		return findByCompanyId(companyId, begin, end, null);
+	    return findAll(begin, end, null);
 	}
+	
 	@CloseDBIfOpened
 	protected List findByCompanyId(String companyId, int begin, int end,
 			OrderByComparator obc) throws SystemException {
-		Session session = null;
-
-		try {
-			session = openSession();
-
-			StringBuffer query = new StringBuffer();
-			query.append(
-					"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
-			query.append("companyId = ?");
-
-			query.append(" AND delete_in_progress = ");
-			query.append(DbConnectionFactory.getDBFalse());
-
-			if (obc != null) {
-				query.append(" ORDER BY " + obc.getOrderBy());
-			}
-			else {
-				query.append(" ORDER BY ");
-				query.append("firstName ASC").append(", ");
-				query.append("middleName ASC").append(", ");
-				query.append("lastName ASC");
-			}
-
-			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
-			q.setString(queryPos++, companyId);
-
-			List list = new ArrayList();
-
-			if (getDialect().supportsLimit()) {
-				q.setMaxResults(end - begin);
-				q.setFirstResult(begin);
-
-				Iterator itr = q.list().iterator();
-
-				while (itr.hasNext()) {
-					UserHBM userHBM = (UserHBM)itr.next();
-					list.add(UserHBMUtil.model(userHBM));
-				}
-			}
-			else {
-				ScrollableResults sr = q.scroll();
-
-				if (sr.first() && sr.scroll(begin)) {
-					for (int i = begin; i < end; i++) {
-						UserHBM userHBM = (UserHBM)sr.get(0);
-						list.add(UserHBMUtil.model(userHBM));
-
-						if (!sr.next()) {
-							break;
-						}
-					}
-				}
-			}
-
-			return list;
-		}
-		catch (HibernateException he) {
-			throw new SystemException(he);
-		}
+        return findAll(begin, end, obc);
 
 	}
 
 	protected com.liferay.portal.model.User findByCompanyId_First(
 			String companyId, OrderByComparator obc)
 			throws NoSuchUserException, SystemException {
-		List list = findByCompanyId(companyId, 0, 1, obc);
+		List list = findAll(0, 1, obc);
 
 		if (list.size() == 0) {
 			throw new NoSuchUserException();
@@ -821,36 +780,34 @@ public class UserPersistence extends BasePersistence {
 
 	}
 	@CloseDBIfOpened
-	protected List findAll() throws SystemException {
-		Session session = null;
-
-		try {
-			session = openSession();
-
-			StringBuffer query = new StringBuffer();
-			query.append("FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM ");
-			query.append(" WHERE delete_in_progress = ");
-			query.append(DbConnectionFactory.getDBFalse());
-			query.append(" ORDER BY ");
-			query.append("firstName ASC").append(", ");
-			query.append("middleName ASC").append(", ");
-			query.append("lastName ASC");
-
-			Iterator itr = session.find(query.toString()).iterator();
-			List list = new ArrayList();
-
-			while (itr.hasNext()) {
-				UserHBM userHBM = (UserHBM)itr.next();
-				list.add(UserHBMUtil.model(userHBM));
-			}
-
-			return list;
-		}
-		catch (HibernateException he) {
-			throw new SystemException(he);
-		}
-
+	protected List<User> findAll() throws SystemException {
+		return findAll(0, 100000, null);
 	}
+	
+
+    @CloseDBIfOpened
+    protected List<User> findAll(int begin, int end, OrderByComparator obc) {
+
+
+        try {
+            DotConnect dc = new DotConnect();
+            dc.setSQL(SELECT_ALL_USERS);
+            dc.setStartRow(begin);
+            dc.setMaxRows(end - begin);
+
+            List<User> users = dc.loadObjectResults().stream().map(m -> userTransformer.fromMap(m)).collect(Collectors.toList());
+            if (obc != null) {
+                users.sort(obc);
+            }
+            return users;
+        } catch (Exception e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+	
+	
+	
+	
 	@WrapInTransaction
 	protected void removeByCompanyId(String companyId)
 			throws SystemException {

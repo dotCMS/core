@@ -1,6 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.util.Logger;

@@ -1,5 +1,7 @@
 package com.dotcms.company;
 
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.Company;
@@ -174,4 +176,16 @@ public interface CompanyAPI extends Serializable {
                                    java.lang.String timeZoneId, java.lang.String skinId,
                                    boolean dottedSkins, boolean roundedSkins, java.lang.String resolution)
             throws PortalException, SystemException,com.dotmarketing.exception.DotRuntimeException;
+
+    /**
+     * This will regenerate the default company key.
+     * And will broadcast a LocalSystemEvent notifying such change to any interested subscriber.
+     *
+     * @param company
+     * @param user
+     * @return
+     * @throws DotDataException
+     */
+    Company regenerateKey(Company company, User user) throws DotDataException, DotSecurityException;
+
 } // E:O:F:CompanyAPI.

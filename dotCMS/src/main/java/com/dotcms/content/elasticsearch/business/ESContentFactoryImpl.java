@@ -1,12 +1,64 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotmarketing.util.StringUtils.lowercaseStringExceptMatchingTokens;
 
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.util.transform.TransformerLocator;
+import com.dotmarketing.util.PaginatedArrayList;
+import java.io.Serializable;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
+import com.google.common.collect.Lists;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.lucene.search.TotalHits;
+import org.apache.lucene.search.TotalHits.Relation;
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.ElasticsearchStatusException;
+import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.search.ClearScrollRequest;
+import org.elasticsearch.action.search.ClearScrollResponse;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchScrollRequest;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.index.IndexNotFoundException;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.functionscore.RandomScoreFunctionBuilder;
+import org.elasticsearch.search.Scroll;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.sort.SortBuilders;
+import org.elasticsearch.search.sort.SortOrder;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.util.NumberUtils;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
-import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
-import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.content.elasticsearch.ESQueryCache;
+import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
@@ -58,45 +110,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.Ints;
 import com.liferay.portal.model.User;
-import java.io.Serializable;
-import java.io.StringWriter;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.StringTokenizer;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.index.IndexNotFoundException;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.QueryStringQueryBuilder;
-import org.elasticsearch.index.query.functionscore.RandomScoreFunctionBuilder;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.search.sort.SortBuilders;
-import org.elasticsearch.search.sort.SortOrder;
-import org.springframework.util.NumberUtils;
+import io.vavr.control.Try;
 
 /**
  * Implementation class for the {@link ContentletFactory} interface. This class
@@ -110,10 +124,9 @@ import org.springframework.util.NumberUtils;
 public class ESContentFactoryImpl extends ContentletFactory {
     private static final String[] ES_FIELDS = {"inode", "identifier"};
     private final ContentletCache contentletCache;
-	private final ESClient client;
 	private final LanguageAPI languageAPI;
 	private final IndiciesAPI indiciesAPI;
-
+	private final ESQueryCache queryCache;
     @VisibleForTesting
     public static final String CACHE_404_CONTENTLET = "CACHE_404_CONTENTLET";
 
@@ -133,8 +146,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	public ESContentFactoryImpl() {
         this.contentletCache = CacheLocator.getContentletCache();
         this.languageAPI     =  APILocator.getLanguageAPI();
-        this.client          = new ESClient();
         this.indiciesAPI     = APILocator.getIndiciesAPI();
+        this.queryCache      = CacheLocator.getESQueryCache();
 	}
 
 	@Override
@@ -221,15 +234,21 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	@Override
 	public com.dotmarketing.portlets.contentlet.business.Contentlet convertContentletToFatContentlet(Contentlet cont,
 			com.dotmarketing.portlets.contentlet.business.Contentlet fatty) throws DotDataException {
-	    String name = "";
-        try {
-            // If the contentlet doesn't have the identifier is pointless to call ContentletAPI().getName().
-            if (UtilMethods.isSet(cont) && UtilMethods.isSet(cont.getIdentifier())){
-                name = APILocator.getContentletAPI().getName(
-                        cont, APILocator.getUserAPI().getSystemUser(), true);
-            }
-        }catch (DotSecurityException e) {
 
+        // if the title was not intentionally set to null.
+        final boolean allowTitle = null == cont.getNullProperties() || !cont.getNullProperties().contains(Contentlet.TITTLE_KEY);
+
+	    String name = "";
+	    if (allowTitle) {
+            try {
+                // If the contentlet doesn't have the identifier is pointless to call ContentletAPI().getName().
+                if (UtilMethods.isSet(cont) && UtilMethods.isSet(cont.getIdentifier())) {
+                    name = APILocator.getContentletAPI().getName(
+                            cont, APILocator.getUserAPI().getSystemUser(), true);
+                }
+            } catch (DotSecurityException e) {
+
+            }
         }
         List<Field> fields = FieldsCache.getFieldsByStructureInode(cont.getStructureInode());
         for (Field f : fields) {
@@ -262,8 +281,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
         fatty.setModUser(cont.getModUser());
         fatty.setModDate(cont.getModDate());
         fatty.setReviewInterval(cont.getReviewInterval());
-        fatty.setTitle(name);
-        fatty.setFriendlyName(name);
+        if (allowTitle) { // if the title was not intentionally set to null.
+            fatty.setTitle(name);
+            fatty.setFriendlyName(name);
+        }
         List<String> wysiwygFields = cont.getDisabledWysiwyg();
         if( wysiwygFields != null && wysiwygFields.size() > 0 ) {
             StringBuilder wysiwyg = new StringBuilder();
@@ -591,15 +612,16 @@ public class ESContentFactoryImpl extends ContentletFactory {
             if(InodeUtils.isSet(con.getInode())){
                 APILocator.getPermissionAPI().removePermissions(con);
 
-                ContentletVersionInfo verInfo=APILocator.getVersionableAPI().getContentletVersionInfo(con.getIdentifier(), con.getLanguageId());
-                if(verInfo!=null && UtilMethods.isSet(verInfo.getIdentifier())) {
-                    if(UtilMethods.isSet(verInfo.getLiveInode()) && verInfo.getLiveInode().equals(con.getInode()))
+                Optional<ContentletVersionInfo> verInfo=APILocator.getVersionableAPI().getContentletVersionInfo(con.getIdentifier(), con.getLanguageId());
+
+                if(verInfo.isPresent()) {
+                    if(UtilMethods.isSet(verInfo.get().getLiveInode()) && verInfo.get().getLiveInode().equals(con.getInode()))
                         try {
                             APILocator.getVersionableAPI().removeLive(con);
                         } catch (Exception e) {
                             throw new DotDataException(e.getMessage(),e);
                         }
-                    if(verInfo.getWorkingInode().equals(con.getInode()))
+                    if(verInfo.get().getWorkingInode().equals(con.getInode()))
                         APILocator.getVersionableAPI().deleteContentletVersionInfo(con.getIdentifier(), con.getLanguageId());
                 }
 
@@ -668,65 +690,118 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
     }
 
-	@Override
-	protected int deleteOldContent(Date deleteFrom) throws DotDataException {
-	    ContentletCache cc = CacheLocator.getContentletCache();
-        Calendar calendar = Calendar.getInstance();
+    /**
+     * Deletes all the Contentlet versions that are older than the specified date.
+     *
+     * @param deleteFrom The date as of which all contents older than that will be deleted.
+     *
+     * @return The number of records deleted by this operation.
+     *
+     * @throws DotDataException An error occurred when interacting with the data source.
+     */
+    @Override
+    protected int deleteOldContent(final Date deleteFrom) throws DotDataException {
+        final Calendar calendar = Calendar.getInstance();
         calendar.setTime(deleteFrom);
         calendar.set(Calendar.HOUR_OF_DAY, 0);
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
-        Date date = calendar.getTime();
-        //Because of the way Oracle databases handle dates,
-        //this string is converted to Uppercase.This does
-        //not cause a problem with the other databases
+        final Date date = calendar.getTime();
         DotConnect dc = new DotConnect();
-
-        String countSQL = ("select count(*) as count from contentlet");
+        final String countSQL = "select count(*) as count from contentlet";
         dc.setSQL(countSQL);
         List<Map<String, String>> result = dc.loadResults();
-        int before = Integer.parseInt(result.get(0).get("count"));
-
-        String deleteContentletSQL = "delete from contentlet where identifier<>'SYSTEM_HOST' and mod_date < ? " +
-        "and not exists (select * from contentlet_version_info where working_inode=contentlet.inode or live_inode=contentlet.inode)";
-        dc.setSQL(deleteContentletSQL);
+        final int before = Integer.parseInt(result.get(0).get("count"));
+        dc = new DotConnect();
+        final String query = new StringBuilder("SELECT inode FROM contentlet WHERE identifier <> 'SYSTEM_HOST' AND mod_date < ? AND NOT EXISTS")
+                .append(" (SELECT working_inode FROM contentlet_version_info WHERE working_inode = contentlet.inode)")
+                .append(" INTERSECT")
+                .append(" SELECT inode FROM contentlet WHERE identifier <> 'SYSTEM_HOST' AND mod_date < ? AND NOT EXISTS")
+                .append(" (SELECT live_inode FROM contentlet_version_info WHERE live_inode = contentlet.inode)")
+                .toString();
+        dc.setSQL(query);
         dc.addParam(date);
-        dc.loadResult();
-
-        String deleteOrphanInodes="delete from inode where type='contentlet' and idate < ? and inode not in (select inode from contentlet)";
-        dc.setSQL(deleteOrphanInodes);
         dc.addParam(date);
-        dc.loadResult();
-
+        result = dc.loadResults();
+        int oldInodesCount = result.size();
+        if (oldInodesCount > 0) {
+            final List<String> inodeList = result.stream().map(row -> row.get("inode")).collect(Collectors.toList());
+            deleteContentData(inodeList);
+        }
+        dc = new DotConnect();
         dc.setSQL(countSQL);
         result = dc.loadResults();
-        int after = Integer.parseInt(result.get(0).get("count"));
-
-        int deleted=before - after;
-
-        // deleting orphan binary files
-        java.io.File assets=new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath());
-        for(java.io.File ff1 : assets.listFiles())
-            if(ff1.isDirectory() && ff1.getName().length()==1 && ff1.getName().matches("^[a-f0-9]$"))
-                for(java.io.File ff2 : ff1.listFiles())
-                    if(ff2.isDirectory() && ff2.getName().length()==1 && ff2.getName().matches("^[a-f0-9]$"))
-                        for(java.io.File ff3 : ff2.listFiles())
-                            try {
-                                if(ff3.isDirectory()) {
-                                    Contentlet con=find(ff3.getName());
-                                    if(con==null || !UtilMethods.isSet(con.getIdentifier()))
-                                        if(!FileUtils.deleteQuietly(ff3))
-                                            Logger.warn(this, "can't delete "+ff3.getAbsolutePath());
-                                }
-                            }
-                            catch(Exception ex) {
-                                Logger.warn(this, ex.getMessage());
-                            }
-
-
+        final int after = Integer.parseInt(result.get(0).get("count"));
+        final int deleted = before - after;
+        if (deleted > 0) {
+            deleteOrphanedBinaryFiles();
+        }
         return deleted;
-	}
+    }
+
+    /**
+     * Deletes the content data associated to the specified list of Inodes. Based on such a list, the {@code contentlet}
+     * will be cleaned up as well.
+     *
+     * @param inodeList The list of Inodes that will be deleted.
+     *
+     * @throws DotDataException An error occurred when interacting with the data source.
+     */
+    private void deleteContentData(final List<String> inodeList) throws DotDataException {
+        final int splitAt = 100;
+        // Split all records into lists of size 'truncateAt'
+        final List<List<String>> inodesToDelete = Lists.partition(inodeList, splitAt);
+        final List<String> queries = Lists.newArrayList("DELETE FROM contentlet WHERE inode IN (?)",
+                "DELETE FROM inode WHERE inode IN (?)");
+        for (final String query : queries) {
+            for (final List<String> inodes : inodesToDelete) {
+                final DotConnect dc = new DotConnect();
+                // Generate the "(?,?,?...)" string depending of the number of inodes
+                final String parameterPlaceholders = DotConnect.createParametersPlaceholder(inodes.size());
+                dc.setSQL(query.replace("?", parameterPlaceholders));
+                for (final String inode : inodes) {
+                    dc.addParam(inode);
+                }
+                dc.loadResult();
+            }
+        }
+    }
+
+    /**
+     * Deletes binary files in the {@code /assets/} folder that don't belong to a valid Inode. This cleanup routine
+     * helps dotCMS keep things in order when deleting old versions of contentlets.
+     */
+    private void deleteOrphanedBinaryFiles() {
+        // Deleting orphaned binary files
+        final java.io.File assets = new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath());
+        for (final java.io.File firstLevelFolder : assets.listFiles()) {
+            if (firstLevelFolder.isDirectory() && firstLevelFolder.getName().length() == 1 && firstLevelFolder
+                    .getName().matches("^[a-f0-9]$")) {
+                for (final java.io.File secondLevelFolder : firstLevelFolder.listFiles()) {
+                    if (secondLevelFolder.isDirectory() && secondLevelFolder.getName().length() == 1 &&
+                            secondLevelFolder.getName().matches("^[a-f0-9]$")) {
+                        for (final java.io.File asset : secondLevelFolder.listFiles()) {
+                            try {
+                                if (asset.isDirectory()) {
+                                    final Contentlet contentlet = find(asset.getName());
+                                    if (null == contentlet || !UtilMethods.isSet(contentlet.getIdentifier())) {
+                                        if (!FileUtils.deleteQuietly(asset)) {
+                                            Logger.warn(this, "Asset '" + asset.getAbsolutePath() + "' could " +
+                                                    "not be deleted.");
+                                        }
+                                    }
+                                }
+                            } catch (final Exception ex) {
+                                Logger.warn(this, String.format("An error occurred when deleting asset '%s': %s",
+                                        asset.getAbsolutePath(), ex.getMessage()));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
 	@Override
 	protected void deleteVersion(Contentlet contentlet) throws DotDataException {
@@ -813,14 +888,27 @@ public class ESContentFactoryImpl extends ContentletFactory {
     @Override
     protected List<Contentlet> findAllCurrent ( int offset, int limit ) throws ElasticsearchException {
 
-        QueryBuilder builder = QueryBuilders.matchAllQuery();
+        String indexToHit;
 
-        SearchResponse response = client.getClient().prepareSearch().
-                setSource(SearchSourceBuilder.searchSource().
-                fetchSource(new String[] {"inode"}, null)).
-                setQuery( builder ).
-                setSize( limit ).setFrom( offset ).execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
-        SearchHits hits = response.getHits();
+        try {
+            indexToHit = APILocator.getIndiciesAPI().loadIndicies().getWorking();
+        }
+        catch(DotDataException ee) {
+            Logger.fatal(this, "Can't get indicies information",ee);
+            return null;
+        }
+
+        SearchRequest searchRequest = new SearchRequest(indexToHit);
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        searchSourceBuilder.query(QueryBuilders.matchAllQuery());
+        searchSourceBuilder.size(limit);
+        searchSourceBuilder.from(offset);
+        searchSourceBuilder.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+        searchSourceBuilder.fetchSource(new String[] {"inode"}, null);
+        searchRequest.source(searchSourceBuilder);
+
+        SearchHits  hits = cachedIndexSearch(searchRequest);
+        
         List<Contentlet> cons = new ArrayList<>();
 
         for ( SearchHit hit : hits ) {
@@ -899,12 +987,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
     @Override
     protected List<Contentlet> findByStructure(String structureInode, Date maxDate, int limit,
             int offset) throws DotDataException, DotStateException, DotSecurityException {
-        final HibernateUtil hu = new HibernateUtil();
+        final DotConnect dotConnect = new DotConnect();
         final StringBuilder select = new StringBuilder();
-        select.append("select inode from inode in class ")
-                .append(com.dotmarketing.portlets.contentlet.business.Contentlet.class.getName())
-                .append(", contentletvi in class ").append(ContentletVersionInfo.class.getName())
-                .append(" where type = 'contentlet' and structure_inode = '")
+        select.append("select contentlet.*, inode.owner ").append(
+                "from contentlet, contentlet_version_info, inode ")
+                .append("where structure_inode = '")
                 .append(structureInode).append("' " );
 
         if (maxDate != null){
@@ -924,67 +1011,67 @@ public class ESContentFactoryImpl extends ContentletFactory {
             }
         }
 
-        select.append(" and contentletvi.identifier=inode.identifier and contentletvi.workingInode=inode.inode ");
-        hu.setQuery(select.toString());
+        select.append(" and contentlet_version_info.identifier=contentlet.identifier ")
+                .append(" and contentlet_version_info.working_inode=contentlet.inode ")
+                .append(" and contentlet.inode = inode.inode");
+        dotConnect.setSQL(select.toString());
 
         if (offset > 0) {
-            hu.setFirstResult(offset);
+            dotConnect.setStartRow(offset);
         }
         if (limit > 0) {
-            hu.setMaxResults(limit);
+            dotConnect.setMaxRows(limit);
         }
-        List<com.dotmarketing.portlets.contentlet.business.Contentlet> fatties = hu.list();
-        List<Contentlet> result = new ArrayList<Contentlet>();
-        for (com.dotmarketing.portlets.contentlet.business.Contentlet fatty : fatties) {
-            Contentlet content = convertFatContentletToContentlet(fatty);
-            contentletCache.add(String.valueOf(content.getInode()), content);
-            result.add(convertFatContentletToContentlet(fatty));
-        }
-        return result;
+
+        List<com.dotmarketing.portlets.contentlet.business.Contentlet> fatContentlets =
+                TransformerLocator.createFatContentletTransformer
+                (dotConnect.loadObjectResults()).asList();
+
+        List<Contentlet> contentlets = fatContentlets.stream()
+                .map(fatty -> Try.of(() -> convertFatContentletToContentlet(fatty)).getOrNull())
+                .collect(Collectors.toList());
+
+        contentlets.forEach(contentlet ->contentletCache
+                .add(String.valueOf(contentlet.getInode()), contentlet));
+
+        return contentlets;
     }
 
 	@Override
 	protected Contentlet findContentletByIdentifier(String identifier, Boolean live, Long languageId) throws DotDataException {
-		try {
-			Client client = new ESClient().getClient();
-
-			StringWriter sw= new StringWriter();
-			sw.append(" +identifier:" + identifier);
-			sw.append(" +languageid:" + languageId);
-			sw.append(" +deleted:false");
-
-			SearchRequestBuilder request = createRequest(client, sw.toString());
-
-			IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
-			SearchResponse response = request.setIndices((live ? info.live : info.working))
-			        .execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
-			SearchHits hits = response.getHits();
-			Contentlet contentlet = find(hits.getAt(0).getSourceAsMap().get("inode").toString());
-			return contentlet;
-		}
-		// if we don't have the con in this language
-		catch(ArrayIndexOutOfBoundsException aibex){
-			return null;
-		}
-		catch (Exception e) {
-			throw new ElasticsearchException(e.getMessage(), e);
-
-		}
+        final Optional<ContentletVersionInfo> cvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, languageId);
+        if(!cvi.isPresent() || UtilMethods.isEmpty(cvi.get().getIdentifier())
+                || (live && UtilMethods.isEmpty(cvi.get().getLiveInode()))) {
+            return null;
+        }
+        return Try.of(()->find((live?cvi.get().getLiveInode():cvi.get().getWorkingInode())))
+                .getOrElseThrow(DotRuntimeException::new);
 	}
 
 	@Override
     protected Contentlet findContentletByIdentifierAnyLanguage(final String identifier) throws DotDataException, DotSecurityException {
 	    
 	    // Looking content up this way can avoid any DB hits as these calls are all cached.
-	    final List<Language> langs = APILocator.getLanguageAPI().getLanguages();
-	    for(final Language language : langs) {
-	        final ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, language.getId());
-	        if(cvi != null  && UtilMethods.isSet(cvi.getIdentifier()) && !cvi.isDeleted()) {
-	            return find(cvi.getWorkingInode());
-	        }
-	    }
-	    return null;
+	    return findContentletByIdentifierAnyLanguage(identifier, false);
 
+    }
+
+    @Override
+    protected Contentlet findContentletByIdentifierAnyLanguage(final String identifier, final boolean includeDeleted) throws DotDataException, DotSecurityException {
+        // Looking content up this way can avoid any DB hits as these calls are all cached.
+        final List<Language> langs = this.languageAPI.getLanguages();
+        for(final Language language : langs) {
+            final Optional<ContentletVersionInfo> contentVersion = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, language.getId());
+            if (contentVersion.isPresent() && UtilMethods.isSet(contentVersion.get().getIdentifier())
+                    && (includeDeleted || !contentVersion.get().isDeleted())) {
+                return find(contentVersion.get().getWorkingInode());
+            }
+            if (contentVersion.isPresent() && contentVersion.get().isDeleted() && !includeDeleted) {
+                Logger.warn(this, String.format("Contentlet with ID '%s' exists, but is marked as 'Archived'.",
+                        identifier));
+            }
+        }
+        return null;
     }
 
 	@Override
@@ -1007,7 +1094,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
       List<String> missingCons = new ArrayList<>(CollectionUtils.subtract(inodes, conMap.keySet()));
 
       final String contentletBase = "select {contentlet.*} from contentlet join inode contentlet_1_ "
-          + "on contentlet_1_.inode = contentlet.inode and contentlet_1_.type = 'contentlet' where  contentlet.inode in ('";
+          + " on contentlet_1_.inode = contentlet.inode and contentlet_1_.type = 'contentlet' where  contentlet.inode in ('";
 
       for (int init = 0; init < missingCons.size(); init += 200) {
         int end = Math.min(init + 200, missingCons.size());
@@ -1039,30 +1126,38 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	 * @return
 	 * @throws DotDataException
 	 */
-	protected List<Contentlet> findContentletsByHost(String hostId, int limit, int offset) throws DotDataException {
+	protected List<Contentlet> findContentletsByHost(final String hostId, final int limit,
+            final int offset) {
 		try {
 
-			SearchResponse response = createRequest(client.getClient(), "+conhost:"+hostId).
-			        setSize(limit).setFrom(offset).execute()
-					.actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
-
-			SearchHits hits = response.getHits();
-
-			List<Contentlet> cons = new ArrayList<>();
-			for (int i = 0; i < hits.getHits().length; i++) {
-				try {
-					cons.add(find(hits.getAt(i).getSourceAsMap().get("inode").toString()));
-				} catch (Exception e) {
-					throw new ElasticsearchException(e.getMessage(),e);
-				}
-			}
-			return cons;
+		    final SearchRequest searchRequest = new SearchRequest();
+            final SearchSourceBuilder searchSourceBuilder = createSearchSourceBuilder("+conhost:"
+                    +hostId).size(limit).from(offset);
+            searchRequest.source(searchSourceBuilder);
+            return getContentletsFromSearchResponse(searchRequest);
 		} catch (Exception e) {
 			throw new ElasticsearchException(e.getMessage(), e);
 		}
 	}
 
-	@Override
+    @NotNull
+    private List<Contentlet> getContentletsFromSearchResponse(SearchRequest searchRequest) {
+        
+
+        SearchHits hits = cachedIndexSearch(searchRequest);
+
+        List<Contentlet> cons = new ArrayList<>();
+        for (int i = 0; i < hits.getHits().length; i++) {
+            try {
+                cons.add(find(hits.getAt(i).getSourceAsMap().get("inode").toString()));
+            } catch (Exception e) {
+                throw new ElasticsearchException(e.getMessage(),e);
+            }
+        }
+        return cons;
+    }
+
+    @Override
 	protected List<Contentlet> findContentletsByIdentifier(String identifier, Boolean live, Long languageId) throws DotDataException, DotStateException, DotSecurityException {
 	    List<Contentlet> cons = new ArrayList<>();
         StringBuilder queryBuffer = new StringBuilder();
@@ -1342,17 +1437,17 @@ public class ESContentFactoryImpl extends ContentletFactory {
             Logger.fatal(this, "Can't get indicies information",ee);
             return 0;
         }
-        if(query.contains("+live:true") && !query.contains("+deleted:true"))
-            indexToHit=info.live;
-        else
-            indexToHit=info.working;
+        if(query.contains("+live:true") && !query.contains("+deleted:true")) {
+            indexToHit = info.getLive();
+        } else {
+            indexToHit = info.getWorking();
+        }
 
-        final Client client              = this.client.getClient();
-        final QueryStringQueryBuilder qb = QueryBuilders.queryStringQuery(qq);
-        final SearchRequestBuilder searchRequestBuilder = client.prepareSearch().setSize(0);
-        searchRequestBuilder.setQuery(qb);
-        searchRequestBuilder.setIndices(indexToHit);
-        return searchRequestBuilder.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS).getHits().getTotalHits();
+        SearchRequest searchRequest = getCountSearchRequest(qq);
+        searchRequest.indices(indexToHit);
+
+        final SearchHits hits = cachedIndexSearch(searchRequest);
+       return hits.getTotalHits().value;
 	}
 
     @Override
@@ -1362,7 +1457,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         final String queryStringQuery =
                 LuceneQueryDateTimeFormatter.findAndReplaceQueryDates(translateQuery(query, null).getQuery());
 
-        // we check the query to figure out wich indexes to hit
+        // we check the query to figure out which indexes to hit
         IndiciesInfo info;
 
         try {
@@ -1373,18 +1468,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
             return 0;
         }
 
-        final Client client = this.client.getClient();
-        final QueryStringQueryBuilder queryStringQueryBuilder =
-                QueryBuilders.queryStringQuery(queryStringQuery);
-        final SearchRequestBuilder searchRequestBuilder =
-                client.prepareSearch().setSize(0);
+        SearchRequest searchRequest = getCountSearchRequest(queryStringQuery);
+        searchRequest.indices(query.contains("+live:true") && !query.contains("+deleted:true")?
+                info.getLive(): info.getWorking());
 
-        searchRequestBuilder.setTimeout(TimeValue.timeValueMillis(timeoutMillis));
-        searchRequestBuilder.setQuery(queryStringQueryBuilder);
-        searchRequestBuilder.setIndices(
-                query.contains("+live:true") && !query.contains("+deleted:true")? info.live: info.working);
-
-        return searchRequestBuilder.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS).getHits().getTotalHits();
+        final SearchHits hits = cachedIndexSearch(searchRequest);
+        return hits.getTotalHits().value;
     }
 
     @Override
@@ -1411,22 +1500,16 @@ public class ESContentFactoryImpl extends ContentletFactory {
             return;
         }
 
-        final Client client = this.client.getClient();
-        final QueryStringQueryBuilder queryStringQueryBuilder =
-                QueryBuilders.queryStringQuery(queryStringQuery);
-        final SearchRequestBuilder searchRequestBuilder =
-                client.prepareSearch().setSize(0);
+        SearchRequest searchRequest = getCountSearchRequest(queryStringQuery);
+        searchRequest.indices(query.contains("+live:true") && !query.contains("+deleted:true")?
+                info.getLive(): info.getWorking());
 
-        searchRequestBuilder.setQuery(queryStringQueryBuilder);
-        searchRequestBuilder.setIndices(
-                query.contains("+live:true") && !query.contains("+deleted:true")? info.live: info.working);
-        searchRequestBuilder.setTimeout(TimeValue.timeValueMillis(timeoutMillis));
-
-        searchRequestBuilder.execute(new ActionListener<SearchResponse>() {
+        RestHighLevelClientProvider.getInstance().getClient().searchAsync(searchRequest, RequestOptions.DEFAULT,
+                        new ActionListener<SearchResponse>() {
             @Override
             public void onResponse(SearchResponse searchResponse) {
 
-                indexCountSuccess.accept(searchResponse.getHits().getTotalHits());
+                indexCountSuccess.accept(searchResponse.getHits().getTotalHits().value);
             }
 
             @Override
@@ -1440,142 +1523,321 @@ public class ESContentFactoryImpl extends ContentletFactory {
         });
     }
 
+    @NotNull
+    private SearchRequest getCountSearchRequest(final String queryString) {
+        SearchRequest searchRequest = new SearchRequest();
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        searchSourceBuilder.query(QueryBuilders.queryStringQuery(queryString));
+        searchSourceBuilder.size(0);
+        searchSourceBuilder.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+        searchRequest.source(searchSourceBuilder);
+        return searchRequest;
+    }
+
     /**
      * It will call createRequest with null as sortBy parameter
      *
-     * @param client
      * @param query
      * @return
      */
-    private SearchRequestBuilder createRequest(Client client, String query) {
-		return createRequest(client, query, null);
-	}
+
+    private SearchSourceBuilder createSearchSourceBuilder(final String query) {
+        return createSearchSourceBuilder(query, null);
+    }
 
     /**
      *
-     * @param client
      * @param query
      * @param sortBy i.e. "random" or null object.
      * @return
      */
-    private SearchRequestBuilder createRequest(Client client, String query, String sortBy) {
 
-        SearchSourceBuilder ssb = SearchSourceBuilder.searchSource();
+    private SearchSourceBuilder createSearchSourceBuilder(final String query, final String sortBy) {
 
-        ssb.fetchSource(ES_FIELDS, null);
+        final SearchSourceBuilder searchSourceBuilder = SearchSourceBuilder.searchSource();
 
-        if(Config.getBooleanProperty("ELASTICSEARCH_USE_FILTERS_FOR_SEARCHING",false) && sortBy!=null && ! sortBy.toLowerCase().startsWith("score")) {
+        QueryBuilder queryBuilder;
+        QueryBuilder postFilter = null;
+
+        searchSourceBuilder.fetchSource(ES_FIELDS, null);
+
+        if(Config.getBooleanProperty("ELASTICSEARCH_USE_FILTERS_FOR_SEARCHING",false)
+                && sortBy!=null && ! sortBy.toLowerCase().startsWith("score")) {
 
             if("random".equals(sortBy)){
-                return client.prepareSearch().setSource(ssb)
-                        .setQuery(QueryBuilders.functionScoreQuery(QueryBuilders.matchAllQuery(), new RandomScoreFunctionBuilder()))
-                        .setPostFilter(QueryBuilders.queryStringQuery(query)); //Cache is handled internally.
+                queryBuilder = QueryBuilders.functionScoreQuery(QueryBuilders.matchAllQuery()
+                        , new RandomScoreFunctionBuilder());
             } else {
-                return client.prepareSearch().setSource(ssb)
-                        .setQuery(QueryBuilders.matchAllQuery())
-                        .setPostFilter(QueryBuilders.queryStringQuery(query)); //Cache is handled internally.
+                queryBuilder = QueryBuilders.matchAllQuery();
             }
+
+            postFilter = QueryBuilders.queryStringQuery(query);
 
         } else {
-            return client.prepareSearch().setSource(ssb).setQuery(QueryBuilders.queryStringQuery(query));
+            queryBuilder = QueryBuilders.queryStringQuery(query);
         }
+
+        searchSourceBuilder.query(queryBuilder);
+        searchSourceBuilder.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+
+        if(UtilMethods.isSet(postFilter)) {
+            searchSourceBuilder.postFilter(postFilter);
+        }
+
+        return searchSourceBuilder;
     }
 
-	@Override
-	protected SearchHits indexSearch(String query, int limit, int offset, String sortBy) {
+    private boolean useQueryCache=false;
+    private boolean shouldQueryCache() {
+        if(!useQueryCache) {
+            useQueryCache = LicenseManager.getInstance().isEnterprise() && Config.getBooleanProperty("ES_CACHE_SEARCH_QUERIES", true);
+        }
+        return useQueryCache;
+    }
+    
 
-	    final String qq = LuceneQueryDateTimeFormatter
+    SearchHits cachedIndexSearch(final SearchRequest searchRequest) {
+        
+        final Optional<SearchHits> optionalHits = shouldQueryCache() ? queryCache.get(searchRequest) : Optional.empty();
+        if(optionalHits.isPresent()) {
+            return optionalHits.get();
+        }
+        try {
+            SearchResponse response = RestHighLevelClientProvider.getInstance().getClient().search(searchRequest, RequestOptions.DEFAULT);
+            SearchHits hits  = response.getHits();
+            if(shouldQueryCache()) {
+                queryCache.put(searchRequest, hits);
+            }
+            return hits;
+        } catch (final ElasticsearchStatusException | IndexNotFoundException | SearchPhaseExecutionException e) {
+            final String exceptionMsg = (null != e.getCause() ? e.getCause().getMessage() : e.getMessage());
+            Logger.warn(this.getClass(), "----------------------------------------------");
+            Logger.warn(this.getClass(), String.format("Elasticsearch error in index '%s'", (searchRequest.indices()!=null) ? String.join(",", searchRequest.indices()): "unknown"));
+            Logger.warn(this.getClass(), String.format("ES Query: %s", String.valueOf(searchRequest.source()) ));
+            Logger.warn(this.getClass(), String.format("Class %s: %s", e.getClass().getName(), exceptionMsg));
+            Logger.warn(this.getClass(), "----------------------------------------------");
+            return new SearchHits(new SearchHit[] {}, new TotalHits(0, Relation.EQUAL_TO), 0);
+        } catch (final Exception e) {
+            final String errorMsg = String.format("An error occurred when executing the Lucene Query [ %s ] : %s",
+                            searchRequest.source().toString(), e.getMessage());
+            Logger.warnAndDebug(ESContentFactoryImpl.class, errorMsg, e);
+            throw new DotRuntimeException(errorMsg, e);
+        }
+            
+        
+        
+    }
+    
+
+    
+    
+    @Override
+    protected SearchHits indexSearch(final String query, final int limit, final int offset, String sortBy) {
+
+        final String formattedQuery = LuceneQueryDateTimeFormatter
                 .findAndReplaceQueryDates(translateQuery(query, sortBy).getQuery());
 
-	    // we check the query to figure out wich indexes to hit
-	    String indexToHit;
-	    IndiciesInfo info;
-	    try {
-	        info=APILocator.getIndiciesAPI().loadIndicies();
-	    }
-	    catch(DotDataException ee) {
-	        Logger.fatal(this, "Can't get indicies information",ee);
-	        return null;
-	    }
-	    if(query.contains("+live:true") && !query.contains("+deleted:true"))
-	        indexToHit=info.live;
-	    else
-	        indexToHit=info.working;
-
-	    Client client=new ESClient().getClient();
-
-        SearchResponse resp = null;
+        // we check the query to figure out wich indexes to hit
+        String indexToHit;
+        IndiciesInfo info;
         try {
+            info=APILocator.getIndiciesAPI().loadIndicies();
+        }
+        catch(DotDataException ee) {
+            Logger.fatal(this, "Can't get indicies information",ee);
+            return null;
+        }
+        if(query.contains("+live:true") && !query.contains("+deleted:true")) {
+            indexToHit = info.getLive();
+        } else {
+            indexToHit = info.getWorking();
+        }
 
-        	SearchRequestBuilder srb = createRequest(client, qq, sortBy);
-        	srb.setIndices(indexToHit);
+        final SearchRequest searchRequest = new SearchRequest();
+        SearchResponse response;
+        final SearchSourceBuilder searchSourceBuilder = createSearchSourceBuilder(formattedQuery, sortBy);
+        searchSourceBuilder.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+        searchRequest.indices(indexToHit);
 
-            if(limit>0)
-                srb.setSize(limit);
-            if(offset>0)
-                srb.setFrom(offset);
+        if(limit>0) {
+            searchSourceBuilder.size(limit);
+        }
+        if(offset>0) {
+            searchSourceBuilder.from(offset);
+        }
+        if(UtilMethods.isSet(sortBy)) {
+            sortBy = sortBy.toLowerCase();
 
-            if(UtilMethods.isSet(sortBy) ) {
-            	sortBy = sortBy.toLowerCase();
-                if(sortBy.startsWith("score")){
-            		String[] test = sortBy.split("[,|\\s+]");
-            		String defaultSecondarySort = "moddate";
-            		SortOrder defaultSecondardOrder = SortOrder.DESC;
+            
+            if(sortBy.startsWith("score")){
+                String[] sortByCriteria = sortBy.split("[,|\\s+]");
+                String defaultSecondarySort = "moddate";
+                SortOrder defaultSecondardOrder = SortOrder.DESC;
 
-            		if(test.length>2){
-            			if(test[2].equalsIgnoreCase("desc"))
-            				defaultSecondardOrder = SortOrder.DESC;
-            			else
-            				defaultSecondardOrder = SortOrder.ASC;
-            		}
-            		if(test.length>1){
-            			defaultSecondarySort= test[1];
-            		}
-
-            		srb.addSort("_score", SortOrder.DESC);
-            		srb.addSort(defaultSecondarySort, defaultSecondardOrder);
-            	}
-            	else if(!sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw") && !sortBy.equals("random")) {
-                    addBuilderSort(sortBy, srb);
+                if(sortByCriteria.length>2){
+                    if(sortByCriteria[2].equalsIgnoreCase("desc")) {
+                        defaultSecondardOrder = SortOrder.DESC;
+                    } else {
+                        defaultSecondardOrder = SortOrder.ASC;
+                    }
                 }
-            }else{
-                srb.addSort("moddate", SortOrder.DESC);
+                if(sortByCriteria.length>1){
+                    defaultSecondarySort= sortByCriteria[1];
+                }
+
+                searchSourceBuilder.sort("_score", SortOrder.DESC);
+                searchSourceBuilder.sort(defaultSecondarySort, defaultSecondardOrder);
+            } else if(!sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw") && !sortBy.equals("random")  && !sortBy.equals(SortOrder.ASC.toString())  && !sortBy.equals(SortOrder.DESC.toString())) {
+                addBuilderSort(sortBy, searchSourceBuilder);
+            }
+        }else{
+            searchSourceBuilder.sort("moddate", SortOrder.DESC);
+        }
+
+        searchRequest.source(searchSourceBuilder);
+        return cachedIndexSearch(searchRequest);
+
+
+    }
+
+    PaginatedArrayList<ContentletSearch> indexSearchScroll(final String query, String sortBy) {
+
+        final String formattedQuery = LuceneQueryDateTimeFormatter
+                .findAndReplaceQueryDates(translateQuery(query, sortBy).getQuery());
+
+        // we check the query to figure out wich indexes to hit
+        String indexToHit;
+        IndiciesInfo info;
+        try {
+            info=APILocator.getIndiciesAPI().loadIndicies();
+        }
+        catch(DotDataException ee) {
+            Logger.fatal(this, "Can't get indicies information",ee);
+            return null;
+        }
+        if(query.contains("+live:true") && !query.contains("+deleted:true")) {
+            indexToHit = info.getLive();
+        } else {
+            indexToHit = info.getWorking();
+        }
+
+        final SearchRequest searchRequest = new SearchRequest();
+        final SearchSourceBuilder searchSourceBuilder = createSearchSourceBuilder(formattedQuery, sortBy);
+        searchSourceBuilder.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+        searchRequest.indices(indexToHit);
+
+        if(UtilMethods.isSet(sortBy) ) {
+            sortBy = sortBy.toLowerCase();
+
+            if(sortBy.startsWith("score")){
+                String[] sortByCriteria = sortBy.split("[,|\\s+]");
+                String defaultSecondarySort = "moddate";
+                SortOrder defaultSecondardOrder = SortOrder.DESC;
+
+                if(sortByCriteria.length>2){
+                    if(sortByCriteria[2].equalsIgnoreCase("desc")) {
+                        defaultSecondardOrder = SortOrder.DESC;
+                    } else {
+                        defaultSecondardOrder = SortOrder.ASC;
+                    }
+                }
+                if(sortByCriteria.length>1){
+                    defaultSecondarySort= sortByCriteria[1];
+                }
+
+                searchSourceBuilder.sort("_score", SortOrder.DESC);
+                searchSourceBuilder.sort(defaultSecondarySort, defaultSecondardOrder);
+            } else if(!sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw") && !sortBy.equals("random")) {
+                addBuilderSort(sortBy, searchSourceBuilder);
+            }
+        }else{
+            searchSourceBuilder.sort("moddate", SortOrder.DESC);
+        }
+
+        searchSourceBuilder.size(MAX_LIMIT);
+        searchRequest.source(searchSourceBuilder);
+        final Scroll scroll = new Scroll(TimeValue.timeValueMinutes(1L));
+        searchRequest.scroll(scroll);
+
+        PaginatedArrayList<ContentletSearch> contentletSearchList = new PaginatedArrayList<>();
+
+        try {
+            SearchResponse searchResponse = RestHighLevelClientProvider.getInstance().getClient()
+                    .search(searchRequest, RequestOptions.DEFAULT);
+            String scrollId = searchResponse.getScrollId();
+            SearchHits searchHits = searchResponse.getHits();
+
+            contentletSearchList.addAll(getContentletSearchFromSearchHits(searchHits));
+            contentletSearchList.setTotalResults(searchHits.getTotalHits().value);
+
+            while (searchHits.getHits() != null && searchHits.getHits().length > 0) {
+
+                SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
+                scrollRequest.scroll(scroll);
+                searchResponse = RestHighLevelClientProvider.getInstance().getClient()
+                        .scroll(scrollRequest, RequestOptions.DEFAULT);
+                scrollId = searchResponse.getScrollId();
+                searchHits = searchResponse.getHits();
+
+                contentletSearchList.addAll(getContentletSearchFromSearchHits(searchHits));
             }
 
+            ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
+            clearScrollRequest.addScrollId(scrollId);
+            ClearScrollResponse clearScrollResponse = RestHighLevelClientProvider.getInstance()
+                    .getClient().clearScroll(clearScrollRequest, RequestOptions.DEFAULT);
+            boolean succeeded = clearScrollResponse.isSucceeded();
 
-
-            try{
-            	resp = srb.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
-            }catch (SearchPhaseExecutionException e) {
-				if(e.getMessage().contains("dotraw] in order to sort on")){
-					return new SearchHits(SearchHits.EMPTY,0,0);
-				}else{
-					throw e;
-				}
-			}
-            
-            
-        } catch (IndexNotFoundException | SearchPhaseExecutionException infe ) {
+        } catch (final ElasticsearchStatusException | IndexNotFoundException | SearchPhaseExecutionException e) {
+            final String exceptionMsg = (null != e.getCause() ? e.getCause().getMessage() : e.getMessage());
             Logger.warn(this.getClass(), "----------------------------------------------");
-            Logger.warn(this.getClass(), "Elasticsearch Index Error : " + indexToHit);
-            Logger.warnAndDebug(this.getClass(), infe.getMessage(), infe);
+            Logger.warn(this.getClass(), String.format("Elasticsearch error in index '%s'", (searchRequest.indices()!=null) ? String.join(",", searchRequest.indices()): "unknown"));
+            Logger.warn(this.getClass(), String.format("ES Query: %s", String.valueOf(searchRequest.source()) ));
+            Logger.warn(this.getClass(), String.format("Class %s: %s", e.getClass().getName(), exceptionMsg));
             Logger.warn(this.getClass(), "----------------------------------------------");
-            
-            return new SearchHits(new SearchHit[] {}, 0, 0);
-
-
-        } catch (Exception e) {
-            Logger.debug(this, e.getMessage(), e); 
-            throw new DotRuntimeException(e);
+            return new PaginatedArrayList<>();
+        } catch (final Exception e) {
+            final String errorMsg = String.format("An error occurred when executing the Lucene Query [ %s ] : %s",
+                    searchRequest.source().toString(), e.getMessage());
+            Logger.warnAndDebug(ESContentFactoryImpl.class, errorMsg, e);
+            throw new DotRuntimeException(errorMsg, e);
         }
-	    return resp.getHits();
-	}
 
-    public static void addBuilderSort(String sortBy, SearchRequestBuilder srb) {
+        return contentletSearchList;
+
+
+    }
+
+    private List<ContentletSearch> getContentletSearchFromSearchHits(final SearchHits searchHits) {
+        PaginatedArrayList<ContentletSearch> list=new PaginatedArrayList<>();
+        list.setTotalResults(searchHits.getTotalHits().value);
+
+        for (SearchHit sh : searchHits.getHits()) {
+            try{
+                Map<String, Object> sourceMap = sh.getSourceAsMap();
+                ContentletSearch conwrapper= new ContentletSearch();
+                conwrapper.setId(sh.getId());
+                conwrapper.setIndex(sh.getIndex());
+                conwrapper.setIdentifier(sourceMap.get("identifier").toString());
+                conwrapper.setInode(sourceMap.get("inode").toString());
+                conwrapper.setScore(sh.getScore());
+
+                list.add(conwrapper);
+            }
+            catch(Exception e){
+                Logger.error(this,e.getMessage(),e);
+                throw e;
+            }
+
+        }
+        return list;
+    }
+
+    public static void addBuilderSort(String sortBy, SearchSourceBuilder srb) {
         String[] sortbyArr = sortBy.split(",");
         for (String sort : sortbyArr) {
             String[] x = sort.trim().split(" ");
-            srb.addSort(SortBuilders.fieldSort(x[0].toLowerCase() + "_dotraw")
+            srb.sort(SortBuilders.fieldSort(x[0].toLowerCase() + "_dotraw")
                     .order(x.length > 1 && x[1].equalsIgnoreCase("desc") ?
                             SortOrder.DESC : SortOrder.ASC));
 
@@ -1848,6 +2110,22 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	        }
 	    }
 
+    /**
+     * This method filters out some content types depending on the license level
+     * @param query String with the lucene query where the filter will be applied
+     * @return String Query excluding non allowed content types
+     */
+    private static String getQueryWithValidContentTypes(final String query){
+        if (!LicenseManager.getInstance().isEnterprise()) {
+            final StringBuilder queryBuilder = new StringBuilder(query);
+            queryBuilder.append(" -baseType:" + BaseContentType.PERSONA.getType() + " ");
+            queryBuilder.append(" -basetype:" + BaseContentType.FORM.getType() + " ");
+            return queryBuilder.toString();
+        }
+
+        return query;
+    }
+
 	/**
 	 * Takes a dotCMS-generated query and translates it into valid terms and
 	 * keywords for accessing the Elastic index.
@@ -1859,6 +2137,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	 * @return The translated query used to search content in our Elastic index.
 	 */
 	    public static TranslatedQuery translateQuery(String query, String sortBy) {
+
+            query = getQueryWithValidContentTypes(query);
 
 	        TranslatedQuery result = CacheLocator.getContentletCache()
                     .getTranslatedQuery(query + " --- " + sortBy);

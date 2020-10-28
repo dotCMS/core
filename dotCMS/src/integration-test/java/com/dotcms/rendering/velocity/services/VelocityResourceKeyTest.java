@@ -1,11 +1,22 @@
 package com.dotcms.rendering.velocity.services;
 
+import com.dotcms.rendering.velocity.directive.RenderParams;
+import com.dotcms.rendering.velocity.directive.TemplatePathStrategy;
+import com.dotcms.rendering.velocity.directive.TemplatePathStrategyResolver;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.PageMode;
+import org.apache.velocity.context.Context;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.util.Optional;
+
+import static org.mockito.Mockito.mock;
 
 /**
  * Test of {@link VelocityResourceKey}
@@ -20,18 +31,28 @@ public class VelocityResourceKeyTest {
 
     @Test
     public void velocityResourceKey_constructor_fs_container_path_test() throws DotDataException {
+        final String path = "//demo.dotcms.com/application/containers/large-column";
 
-        final String path = "1/EDIT_MODE///demo.dotcms.com/application/containers/large-column/1551200983126.container";
+        final Host host = mock(Host.class);
+        final Language language = mock(Language.class);
+
+        final Context context = mock(Context.class);
+        final RenderParams params = new RenderParams(APILocator.systemUser(), language, host, PageMode.EDIT_MODE);
+        final String[] arguments = new String[]{path, "1551200983126"};
+
+        final TemplatePathStrategyResolver templatePathResolver = TemplatePathStrategyResolver.getInstance();
+        final Optional<TemplatePathStrategy> strategy           = templatePathResolver.get(context, params, arguments);
+
         final VelocityResourceKey velocityResourceKey =
-                new VelocityResourceKey(path);
+                new VelocityResourceKey(strategy.get().apply(context, params, arguments));
 
-        Assert.assertEquals("/EDIT_MODE///demo.dotcms.com/application/containers/large-column/1551200983126.container", velocityResourceKey.path);
-        Assert.assertEquals("///demo.dotcms.com/application/containers/large-column", velocityResourceKey.id1);
+        Assert.assertEquals("/EDIT_MODE/%%demo#dotcms#com%application%containers%large-column/1551200983126.container", velocityResourceKey.path);
+        Assert.assertEquals("%%demo#dotcms#com%application%containers%large-column", velocityResourceKey.id1);
         Assert.assertEquals("1551200983126", velocityResourceKey.id2);
         Assert.assertEquals(PageMode.EDIT_MODE, velocityResourceKey.mode);
         Assert.assertEquals(VelocityType.CONTAINER, velocityResourceKey.type);
         Assert.assertEquals("1", velocityResourceKey.language);
-        Assert.assertEquals("EDIT_MODE-///demo.dotcms.com/application/containers/large-column-1.container", velocityResourceKey.cacheKey);
+        Assert.assertEquals("EDIT_MODE-%%demo#dotcms#com%application%containers%large-column-1.container", velocityResourceKey.cacheKey);
     }
 
 

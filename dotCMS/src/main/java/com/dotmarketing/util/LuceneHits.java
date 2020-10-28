@@ -63,15 +63,15 @@ public class LuceneHits implements Serializable {
 	public void recordHits(TopDocs hits, int offset, int limit, String sortBy, IndexSearcher searcher)
 		throws IOException {
 
-		_total = hits.totalHits;
+		_total = hits.totalHits.value;
 		long upperIndex;
 		if (offset > -1 && limit > 0) {
-			if (offset + limit >  hits.totalHits)
-				upperIndex = hits.totalHits;
+			if (offset + limit >  hits.totalHits.value)
+				upperIndex = hits.totalHits.value;
 			else 
 				upperIndex = offset + limit;
 		} else {
-			upperIndex = hits.totalHits;
+			upperIndex = hits.totalHits.value;
 			offset = 0;
 		}
 		

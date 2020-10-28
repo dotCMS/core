@@ -396,13 +396,16 @@ public class PortalUtil {
   public static User getUser(HttpServletRequest req) {
     User user = (User) req.getAttribute(WebKeys.USER);
     if (user == null) {
+        user = getUser(req.getSession(false));
+    }
+    if (user == null) {
       String userId = PortalUtil.getUserId(req);
       if (userId == null) {
         return null;
       }
       user = Try.of(() -> UserLocalManagerUtil.getUserById(userId)).getOrNull();
-      req.setAttribute(WebKeys.USER, user);
     }
+    req.setAttribute(WebKeys.USER, user);
     return user;
   }
 

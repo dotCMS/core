@@ -3,6 +3,7 @@
  */
 package com.dotmarketing.portlets.structure.business;
 
+import java.io.Serializable;
 import java.util.List;
 
 import com.dotcms.business.CloseDBIfOpened;
@@ -23,7 +24,8 @@ import com.liferay.portal.model.User;
  *             class via {@link APILocator#getContentTypeFieldAPI()} in order to
  *             interact with Content Type fields.
  */
-public class FieldAPIImpl implements FieldAPI {
+@Deprecated
+public class FieldAPIImpl implements FieldAPI, Serializable {
 
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.portlets.structure.business.FieldAPI#valueSettable(com.dotmarketing.portlets.structure.model.Field)

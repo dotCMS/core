@@ -40,6 +40,8 @@ import com.dotmarketing.portlets.containers.business.ContainerFactory;
 import com.dotmarketing.portlets.containers.business.ContainerFactoryImpl;
 import com.dotmarketing.portlets.contentlet.business.ContentletFactory;
 import com.dotmarketing.portlets.dashboard.business.DashboardFactory;
+import com.dotmarketing.portlets.fileassets.business.FileAssetFactory;
+import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryImpl;
 import com.dotmarketing.portlets.folders.business.FolderFactory;
 import com.dotmarketing.portlets.folders.business.FolderFactoryImpl;
 import com.dotmarketing.portlets.hostvariable.bussiness.HostVariableFactory;
@@ -222,6 +224,10 @@ public class FactoryLocator extends Locator<FactoryIndex>{
         return (FieldFactory)  new FieldFactoryImpl();
     }
 
+    public static FileAssetFactory getFileAssetFactory() {
+        return (FileAssetFactory)getInstance(FactoryIndex.FileAsset_Factory);
+    }
+
     private static Object getInstance(FactoryIndex index) {
 
 		if(instance == null){
@@ -294,7 +300,8 @@ enum FactoryIndex
 	PERSONA_FACTORY,
 	CONTENTTYPE_FACTORY_2,
 	RELATIONSHIP_FACTORY,
-	FIELD_FACTORY_2;
+	FIELD_FACTORY_2,
+    FileAsset_Factory;
 
 	Object create() {
 		switch(this) {
@@ -332,6 +339,7 @@ enum FactoryIndex
             case PERSONA_FACTORY: return new PersonaFactoryImpl();
             case RELATIONSHIP_FACTORY: return new RelationshipFactoryImpl();
             case TAG_FACTORY: return new TagFactoryImpl();
+            case FileAsset_Factory: return new FileAssetFactoryImpl();
 		}
 		throw new AssertionError("Unknown Factory Index: " + this);
 	}

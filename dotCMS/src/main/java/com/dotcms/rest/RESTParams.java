@@ -17,7 +17,8 @@ public enum RESTParams {
 	RESPECT_FRONT_END_ROLES ("respectFrontendRoles"),
     //keeps the identifier of the related content to filter by (useful when retrieving parents given a child
     RELATED ("related"),
-	DEPTH ("depth");
+	DEPTH ("depth"),
+	ALL_CATEGORIES_INFO ("includeCategoriesExtraInfo");
 
 	private final String  value;
 

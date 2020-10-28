@@ -1,6 +1,13 @@
 package com.dotcms.company;
 
+import com.dotcms.business.WrapInTransaction;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotcms.system.event.local.type.security.CompanyKeyResetEvent;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.CompanyUtils;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.PortalException;
@@ -11,13 +18,16 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.ImageKey;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
-
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
+import com.liferay.util.Base64;
+import com.liferay.util.Encryptor;
+import com.liferay.util.EncryptorException;
 import java.io.File;
 import java.io.Serializable;
+import java.security.Key;
 import java.text.MessageFormat;
 import java.util.List;
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Factory to get the CompanyAPI, this encapsulates the creation of it, however in order to
@@ -27,6 +37,8 @@ import java.util.List;
 public class CompanyAPIFactory implements Serializable {
 
     private final CompanyAPI companyAPI = new CompanyAPIImpl();
+
+    private final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
 
     private CompanyAPIFactory () {
         // singleton
@@ -155,5 +167,34 @@ public class CompanyAPIFactory implements Serializable {
                     skinId, dottedSkins, roundedSkins,
                     resolution);
         }
+
+        @Override
+        @WrapInTransaction
+        public Company regenerateKey(final Company company, final User user)
+                throws DotDataException, DotSecurityException {
+            try {
+                if (!user.isAdmin()) {
+                    throw new DotSecurityException(String.format(
+                            "User `%s` does not have permission to regenerate company Key operation.",
+                            user.getUserId()));
+                }
+                final String originalKey = company.getKey();
+                final String newKey = Base64.objectToString(Encryptor.generateKey());
+                company.setKey(newKey);
+                company.setModified(true);
+                CompanyManagerUtil.updateCompany(company);
+                final Key originalKeyObj = (Key) Base64.stringToObject(originalKey);
+                final Key newKeyObj = (Key) Base64.stringToObject(newKey);
+                HibernateUtil.addCommitListener(() -> {
+                    localSystemEventsAPI
+                            .notify(new CompanyKeyResetEvent(company.getCompanyId(), originalKeyObj,
+                                    newKeyObj));
+                });
+                return company;
+            } catch (EncryptorException | SystemException e) {
+                throw new DotDataException(e);
+            }
+        }
+
     }
 } // E:O:F:CompanyAPI.

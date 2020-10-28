@@ -19,13 +19,34 @@
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@ page import="com.dotmarketing.portlets.containers.business.FileAssetContainerUtil" %>
 <%@ page import="com.dotmarketing.business.web.WebAPILocator" %>
+<%@ page import="com.dotmarketing.beans.Host" %>
+<%@ page import="com.dotmarketing.util.HostUtil" %>
+<%@ page import="com.dotmarketing.util.Constants" %>
+<%@ page import="com.dotcms.contenttype.exception.NotFoundInDbException" %>
 
 <%
     String containerIdentifier = request.getParameter("container_id");
     User user = PortalUtil.getUser(request);
-    Container container = FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerIdentifier)?
-            APILocator.getContainerAPI().getWorkingContainerByFolderPath(containerIdentifier, WebAPILocator.getHostWebAPI().getHost(request), APILocator.getUserAPI().getSystemUser(), false):
-            APILocator.getContainerAPI().getWorkingContainerById(containerIdentifier, APILocator.getUserAPI().getSystemUser(), false);
+    Container container = null;
+    if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerIdentifier)) {
+
+        final Optional<Host> hostOpt = HostUtil.getHostFromPathOrCurrentHost(containerIdentifier, Constants.CONTAINER_FOLDER_PATH);
+        final Host   host            = hostOpt.isPresent()? hostOpt.get():WebAPILocator.getHostWebAPI().getHost(request);
+        final String relativePath    = FileAssetContainerUtil.getInstance().getPathFromFullPath(host.getHostname(), containerIdentifier);
+        try {
+            container = APILocator.getContainerAPI().getWorkingContainerByFolderPath(relativePath, host, APILocator.getUserAPI().getSystemUser(), false);
+        } catch (NotFoundInDbException e) {
+            // if does not found in the host path or current host, tries the default one if it is not the same
+            final Host defaultHost = WebAPILocator.getHostWebAPI().findDefaultHost(user, false);
+            if (!defaultHost.getIdentifier().equals(host.getIdentifier())) {
+
+                container = APILocator.getContainerAPI().getWorkingContainerByFolderPath(relativePath, defaultHost, APILocator.getUserAPI().getSystemUser(), false);
+            }
+        }
+    } else {
+
+        container = APILocator.getContainerAPI().getWorkingContainerById(containerIdentifier, APILocator.getUserAPI().getSystemUser(), false);
+    }
 
     List<ContentType> contentTypes = null;
     String baseTypeToAdd = request.getParameter("add");
@@ -134,7 +155,7 @@
 
         function loadAddContentTypePrimaryMenu() {
             var addContentDropdown = '<div data-dojo-type="dijit/form/DropDownButton" data-dojo-props=\'iconClass:"fa-plus", class:"dijitDropDownActionButton"\'><span></span>';
-            addContentDropdown+= '<ul data-dojo-type="dijit/Menu" >';
+            addContentDropdown+= '<ul class="content-search-dialog__content-type-menu" data-dojo-type="dijit/Menu" >';
             var addContentTypePrimaryMenu =  document.getElementById('addContentTypeDropdown');
             for ( var i = 1; contentSelector.containerStructures.length > i; i++) {
                 addContentDropdown+= '<li data-dojo-type="dijit/MenuItem" onClick="addNewContentlet(\'' + contentSelector.containerStructures[i].inode + '\')">' + contentSelector.containerStructures[i].name + '</li>';

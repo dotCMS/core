@@ -1,5 +1,6 @@
 package com.dotcms.util.pagination;
 
+import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -17,6 +18,7 @@ import com.liferay.portal.model.User;
 import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.*;
 
+import java.io.IOException;
 import java.util.Map;
 
 import com.tngtech.java.junit.dataprovider.DataProvider;
@@ -121,6 +123,43 @@ public class ContentTypesPaginatorTest {
         }
     }
 
+    /**
+     * Method to Test: {@link ContentTypesPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
+     * When: When the current indices are desactive or deleted
+     * Should: Should return NA in the entries property
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void whenTheIndicesAreDeactivateShouldReturnNAInEntries() throws DotDataException, IOException {
+        final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
+
+        final String live = APILocator.getESIndexAPI().removeClusterIdFromName(indiciesInfo.getLive());
+        final String working = APILocator.getESIndexAPI().removeClusterIdFromName(indiciesInfo.getWorking());
+        try {
+            if (live != null) {
+                APILocator.getContentletIndexAPI().deactivateIndex(live);
+            }
+
+            APILocator.getContentletIndexAPI().deactivateIndex(working);
+
+            final ContentTypesPaginator paginator = new ContentTypesPaginator();
+
+            final PaginatedArrayList<Map<String, Object>> items = paginator.getItems(user, "", -1, 0);
+
+            for (final Map<String, Object> item : items) {
+                assertEquals("N/A", item.get("nEntries"));
+            }
+
+        }finally {
+            if (live != null) {
+                APILocator.getContentletIndexAPI().activateIndex(live);
+            }
+
+            APILocator.getContentletIndexAPI().activateIndex(working);
+        }
+    }
 
     private ContentType createContentType() throws DotSecurityException, DotDataException {
         final long i = System.currentTimeMillis();

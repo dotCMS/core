@@ -52,6 +52,7 @@ public class RotateImageFilter extends ImageFilter {
 			 * }
 			 */
 			ImageIO.write(dst, "png", resultFile);
+			dst.flush();
 		} catch (IOException e) {
 			Logger.error(this.getClass(), e.getMessage());
 		}

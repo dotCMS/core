@@ -19,8 +19,32 @@
 
 package com.liferay.portal.servlet;
 
+import com.dotmarketing.startup.runalways.Task00030ClusterInitialize;
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Optional;
+import java.util.TreeMap;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.servlet.jsp.PageContext;
+import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.commons.beanutils.SuppressPropertiesBeanIntrospector;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.Element;
+import org.dom4j.io.SAXReader;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.config.DotInitializationService;
+import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.repackage.com.httpbridge.webproxy.http.TaskController;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.action.ActionServlet;
@@ -61,35 +85,6 @@ import com.liferay.util.StringUtil;
 import com.liferay.util.servlet.EncryptedServletRequest;
 import com.liferay.util.servlet.UploadServletRequest;
 
-import io.vavr.API;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.StringReader;
-import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Optional;
-import java.util.TreeMap;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.servlet.jsp.PageContext;
-
-import org.apache.commons.beanutils.PropertyUtils;
-import org.apache.commons.beanutils.SuppressPropertiesBeanIntrospector;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.dom4j.Document;
-import org.dom4j.DocumentException;
-import org.dom4j.Element;
-import org.dom4j.io.SAXReader;
-
 /**
  * <a href="MainServlet.java.html"><b><i>View Source</i></b></a>
  *
@@ -112,14 +107,26 @@ public class MainServlet extends ActionServlet {
       } catch (IOException e1) {
         Logger.debug(InitServlet.class, "IOException: " + e1.getMessage(), e1);
       }
+      
+      // Make sure elasticseach is up
+      new ESIndexAPI().waitUtilIndexReady();
+      
+      
+
+
 
       // Checking for execute upgrades
       try {
-        StartupTasksExecutor.getInstance().executeUpgrades(config.getServletContext().getRealPath("/"));
-      } catch (DotRuntimeException e1) {
-        throw new ServletException(e1);
-      } catch (DotDataException e1) {
-        throw new ServletException(e1);
+        StartupTasksExecutor.getInstance().executeStartUpTasks();
+        StartupTasksExecutor.getInstance().executeUpgrades();
+
+        final Task00030ClusterInitialize clusterInitializeTask = new Task00030ClusterInitialize();
+        if(clusterInitializeTask.forceRun()){
+          clusterInitializeTask.executeUpgrade();
+        }
+
+      } catch (Exception e1) {
+        throw new DotRuntimeException(e1);
       } finally {
         DbConnectionFactory.closeSilently();
       }

@@ -2,11 +2,11 @@ package com.dotcms.content.elasticsearch.business;
 
 import static org.junit.Assert.*;
 
+import com.dotcms.content.elasticsearch.business.IndiciesInfo.Builder;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -32,8 +32,8 @@ public class IndiciesFactoryTest {
         indiciesAPI     = APILocator.getIndiciesAPI();
 
         IndiciesInfo indiciesInfo = indiciesAPI.loadIndicies();
-        ORIGINAL_WORKING_INDEX    = indiciesInfo.working;
-        ORIGINAL_LIVE_INDEX       = indiciesInfo.live;
+        ORIGINAL_WORKING_INDEX    = indiciesInfo.getWorking();
+        ORIGINAL_LIVE_INDEX       = indiciesInfo.getLive();
     }
     
     @Test
@@ -41,23 +41,22 @@ public class IndiciesFactoryTest {
         new DotConnect().setSQL("delete from indicies").loadResult();
         CacheLocator.getIndiciesCache().clearCache();
         IndiciesInfo nullInfo = indiciesAPI.loadIndicies();
-        assert(nullInfo.live==null);
-        assert(nullInfo.working==null);
-        assert(nullInfo.reindex_live==null);
-        assert(nullInfo.reindex_working==null);
-        
-        final IndiciesInfo info = new IndiciesInfo();
-        info.working= INFO_WORKING;
-        info.live= INFO_LIVE;
-        info.reindex_live= INFO_REINDEX_LIVE;
-        info.reindex_working= INFO_REINDEX_WORKING;
-        indiciesFactory.point(info);
+        assert(nullInfo.getLive()==null);
+        assert(nullInfo.getWorking()==null);
+        assert(nullInfo.getReindexLive()==null);
+        assert(nullInfo.getReindexWorking()==null);
+
+        final Builder builder = new Builder();
+        builder.setWorking(INFO_WORKING).setLive(INFO_LIVE).setReindexLive(INFO_REINDEX_LIVE)
+                .setReindexWorking(INFO_REINDEX_WORKING);
+
+        indiciesFactory.point(builder.build());
 
         final IndiciesInfo cachedInfo = indiciesAPI.loadIndicies();
-        assertEquals(cachedInfo.live, INFO_LIVE);
-        assertEquals(cachedInfo.working, INFO_WORKING);
-        assertEquals(cachedInfo.reindex_live, INFO_REINDEX_LIVE);
-        assertEquals(cachedInfo.reindex_working,INFO_REINDEX_WORKING);
+        assertEquals(cachedInfo.getLive(), INFO_LIVE);
+        assertEquals(cachedInfo.getWorking(), INFO_WORKING);
+        assertEquals(cachedInfo.getReindexLive(), INFO_REINDEX_LIVE);
+        assertEquals(cachedInfo.getReindexWorking(),INFO_REINDEX_WORKING);
     }
     
     
@@ -67,34 +66,33 @@ public class IndiciesFactoryTest {
         new DotConnect().setSQL("delete from indicies").loadResult();
         CacheLocator.getIndiciesCache().clearCache();
 
-        IndiciesInfo info = new IndiciesInfo();
-        info.working= INFO_WORKING;
-        info.live= INFO_LIVE;
-        indiciesFactory.point(info);
+        Builder builder = new Builder();
+        builder.setWorking(INFO_WORKING).setLive(INFO_LIVE);
+        indiciesFactory.point(builder.build());
 
         IndiciesInfo cachedInfo = indiciesAPI.loadIndicies();
-        assertEquals(cachedInfo.live, INFO_LIVE);
-        assertEquals(cachedInfo.working, INFO_WORKING);
-        assertNull(cachedInfo.reindex_live);
-        assertNull(cachedInfo.reindex_working);
-        
-        info = new IndiciesInfo();
-        info.reindex_live= INFO_REINDEX_LIVE;
-        info.reindex_working=INFO_REINDEX_WORKING;
-        indiciesFactory.point(info);
+        assertEquals(cachedInfo.getLive(), INFO_LIVE);
+        assertEquals(cachedInfo.getWorking(), INFO_WORKING);
+        assertNull(cachedInfo.getReindexLive());
+        assertNull(cachedInfo.getReindexWorking());
+
+        builder = new Builder();
+        builder.setReindexLive(INFO_REINDEX_LIVE).setReindexWorking(INFO_REINDEX_WORKING);
+        indiciesFactory.point(builder.build());
         
         cachedInfo = indiciesAPI.loadIndicies();
-        assertNull(cachedInfo.live);
-        assertNull(cachedInfo.working);
-        assertEquals(cachedInfo.reindex_live, INFO_REINDEX_LIVE);
-        assertEquals(cachedInfo.reindex_working, INFO_REINDEX_WORKING);
+        assertNull(cachedInfo.getLive());
+        assertNull(cachedInfo.getWorking());
+        assertEquals(cachedInfo.getReindexLive(), INFO_REINDEX_LIVE);
+        assertEquals(cachedInfo.getReindexWorking(), INFO_REINDEX_WORKING);
     }
 
     @AfterClass
     public static void restoreIndex() throws Exception {
-        final IndiciesInfo info = new IndiciesInfo();
-        info.live    = ORIGINAL_LIVE_INDEX;
-        info.working = ORIGINAL_WORKING_INDEX;
-        indiciesFactory.point(info);
+
+        final Builder builder = new Builder();
+        builder.setWorking(ORIGINAL_WORKING_INDEX).setLive(ORIGINAL_LIVE_INDEX);
+
+        indiciesFactory.point(builder.build());
     }
 }

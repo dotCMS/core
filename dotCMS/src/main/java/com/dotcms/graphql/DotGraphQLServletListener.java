@@ -1,5 +1,6 @@
 package com.dotcms.graphql;
 
+import graphql.kickstart.servlet.core.GraphQLServletListener;
 import javax.ws.rs.core.Response;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotmarketing.util.Logger;
@@ -8,8 +9,6 @@ import java.io.IOException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import graphql.servlet.GraphQLServletListener;
 
 public class DotGraphQLServletListener implements GraphQLServletListener {
 

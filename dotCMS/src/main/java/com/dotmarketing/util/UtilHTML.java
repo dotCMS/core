@@ -3,9 +3,11 @@ package com.dotmarketing.util;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.IconType;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.WebAsset;
@@ -27,6 +29,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 
 public class UtilHTML {
 
@@ -398,27 +401,56 @@ public class UtilHTML {
 
 		return strHTML.toString();
 	}
-	
-	public static String getIconClass(Contentlet contentlet) throws DotDataException {
-	    
-        ContentType type = contentlet.getContentType();
 
-        Identifier ident = APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
-
-        return (type.baseType().ordinal() ==1)
-                ? "contentIcon"
-                        :  (type.baseType().ordinal() ==2)
-                        ? "gearIcon"
-                                :  (type.baseType().ordinal() ==3)
-                                ? "formIcon"
-                                    :  (type.baseType().ordinal() ==4)
-                                    ? "uknIcon " + UtilMethods.getFileExtension( ident.getURI()) + "Icon"
-                                        :  (type.baseType().ordinal() ==5)
-                                        ? "pageIcon"
-                                                : "personaIcon";
+	/**
+	 * Return the Icon Class for the Front End
+	 * @param contentlet {@link Contentlet}
+	 * @return String
+	 * @throws DotDataException
+	 */
+	public static String getIconClass(final Contentlet contentlet) throws DotDataException {
 	    
+        final ContentType type = contentlet.getContentType();
+
+        switch(type.baseType()) {
+            case CONTENT:
+
+                return IconType.CONTENT.iconName();
+            case WIDGET:
+
+                return IconType.WIDGET.iconName();
+            case FORM:
+
+                return IconType.FORM.iconName();
+            case FILEASSET:
+
+				final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
+				final String      uri       = identifier.getURI();
+				final String      icon      = UtilMethods.getFileExtension(uri);
+
+				return uri.equals(icon)? "uknIcon": icon + "Icon";
+            case HTMLPAGE:
+
+                return IconType.HTMLPAGE.iconName();
+            case KEY_VALUE:
+
+                return IconType.KEY_VALUE.iconName();
+            case PERSONA:
+
+                return IconType.PERSONA.iconName();
+            case VANITY_URL:
+
+                return IconType.VANITY_URL.iconName();
+            case DOTASSET:
+
+            	final String dotUri  = Try.of(()-> contentlet.getBinary(DotAssetContentType.ASSET_FIELD_VAR).getName()).getOrElse("ukn");
+            	final String dotIcon = UtilMethods.getFileExtension(dotUri);
+
+				return dotUri.equals(dotIcon)? "uknIcon": dotIcon + "Icon";
+            default:
+                return IconType.UNKNOWN.iconName();
+        }
 	}
-	
 	
 	
 	

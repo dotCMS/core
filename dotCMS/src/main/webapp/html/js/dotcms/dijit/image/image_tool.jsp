@@ -13,19 +13,20 @@
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.util.WebKeys"%>
 <%@page import="java.util.Enumeration"%>
-<%
-    String dojoPath = Config.getStringProperty("path.to.dojo");
+
+
+<%	
+	String dojoPath = Config.getStringProperty("path.to.dojo");
 
 	String id = request.getParameter("id");
-	
-	String fieldName = (UtilMethods.isSet(request.getParameter("fieldName"))) ? request.getParameter("fieldName") : "fileAsset";
 
+	String wysiwyg = (UtilMethods.isSet(request.getParameter("wysiwyg"))) ? request.getParameter("wysiwyg") : null;
+
+	String fieldName = (UtilMethods.isSet(request.getParameter("fieldName"))) ? request.getParameter("fieldName") : "fileAsset";
 	String baseImage =  "/contentAsset/image/" + id + "/" + fieldName + "/" ;
 
-    
     Optional<FocalPoint> focalPoint =APILocator.getFocalPointAPI().readFocalPoint(id, fieldName);
     String fpStr = focalPoint.isPresent() ? focalPoint.toString() :".0,.0"; 
-    
 	String hostId = null;
 	if (request.getParameter("host_id") != null) {
 		hostId = request.getParameter("host_id");
@@ -33,8 +34,7 @@
 		hostId = (String)session.getAttribute(com.dotmarketing.util.WebKeys.SEARCH_HOST_ID);
 	}
 		
-	
-    User user = com.liferay.portal.util.PortalUtil.getUser(request);
+ User user = com.liferay.portal.util.PortalUtil.getUser(request);
 
     if(user ==null || LicenseLevel.COMMUNITY.level == LicenseUtil.getLevel()){
     	response.getWriter().println("Unauthorized");
@@ -43,7 +43,6 @@
 	
     String userAgent = request.getHeader("USER-AGENT");
 %>
-
 
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD. HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
@@ -109,79 +108,78 @@
 				
 			}
 		);
-
-		
-
-		
-		
-		
+	
 	</script>
 	
 </head>
 <body class="dmundra"  >
-<!--  top button bar -->
-	<div class="imageToolContainer">
-      <div class="imageToolButtonBar">
-      	<table style="width:98%;margin:5px">
-      		<tr>
-      			<td width="100%" style="white-space: nowrap;">
-      				<table>
-      					<tr>
-      						<td style="white-space: nowrap;">
-      							<%= LanguageUtil.get(pageContext, "Address") %>: 
-      						</td>
-      						<td width="100%;" style="white-space: nowrap;padding-right:25px;">
-      							<input type="text" id="viewingUrl" dojoType="dijit.form.TextBox" value="<%=baseImage %>" style="width:100%;" onkeypress="if (event.which == 13 || event.keyCode == 13) {imageEditor.changeViewingUrl()}" onchange="imageEditor.changeViewingUrl()">
-      						</td>
-      					</tr>
-      				</table>
-      			</td>
-      			<td style="white-space: nowrap;">
-                      <span style="display:inline-block;margin-left:0px;margin-right:10px;">
-                          <a href="#" id="showLink" target="showDotImages">show</a>
-                      </span>
-      
-      
-      				<button dojoType="dijit.form.Button" onclick="imageEditor.doDownload()" >
-      					<%= LanguageUtil.get(pageContext, "download") %>
-      				</button>
-      				&nbsp; &nbsp;
-      				<button dojoType="dijit.form.Button" id="clipBoard"  <% if(id == null || id.startsWith("temp_")) { %>disabled<% } %> onclick="imageEditor.addToClipboard()">
-      					<%= LanguageUtil.get(pageContext, "Clip") %>
-      				</button>
-      				
-      				<%-- this span is hidden for binary images --%>
-      				<span id="saveAsSpan" style="display:none;">
-      					<button dojoType="dijit.form.ComboButton"  title="save-as">
-      						<span><%= LanguageUtil.get(pageContext, "save-as") %></span>
-      						<div dojoType="dijit.Menu" id="createMenu" style="display: none;">
-      							<div dojoType="dijit.MenuItem"   onClick="imageEditor.showSaveAsDialog('jpg')">
-      								<%= LanguageUtil.get(pageContext, "jpeg") %>
-      							</div>
-      							<div dojoType="dijit.MenuItem"   onClick="imageEditor.showSaveAsDialog('png');">
-      								<%= LanguageUtil.get(pageContext, "png") %>
-      							</div>
-      							<div dojoType="dijit.MenuItem"  onClick="imageEditor.showSaveAsDialog('gif');">
-      								<%= LanguageUtil.get(pageContext, "gif") %>
-      							</div>
-      						</div>
-      					</button>
-      					&nbsp;
-      				</span>
-                      &nbsp;
-      				<button dojoType="dijit.form.Button" onclick="imageEditor.saveImage()" >
-      					<%= LanguageUtil.get(pageContext, "Save") %>
-      				</button>
-      				&nbsp;
-      				<button dojoType="dijit.form.Button" onClick="imageEditor.closeImageWindow()" >
-      					<%= LanguageUtil.get(pageContext, "Close") %>
-      				</button>
-      			</td>
-      		</tr>
-      	 </table>
-      </div>
-      <!--  /top button bar -->
-    </div>
+<div class="imageToolButtonBar">
+	<table style="width:100%;margin:0px">
+		<tr>
+			<td width="100%;" style="white-space: nowrap;">
+				<table>
+					<tr>
+						<td style="white-space: nowrap;">
+							<%= LanguageUtil.get(pageContext, "Address") %>: 
+						</td>
+						<td width="100%;" style="white-space: nowrap;padding-right:25px;">
+							<input type="text" id="viewingUrl" dojoType="dijit.form.TextBox" value="<%=baseImage %>" style="width:100%;" onkeypress="if (event.which == 13 || event.keyCode == 13) {imageEditor.changeViewingUrl()}" onchange="imageEditor.changeViewingUrl()">
+						</td>
+					</tr>
+				</table>
+			</td>
+			<td style="white-space: nowrap;">
+                <span style="display:inline-block;margin-left:0px;margin-right:10px;">
+                    <a href="#" id="showLink" target="showDotImages">show</a>
+                </span>
+
+
+				<button dojoType="dijit.form.Button" onclick="imageEditor.doDownload()" >
+					<%= LanguageUtil.get(pageContext, "download") %>
+				</button>
+				&nbsp; &nbsp;
+				<button dojoType="dijit.form.Button" id="clipBoard"  <% if(id == null || id.startsWith("temp_")) { %>disabled<% } %> onclick="imageEditor.addToClipboard()">
+					<%= LanguageUtil.get(pageContext, "Clip") %>
+				</button>
+				
+				<%-- this span is hidden for binary images --%>
+				<span id="saveAsSpan" style="display:none;">
+					<button dojoType="dijit.form.ComboButton"  title="save-as">
+						<span><%= LanguageUtil.get(pageContext, "save-as") %></span>
+						<div dojoType="dijit.Menu" id="createMenu" style="display: none;">
+							<div dojoType="dijit.MenuItem"   onClick="imageEditor.showSaveAsDialog('jpg')">
+								<%= LanguageUtil.get(pageContext, "jpeg") %>
+							</div>
+							<div dojoType="dijit.MenuItem"   onClick="imageEditor.showSaveAsDialog('png');">
+								<%= LanguageUtil.get(pageContext, "png") %>
+							</div>
+							<div dojoType="dijit.MenuItem"  onClick="imageEditor.showSaveAsDialog('gif');">
+								<%= LanguageUtil.get(pageContext, "gif") %>
+							</div>
+						</div>
+					</button>
+					&nbsp;
+				</span>
+         &nbsp;
+				<button dojoType="dijit.form.Button" onclick="imageEditor.saveImage()" >
+						<% if(wysiwyg == null) { %>
+							<%= LanguageUtil.get(pageContext, "Save") %>
+						<%} else {%>	
+							<%= LanguageUtil.get(pageContext, "Apply") %>
+						<% } %>
+				</button>
+				&nbsp;
+				<button dojoType="dijit.form.Button" onClick="imageEditor.closeImageWindow()" >
+					<%= LanguageUtil.get(pageContext, "Close") %>
+				</button>
+			</td>
+		</tr>
+
+	</table>
+		
+</div>
+<!--  /top button bar -->
+
 
 
 <div class="imageToolContainer">
@@ -232,7 +230,7 @@
                     showButtons="true" 
                     intermediateChanges="true"
 					scrollOnFocus=false>
-
+                    <script type="dojo/method" event="_mouseWheeled"></script>
                   <div dojoType="dijit.form.HorizontalRule" container="bottomDecoration" count=11 style="height: 5px;"></div>
                   <ol dojoType="dijit.form.HorizontalRuleLabels" container="bottomDecoration" style="height: 1em; font-size: 75%; color: gray;">
                      <li>1%</li>
@@ -323,7 +321,7 @@
                         showButtons="true"
                         intermediateChanges="true"
 						scrollOnFocus=false>
-
+                        <script type="dojo/method" event="_mouseWheeled"></script>
                     <div dojoType="dijit.form.HorizontalRule" container="bottomDecoration" count=11 style="height:5px;"></div>
                     <ol dojoType="dijit.form.HorizontalRuleLabels" container="bottomDecoration" style="height:1em;font-size:75%;color:gray;">
                         <li>0</li>
@@ -428,7 +426,7 @@
 						onchange="imageEditor.changeHSB()"
 						intermediateChanges="true"
 						class="colorSlider"
-	s					scrollOnFocus=false
+						scrollOnFocus=false
 							id="brightSlider"> 
 						<div dojoType="dijit.form.HorizontalRule" container="bottomDecoration" count=5 style="height:5px;"></div>
 						<ol dojoType="dijit.form.HorizontalRuleLabels" container="bottomDecoration" style="height:1em;font-size:75%;color:gray;">

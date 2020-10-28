@@ -23,7 +23,7 @@ public class Task00030ClusterInitialize implements StartupTask {
 
     	Connection con = null;
 		try {
-			con = DbConnectionFactory.getDataSource("jdbc/dotCMSPool").getConnection();
+			con = DbConnectionFactory.getDataSource().getConnection();
 		} catch (SQLException e1) {
 			Logger.error(Task00030ClusterInitialize.class,e1.getMessage(),e1);
 			return false;

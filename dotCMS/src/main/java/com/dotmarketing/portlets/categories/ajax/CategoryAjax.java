@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.categories.ajax;
 
+import io.vavr.control.Try;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
@@ -82,7 +83,7 @@ public class CategoryAjax {
 
 	/**
 	 * Returns all the sub-categories multiple levels depth of the given category
-	 * @param catName The inode/key/name of the parent category
+	 * @param cat The inode/key/name of the parent category
 	 * @return
 	 * @throws DotDataException
 	 * @throws SystemException
@@ -111,7 +112,7 @@ public class CategoryAjax {
 
 	/**
 	 * Returns all the sub-categories multiple levels depth of the given category
-	 * @param category tries first to parse by inode, if not tries by key if not tries by name, passing the name of a category is
+	 * @param categoryInode tries first to parse by inode, if not tries by key if not tries by name, passing the name of a category is
 	 * 			discouraged and could be removed in later versions
 	 * @param filter A filter regular expression
 	 * @return
@@ -148,7 +149,7 @@ public class CategoryAjax {
 	 * Returns all sub-categories multiple levels depth of the given parent category,
 	 * it returns them on a single list adding to each category a property that denotes
 	 * depth
-	 * @param catName The name of the parent category
+	 * @param catInode The name of the parent category
 	 * @param filter A regular expression to use as filter if null, then no filter will be applied
 	 * @return
 	 * @throws DotDataException
@@ -278,13 +279,13 @@ public class CategoryAjax {
 		return saveOrUpdateCategory(save, inode, name, var, key, keywords, null, !save);
 	}
 
-	private Integer saveOrUpdateCategory(Boolean save, String inode, String name, String var, String key, String keywords, String sort, boolean merge)
+	private Integer saveOrUpdateCategory(final Boolean isSave, final String inode, final String name, final String var, final String key, final String keywords, final String sort, final boolean isMerge)
 			throws Exception {
 
-		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest request = ctx.getHttpServletRequest();
-		User user = uWebAPI.getLoggedInUser(request);
+		final UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
+		final WebContext ctx = WebContextFactory.get();
+		final HttpServletRequest request = ctx.getHttpServletRequest();
+		final User user = uWebAPI.getLoggedInUser(request);
 		Category parent = null;
 		Category cat = new Category();
 		cat.setCategoryName(name);
@@ -293,18 +294,21 @@ public class CategoryAjax {
 		cat.setSortOrder(sort);
 		cat.setKeywords(keywords);
 
-		if(UtilMethods.isSet(inode) && !save) {
-			cat.setInode(inode);
+		if(UtilMethods.isSet(inode)){
+			if(!isSave){//edit
+				cat.setInode(inode);
+				final Category finalCat = cat;//this is to be able to use the try.of
+				parent = Try.of(()->categoryAPI.getParents(finalCat,user,false).get(0)).getOrNull();
+			}else{//save
+				parent = categoryAPI.find(inode, user, false);
+			}
 		}
 
 		setVelocityVarName(cat, var, name);
 
-		if(InodeUtils.isSet(inode) && save)
-			parent = (Category) categoryAPI.find(inode, user, false);
+		if(isMerge) { // add/edit
 
-		if(merge) { // add/edit
-
-			if(save) { // Importing
+			if(isSave) { // Importing
 				if(UtilMethods.isSet(key)) {
 					cat = categoryAPI.findByKey(key, user, false);
 						if(cat==null) {
