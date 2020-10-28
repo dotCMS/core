@@ -15,6 +15,10 @@
 .p-field {
     margin-bottom: $spacing-4;
 
+    label {
+        display: block;
+    }
+
     input,
     textarea {
         font-size: $font-size-large;
