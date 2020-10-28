@@ -45,7 +45,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import java.util.stream.Collectors;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.oro.text.regex.Pattern;
@@ -221,7 +220,7 @@ public class FolderFactoryImpl extends FolderFactory {
 			return null;
 		}
 		// replace nasty double //
-		path=path.replaceAll("//", "/");
+		path=path.replaceAll(StringPool.DOUBLE_SLASH, StringPool.SLASH);
 
 		if(path.equals("/") || path.equals(SYSTEM_FOLDER_PARENT_PATH)) {
 			folder = this.findSystemFolder();

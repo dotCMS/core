@@ -64,7 +64,7 @@ public class FileAssetSearcher {
         private String searchTerm;
         private User user;
         private boolean respectFrontendRoles;
-        private boolean live=false;
+        private boolean live;
         private Builder() {}
 
         private Builder(FileAssetSearcher fileAssetSearcher) {

@@ -41,8 +41,6 @@ public class FileAssetFactoryImpl implements FileAssetFactory {
      * @param respectFrontendRoles
      * @return
      */
-
-    @NotNull
     List<Contentlet> fromIdentifiers(
             final List<String> identifiers,
             final User user,

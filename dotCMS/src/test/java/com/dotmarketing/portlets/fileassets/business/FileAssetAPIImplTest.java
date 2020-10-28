@@ -82,8 +82,7 @@ public class FileAssetAPIImplTest {
         when(
                 contAPI.search(luceneQuery, -1, 0, null , user, respectFrontendRoles)
         ).thenThrow(exception);
-        FileAssetSearcher searcher =FileAssetSearcher.builder().folder(parentFolder).build();
-        
+
         when(fileAssetFactory.findByDB(notNull(FileAssetSearcher.class)))
                 .thenReturn(contentlets);
 
@@ -102,10 +101,4 @@ public class FileAssetAPIImplTest {
         verify(contAPI, times(1)).copyProperties(fileAssetsByFolder.get(0), contentMap);
         verify(contentletCache, times(1)).add(fileAssetsByFolder.get(0));
     }
-    
-    
-    
-    
-    
-    
 }
