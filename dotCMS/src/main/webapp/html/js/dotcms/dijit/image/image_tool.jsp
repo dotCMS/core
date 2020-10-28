@@ -1,6 +1,5 @@
 <%@page import="com.dotmarketing.image.focalpoint.FocalPoint"%>
 <%@page import="com.dotmarketing.image.focalpoint.FocalPointAPIImpl"%>
-
 <%@page import="java.util.Optional"%>
 <%@page import="com.liferay.portal.model.User"%>
 <%@page import="com.dotmarketing.util.Logger"%>
@@ -13,11 +12,8 @@
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.util.WebKeys"%>
 <%@page import="java.util.Enumeration"%>
-
-
 <%	
 	String dojoPath = Config.getStringProperty("path.to.dojo");
-
 	String id = request.getParameter("id");
 
 	String wysiwyg = (UtilMethods.isSet(request.getParameter("wysiwyg"))) ? request.getParameter("wysiwyg") : null;
@@ -113,6 +109,8 @@
 	
 </head>
 <body class="dmundra"  >
+<!--  top button bar -->
+    <div class="imageToolContainer">
 <div class="imageToolButtonBar">
 	<table style="width:100%;margin:0px">
 		<tr>
@@ -182,7 +180,7 @@
 
 
 
-<div class="imageToolContainer">
+
 
 
 <!--  image viewport -->
