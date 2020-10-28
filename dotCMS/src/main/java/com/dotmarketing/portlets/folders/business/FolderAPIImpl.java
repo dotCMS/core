@@ -61,6 +61,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.Lazy;
+import io.vavr.control.Try;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -604,9 +606,15 @@ public class FolderAPIImpl implements FolderAPI  {
 
 	}
 
+	final Lazy<Folder> loadSystemFolder = Lazy.of(
+	                ()-> { return Try.of(()->folderFactory.findSystemFolder())
+	                                .getOrElseThrow(e->new DotRuntimeException(e));
+	                                                });
+	
+	
 	@CloseDBIfOpened
 	public Folder findSystemFolder() throws DotDataException {
-		return folderFactory.findSystemFolder();
+		return loadSystemFolder.get();
 	}
 
 
@@ -622,6 +630,14 @@ public class FolderAPIImpl implements FolderAPI  {
 
 		Folder parent = null;
 
+		
+		final String defaultFileAssetType=Try.of(
+                        ()->
+                        APILocator.getContentTypeAPI(APILocator.systemUser()).find(APILocator.getFileAssetAPI().DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).id())
+		                .getOrElseThrow(e-> new DotRuntimeException("unable to find default fileAssetType"));
+		
+		
+		
 		while (st.hasMoreTokens()) {
 			final String name = st.nextToken();
 			sb.append(name + "/");
@@ -634,7 +650,9 @@ public class FolderAPIImpl implements FolderAPI  {
 				f.setSortOrder(0);
 				f.setFilesMasks("");
 				f.setHostId(host.getIdentifier());
-				f.setDefaultFileType(CacheLocator.getContentTypeCache().getStructureByVelocityVarName(APILocator.getFileAssetAPI().DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode());
+				f.setDefaultFileType((parent!=null && parent.getDefaultFileType() !=null) 
+				                ? parent.getDefaultFileType() 
+				                : defaultFileAssetType);
 				final Identifier newIdentifier = !UtilMethods.isSet(parent)?
 						APILocator.getIdentifierAPI().createNew(f, host):
 						APILocator.getIdentifierAPI().createNew(f, parent);
