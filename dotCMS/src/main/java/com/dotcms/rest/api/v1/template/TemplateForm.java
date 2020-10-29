@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.template;
 
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
@@ -31,6 +32,7 @@ public class TemplateForm {
     private final int     sortOrder;
     private final boolean headerCheck;
     private final boolean footerCheck;
+    private final TemplateLayout layout;
 
     private TemplateForm(final Builder builder) {
 
@@ -55,6 +57,11 @@ public class TemplateForm {
         this.sortOrder = builder.sortOrder;
         this.headerCheck = builder.headerCheck;
         this.footerCheck = builder.footerCheck;
+        this.layout      = builder.layout;
+    }
+
+    public TemplateLayout getLayout() {
+        return layout;
     }
 
     public String getIdentifier() {
@@ -185,6 +192,14 @@ public class TemplateForm {
         private  boolean headerCheck;
         @JsonProperty
         private  boolean footerCheck;
+        @JsonProperty
+        private TemplateLayout layout;
+
+        public Builder layout (final TemplateLayout layout) {
+
+            this.layout = layout;
+            return this;
+        }
 
         public Builder identifier (final String identifier) {
 

@@ -856,7 +856,12 @@ public class TemplateResource {
         template.setModUser(user.getUserId());
         template.setOwner(user.getUserId());
         template.setModDate(new Date());
-        template.setDrawedBody(templateForm.getDrawedBody());
+        if (null != templateForm.getLayout()) {
+            template.setDrawedBody(templateForm.getLayout());
+            template.setDrawed(true);
+        } else {
+            template.setDrawedBody(templateForm.getDrawedBody());
+        }
         template.setFooter(templateForm.getFooter());
         template.setFriendlyName(templateForm.getFriendlyName());
         template.setHeadCode(templateForm.getHeadCode());
@@ -876,7 +881,7 @@ public class TemplateResource {
                     themePath, templateForm.isHeaderCheck(), templateForm.isFooterCheck());
 
             // set the drawedBody for future edit
-            template.setDrawedBody(template.getBody());
+            //template.setDrawedBody(template.getBody());
             // set the real body
             template.setBody(endBody.toString());
         }
