@@ -71,6 +71,8 @@ public class StringPool {
 
 	public static final String SLASH = FORWARD_SLASH;
 
+    public static final String DOUBLE_SLASH = "//";
+
 	public static final String SPACE = " ";
 
 	public static final String STAR = "*";

@@ -249,31 +249,6 @@
 			<property column="mod_date" length="23" name="modDate" type="java.util.Date" />
 		</joined-subclass>
 
-		<joined-subclass name="com.dotmarketing.portlets.templates.model.Template" table="template">
-			<key column="inode" />
-			<property column="show_on_menu" name="showOnMenu" type="boolean" />
-			<property column="title" length="255" name="title" type="string" />
-			<property column="mod_date" length="23" name="modDate" type="java.util.Date" />
-			<property column="mod_user" name="modUser" length="100" type="string">
-				<column name="mod_user" index="idx_template_1" />
-			</property>
-			<property column="sort_order" length="4" name="sortOrder" type="integer" />
-			<property column="friendly_name" name="friendlyName" length="255" type="string" />
-			<property column="body" name="body" type="string" length="123456789" />
-			<property column="header" name="header" type="string" length="123456789" />
-			<property column="footer" name="footer" type="string" length="123456789" />
-			<property column="image" name="image" length="36" type="string" />
-			<property column="identifier" length="36" name="identifier" type="string" />
-			<!-- *********************** BEGIN GRAZIANO issue-12-dnd-template -->
-			<property column="drawed" name="drawed" type="boolean" />
-			<property column="drawed_body" name="drawedBody" type="string" length="123456789" />
-			<property column="add_container_links" length="4" name="countAddContainer" type="integer" />
-			<property column="containers_added" length="4" name="countContainers" type="integer" />
-			<property column="head_code" name="headCode" type="string" length="123456789" />
-			<!-- *********************** END GRAZIANO issue-12-dnd-template -->
-			<property column="theme" name="theme" length="255" type="string" />
-		</joined-subclass>
-
 		<joined-subclass name="com.dotmarketing.portlets.links.model.Link" table="links">
 			<key column="inode" />
 			<!-- Web Asset properties -->

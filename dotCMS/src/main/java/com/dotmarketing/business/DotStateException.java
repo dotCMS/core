@@ -19,11 +19,11 @@ public class DotStateException extends DotRuntimeException {
 		super(x);
 	}
 	
-	public DotStateException(String x, Exception e) {
+	public DotStateException(String x, Throwable e) {
 		super(x, e);
 	}
 	
-	public DotStateException(Exception ex) {
+	public DotStateException(Throwable ex) {
 		super(ex.getMessage() ,ex);
 	}
 	

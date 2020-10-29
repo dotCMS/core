@@ -3,17 +3,14 @@ package com.dotmarketing.portlets.fileassets.business;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
-import org.jetbrains.annotations.NotNull;
-
+import io.vavr.control.Try;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * {@link FileAssetFactory} default implementation
@@ -22,7 +19,7 @@ public class FileAssetFactoryImpl implements FileAssetFactory {
     private final PermissionAPI permissionAPI;
 
     private final String FIND_FILE_ASSETS_BY_FOLDER_QUERY =
-            "SELECT contentlet.inode " +
+            "SELECT contentlet.inode as mynode " +
             "FROM identifier, contentlet_version_info, contentlet, structure " +
             "WHERE identifier.parent_path = ? and " +
                 "identifier.host_inode = ? and " +
@@ -35,45 +32,57 @@ public class FileAssetFactoryImpl implements FileAssetFactory {
         permissionAPI = APILocator.getPermissionAPI();
     }
 
-    @Override
-    public List<Contentlet> findFileAssetsByFolderInDB(
-            final Folder parentFolder,
-            final  User user,
-            final boolean live) throws DotDataException, DotSecurityException {
-
-        final boolean respectFrontendRoles = live;
-
-        if(!permissionAPI.doesUserHavePermission(parentFolder, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
-            throw new DotSecurityException("User:" + user.getUserId() + " does not have permissions on Folder " + parentFolder);
-        }
-
-        final DotConnect dotConnect = new DotConnect();
-        dotConnect.setSQL(String.format(FIND_FILE_ASSETS_BY_FOLDER_QUERY, live ? "live" : "working"));
-        dotConnect.addParam(parentFolder.getPath());
-        dotConnect.addParam(parentFolder.getHostId());
-
-        final List<Map<String, Object>> queryResults = dotConnect.loadObjectResults();
-        return convertToFileAssets(user, respectFrontendRoles, queryResults);
-    }
-
-    @NotNull
-    private List<Contentlet> convertToFileAssets(
+    
+    /**
+     * takes a list of inodes and returns the list of contentlets - includes permissions check
+     * 
+     * @param identifiers
+     * @param user
+     * @param respectFrontendRoles
+     * @return
+     */
+    List<Contentlet> fromIdentifiers(
+            final List<String> identifiers,
             final User user,
-            final boolean respectFrontendRoles,
-            final List<Map<String, Object>> queryResults) throws DotDataException {
+            final boolean respectFrontendRoles
+            )  {
 
-        final ImmutableList.Builder builder = new ImmutableList.Builder();
+        final ImmutableList.Builder<Contentlet> builder = new ImmutableList.Builder<>();
 
-        for (final Map<String, Object> fileInfo : queryResults) {
-            final String contentId = (String) fileInfo.get("inode");
-
-            try {
-                final Contentlet file = APILocator.getContentletAPI().find(contentId, user, respectFrontendRoles);
-                builder.add(file);
-            } catch (DotSecurityException e) {
-                Logger.debug(FileAssetFactoryImpl.class, e.getMessage());
-            }
+        for (final String  fileInfo : identifiers) {
+            final Contentlet file = Try.of(()-> APILocator.getContentletAPI().find(fileInfo, user, respectFrontendRoles)).getOrNull();
+            if(file==null)continue;
+            builder.add(file);
+           
         }
         return builder.build();
+    }
+
+
+
+    @Override
+    public List<Contentlet> findByDB(final FileAssetSearcher searcher)  {
+
+        // check read permissions on parent folder
+        if(!Try.of(()-> permissionAPI.doesUserHavePermission(searcher.folder, PermissionAPI.PERMISSION_READ, searcher.user, searcher.respectFrontendRoles)).getOrElse(false)) {
+            throw new DotRuntimeException("user:" + searcher.user + " does not have permission to view the parent folder:"+searcher.folder);
+        }
+        
+
+
+
+        final DotConnect dotConnect = new DotConnect()
+            .setSQL(String.format(FIND_FILE_ASSETS_BY_FOLDER_QUERY, searcher.live ? "live" : "working"))
+            .addParam(searcher.folder.getPath())
+            .addParam(searcher.host.getIdentifier());
+
+        final List<String> identifiers = Try.of(()->  dotConnect
+                        .loadObjectResults())
+                        .getOrElseThrow(e->new DotRuntimeException(e))
+                        .stream()
+                        .map(m->((String) m.get("mynode")))
+                        .collect(Collectors.toList());
+
+        return fromIdentifiers(identifiers, searcher.user, searcher.respectFrontendRoles);
     }
 }

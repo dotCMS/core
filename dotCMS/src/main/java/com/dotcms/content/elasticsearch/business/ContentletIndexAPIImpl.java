@@ -474,7 +474,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             return;
         }
 
-        Logger.info(this, "Indexing: " + parentContenlet.getIdentifier()
+        Logger.info(this, "Indexing: " + parentContenlet.getIdentifier() + " : " + parentContenlet.getTitle()
                 + ", includeDependencies: " + includeDependencies +
                 ", policy: " + parentContenlet.getIndexPolicy());
 

@@ -1,4 +1,4 @@
-package com.dotmarketing.portlets.templates.transform;
+package com.dotmarketing.portlets.folders.transform;
 
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.transform.DBTransformer;

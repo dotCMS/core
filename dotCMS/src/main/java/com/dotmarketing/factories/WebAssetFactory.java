@@ -24,6 +24,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotIdentifierStateException;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
@@ -489,44 +490,55 @@ public class WebAssetFactory {
 			throw new WebAssetException("You may not publish deleted assets!!!");
 		}
 
-		boolean localTransaction = false;
-		try {
-
-			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
-
+		if(currWebAsset instanceof Template){
 			// sets new working to live
 			APILocator.getVersionableAPI().setLive(workingwebasset);
+			//if it's a new version update modDate and modUser
+			if (isNewVersion) {
+				workingwebasset.setModDate(new java.util.Date());
+				workingwebasset.setModUser(user.getUserId());
+			}
+			//update template
+			FactoryLocator.getTemplateFactory().save((Template) workingwebasset);
+		} else {
 
+			boolean localTransaction = false;
+			try {
 
-			if(isNewVersion){
+				localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
 
-			   workingwebasset.setModDate(new java.util.Date());
-			   workingwebasset.setModUser(user.getUserId());
+				// sets new working to live
+				APILocator.getVersionableAPI().setLive(workingwebasset);
+
+				if (isNewVersion) {
+					workingwebasset.setModDate(new java.util.Date());
+					workingwebasset.setModUser(user.getUserId());
+				}
+
+				// persists the webasset
+				HibernateUtil.merge(workingwebasset);
+
+				if (localTransaction) {
+
+					HibernateUtil.commitTransaction();
+				}
+			} catch (Exception e) {
+
+				Logger.error(WebAssetFactory.class, e.getMessage(), e);
+
+				if (localTransaction) {
+
+					HibernateUtil.rollbackTransaction();
+				}
+			} finally {
+
+				if (localTransaction) {
+					DbConnectionFactory.closeConnection();
+				}
 			}
 
-			// persists the webasset
-			HibernateUtil.merge(workingwebasset);
-
-			if(localTransaction) {
-
-				HibernateUtil.commitTransaction();
-			}
-		} catch(Exception e){
-
-			Logger.error(WebAssetFactory.class, e.getMessage(), e);
-
-			if(localTransaction){
-
-				HibernateUtil.rollbackTransaction();
-			}
-		} finally {
-
-			if(localTransaction) {
-				DbConnectionFactory.closeConnection();
-			}
+			Logger.debug(WebAssetFactory.class, "HibernateUtil.saveOrUpdate(workingwebasset)");
 		}
-
-		Logger.debug(WebAssetFactory.class, "HibernateUtil.saveOrUpdate(workingwebasset)");
 
 
 		systemEventsAPI.pushAsync(SystemEventType.PUBLISH_LINK, new Payload(currWebAsset, Visibility.EXCLUDE_OWNER,
@@ -563,10 +575,7 @@ public class WebAssetFactory {
 		// gets the identifier for this asset
 		Identifier identifier = APILocator.getIdentifierAPI().find(currWebAsset);
 
-		WebAsset workingwebasset = null;
-
-			// gets the current working asset
-			workingwebasset = (WebAsset) APILocator.getVersionableAPI().findWorkingVersion(identifier, APILocator.getUserAPI().getSystemUser(), false);
+		WebAsset workingwebasset = (WebAsset) APILocator.getVersionableAPI().findWorkingVersion(identifier, APILocator.getUserAPI().getSystemUser(), false);
 
 
 		WebAsset live = (WebAsset) APILocator.getVersionableAPI().findLiveVersion(identifier, APILocator.getUserAPI().getSystemUser(), false);
@@ -598,8 +607,12 @@ public class WebAssetFactory {
 			workingwebasset.setModDate(new Date ());
 			// sets deleted to true
 	        APILocator.getVersionableAPI().setDeleted(workingwebasset, true);
-			// persists the webasset
-			HibernateUtil.saveOrUpdate(workingwebasset);
+	        if(currWebAsset instanceof Template){
+	        	FactoryLocator.getTemplateFactory().save(Template.class.cast(workingwebasset));
+			} else {
+				// persists the webasset
+				HibernateUtil.saveOrUpdate(workingwebasset);
+			}
 
 			systemEventsAPI.pushAsync(SystemEventType.ARCHIVE_LINK, new Payload(currWebAsset, Visibility.EXCLUDE_OWNER,
 					new ExcludeOwnerVerifierBean(userId, PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
@@ -675,7 +688,11 @@ public class WebAssetFactory {
 		        APILocator.getVersionableAPI().removeLive(identifier.getId());
 				livewebasset.setModDate(new java.util.Date());
 				livewebasset.setModUser(userId);
-				HibernateUtil.saveOrUpdate(livewebasset);
+				if(currWebAsset instanceof Template) {
+					FactoryLocator.getTemplateFactory().save(Template.class.cast(livewebasset));
+				} else {
+					HibernateUtil.saveOrUpdate(livewebasset);
+				}
 
 				if ((livewebasset.getInode() != workingwebasset.getInode())) {
 			        APILocator.getVersionableAPI().setLocked(workingwebasset, false, null);

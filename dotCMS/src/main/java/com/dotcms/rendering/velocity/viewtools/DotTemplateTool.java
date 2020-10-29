@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.viewtools;
 
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -21,6 +22,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
+import io.vavr.control.Try;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -132,15 +134,16 @@ public class DotTemplateTool implements ViewTool {
         layoutCache.invalidate(templateInode + true);
     }
 
-    private static DrawedBody getDrawedBody(String themeInode, User user) throws DotDataException, DotSecurityException {
-        final Identifier ident = APILocator.getIdentifierAPI().findFromInode(themeInode);
-        final Template template = APILocator.getTemplateAPI().findWorkingTemplate(ident.getId(), user, false);
+    private static DrawedBody getDrawedBody(String themeInodeOrId, User user) throws DotDataException, DotSecurityException {
+        final Template template = FactoryLocator.getTemplateFactory().find(themeInodeOrId);//If null themeInodeOrId is a Id
+        final String identifier = template!=null ? template.getIdentifier() : themeInodeOrId;
+        final Template workingTemplate = APILocator.getTemplateAPI().findWorkingTemplate(identifier, user, false);
 
-        if (!template.isDrawed()){
-            throw new RuntimeException("Template with inode: " + themeInode + " is not drawed");
+        if (!workingTemplate.isDrawed()){
+            throw new RuntimeException("Template with inode: " + themeInodeOrId + " is not drawed");
         }
 
-        return new DrawedBody(template.getTitle(), template.getDrawedBody());
+        return new DrawedBody(workingTemplate.getTitle(), workingTemplate.getDrawedBody());
     }
 
     private DrawedBody getDrawedBody() {
