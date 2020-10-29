@@ -737,40 +737,11 @@ public class EditTemplateAction extends DotPortletAction implements
 	public void _getVersionBackWebAsset(ActionRequest req, ActionResponse res,
 			PortletConfig config, ActionForm form, User user) throws Exception {
 
-		Template versionTemplate = (Template) InodeFactory.getInode(req
-				.getParameter("inode_version"), Template.class);
-
-//		Identifier id = (Identifier)APILocator.getIdentifierAPI().find(versionTemplate);
-
-		//Template workingTemplate = (Template)APILocator.getVersionableAPI().findWorkingVersion(id, APILocator.getUserAPI().getSystemUser(),false);
-
-		//gets containers identifiers children from current template
+		Template versionTemplate = APILocator.getTemplateAPI().find(req.getParameter("inode_version"), user,false);
 
 		APILocator.getVersionableAPI().setWorking(versionTemplate);
 
-		//Template newWorkingTemplate = (Template) super._getVersionBackWebAsset(req, res, config, form, user, Template.class, WebKeys.TEMPLATE_EDIT);
 		new TemplateLoader().invalidate(versionTemplate);
 	}
-
-//	private void updateParseContainerSyntax(Template template){
-//		String tb = template.getBody();
-//		Perl5Matcher matcher = (Perl5Matcher) localP5Matcher.get();
-//		String oldParse;
-//		String newParse;
-//    	while(matcher.contains(tb, parseContainerPattern)){
-//     		MatchResult match = matcher.getMatch();
-//    		int groups = match.groups();
-//     		for(int g=0;g<groups;g++){
-//     			oldParse = match.group(g);
-//     			if(matcher.contains(oldParse, oldContainerPattern)){
-//     				MatchResult matchOld = matcher.getMatch();
-//     				newParse = matchOld.group(0).trim();
-//     				newParse = "#parseContainer('" + newParse + "')";
-//     				tb = StringUtil.replace(tb,oldParse,newParse);
-//     			}
-//     		}
-//     		template.setBody(tb);
-//    	}
-//	}
 
 }
