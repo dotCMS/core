@@ -27,7 +27,9 @@ public class MimeTypeUtils {
      * @return String
      */
     public static String getMimeType (final File binary) {
-
+        if(binary==null) {
+            return FileAsset.UNKNOWN_MIME_TYPE;
+        }
         final Path path = binary.toPath();
         String mimeType = Sneaky.sneak(() -> Files.probeContentType(path));
 
