@@ -28,6 +28,10 @@ public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
             "INNER JOIN contentlet ON cvi.working_inode = contentlet.inode " +
         "WHERE template.drawed_body is not null order by template.inode";
 
+    final static String GET_HOSTNAME_COLUMN = "SELECT field.field_contentlet\n"
+            + "FROM field JOIN structure s ON field.structure_inode = s.inode\n"
+            + "WHERE s.velocity_var_name = 'Host' AND field.velocity_var_name = 'hostName'";
+
     final static String UPDATE_TEMPLATES = "update template set drawed_body = ?, body = ? where inode =?";
 
     final static String UPDATE_TEMPLATES_ORACLE = "update template set drawed_body = TO_CLOB(?), body = ? where inode =?";
@@ -105,9 +109,7 @@ public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
     }
 
     private List<Map<String, Object>> getAllDrawedTemplates() throws DotDataException {
-        final Map<String, Object> results = new DotConnect().setSQL("select field.field_contentlet\n"
-                + "from field join structure s on field.structure_inode = s.inode\n"
-                + "where s.velocity_var_name = 'Host' and field.velocity_var_name = 'hostName';")
+        final Map<String, Object> results = new DotConnect().setSQL(GET_HOSTNAME_COLUMN)
                 .loadObjectResults().get(0);
 
         final String hostNameColumnName = (String) results.get("field_contentlet");
