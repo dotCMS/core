@@ -22,6 +22,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.PortalException;
@@ -29,13 +30,14 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-
+import io.vavr.control.Try;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
@@ -253,7 +255,7 @@ public class ShortyServlet extends HttpServlet {
     final int      width   = this.getWidth(lowerUri, 0);
     final int      height  = this.getHeight(lowerUri, 0);
     final int      quality  = this.getQuality(lowerUri, 0);
-    final Optional<FocalPoint> focalPoint = this.getFocalPoint(lowerUri);
+    Optional<FocalPoint> focalPoint = this.getFocalPoint(lowerUri);
     final int      cropWidth  = this.cropWidth(lowerUri);
     final int      cropHeight  = this.cropHeight(lowerUri);
     final boolean  jpeg    = lowerUri.contains(JPEG);
@@ -277,6 +279,14 @@ public class ShortyServlet extends HttpServlet {
               response.sendError(HttpServletResponse.SC_NOT_FOUND);
               return;
           }
+          if(cropWidth+cropHeight>0 && !focalPoint.isPresent()) {
+              Optional<Tag> focalPointTag = APILocator.getTagAPI().getTagsByInode(conOpt.get().getInode()).stream().filter(t->t.getTagName().startsWith("fp:"+fieldName+":")).findAny();
+              if(focalPointTag.isPresent()) {
+                  focalPoint = Try.of(()->new FocalPoint(focalPointTag.get().getTagName().replace("fp:", ""))).toJavaOptional();
+              }
+          }
+          
+          
           id=this.inodePath(conOpt.get(), fieldName, live);
         }else {
           id="/" + shorty.longId + "/temp";

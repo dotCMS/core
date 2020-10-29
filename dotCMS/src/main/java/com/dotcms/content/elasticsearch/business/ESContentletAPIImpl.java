@@ -4786,10 +4786,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             String oldInode = workingContentlet.getInode();
 
 
-            File newDir = new File(APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator
-                    + newInode.charAt(0)
-                    + File.separator
-                    + newInode.charAt(1) + File.separator + newInode);
+            File newDir = new File(APILocator.getFileAssetAPI().getRealAssetsRootPath() 
+                    + File.separator + newInode.charAt(0)
+                    + File.separator + newInode.charAt(1) 
+                    + File.separator + newInode);
             newDir.mkdirs();
 
             File oldDir = null;
@@ -4799,122 +4799,61 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         + File.separator + oldInode.charAt(1)
                         + File.separator + oldInode);
             }
-
-            File tmpDir = null;
-            if(UtilMethods.isSet(oldInode)) {
-                tmpDir = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
-                        + File.separator + oldInode.charAt(0)
-                        + File.separator + oldInode.charAt(1)
-                        + File.separator + oldInode);
+            
+            // copy the existing first
+            if(oldDir!=null && oldDir.exists() && !oldDir.equals(newDir)) {
+                FileUtil.copyDirectory(oldDir, newDir);
             }
-
-            // List of files that we need to delete after iterate over all the fields.
-            Set<File> fileListToDelete = Sets.newHashSet();
+            
 
             // loop over the new field values
             // if we have a new temp file or a deleted file
             // do it to the new inode directory
             for ( com.dotcms.contenttype.model.field.Field field : contentType.fields(BinaryField.class) ) {
-                try {
-
-
-                    final String velocityVarNm = field.variable();
-                    File incomingFile = contentletRaw.getBinary(velocityVarNm);
-                    if(validateEmptyFile && incomingFile!=null && incomingFile.length()==0 && !Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false)){
-                        throw new DotContentletStateException("Cannot checkin 0 length file: " + incomingFile );
-                    }
-                    final File binaryFieldFolder = new File(newDir.getAbsolutePath() + File.separator + velocityVarNm);
-
-                    final File metadata=(contentType instanceof FileAssetContentType) ? 
-                        APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode()) : null;
+                
+                final String velocityVarNm = field.variable();
+                final File oldFile = workingContentlet.getBinary(velocityVarNm);
+                final File incomingFile = contentletRaw.getBinary(velocityVarNm);
+                final File binaryFieldFolder = new File(newDir.getAbsolutePath() + File.separator + velocityVarNm);
+                final File metadata=(contentType instanceof FileAssetContentType) ? 
+                    APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode()) : null;
                     
-
-                    // if the user has removed this  file via the ui
-                    if (incomingFile == null  || incomingFile.getAbsolutePath().contains("-removed-")){
-                        FileUtil.deltree(binaryFieldFolder);
-                        contentlet.setBinary(velocityVarNm, null);
-                        if(metadata!=null && metadata.exists())
-                            metadata.delete();
-                        continue;
-                    }
-
-                    // if we have an incoming file
-                    else if (incomingFile.exists() ){
-                        //The physical file name is preserved across versions.
-                        //No need to update the name. We will only reference the file through the logical asset-name
-                        final String oldFileName  = incomingFile.getName();
-
-                        File oldFile = null;
-                        if(UtilMethods.isSet(oldInode)) {
-                            //get old file
-                            oldFile = new File(oldDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator +  oldFileName);
-
-                            // do we have an inline edited file, if so use that
-                            File editedFile = new File(tmpDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator + WebKeys.TEMP_FILE_PREFIX + oldFileName);
-                            if(editedFile.exists()){
-                                incomingFile = editedFile;
-                            }
-                        }
-
-                        //The file name must be preserved so it remains the same across versions.
-                        File newFile = new File(newDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator +  oldFileName);
-                        binaryFieldFolder.mkdirs();
-
-                        // we move files that have been newly uploaded or edited
-                        if(oldFile==null || !oldFile.equals(incomingFile)){
-                            if(!createNewVersion){
-                                // If we're calling a checkinWithoutVersioning method,
-                                // then folder needs to be cleaned up in order to add the new file in it.
-                                // Otherwise we will have the old file and incoming file at the same time
-                                FileUtil.deltree(binaryFieldFolder);
-                                binaryFieldFolder.mkdirs();
-                            }
-                            // We want to copy (not move) cause the same file could be in
-                            // another field and we don't want to delete it in the first time.
-                            final boolean contentVersionHardLink = Config
-                                    .getBooleanProperty("CONTENT_VERSION_HARD_LINK", true);
-                            FileUtil.copyFile(incomingFile, newFile, contentVersionHardLink, validateEmptyFile);
-
-
-                            // delete old content metadata if exists
-                            if(metadata!=null && metadata.exists()){
-                                metadata.delete();
-                            }
-
-                        } else if (oldFile.exists()) {
-                            // otherwise, we copy the files as hardlinks
-                            final boolean contentVersionHardLink = Config
-                                    .getBooleanProperty("CONTENT_VERSION_HARD_LINK", true);
-                            FileUtil.copyFile(incomingFile, newFile, contentVersionHardLink, validateEmptyFile);
-
-                            // try to get the content metadata from the old version
-                            if (metadata != null) {
-                                File oldMeta = APILocator.getFileAssetAPI()
-                                        .getContentMetadataFile(oldInode);
-                                if (oldMeta.exists() && !oldMeta.equals(metadata)) {
-                                    if (metadata
-                                            .exists()) {// unlikely to happend. deleting just in case
-                                        metadata.delete();
-                                    }
-                                    metadata.getParentFile().mkdirs();
-                                    FileUtil.copyFile(oldMeta, metadata);
-                                }
-                            }
-                        }
-                        contentlet.setBinary(velocityVarNm, newFile);
-                    }
-                } catch (FileNotFoundException e) {
-                    throw new DotContentletValidationException("Error occurred while processing the file:" + e.getMessage(),e);
-                } catch (IOException e) {
-                    throw new DotContentletValidationException("Error occurred while processing the file:" + e.getMessage(),e);
+                    
+                if(validateEmptyFile && incomingFile!=null && incomingFile.length()==0 && !Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false)){
+                    throw new DotContentletStateException("Cannot checkin 0 length file: " + incomingFile );
                 }
+
+                
+                // if the user has removed this  file via the ui
+                if (incomingFile == null  || incomingFile.getAbsolutePath().contains("-removed-")){
+                    FileUtil.deltree(binaryFieldFolder);
+                    contentlet.setBinary(velocityVarNm, null);
+                    if(metadata!=null && metadata.exists())
+                        metadata.delete();
+                    continue;
+                }
+
+                // if we have an incoming file
+                if (incomingFile!=null && !incomingFile.equals(oldFile)){
+                    
+                    File newFile = new File(binaryFieldFolder + File.separator +  incomingFile.getName());
+                    
+                    binaryFieldFolder.mkdirs();
+                    if(oldFile!=null) {
+                        FileUtil.deltree(binaryFieldFolder, false);
+                    }
+                    FileUtil.copyFile(incomingFile, newFile);
+
+                    // delete old content metadata if exists
+                    if(metadata!=null && metadata.exists()){
+                        metadata.delete();
+                    }
+
+                    contentlet.setBinary(velocityVarNm, newFile);
+                }
+
             }
 
-            // These are the incomingFiles that were copied to a new location
-            // (cause new content inode) and now we need to delete to avoid duplicates.
-            for (File fileToDelete : fileListToDelete) {
-                fileToDelete.delete();
-            }
 
             // lets update identifier's syspubdate & sysexpiredate
             if ((contentlet != null) && InodeUtils.isSet(contentlet.getIdentifier())) {

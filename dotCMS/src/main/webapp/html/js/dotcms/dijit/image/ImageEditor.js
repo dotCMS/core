@@ -196,6 +196,16 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     },
 
 
+    setFocalPointTag:function(){
+        var tagField = document.querySelector(".tagsWrapper input[type='hidden']");
+        
+        alert(tagField)
+        
+        
+    },
+    
+    
+    
     setThumbnail: function(){
         var thumbUrl = this._getThumbRendition(this.currentUrl)  ;
         dojo.style(this.thumbnailImage, "display", "none");
@@ -206,6 +216,9 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
             dojo.removeClass(ctx.thumbnailDiv, "loader");
 
         };
+        
+
+        
 
         //this.thumbnailImage.src =  "#"; // thumbUrl;
         this.thumbnailImage.src =  thumbUrl ;
@@ -578,6 +591,11 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
      *
      */
     saveBinaryImage: function(activeEditor){
+        parent
+        
+        
+        
+        
         var field = this.binaryFieldId;
         if(this.fieldContentletId.length>0) {
             field=this.fieldContentletId;
