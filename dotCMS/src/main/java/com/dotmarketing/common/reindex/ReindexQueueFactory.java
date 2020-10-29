@@ -422,7 +422,10 @@ public class ReindexQueueFactory {
                     .addParam(ReindexAction.REINDEX.ordinal()).addParam(date).loadResult();
 
         }
-        ReindexThread.unpause();
+        if (!Config.getBooleanProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false)){
+            ReindexThread.unpause();
+        }
+
         return identifiers.size();
     }
     protected int addIdentifierDelete(final Collection<String> identifiers, final int prority) throws DotDataException {
