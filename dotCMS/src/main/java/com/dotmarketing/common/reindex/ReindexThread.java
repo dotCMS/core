@@ -26,6 +26,7 @@ import com.liferay.portal.model.User;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -233,7 +234,8 @@ public class ReindexThread {
       while (STATE == ThreadState.PAUSED) {
         ThreadUtils.sleep(SLEEP);
         Logger.infoEvery(ReindexThread.class, "--- ReindexThread Paused", 300000);
-        if(cache.get().get(REINDEX_THREAD_PAUSED)==null) {
+        Long restartTime = (Long) cache.get().get(REINDEX_THREAD_PAUSED);
+        if(restartTime ==null || restartTime < System.currentTimeMillis()) {
             unpause();
         }
       }
@@ -305,7 +307,9 @@ public class ReindexThread {
 
     public static void pause() {
         Logger.debug(ReindexThread.class, "--- ReindexThread - Paused");
-        cache.get().put(REINDEX_THREAD_PAUSED, REINDEX_THREAD_PAUSED);
+        cache.get().put(REINDEX_THREAD_PAUSED, System.currentTimeMillis() + Duration
+                .ofMinutes(Config.getIntProperty("REINDEX_THREAD_PAUSE_IN_MINUTES", 10))
+                .toMillis());
         getInstance().state(ThreadState.PAUSED);
     }
 
