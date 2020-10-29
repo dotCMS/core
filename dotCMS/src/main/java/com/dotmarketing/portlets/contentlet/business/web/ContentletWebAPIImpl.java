@@ -531,7 +531,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 							!currentContentlet.getTitle().equals(oldContentletMap.get(Host.HOST_NAME_KEY))) {
 						UpdateContainersPathsJob.triggerUpdateContainersPathsJob(
 								oldContentletMap.get(Host.HOST_NAME_KEY).toString(),
-								currentContentlet.getName()
+								(String) currentContentlet.get("hostName")
 						);
 					}
 				} else {
