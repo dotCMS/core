@@ -19,6 +19,7 @@
 
 package com.liferay.portal.servlet;
 
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotmarketing.startup.runalways.Task00030ClusterInitialize;
 import java.io.File;
 import java.io.IOException;
@@ -34,6 +35,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.PageContext;
+
+import com.dotmarketing.startup.runonce.Task201102UpdateColumnSitelicTable;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.beanutils.SuppressPropertiesBeanIntrospector;
 import org.apache.commons.logging.Log;
@@ -51,7 +54,6 @@ import com.dotcms.repackage.org.apache.struts.action.ActionServlet;
 import com.dotcms.repackage.org.apache.struts.tiles.TilesUtilImpl;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.servlets.InitServlet;
 import com.dotmarketing.startup.StartupTasksExecutor;
@@ -120,6 +122,11 @@ public class MainServlet extends ActionServlet {
         StartupTasksExecutor.getInstance().executeStartUpTasks();
         StartupTasksExecutor.getInstance().executeUpgrades();
 
+        final Task201102UpdateColumnSitelicTable siteLicenseTask = new Task201102UpdateColumnSitelicTable();
+        if (siteLicenseTask.forceRun()) {
+          siteLicenseTask.executeUpgrade();
+        }
+
         final Task00030ClusterInitialize clusterInitializeTask = new Task00030ClusterInitialize();
         if(clusterInitializeTask.forceRun()){
           clusterInitializeTask.executeUpgrade();
@@ -130,6 +137,9 @@ public class MainServlet extends ActionServlet {
       } finally {
         DbConnectionFactory.closeSilently();
       }
+
+      // Update license with server start time
+      LicenseManager.getInstance().updateLicenseStartTime();
 
       HashSet<String> suppressProperties = new HashSet<>();
       suppressProperties.add("class");
