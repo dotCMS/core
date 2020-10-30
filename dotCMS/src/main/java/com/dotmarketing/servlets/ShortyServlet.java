@@ -255,13 +255,13 @@ public class ShortyServlet extends HttpServlet {
     final int      width   = this.getWidth(lowerUri, 0);
     final int      height  = this.getHeight(lowerUri, 0);
     final int      quality  = this.getQuality(lowerUri, 0);
-    Optional<FocalPoint> focalPoint = this.getFocalPoint(lowerUri);
+    Optional<FocalPoint> focalPoint = Optional.empty();
     final int      cropWidth  = this.cropWidth(lowerUri);
     final int      cropHeight  = this.cropHeight(lowerUri);
     final boolean  jpeg    = lowerUri.contains(JPEG);
     final boolean  jpegp   = jpeg && lowerUri.contains(JPEGP);
     final boolean  webp    = lowerUri.contains(WEBP);
-    final boolean  isImage = webp || jpeg || width+height > 0 || quality>0 || focalPoint.isPresent() || cropHeight>0 || cropWidth>0;
+    final boolean  isImage = webp || jpeg || width+height > 0 || quality>0 || cropHeight>0 || cropWidth>0;
     final ShortyId shorty  = shortOpt.get();
     final String   path    = isImage? "/contentAsset/image" : "/contentAsset/raw-data";
     final User systemUser  = APILocator.systemUser();
@@ -279,7 +279,9 @@ public class ShortyServlet extends HttpServlet {
               response.sendError(HttpServletResponse.SC_NOT_FOUND);
               return;
           }
-          if(cropWidth+cropHeight>0 && !focalPoint.isPresent()) {
+          
+          if(cropWidth+cropHeight>0 ) {
+              focalPoint = this.getFocalPoint(lowerUri);
               Optional<Tag> focalPointTag = APILocator.getTagAPI().getTagsByInode(conOpt.get().getInode()).stream().filter(t->t.getTagName().startsWith("fp:"+fieldName+":")).findAny();
               if(focalPointTag.isPresent()) {
                   focalPoint = Try.of(()->new FocalPoint(focalPointTag.get().getTagName().replace("fp:", ""))).toJavaOptional();

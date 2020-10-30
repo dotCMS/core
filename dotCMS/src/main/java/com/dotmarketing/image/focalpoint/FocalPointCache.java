@@ -33,7 +33,7 @@ public class FocalPointCache implements Cachable {
 
 
 
-    public FocalPoint add(final String inode, final String fieldVar, final FocalPoint focalPoint) {
+    public Optional<FocalPoint> add(final String inode, final String fieldVar, Optional<FocalPoint> focalPoint) {
 
         if (UtilMethods.isSet(inode) && UtilMethods.isSet(fieldVar)) {
             cache.put(key(inode, fieldVar), focalPoint, primaryGroup);
@@ -66,13 +66,12 @@ public class FocalPointCache implements Cachable {
 
     public Optional<FocalPoint> get(final String inode, final String fieldVar) {
 
-        FocalPoint retVal = null;
         try {
-            retVal = (FocalPoint) cache.get(key(inode, fieldVar), primaryGroup);
+            return (Optional<FocalPoint>) cache.get(key(inode, fieldVar), primaryGroup);
         } catch (DotCacheException e) {
             Logger.debug(this, "Cache not able to be gotten", e);
 
         }
-        return Optional.ofNullable(retVal);
+        return Optional.empty();
     }
 }

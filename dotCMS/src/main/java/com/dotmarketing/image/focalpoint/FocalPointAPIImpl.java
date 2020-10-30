@@ -15,6 +15,7 @@ import org.apache.commons.io.IOUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Logger;
 import io.vavr.control.Try;
 
@@ -51,9 +52,7 @@ public class FocalPointAPIImpl implements FocalPointAPI {
         if (focalPoint.x == 0 && focalPoint.y == 0) {
             Logger.info(this.getClass(), "Deleteing focalpoint:" + focalPoint);
             dotFP.delete();
-            if (cache != null) {
-                cache.remove(inode, fieldVar);
-            }
+            cache.remove(inode, fieldVar);
             return;
         }
 
@@ -64,9 +63,9 @@ public class FocalPointAPIImpl implements FocalPointAPI {
             throw new DotRuntimeException(e);
         }
 
-        if (cache != null) {
-            cache.add(inode, fieldVar, focalPoint);
-        }
+   
+        cache.add(inode, fieldVar, Optional.ofNullable(focalPoint));
+        
 
     }
 
@@ -99,13 +98,27 @@ public class FocalPointAPIImpl implements FocalPointAPI {
     @Override
     public Optional<FocalPoint> readFocalPoint(final String inode, final String fieldVar) {
 
-        final Optional<FocalPoint> retVal = cache != null ? cache.get(inode, fieldVar) : Optional.empty();
-        if (retVal.isPresent()) {
-            return retVal;
+        Optional<FocalPoint> focalPoint = cache.get(inode, fieldVar);
+        if (focalPoint!=null) {
+            return focalPoint;
         }
 
+        
+        Optional<Tag> focalPointTag = Try.of(()->APILocator.getTagAPI().getTagsByInode(inode).stream().filter(t->t.getTagName().startsWith("fp:"+fieldVar+":")).findAny()).getOrElse(Optional.empty());
+        
+        if(focalPointTag.isPresent()) {
+            focalPoint = Try.of(()->new FocalPoint(focalPointTag.get().getTagName().replace("fp:", ""))).toJavaOptional();
+            if (focalPoint.isPresent()) {
+                cache.add(inode, fieldVar, focalPoint);
+                return focalPoint;
+            }
+        }
+       
+
         final File file = getFPFile(inode, fieldVar);
-        return readFocalPoint(file);
+        focalPoint= readFocalPoint(file);
+        cache.add(inode, fieldVar, focalPoint);
+        return focalPoint;
     }
 
 
