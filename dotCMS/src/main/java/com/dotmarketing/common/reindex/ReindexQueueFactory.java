@@ -93,7 +93,9 @@ public class ReindexQueueFactory {
         } catch (Exception e) {
             throw new DotDataException(e.getMessage(), e);
         }
-        ReindexThread.unpause();
+        if (!Config.getBooleanProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false)) {
+            ReindexThread.unpause();
+        }
     }
 
     protected void addStructureReindexEntries(String structureInode) throws DotDataException {
@@ -109,7 +111,9 @@ public class ReindexQueueFactory {
         } catch (Exception ex) {
             Logger.fatal(this, "Error  unlocking the reindex journal table" + ex);
         }
-        ReindexThread.unpause();
+        if (!Config.getBooleanProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false)) {
+            ReindexThread.unpause();
+        }
     }
 
     protected boolean areRecordsLeftToIndex() throws DotDataException {
@@ -256,7 +260,9 @@ public class ReindexQueueFactory {
         dc.addParam(cause);
         dc.addParam(idx.getId());
         dc.loadResult();
-        ReindexThread.unpause();
+        if (!Config.getBooleanProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false)) {
+            ReindexThread.unpause();
+        }
     }
 
     
@@ -367,7 +373,9 @@ public class ReindexQueueFactory {
         String folderPath = APILocator.getIdentifierAPI().find(folder).getPath();
         dc.addParam(folderPath + "%");
         dc.loadResult();
-        ReindexThread.unpause();
+        if (!Config.getBooleanProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false)) {
+            ReindexThread.unpause();
+        }
     }
 
     protected void refreshContentUnderFolderPath(String hostId, String folderPath) throws DotDataException {
@@ -382,7 +390,9 @@ public class ReindexQueueFactory {
         dc.addParam(hostId);
         dc.addParam(folderPath + "%");
         dc.loadResult();
-        ReindexThread.unpause();
+        if (!Config.getBooleanProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false)) {
+            ReindexThread.unpause();
+        }
     }
 
     protected void addIdentifierReindex(final String identifier, final int priority) throws DotDataException {
@@ -441,7 +451,10 @@ public class ReindexQueueFactory {
                     .addParam(ReindexAction.DELETE.ordinal()).addParam(date).loadResult();
 
         }
-        ReindexThread.unpause();
+
+        if (!Config.getBooleanProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false)) {
+            ReindexThread.unpause();
+        }
         return identifiers.size();
     }
 
@@ -463,7 +476,9 @@ public class ReindexQueueFactory {
         dc.addParam(ReindexAction.REINDEX.ordinal());
         dc.addParam(host.getIdentifier());
         dc.loadResult();
-        ReindexThread.unpause();
+        if (!Config.getBooleanProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false)) {
+            ReindexThread.unpause();
+        }
     }
 
     static long lastTimeIRequedRecords = 0;
@@ -487,7 +502,9 @@ public class ReindexQueueFactory {
                 .setSQL("UPDATE dist_reindex_journal SET serverid=NULL where time_entered<? and serverid is not null and priority < ?").addParam(olderThan).addParam(Priority.ERROR.dbValue());
 
         dc.loadResult();
-        ReindexThread.unpause();
+        if (!Config.getBooleanProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false)) {
+            ReindexThread.unpause();
+        }
     }
 
 }
