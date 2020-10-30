@@ -233,7 +233,8 @@ public class ReindexThread {
       }
       while (STATE == ThreadState.PAUSED) {
         ThreadUtils.sleep(SLEEP);
-        Logger.infoEvery(ReindexThread.class, "--- ReindexThread Paused", 300000);
+        //Logs every 10 minutes
+        Logger.infoEvery(ReindexThread.class, "--- ReindexThread Paused", 600000);
         Long restartTime = (Long) cache.get().get(REINDEX_THREAD_PAUSED);
         if(restartTime ==null || restartTime < System.currentTimeMillis()) {
             unpause();
