@@ -811,9 +811,10 @@ public class IntegrityResource {
 
         JSONObject jsonResponse = new JSONObject();
         IntegrityUtil integrityUtil = new IntegrityUtil();
+        String key = null;
 
         try {
-            final String key = pushPublishAuthenticationToken.isJWTTokenWay() ?
+             key = pushPublishAuthenticationToken.isJWTTokenWay() ?
                     pushPublishAuthenticationToken.getToken().getId() :
                     pushPublishAuthenticationToken.getPublishingEndPoint().getId();
             integrityUtil.fixConflicts(dataToFix, key,
@@ -824,18 +825,15 @@ public class IntegrityResource {
             Logger.error( this.getClass(), "Error fixing "+type+" conflicts from remote", e );
             return response( "Error fixing "+type+" conflicts from remote" , true );
         } finally {
-            final String remoteIp = RestEndPointIPUtil.resolveRemoteIp(request);
-
             try {
-                if (remoteIp != null) {
+                if (key != null) {
                     // Discard conflicts if successful or failed
-                    integrityUtil.discardConflicts(remoteIp,
-                            IntegrityType.valueOf(type.toUpperCase()));
+                    integrityUtil.discardConflicts(key, IntegrityType.valueOf(type.toUpperCase()));
                 }
             } catch (DotDataException e) {
                 Logger.error(this.getClass(), "ERROR: Table "
                         + IntegrityType.valueOf(type.toUpperCase()).getResultsTableName()
-                        + " could not be cleared on request id [" + remoteIp
+                        + " could not be cleared on request id [" + key
                         + "]. Please truncate the table data manually.", e);
             }
         }
