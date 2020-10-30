@@ -5,7 +5,6 @@ import { CoreWebService } from 'dotcms-js';
 import { of } from 'rxjs';
 
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-import { DotAppsCardComponent } from './dot-apps-card/dot-apps-card.component';
 import { DotAppsListComponent } from './dot-apps-list.component';
 import { DotAppsService } from '@services/dot-apps/dot-apps.service';
 import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
@@ -15,6 +14,9 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { MockDotRouterService } from '@tests/dot-router-service.mock';
 import { MockDotNotLicensedComponent } from '@tests/dot-not-licensed.component.mock';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { DotApps } from '@shared/models/dot-apps/dot-apps.model';
+import { ButtonModule } from 'primeng/button';
 
 export class AppsServicesMock {
     get() {}
@@ -38,6 +40,21 @@ export const appsResponse = [
         iconUrl: '/dA/792c7c9f-6b6f-427b-80ff-1643376c9999/photo/mountain-persona.jpg'
     }
 ];
+
+@Component({
+    selector: 'dot-apps-card',
+    template: ''
+})
+class MockDotAppsCardComponent {
+    @Input() app: DotApps;
+    @Output() actionFired = new EventEmitter<string>();
+}
+
+@Component({
+    selector: 'dot-apps-export-dialog',
+    template: ''
+})
+class MockDotAppsExportDialogComponent {}
 
 let canAccessPortletResponse = {
     dotAppsListResolverData: {
@@ -66,10 +83,12 @@ describe('DotAppsListComponent', () => {
         TestBed.configureTestingModule({
             declarations: [
                 DotAppsListComponent,
-                DotAppsCardComponent,
+                MockDotAppsCardComponent,
                 MockDotNotLicensedComponent,
-                DotMessagePipe
+                DotMessagePipe,
+                MockDotAppsExportDialogComponent
             ],
+            imports: [ButtonModule],
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {
@@ -123,8 +142,23 @@ describe('DotAppsListComponent', () => {
             ).toEqual(appsResponse[0]);
         });
 
+        it('should export All button be enabled', () => {
+            const exportAllBtn = fixture.debugElement.query(
+                By.css('.dot-apps-configuration__action_export_button')
+            );
+            expect(exportAllBtn.nativeElement.disabled).toBe(false);
+        });
+
+        it('should open confirm dialog and export All configurations', () => {
+            const exportAllBtn = fixture.debugElement.query(
+                By.css('.dot-apps-configuration__action_export_button')
+            );
+            exportAllBtn.triggerEventHandler('click', null);
+            expect(component.exportDialog.showExportDialog).toBe(true);
+        });
+
         it('should redirect to detail configuration list page when app Card clicked', () => {
-            const card: DotAppsCardComponent = fixture.debugElement.queryAll(
+            const card: MockDotAppsCardComponent = fixture.debugElement.queryAll(
                 By.css('dot-apps-card')
             )[0].componentInstance;
             card.actionFired.emit(component.apps[0].key);

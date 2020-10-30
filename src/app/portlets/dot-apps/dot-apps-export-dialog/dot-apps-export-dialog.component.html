@@ -1,0 +1,22 @@
+<dot-dialog
+    class="p-fluid"
+    *ngIf="showExportDialog"
+    [header]="'apps.confirmation.export.header' | dm"
+    [visible]="showExportDialog"
+    [actions]="dialogExportActions"
+    [appendToBody]="true"
+    (hide)="closeExportDialog()"
+>
+    <form [formGroup]="form" novalidate>
+        <input
+            dotAutofocus
+            autocomplete="new-password"
+            formControlName="password"
+            name="export-password"
+            pInputText
+            type="password"
+            [placeholder]="'apps.confirmation.export.password.label' | dm"
+        />
+        <span>{{ exportErrorMessage }}</span>
+    </form>
+</dot-dialog>

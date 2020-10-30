@@ -23,6 +23,12 @@
     input {
         width: 31.5rem;
     }
+
+    button {
+        &:first-child {
+            margin-right: $spacing-1;
+        }
+    }
 }
 
 .dot-apps-configuration__add-configurations {

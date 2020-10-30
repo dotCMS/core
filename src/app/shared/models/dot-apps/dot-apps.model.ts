@@ -43,3 +43,9 @@ export interface DotAppsListResolverData {
     apps: DotApps[];
     isEnterpriseLicense: boolean;
 }
+
+export interface DotAppsExportConfiguration {
+    appKeysBySite?: { [key: string]: string[] };
+    exportAll: boolean;
+    password: string;
+}

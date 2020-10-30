@@ -63,7 +63,7 @@ const FILTERS_SORTED = [
     }
 ];
 
-xdescribe('DotDownloadBundleDialogComponent', () => {
+describe('DotDownloadBundleDialogComponent', () => {
     let component: DotDownloadBundleDialogComponent;
     let fixture: ComponentFixture<DotDownloadBundleDialogComponent>;
     let dotDialogComponent: DotDialogComponent;

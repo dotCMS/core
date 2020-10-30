@@ -17,6 +17,7 @@ export class DotAppsConfigurationListComponent {
 
     @Output() loadData = new EventEmitter<LazyLoadEvent>();
     @Output() edit = new EventEmitter<DotAppsSites>();
+    @Output() export = new EventEmitter<DotAppsSites>();
     @Output() delete = new EventEmitter<DotAppsSites>();
 
     constructor() {}

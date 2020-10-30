@@ -11,6 +11,7 @@
         pTooltip="{{ site.secretsWithWarnings + ' ' + ('apps.invalid.secrets' | dm) }}"
         size="18"
     ></dot-icon>
+    <dot-icon-button icon="launch" (click)="exportConfiguration($event, site)"></dot-icon-button>
     <dot-icon-button icon="delete_outline" (click)="confirmDelete($event, site)"></dot-icon-button>
     <dot-icon-button icon="edit" (click)="editConfigurationSite($event, site)"></dot-icon-button>
 </ng-container>

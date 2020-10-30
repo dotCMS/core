@@ -1,10 +1,15 @@
 import { pluck, catchError, take, map } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { DotApps, DotAppsSaveData } from '@models/dot-apps/dot-apps.model';
+import {
+    DotApps,
+    DotAppsExportConfiguration,
+    DotAppsSaveData
+} from '@models/dot-apps/dot-apps.model';
 import { CoreWebService } from 'dotcms-js';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { HttpErrorResponse } from '@angular/common/http';
+import { getDownloadLink } from '@shared/dot-utils';
 
 const appsUrl = `v1/apps`;
 
@@ -114,6 +119,39 @@ export class DotAppsService {
                     );
                 })
             );
+    }
+
+    /**
+     * Export configuration(s) of a Service Integration
+     * @param {DotAppsExportConfiguration} conf
+     * @returns Promise<string>
+     * @memberof DotAppsService
+     */
+    exportConfiguration(conf: DotAppsExportConfiguration): Promise<string> {
+        let fileName = '';
+
+        return fetch(`/api/${appsUrl}/export`, {
+            method: 'POST',
+            cache: 'no-cache',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+
+            body: JSON.stringify(conf)
+        })
+            .then((res: Response) => {
+                const key = 'filename=';
+                const contentDisposition = res.headers.get('content-disposition');
+                fileName = contentDisposition.slice(contentDisposition.indexOf(key) + key.length);
+                return res.blob();
+            })
+            .then((blob: Blob) => {
+                getDownloadLink(blob, fileName).click();
+                return '';
+            })
+            .catch((error) => {
+                return error.message;
+            });
     }
 
     /**

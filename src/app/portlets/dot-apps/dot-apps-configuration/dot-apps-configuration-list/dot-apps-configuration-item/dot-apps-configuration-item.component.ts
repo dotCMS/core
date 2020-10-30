@@ -13,6 +13,7 @@ export class DotAppsConfigurationItemComponent {
     @Input() site: DotAppsSites;
 
     @Output() edit = new EventEmitter<DotAppsSites>();
+    @Output() export = new EventEmitter<DotAppsSites>();
     @Output() delete = new EventEmitter<DotAppsSites>();
 
     constructor(
@@ -36,6 +37,18 @@ export class DotAppsConfigurationItemComponent {
     editConfigurationSite($event: MouseEvent, site?: DotAppsSites): void {
         $event.stopPropagation();
         this.edit.emit(site);
+    }
+
+    /**
+     * Emits action to export configuration
+     *
+     * @param MouseEvent $event
+     * @param DotAppsSites site
+     * @memberof DotAppsConfigurationItemComponent
+     */
+    exportConfiguration($event: MouseEvent, site: DotAppsSites): void {
+        $event.stopPropagation();
+        this.export.emit(site);
     }
 
     /**

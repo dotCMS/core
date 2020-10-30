@@ -8,9 +8,19 @@ import { DotAppsService } from '@services/dot-apps/dot-apps.service';
 import { DotAppsListResolver } from './dot-apps-list-resolver.service';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { NotLicensedModule } from '@components/not-licensed/not-licensed.module';
+import { ButtonModule } from 'primeng/button';
+import { DotAppsExportDialogModule } from '../dot-apps-export-dialog/dot-apps-export-dialog.module';
 
 @NgModule({
-    imports: [InputTextModule, CommonModule, DotAppsCardModule, DotPipesModule, NotLicensedModule],
+    imports: [
+        InputTextModule,
+        CommonModule,
+        ButtonModule,
+        DotAppsCardModule,
+        DotPipesModule,
+        DotAppsExportDialogModule,
+        NotLicensedModule
+    ],
     declarations: [DotAppsListComponent],
     exports: [DotAppsListComponent],
     providers: [DotAppsService, DotAppsListResolver]

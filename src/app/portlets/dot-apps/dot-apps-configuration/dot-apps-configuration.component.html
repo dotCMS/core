@@ -9,14 +9,25 @@
                     type="text"
                     [placeholder]="'apps.search.placeholder' | dm"
                 />
-                <button
-                    pButton
-                    link
-                    icon="fa fa-trash-o"
-                    [label]="'apps.confirmation.delete.all.button' | dm"
-                    [disabled]="!apps.configurationsCount"
-                    (click)="deleteAllConfigurations()"
-                ></button>
+                <div>
+                    <button
+                        pButton
+                        link
+                        icon="pi pi-external-link"
+                        class="dot-apps-configuration__action_export_button"
+                        [label]="'apps.confirmation.export.all.button' | dm"
+                        [disabled]="!apps.configurationsCount"
+                        (click)="confirmExport()"
+                    ></button>
+                    <button
+                        pButton
+                        link
+                        icon="pi pi-trash"
+                        [label]="'apps.confirmation.delete.all.button' | dm"
+                        [disabled]="!apps.configurationsCount"
+                        (click)="deleteAllConfigurations()"
+                    ></button>
+                </div>
             </div>
             <dot-apps-configuration-list
                 [siteConfigurations]="apps.sites"
@@ -24,8 +35,11 @@
                 [itemsPerPage]="paginationPerPage"
                 (loadData)="loadData($event)"
                 (edit)="gotoConfiguration($event)"
+                (export)="confirmExport($event)"
                 (delete)="deleteConfiguration($event)"
             ></dot-apps-configuration-list>
         </div>
     </div>
 </div>
+
+<dot-apps-export-dialog #exportDialog [app]="apps" [site]="siteSelected"></dot-apps-export-dialog>

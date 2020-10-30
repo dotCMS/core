@@ -8,6 +8,15 @@
                 type="text"
                 [placeholder]="('apps.search.placeholder' | dm) || ''"
             />
+            <button
+                pButton
+                link
+                icon="pi pi-external-link"
+                class="dot-apps-configuration__action_export_button"
+                [label]="'apps.confirmation.export.all.button' | dm"
+                [disabled]="!isExportButtonDisabled()"
+                (click)="confirmExport()"
+            ></button>
         </div>
         <div class="dot-apps__body">
             <dot-apps-card
@@ -18,3 +27,5 @@
         </div>
     </div>
 </ng-template>
+
+<dot-apps-export-dialog #exportDialog></dot-apps-export-dialog>

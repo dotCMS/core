@@ -6,6 +6,7 @@ import * as _ from 'lodash';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { ActivatedRoute } from '@angular/router';
 import { DotAppsService } from '@services/dot-apps/dot-apps.service';
+import { DotAppsExportDialogComponent } from '../dot-apps-export-dialog/dot-apps-export-dialog.component';
 
 @Component({
     selector: 'dot-apps-list',
@@ -13,8 +14,8 @@ import { DotAppsService } from '@services/dot-apps/dot-apps.service';
     styleUrls: ['./dot-apps-list.component.scss']
 })
 export class DotAppsListComponent implements OnInit, OnDestroy {
-    @ViewChild('searchInput')
-    searchInput: ElementRef;
+    @ViewChild('searchInput') searchInput: ElementRef;
+    @ViewChild('exportDialog') exportDialog: DotAppsExportDialogComponent;
     apps: DotApps[];
     appsCopy: DotApps[];
     canAccessPortlet: boolean;
@@ -51,6 +52,25 @@ export class DotAppsListComponent implements OnInit, OnDestroy {
      */
     goToApp(key: string): void {
         this.dotRouterService.goToAppsConfiguration(key);
+    }
+
+    /**
+     * Opens the Export dialog for all configurations
+     *
+     * @memberof DotAppsConfigurationComponent
+     */
+    confirmExport(): void {
+        this.exportDialog.showExportDialog = true;
+    }
+
+    /**
+     * Checks if export button is disabled based on existing configurations
+     *
+     * @returns {boolean}
+     * @memberof DotAppsListComponent
+     */
+    isExportButtonDisabled(): boolean {
+        return this.apps.filter((app: DotApps) => app.configurationsCount).length > 0;
     }
 
     private getApps(apps: DotApps[]): void {

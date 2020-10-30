@@ -3,7 +3,7 @@ import { DotApps, DotAppsSaveData } from '@shared/models/dot-apps/dot-apps.model
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { CoreWebService, LoginService } from 'dotcms-js';
 import { LoginServiceMock } from '@tests/login-service.mock';
-import { TestBed, getTestBed } from '@angular/core/testing';
+import { TestBed, getTestBed, fakeAsync, tick } from '@angular/core/testing';
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
@@ -13,6 +13,7 @@ import { MockDotRouterService } from '@tests/dot-router-service.mock';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { mockResponseView } from '@tests/response-view.mock';
 import { throwError } from 'rxjs';
+import * as dotUtils from '@shared/dot-utils';
 
 const mockDotApps = [
     {
@@ -125,6 +126,60 @@ describe('DotAppsService', () => {
         dotAppsService.getConfiguration('test', '1').subscribe();
         expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(mockResponseView(400));
     });
+
+    it('should export apps configuration', fakeAsync(() => {
+        const blobMock = new Blob(['']);
+        const fileName = 'asd-01EDSTVT6KGQ8CQ80PPA8717AN.tar.gz';
+        const mockResponse = {
+            headers: {
+                get: (_header: string) => {
+                    return `attachment; filename=${fileName}`;
+                }
+            },
+            blob: () => {
+                return blobMock;
+            }
+        };
+        const anchor: HTMLAnchorElement = document.createElement('a');
+        spyOn<any>(window, 'fetch').and.returnValue(Promise.resolve(mockResponse));
+        spyOn(anchor, 'click');
+        spyOn(dotUtils, 'getDownloadLink').and.returnValue(anchor);
+
+        const conf = {
+            appKeysBySite: {},
+            exportAll: true,
+            password: 'test'
+        };
+
+        dotAppsService.exportConfiguration(conf);
+        tick(1);
+
+        expect(window.fetch).toHaveBeenCalledWith(`/api/v1/apps/export`, {
+            method: 'POST',
+            cache: 'no-cache',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(conf)
+        });
+        expect(dotUtils.getDownloadLink).toHaveBeenCalledWith(blobMock, fileName);
+        expect(anchor.click).toHaveBeenCalledTimes(1);
+    }));
+
+    it('should throw error when export apps configuration', fakeAsync(() => {
+        spyOn<any>(window, 'fetch').and.returnValue(Promise.reject(new Error('error')));
+
+        const conf = {
+            appKeysBySite: {},
+            exportAll: true,
+            password: 'test'
+        };
+
+        dotAppsService.exportConfiguration(conf).then((error: any) => {
+            expect(error).toEqual('error');
+        });
+        tick(1);
+    }));
 
     it('should save a specific configuration from an app', () => {
         const appKey = '1';

@@ -10,6 +10,7 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { LazyLoadEvent } from 'primeng/api';
 import { PaginatorService } from '@services/paginator';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotAppsExportDialogComponent } from '../dot-apps-export-dialog/dot-apps-export-dialog.component';
 
 @Component({
     selector: 'dot-apps-configuration',
@@ -18,7 +19,9 @@ import { DotMessageService } from '@services/dot-message/dot-messages.service';
 })
 export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
     @ViewChild('searchInput', { static: true }) searchInput: ElementRef;
+    @ViewChild('exportDialog') exportDialog: DotAppsExportDialogComponent;
     apps: DotApps;
+    siteSelected: DotAppsSites;
 
     hideLoadDataButton: boolean;
     paginationPerPage = 40;
@@ -29,9 +32,9 @@ export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
     constructor(
         private dotAlertConfirmService: DotAlertConfirmService,
         private dotAppsService: DotAppsService,
+        private dotMessageService: DotMessageService,
         private dotRouterService: DotRouterService,
         private route: ActivatedRoute,
-        private dotMessageService: DotMessageService,
         public paginationService: PaginatorService
     ) {}
 
@@ -95,10 +98,21 @@ export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
      * Redirects to app configuration listing page
      *
      * @param string key
-     * @memberof DotAppsConfigurationDetailComponent
+     * @memberof DotAppsConfigurationComponent
      */
     goToApps(key: string): void {
         this.dotRouterService.gotoPortlet(`/apps/${key}`);
+    }
+
+    /**
+     * Opens the dialog and set Export actions based on a single/all sites
+     *
+     * @param DotAppsSites [site]
+     * @memberof DotAppsConfigurationComponent
+     */
+    confirmExport(site?: DotAppsSites): void {
+        this.exportDialog.showExportDialog = true;
+        this.siteSelected = site;
     }
 
     /**
