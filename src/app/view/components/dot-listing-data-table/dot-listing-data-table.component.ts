@@ -7,9 +7,13 @@ import {
     ViewChild,
     ElementRef,
     OnInit,
-    SimpleChanges
+    SimpleChanges,
+    TemplateRef,
+    ContentChildren,
+    QueryList,
+    ContentChild
 } from '@angular/core';
-import { LazyLoadEvent } from 'primeng/api';
+import { LazyLoadEvent, PrimeTemplate } from 'primeng/api';
 import { Table } from 'primeng/table';
 import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
 import { DataTableColumn } from '@models/data-table/data-table-column';
@@ -19,8 +23,19 @@ import { PaginatorService, OrderDirection } from '@services/paginator';
 import { DotDataTableAction } from '@models/data-table/dot-data-table-action';
 import { take } from 'rxjs/operators';
 
+function tableFactory(dotListingDataTableComponent: DotListingDataTableComponent) {
+    return dotListingDataTableComponent.dataTable;
+}
+
 @Component({
-    providers: [PaginatorService],
+    providers: [
+        PaginatorService,
+        {
+            provide: Table,
+            useFactory: tableFactory,
+            deps: [DotListingDataTableComponent]
+        }
+    ],
     selector: 'dot-listing-data-table',
     styleUrls: ['./dot-listing-data-table.component.scss'],
     templateUrl: 'dot-listing-data-table.component.html'
@@ -35,15 +50,26 @@ export class DotListingDataTableComponent implements OnChanges, OnInit {
     @Input() multipleSelection = false;
     @Input() paginationPerPage = 40;
     @Input() actions: DotDataTableAction[];
+    @Input() selectionMode = 'single';
+    @Input() dataKey = '';
+    @Input() checkbox = false;
 
     @Output() rowWasClicked: EventEmitter<any> = new EventEmitter();
+    @Output() selectedItems: EventEmitter<any> = new EventEmitter();
 
-    @ViewChild('gf', { static: true }) globalSearch: ElementRef;
-    @ViewChild('dataTable', { static: true }) dataTable: Table;
+    @ViewChild('gf', { static: true })
+    globalSearch: ElementRef;
+    @ViewChild('dataTable', { static: true })
+    dataTable: Table;
+
+    @ContentChildren(PrimeTemplate) templates: QueryList<ElementRef>;
+
+    @ContentChild('rowTemplate') rowTemplate: TemplateRef<any>;
+    @ContentChild('headerTemplate') headerTemplate: TemplateRef<any>;
 
     readonly DATE_FORMAT = 'date';
-
     items: any[];
+    selected: any[];
     filter;
     dateColumns: DataTableColumn[];
     loading = true;
@@ -63,7 +89,7 @@ export class DotListingDataTableComponent implements OnChanges, OnInit {
 
         if (changes.columns && changes.columns.currentValue) {
             this.dateColumns = changes.columns.currentValue.filter(
-                (column) => column.format === this.DATE_FORMAT
+                column => column.format === this.DATE_FORMAT
             );
             this.loadData(0);
         }
@@ -76,13 +102,30 @@ export class DotListingDataTableComponent implements OnChanges, OnInit {
         this.globalSearch.nativeElement.focus();
     }
 
-    handleRowClick($event): void {
-        this.rowWasClicked.emit($event);
+    /**
+     * Emit checked rows.
+     *
+     * @memberof DotListingDataTableComponent
+     */
+    handleRowCheck(): void {
+        this.selectedItems.emit(this.selectedItems);
+    }
+
+    /**
+     * Emit selected row
+     * @param {any} rowData
+     *
+     * @memberof DotListingDataTableComponent
+     */
+    handleRowClick(rowData: any): void {
+        this.rowWasClicked.emit(rowData);
     }
 
     /**
      * Call when click on any pagination link
-     * @param event Pagination event
+     * @param {LazyLoadEvent} event
+     *
+     * @memberof DotListingDataTableComponent
      */
     loadDataPaginationEvent(event: LazyLoadEvent): void {
         this.loadData(event.first, event.sortField, event.sortOrder);
@@ -102,21 +145,21 @@ export class DotListingDataTableComponent implements OnChanges, OnInit {
             this.paginatorService
                 .getWithOffset(offset)
                 .pipe(take(1))
-                .subscribe((items) => this.setItems(items));
+                .subscribe(items => this.setItems(items));
         }
     }
 
     /**
      * Load first page of results and reset the pagination url's and set the table pagination.
      *
-     * @memberof ListingDataTableComponent
+     * @memberof DotListingDataTableComponent
      */
     loadFirstPage(): void {
         this.loading = true;
         this.paginatorService
             .get()
             .pipe(take(1))
-            .subscribe((items) => {
+            .subscribe(items => {
                 this.setItems(items);
                 this.dataTable.first = 1;
             });
@@ -124,7 +167,7 @@ export class DotListingDataTableComponent implements OnChanges, OnInit {
 
     /**
      * Reloads data table with updated data on current page
-     * @memberof ListingDataTableComponent
+     * @memberof DotListingDataTableComponent
      */
     loadCurrentPage(): void {
         this.loading = true;
@@ -132,23 +175,19 @@ export class DotListingDataTableComponent implements OnChanges, OnInit {
             this.paginatorService
                 .getCurrentPage()
                 .pipe(take(1))
-                .subscribe((items) => this.setItems(items));
+                .subscribe(items => this.setItems(items));
         }
     }
 
     /**
      * Column align, return the DataTableColumn's textAlign property if it exists,
      * otherwise return right if the content is number and left if the content's type is not number.
-     * @param DataTableColumn col
+     * @param {DataTableColumn} col
      * @returns string
-     * @memberof ListingDataTableComponent
+     * @memberof DotListingDataTableComponent
      */
     getAlign(col: DataTableColumn): string {
-        return col.textAlign
-            ? col.textAlign
-            : this.items && this.items[0] && typeof this.items[0][col.fieldName] === 'number'
-            ? 'right'
-            : 'left';
+        return col.textAlign ? col.textAlign : this.isTypeNumber(col) ? 'right' : 'left';
     }
 
     /**
@@ -163,9 +202,9 @@ export class DotListingDataTableComponent implements OnChanges, OnInit {
     }
 
     private formatData(items: any[]): any[] {
-        return items.map((item) => {
+        return items.map(item => {
             this.dateColumns.forEach(
-                (col) =>
+                col =>
                     (item[col.fieldName] = this.formatDateService.getRelative(item[col.fieldName]))
             );
             return item;
@@ -175,5 +214,9 @@ export class DotListingDataTableComponent implements OnChanges, OnInit {
     private setItems(items: any[]): void {
         this.items = this.dateColumns ? this.formatData(items) : items;
         this.loading = false;
+    }
+
+    private isTypeNumber(col: DataTableColumn): boolean {
+        return this.items && this.items[0] && typeof this.items[0][col.fieldName] === 'number';
     }
 }

@@ -1,0 +1,29 @@
+<dot-listing-data-table
+    [actionHeaderOptions]=""
+    [columns]="tableColumns"
+    [paginationPerPage]="40"
+    sortField="identifier"
+    sortOrder="DESC"
+    url="v1/templates"
+    [actions]="[]"
+    [checkbox]="true"
+    dataKey="inode"
+>
+    <ng-template #rowTemplate let-rowData="rowData">
+        <td [ngStyle]="{ 'text-align': tableColumns[0].textAlign }">
+            {{rowData.name}}
+        </td>
+        <td [ngStyle]="{ 'text-align': tableColumns[1].textAlign }">
+            <span>Status TBD</span>
+        </td>
+        <td [ngStyle]="{ 'text-align': tableColumns[2].textAlign }">
+            {{rowData.friendlyName}}
+        </td>
+        <td [ngStyle]="{ 'text-align': tableColumns[3].textAlign }">
+            {{rowData.modDate}}
+        </td>
+        <td style="width: 5%">
+            <span>Actions TBD</span>
+        </td>
+    </ng-template>
+</dot-listing-data-table>

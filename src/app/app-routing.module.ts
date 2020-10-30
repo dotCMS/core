@@ -16,6 +16,15 @@ import { DotIframePortletLegacyResolver } from '@components/_common/iframe/servi
 
 const PORTLETS_ANGULAR = [
     {
+        // canActivate: [MenuGuardService],
+        // canActivateChild: [MenuGuardService],
+        path: 'templates',
+        loadChildren: () =>
+            import('@portlets/dot-templates/dot-templates.module').then(
+                (m) => m.DotTemplatesModule
+            )
+    },
+    {
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         path: 'content-types-angular',
