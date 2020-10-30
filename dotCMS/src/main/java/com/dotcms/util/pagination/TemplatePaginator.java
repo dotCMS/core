@@ -2,6 +2,7 @@ package com.dotcms.util.pagination;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.api.v1.template.TemplateHelper;
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -68,7 +69,7 @@ public class TemplatePaginator implements PaginatorOrdered<TemplateView> {
 
         String orderByDirection = orderby;
         if (UtilMethods.isSet(direction) && UtilMethods.isSet(orderby)) {
-            orderByDirection = new StringBuffer(orderByDirection)
+            orderByDirection = new StringBuffer(this.mapOrderBy(orderByDirection))
                     .append(" ")
                     .append(direction.toString().toLowerCase()).toString();
         }
@@ -97,6 +98,12 @@ public class TemplatePaginator implements PaginatorOrdered<TemplateView> {
             Logger.error(this, e.getMessage(), e);
             throw new PaginationException(e);
         }
+    }
+
+    private final Map<String, String> orderByMapping = CollectionsUtils.map("name", "title", "modDate", "mod_date");
+
+    private String mapOrderBy(final String orderBy) {
+        return this.orderByMapping.getOrDefault(orderBy.trim(), orderBy);
     }
 
     private String hostname (final Template template) {
