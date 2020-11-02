@@ -197,7 +197,7 @@ public class Task00050LoadAppsSecretsTest {
         final AppsAPI api = APILocator.getAppsAPI();
         final Optional<AppSecrets> secrets = api.getSecrets(descriptor.getKey(), site, admin);
         Assert.assertFalse(secrets.isPresent());
-        //finally test file got removed.
+        //Since there were errors the file should continue to exist.
         Assert.assertTrue(fileToImport.exists());
     }
 
