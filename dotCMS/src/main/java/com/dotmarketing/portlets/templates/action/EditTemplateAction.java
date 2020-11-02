@@ -327,7 +327,7 @@ public class EditTemplateAction extends DotPortletAction implements
 								));
 
 				for(String inode  : inodes)	{
-					WebAsset webAsset = (WebAsset) InodeFactory.getInode(inode,Template.class);
+					WebAsset webAsset = APILocator.getTemplateAPI().find(inode,user,false);
 
 					if (canTemplateBeDeleted(webAsset, user, errors)) {
 						WebAssetFactory.deleteAsset(webAsset,user);
