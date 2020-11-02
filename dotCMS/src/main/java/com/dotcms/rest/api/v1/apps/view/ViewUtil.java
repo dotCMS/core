@@ -16,11 +16,11 @@ import org.apache.velocity.runtime.RuntimeSingleton;
 import org.apache.velocity.runtime.parser.ParseException;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
 
-class ViewUtil {
+public class ViewUtil {
 
     private static final ThreadLocal<StackContext> threadLocal = new ThreadLocal<>();
 
-    static void newStackContext(final AppView appView) {
+    public static void newStackContext(final AppView appView) {
         threadLocal.set(new StackContext(appView));
     }
 
@@ -28,7 +28,7 @@ class ViewUtil {
         return threadLocal.get();
     }
 
-    static void currentSite(final String siteId) {
+    public static void currentSite(final String siteId) {
         final StackContext currentStack = currentStackContext();
         if(null == currentStack){
             throw new IllegalStateException("Create stack hasn't been called yet.");
@@ -36,7 +36,7 @@ class ViewUtil {
         currentStack.currentSite = siteId;
     }
 
-    static void pushSecret(final Map<String, Object> map) {
+    public static void pushSecret(final Map<String, Object> map) {
         final StackContext context = currentStackContext();
         if(null == context){
             throw new IllegalStateException("Create stack hasn't been called yet.");
@@ -48,7 +48,7 @@ class ViewUtil {
         context.secretsBySite.computeIfAbsent(context.currentSite, k -> new ArrayList<>()).add(map);
     }
 
-    static void disposeStackContext() {
+    public static void disposeStackContext() {
         threadLocal.remove();
     }
 
