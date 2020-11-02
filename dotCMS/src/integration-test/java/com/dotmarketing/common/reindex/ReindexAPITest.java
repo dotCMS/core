@@ -121,6 +121,10 @@ public class ReindexAPITest extends IntegrationTestBase {
         ReindexThread.unpause();
     }
 
+    /**
+     * This method tests that all pieces of content that belong to a content type are queued to be re-indexed
+     * @throws Exception
+     */
     @Test
     public void test_content_type_reindex() throws Exception {
         Config.setProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", true);
