@@ -15,6 +15,7 @@ import io.vavr.Lazy;
 import java.io.File;
 import java.util.List;
 import java.util.WeakHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -249,7 +250,7 @@ public class Logger{
         final Long expireWhen = logMap.get().get(hash);
         
         if(expireWhen == null || expireWhen < System.currentTimeMillis()) {
-            logMap.get().put(hash, System.currentTimeMillis() + warnEveryMillis );
+            logMap.get().put(hash, System.currentTimeMillis() + warnEveryMillis , warnEveryMillis, TimeUnit.MILLISECONDS);
             logger.warn(message + " (every "+warnEveryMillis + " millis)");
             
         }
@@ -273,7 +274,7 @@ public class Logger{
         final Long expireWhen = logMap.get().get(hash);
         
         if(expireWhen == null || expireWhen < System.currentTimeMillis()) {
-            logMap.get().put(hash, System.currentTimeMillis() + warnEveryMillis );
+            logMap.get().put(hash, System.currentTimeMillis() + warnEveryMillis , warnEveryMillis, TimeUnit.MILLISECONDS);
             logger.info(message + " (every "+warnEveryMillis + " millis)");
             
         }
