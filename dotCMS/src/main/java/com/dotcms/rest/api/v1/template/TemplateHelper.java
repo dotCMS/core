@@ -110,7 +110,7 @@ public class TemplateHelper {
 
             layout = new TemplateLayout();
             layout.setBody(this.toBody(templateLayoutView.getBody()));
-            layout.setSidebar(this.sideBar(templateLayoutView.getSidebar()));
+            layout.setSidebar(this.toSideBar(templateLayoutView.getSidebar()));
             layout.setTitle(templateLayoutView.getTitle());
             layout.setWidth(templateLayoutView.getWidth());
         }
@@ -118,9 +118,10 @@ public class TemplateHelper {
         return layout;
     }
 
-    private Sidebar sideBar(final SidebarView sidebarView) {
+    private Sidebar toSideBar(final SidebarView sidebarView) {
 
-        return new Sidebar(sidebarView.getContainers(), sidebarView.getLocation(), sidebarView.getWidth(), -1);
+        return null != sidebarView?
+                new Sidebar(sidebarView.getContainers(), sidebarView.getLocation(), sidebarView.getWidth(), -1): null;
     }
 
     private Body toBody(final BodyView bodyView) {
