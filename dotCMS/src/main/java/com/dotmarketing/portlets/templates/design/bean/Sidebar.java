@@ -32,10 +32,13 @@ public class Sidebar extends ContainerHolder implements Serializable{
 
         if (width != null) {
             this.width = SidebarWidthValue.fromString(width);
+            if (-1 == widthPercent) {
+
+                this.widthPercent = this.width.getWidthPercent();
+            }
         } else {
             this.width = this.getWidthFromWidthPercent();
         }
-
     }
 
     public String getLocation() {

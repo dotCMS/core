@@ -2,13 +2,10 @@ package com.dotcms.util.pagination;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.api.v1.template.TemplateHelper;
+import com.dotcms.rest.api.v1.template.TemplateView;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.web.HostWebAPI;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
@@ -18,11 +15,8 @@ import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import io.vavr.control.Try;
 
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -55,8 +49,8 @@ public class TemplatePaginator implements PaginatorOrdered<TemplateView> {
 
     @Override
     public PaginatedArrayList<TemplateView> getItems(final User user, final String filter, final int limit, final int offset,
-                                                  final String orderby, final OrderDirection direction,
-                                                  final Map<String, Object> extraParams) {
+                                                     final String orderby, final OrderDirection direction,
+                                                     final Map<String, Object> extraParams) {
         String hostId   = null;
         boolean archive = false;
 

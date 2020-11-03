@@ -32,7 +32,7 @@ public class TemplateForm {
     private final int     sortOrder;
     private final boolean headerCheck;
     private final boolean footerCheck;
-    private final TemplateLayout layout;
+    private final TemplateLayoutView layout;
 
     private TemplateForm(final Builder builder) {
 
@@ -60,7 +60,7 @@ public class TemplateForm {
         this.layout      = builder.layout;
     }
 
-    public TemplateLayout getLayout() {
+    public TemplateLayoutView getLayout() {
         return layout;
     }
 
@@ -193,9 +193,9 @@ public class TemplateForm {
         @JsonProperty
         private  boolean footerCheck;
         @JsonProperty
-        private TemplateLayout layout;
+        private TemplateLayoutView layout;
 
-        public Builder layout (final TemplateLayout layout) {
+        public Builder layout (final TemplateLayoutView layout) {
 
             this.layout = layout;
             return this;

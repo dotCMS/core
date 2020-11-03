@@ -2,12 +2,12 @@ package com.dotcms.rest.api.v1.template;
 
 import com.beust.jcommander.internal.Maps;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.exception.ValidationException;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.ContainerPaginator;
@@ -24,12 +24,8 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.business.TemplateConstants;
 import com.dotmarketing.portlets.templates.design.util.DesignTemplateUtil;
@@ -41,12 +37,12 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
-import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.servlet.SessionDialogMessage;
 import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
+import org.mockito.internal.matchers.Not;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -321,12 +317,12 @@ public class TemplateResource {
         final User user         = initData.getUser();
         final Host host         = this.hostWebAPI.getCurrentHostNoThrow(request);
         final PageMode pageMode = PageMode.get(request);
-        final Template currentTemplate = this.templateAPI.find(templateForm.getInode(), user, pageMode.respectAnonPerms);
+        final Template currentTemplate = this.findTemplateByForm(templateForm, user, pageMode);
 
-        if (null == currentTemplate || UtilMethods.isNotSet(currentTemplate.getIdentifier())
-                || !InodeUtils.isSet(currentTemplate.getInode())) {
+        if (null == currentTemplate) {
 
-            throw new DoesNotExistException("The working template inode: " + templateForm.getInode() + " does not exists");
+            throw new DoesNotExistException("The working template inode: " + templateForm.getInode()
+                    + " or id: " + templateForm.getIdentifier() + " does not exists");
         }
 
         this.templateHelper.checkPermission(user, currentTemplate, PERMISSION_WRITE);
@@ -334,6 +330,24 @@ public class TemplateResource {
         return Response.ok(new ResponseEntityView(this.templateHelper.toTemplateView(
                 this.fillAndSaveTemplate(templateForm, user, host, pageMode, currentTemplate), user))).build();
     }
+
+    private Template findTemplateByForm (final TemplateForm templateForm, final User user, final PageMode pageMode) throws DotDataException, DotSecurityException {
+
+        final String templateInode = templateForm.getInode();
+        if (UtilMethods.isSet(templateInode)) {
+            return this.templateAPI.find(templateForm.getInode(), user, pageMode.respectAnonPerms);
+        }
+
+        if (UtilMethods.isSet(templateForm.getIdentifier())) {
+
+            return pageMode.showLive?
+                    this.templateAPI.findLiveTemplate(templateForm.getIdentifier(), user, pageMode.respectAnonPerms):
+                    this.templateAPI.findWorkingTemplate(templateForm.getIdentifier(), user, pageMode.respectAnonPerms);
+        }
+
+         throw new DoesNotExistException("Can not find the template");
+    }
+
 
     /**
      * Save and publish a new template
@@ -393,12 +407,12 @@ public class TemplateResource {
         final User user         = initData.getUser();
         final Host host         = this.hostWebAPI.getCurrentHostNoThrow(request);
         final PageMode pageMode = PageMode.get(request);
-        final Template currentTemplate = this.templateAPI.find(templateForm.getInode(), user, pageMode.respectAnonPerms);
+        final Template currentTemplate = this.findTemplateByForm(templateForm, user, pageMode);
 
-        if (null == currentTemplate || UtilMethods.isNotSet(currentTemplate.getIdentifier())
-                || !InodeUtils.isSet(currentTemplate.getInode())) {
+        if (null == currentTemplate) {
 
-            throw new DoesNotExistException("The working template inode: " + templateForm.getInode() + " does not exists");
+            throw new DoesNotExistException("The working template inode: " + templateForm.getInode()
+                    + " or id: " + templateForm.getIdentifier() + " does not exists");
         }
 
         this.templateHelper.checkPermission(user, currentTemplate, PERMISSION_WRITE);
@@ -857,7 +871,7 @@ public class TemplateResource {
         template.setOwner(user.getUserId());
         template.setModDate(new Date());
         if (null != templateForm.getLayout()) {
-            template.setDrawedBody(templateForm.getLayout());
+            template.setDrawedBody(this.templateHelper.toTemplateLayout(templateForm.getLayout()));
             template.setDrawed(true);
         } else {
             template.setDrawedBody(templateForm.getDrawedBody());

@@ -1,10 +1,9 @@
-package com.dotcms.util.pagination;
+package com.dotcms.rest.api.v1.template;
 
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.ContainerView;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
-import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 
 import java.util.Date;
@@ -46,7 +45,7 @@ public class TemplateView {
     private final boolean canRead;
     private final boolean canWrite;
     private final boolean canPublish;
-    private final TemplateLayout layout;
+    private final TemplateLayoutView layout;
     private final Set<ContainerView> containers;
 
     private TemplateView(final Builder builder) {
@@ -104,7 +103,7 @@ public class TemplateView {
         return containerMap;
     }
 
-    public TemplateLayout getLayout() {
+    public TemplateLayoutView getLayout() {
         return layout;
     }
 
@@ -270,7 +269,7 @@ public class TemplateView {
         private  boolean canRead;
         private  boolean canWrite;
         private  boolean canPublish;
-        private  TemplateLayout layout;
+        private  TemplateLayoutView layout;
         private  Set<ContainerView> containers;
 
         public Builder containers (final Set<ContainerView> containers) {
@@ -279,7 +278,7 @@ public class TemplateView {
             return this;
         }
 
-        public Builder layout (final TemplateLayout layout) {
+        public Builder layout (final TemplateLayoutView layout) {
 
             this.layout = layout;
             return this;
