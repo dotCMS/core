@@ -1,11 +1,8 @@
 @use "variables" as *;
 
-.p-toast {
-    opacity: 0.9;
-    line-height: 1.5;
-}
-
 .p-toast .p-toast-message {
+    line-height: 1.5;
+    background-color: $white;
     margin: 0 0 $spacing-3 0;
     box-shadow: $md-shadow-1;
     border-radius: $border-radius;
