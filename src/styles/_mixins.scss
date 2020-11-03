@@ -16,29 +16,6 @@
     word-wrap: normal;
 }
 
-@mixin icon-button {
-    align-items: center;
-    background: transparent;
-    border-radius: 50%;
-    border: none;
-    color: $gray;
-    cursor: pointer;
-    display: inline-flex;
-    height: $icon-button-size;
-    justify-content: center;
-    transition: background-color $field-animation-speed ease-in,
-        box-shadow $field-animation-speed ease-in;
-    width: $icon-button-size;
-
-    &:focus {
-        outline: 0;
-    }
-
-    &:hover {
-        background-color: rgba($black, 0.07);
-    }
-}
-
 @mixin dot-icon_inverted {
     color: $white;
 }

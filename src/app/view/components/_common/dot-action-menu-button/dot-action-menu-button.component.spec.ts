@@ -1,31 +1,31 @@
 import { DotCMSContentType } from 'dotcms-models';
 import { DotIconButtonTooltipModule } from '../dot-icon-button-tooltip/dot-icon-button-tooltip.module';
-import { ActionMenuButtonComponent } from './action-menu-button.component';
+import { DotActionMenuButtonComponent } from './dot-action-menu-button.component';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';
-import { DotDataTableAction } from '@models/data-table/dot-data-table-action';
+import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
 import { DotMenuModule } from '../dot-menu/dot-menu.module';
 import { dotcmsContentTypeBasicMock } from '@tests/dot-content-types.mock';
 
 describe('ActionMenuButtonComponent', () => {
-    let comp: ActionMenuButtonComponent;
-    let fixture: ComponentFixture<ActionMenuButtonComponent>;
+    let comp: DotActionMenuButtonComponent;
+    let fixture: ComponentFixture<DotActionMenuButtonComponent>;
     let de: DebugElement;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [ActionMenuButtonComponent],
+            declarations: [DotActionMenuButtonComponent],
             imports: [DotIconButtonTooltipModule, DotMenuModule]
         }).compileComponents();
 
-        fixture = TestBed.createComponent(ActionMenuButtonComponent);
+        fixture = TestBed.createComponent(DotActionMenuButtonComponent);
         comp = fixture.componentInstance;
         de = fixture.debugElement;
     });
 
     it('should display a menu button with multiple actions if actions are more than 1', () => {
-        const fakeActions: DotDataTableAction[] = [
+        const fakeActions: DotActionMenuItem[] = [
             {
                 menuItem: {
                     command: () => {},
@@ -56,7 +56,7 @@ describe('ActionMenuButtonComponent', () => {
     });
 
     it('should display an icon button tooltip if actions are equal to 1', () => {
-        const fakeActions: DotDataTableAction[] = [
+        const fakeActions: DotActionMenuItem[] = [
             {
                 menuItem: {
                     command: () => {},
@@ -77,7 +77,7 @@ describe('ActionMenuButtonComponent', () => {
     });
 
     it('should call menu action with item passed', () => {
-        const fakeActions: DotDataTableAction[] = [
+        const fakeActions: DotActionMenuItem[] = [
             {
                 menuItem: {
                     icon: 'fa fa-trash',
@@ -114,7 +114,7 @@ describe('ActionMenuButtonComponent', () => {
     });
 
     it('should filter actions based on shouldShow field', () => {
-        const fakeActions: DotDataTableAction[] = [
+        const fakeActions: DotActionMenuItem[] = [
             {
                 menuItem: {
                     icon: 'fa fa-trash',
@@ -148,7 +148,7 @@ describe('ActionMenuButtonComponent', () => {
     });
 
     it('should render button with submenu', () => {
-        const fakeActions: DotDataTableAction[] = [
+        const fakeActions: DotActionMenuItem[] = [
             {
                 menuItem: {
                     icon: 'fa fa-trash',
@@ -193,7 +193,7 @@ describe('ActionMenuButtonComponent', () => {
     it('should call menu option actions with item passed', () => {
         const fakeCommand = jasmine.createSpy('fakeCommand');
 
-        const fakeActions: DotDataTableAction[] = [
+        const fakeActions: DotActionMenuItem[] = [
             {
                 menuItem: {
                     icon: 'fa fa-trash',

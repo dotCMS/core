@@ -1,8 +1,10 @@
 @use "variables" as *;
 
 .p-toolbar {
+    background-color: $white;
+    border-bottom: solid 1px $gray-light;
     display: flex;
-    padding: 0 $spacing-3;
+    padding: $spacing-3 $spacing-4;
 
     &.p-corner-all {
         border-radius: 0;

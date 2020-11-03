@@ -1,6 +1,6 @@
 import { MenuItem } from 'primeng/api';
 
-export interface DotDataTableAction {
+export interface DotActionMenuItem {
     shouldShow?: (x?: any) => boolean;
     menuItem: MenuItem;
 }

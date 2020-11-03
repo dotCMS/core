@@ -50,7 +50,6 @@ describe('DotToolbarUserComponent', () => {
     let loginService: LoginService;
     let locationService: Location;
     let dotNavigationService: DotNavigationService;
-    let dotRouterService: DotRouterService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -111,22 +110,21 @@ describe('DotToolbarUserComponent', () => {
         loginService = de.injector.get(LoginService);
         locationService = de.injector.get(LOCATION_TOKEN);
         dotNavigationService = de.injector.get(DotNavigationService);
-        dotRouterService = de.injector.get(DotRouterService);
     });
 
-    it('should call doLogOut on logout click', () => {
+    it('should have correct href in logout link', () => {
         comp.auth = {
             user: mockUser(),
             loginAsUser: null
         };
         fixture.detectChanges();
-        spyOn(dotRouterService, 'doLogOut');
+
         dotDropdownComponent = de.query(By.css('dot-dropdown-component')).componentInstance;
         dotDropdownComponent.onToggle();
         fixture.detectChanges();
+
         const logoutLink = de.query(By.css('#dot-toolbar-user-link-logout'));
-        logoutLink.triggerEventHandler('click', {});
-        expect(dotRouterService.doLogOut).toHaveBeenCalled();
+        expect(logoutLink.attributes.href).toBe('/dotAdmin/logout');
     });
 
     it('should call "logoutAs" in "LoginService" on logout click', async () => {

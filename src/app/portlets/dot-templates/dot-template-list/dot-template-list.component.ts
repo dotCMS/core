@@ -12,7 +12,6 @@ import { DotMessageService } from '@services/dot-message/dot-messages.service';
     styleUrls: ['./dot-template-list.component.scss']
 })
 export class DotTemplateListComponent implements OnInit, OnDestroy {
-
     tableColumns: DataTableColumn[];
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -38,7 +37,7 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
             {
                 fieldName: 'name',
                 header: this.dotMessageService.get('templates.fieldName.name'),
-                sortable: true,
+                sortable: true
             },
             {
                 fieldName: 'status',
@@ -60,8 +59,7 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
                 fieldName: '',
                 header: '',
                 width: '5%'
-            },
-
+            }
         ];
     }
 }

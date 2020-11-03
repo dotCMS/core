@@ -1,7 +1,7 @@
 import { of as observableOf, Observable } from 'rxjs';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
 import { DotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
-import { ActionMenuButtonComponent } from '../_common/action-menu-button/action-menu-button.component';
+import { DotActionMenuButtonComponent } from '../_common/dot-action-menu-button/dot-action-menu-button.component';
 import { DotActionButtonComponent } from '../_common/dot-action-button/dot-action-button.component';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture } from '@angular/core/testing';
@@ -15,7 +15,7 @@ import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { PaginatorService } from '@services/paginator';
 import { ActionHeaderComponent } from './action-header/action-header.component';
-import { DotDataTableAction } from '@models/data-table/dot-data-table-action';
+import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
 import { DotMenuModule } from '../_common/dot-menu/dot-menu.module';
 import { DotIconModule } from '../_common/dot-icon/dot-icon.module';
 import { DotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
@@ -44,7 +44,7 @@ describe('DotListingDataTableComponent', () => {
                 ActionHeaderComponent,
                 DotActionButtonComponent,
                 DotListingDataTableComponent,
-                ActionMenuButtonComponent
+                DotActionMenuButtonComponent
             ],
             imports: [
                 TableModule,
@@ -300,7 +300,7 @@ describe('DotListingDataTableComponent', () => {
     });
 
     it('should add a column if actions are received', () => {
-        const fakeActions: DotDataTableAction[] = [
+        const fakeActions: DotActionMenuItem[] = [
             {
                 menuItem: {
                     icon: 'fa fa-trash',
@@ -333,7 +333,7 @@ describe('DotListingDataTableComponent', () => {
     });
 
     it('should receive an action an execute the command after clickling over the action button', () => {
-        const fakeActions: DotDataTableAction[] = [
+        const fakeActions: DotActionMenuItem[] = [
             {
                 menuItem: {
                     icon: 'fa fa-trash',

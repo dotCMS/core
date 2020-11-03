@@ -1,0 +1,8 @@
+@use "variables" as *;
+
+p-dynamicdialog {
+    .p-component-overlay {
+        align-items: baseline;
+        padding: 7rem;
+    }
+}

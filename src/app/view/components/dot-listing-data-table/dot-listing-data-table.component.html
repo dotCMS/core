@@ -34,25 +34,29 @@
             <th *ngIf="checkbox" style="width: 5%">
                 <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
             </th>
-            <ng-container [ngTemplateOutlet]="headerTemplate ||defaultHeaderTemplate"
-                          [ngTemplateOutletContext]="{columns: columns}"
+            <ng-container
+                [ngTemplateOutlet]="headerTemplate || defaultHeaderTemplate"
+                [ngTemplateOutletContext]="{ columns: columns }"
             ></ng-container>
         </tr>
     </ng-template>
 
-    <ng-template  pTemplate="body" let-rowData let-columns="columns">
+    <ng-template pTemplate="body" let-rowData let-columns="columns">
         <tr>
-            <td *ngIf="checkbox" >
-                <p-tableCheckbox (click)="$event.stopPropagation()" [value]="rowData"></p-tableCheckbox>
+            <td *ngIf="checkbox">
+                <p-tableCheckbox
+                    (click)="$event.stopPropagation()"
+                    [value]="rowData"
+                ></p-tableCheckbox>
             </td>
-            <ng-container  [ngTemplateOutlet]="rowTemplate || defaultRowTemplate"
-                          [ngTemplateOutletContext]="{rowData: rowData}"
+            <ng-container
+                [ngTemplateOutlet]="rowTemplate || defaultRowTemplate"
+                [ngTemplateOutletContext]="{ rowData: rowData }"
             ></ng-container>
-
         </tr>
     </ng-template>
 </p-table>
-<ng-template  pTemplate="header" let-columns="columns" #defaultHeaderTemplate>
+<ng-template pTemplate="header" let-columns="columns" #defaultHeaderTemplate>
     <th
         *ngFor="let col of columns"
         [ngStyle]="{ width: col.width, 'text-align': getAlign(col) }"
@@ -62,7 +66,7 @@
         {{ col.header }}
         <p-sortIcon *ngIf="col.sortable" [field]="col.fieldName"></p-sortIcon>
     </th>
-     <th style="width: 5%"></th>
+    <th style="width: 5%"></th>
 </ng-template>
 
 <ng-template let-rowData="rowData" #defaultRowTemplate>
@@ -76,17 +80,17 @@
             <span>{{ col.textContent || rowData[col.fieldName] }}</span>
         </div>
         <span *ngIf="!col.icon && col.fieldName !== 'nEntries'">
-                    {{rowData[col.fieldName]}}
-                </span>
+            {{ rowData[col.fieldName] }}
+        </span>
         <a
             *ngIf="col.fieldName === 'nEntries'"
             [routerLink]="rowData.variable === 'Host' ? '/c/sites' : '/c/content'"
             [queryParams]="rowData.variable === 'Host' ? {} : { filter: rowData.variable }"
         >
             {{
-            col.textContent
-                ? (col.textContent | dotStringFormat: [rowData[col.fieldName]])
-                : rowData[col.fieldName]
+                col.textContent
+                    ? (col.textContent | dotStringFormat: [rowData[col.fieldName]])
+                    : rowData[col.fieldName]
             }}
         </a>
     </td>

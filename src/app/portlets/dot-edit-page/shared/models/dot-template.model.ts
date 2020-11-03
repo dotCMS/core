@@ -1,3 +1,5 @@
+import { DotContainer } from '@shared/models/container/dot-container.model';
+
 export interface DotTemplate {
     anonymous: boolean;
     archived?: boolean;
@@ -29,4 +31,9 @@ export interface DotTemplate {
 // Extra properties from renderHTML
 export interface DotTemplate {
     canEdit: boolean;
+    containers?: {
+        [id: string]: {
+            container: DotContainer;
+        };
+    };
 }

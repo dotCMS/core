@@ -11,16 +11,16 @@
 >
     <ng-template #rowTemplate let-rowData="rowData">
         <td [ngStyle]="{ 'text-align': tableColumns[0].textAlign }">
-            {{rowData.name}}
+            {{ rowData.name }}
         </td>
         <td [ngStyle]="{ 'text-align': tableColumns[1].textAlign }">
             <span>Status TBD</span>
         </td>
         <td [ngStyle]="{ 'text-align': tableColumns[2].textAlign }">
-            {{rowData.friendlyName}}
+            {{ rowData.friendlyName }}
         </td>
         <td [ngStyle]="{ 'text-align': tableColumns[3].textAlign }">
-            {{rowData.modDate}}
+            {{ rowData.modDate }}
         </td>
         <td style="width: 5%">
             <span>Actions TBD</span>

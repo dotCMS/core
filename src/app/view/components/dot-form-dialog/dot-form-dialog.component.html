@@ -1,0 +1,18 @@
+<div class="dot-form-dialog__content">
+    <ng-content></ng-content>
+</div>
+
+<div class="dot-form-dialog__actions">
+    <button
+        pButton
+        label="Cancel"
+        class="p-button-secondary"
+        (click)="onSecondaryClick($event)"
+    ></button>
+    <button
+        pButton
+        label="Save"
+        [disabled]="saveButtonDisabled"
+        (click)="onPrimaryClick($event)"
+    ></button>
+</div>

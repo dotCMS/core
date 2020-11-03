@@ -19,7 +19,7 @@ p-toolbar::ng-deep {
         background-color: $toolbar-background;
         color: $toolbar-color;
         height: $toolbar-height;
-        padding-left: 0;
+        padding: 0 $spacing-3 0 0;
         box-shadow: $md-shadow-1;
     }
 

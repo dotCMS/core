@@ -1,33 +1,33 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { MenuItem } from 'primeng/api';
-import { DotDataTableAction } from '@models/data-table/dot-data-table-action';
+import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
 
 /**
- * The ActionMenuButtonComponent is a configurable button with
+ * The DotActionMenuButtonComponent is a configurable button with
  * menu component as a pop up
  * @export
- * @class ActionMenuButtonComponent
+ * @class DotActionMenuButtonComponent
  */
 @Component({
     selector: 'dot-action-menu-button',
-    styleUrls: ['./action-menu-button.component.scss'],
-    templateUrl: 'action-menu-button.component.html'
+    styleUrls: ['./dot-action-menu-button.component.scss'],
+    templateUrl: 'dot-action-menu-button.component.html'
 })
-export class ActionMenuButtonComponent implements OnInit {
+export class DotActionMenuButtonComponent implements OnInit {
     filteredActions: MenuItem[] = [];
-    @Input()
-    item: any;
-    @Input()
-    icon? = 'more_vert';
-    @Input()
-    actions?: DotDataTableAction[];
+
+    @Input() item: any;
+
+    @Input() icon? = 'more_vert';
+
+    @Input() actions?: DotActionMenuItem[];
 
     ngOnInit() {
         this.filteredActions = this.actions
-            .filter((action: DotDataTableAction) =>
+            .filter((action: DotActionMenuItem) =>
                 action.shouldShow ? action.shouldShow(this.item) : true
             )
-            .map((action: DotDataTableAction) => {
+            .map((action: DotActionMenuItem) => {
                 return {
                     ...action.menuItem,
                     command: ($event) => {

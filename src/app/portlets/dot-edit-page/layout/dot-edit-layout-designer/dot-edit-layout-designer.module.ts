@@ -5,15 +5,12 @@ import { NgModule } from '@angular/core';
 
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { DotEditLayoutDesignerComponent } from '../dot-edit-layout-designer/dot-edit-layout-designer.component';
-import { DotEditLayoutGridModule } from '../components/dot-edit-layout-grid/dot-edit-layout-grid.module';
-import { DotEditLayoutSidebarModule } from '../components/dot-edit-layout-sidebar/dot-edit-layout-sidebar.module';
 import { DotEditLayoutService } from 'src/app/portlets/dot-edit-page/shared/services/dot-edit-layout.service';
 import { DotLayoutPropertiesModule } from '../components/dot-layout-properties/dot-layout-properties.module';
 import { DotSidebarPropertiesModule } from '../components/dot-sidebar-properties/dot-sidebar-properties.module';
 import { DotTemplateAdditionalActionsModule } from '../components/dot-template-additional-actions/dot-template-additional-actions.module';
 import { TemplateContainersCacheService } from '../../template-containers-cache.service';
 import { DotPageLayoutService } from '@services/dot-page-layout/dot-page-layout.service';
-import { DotLayoutDesignerComponent } from './components/dot-layout-designer/dot-layout-designer.component';
 import { DotContainerSelectorModule } from '@components/dot-container-selector/dot-container-selector.module';
 import { DotEditPageInfoModule } from '../../components/dot-edit-page-info/dot-edit-page-info.module';
 import { DotThemeSelectorModule } from '../components/dot-theme-selector/dot-theme-selector.module';
@@ -28,9 +25,10 @@ import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
+import { DotLayoutDesignerModule } from './components/dot-layout-designer/dot-layout-designer.module';
 
 @NgModule({
-    declarations: [DotEditLayoutDesignerComponent, DotLayoutDesignerComponent],
+    declarations: [DotEditLayoutDesignerComponent],
     imports: [
         ButtonModule,
         CheckboxModule,
@@ -38,8 +36,6 @@ import { TooltipModule } from 'primeng/tooltip';
         DialogModule,
         DotActionButtonModule,
         DotContainerSelectorModule,
-        DotEditLayoutGridModule,
-        DotEditLayoutSidebarModule,
         DotEditPageInfoModule,
         DotGlobalMessageModule,
         DotIconButtonModule,
@@ -54,7 +50,8 @@ import { TooltipModule } from 'primeng/tooltip';
         TooltipModule,
         DotSecondaryToolbarModule,
         DotEditPageViewAsControllerModule,
-        DotPipesModule
+        DotPipesModule,
+        DotLayoutDesignerModule
     ],
     exports: [DotEditLayoutDesignerComponent],
     providers: [DotEditLayoutService, DotPageLayoutService, TemplateContainersCacheService]

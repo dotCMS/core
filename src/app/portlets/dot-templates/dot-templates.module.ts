@@ -1,6 +1,18 @@
 import { NgModule } from '@angular/core';
-import { DotTemplatesRoutingModule } from '@portlets/dot-templates/dot-templates-routing.module';
+import { CommonModule } from '@angular/common';
+
+import { DotTemplatesRoutingModule } from './dot-templates-routing.module';
+import { DotTemplatesService } from '@services/dot-templates/dot-templates.service';
 import { DotTemplateListModule } from '@portlets/dot-templates/dot-template-list/dot-template-list.module';
 
-@NgModule({ imports: [DotTemplatesRoutingModule, DotTemplateListModule] })
+@NgModule({
+    declarations: [],
+    imports: [
+        CommonModule,
+        DotTemplatesRoutingModule,
+        DotTemplatesRoutingModule,
+        DotTemplateListModule
+    ],
+    providers: [DotTemplatesService]
+})
 export class DotTemplatesModule {}

@@ -26,8 +26,6 @@
             background-color: $brand-primary;
             border-radius: 50%;
             box-shadow: $md-shadow-1;
-            height: $button-height;
-            width: $button-height;
 
             &:hover {
                 background-color: $brand-primary_mod;
@@ -114,6 +112,24 @@
     }
 
     button {
-        @include icon-button;
+        align-items: center;
+        background: transparent;
+        border-radius: 50%;
+        border: none;
+        color: $gray;
+        cursor: pointer;
+        display: inline-flex;
+        justify-content: center;
+        padding: 0.608rem; // 39x39 the defauld field height
+        transition: background-color $field-animation-speed ease-in,
+            box-shadow $field-animation-speed ease-in;
+
+        &:focus {
+            outline: 0;
+        }
+
+        &:hover {
+            background-color: rgba($black, 0.07);
+        }
     }
 }

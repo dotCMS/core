@@ -1,0 +1,46 @@
+<p-toolbar>
+    <div class="p-toolbar-group-left">
+        <h3 *ngIf="title">{{ title }}</h3>
+        <div class="dot-portlet-toolbar__extra-left">
+            <ng-content select="#left"></ng-content>
+        </div>
+    </div>
+
+    <div class="p-toolbar-group-right">
+        <div class="dot-portlet-toolbar__extra-right">
+            <ng-content select="#right"></ng-content>
+        </div>
+
+        <div class="dot-portlet-toolbar__actions">
+            <button
+                *ngIf="actions?.cancel"
+                pButton
+                (click)="onCancelClick($event)"
+                [label]="cancelButtonLabel || ('cancel' | dm)"
+                class="p-button-secondary"
+            ></button>
+
+            <ng-container *ngIf="actions?.primary?.length > 1; else elseBlock">
+                <button
+                    pButton
+                    icon="pi pi-chevron-down"
+                    iconPos="right"
+                    [label]="actionsButtonLabel || ('actions' | dm)"
+                    (click)="menu.toggle($event)"
+                ></button>
+                <p-menu #menu [popup]="true" [model]="actions?.primary"></p-menu>
+            </ng-container>
+        </div>
+    </div>
+</p-toolbar>
+
+<ng-template #elseBlock>
+    <ng-container *ngIf="actions?.primary[0]">
+        <button
+            pButton
+            label="Save"
+            (click)="onPrimaryClick($event)"
+            [disabled]="actions?.primary[0]?.disabled"
+        ></button>
+    </ng-container>
+</ng-template>

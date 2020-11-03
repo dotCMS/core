@@ -20,9 +20,7 @@ const PORTLETS_ANGULAR = [
         // canActivateChild: [MenuGuardService],
         path: 'templates',
         loadChildren: () =>
-            import('@portlets/dot-templates/dot-templates.module').then(
-                (m) => m.DotTemplatesModule
-            )
+            import('@portlets/dot-templates/dot-templates.module').then((m) => m.DotTemplatesModule)
     },
     {
         canActivate: [MenuGuardService],
@@ -77,6 +75,13 @@ const PORTLETS_ANGULAR = [
         path: 'edit-page',
         loadChildren: () =>
             import('@portlets/dot-edit-page/dot-edit-page.module').then((m) => m.DotEditPageModule)
+    },
+    {
+        path: 'templates',
+        loadChildren: () =>
+            import('@portlets/dot-templates/dot-templates.module.ts').then(
+                (m) => m.DotTemplatesModule
+            )
     },
     {
         canActivate: [MenuGuardService],

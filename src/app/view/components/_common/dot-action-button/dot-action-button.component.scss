@@ -1,19 +1,12 @@
 @use "variables" as *;
 @import "dotcms-theme/utils/theme-variables";
 
-$action-button-height: 48px;
-
 :host(.action-button--no-label) ::ng-deep {
     display: inline-block;
 
     dot-icon-button button {
-        border-radius: 50%;
-        font-size: $font-size-large;
-        height: $action-button-height;
-        width: $action-button-height;
-
         .material-icons {
-            font-size: $md-icon-size-big;
+            color: $white;
         }
 
         &:not([disabled]) {
@@ -30,13 +23,6 @@ $action-button-height: 48px;
             &:focus {
                 background: $brand-primary_mod;
             }
-
-            [class^="ui-button-icon"],
-            .p-button-text,
-            .p-c,
-            i {
-                color: $white;
-            }
         }
     }
 }
@@ -45,7 +31,6 @@ $action-button-height: 48px;
     align-items: center;
     display: inline-flex;
     flex-direction: column;
-    width: $action-button-height;
 
     .p-button.p-button-icon-only.action-button--selected {
         background: rgba($black, $button-hover-background-opacity);

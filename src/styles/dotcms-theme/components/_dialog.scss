@@ -11,7 +11,7 @@
     border-bottom: 0 none;
     background: $white;
     color: $black;
-    padding: $spacing-4 $spacing-4 $spacing-6 $spacing-4;
+    padding: $spacing-6;
     border-top-right-radius: $border-radius;
     border-top-left-radius: $border-radius;
 }
@@ -51,7 +51,7 @@
 .p-dialog .p-dialog-content {
     background: $white;
     color: $black;
-    padding: 0 $spacing-4 $spacing-4 $spacing-4;
+    padding: 0 $spacing-6 $spacing-6 $spacing-6;
 }
 
 .p-dialog .p-dialog-footer {
@@ -78,5 +78,5 @@
 }
 
 .p-dialog-mask.p-component-overlay {
-    background-color: rgba(0, 0, 0, 0.32);
+    background-color: rgba($black, 0.8);
 }

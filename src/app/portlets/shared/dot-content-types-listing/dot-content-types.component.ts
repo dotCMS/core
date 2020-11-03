@@ -14,7 +14,7 @@ import { DataTableColumn } from '@models/data-table';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { StructureTypeView } from '@models/contentlet/structure-type-view.model';
 import { ButtonModel } from '@models/action-header/button.model';
-import { DotDataTableAction } from '@models/data-table/dot-data-table-action';
+import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
 import { PushPublishService } from '@services/push-publish/push-publish.service';
 import { DotEnvironment } from '@models/dot-environment/dot-environment';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
@@ -40,7 +40,7 @@ export class DotContentTypesPortletComponent implements OnInit {
     public contentTypeColumns: DataTableColumn[];
     public item: any;
     public actionHeaderOptions: ActionHeaderOptions;
-    public rowActions: DotDataTableAction[];
+    public rowActions: DotActionMenuItem[];
     public addToBundleIdentifier: string;
 
     constructor(
@@ -110,8 +110,8 @@ export class DotContentTypesPortletComponent implements OnInit {
         this.actionHeaderOptions.primary.model = null;
     }
 
-    private getPublishActions(pushPublish: boolean, addToBundle: boolean): DotDataTableAction[] {
-        const actions: DotDataTableAction[] = [];
+    private getPublishActions(pushPublish: boolean, addToBundle: boolean): DotActionMenuItem[] {
+        const actions: DotActionMenuItem[] = [];
         /*
             Only show Push Publish action if DotCMS instance have the appropriate license and there are
             push publish environments created.
@@ -137,8 +137,8 @@ export class DotContentTypesPortletComponent implements OnInit {
         return actions;
     }
 
-    private createRowActions(rowActionsMap: any): DotDataTableAction[] {
-        const listingActions: DotDataTableAction[] = [
+    private createRowActions(rowActionsMap: any): DotActionMenuItem[] {
+        const listingActions: DotActionMenuItem[] = [
             ...this.getPublishActions(rowActionsMap.pushPublish, rowActionsMap.addToBundle)
         ];
 
@@ -159,7 +159,7 @@ export class DotContentTypesPortletComponent implements OnInit {
             : listingActions;
     }
 
-    private removeIconsFromMenuItem(action: DotDataTableAction): DotDataTableAction {
+    private removeIconsFromMenuItem(action: DotActionMenuItem): DotActionMenuItem {
         const { icon, ...noIconMenuItem } = action.menuItem;
         return {
             ...action,

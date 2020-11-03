@@ -20,8 +20,8 @@ import { DataTableColumn } from '@models/data-table/data-table-column';
 import { LoggerService } from 'dotcms-js';
 import { FormatDateService } from '@services/format-date-service';
 import { PaginatorService, OrderDirection } from '@services/paginator';
-import { DotDataTableAction } from '@models/data-table/dot-data-table-action';
 import { take } from 'rxjs/operators';
+import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
 
 function tableFactory(dotListingDataTableComponent: DotListingDataTableComponent) {
     return dotListingDataTableComponent.dataTable;
@@ -49,7 +49,7 @@ export class DotListingDataTableComponent implements OnChanges, OnInit {
     @Input() sortField: string;
     @Input() multipleSelection = false;
     @Input() paginationPerPage = 40;
-    @Input() actions: DotDataTableAction[];
+    @Input() actions: DotActionMenuItem[];
     @Input() selectionMode = 'single';
     @Input() dataKey = '';
     @Input() checkbox = false;
@@ -89,7 +89,7 @@ export class DotListingDataTableComponent implements OnChanges, OnInit {
 
         if (changes.columns && changes.columns.currentValue) {
             this.dateColumns = changes.columns.currentValue.filter(
-                column => column.format === this.DATE_FORMAT
+                (column) => column.format === this.DATE_FORMAT
             );
             this.loadData(0);
         }
@@ -145,7 +145,7 @@ export class DotListingDataTableComponent implements OnChanges, OnInit {
             this.paginatorService
                 .getWithOffset(offset)
                 .pipe(take(1))
-                .subscribe(items => this.setItems(items));
+                .subscribe((items) => this.setItems(items));
         }
     }
 
@@ -159,7 +159,7 @@ export class DotListingDataTableComponent implements OnChanges, OnInit {
         this.paginatorService
             .get()
             .pipe(take(1))
-            .subscribe(items => {
+            .subscribe((items) => {
                 this.setItems(items);
                 this.dataTable.first = 1;
             });
@@ -175,7 +175,7 @@ export class DotListingDataTableComponent implements OnChanges, OnInit {
             this.paginatorService
                 .getCurrentPage()
                 .pipe(take(1))
-                .subscribe(items => this.setItems(items));
+                .subscribe((items) => this.setItems(items));
         }
     }
 
@@ -202,9 +202,9 @@ export class DotListingDataTableComponent implements OnChanges, OnInit {
     }
 
     private formatData(items: any[]): any[] {
-        return items.map(item => {
+        return items.map((item) => {
             this.dateColumns.forEach(
-                col =>
+                (col) =>
                     (item[col.fieldName] = this.formatDateService.getRelative(item[col.fieldName]))
             );
             return item;

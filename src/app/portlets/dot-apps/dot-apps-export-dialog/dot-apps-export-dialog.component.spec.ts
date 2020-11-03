@@ -49,7 +49,7 @@ describe('DotAppsExportDialogComponent', () => {
                 ],
                 providers: [
                     { provide: DotAppsService, useClass: DotAppsServiceMock },
-                    { provide: DotMessageService, useValue: messageServiceMock },
+                    { provide: DotMessageService, useValue: messageServiceMock }
                 ]
             }).compileComponents();
 
