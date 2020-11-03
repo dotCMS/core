@@ -1,5 +1,8 @@
 package com.dotcms.rest.api.v1.template;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class TemplateLayoutView {
 
     private final String      width;
@@ -9,12 +12,13 @@ public class TemplateLayoutView {
     private final BodyView    body;
     private final SidebarView sidebar;
 
-    public TemplateLayoutView(final String width,
-                              final String title,
-                              final boolean header,
-                              final boolean footer,
-                              final BodyView body,
-                              final SidebarView sidebar) {
+    @JsonCreator
+    public TemplateLayoutView(@JsonProperty("width")   final String width,
+                              @JsonProperty("title")   final String title,
+                              @JsonProperty("header")  final boolean header,
+                              @JsonProperty("footer")  final boolean footer,
+                              @JsonProperty("body")    final BodyView body,
+                              @JsonProperty("sidebar") final SidebarView sidebar) {
         this.width   = width;
         this.title   = title;
         this.header  = header;

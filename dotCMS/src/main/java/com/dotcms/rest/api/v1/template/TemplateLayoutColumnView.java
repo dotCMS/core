@@ -1,6 +1,8 @@
 package com.dotcms.rest.api.v1.template;
 
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
@@ -11,10 +13,12 @@ public class TemplateLayoutColumnView {
     private final int leftOffset;
     private final String styleClass;
 
-    public TemplateLayoutColumnView(final List<ContainerUUID> containers,
-                                    final int width,
-                                    final int leftOffset,
-                                    final String styleClass) {
+    @JsonCreator
+    public TemplateLayoutColumnView(@JsonProperty("containers") final List<ContainerUUID> containers,
+                                    @JsonProperty("width")      final int width,
+                                    @JsonProperty("leftOffset") final int leftOffset,
+                                    @JsonProperty("styleClass") final String styleClass) {
+
         this.containers = containers;
         this.width      = width;
         this.leftOffset = leftOffset;

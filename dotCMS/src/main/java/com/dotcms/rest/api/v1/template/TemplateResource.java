@@ -860,6 +860,7 @@ public class TemplateResource {
         if(UtilMethods.isSet(templateForm.getTheme())) {
 
             template.setThemeName(this.folderAPI.find(templateForm.getTheme(), user, pageMode.respectAnonPerms).getName());
+            template.setTheme(templateForm.getTheme());
         }
 
         template.setBody(templateForm.getBody());
@@ -883,7 +884,7 @@ public class TemplateResource {
         template.setSelectedimage(templateForm.getSelectedimage());
         template.setHeader(templateForm.getHeader());
 
-        if (templateForm.isDrawed()) {
+        if (templateForm.isDrawed()) { // todo: not sure if this needed
 
             final String themeHostId = APILocator.getFolderAPI().find(templateForm.getTheme(), user, pageMode.respectAnonPerms).getHostId();
             final String themePath   = themeHostId.equals(host.getInode())?
