@@ -8,7 +8,6 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode.Type;
 import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -35,7 +34,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	@SuppressWarnings("unchecked")
 
 	public Template find(final String inode) throws DotStateException, DotDataException {
-		
+
 		Template template = templateCache.get(inode);
 
 		if(template==null){
@@ -70,7 +69,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		final DotConnect dc = new DotConnect();
 		final String query = !includeArchived ?
 				templateSQL.FIND_TEMPLATES_BY_HOST_INODE + " and vi.deleted = "
-				+ DbConnectionFactory.getDBFalse() : templateSQL.FIND_TEMPLATES_BY_HOST_INODE;
+						+ DbConnectionFactory.getDBFalse() : templateSQL.FIND_TEMPLATES_BY_HOST_INODE;
 		dc.setSQL(query);
 		dc.addParam(parentHost.getIdentifier());
 
@@ -91,39 +90,39 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	public void save(final Template template) throws DotDataException {
 		save(template, UUIDGenerator.generateUuid());
 	}
-	
+
 	public void save(final Template template, final String inode) throws DotDataException {
-        if(!UtilMethods.isSet(template.getIdentifier())){
-            throw new DotStateException("Cannot save a template without an Identifier");
-        }
+		if(!UtilMethods.isSet(template.getIdentifier())){
+			throw new DotStateException("Cannot save a template without an Identifier");
+		}
 
 		if (UtilMethods.isSet(template.getTitle()) && !template.isAnonymous()) {
 			template.setIsTemplate(true);
 		}
-        
-        if(UtilMethods.isSet(template.getDrawedBody())) {
-            template.setDrawed(true);
-        }else {
-            template.setDrawedBody((String)null);
-            template.setDrawed(false);
-        }
 
-        if(!UtilMethods.isSet(template.getInode())) {
+		if(UtilMethods.isSet(template.getDrawedBody())) {
+			template.setDrawed(true);
+		}else {
+			template.setDrawedBody((String)null);
+			template.setDrawed(false);
+		}
+
+		if(!UtilMethods.isSet(template.getInode())) {
 			template.setInode(UUIDGenerator.generateUuid());
 		}
 
-        if(!UtilMethods.isSet(find(template.getInode()))) {
+		if(!UtilMethods.isSet(find(template.getInode()))) {
 			insertInodeInDB(template);
 			insertTemplateInDB(template);
 		} else {
-        	updateInodeInDB(template);
-        	updateTemplateInDB(template);
+			updateInodeInDB(template);
+			updateTemplateInDB(template);
 		}
 
-        templateCache.add(template.getInode(), template);
-        new TemplateLoader().invalidate(template);
+		templateCache.add(template.getInode(), template);
+		new TemplateLoader().invalidate(template);
 
-    }
+	}
 
 	private void insertInodeInDB(final Template template) throws DotDataException{
 		DotConnect dc = new DotConnect();
@@ -166,7 +165,6 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 	@SuppressWarnings("unchecked")
 	public Template findWorkingTemplateByName(String name, Host host) throws DotDataException {
-
 		DotConnect dc = new DotConnect();
 		dc.setSQL(templateSQL.FIND_WORKING_TEMPLATE_BY_HOST_INODE_AND_TITLE);
 		dc.addParam(host.getIdentifier());
@@ -184,13 +182,11 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 	}
 
-	
 	@Override
-	public List<Template> findTemplates(final User user, final boolean includeArchived,
-			Map<String, Object> params, final String hostId, final String inode, String identifier, String parent,
-			int offset, int limit, final String orderByIncoming) throws DotSecurityException,
+	public List<Template> findTemplates(User user, boolean includeArchived,
+			Map<String, Object> params, String hostId, String inode, String identifier, String parent,
+			int offset, int limit, String orderBy) throws DotSecurityException,
 			DotDataException {
-
 
 		PaginatedArrayList<Template> assets = new PaginatedArrayList<Template>();
 		List<Permissionable> toReturn = new ArrayList<Permissionable>();
@@ -206,30 +202,10 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		conditionBuffer.append(condition);
 
 		if(params!=null && params.size()>0){
-			conditionBuffer.append(" and ( false ");
-			paramValues = new ArrayList<>();
-			for (Map.Entry<String, Object> entry : params.entrySet()) {
-				if(entry.getValue() instanceof String){
-					if(entry.getKey().equalsIgnoreCase("inode")){
-						conditionBuffer.append(" OR asset.inode = ? ");
-						paramValues.add((String)entry.getValue());
-					}else{
-						conditionBuffer.append(" OR lower(asset.");
-						conditionBuffer.append(entry.getKey());
-						conditionBuffer.append(") like ? ");
-						paramValues.add("%"+ ((String)entry.getValue()).toLowerCase()+"%");
-					}
-				}else{
-					conditionBuffer.append(" OR asset.");
-					conditionBuffer.append(entry.getKey());
-                    conditionBuffer.append(" = ? ");
-                    paramValues.add((String)entry.getValue());
-				}
-			}
-			conditionBuffer.append(" ) ");
+			conditionBuffer
+					.append(" and ( asset.inode like ? or asset.identifier like ? or lower(asset.title) like ? )");
 		}
-		DotConnect dc = new DotConnect();
-		
+
 		StringBuffer query = new StringBuffer();
 		query.append("select asset.*, inode.* from ");
 		query.append(Type.TEMPLATE.getTableName());
@@ -244,29 +220,29 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			query.append(" where asset.inode = inode.inode and asset.identifier = identifier.id");
 		}
 		query.append(" and versioninfo.identifier=asset.identifier ")
-			.append(" and show_on_menu = ").append(DbConnectionFactory.getDBTrue());
+				.append(" and show_on_menu = ").append(DbConnectionFactory.getDBTrue());
 
-		List<String> additionalParams = new ArrayList<>();
 		if(UtilMethods.isSet(hostId)){
-			query.append(" and identifier.host_inode = ?");
-			additionalParams.add(hostId);
+			query.append(" and identifier.host_inode = '");
+			query.append(hostId);
+			query.append("'");
 		}
-		
 		if(UtilMethods.isSet(inode)){
-			query.append(" and asset.inode =  ? ");
-			additionalParams.add(inode);
+			query.append(" and asset.inode = '");
+			query.append(inode);
+			query.append("'");
 		}
 		if(UtilMethods.isSet(identifier)){
-			query.append(" and asset.identifier = ? ");
-			additionalParams.add(identifier);
+			query.append(" and asset.identifier = '");
+			query.append(identifier);
+			query.append("'");
 		}
-		
-		String orderBy = SQLUtil.sanitizeSortBy(orderByIncoming) ;
-		orderBy = UtilMethods.isSet(orderBy) ? orderBy : "mod_date desc";
-		
+		if(!UtilMethods.isSet(orderBy)){
+			orderBy = "mod_date desc";
+		}
 
 		List<Template> resultList;
-		
+		DotConnect dc = new DotConnect();
 		int countLimit = 100;
 		int size = 0;
 		try {
@@ -276,14 +252,11 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			query.append(orderBy);
 			dc.setSQL(query.toString());
 
-			additionalParams.forEach(p->dc.addParam(p));
-			
-			
-			if(paramValues!=null && paramValues.size()>0){
-				for (Object value : paramValues) {
-					dc.addParam((String)value);
-				}
-
+			if(params!=null && params.size()>0){
+				final String filter = "%"+params.get("filter").toString().toLowerCase()+"%";
+				dc.addParam(filter);
+				dc.addParam(filter);
+				dc.addParam(filter);
 			}
 
 			while(!done) {
@@ -326,7 +299,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 				}
 			} else {
 				for(int i=0;i<toReturn.size();i++){
-						assets.add((Template) toReturn.get(i));
+					assets.add((Template) toReturn.get(i));
 				}
 			}
 		} catch (Exception e) {
@@ -341,10 +314,10 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	}
 
 
-	
+
 	@Override
 	public List<Container> getContainersInTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-		
+
 		List<Container> result = new ArrayList<Container>();
 		Collection<String> ids = getContainerIds(template);
 		for(String containerId : ids) {
@@ -405,10 +378,10 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	}
 
 	private List<String> getContainerIdsFromHTML(String templateBody) {
-	    Set<String> ids = new HashSet<String>();
-	    if(!UtilMethods.isSet(templateBody)){
-	        return new ArrayList<>(ids);
-	    }
+		Set<String> ids = new HashSet<String>();
+		if(!UtilMethods.isSet(templateBody)){
+			return new ArrayList<>(ids);
+		}
 
 		Pattern newContainerReferencesRegex = Pattern.compile(PARSE_CONTAINER_ID_PATTERN);
 		Matcher matcher = newContainerReferencesRegex.matcher(templateBody);
@@ -416,11 +389,11 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			String containerId = matcher.group(1).trim();
 			ids.add(containerId);
 		}
-        return new ArrayList<>(ids);
+		return new ArrayList<>(ids);
 	}
 
-    private static final String PARSE_CONTAINER_ID_PATTERN =
-            "#parseContainer\\s*\\(\\s*['\"]*([^'\")]+)['\"]*\\s*\\)";
+	private static final String PARSE_CONTAINER_ID_PATTERN =
+			"#parseContainer\\s*\\(\\s*['\"]*([^'\")]+)['\"]*\\s*\\)";
 	private static final String PARSE_CONTAINER_ID_UUDI_PATTERN =
 			"\\s*#parseContainer\\s*\\(\\s*['\"]{1}([^'\")]+)['\"]{1}\\s*,\\s*['\"]{1}([^'\")]+)['\"]{1}\\s*\\)\\s*";
 
@@ -436,8 +409,8 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			line = lineReader.readLine();
 			final Pattern newContainerUUIDReferencesRegex =
 					Pattern.compile(PARSE_CONTAINER_ID_UUDI_PATTERN);
-            final Pattern newContainerReferencesRegex =
-                    Pattern.compile(PARSE_CONTAINER_ID_PATTERN);
+			final Pattern newContainerReferencesRegex =
+					Pattern.compile(PARSE_CONTAINER_ID_PATTERN);
 
 			while (null != line) {
 
@@ -450,14 +423,14 @@ public class TemplateFactoryImpl implements TemplateFactory {
 					containerUUIDS.add(new ContainerUUID(containerId, uuid));
 				} else {
 
-                    matcher = newContainerReferencesRegex.matcher(line);
-                    if (matcher.find() && matcher.groupCount() == 1) {
+					matcher = newContainerReferencesRegex.matcher(line);
+					if (matcher.find() && matcher.groupCount() == 1) {
 
-                        final String containerId = matcher.group(1).trim();
-                        final String uuid        = ContainerUUID.UUID_LEGACY_VALUE;
-                        containerUUIDS.add(new ContainerUUID(containerId, uuid));
-                    }
-                }
+						final String containerId = matcher.group(1).trim();
+						final String uuid        = ContainerUUID.UUID_LEGACY_VALUE;
+						containerUUIDS.add(new ContainerUUID(containerId, uuid));
+					}
+				}
 
 				line = lineReader.readLine();
 			}
@@ -468,8 +441,8 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 		return containerUUIDS;
 	}
-	
-	
+
+
 	@Override
 	public Template copyTemplate(Template currentTemplate, Host host) throws DotDataException, DotSecurityException {
 		if(currentTemplate ==null){
@@ -495,11 +468,11 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		if(RegEX.contains(newTemplateName, " - [0-9]+$")){
 			newTemplateName = newTemplateName.substring(0,newTemplateName.lastIndexOf("-")).trim();
 		}
-		
-		
-		
+
+
+
 		Template test = null;
-		for(int iter=1;iter<100000;iter++){		
+		for(int iter=1;iter<100000;iter++){
 			try{
 				test = findWorkingTemplateByName(testName, host);
 			}
@@ -515,7 +488,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 				break;
 			}
 		}
-		
+
 		newTemplate.setFriendlyName(newTemplateName);
 		newTemplate.setTitle(newTemplateName);
 
@@ -524,7 +497,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 		return newTemplate;
 	}
-	
+
 	/**
 	 *
 	 * Updates the template's theme without creating new version.
@@ -532,16 +505,16 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	 * @param theme
 	 *
 	 */
-   public void updateThemeWithoutVersioning(final String templateInode, final String theme) throws DotDataException{
-	   final Template templateToUpdate = find(templateInode);
-	   templateToUpdate.setTheme(theme);
+	public void updateThemeWithoutVersioning(final String templateInode, final String theme) throws DotDataException{
+		final Template templateToUpdate = find(templateInode);
+		templateToUpdate.setTheme(theme);
 
-	   updateInodeInDB(templateToUpdate);
-	   updateTemplateInDB(templateToUpdate);
+		updateInodeInDB(templateToUpdate);
+		updateTemplateInDB(templateToUpdate);
 
-       templateCache.add(templateToUpdate.getInode(), templateToUpdate);
-       new TemplateLoader().invalidate(templateToUpdate);
-   }
+		templateCache.add(templateToUpdate.getInode(), templateToUpdate);
+		new TemplateLoader().invalidate(templateToUpdate);
+	}
 
 	private void updateInodeInDB(final Template template) throws DotDataException{
 		DotConnect dc = new DotConnect();
@@ -576,43 +549,43 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		dc.loadResult();
 	}
 
-   /**
+	/**
 	 * Method will replace user references of the given userId in templates
-	 * with the replacement user Id  
+	 * with the replacement user Id
 	 * @param userId User Identifier
 	 * @param replacementUserId The user id of the replacement user
 	 * @throws DotDataException There is a data inconsistency
 	 * @throws DotStateException There is a data inconsistency
-	 * @throws DotSecurityException 
+	 * @throws DotSecurityException
 	 */
 	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException{
 		DotConnect dc = new DotConnect();
-       
-       try {
-          dc.setSQL(templateSQL.FIND_TEMPLATES_BY_MOD_USER);
-          dc.addParam(userId);
-          List<HashMap<String, String>> templates = dc.loadResults();
-          
-          dc.setSQL(templateSQL.UPDATE_MOD_USER_BY_MOD_USER);
-          dc.addParam(replacementUserId);
-          dc.addParam(userId);
-          dc.loadResult();
-          
-          dc.setSQL(templateSQL.UPDATE_LOCKED_BY);
-          dc.addParam(replacementUserId);
-          dc.addParam(userId);
-          dc.loadResult();
-        
-          for(HashMap<String, String> ident:templates){
-              String inode = ident.get("inode");
-              Template template = find(inode);
-              deleteFromCache(template);
-              new TemplateLoader().invalidate(template);
-          }
-       } catch (DotDataException e) {
-           Logger.error(TemplateFactory.class,e.getMessage(),e);
-           throw new DotDataException(e.getMessage(), e);
-       }
+
+		try {
+			dc.setSQL(templateSQL.FIND_TEMPLATES_BY_MOD_USER);
+			dc.addParam(userId);
+			List<HashMap<String, String>> templates = dc.loadResults();
+
+			dc.setSQL(templateSQL.UPDATE_MOD_USER_BY_MOD_USER);
+			dc.addParam(replacementUserId);
+			dc.addParam(userId);
+			dc.loadResult();
+
+			dc.setSQL(templateSQL.UPDATE_LOCKED_BY);
+			dc.addParam(replacementUserId);
+			dc.addParam(userId);
+			dc.loadResult();
+
+			for(HashMap<String, String> ident:templates){
+				String inode = ident.get("inode");
+				Template template = find(inode);
+				deleteFromCache(template);
+				new TemplateLoader().invalidate(template);
+			}
+		} catch (DotDataException e) {
+			Logger.error(TemplateFactory.class,e.getMessage(),e);
+			throw new DotDataException(e.getMessage(), e);
+		}
 	}
 
 	public List<Template> findAllVersions(final Identifier identifier, final boolean bringOldVersions)
