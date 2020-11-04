@@ -121,7 +121,7 @@ public class VersionableResource {
      * @throws DotSecurityException
      */
     @GET
-    @Path("/{versionableIdentifier}")
+    @Path("/{versionableIdentifier}/versions")
     @JSONP
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
