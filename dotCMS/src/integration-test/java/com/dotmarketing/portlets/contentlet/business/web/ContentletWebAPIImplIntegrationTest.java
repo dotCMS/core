@@ -46,18 +46,18 @@ public class ContentletWebAPIImplIntegrationTest {
     final String body =
             "<html>" +
                     "<head>" +
-                        "#dotParse('%1$s/application/themes/landing-page/html_head.vtl')" +
+                        "#dotParse('//%1$s/application/themes/landing-page/html_head.vtl')" +
                         "<link rel=\"stylesheet\" type=\"text/css\" href=\"/html/css/template/reset-fonts-grids.css\" />" +
                     "</head>" +
                     "<body>" +
                         "<div id=\"resp-template\" name=\"globalContainer\">" +
                         "<div id=\"hd-template\">" +
-                        "#dotParse('%1$s/application/themes/landing-page/header.vtl')" +
+                        "#dotParse('//%1$s/application/themes/landing-page/header.vtl')" +
                         "</div>" +
                         "<div id=\"bd-template\">" +
                             "<div id=\"yui-main-template\">" +
                                 "<div class=\"yui-b-template\" id=\"splitBody0\">" +
-                                    "#parseContainer('%1$s/application/containers/default/','1')" +
+                                    "#parseContainer('//%1$s/application/containers/default/','1')" +
                                 "</div>" +
                             "</div>" +
                         "</div>" +
@@ -163,7 +163,7 @@ public class ContentletWebAPIImplIntegrationTest {
 
         final String drawedBodyHTML = "" +
                 "<div style=\"display: none;\" title=\"container_854ad819-8381-434d-a70f-6e2330985ea4\" id=\"splitBody0_div_854ad819-8381-434d-a70f-6e2330985ea4_1572981893151\">" +
-                "#parseContainer('//%s','1572981893151')" +
+                "#parseContainer('//%s/','1572981893151')" +
                 "</div>";
 
         final User user = APILocator.systemUser();
