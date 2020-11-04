@@ -342,6 +342,7 @@ public class ContentMap {
 			final List<Contentlet> contents = records.getRecords().stream()
 					.filter(contentlet -> needLiveVersion(contentlet))
 					.map(relatedContent -> EDIT_OR_PREVIEW_MODE ? relatedContent : getLiveVersion(relatedContent))
+					.filter(Objects::nonNull)
 					.collect(Collectors.toList());
 
 			return perAPI.filterCollection(contents, PermissionAPI.PERMISSION_USE, true, user).stream()
@@ -358,25 +359,22 @@ public class ContentMap {
 				return relatedContent;
 			} else {
 				try {
-					final List<Contentlet>  contentlets = APILocator.getContentletAPI()
+					final List<Contentlet> contentlets = APILocator.getContentletAPI()
 							.findContentletsByIdentifiers(new String[]{relatedContent.getIdentifier()}, true, relatedContent.getLanguageId(), user, user.isFrontendUser());
 
-					return contentlets.get(0);
+					return contentlets != null && !contentlets.isEmpty() ? contentlets.get(0) : null;
 				} catch (DotDataException| DotSecurityException e) {
 					throw new RuntimeException(e);
 				}
 			}
 		} catch (DotDataException | DotSecurityException e) {
-			return relatedContent;
+			return null;
 		}
 	}
 
 	private boolean needLiveVersion(final Contentlet contentlet) {
-		try {
-			return EDIT_OR_PREVIEW_MODE || !EDIT_OR_PREVIEW_MODE && contentlet.hasLiveVersion();
-		} catch (DotDataException e) {
-			return false;
-		}
+		return Try.of(() -> EDIT_OR_PREVIEW_MODE || !EDIT_OR_PREVIEW_MODE && contentlet.hasLiveVersion())
+				.getOrElse(false);
 	}
 
 	/**
