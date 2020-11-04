@@ -2636,19 +2636,13 @@ alter table container_structures add constraint FK_cs_inode foreign key (contain
 create table sitelic(id NVARCHAR(36) primary key, serverid NVARCHAR(100), license NVARCHAR(MAX) not null, lastping datetime not null);
 
 -- Integrity Checker
-create table folders_ir(folder NVARCHAR(255), local_inode NVARCHAR(36), remote_inode NVARCHAR(36), local_identifier NVARCHAR(36), remote_identifier NVARCHAR(36), endpoint_id NVARCHAR(36), PRIMARY KEY (local_inode, endpoint_id));
-create table structures_ir(velocity_name NVARCHAR(255), local_inode NVARCHAR(36), remote_inode NVARCHAR(36), endpoint_id NVARCHAR(36), PRIMARY KEY (local_inode, endpoint_id));
-create table schemes_ir(name NVARCHAR(255), local_inode NVARCHAR(36), remote_inode NVARCHAR(36), endpoint_id NVARCHAR(36), PRIMARY KEY (local_inode, endpoint_id));
-create table htmlpages_ir(html_page NVARCHAR(255), local_working_inode NVARCHAR(36), local_live_inode NVARCHAR(36), remote_working_inode NVARCHAR(36), remote_live_inode NVARCHAR(36),local_identifier NVARCHAR(36), remote_identifier NVARCHAR(36), endpoint_id NVARCHAR(36), language_id bigint, PRIMARY KEY (local_working_inode, language_id, endpoint_id));
-create table fileassets_ir(file_name NVARCHAR(255), local_working_inode NVARCHAR(36), local_live_inode NVARCHAR(36), remote_working_inode NVARCHAR(36), remote_live_inode NVARCHAR(36),local_identifier NVARCHAR(36), remote_identifier NVARCHAR(36), endpoint_id NVARCHAR(36), language_id bigint, PRIMARY KEY (local_working_inode, language_id, endpoint_id));
-create table cms_roles_ir(name NVARCHAR(1000), role_key NVARCHAR(255), local_role_id NVARCHAR(36), remote_role_id NVARCHAR(36), local_role_fqn NVARCHAR(1000), remote_role_fqn NVARCHAR(1000), endpoint_id NVARCHAR(36), PRIMARY KEY (local_role_id, endpoint_id));
+create table folders_ir(folder NVARCHAR(255), local_inode NVARCHAR(36), remote_inode NVARCHAR(36), local_identifier NVARCHAR(36), remote_identifier NVARCHAR(36), endpoint_id NVARCHAR(40), PRIMARY KEY (local_inode, endpoint_id));
+create table structures_ir(velocity_name NVARCHAR(255), local_inode NVARCHAR(36), remote_inode NVARCHAR(36), endpoint_id NVARCHAR(40), PRIMARY KEY (local_inode, endpoint_id));
+create table schemes_ir(name NVARCHAR(255), local_inode NVARCHAR(36), remote_inode NVARCHAR(36), endpoint_id NVARCHAR(40), PRIMARY KEY (local_inode, endpoint_id));
+create table htmlpages_ir(html_page NVARCHAR(255), local_working_inode NVARCHAR(36), local_live_inode NVARCHAR(36), remote_working_inode NVARCHAR(36), remote_live_inode NVARCHAR(36),local_identifier NVARCHAR(36), remote_identifier NVARCHAR(36), endpoint_id NVARCHAR(40), language_id bigint, PRIMARY KEY (local_working_inode, language_id, endpoint_id));
+create table fileassets_ir(file_name NVARCHAR(255), local_working_inode NVARCHAR(36), local_live_inode NVARCHAR(36), remote_working_inode NVARCHAR(36), remote_live_inode NVARCHAR(36),local_identifier NVARCHAR(36), remote_identifier NVARCHAR(36), endpoint_id NVARCHAR(40), language_id bigint, PRIMARY KEY (local_working_inode, language_id, endpoint_id));
+create table cms_roles_ir(name NVARCHAR(1000), role_key NVARCHAR(255), local_role_id NVARCHAR(36), remote_role_id NVARCHAR(36), local_role_fqn NVARCHAR(1000), remote_role_fqn NVARCHAR(1000), endpoint_id NVARCHAR(40), PRIMARY KEY (local_role_id, endpoint_id));
 
-alter table folders_ir add constraint FK_folder_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
-alter table structures_ir add constraint FK_structure_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
-alter table schemes_ir add constraint FK_scheme_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
-alter table htmlpages_ir add constraint FK_page_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
-alter table fileassets_ir add constraint FK_file_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
-alter table cms_roles_ir add constraint FK_cms_roles_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
 
 ---Server Action
 create table cluster_server_action(
