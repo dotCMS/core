@@ -21,6 +21,10 @@ public class TemplateSQL {
                     "template.inode = template_1_.inode and " +
                     "template.inode=vi.working_inode ";
 
+//    public static final String SELECT_ALL_FIELDS = "select inode, show_on_menu, title, mod_date, mod_user, " +
+//            "sort_order, friendly_name, body, header, footer, image, identifier, drawed, drawed_body, " +
+//            "add_container_links, containers_added, head_code, theme from " + Type.TEMPLATE.getTableName();
+
     public static final String FIND_BY_INODE = "select template.* from template where inode = ?";
 
     public static final String FIND_IDATE_OWNER_FROM_INODE_BY_INODE = "select idate,owner from inode where inode = ?";

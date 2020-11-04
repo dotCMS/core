@@ -1,4 +1,4 @@
-package com.dotmarketing.startup.runonce;
+package com.dotmarketing.startup.runalways;
 
 import static com.dotcms.security.apps.AppsUtil.APPS_IMPORT_EXPORT_DEFAULT_PASSWORD;
 import static com.liferay.util.StringPool.BLANK;
@@ -36,7 +36,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class Task201008LoadAppsSecretsTest {
+public class Task00050LoadAppsSecretsTest {
 
     static AppsAPI api;
     static User admin;
@@ -117,7 +117,7 @@ public class Task201008LoadAppsSecretsTest {
         exportFile.renameTo(fileToImport);
         destroySecretsStore();
 
-        final Task201008LoadAppsSecrets task = new Task201008LoadAppsSecrets();
+        final Task00050LoadAppsSecrets task = new Task00050LoadAppsSecrets();
         Assert.assertTrue(task.forceRun());
         task.executeUpgrade();
         Assert.assertEquals(1, task.getImportCount());
@@ -154,7 +154,7 @@ public class Task201008LoadAppsSecretsTest {
         exportFile.renameTo(fileToImport);
         destroySecretsStore();
 
-        final Task201008LoadAppsSecrets task = new Task201008LoadAppsSecrets();
+        final Task00050LoadAppsSecrets task = new Task00050LoadAppsSecrets();
         Assert.assertTrue(task.forceRun());
         task.executeUpgrade();
         Assert.assertEquals(1, task.getImportCount());
@@ -189,7 +189,7 @@ public class Task201008LoadAppsSecretsTest {
         exportFile.renameTo(fileToImport);
         destroySecretsStore();
 
-        final Task201008LoadAppsSecrets task = new Task201008LoadAppsSecrets();
+        final Task00050LoadAppsSecrets task = new Task00050LoadAppsSecrets();
         Assert.assertTrue(task.forceRun());
         task.executeUpgrade();
         Assert.assertEquals(1, task.getImportCount());
@@ -209,7 +209,7 @@ public class Task201008LoadAppsSecretsTest {
         final String stringProperty = Config.getStringProperty(APPS_IMPORT_EXPORT_DEFAULT_PASSWORD);
        try{
            Config.setProperty(APPS_IMPORT_EXPORT_DEFAULT_PASSWORD, BLANK);
-           final Task201008LoadAppsSecrets task = new Task201008LoadAppsSecrets();
+           final Task00050LoadAppsSecrets task = new Task00050LoadAppsSecrets();
            Assert.assertFalse(task.forceRun());
        }finally {
            Config.setProperty(APPS_IMPORT_EXPORT_DEFAULT_PASSWORD, stringProperty);

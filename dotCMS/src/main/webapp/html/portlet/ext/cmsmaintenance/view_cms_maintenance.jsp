@@ -1084,6 +1084,14 @@ dd.leftdl {
    	min-height:100px;
    	max-height: 600px;
 }
+
+.hideSizer{
+    font: white;
+    font-size: 1%;
+}
+
+
+
 </style>
 
 <div class="portlet-main">

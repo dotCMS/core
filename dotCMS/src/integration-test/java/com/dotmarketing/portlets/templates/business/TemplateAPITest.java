@@ -1,11 +1,14 @@
 package com.dotmarketing.portlets.templates.business;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -657,6 +660,11 @@ public class TemplateAPITest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Method to test: {@link TemplateAPI#find(String, User, boolean)}
+     * Given Scenario: find a template by inode
+     * ExpectedResult: the template of the specific inode
+     */
     @Test
     public void test_find_success() throws Exception{
         final String title = "testFindTemplate_" + System.currentTimeMillis();
@@ -671,10 +679,51 @@ public class TemplateAPITest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Method to test: {@link TemplateAPI#find(String, User, boolean)}
+     * Given Scenario: tries to find a template, but the inode does not exists.
+     * ExpectedResult: null
+     */
     @Test
-    public void test_find_inode_not_exist_return_NotFoundInDBException() throws Exception{
+    public void test_find_inode_not_exist_return_Null() throws Exception{
        final Template templateFound = templateAPI.find(UUIDGenerator.generateUuid(),user,false);
        assertNull(templateFound);
+    }
+
+    /**
+     * Method to test: {@link TemplateAPI#findAllVersions(Identifier, User, boolean)}
+     * Given Scenario: brings all the versions of a template, using the identifier as reference
+     * ExpectedResult: list of templates, the size must be 3 since its the amount of versions
+     */
+    @Test
+    public void test_findAllVersions_success() throws Exception {
+        final String title = "testFindTemplate_" + System.currentTimeMillis();
+        Template template = new TemplateDataGen().title(title).nextPersisted();
+        template.setTitle(title + "_1");
+        template.setInode("");
+        template = TemplateDataGen.save(template);
+        template.setTitle(title + "_2");
+        template.setInode("");
+        template = TemplateDataGen.save(template);
+
+        final Identifier identifier = APILocator.getIdentifierAPI().find(template.getIdentifier());
+        final List<Template> templateAllVersions = templateAPI.findAllVersions(identifier,user,false);
+        assertNotNull(templateAllVersions);
+        assertEquals(3,templateAllVersions.size());
+    }
+
+    /**
+     * Method to test: {@link TemplateAPI#findAllVersions(Identifier, User, boolean)}
+     * Given Scenario: brings all the versions of a template, using the identifier as reference,
+     * since the identifier does not belong to any template, the list must be empty
+     * ExpectedResult: empty list of templates
+     */
+    @Test
+    public void test_findAllVersions_IdentifierNotBelongToTemplate_returnEmptyList() throws Exception {
+        final Identifier identifier = new Identifier();
+        identifier.setId(UUIDGenerator.generateUuid());
+        final List<Template> templateAllVersions = templateAPI.findAllVersions(identifier,user,false);
+        assertTrue(templateAllVersions.isEmpty());
     }
 
 }

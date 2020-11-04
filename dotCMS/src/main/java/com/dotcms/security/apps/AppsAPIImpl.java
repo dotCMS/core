@@ -702,13 +702,9 @@ public class AppsAPIImpl implements AppsAPI {
             exportedSecrets = collectSecretsForExport(appKeysByHost(), user);
         } else {
            if(null == paramAppKeysBySite || paramAppKeysBySite.isEmpty()){
-              throw new IllegalArgumentException("No `AppKeysBySite` param wasn't specified.");
+              throw new IllegalArgumentException("No `AppKeysBySite` param was specified.");
            }
-            //This does transform all keys into their lowe case version
-            Map<String, Set<String>> paramAppKeysBySiteLC = paramAppKeysBySite.entrySet().stream()
-                    .collect(Collectors.toMap(entry -> entry.getKey().toLowerCase(),
-                            Entry::getValue));
-           exportedSecrets = collectSecretsForExport(paramAppKeysBySiteLC, user);
+           exportedSecrets = collectSecretsForExport(paramAppKeysBySite, user);
         }
 
         Logger.info(AppsAPIImpl.class," exporting : "+exportedSecrets);
@@ -736,8 +732,8 @@ public class AppsAPIImpl implements AppsAPI {
 
         for (final Entry<String, Set<String>> entry : paramAppKeysBySite.entrySet()) {
             final String siteId = entry.getKey();
-            final Host site = hostAPI.find(siteId, user, false);
-            if (null != site) {
+            final Host site = Host.SYSTEM_HOST.equalsIgnoreCase(siteId) ? hostAPI.findSystemHost() : hostAPI.find(siteId, user, false);
+            if (null != site ) {
                 final Set<String> appKeysBySiteId = paramAppKeysBySite.get(siteId);
                 if (isSet(appKeysBySiteId)) {
                     for (final String appKey : appKeysBySiteId) {
@@ -757,7 +753,7 @@ public class AppsAPIImpl implements AppsAPI {
             }
         }
         if(exportedSecrets.isEmpty()){
-            throw new IllegalArgumentException(String.format("Unable to collect any secrets for export with the given params `%s` ", paramAppKeysBySite));
+            throw new IllegalArgumentException("Unable to collect any secrets for the given params. The result would be an empty file.");
         }
         return new AppsSecretsImportExport(exportedSecrets);
     }

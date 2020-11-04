@@ -335,7 +335,8 @@ public class DirectorAction extends DotPortletAction {
 				    workingTemplate = APILocator.getTemplateAPI().findWorkingTemplate(
 				            htmlPage.getTemplateId(),user,false);
 				} else if (req.getParameter("template")!=null) {
-					workingTemplate = (Template) InodeFactory.getInode(req.getParameter("template"), Template.class);
+					workingTemplate = APILocator.getTemplateAPI().findWorkingTemplate(
+							req.getParameter("template"),user,false);
 				}
 
 				if ("unlockTemplate".equals(subcmd)) {

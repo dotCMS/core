@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.maintenance;
 
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.content.elasticsearch.business.ESReadOnlyMonitor;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -11,6 +13,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import java.io.Serializable;
+import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -65,7 +68,7 @@ public class MaintenanceResource implements Serializable {
                         .rejectWhenNoUser(true).requiredPortlet("maintenance").init();
 
 
-        Logger.info(this.getClass(), "User:" + initData.getUser() + " is shutting down dotCMS!");
+        Logger.info(this.getClass(), "User:" + initData.getUser() + " is shutting down dotCMS!"); 
         SecurityLogger.logInfo(this.getClass(),
                         "User:" + initData.getUser() + " is shutting down dotCMS from ip:" + request.getRemoteAddr());
 
@@ -73,7 +76,14 @@ public class MaintenanceResource implements Serializable {
             return Response.status(Status.FORBIDDEN).build();
         }
 
-        Runtime.getRuntime().exit(0);
+        DotConcurrentFactory.getInstance()
+                .getSubmitter()
+                .submit(
+                        () -> Runtime.getRuntime().exit(0),
+                        5,
+                        TimeUnit.SECONDS
+                );
+
         return Response.ok(new ResponseEntityView("Shutdown")).build();
 
 

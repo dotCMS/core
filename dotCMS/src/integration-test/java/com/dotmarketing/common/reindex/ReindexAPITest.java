@@ -5,6 +5,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import com.dotmarketing.util.Config;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +30,6 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -121,44 +121,53 @@ public class ReindexAPITest extends IntegrationTestBase {
         ReindexThread.unpause();
     }
 
+    /**
+     * This method tests that all pieces of content that belong to a content type are queued to be re-indexed
+     * @throws Exception
+     */
     @Test
     public void test_content_type_reindex() throws Exception {
-        ReindexThread.pause();
-        ContentType type = new ContentTypeDataGen().nextPersisted();
-        new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
-        for (int i = 0; i < numberToTest; i++) {
-            new ContentletDataGen(type.id()).setPolicy(IndexPolicy.DEFER).nextPersisted();
+        Config.setProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", true);
+        try {
+            ReindexThread.pause();
+            ContentType type = new ContentTypeDataGen().nextPersisted();
+            new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
+            for (int i = 0; i < numberToTest; i++) {
+                new ContentletDataGen(type.id()).setPolicy(IndexPolicy.DEFER).nextPersisted();
+            }
+
+            final ReindexQueueAPI reindexQueueAPI = APILocator.getReindexQueueAPI();
+
+            Map<String, ReindexEntry> reindexEntries = reindexQueueAPI
+                    .findContentToReindex(numberToTest);
+
+            assertTrue(
+                    "should have " + numberToTest + " to reindex, only got" + reindexEntries.size(),
+                    reindexEntries.size() == numberToTest);
+
+            new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
+            reindexEntries = reindexQueueAPI.findContentToReindex();
+            assertTrue("now we have none", reindexEntries.isEmpty());
+
+            List<Field> newFields = new ArrayList<>();
+            newFields.addAll(type.fields());
+
+            newFields.add(
+                    ImmutableTextField.builder().name("asdasdasd").variable("asdasdasd")
+                            .searchable(true).contentTypeId(type.id()).build());
+
+            //Pausing reindex to avoid race condition when findContentToReindex is called (no content will be indexed)
+
+            APILocator.getContentTypeAPI(APILocator.systemUser()).save(type, newFields);
+
+            reindexEntries = reindexQueueAPI.findContentToReindex(numberToTest);
+            assertEquals(numberToTest, reindexEntries.size());
+            assertEquals(reindexEntries.values().iterator().next().getPriority(),
+                    ReindexQueueFactory.Priority.STRUCTURE.dbValue());
+        }finally{
+            Config.setProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false);
+            ReindexThread.unpause();
         }
-
-        final ReindexQueueAPI reindexQueueAPI = APILocator.getReindexQueueAPI();
-
-
-
-        Map<String, ReindexEntry> reindexEntries = reindexQueueAPI.findContentToReindex(numberToTest);
-
-        assertTrue("should have " + numberToTest + " to reindex, only got" +  reindexEntries.size(),  reindexEntries.size()== numberToTest);
-
-
-        new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
-        reindexEntries = reindexQueueAPI.findContentToReindex();
-        assertTrue("now we have none", reindexEntries.isEmpty());
-
-
-        List<Field> newFields = new ArrayList<>();
-        newFields.addAll(type.fields());
-
-        newFields.add(
-                ImmutableTextField.builder().name("asdasdasd").variable("asdasdasd").searchable(true).contentTypeId(type.id()).build());
-
-        //Pausing reindex to avoid race condition when findContentToReindex is called (no content will be indexed)
-
-
-        APILocator.getContentTypeAPI(APILocator.systemUser()).save(type, newFields);
-
-        reindexEntries = reindexQueueAPI.findContentToReindex(numberToTest);
-        assertEquals(numberToTest, reindexEntries.size());
-        assertEquals(reindexEntries.values().iterator().next().getPriority(), ReindexQueueFactory.Priority.STRUCTURE.dbValue());
-        ReindexThread.unpause();
     }
 
     @Test

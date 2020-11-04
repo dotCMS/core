@@ -1,5 +1,6 @@
 package com.dotcms.vanityurl.filters;
 
+import static com.dotmarketing.filters.Constants.VANITY_URL_OBJECT;
 import java.io.IOException;
 import java.util.Optional;
 import javax.servlet.Filter;
@@ -77,6 +78,7 @@ public class VanityURLFilter implements Filter {
           final Optional<CachedVanityUrl> cachedVanity = vanityApi.resolveVanityUrl(uri, host, language);
           
           if (cachedVanity.isPresent()) {
+              request.setAttribute(VANITY_URL_OBJECT, cachedVanity.get());
               final VanityUrlResult vanityUrlResult = cachedVanity.get().handle( uri, response);
               // If the handler already resolved the requested URI we stop the processing here
               if (vanityUrlResult.isResolved()) {

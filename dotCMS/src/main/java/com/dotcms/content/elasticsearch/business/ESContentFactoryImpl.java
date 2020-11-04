@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -597,7 +598,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 
         //Now workflows, and versions
-        List<String> identsDeleted = new ArrayList<String>();
+        Set<String> identsDeleted = new HashSet<>();
         for (Contentlet con : contentlets) {
             contentletCache.remove(con.getInode());
 
@@ -647,8 +648,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	        for (Contentlet c : contentlets) {
 	            if(InodeUtils.isSet(c.getInode())){
 	                Identifier ident = APILocator.getIdentifierAPI().find(c.getIdentifier());
-	                String si = ident.getInode();
-	                if(!identsDeleted.contains(si) && si!=null && si!="" ){
+	                if(ident==null || UtilMethods.isEmpty(ident.getId())) {
+	                    continue;
+	                }
+	                String si = ident.getId();
+	                if(!identsDeleted.contains(si)){
 	                    APILocator.getIdentifierAPI().delete(ident);
 	                    identsDeleted.add(si);
 	                }

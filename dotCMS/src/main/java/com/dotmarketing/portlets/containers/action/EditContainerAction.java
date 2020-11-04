@@ -523,7 +523,7 @@ public class EditContainerAction extends DotPortletAction implements
 		}
 
 		// Current associated templates
-		List<Template> currentTemplates = InodeFactory.getChildrenClass(currentContainer, Template.class);
+		final List<Template> currentTemplates = APILocator.getTemplateAPI().findTemplatesByContainerInode(currentContainer.getInode());
 
 		// gets user id from request for mod user
 		String userId = user.getUserId();

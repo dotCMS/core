@@ -186,7 +186,7 @@ public class AppDescriptorHelper {
 
         if (null == descriptor.getType()) {
             errors.add(String.format(
-                    "Param `%s`: is missing required field `type` (STRING|BOOL|SELECT) .",
+                    "Param `%s`: is missing required field `type` (STRING|BOOL|SELECT|BUTTON) .",
                     name));
         }
 
@@ -267,6 +267,22 @@ public class AppDescriptorHelper {
                     errors.add(String.format("Malformed list. Param: `%s`. There must be only 1 item marked as selected ", name));
                 }
             }
+        }
+
+        if (Type.BUTTON.equals(descriptor.getType())) {
+            if (isSet(descriptor.getHidden())
+                    && descriptor.isHidden()) {
+                errors.add(String.format(
+                        "Param `%s`: Button params can not be marked hidden. The combination (Button + Hidden) isn't allowed.",
+                        name));
+            }
+
+            if(!(descriptor.getValue() instanceof String)){
+                errors.add(String.format(
+                        "Value Param `%s` has a default value `%s` that isn't a string .",
+                        name, descriptor.getValue()));
+            }
+
         }
 
         return errors;
