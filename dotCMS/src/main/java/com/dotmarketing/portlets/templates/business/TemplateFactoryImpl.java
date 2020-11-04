@@ -46,13 +46,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 				Logger.debug(this, "Template with inode: " + inode + " not found");
 				return null;
 			}
-			//This probably can be deleted when we add the iDate and Owner to the template table
-			final List<Map<String, Object>> inodeResults = new DotConnect()
-					.setSQL(templateSQL.FIND_IDATE_OWNER_FROM_INODE_BY_INODE)
-					.addParam(inode)
-					.loadObjectResults();
-			templateResults.get(0).putAll(inodeResults.get(0));
-			//
+
 			template = (Template) TransformerLocator.createTemplateTransformer(templateResults).findFirst();
 
 			if(template != null && template.getInode() != null) {
@@ -207,7 +201,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		}
 
 		StringBuffer query = new StringBuffer();
-		query.append("select asset.*, inode.* from ");
+		query.append("select asset.*, identifier.* from ");
 		query.append(Type.TEMPLATE.getTableName());
 		query.append(" asset, inode, identifier, ");
 		query.append(Type.TEMPLATE.getVersionTableName());
