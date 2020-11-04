@@ -1,7 +1,6 @@
 package com.dotcms.rest;
 
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.integritycheckers.IntegrityType;
 import com.dotcms.integritycheckers.IntegrityUtil;
@@ -16,7 +15,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.util.*;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJob;
@@ -196,10 +194,6 @@ public class IntegrityResource {
     @Path("/_generateintegritydata")
     @Produces("text/plain")
     public Response generateIntegrityData(@Context HttpServletRequest request)  {
-
-        if (LicenseManager.getInstance().isCommunity()) {
-            throw new InvalidLicenseException("License required");
-        }
 
         final String localAddress = RestEndPointIPUtil.getFullLocalIp(request);
         final String remoteIp = RestEndPointIPUtil.resolveRemoteIp(request);
@@ -811,10 +805,6 @@ public class IntegrityResource {
                                              @FormDataParam("DATA_TO_FIX") InputStream dataToFix,
                                              @FormDataParam("TYPE") String type ) throws JSONException {
 
-        if (LicenseManager.getInstance().isCommunity()) {
-            throw new InvalidLicenseException("License required");
-        }
-
         final AuthCredentialPushPublishUtil.PushPublishAuthenticationToken pushPublishAuthenticationToken
                 = AuthCredentialPushPublishUtil.INSTANCE.processAuthHeader(request);
 
@@ -826,10 +816,9 @@ public class IntegrityResource {
 
         JSONObject jsonResponse = new JSONObject();
         IntegrityUtil integrityUtil = new IntegrityUtil();
-        String key = null;
 
         try {
-             key = pushPublishAuthenticationToken.isJWTTokenWay() ?
+            final String key = pushPublishAuthenticationToken.isJWTTokenWay() ?
                     pushPublishAuthenticationToken.getToken().getId() :
                     pushPublishAuthenticationToken.getPublishingEndPoint().getId();
             integrityUtil.fixConflicts(dataToFix, key,
@@ -840,15 +829,18 @@ public class IntegrityResource {
             Logger.error( this.getClass(), "Error fixing "+type+" conflicts from remote", e );
             return response( "Error fixing "+type+" conflicts from remote" , true );
         } finally {
+            final String remoteIp = RestEndPointIPUtil.resolveRemoteIp(request);
+
             try {
-                if (key != null) {
+                if (remoteIp != null) {
                     // Discard conflicts if successful or failed
-                    integrityUtil.discardConflicts(key, IntegrityType.valueOf(type.toUpperCase()));
+                    integrityUtil.discardConflicts(remoteIp,
+                            IntegrityType.valueOf(type.toUpperCase()));
                 }
             } catch (DotDataException e) {
                 Logger.error(this.getClass(), "ERROR: Table "
                         + IntegrityType.valueOf(type.toUpperCase()).getResultsTableName()
-                        + " could not be cleared on request id [" + key
+                        + " could not be cleared on request id [" + remoteIp
                         + "]. Please truncate the table data manually.", e);
             }
         }

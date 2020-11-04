@@ -1,4 +1,5 @@
 <%@page import="com.dotmarketing.util.UtilMethods"%>
+<%@page import="com.dotmarketing.business.LayoutAPI"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint" %>
@@ -7,19 +8,18 @@
 <%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@include file="/html/portlet/ext/categories/init.jsp"%>
 <%@ include file="/html/portlet/ext/remotepublish/init.jsp" %>
-<%@ page import="com.dotmarketing.business.PermissionAPI.PermissionableType" %>
 
 <%
-    final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+    PermissionAPI conPerAPI = APILocator.getPermissionAPI();
 	boolean enterprise = LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level;
 
 	PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
 	List<PublishingEndPoint> sendingEndpointsList = pepAPI.getReceivingEndPoints();
     boolean sendingEndpoints = UtilMethods.isSet(sendingEndpointsList) && !sendingEndpointsList.isEmpty();
 
-	boolean hasViewPermision = permissionAPI.doesUserHavePermissions(APILocator.systemHost().getIdentifier(),
-			PermissionableType.CATEGORY,
-			PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user);
+    final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
+
+    boolean hasViewPermision = layoutAPI.doesUserHaveAccessToPortlet("permissions", user);
 %>
 
 <%  String dojoPath = Config.getStringProperty("path.to.dojo"); %>
