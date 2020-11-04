@@ -2,7 +2,6 @@ package com.dotcms.rest.api.v1.template;
 
 import com.beust.jcommander.internal.Maps;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -42,7 +41,6 @@ import com.liferay.portal.model.User;
 import com.liferay.util.servlet.SessionDialogMessage;
 import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
-import org.mockito.internal.matchers.Not;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
