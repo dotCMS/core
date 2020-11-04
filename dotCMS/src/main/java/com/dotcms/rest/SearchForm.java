@@ -74,8 +74,8 @@ public class SearchForm {
 
         private  @JsonProperty String query  = "";
         private  @JsonProperty String sort   = "";
-        private  @JsonProperty int    limit  = 0;
-        private  @JsonProperty int    offset = 20;
+        private  @JsonProperty int    limit  = 20;
+        private  @JsonProperty int    offset = 0;
         private  @JsonProperty String userId;
         private  @JsonProperty String render;
         private  @JsonProperty int depth       = -1;
