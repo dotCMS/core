@@ -51,6 +51,11 @@ describe('DotEditLayoutComponent', () => {
         layoutDesigner = fixture.debugElement.query(By.css('dot-edit-layout-designer'));
     });
 
+    it('should be 100% min-width in the host', () => {
+        // https://github.com/dotCMS/core/issues/19540
+        expect(fixture.debugElement.nativeElement.style.minWidth).toBe('100%');
+    });
+
     it('should have dot-edit-layout-designer', () => {
         expect(layoutDesigner).toBeTruthy();
     });

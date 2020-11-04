@@ -1,5 +1,5 @@
 import { pluck, filter } from 'rxjs/operators';
-import { Component, OnInit } from '@angular/core';
+import { Component, HostBinding, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Observable } from 'rxjs';
 import { DotPageRenderState } from '../../shared/models/dot-rendered-page-state.model';
@@ -11,6 +11,8 @@ import { DotPageRenderState } from '../../shared/models/dot-rendered-page-state.
 })
 export class DotEditLayoutComponent implements OnInit {
     pageState: Observable<DotPageRenderState>;
+
+    @HostBinding('style.minWidth') width = '100%';
 
     constructor(private route: ActivatedRoute) {}
 

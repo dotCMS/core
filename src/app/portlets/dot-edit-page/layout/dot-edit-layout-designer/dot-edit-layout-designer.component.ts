@@ -40,7 +40,6 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy {
     editTemplate = false;
     @Input()
     pageState: DotPageRenderState;
-    newPageState: DotPageRenderState;
 
     form: FormGroup;
     initialFormValue: any;

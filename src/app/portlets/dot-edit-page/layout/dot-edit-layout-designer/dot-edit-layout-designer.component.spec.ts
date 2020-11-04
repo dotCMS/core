@@ -146,7 +146,7 @@ describe('DotEditLayoutDesignerComponent', () => {
             fixture.detectChanges();
         });
         // these need to be fixed when this is fixed correctly https://github.com/dotCMS/core/issues/18830
-        xit('should have dot-secondary-toolbar with right content', () => {
+        it('should have dot-secondary-toolbar with right content', () => {
             const dotSecondaryToolbar = fixture.debugElement.query(By.css('dot-secondary-toolbar'));
             const dotEditPageInfo = fixture.debugElement.query(
                 By.css('dot-secondary-toolbar .main-toolbar-left dot-edit-page-info')
@@ -155,9 +155,7 @@ describe('DotEditLayoutDesignerComponent', () => {
                 By.css('dot-secondary-toolbar .main-toolbar-right form')
             );
             const dotLayoutActions = fixture.debugElement.query(
-                By.css(
-                    'dot-secondary-toolbar .lower-toolbar-right .dot-edit-layout__toolbar-action-themes'
-                )
+                By.css('.dot-edit-layout__toolbar-action-themes')
             );
 
             expect(dotSecondaryToolbar).not.toBeNull();
@@ -166,7 +164,7 @@ describe('DotEditLayoutDesignerComponent', () => {
             expect(dotLayoutActions).not.toBeNull();
         });
         // these need to be fixed when this is fixed correctly https://github.com/dotCMS/core/issues/18830
-        xit('should show dot-edit-page-info', () => {
+        it('should show dot-edit-page-info', () => {
             const dotEditPageInfo: DebugElement = fixture.debugElement.query(
                 By.css('dot-edit-page-info')
             );
