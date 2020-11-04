@@ -469,7 +469,7 @@ public class PublishFactory {
 
         //gets working (not published) template parent for this html page
         Template templateParent = APILocator.getTemplateAPI().findWorkingTemplate( htmlPage.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false );
-        if ( InodeUtils.isSet( templateParent.getInode() ) ) {
+        if ( templateParent!=null && InodeUtils.isSet( templateParent.getInode() ) ) {
 
             if ( !templateParent.isLive() && (permissionAPI.doesUserHavePermission( templateParent, PERMISSION_PUBLISH, user, respectFrontendRoles ) || !checkPublishPermissions) ) {
                 relatedAssets.add( templateParent );

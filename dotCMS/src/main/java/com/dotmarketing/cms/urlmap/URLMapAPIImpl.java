@@ -1,12 +1,13 @@
 package com.dotmarketing.cms.urlmap;
 
+import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import io.vavr.control.Try;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+
+import java.util.*;
+
 import org.jetbrains.annotations.NotNull;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -205,17 +206,30 @@ public class URLMapAPIImpl implements URLMapAPI {
         final StringBuilder query = new StringBuilder();
         final List<RegExMatch> groups = matches.getMatches().get(0).getGroups();
         final List<String> fieldMatches = matches.getPatternChange().getFieldMatches();
-
         int counter = 0;
+
+        final Map<String, Field> fieldMap = structure.fieldMap();
+
         for (final RegExMatch regExMatch : groups) {
 
             String value = regExMatch.getMatch();
             if (value.endsWith("/")) {
                 value = value.substring(0, value.length() - 1);
             }
-            query.append('+').append(structure.variable()).append('.')
-                    .append(fieldMatches.get(counter)).append("_dotRaw").append(':')
-                    .append(ESUtils.escapeExcludingSlashIncludingSpace(value)).append(' ');
+            query.append('+')
+                    .append(structure.variable()).append('.');
+
+            final String variableName = fieldMatches.get(counter);
+            final Field field = fieldMap.get(variableName);
+
+            if (field.dataType().equals(DataTypes.INTEGER) || field.dataType().equals(DataTypes.FLOAT)){
+                query.append(variableName);
+            } else {
+                query.append(variableName).append("_dotRaw");
+            }
+
+            query.append(':')
+                .append(ESUtils.escapeExcludingSlashIncludingSpace(value)).append(' ');
             counter++;
         }
 
@@ -249,8 +263,14 @@ public class URLMapAPIImpl implements URLMapAPI {
         }
 
        final Contentlet finalContentlet = contentlet;
-       return Try.of(()->new DotTransformerBuilder().
-               defaultOptions().content(finalContentlet).build().hydrate().get(0)).getOrNull();
+
+        if(context.isGraphQL()) {
+            return Try.of(() -> new DotTransformerBuilder().
+                    graphQLDataFetchOptions().content(finalContentlet).build().hydrate().get(0)).getOrNull();
+        } else {
+            return Try.of(() -> new DotTransformerBuilder().
+                    defaultOptions().content(finalContentlet).build().hydrate().get(0)).getOrNull();
+        }
     }
 
     private void checkContentPermission(final UrlMapContext context, final Contentlet contentlet)

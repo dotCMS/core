@@ -1031,6 +1031,9 @@ create table identifier (
    asset_type varchar(64),
    syspublish_date timestamp,
    sysexpire_date timestamp,
+   owner varchar(255),
+   create_date timestamp,
+   asset_subtype varchar(255),
    primary key (id),
    unique (parent_path, asset_name, host_inode)
 );
@@ -1562,6 +1565,7 @@ alter table analytic_summary_visits add constraint fk9eac9733b7b46300 foreign ke
 create index idx_preference_1 on user_preferences (preference);
 create index idx_identifier_pub on identifier (syspublish_date);
 create index idx_identifier_exp on identifier (sysexpire_date);
+create index idx_identifier_asset_subtype on identifier (asset_subtype);
 create index idx_user_clickstream11 on clickstream (host_id);
 create index idx_user_clickstream12 on clickstream (last_page_id);
 create index idx_user_clickstream15 on clickstream (browser_name);
@@ -2492,8 +2496,39 @@ CREATE TABLE api_token_issued(
 
 create index idx_api_token_issued_user ON api_token_issued (token_userid);
 
+create table storage_group (
+    group_name varchar(255)  not null,
+    mod_date   timestamp without time zone NOT NULL DEFAULT CURRENT_DATE,
+    PRIMARY KEY (group_name)
+);
 
+create table storage (
+    path        varchar(255) not null,
+    group_name varchar(255) not null,
+    hash       varchar(64) not null,
+    metadata   text not null,
+    mod_date   timestamp without time zone NOT NULL DEFAULT CURRENT_DATE,
+    PRIMARY KEY (path, group_name),
+    FOREIGN KEY (group_name) REFERENCES storage_group (group_name)
+);
 
+CREATE INDEX idx_storage_hash ON storage (hash);
+
+create table storage_data (
+    hash_id  varchar(64) not null,
+    data     bytea not null,
+    mod_date timestamp without time zone NOT NULL DEFAULT CURRENT_DATE,
+    PRIMARY KEY (hash_id)
+);
+
+create table storage_x_data (
+    storage_hash varchar(64)                 not null,
+    data_hash    varchar(64)                 not null,
+    data_order   integer                     not null,
+    mod_date     timestamp without time zone NOT NULL DEFAULT CURRENT_DATE,
+    PRIMARY KEY (storage_hash, data_hash),
+    FOREIGN KEY (data_hash) REFERENCES storage_data (hash_id)
+);
 
 
 

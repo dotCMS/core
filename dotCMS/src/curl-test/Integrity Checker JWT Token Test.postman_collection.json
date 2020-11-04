@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "bf248c74-2817-4a70-9d13-d4569d5cfbc7",
+		"_postman_id": "d95ed1fc-d70f-457d-875b-7d093e87735e",
 		"name": "Integrity Checker JWT Token Test",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -17,7 +17,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "8528c13c-c1b3-4a40-96b8-544d7f693cad",
+										"id": "ff3f85b4-34a6-4d1d-9c71-2ea629b1149a",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -80,7 +80,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "483d1c70-0e40-4541-a32f-879e0e15defc",
+										"id": "b6f841df-9fed-421f-95cd-f45ca8d60982",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -113,7 +113,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "3d922fc4-9843-49c5-b8fb-57a301bd2b37",
+										"id": "60773697-cb92-46d6-a885-97911bef8faa",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -163,7 +163,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "324b2288-3fe9-4293-8ad5-78a787e093de",
+										"id": "2be04647-75e0-4e9c-995f-0efb49bd88cd",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -226,7 +226,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "9f2fc11c-3c1b-4922-8308-854f1ddfcc8d",
+										"id": "cc86c964-d00b-483a-869b-bfd61c007544",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(401);",
@@ -301,7 +301,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "744a21f4-a854-4557-9f12-0dc055d7363e",
+										"id": "19f88993-2387-4d93-8d38-fbaaca01f39a",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(401);",
@@ -367,7 +367,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "29df161e-45c2-41ba-a911-79d215d8f68b",
+										"id": "8aaf3838-4a62-455f-a374-317f64082030",
 										"exec": [
 											"pm.test(\"Status code is 401\", function () {",
 											"    pm.response.to.have.status(401);",
@@ -446,7 +446,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "53422518-17a5-4800-acc0-c0ff2c9a0ac3",
+										"id": "75c09f16-ad19-4efa-bf9e-4e0bd33d0e24",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -454,7 +454,7 @@
 											"    var jsonData = pm.response.json();",
 											"    console.log(jsonData);",
 											"",
-											"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"folder_integrity_test.tar.gz\");",
+											"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"folder_integrity_test_demo.tar.gz\");",
 											"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
 											"});"
 										],
@@ -498,7 +498,7 @@
 											"key": "file",
 											"contentType": "application/tar+gzip ",
 											"type": "file",
-											"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/folder_integrity_test.tar.gz"
+											"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/folder_integrity_test_demo.tar.gz"
 										}
 									],
 									"options": {
@@ -526,7 +526,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "5ced69a2-1210-4397-8720-0a75f3212ad5",
+										"id": "16963a6e-88dd-4b77-a525-bee771ce90e0",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -589,7 +589,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "0c961544-d102-4b53-b07d-156e7c2b3966",
+										"id": "ec53f1a9-9b7d-4475-9a40-692fa8b54025",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -638,7 +638,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"upgradeTaskClass\":\"com.dotmarketing.startup.runonce.Task05390RemoveEndpointIdForeignKeyInIntegrityResolverTables\"\n}\n",
+									"raw": "{\n    \"upgradeTaskClass\":\"com.dotmarketing.startup.runonce.Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTables\"\n}\n",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -667,7 +667,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "19f3c1ff-6198-4fb0-9a62-af68ae085972",
+										"id": "1fa49819-f294-41f3-b4be-b0cdb8f97cd2",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -703,7 +703,7 @@
 										{
 											"key": "DATA_TO_FIX",
 											"type": "file",
-											"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/DataToFix.zip"
+											"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/DataToFix_demo.zip"
 										},
 										{
 											"key": "TYPE",
@@ -732,13 +732,13 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "fe24a02b-8770-481f-808f-88193f19af81",
+										"id": "b9523e5a-adbb-4d7b-842a-5f336fa675a7",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
 											"",
 											"    var jsonData = pm.response.json();",
-											"    pm.expect(jsonData[\"entity\"][\"identifier\"]).to.eql(\"ecf8d1d2-d150-4af8-9a0b-93bd53143c11\");",
+											"    pm.expect(jsonData[\"entity\"][\"inode\"]).to.eql(\"8b30893d-8b91-4c1f-8289-1308032961a0\");",
 											"});"
 										],
 										"type": "text/javascript"
@@ -764,7 +764,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{serverURL}}/api/v1/folder/sitename/default/uri/folder_integrity_test",
+									"raw": "{{serverURL}}/api/v1/folder/sitename/demo.dotcms.com/uri/folder_integrity_test",
 									"host": [
 										"{{serverURL}}"
 									],
@@ -773,7 +773,7 @@
 										"v1",
 										"folder",
 										"sitename",
-										"default",
+										"demo.dotcms.com",
 										"uri",
 										"folder_integrity_test"
 									]
@@ -793,7 +793,7 @@
 		{
 			"listen": "prerequest",
 			"script": {
-				"id": "d94022a9-d19d-40ab-a076-be58a63cf3b3",
+				"id": "41b57653-7c5e-4c68-abac-2aa027f8a243",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -803,7 +803,7 @@
 		{
 			"listen": "test",
 			"script": {
-				"id": "f64070e5-f3ce-4a59-bc69-b4478ae941eb",
+				"id": "062d852e-e0ec-42ce-a6bf-3fb571362479",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -813,22 +813,22 @@
 	],
 	"variable": [
 		{
-			"id": "81a21cd1-affe-4e42-914a-894e7ffde1e9",
+			"id": "d9949ac1-49de-498b-a7bc-ca4f60544b3c",
 			"key": "serverURL",
 			"value": "http://localhost:8080"
 		},
 		{
-			"id": "547ffe1c-a555-4e44-903f-c80060dccb1c",
+			"id": "8884cc77-85d8-4468-8453-b788b6b6181f",
 			"key": "token",
-			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGk1MGY1N2RlNi02MjJhLTQyMWYtYThjYy0wZTY0ZDIwOGY3NTgiLCJ4bW9kIjoxNjAwOTgwMTYyMDAwLCJuYmYiOjE2MDA5ODAxNjIsImlzcyI6IjZmZWRmNjBhMTYiLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2OTU1NTE1MjcsImlhdCI6MTYwMDk4MDE2MiwianRpIjoiZjAwYjcyZmItNDQ0YS00MGUzLWI1MzItMDBiZDk4NzFmMTk3In0.S3W8wZV8SAtTxPwlxoB1nzd301wvNDZDEFzVis-UdfA"
+			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGljZTBkYjBiOS04ZTViLTQ0MDktOTUzMy0yZDc2OTIxZTJjNGMiLCJ4bW9kIjoxNjAyNTE2NzM0MDAwLCJuYmYiOjE2MDI1MTY3MzQsImlzcyI6ImNjNDE0ZjI1YWUiLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2OTcwODgwOTksImlhdCI6MTYwMjUxNjczNCwianRpIjoiMjU3MTE0MDEtZTZjOC00OTNmLThjNDktM2MyNzJkM2Q0ZDNjIn0.S4ndnOqgJFNEEnFMHG2nlaE0RpzS5sdrFaqzepzTO2M"
 		},
 		{
-			"id": "1f57fb71-9bc1-4a31-b3b4-4ab44647f181",
+			"id": "e221ee0e-06c0-49d2-a1f7-b49682ada9fc",
 			"key": "bundle_id",
 			"value": "bundle_1598948729120"
 		},
 		{
-			"id": "b4166b36-71b9-4cc9-ab25-4514b88e07c7",
+			"id": "86cc8145-3eda-456c-b2fd-a39e87cab424",
 			"key": "transactionId",
 			"value": "48db03da-d303-47cc-af29-9be490e99648"
 		}

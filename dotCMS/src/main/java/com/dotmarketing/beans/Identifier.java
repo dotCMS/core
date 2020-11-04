@@ -32,6 +32,7 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
 	public static final String ASSET_TYPE_FOLDER = "folder";
 	public static final String ASSET_TYPE_HTML_PAGE = "htmlpage";
 	public static final String ASSET_TYPE_CONTENTLET = "contentlet";
+	public static final String ASSET_TYPE_TEMPLATE = "template";
 
 	public Identifier() {
 	}
@@ -52,6 +53,10 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
     
     private Date sysPublishDate;
     private Date sysExpireDate;
+
+    private String owner;
+    private Date createDate;
+    private String assetSubType;
     
     /**
      * @deprecated As of 2016-05-16, replaced by {@link #getId()}
@@ -230,7 +235,7 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
 	}
 
 	public String getOwner() {
-		return null;
+		return this.owner;
 	}
 
 	public Permissionable getParentPermissionable() throws DotDataException {
@@ -255,6 +260,7 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
 	}
 
 	public void setOwner(String owner) {
+	    this.owner = owner;
 	}
 
 	public String getCategoryId() {
@@ -323,6 +329,22 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
 
     public void setSysExpireDate(Date sysExpireDate) {
         this.sysExpireDate = sysExpireDate;
+    }
+
+    public Date getCreateDate() {
+        return createDate;
+    }
+
+    public void setCreateDate(Date createDate) {
+        this.createDate = createDate;
+    }
+
+    public String getAssetSubType() {
+        return assetSubType;
+    }
+
+    public void setAssetSubType(String assetSubType) {
+        this.assetSubType = assetSubType;
     }
 
     @Override

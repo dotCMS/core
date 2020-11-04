@@ -5,6 +5,7 @@ import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.PublishFactory;
@@ -69,7 +70,7 @@ public class PublishTemplatesAction extends DotPortletAction {
 
 		for (int i=0;i<publishInode.length;i++) {
 
-			Template template = (Template) InodeFactory.getInode(publishInode[i],Template.class);
+			Template template = APILocator.getTemplateAPI().find(publishInode[i],user,false);
 			
 			if (InodeUtils.isSet(template.getInode())) {
 	        	

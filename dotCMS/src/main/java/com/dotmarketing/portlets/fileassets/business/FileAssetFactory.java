@@ -13,15 +13,19 @@ import java.util.List;
  */
 public interface FileAssetFactory {
 
+
+    
     /**
      * Return the FileAsset into a {@link Folder}, it just return the FileAsset for which the user has permission.
      *
-     * @param parentFolder Folder to search the files
-     * @param user User to check permission
-     * @param respectFrontendRoles it is true the Frontend roles are respect
+     * takes a FileAssetSearcher object as params
+
      * @return
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    List<Contentlet>  findFileAssetsByFolderInDB(Folder parentFolder, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+    
+    List<Contentlet> findByDB(FileAssetSearcher fileSearcher)
+                    throws DotDataException, DotSecurityException;
 }

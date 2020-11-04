@@ -111,7 +111,7 @@ public class IntegrityDataGenerationJob extends DotStatefulJob {
      * @throws SchedulerException
      */
     public static Scheduler getJobScheduler() throws SchedulerException {
-        return QuartzUtils.getStandardScheduler();
+        return QuartzUtils.getScheduler();
     }
 
 }

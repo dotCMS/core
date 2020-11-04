@@ -342,6 +342,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                         .setMode(context.getPageMode())
                         .setUri(context.getPageUri())
                         .setUser(context.getUser())
+                        .setGraphQL(context.isGraphQL())
                         .build()
         );
 

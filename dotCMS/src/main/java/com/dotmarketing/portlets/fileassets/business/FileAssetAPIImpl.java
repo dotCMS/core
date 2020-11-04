@@ -127,16 +127,16 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 			final Folder parentFolder,
 			final User user,
 			final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-		List<Contentlet> contentlets = null;
 
 		try{
-			contentlets = contAPI.search(
+		    return fromContentlets(contAPI.search(
 					"+structureType:" + Structure.STRUCTURE_TYPE_FILEASSET + " +conFolder:" + parentFolder.getInode(),
-					-1, 0, null, user, respectFrontendRoles);
+					-1, 0, null, user, respectFrontendRoles));
 		} catch (DotRuntimeException e) {
 			if ( ExceptionUtil.causedBy(e, ConnectException.class)) {
 				Logger.warnEveryAndDebug(FileAssetAPIImpl.class, e.getMessage(), e, 5000);
-				contentlets = getFileAssetsByFolderInDB(parentFolder, user, respectFrontendRoles);
+				
+				return findFileAssetsByDB(FileAssetSearcher.builder().folder(parentFolder).user(user).respectFrontendRoles(respectFrontendRoles).build());
 			} else {
 				throw e;
 			}
@@ -147,17 +147,21 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 			throw new DotRuntimeException(e.getMessage(), e);
 		}
 
-		return fromContentlets(perAPI.filterCollection(contentlets, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
-
 	}
 
-	private synchronized List<Contentlet> getFileAssetsByFolderInDB(
-			final Folder parentFolder,
-			final User user,
-			final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+    @Override
+    @CloseDBIfOpened
+    public List<FileAsset> findFileAssetsByDB(FileAssetSearcher searcher) {
 
-		return this.fileAssetFactory.findFileAssetsByFolderInDB(parentFolder, user, respectFrontendRoles);
-	}
+        return Try.of(() -> fromContentlets(fileAssetFactory.findByDB(searcher)))
+                        .getOrElseThrow(e -> e instanceof RuntimeException ? (RuntimeException) e : new DotRuntimeException(e));
+
+    }
+	
+	
+
+	
+
 
 	@CloseDBIfOpened
 	public List<FileAsset> findFileAssetsByHost(Host parentHost, User user, boolean respectFrontendRoles) throws DotDataException,
@@ -165,6 +169,9 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		List<FileAsset> assets = null;
 		try{
 			Folder parentFolder = APILocator.getFolderAPI().find(FolderAPI.SYSTEM_FOLDER, user, false);
+			
+			
+			
 			assets = fromContentlets(perAPI.filterCollection(contAPI.search("+conHost:" +parentHost.getIdentifier() +" +structureType:" + Structure.STRUCTURE_TYPE_FILEASSET+" +conFolder:" + parentFolder.getInode(), -1, 0, null , user, respectFrontendRoles),
 					PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
 		} catch (Exception e) {

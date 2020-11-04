@@ -13,6 +13,7 @@ public class UrlMapContextBuilder {
     private String uri;
     private Host host;
     private User user;
+    private boolean graphQL;
 
     private UrlMapContextBuilder(){}
 
@@ -45,7 +46,12 @@ public class UrlMapContextBuilder {
         return this;
     }
 
+    public UrlMapContextBuilder setGraphQL(final boolean graphQL) {
+        this.graphQL = graphQL;
+        return this;
+    }
+
     public UrlMapContext build() {
-        return new UrlMapContext(mode, languageId, uri, host, user);
+        return new UrlMapContext(mode, languageId, uri, host, user, graphQL);
     }
 }

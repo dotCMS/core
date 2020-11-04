@@ -62,7 +62,7 @@ public class UpdateContainersPathsJob extends DotStatefulJob  {
             throw new JobExecutionException(e);
         } finally {
             try {
-                QuartzUtils.getSequentialScheduler().unscheduleJob(
+                QuartzUtils.getScheduler().unscheduleJob(
                         jobContext.getJobDetail().getName(),
                         jobContext.getTrigger().getName()
                 );
@@ -130,7 +130,7 @@ public class UpdateContainersPathsJob extends DotStatefulJob  {
         );
 
         try {
-            Scheduler scheduler = QuartzUtils.getSequentialScheduler();
+            Scheduler scheduler = QuartzUtils.getScheduler();
             scheduler.scheduleJob(jobDetail, trigger);
         } catch (SchedulerException e) {
             throw new DotRuntimeException(e);

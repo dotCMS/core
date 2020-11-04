@@ -13,6 +13,7 @@ public class PageContextBuilder {
     private String pageUri;
     private PageMode pageMode;
     private HTMLPageAsset page;
+    private boolean graphQL;
 
     private PageContextBuilder() {}
 
@@ -40,7 +41,12 @@ public class PageContextBuilder {
         return this;
     }
 
+    public PageContextBuilder setGraphQL(final boolean graphQL) {
+        this.graphQL = graphQL;
+        return this;
+    }
+
     public PageContext build() {
-        return new PageContext(user, pageUri, pageMode, page);
+        return new PageContext(user, pageUri, pageMode, page, graphQL);
     }
 }

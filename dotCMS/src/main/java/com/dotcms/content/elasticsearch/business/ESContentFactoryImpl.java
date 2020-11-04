@@ -5,8 +5,7 @@ import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATI
 import static com.dotmarketing.util.StringUtils.lowercaseStringExceptMatchingTokens;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.util.PaginatedArrayList;
 import java.io.Serializable;
 import java.sql.Connection;
@@ -18,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -598,7 +598,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 
         //Now workflows, and versions
-        List<String> identsDeleted = new ArrayList<String>();
+        Set<String> identsDeleted = new HashSet<>();
         for (Contentlet con : contentlets) {
             contentletCache.remove(con.getInode());
 
@@ -613,15 +613,16 @@ public class ESContentFactoryImpl extends ContentletFactory {
             if(InodeUtils.isSet(con.getInode())){
                 APILocator.getPermissionAPI().removePermissions(con);
 
-                ContentletVersionInfo verInfo=APILocator.getVersionableAPI().getContentletVersionInfo(con.getIdentifier(), con.getLanguageId());
-                if(verInfo!=null && UtilMethods.isSet(verInfo.getIdentifier())) {
-                    if(UtilMethods.isSet(verInfo.getLiveInode()) && verInfo.getLiveInode().equals(con.getInode()))
+                Optional<ContentletVersionInfo> verInfo=APILocator.getVersionableAPI().getContentletVersionInfo(con.getIdentifier(), con.getLanguageId());
+
+                if(verInfo.isPresent()) {
+                    if(UtilMethods.isSet(verInfo.get().getLiveInode()) && verInfo.get().getLiveInode().equals(con.getInode()))
                         try {
                             APILocator.getVersionableAPI().removeLive(con);
                         } catch (Exception e) {
                             throw new DotDataException(e.getMessage(),e);
                         }
-                    if(verInfo.getWorkingInode().equals(con.getInode()))
+                    if(verInfo.get().getWorkingInode().equals(con.getInode()))
                         APILocator.getVersionableAPI().deleteContentletVersionInfo(con.getIdentifier(), con.getLanguageId());
                 }
 
@@ -647,8 +648,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	        for (Contentlet c : contentlets) {
 	            if(InodeUtils.isSet(c.getInode())){
 	                Identifier ident = APILocator.getIdentifierAPI().find(c.getIdentifier());
-	                String si = ident.getInode();
-	                if(!identsDeleted.contains(si) && si!=null && si!="" ){
+	                if(ident==null || UtilMethods.isEmpty(ident.getId())) {
+	                    continue;
+	                }
+	                String si = ident.getId();
+	                if(!identsDeleted.contains(si)){
 	                    APILocator.getIdentifierAPI().delete(ident);
 	                    identsDeleted.add(si);
 	                }
@@ -987,12 +991,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
     @Override
     protected List<Contentlet> findByStructure(String structureInode, Date maxDate, int limit,
             int offset) throws DotDataException, DotStateException, DotSecurityException {
-        final HibernateUtil hu = new HibernateUtil();
+        final DotConnect dotConnect = new DotConnect();
         final StringBuilder select = new StringBuilder();
-        select.append("select inode from inode in class ")
-                .append(com.dotmarketing.portlets.contentlet.business.Contentlet.class.getName())
-                .append(", contentletvi in class ").append(ContentletVersionInfo.class.getName())
-                .append(" where type = 'contentlet' and structure_inode = '")
+        select.append("select contentlet.*, inode.owner ").append(
+                "from contentlet, contentlet_version_info, inode ")
+                .append("where structure_inode = '")
                 .append(structureInode).append("' " );
 
         if (maxDate != null){
@@ -1012,33 +1015,41 @@ public class ESContentFactoryImpl extends ContentletFactory {
             }
         }
 
-        select.append(" and contentletvi.identifier=inode.identifier and contentletvi.workingInode=inode.inode ");
-        hu.setQuery(select.toString());
+        select.append(" and contentlet_version_info.identifier=contentlet.identifier ")
+                .append(" and contentlet_version_info.working_inode=contentlet.inode ")
+                .append(" and contentlet.inode = inode.inode");
+        dotConnect.setSQL(select.toString());
 
         if (offset > 0) {
-            hu.setFirstResult(offset);
+            dotConnect.setStartRow(offset);
         }
         if (limit > 0) {
-            hu.setMaxResults(limit);
+            dotConnect.setMaxRows(limit);
         }
-        List<com.dotmarketing.portlets.contentlet.business.Contentlet> fatties = hu.list();
-        List<Contentlet> result = new ArrayList<Contentlet>();
-        for (com.dotmarketing.portlets.contentlet.business.Contentlet fatty : fatties) {
-            Contentlet content = convertFatContentletToContentlet(fatty);
-            contentletCache.add(String.valueOf(content.getInode()), content);
-            result.add(convertFatContentletToContentlet(fatty));
-        }
-        return result;
+
+        List<com.dotmarketing.portlets.contentlet.business.Contentlet> fatContentlets =
+                TransformerLocator.createFatContentletTransformer
+                (dotConnect.loadObjectResults()).asList();
+
+        List<Contentlet> contentlets = fatContentlets.stream()
+                .map(fatty -> Try.of(() -> convertFatContentletToContentlet(fatty)).getOrNull())
+                .collect(Collectors.toList());
+
+        contentlets.forEach(contentlet ->contentletCache
+                .add(String.valueOf(contentlet.getInode()), contentlet));
+
+        return contentlets;
     }
 
 	@Override
 	protected Contentlet findContentletByIdentifier(String identifier, Boolean live, Long languageId) throws DotDataException {
-        final ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, languageId);
-        if(cvi == null  || UtilMethods.isEmpty(cvi.getIdentifier()) || (live && UtilMethods.isEmpty(cvi.getLiveInode()))) {
+        final Optional<ContentletVersionInfo> cvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, languageId);
+        if(!cvi.isPresent() || UtilMethods.isEmpty(cvi.get().getIdentifier())
+                || (live && UtilMethods.isEmpty(cvi.get().getLiveInode()))) {
             return null;
         }
-        return Try.of(()->find((live?cvi.getLiveInode():cvi.getWorkingInode()))).getOrElseThrow(e->new DotRuntimeException(e));
-        
+        return Try.of(()->find((live?cvi.get().getLiveInode():cvi.get().getWorkingInode())))
+                .getOrElseThrow(DotRuntimeException::new);
 	}
 
 	@Override
@@ -1054,11 +1065,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
         // Looking content up this way can avoid any DB hits as these calls are all cached.
         final List<Language> langs = this.languageAPI.getLanguages();
         for(final Language language : langs) {
-            final ContentletVersionInfo contentVersion = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, language.getId());
-            if (contentVersion != null  && UtilMethods.isSet(contentVersion.getIdentifier()) && (includeDeleted || !contentVersion.isDeleted())) {
-                return find(contentVersion.getWorkingInode());
+            final Optional<ContentletVersionInfo> contentVersion = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, language.getId());
+            if (contentVersion.isPresent() && UtilMethods.isSet(contentVersion.get().getIdentifier())
+                    && (includeDeleted || !contentVersion.get().isDeleted())) {
+                return find(contentVersion.get().getWorkingInode());
             }
-            if (null != contentVersion && contentVersion.isDeleted() && !includeDeleted) {
+            if (contentVersion.isPresent() && contentVersion.get().isDeleted() && !includeDeleted) {
                 Logger.warn(this, String.format("Contentlet with ID '%s' exists, but is marked as 'Archived'.",
                         identifier));
             }
@@ -1086,7 +1098,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
       List<String> missingCons = new ArrayList<>(CollectionUtils.subtract(inodes, conMap.keySet()));
 
       final String contentletBase = "select {contentlet.*} from contentlet join inode contentlet_1_ "
-          + "on contentlet_1_.inode = contentlet.inode and contentlet_1_.type = 'contentlet' where  contentlet.inode in ('";
+          + " on contentlet_1_.inode = contentlet.inode and contentlet_1_.type = 'contentlet' where  contentlet.inode in ('";
 
       for (int init = 0; init < missingCons.size(); init += 200) {
         int end = Math.min(init + 200, missingCons.size());

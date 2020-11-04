@@ -269,6 +269,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     setSortOrder(0);
     setDisabledWysiwyg(new ArrayList<>());
     getWritableNullProperties();
+    this.needsReindex = false;
+    
   }
 
     @Override
@@ -667,10 +669,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public String getStringProperty(String fieldVarName) throws DotRuntimeException {
 		try{
 			Object value = get(fieldVarName);
-			if(value instanceof Long || value instanceof Date ){
-				return value.toString();
-			}
-			return (String)value;
+
+			return value != null ? value.toString() : null;
 		}catch (Exception e) {
 			 throw new DotRuntimeException(e.getMessage(), e);
 		}
@@ -1611,16 +1611,19 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 			super();
 		}
 
-		public Object put(final String key, final Object value) {
+		public Object put(final String key, final Object newValue) {
 
-			Contentlet.this.markAsDirty();
+		    final Object oldValue = this.get(key);
+		    if(!java.util.Objects.equals(oldValue, newValue)) {
+		        Contentlet.this.markAsDirty();
+		    }
 
-			 if(value==null) {
-				 Object oldValue = this.get(key);
-				 this.remove(key);
-				 return oldValue;
-			 }
-			 return super.put(key, value);
+		    if(newValue==null) {
+		        return super.remove(key);
+		    }
+
+            return super.put(key, newValue);
+
 		 }
 	}
 
