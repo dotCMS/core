@@ -41,7 +41,7 @@ public class TemplateSQL {
     public static final String DELETE_TEMPLATE_BY_INODE = "delete from template where inode = ?";
 
     public static final String FIND_TEMPLATES_BY_CONTAINER_INODE = "SELECT template.*, template_identifier.* from template template, tree tree, inode inode, identifier template_identifier "
-            + "where tree.parent = ? and tree.child = template.inode and inode.inode = template.inode and inode.type = 'template'";//este falta creo
+            + "where tree.parent = ? and tree.child = template.inode and inode.inode = template.inode and inode.type = 'template'";
 
     public static final String FIND_ALL_VERSIONS_BY_IDENTIFIER = "SELECT inode FROM template WHERE identifier=? order by mod_date desc";
 
