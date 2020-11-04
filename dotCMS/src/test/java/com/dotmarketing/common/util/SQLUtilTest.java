@@ -16,14 +16,6 @@ public class SQLUtilTest  extends UnitTestBase {
 
     protected static SecurityLoggerServiceAPI securityLoggerServiceAPI = mock(SecurityLoggerServiceAPI.class);
 
-    public final static String MALICIOUS_SQL_CONDITION = "; SeleCt pg_sleep(200)";
-    
-    
-    public final static String MALICIOUS_SQL_ORDER_BY = "; SeleCt pg_sleep(200)";
-    
-    
-    
-    
     @Before
     public void before () {
 

@@ -386,7 +386,7 @@ public class DesignTemplateUtil {
             String parseContainerArguments = matcher.group();
 
             if (parseContainerArguments != null) {
-				String[] splitArguments = parseContainerArguments.split("'\\s*,");
+				String[] splitArguments = parseContainerArguments.split(",");
 				String id = cleanId(splitArguments[0]);
 				String uuid = splitArguments.length > 1 ? cleanId(splitArguments[1]) : ParseContainer.DEFAULT_UUID_VALUE;
 				try {

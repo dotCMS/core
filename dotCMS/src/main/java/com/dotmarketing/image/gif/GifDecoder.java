@@ -329,7 +329,7 @@ public class GifDecoder {
   public int read(String name) {
     status = STATUS_OK;
     try {
-      name = name.trim();
+      name = name.trim().toLowerCase();
       if ((name.indexOf("file:") >= 0) ||
         (name.indexOf(":/") > 0)) {
         URL url = new URL(name);

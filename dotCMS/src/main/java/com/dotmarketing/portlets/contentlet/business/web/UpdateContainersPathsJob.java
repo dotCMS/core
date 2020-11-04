@@ -94,8 +94,8 @@ public class UpdateContainersPathsJob extends DotStatefulJob  {
                         CacheLocator.getContainerCache().remove(container);
                     }
                 }
-            } catch(Exception e) {
-                Logger.warnAndDebug(this.getClass(), "error cleaning template cache: " + e.getMessage(), e);
+            } catch(DotSecurityException e) {
+                Logger.warn(this.getClass(), e.getMessage());
                 continue;
             }
         }
@@ -150,8 +150,8 @@ public class UpdateContainersPathsJob extends DotStatefulJob  {
             final String drawedBody = (String) template.get("drawed_body");
             final String body = (String) template.get("body");
 
-            final String newDrawBody = drawedBody.replaceAll("//" + oldHostName + "/", "//" + newHostName + "/");
-            final String newBody = body != null ? body.replaceAll("//" + oldHostName + "/", "//" + newHostName + "/") : null;
+            final String newDrawBody = drawedBody.replaceAll(oldHostName, newHostName);
+            final String newBody = body != null ? body.replaceAll(oldHostName, newHostName) : null;
 
             Params templateParams = new Params.Builder()
                     .add(newDrawBody, newBody, template.get("inode"))
@@ -166,7 +166,7 @@ public class UpdateContainersPathsJob extends DotStatefulJob  {
     private List<Map<String, Object>> getAllTemplatesByPath(final String hostName) throws DotDataException {
         return new DotConnect()
                 .setSQL(GET_TEMPLATES_QUERY)
-                .addParam(String.format("%%//%s%%", hostName + "/"))
+                .addParam(String.format("%%//%s%%", hostName))
                 .loadObjectResults();
     }
 }
