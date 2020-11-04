@@ -726,4 +726,22 @@ public class TemplateAPITest extends IntegrationTestBase {
         assertTrue(templateAllVersions.isEmpty());
     }
 
+    /**
+     * Method to test: {@link TemplateAPI#saveTemplate(Template, Host, User, boolean)}
+     * Given Scenario: Saves a new template and checks that the owner and create_date
+     * is being save on the identifier table
+     * ExpectedResult: owner and create_date columns on the identifier tables must have values
+     */
+    @Test
+    public void test_newTemplate_checkIfSavesOwnerAndCreateDateOnIdentifier() throws Exception {
+        final String title = "testTemplate_" + System.currentTimeMillis();
+        final Template template = new TemplateDataGen().title(title).nextPersisted();
+        final Identifier identifier = APILocator.getIdentifierAPI().find(template.getIdentifier());
+        assertNotNull(identifier);
+        assertNotNull(identifier.getOwner());
+        assertNotNull(identifier.getCreateDate());
+        assertFalse(identifier.getOwner().isEmpty());
+        assertFalse(identifier.getCreateDate().toString().isEmpty());
+    }
+
 }
