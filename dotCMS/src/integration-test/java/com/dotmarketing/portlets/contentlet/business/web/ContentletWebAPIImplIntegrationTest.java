@@ -136,6 +136,79 @@ public class ContentletWebAPIImplIntegrationTest {
         assertEquals(newHostname, containerFromDataBase.getHost().getName());
     }
 
+    /**
+     * Method to Test: {@link ContentletWebAPIImpl#saveContent(Map, boolean, boolean, User)}
+     * When: Change a Host' name and the new host name is a substring from the old ones
+     * Should: Update the container path into the template
+     *
+     * */
+    @Test
+    public void whenNewNameIsSubstring() throws Exception {
+
+        final User user = APILocator.systemUser();
+        init();
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        Container container = createContainer(user, host);
+        Template template = createTemplate(host, container);
+
+        final ContentletWebAPIImpl contentletWebAPI = new ContentletWebAPIImpl();
+        final Map<String, Object> hostMap = host.getMap();
+        final String oldHostName = host.getHostname();
+        final String newHostname = oldHostName.substring(0, (int) (oldHostName.length()/2));
+        hostMap.put("text1", newHostname);
+        hostMap.put("contentletInode", hostMap.get("inode"));
+
+        contentletWebAPI.saveContent(hostMap, false, false, user);
+        waitUntilJobIsFinish();
+
+        final Host hostFromDataBse = APILocator.getHostAPI().find(host.getIdentifier(), user, false);
+        assertEquals(newHostname, hostFromDataBse.getHostname());
+
+        final TemplateLayout templateLayout = DotTemplateTool.themeLayout(template.getInode());
+        final String drawedBodyJson = JsonTransformer.mapper.writeValueAsString(templateLayout);
+        assertFalse(drawedBodyJson.contains(String.format("//%s/", oldHostName)));
+        assertTrue(drawedBodyJson.contains(String.format("//%s/", newHostname)));
+    }
+
+
+    /**
+     * Method to Test: {@link ContentletWebAPIImpl#saveContent(Map, boolean, boolean, User)}
+     * When: Change a Host' name and the new host name contains the old one
+     * Should: Update the container path into the template
+     *
+     * */
+    @Test
+    public void whenOldNameIsSubstring() throws Exception {
+
+        final User user = APILocator.systemUser();
+        init();
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        Container container = createContainer(user, host);
+        Template template = createTemplate(host, container);
+
+        final ContentletWebAPIImpl contentletWebAPI = new ContentletWebAPIImpl();
+        final Map<String, Object> hostMap = host.getMap();
+        final String oldHostName = host.getHostname();
+        final String newHostname = oldHostName + "_new";
+        hostMap.put("text1", newHostname);
+        hostMap.put("contentletInode", hostMap.get("inode"));
+
+        contentletWebAPI.saveContent(hostMap, false, false, user);
+        waitUntilJobIsFinish();
+
+        final Host hostFromDataBse = APILocator.getHostAPI().find(host.getIdentifier(), user, false);
+        assertEquals(newHostname, hostFromDataBse.getHostname());
+
+        final TemplateLayout templateLayout = DotTemplateTool.themeLayout(template.getInode());
+        final String drawedBodyJson = JsonTransformer.mapper.writeValueAsString(templateLayout);
+        assertFalse(drawedBodyJson.contains(String.format("//%s/", oldHostName)));
+        assertTrue(drawedBodyJson.contains(String.format("//%s/", newHostname)));
+    }
+
     private void checkTemplate(
             final String templateInode,
             final User user,
