@@ -208,6 +208,12 @@ public interface TemplateAPI {
 	boolean deleteTemplate(Template template, User user, boolean respectFrontendRoles);
 
 	/**
+	 * Deletes the template by inode
+	 * @param inode String
+	 */
+	void deleteByInode(String inode);
+
+	/**
 	 * Delete the specified template
 	 *
 	 * @deprecated uses {@link #deleteTemplate(Template, User, boolean)}
@@ -338,5 +344,5 @@ public interface TemplateAPI {
 	 * @throws DotDataException
 	 */
 	List<Template> findTemplatesByContainerInode(final String containerInode) throws DotDataException;
-	
+
 }

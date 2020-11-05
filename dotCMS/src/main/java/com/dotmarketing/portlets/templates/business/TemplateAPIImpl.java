@@ -247,6 +247,14 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		}
 	}
 
+	@Override
+	@WrapInTransaction
+	public void deleteByInode(final String inode) {
+
+		Logger.debug(this, ()-> "Deleting template inode: " + inode);
+		Try.run(()->FactoryLocator.getTemplateFactory().deleteTemplateByInode(inode)).onFailure(e -> new RuntimeException(e));
+	}
+
 	@WrapInTransaction
 	public Template saveTemplate(final Template template, final Host destination, final User user, final boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
