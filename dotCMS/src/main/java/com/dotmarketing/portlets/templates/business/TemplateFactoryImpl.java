@@ -8,6 +8,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode.Type;
 import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -46,13 +47,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 				Logger.debug(this, "Template with inode: " + inode + " not found");
 				return null;
 			}
-			//This probably can be deleted when we add the iDate and Owner to the template table
-			final List<Map<String, Object>> inodeResults = new DotConnect()
-					.setSQL(templateSQL.FIND_IDATE_OWNER_FROM_INODE_BY_INODE)
-					.addParam(inode)
-					.loadObjectResults();
-			templateResults.get(0).putAll(inodeResults.get(0));
-			//
+
 			template = (Template) TransformerLocator.createTemplateTransformer(templateResults).findFirst();
 
 			if(template != null && template.getInode() != null) {
@@ -207,7 +202,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		}
 
 		StringBuffer query = new StringBuffer();
-		query.append("select asset.*, inode.* from ");
+		query.append("select asset.*, identifier.* from ");
 		query.append(Type.TEMPLATE.getTableName());
 		query.append(" asset, inode, identifier, ");
 		query.append(Type.TEMPLATE.getVersionTableName());
@@ -237,6 +232,8 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			query.append(identifier);
 			query.append("'");
 		}
+
+		orderBy = SQLUtil.sanitizeSortBy(orderBy);
 		if(!UtilMethods.isSet(orderBy)){
 			orderBy = "mod_date desc";
 		}
