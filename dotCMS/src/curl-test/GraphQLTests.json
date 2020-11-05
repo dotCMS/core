@@ -578,7 +578,7 @@
 									"    var jsonData = pm.response.json();",
 									"    var template = jsonData.data.page.template;",
 									"",
-									"    pm.expect(template[\"iDate\"], 'FAILED:[iDate]').equal(\"1604523586877\");",
+									"    pm.expect(template[\"iDate\"], 'FAILED:[iDate]').to.be.not.null",
 									"    pm.expect(template[\"type\"], 'FAILED:[type]').equal(\"template\");",
 									"    pm.expect(template[\"owner\"].firstName, 'FAILED:[owner.firstName]').equal(\"system user\");",
 									"    pm.expect(template[\"inode\"], 'FAILED:[inode]').equal(\"cfda9246-cce3-4313-8cc3-2080d1935cf9\");",
