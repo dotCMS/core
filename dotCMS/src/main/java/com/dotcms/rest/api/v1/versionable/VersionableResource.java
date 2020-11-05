@@ -40,7 +40,7 @@ import javax.ws.rs.core.Response;
  * Resource to retrieve the versions of different kind of objects.
  * @author jsanca
  */
-@Path("/v1/versionables")
+@Path("/v1/versionable")
 public class VersionableResource {
 
     private final WebResource       webResource;
