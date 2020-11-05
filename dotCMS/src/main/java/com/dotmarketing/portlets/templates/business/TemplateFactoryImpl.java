@@ -8,6 +8,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode.Type;
 import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -231,6 +232,8 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			query.append(identifier);
 			query.append("'");
 		}
+
+		orderBy = SQLUtil.sanitizeSortBy(orderBy);
 		if(!UtilMethods.isSet(orderBy)){
 			orderBy = "mod_date desc";
 		}
