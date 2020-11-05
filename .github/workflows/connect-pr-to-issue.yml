@@ -1,0 +1,11 @@
+name: Connect PRs to their matching GitHub Issue
+on:pull_request:
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+jobs:
+  connect_pr_to_issue:
+    runs-on: ubuntu-latest
+    name: Connect PR to Issue
+    steps:
+      - name: Connect PRs to their matching GitHub Issue
+        uses: coblox/zenhub-link-pr-to-issue@v0.1.1
