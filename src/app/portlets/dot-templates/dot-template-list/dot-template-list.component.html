@@ -1,13 +1,14 @@
 <dot-listing-data-table
+    (rowWasClicked)="editTemplate($event)"
     [actionHeaderOptions]=""
     [columns]="tableColumns"
-    [paginationPerPage]="40"
     sortField="identifier"
     sortOrder="DESC"
     url="v1/templates"
     [actions]="[]"
     [checkbox]="true"
     dataKey="inode"
+    [firstPageData]="firstPage"
 >
     <ng-template #rowTemplate let-rowData="rowData">
         <td [ngStyle]="{ 'text-align': tableColumns[0].textAlign }">

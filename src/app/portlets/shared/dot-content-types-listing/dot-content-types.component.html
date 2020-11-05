@@ -1,9 +1,10 @@
 <dot-listing-data-table
+    *ngIf="showTable"
     #listing
     (rowWasClicked)="editContentType($event)"
     [actionHeaderOptions]="actionHeaderOptions"
+    [paginatorExtraParams]="paginatorExtraParams"
     [columns]="contentTypeColumns"
-    [paginationPerPage]="40"
     sortField="modDate"
     sortOrder="DESC"
     url="v1/contenttype"

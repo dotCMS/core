@@ -41,13 +41,10 @@
         </tr>
     </ng-template>
 
-    <ng-template pTemplate="body" let-rowData let-columns="columns">
-        <tr>
-            <td *ngIf="checkbox">
-                <p-tableCheckbox
-                    (click)="$event.stopPropagation()"
-                    [value]="rowData"
-                ></p-tableCheckbox>
+    <ng-template  pTemplate="body" let-rowData let-columns="columns">
+        <tr (click)="handleRowClick(rowData)" (keyup.enter)="handleRowClick(rowData)" [pSelectableRow]="rowData" >
+            <td *ngIf="checkbox" >
+                <p-tableCheckbox (click)="$event.stopPropagation()" [value]="rowData"></p-tableCheckbox>
             </td>
             <ng-container
                 [ngTemplateOutlet]="rowTemplate || defaultRowTemplate"
@@ -73,16 +70,15 @@
     <td
         *ngFor="let col of columns"
         [ngStyle]="{ width: col.width, 'text-align': getAlign(col) }"
-        (click)="handleRowClick(rowData)"
     >
         <div class="listing-datatable__column-icon" *ngIf="col.icon">
             <dot-icon name="{{ col.icon(rowData) }}"></dot-icon>
             <span>{{ col.textContent || rowData[col.fieldName] }}</span>
         </div>
         <span *ngIf="!col.icon && col.fieldName !== 'nEntries'">
-            {{ rowData[col.fieldName] }}
-        </span>
-        <a
+                    {{ rowData[col.fieldName] }}
+                </span>
+        <a (click)="$event.stopPropagation()"
             *ngIf="col.fieldName === 'nEntries'"
             [routerLink]="rowData.variable === 'Host' ? '/c/sites' : '/c/content'"
             [queryParams]="rowData.variable === 'Host' ? {} : { filter: rowData.variable }"

@@ -1,18 +1,18 @@
 import { Injectable } from '@angular/core';
 import { Resolve } from '@angular/router';
-import { DotTemplatesService } from '@services/dot-templates/dot-templates.service';
 import { Observable } from 'rxjs';
 import { DotTemplate } from '@portlets/dot-edit-page/shared/models';
 import { take } from 'rxjs/operators';
+import { PaginatorService } from '@services/paginator';
 
 @Injectable({
     providedIn: 'root'
 })
 export class DotTemplateListResolver implements Resolve<DotTemplate[]> {
-    constructor(private dotTemplatesService: DotTemplatesService) {}
+    constructor(public paginatorService: PaginatorService) {}
 
     resolve(): Observable<DotTemplate[]> {
-        // TODO: Need to update to get the fist page.
-        return this.dotTemplatesService.get().pipe(take(1));
+        this.paginatorService.url = '/api/v1/templates';
+        return this.paginatorService.getFirstPage().pipe(take(1));
     }
 }

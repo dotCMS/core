@@ -23,7 +23,7 @@ export class PaginatorService {
 
     public links: Links = {};
 
-    public paginationPerPage: number;
+    public paginationPerPage = 40;
     public currentPage: number;
     public maxLinksPage: number;
     public totalRecords: number;

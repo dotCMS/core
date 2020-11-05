@@ -33,7 +33,7 @@ describe('PaginatorService', () => {
         paginatorService.sortField = 'name';
         paginatorService.sortOrder = OrderDirection.DESC;
         paginatorService.get().subscribe();
-        httpMock.expectOne('v1/urldemo?filter=test&orderby=name&direction=DESC');
+        httpMock.expectOne('v1/urldemo?filter=test&orderby=name&direction=DESC&per_page=40');
     });
 
     it('should do a request with extra params', () => {
@@ -41,7 +41,7 @@ describe('PaginatorService', () => {
         paginatorService.setExtraParams('system', 'true');
         paginatorService.setExtraParams('live', null);
         paginatorService.get().subscribe();
-        httpMock.expectOne('v1/urldemo?archive=false&system=true');
+        httpMock.expectOne('v1/urldemo?per_page=40&archive=false&system=true');
     });
 
     it('should remove extra parameters', () => {

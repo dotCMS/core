@@ -35,8 +35,10 @@ import { DotPushPublishDialogService } from 'dotcms-js';
     templateUrl: 'dot-content-types.component.html'
 })
 export class DotContentTypesPortletComponent implements OnInit {
-    @ViewChild('listing', { static: true }) listing: DotListingDataTableComponent;
+    @ViewChild('listing', { static: false }) listing: DotListingDataTableComponent;
     filterBy: string;
+    showTable = false;
+    paginatorExtraParams: { [key: string]: string };
     public contentTypeColumns: DataTableColumn[];
     public item: any;
     public actionHeaderOptions: ActionHeaderOptions;
@@ -84,6 +86,7 @@ export class DotContentTypesPortletComponent implements OnInit {
             if (filterBy) {
                 this.setFilterByContentType(filterBy as string);
             }
+            this.showTable = true;
         });
     }
 
@@ -102,8 +105,7 @@ export class DotContentTypesPortletComponent implements OnInit {
 
     private setFilterByContentType(contentType: string) {
         this.filterBy = _.startCase(_.toLower(contentType));
-        this.listing.paginatorService.setExtraParams('type', this.filterBy);
-
+        this.paginatorExtraParams = {type: this.filterBy};
         this.actionHeaderOptions.primary.command = ($event) => {
             this.createContentType(null, $event);
         };

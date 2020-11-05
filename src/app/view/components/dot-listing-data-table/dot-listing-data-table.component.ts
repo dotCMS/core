@@ -3,11 +3,9 @@ import {
     Input,
     Output,
     EventEmitter,
-    OnChanges,
     ViewChild,
     ElementRef,
     OnInit,
-    SimpleChanges,
     TemplateRef,
     ContentChildren,
     QueryList,
@@ -20,8 +18,8 @@ import { DataTableColumn } from '@models/data-table/data-table-column';
 import { LoggerService } from 'dotcms-js';
 import { FormatDateService } from '@services/format-date-service';
 import { PaginatorService, OrderDirection } from '@services/paginator';
-import { take } from 'rxjs/operators';
 import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
+import { take } from 'rxjs/operators';
 
 function tableFactory(dotListingDataTableComponent: DotListingDataTableComponent) {
     return dotListingDataTableComponent.dataTable;
@@ -40,7 +38,7 @@ function tableFactory(dotListingDataTableComponent: DotListingDataTableComponent
     styleUrls: ['./dot-listing-data-table.component.scss'],
     templateUrl: 'dot-listing-data-table.component.html'
 })
-export class DotListingDataTableComponent implements OnChanges, OnInit {
+export class DotListingDataTableComponent implements OnInit {
     @Input() columns: DataTableColumn[];
     @Input() url: string;
     @Input() actionHeaderOptions: ActionHeaderOptions;
@@ -49,10 +47,11 @@ export class DotListingDataTableComponent implements OnChanges, OnInit {
     @Input() sortField: string;
     @Input() multipleSelection = false;
     @Input() paginationPerPage = 40;
+    @Input() paginatorExtraParams: { [key: string]: string } = {};
     @Input() actions: DotActionMenuItem[];
-    @Input() selectionMode = 'single';
     @Input() dataKey = '';
     @Input() checkbox = false;
+    @Input() firstPageData: any[];
 
     @Output() rowWasClicked: EventEmitter<any> = new EventEmitter();
     @Output() selectedItems: EventEmitter<any> = new EventEmitter();
@@ -82,24 +81,10 @@ export class DotListingDataTableComponent implements OnChanges, OnInit {
         this.paginatorService.url = this.url;
     }
 
-    ngOnChanges(changes: SimpleChanges): void {
-        if (changes.url && changes.url.currentValue) {
-            this.paginatorService.url = changes.url.currentValue;
-        }
-
-        if (changes.columns && changes.columns.currentValue) {
-            this.dateColumns = changes.columns.currentValue.filter(
-                (column) => column.format === this.DATE_FORMAT
-            );
-            this.loadData(0);
-        }
-        if (changes.paginationPerPage && changes.paginationPerPage.currentValue) {
-            this.paginatorService.paginationPerPage = this.paginationPerPage;
-        }
-    }
-
     ngOnInit(): void {
         this.globalSearch.nativeElement.focus();
+        this.paginationSetUp();
+        this.dateColumns = this.columns.filter(column => column.format === this.DATE_FORMAT);
     }
 
     /**
@@ -108,7 +93,7 @@ export class DotListingDataTableComponent implements OnChanges, OnInit {
      * @memberof DotListingDataTableComponent
      */
     handleRowCheck(): void {
-        this.selectedItems.emit(this.selectedItems);
+        this.selectedItems.emit(this.selected);
     }
 
     /**
@@ -131,22 +116,23 @@ export class DotListingDataTableComponent implements OnChanges, OnInit {
         this.loadData(event.first, event.sortField, event.sortOrder);
     }
 
+    /**
+     * Request the data to the paginator service.
+     * @param {number} offset
+     * @param {string} sortFieldParam
+     * @param {OrderDirection} sortOrderParam
+     *
+     * @memberof DotListingDataTableComponent
+     */
     loadData(offset: number, sortFieldParam?: string, sortOrderParam?: OrderDirection): void {
         this.loading = true;
-        if (this.columns) {
-            const sortField = sortFieldParam || this.sortField;
-            const sortOrder = sortOrderParam || this.sortOrder;
 
-            this.paginatorService.filter = this.filter;
-            this.paginatorService.sortField = sortField;
-            this.paginatorService.sortOrder =
-                sortOrder === 1 ? OrderDirection.ASC : OrderDirection.DESC;
-
-            this.paginatorService
-                .getWithOffset(offset)
-                .pipe(take(1))
-                .subscribe((items) => this.setItems(items));
-        }
+        const { sortField, sortOrder } = this.setSortParams(sortFieldParam, sortOrderParam);
+        this.paginatorService.filter = this.filter;
+        this.paginatorService.sortField = sortField;
+        this.paginatorService.sortOrder =
+            sortOrder === 1 ? OrderDirection.ASC : OrderDirection.DESC;
+        this.getPage(offset);
     }
 
     /**
@@ -159,7 +145,7 @@ export class DotListingDataTableComponent implements OnChanges, OnInit {
         this.paginatorService
             .get()
             .pipe(take(1))
-            .subscribe((items) => {
+            .subscribe(items => {
                 this.setItems(items);
                 this.dataTable.first = 1;
             });
@@ -175,7 +161,7 @@ export class DotListingDataTableComponent implements OnChanges, OnInit {
             this.paginatorService
                 .getCurrentPage()
                 .pipe(take(1))
-                .subscribe((items) => this.setItems(items));
+                .subscribe(items => this.setItems(items));
         }
     }
 
@@ -202,9 +188,9 @@ export class DotListingDataTableComponent implements OnChanges, OnInit {
     }
 
     private formatData(items: any[]): any[] {
-        return items.map((item) => {
+        return items.map(item => {
             this.dateColumns.forEach(
-                (col) =>
+                col =>
                     (item[col.fieldName] = this.formatDateService.getRelative(item[col.fieldName]))
             );
             return item;
@@ -212,11 +198,43 @@ export class DotListingDataTableComponent implements OnChanges, OnInit {
     }
 
     private setItems(items: any[]): void {
-        this.items = this.dateColumns ? this.formatData(items) : items;
-        this.loading = false;
+        setTimeout(() => {
+            // avoid ExpressionChangedAfterItHasBeenCheckedError on p-table
+            this.items = this.dateColumns ? this.formatData(items) : items;
+            this.loading = false;
+        }, 0);
     }
 
     private isTypeNumber(col: DataTableColumn): boolean {
         return this.items && this.items[0] && typeof this.items[0][col.fieldName] === 'number';
+    }
+
+    private setSortParams(sortFieldParam?: string, sortOrderParam?: OrderDirection) {
+        return {
+            sortField: sortFieldParam || this.sortField,
+            sortOrder: sortOrderParam || this.sortOrder
+        };
+    }
+
+    private getPage(offset: number): void {
+        if (offset === 0 && this.firstPageData) {
+            this.setItems(this.firstPageData);
+            this.firstPageData = null;
+        } else {
+            this.paginatorService
+                .getWithOffset(offset)
+                .pipe(take(1))
+                .subscribe(items => this.setItems(items));
+        }
+    }
+
+    private paginationSetUp(): void {
+        this.paginatorService.url = this.url;
+        this.paginatorService.paginationPerPage = this.paginationPerPage;
+        if (this.paginatorExtraParams) {
+            Object.entries(this.paginatorExtraParams).forEach(([key, value]) =>
+                this.paginatorService.setExtraParams(key, value)
+            );
+        }
     }
 }
