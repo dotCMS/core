@@ -10,3 +10,7 @@ jobs:
     steps:
       - name: ZenHub link PR to issue
         uses: coblox/zenhub-link-pr-to-issue@v0.1.1
+        with: # Set the secret as an input
+          ZENHUB_TOKEN: ${{ secrets.ZENHUB_TOKEN }}
+        env: # Or as an environment variable
+          ZENHUB_TOKEN: ${{ secrets.ZENHUB_TOKEN }}
