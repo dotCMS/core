@@ -5,8 +5,9 @@ jobs:
     runs-on: ubuntu-latest
     name: Connect PR to Issue
     env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      ZENHUB_TOKEN: ${{ secrets.ZENHUB_TOKEN }}
     steps:
       - name: ZenHub link PR to issue
         uses: coblox/zenhub-link-pr-to-issue@v0.1.1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ZENHUB_TOKEN: ${{ secrets.ZENHUB_TOKEN }}
