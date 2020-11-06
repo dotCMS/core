@@ -1,5 +1,5 @@
 import { Component, OnInit, ViewChild, ElementRef, OnDestroy } from '@angular/core';
-import { DotApps, DotAppsSites } from '@shared/models/dot-apps/dot-apps.model';
+import { dialogAction, DotApps, DotAppsSites } from '@shared/models/dot-apps/dot-apps.model';
 import { ActivatedRoute } from '@angular/router';
 import { pluck, take, debounceTime, takeUntil } from 'rxjs/operators';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
@@ -10,7 +10,7 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { LazyLoadEvent } from 'primeng/api';
 import { PaginatorService } from '@services/paginator';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotAppsExportDialogComponent } from '../dot-apps-export-dialog/dot-apps-export-dialog.component';
+import { DotAppsImportExportDialogComponent } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.component';
 
 @Component({
     selector: 'dot-apps-configuration',
@@ -19,9 +19,11 @@ import { DotAppsExportDialogComponent } from '../dot-apps-export-dialog/dot-apps
 })
 export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
     @ViewChild('searchInput', { static: true }) searchInput: ElementRef;
-    @ViewChild('exportDialog') exportDialog: DotAppsExportDialogComponent;
+    @ViewChild('importExportDialog') importExportDialog: DotAppsImportExportDialogComponent;
     apps: DotApps;
     siteSelected: DotAppsSites;
+    importExportDialogAction = dialogAction.EXPORT;
+    showDialog = false;
 
     hideLoadDataButton: boolean;
     paginationPerPage = 40;
@@ -95,6 +97,15 @@ export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Updates dialog show/hide state
+     *
+     * @memberof DotAppsConfigurationComponent
+     */
+    onClosedDialog(): void {
+        this.showDialog = false;
+    }
+
+    /**
      * Redirects to app configuration listing page
      *
      * @param string key
@@ -111,7 +122,7 @@ export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
      * @memberof DotAppsConfigurationComponent
      */
     confirmExport(site?: DotAppsSites): void {
-        this.exportDialog.showExportDialog = true;
+        this.importExportDialog.show = true;
         this.siteSelected = site;
     }
 

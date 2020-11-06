@@ -1,12 +1,12 @@
 import { Component, OnInit, ViewChild, ElementRef, OnDestroy } from '@angular/core';
-import { debounceTime, pluck, takeUntil } from 'rxjs/operators';
+import { debounceTime, pluck, take, takeUntil } from 'rxjs/operators';
 import { fromEvent as observableFromEvent, Subject } from 'rxjs';
 import { DotApps, DotAppsListResolverData } from '@shared/models/dot-apps/dot-apps.model';
 import * as _ from 'lodash';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { ActivatedRoute } from '@angular/router';
 import { DotAppsService } from '@services/dot-apps/dot-apps.service';
-import { DotAppsExportDialogComponent } from '../dot-apps-export-dialog/dot-apps-export-dialog.component';
+import { DotAppsImportExportDialogComponent } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.component';
 
 @Component({
     selector: 'dot-apps-list',
@@ -15,10 +15,12 @@ import { DotAppsExportDialogComponent } from '../dot-apps-export-dialog/dot-apps
 })
 export class DotAppsListComponent implements OnInit, OnDestroy {
     @ViewChild('searchInput') searchInput: ElementRef;
-    @ViewChild('exportDialog') exportDialog: DotAppsExportDialogComponent;
+    @ViewChild('importExportDialog') importExportDialog: DotAppsImportExportDialogComponent;
     apps: DotApps[];
     appsCopy: DotApps[];
     canAccessPortlet: boolean;
+    importExportDialogAction: string;
+    showDialog = false;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -55,12 +57,22 @@ export class DotAppsListComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Opens the Export dialog for all configurations
+     * Opens the Import/Export dialog for all configurations
      *
      * @memberof DotAppsConfigurationComponent
      */
-    confirmExport(): void {
-        this.exportDialog.showExportDialog = true;
+    confirmImportExport(action: string): void {
+        this.showDialog = true;
+        this.importExportDialogAction = action;
+    }
+
+    /**
+     * Updates dialog show/hide state
+     *
+     * @memberof DotAppsConfigurationComponent
+     */
+    onClosedDialog(): void {
+        this.showDialog = false;
     }
 
     /**
@@ -71,6 +83,20 @@ export class DotAppsListComponent implements OnInit, OnDestroy {
      */
     isExportButtonDisabled(): boolean {
         return this.apps.filter((app: DotApps) => app.configurationsCount).length > 0;
+    }
+
+    /**
+     * Reloads data of all apps configuration listing to update the UI
+     *
+     * @memberof DotAppsListComponent
+     */
+    reloadAppsData(): void {
+        this.dotAppsService
+            .get()
+            .pipe(take(1))
+            .subscribe((apps: DotApps[]) => {
+                this.getApps(apps);
+            });
     }
 
     private getApps(apps: DotApps[]): void {

@@ -18,6 +18,10 @@
     input {
         width: 31.42rem;
     }
+
+    button:first-child {
+        margin-right: $spacing-1;
+    }
 }
 
 .dot-apps__body {

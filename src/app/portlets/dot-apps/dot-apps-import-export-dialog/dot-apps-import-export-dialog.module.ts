@@ -8,7 +8,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotAutofocusModule } from 'projects/dot-rules/src/lib/directives/dot-autofocus/dot-autofocus.module';
 import { ReactiveFormsModule } from '@angular/forms';
-import { DotAppsExportDialogComponent } from './dot-apps-export-dialog.component';
+import { DotAppsImportExportDialogComponent } from './dot-apps-import-export-dialog.component';
 
 @NgModule({
     imports: [
@@ -19,8 +19,8 @@ import { DotAppsExportDialogComponent } from './dot-apps-export-dialog.component
         ReactiveFormsModule,
         DotPipesModule
     ],
-    declarations: [DotAppsExportDialogComponent],
-    exports: [DotAppsExportDialogComponent],
+    declarations: [DotAppsImportExportDialogComponent],
+    exports: [DotAppsImportExportDialogComponent],
     providers: [DotAppsService]
 })
-export class DotAppsExportDialogModule {}
+export class DotAppsImportExportDialogModule {}

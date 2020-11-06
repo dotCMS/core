@@ -15,7 +15,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
 import { MarkdownModule } from 'ngx-markdown';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotAppsExportDialogModule } from '../dot-apps-export-dialog/dot-apps-export-dialog.module';
+import { DotAppsImportExportDialogModule } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.module';
 
 @NgModule({
     imports: [
@@ -27,7 +27,7 @@ import { DotAppsExportDialogModule } from '../dot-apps-export-dialog/dot-apps-ex
         DotCopyButtonModule,
         DotAppsConfigurationHeaderModule,
         DotAppsConfigurationListModule,
-        DotAppsExportDialogModule,
+        DotAppsImportExportDialogModule,
         DotDialogModule,
         DotPipesModule,
         MarkdownModule.forChild()

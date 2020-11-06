@@ -13,7 +13,7 @@
                     <button
                         pButton
                         link
-                        icon="pi pi-external-link"
+                        icon="pi pi-download"
                         class="dot-apps-configuration__action_export_button"
                         [label]="'apps.confirmation.export.all.button' | dm"
                         [disabled]="!apps.configurationsCount"
@@ -42,4 +42,11 @@
     </div>
 </div>
 
-<dot-apps-export-dialog #exportDialog [app]="apps" [site]="siteSelected"></dot-apps-export-dialog>
+<dot-apps-import-export-dialog
+    #importExportDialog
+    [app]="apps"
+    [site]="siteSelected"
+    [action]="importExportDialogAction"
+    [show]="showDialog"
+    (onClose)="onClosedDialog()"
+></dot-apps-import-export-dialog>

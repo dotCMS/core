@@ -51,10 +51,14 @@ class MockDotAppsCardComponent {
 }
 
 @Component({
-    selector: 'dot-apps-export-dialog',
+    selector: 'dot-apps-import-export-dialog',
     template: ''
 })
-class MockDotAppsExportDialogComponent {}
+class MockDotAppsImportExportDialogComponent {
+    @Input() action: string;
+    @Input() show: boolean;
+    @Output() resolved = new EventEmitter<boolean>();
+}
 
 let canAccessPortletResponse = {
     dotAppsListResolverData: {
@@ -74,9 +78,12 @@ describe('DotAppsListComponent', () => {
     let fixture: ComponentFixture<DotAppsListComponent>;
     let routerService: DotRouterService;
     let route: ActivatedRoute;
+    let dotAppsService: DotAppsService;
 
     const messageServiceMock = new MockDotMessageService({
-        'apps.search.placeholder': 'Search'
+        'apps.search.placeholder': 'Search',
+        'apps.confirmation.import.button': 'Import',
+        'apps.confirmation.export.all.button': 'Export'
     });
 
     beforeEach(() => {
@@ -86,7 +93,7 @@ describe('DotAppsListComponent', () => {
                 MockDotAppsCardComponent,
                 MockDotNotLicensedComponent,
                 DotMessagePipe,
-                MockDotAppsExportDialogComponent
+                MockDotAppsImportExportDialogComponent
             ],
             imports: [ButtonModule],
             providers: [
@@ -111,6 +118,7 @@ describe('DotAppsListComponent', () => {
         component = fixture.debugElement.componentInstance;
         routerService = TestBed.inject(DotRouterService);
         route = TestBed.inject(ActivatedRoute);
+        dotAppsService = TestBed.inject(DotAppsService);
     });
 
     describe('With access to portlet', () => {
@@ -153,8 +161,27 @@ describe('DotAppsListComponent', () => {
             const exportAllBtn = fixture.debugElement.query(
                 By.css('.dot-apps-configuration__action_export_button')
             );
-            exportAllBtn.triggerEventHandler('click', null);
-            expect(component.exportDialog.showExportDialog).toBe(true);
+            exportAllBtn.triggerEventHandler('click', 'Export');
+            expect(component.showDialog).toBe(true);
+            expect(component.importExportDialogAction).toBe('Export');
+        });
+
+        it('should open confirm dialog and import configurations', () => {
+            const importBtn = fixture.debugElement.query(
+                By.css('.dot-apps-configuration__action_import_button')
+            );
+            importBtn.triggerEventHandler('click', 'Import');
+            expect(component.showDialog).toBe(true);
+            expect(component.importExportDialogAction).toBe('Import');
+        });
+
+        it('should reload apps data when resolve action from Import/Export dialog', () => {
+            spyOn(dotAppsService, 'get').and.returnValue(of(appsResponse));
+            const importExportDialog = fixture.debugElement.query(
+                By.css('dot-apps-import-export-dialog')
+            );
+            importExportDialog.componentInstance.resolved.emit(true);
+            expect(dotAppsService.get).toHaveBeenCalledTimes(1);
         });
 
         it('should redirect to detail configuration list page when app Card clicked', () => {

@@ -221,7 +221,7 @@ export class CoreWebService {
         const headers = this.getHttpHeaders(options.headers);
         const params = this.getHttpParams(options.params);
         const url = this.getFixedUrl(options.url);
-        let body = <T>options.body || null;
+        const body = <T>options.body || null;
 
         if (
             options.method === 'POST' ||
@@ -249,8 +249,13 @@ export class CoreWebService {
             Object.keys(headers).forEach((key) => {
                 httpHeaders = httpHeaders.set(key, headers[key]);
             });
-        }
 
+            // If Content-Type == 'multipart/form-data' we need to remove Content-Type,
+            // otherwise "boundary" will not be added to Content-Type in the Header
+            if (headers['Content-Type'] === 'multipart/form-data') {
+                httpHeaders = httpHeaders.delete('Content-Type');
+            }
+        }
         return httpHeaders;
     }
 
@@ -281,7 +286,7 @@ export class CoreWebService {
     }
 
     private getDefaultRequestHeaders(): HttpHeaders {
-        let headers = new HttpHeaders()
+        const headers = new HttpHeaders()
             .set('Accept', '*/*')
             .set('Content-Type', 'application/json');
         return headers;
