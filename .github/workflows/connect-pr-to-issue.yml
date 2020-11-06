@@ -8,5 +8,9 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       ZENHUB_TOKEN: ${{ secrets.ZENHUB_TOKEN }}
     steps:
+      - name: Checkout core
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
       - name: ZenHub link PR to issue
         uses: coblox/zenhub-link-pr-to-issue@v0.1.1
