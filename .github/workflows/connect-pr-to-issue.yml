@@ -7,6 +7,7 @@ jobs:
     steps:
       - name: ZenHub link PR to issue
         uses: coblox/zenhub-link-pr-to-issue@v0.1.1
-        with:
+        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
           ZENHUB_TOKEN: ${{ secrets.ZENHUB_TOKEN }}
