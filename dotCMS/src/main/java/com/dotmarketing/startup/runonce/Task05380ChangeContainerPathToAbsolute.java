@@ -21,12 +21,16 @@ import java.util.stream.Collectors;
  */
 public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
 
-    final static String GET_TEMPLATES_QUERY = "SELECT contentlet.title as host_name, template.inode, template.identifier, template.drawed_body, template.body " +
+    final static String GET_TEMPLATES_QUERY = "SELECT contentlet.%s as host_name, template.inode, template.identifier, template.drawed_body, template.body " +
         "FROM identifier " +
             "INNER JOIN template ON identifier.id = template.identifier " +
             "INNER JOIN contentlet_version_info cvi on identifier.host_inode = cvi.identifier " +
             "INNER JOIN contentlet ON cvi.working_inode = contentlet.inode " +
         "WHERE template.drawed_body is not null order by template.inode";
+
+    final static String GET_HOSTNAME_COLUMN = "SELECT field.field_contentlet\n"
+            + "FROM field JOIN structure s ON field.structure_inode = s.inode\n"
+            + "WHERE s.velocity_var_name = 'Host' AND field.velocity_var_name = 'hostName'";
 
     final static String UPDATE_TEMPLATES = "update template set drawed_body = ?, body = ? where inode =?";
 
@@ -105,8 +109,13 @@ public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
     }
 
     private List<Map<String, Object>> getAllDrawedTemplates() throws DotDataException {
+        final Map<String, Object> results = new DotConnect().setSQL(GET_HOSTNAME_COLUMN)
+                .loadObjectResults().get(0);
+
+        final String hostNameColumnName = (String) results.get("field_contentlet");
+
         return new DotConnect()
-                .setSQL(GET_TEMPLATES_QUERY)
+                .setSQL(String.format(GET_TEMPLATES_QUERY,hostNameColumnName))
                 .loadObjectResults();
     }
 }

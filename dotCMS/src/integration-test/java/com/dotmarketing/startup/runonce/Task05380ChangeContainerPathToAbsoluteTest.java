@@ -25,6 +25,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.dotmarketing.startup.runonce.Task05380ChangeContainerPathToAbsolute.GET_HOSTNAME_COLUMN;
+import static com.dotmarketing.startup.runonce.Task05380ChangeContainerPathToAbsolute.GET_TEMPLATES_QUERY;
 import static org.junit.Assert.*;
 
 public class Task05380ChangeContainerPathToAbsoluteTest {
@@ -516,8 +518,13 @@ public class Task05380ChangeContainerPathToAbsoluteTest {
 
         checkTemplateFromDataBase(host, template);
 
+        final Map<String, Object> results = new DotConnect().setSQL(GET_HOSTNAME_COLUMN)
+                .loadObjectResults().get(0);
+
+        final String hostNameColumnName = (String) results.get("field_contentlet");
+
         final boolean anyMatchWithOldName = new DotConnect()
-                .setSQL(Task05380ChangeContainerPathToAbsolute.GET_TEMPLATES_QUERY)
+                .setSQL(String.format(GET_TEMPLATES_QUERY,hostNameColumnName))
                 .loadObjectResults()
                 .stream()
                 .map(templateMap -> templateMap.get("host_name"))
@@ -526,7 +533,7 @@ public class Task05380ChangeContainerPathToAbsoluteTest {
         assertFalse(anyMatchWithOldName);
 
         final long count = new DotConnect()
-                .setSQL(Task05380ChangeContainerPathToAbsolute.GET_TEMPLATES_QUERY)
+                .setSQL(String.format(GET_TEMPLATES_QUERY,hostNameColumnName))
                 .loadObjectResults()
                 .stream()
                 .map(templateMap -> templateMap.get("inode"))
