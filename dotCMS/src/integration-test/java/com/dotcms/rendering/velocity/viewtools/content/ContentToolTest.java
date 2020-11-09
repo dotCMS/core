@@ -428,6 +428,8 @@ public class ContentToolTest extends IntegrationTestBase {
         when(request.getParameter("host_id")).thenReturn(defaultHost.getInode());
         when(request.getParameter("language_id")).thenReturn(String.valueOf(languageId));
         when(request.getSession(false)).thenReturn(session);
+        when(request.getSession(true)).thenReturn(session);
+        when(request.getSession()).thenReturn(session);
         when(request.getParameter(com.dotmarketing.util.WebKeys.PAGE_MODE_PARAMETER)).thenReturn(pageMode.name());
         when(session.getAttribute(com.dotmarketing.util.WebKeys.CMS_USER)).thenReturn(user);
 
