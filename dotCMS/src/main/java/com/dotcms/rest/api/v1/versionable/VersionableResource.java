@@ -35,9 +35,10 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.Optional;
 
 /**
- * Resource to retrieve the versions of different kind of objects.
+ * Resource to interact with versions for Contentlet, Templates, Containers, Links, etc
  * @author jsanca
  */
 @Path("/v1/versionables")
@@ -46,7 +47,6 @@ public class VersionableResource {
     private final WebResource       webResource;
     private final IdentifierAPI     identifierAPI;
     private final VersionableHelper versionableHelper;
-
 
     public VersionableResource() {
         this(new WebResource(), APILocator.getTemplateAPI(),
@@ -101,8 +101,8 @@ public class VersionableResource {
         if (null != identifier && InodeUtils.isSet(identifier.getId())) {
 
             return Response.ok(new ResponseEntityView(
-                    this.versionableHelper.getAssertTypeByVersionableFinderMap().getOrDefault(identifier.getAssetType(),
-                            this.versionableHelper.getDefaultVersionableFinderStrategy())
+                    this.versionableHelper.getAssetTypeByVersionableFindAllMap().getOrDefault(identifier.getAssetType(),
+                            this.versionableHelper.getDefaultVersionableFindAllStrategy())
                             .findAllVersions(identifier, user, mode.respectAnonPerms))).build();
         }
 
@@ -141,11 +141,104 @@ public class VersionableResource {
             throw new DoesNotExistException("The versionable, inode: " + versionableInode + " does not exists");
         }
 
-        this.versionableHelper.getAssertTypeByVersionableDeleteMap().getOrDefault(type,
+        this.versionableHelper.getAssetTypeByVersionableDeleteMap().getOrDefault(type,
                 this.versionableHelper.getDefaultVersionableDeleteStrategy())
                 .deleteVersionByInode(versionableInode, user, mode.respectAnonPerms);
 
         return Response.ok(new ResponseEntityView(true)).build();
     }
 
+    /**
+     * Finds a specific  inode version
+     * If the inode for the version does not exists, 404 is returned
+     * @param httpRequest  {@link HttpServletRequest}
+     * @param httpResponse {@link HttpServletResponse}
+     * @param versionableInode {@link String}
+     * @return Versionable
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @GET
+    @Path("/{versionableInode}")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response findVersion(@Context final HttpServletRequest httpRequest,
+                                     @Context final HttpServletResponse httpResponse,
+                                     @PathParam("versionableInode") final String versionableInode) throws DotDataException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
+        final User user     = initData.getUser();
+        final PageMode mode = PageMode.get(httpRequest);
+        Logger.debug(this, ()-> "Finding the version: " + versionableInode);
+
+        final String type = Try.of(()->InodeUtils.getAssetTypeFromDB(versionableInode)).getOrNull();
+
+        if (null != type) {
+
+            final Optional<VersionableView> versionableOpt = this.versionableHelper
+                    .getAssetTypeByVersionableFinderMap().getOrDefault(type,
+                            this.versionableHelper.getDefaultVersionableFinderStrategy())
+                    .findVersion(versionableInode, user, mode.respectAnonPerms);
+
+            if (versionableOpt.isPresent()) {
+
+                return Response.ok(new ResponseEntityView(versionableOpt.get())).build();
+            }
+        }
+
+        throw new DoesNotExistException("The versionable, inode: " + versionableInode + " does not exists");
+    }
+
+    /**
+     * Bring back to the top a specific version.
+     * If the inode for the version does not exists, 404 is returned
+     * @param httpRequest  {@link HttpServletRequest}
+     * @param httpResponse {@link HttpServletResponse}
+     * @param versionableInode {@link String}
+     * @return List of Versionables
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @GET
+    @Path("/_bringback/{versionableInode}")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response bringBackVersion(@Context final HttpServletRequest httpRequest,
+                                            @Context final HttpServletResponse httpResponse,
+                                            @PathParam("versionableInode") final String versionableInode) throws DotDataException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
+        final User user     = initData.getUser();
+        final PageMode mode = PageMode.get(httpRequest);
+        Logger.debug(this, ()-> "Bringing back to the version: " + versionableInode);
+
+        final String type = Try.of(()->InodeUtils.getAssetTypeFromDB(versionableInode)).getOrNull();
+
+        if (null != type) {
+
+            Optional<VersionableView> versionableOpt = this.versionableHelper
+                    .getAssetTypeByVersionableFinderMap().getOrDefault(type,
+                            this.versionableHelper.getDefaultVersionableFinderStrategy())
+                    .findVersion(versionableInode, user, mode.respectAnonPerms);
+
+            if (versionableOpt.isPresent()) {
+
+                versionableOpt = this.versionableHelper.getAssetTypeByVersionableBringBackMap()
+                        .getOrDefault(type, this.versionableHelper.getDefaultVersionableBringBackStrategy())
+                        .bringBackVersion(versionableOpt.get(), user, mode.respectAnonPerms);
+                if (versionableOpt.isPresent()) {
+
+                    return Response.ok(new ResponseEntityView(versionableOpt.get())).build();
+                }
+            }
+        }
+
+        throw new DoesNotExistException("The versionable, id: " + versionableInode + " does not exists");
+    }
 }

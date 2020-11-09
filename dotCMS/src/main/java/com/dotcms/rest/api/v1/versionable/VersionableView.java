@@ -7,6 +7,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.Date;
 
@@ -78,5 +79,10 @@ public class VersionableView implements Versionable {
         return this.versionable instanceof Contentlet?
                 APILocator.getLanguageAPI().getLanguage(Contentlet.class.cast(this.versionable).getLanguageId()):
                 APILocator.getLanguageAPI().getDefaultLanguage();
+    }
+
+    @JsonIgnore
+    public Versionable getVersionableWrapped() {
+        return this.versionable;
     }
 }

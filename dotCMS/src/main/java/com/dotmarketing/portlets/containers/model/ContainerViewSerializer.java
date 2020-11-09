@@ -43,6 +43,7 @@ public class ContainerViewSerializer extends JsonSerializer<ContainerView> {
         final ObjectWriter objectWriter = MAPPER.writer().withDefaultPrettyPrinter();
         final Map<Object, Object> map = this.asMap(containerView.getContainer());
         map.put("path", containerView.getPath());
+        map.put("identifier", containerView.getPath());
 
         final String json = objectWriter.writeValueAsString(map);
         gen.writeRawValue(json);

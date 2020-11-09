@@ -1,6 +1,5 @@
 package com.dotcms.rest.api.v1.template;
 
-import com.beust.jcommander.internal.Maps;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.rest.InitDataObject;
@@ -59,6 +58,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -169,7 +169,7 @@ public class TemplateResource {
 
         Logger.debug(this, ()-> "Getting the List of templates");
 
-        final Map<String, Object> extraParams = Maps.newHashMap();
+        final Map<String, Object> extraParams = new HashMap<>();
         extraParams.put(ARCHIVE_PARAM, archive);
         checkedHostId.ifPresent(checkedHostIdentifier -> extraParams.put(ContainerPaginator.HOST_PARAMETER_ID, checkedHostIdentifier));
         return this.paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy, OrderDirection.valueOf(direction),

@@ -5627,7 +5627,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         categoryAPI.setParents(toContentlet, categories, APILocator.systemUser(), respect);
     }
 
-    @CloseDBIfOpened
+    @WrapInTransaction
     @Override
     public void restoreVersion(Contentlet contentlet, User user,boolean respectFrontendRoles) throws DotSecurityException, DotContentletStateException, DotDataException {
         if(contentlet.getInode().equals(""))
