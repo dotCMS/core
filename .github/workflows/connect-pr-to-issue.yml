@@ -8,6 +8,9 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: GITHUB CONTEXT
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
       - name: ZenHub link PR to issue
         uses: coblox/zenhub-link-pr-to-issue@v0.1.1
         with:
