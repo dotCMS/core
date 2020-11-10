@@ -2,7 +2,7 @@
 
 echo ""
 echo "========================================================================================================"
-echo "Executing... [newman run <collection> -reporters cli,htmlextra --reporter-htmlextra-export] <report file>"
+echo "Executing... [newman run <collection> -reporters cli,html --reporter-html-export] <report file>"
 echo "========================================================================================================"
 echo ""
 
@@ -26,7 +26,7 @@ do
   resultFile="${reportFolder}/${page}"
 
   # actual running of postman tests for current collection
-  newman run "$f" -e ${postmanEnvFile} --reporters cli,htmlextra --reporter-htmlextra-export $resultFile
+  newman run "$f" -e ${postmanEnvFile} --reporters cli,html --reporter-html-export $resultFile
 
   # handle collection results
   if [[ $? == 0 ]]; then
