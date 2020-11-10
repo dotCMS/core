@@ -7,12 +7,7 @@ import { DotTemplateListModule } from '@portlets/dot-templates/dot-template-list
 
 @NgModule({
     declarations: [],
-    imports: [
-        CommonModule,
-        DotTemplatesRoutingModule,
-        DotTemplatesRoutingModule,
-        DotTemplateListModule
-    ],
+    imports: [CommonModule, DotTemplatesRoutingModule, DotTemplateListModule],
     providers: [DotTemplatesService]
 })
 export class DotTemplatesModule {}

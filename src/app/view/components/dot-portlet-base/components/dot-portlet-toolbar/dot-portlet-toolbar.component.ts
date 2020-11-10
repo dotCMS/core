@@ -1,10 +1,11 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
 import { DotPortletToolbarActions } from '@shared/models/dot-portlet-toolbar.model/dot-portlet-toolbar-actions.model';
 
 @Component({
     selector: 'dot-portlet-toolbar',
     templateUrl: './dot-portlet-toolbar.component.html',
-    styleUrls: ['./dot-portlet-toolbar.component.scss']
+    styleUrls: ['./dot-portlet-toolbar.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotPortletToolbarComponent implements OnInit {
     @Input() title: string;

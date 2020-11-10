@@ -4,8 +4,8 @@
     [(ngModel)]="value"
     class="dot-layout-designer__sidebar-properties"
 ></dot-sidebar-properties>
-<dot-container-selector
+<dot-container-selector-layout
     (change)="updateAndPropagate($event)"
     [data]="containers"
     [multiple]="true"
-></dot-container-selector>
+></dot-container-selector-layout>

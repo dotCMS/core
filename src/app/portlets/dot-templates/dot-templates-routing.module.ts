@@ -20,6 +20,13 @@ const routes: Routes = [
             ).then((m) => m.DotTemplateDesignerModule)
     },
     {
+        path: 'new/advanced',
+        loadChildren: () =>
+            import(
+                '@portlets/dot-templates/dot-template-advanced/dot-template-advanced.module'
+            ).then((m) => m.DotTemplateModule)
+    },
+    {
         path: ':inode',
         loadChildren: () =>
             import(

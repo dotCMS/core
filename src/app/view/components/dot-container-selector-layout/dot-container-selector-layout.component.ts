@@ -1,17 +1,19 @@
 import { DotContainer } from '@models/container/dot-container.model';
 import { PaginatorService } from '@services/paginator/paginator.service';
 import { Component, OnInit, Output, EventEmitter, Input } from '@angular/core';
+import { DotContainerColumnBox } from '@portlets/dot-edit-page/shared/models/dot-container-column-box.model';
 import { TemplateContainersCacheService } from '@portlets/dot-edit-page/template-containers-cache.service';
-import { DotContainerColumnBox } from '@portlets/dot-edit-page/shared/models';
 
 @Component({
-    selector: 'dot-container-selector',
-    templateUrl: './dot-container-selector.component.html',
-    styleUrls: ['./dot-container-selector.component.scss']
+    selector: 'dot-container-selector-layout',
+    templateUrl: './dot-container-selector-layout.component.html',
+    styleUrls: ['./dot-container-selector-layout.component.scss']
 })
-export class DotContainerSelectorComponent implements OnInit {
-    @Output() change: EventEmitter<DotContainer> = new EventEmitter();
+export class DotContainerSelectorLayoutComponent implements OnInit {
     @Input() data: DotContainerColumnBox[] = [];
+    @Input() multiple: boolean;
+    @Output() change: EventEmitter<DotContainerColumnBox[]> = new EventEmitter();
+
     totalRecords: number;
     currentContainers: DotContainer[] = [];
 
@@ -28,17 +30,22 @@ export class DotContainerSelectorComponent implements OnInit {
      * Called when the selected site changed and the change event is emmited
      *
      * @param DotContainer container
-     * @memberof DotContainerSelectorComponent
+     * @memberof DotContainerSelectorLayoutComponent
      */
     containerChange(container: DotContainer): void {
-        this.change.emit(container);
+        if (this.multiple || !this.isContainerSelected(container)) {
+            this.data.push({
+                container: container
+            });
+            this.change.emit(this.data);
+        }
     }
 
     /**
      * Call to handle filter containers from list
      *
      * @param string filter
-     * @memberof DotContainerSelectorComponent
+     * @memberof DotContainerSelectorLayoutComponent
      */
     handleFilterChange(filter: string): void {
         this.getContainersList(filter);
@@ -47,10 +54,33 @@ export class DotContainerSelectorComponent implements OnInit {
     /**
      * Call when the current page changed
      * @param any event
-     * @memberof DotContainerSelectorComponent
+     * @memberof DotContainerSelectorLayoutComponent
      */
     handlePageChange(event: any): void {
         this.getContainersList(event.filter, event.first);
+    }
+
+    /**
+     * Remove container item from selected containers and emit selected containers
+     * @param number i
+     * @memberof DotContainerSelectorLayoutComponent
+     */
+    removeContainerItem(i: number): void {
+        this.data.splice(i, 1);
+        this.change.emit(this.data);
+    }
+
+    /**
+     * Check if a container was already added to the list
+     *
+     * @param DotContainer container
+     * @returns boolean
+     * @memberof DotContainerSelectorLayoutComponent
+     */
+    isContainerSelected(dotContainer: DotContainer): boolean {
+        return this.data.some(
+            (containerItem) => containerItem.container.identifier === dotContainer.identifier
+        );
     }
 
     private getContainersList(filter = '', offset = 0): void {

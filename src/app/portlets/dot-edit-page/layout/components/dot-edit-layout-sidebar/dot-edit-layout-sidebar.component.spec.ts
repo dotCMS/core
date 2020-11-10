@@ -3,7 +3,7 @@ import { By } from '@angular/platform-browser';
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
-import { DotContainerSelectorModule } from '@components/dot-container-selector/dot-container-selector.module';
+import { DotContainerSelectorLayoutModule } from '@components/dot-container-selector-layout/dot-container-selector-layout.module';
 import { DotEditLayoutSidebarComponent } from './dot-edit-layout-sidebar.component';
 import { FormControl, FormGroup } from '@angular/forms';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
@@ -51,7 +51,7 @@ describe('DotEditLayoutSidebarComponent', () => {
         DOTTestBed.configureTestingModule({
             declarations: [DotEditLayoutSidebarComponent, TestHostComponent],
             imports: [
-                DotContainerSelectorModule,
+                DotContainerSelectorLayoutModule,
                 BrowserAnimationsModule,
                 DotSidebarPropertiesModule
             ],

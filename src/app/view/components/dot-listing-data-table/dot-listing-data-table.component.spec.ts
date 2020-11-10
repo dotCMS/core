@@ -31,8 +31,7 @@ import { FormsModule } from '@angular/forms';
 
 @Component({
     selector: 'dot-test-host-component',
-    template: `
-    <dot-listing-data-table
+    template: ` <dot-listing-data-table
         [columns]="columns"
         [url]="url"
         [actionHeaderOptions]="actionHeaderOptions"
@@ -48,7 +47,7 @@ import { FormsModule } from '@angular/forms';
         [paginatorExtraParams]="paginatorExtraParams"
         (rowWasClicked)="rowWasClicked($event)"
         (selectedItems)="selectedItems($event)"
-       ></dot-listing-data-table>`
+    ></dot-listing-data-table>`
 })
 class TestHostComponent {
     @Input() columns: DataTableColumn[];
@@ -225,55 +224,50 @@ describe('DotListingDataTableComponent', () => {
         expect(globalSearch.nativeElement).toBe(document.activeElement);
     });
 
-    it(
-        'renderer basic datatable component',
-        fakeAsync(() => {
-            spyOn(paginatorService, 'getWithOffset').and.returnValue(of(items));
-            hostComponent.multipleSelection = true;
+    it('renderer basic datatable component', fakeAsync(() => {
+        spyOn(paginatorService, 'getWithOffset').and.returnValue(of(items));
+        hostComponent.multipleSelection = true;
 
-            hostFixture.detectChanges();
-            tick(1);
-            hostFixture.detectChanges();
-            const rows = el.querySelectorAll('tr');
-            expect(8).toEqual(rows.length);
+        hostFixture.detectChanges();
+        tick(1);
+        hostFixture.detectChanges();
+        const rows = el.querySelectorAll('tr');
+        expect(8).toEqual(rows.length);
 
-            const headers = rows[0].querySelectorAll('th');
-            expect(5).toEqual(headers.length);
+        const headers = rows[0].querySelectorAll('th');
+        expect(5).toEqual(headers.length);
 
-            hostComponent.columns.forEach((_col, index) => {
-                const sortableIcon = headers[index].querySelector('p-sortIcon');
-                index === 0 ? expect(sortableIcon).toBeDefined() : expect(sortableIcon).toBeNull();
-                expect(hostComponent.columns[index].header).toEqual(
-                    headers[index].textContent.trim()
-                );
-            });
+        hostComponent.columns.forEach((_col, index) => {
+            const sortableIcon = headers[index].querySelector('p-sortIcon');
+            index === 0 ? expect(sortableIcon).toBeDefined() : expect(sortableIcon).toBeNull();
+            expect(hostComponent.columns[index].header).toEqual(headers[index].textContent.trim());
+        });
 
-            rows.forEach((row, rowIndex) => {
-                if (rowIndex) {
-                    const cells = row.querySelectorAll('td');
-                    const item = items[rowIndex - 1];
-                    cells.forEach((_cell, cellIndex) => {
-                        if (cellIndex < 3) {
-                            expect(cells[cellIndex].querySelector('span').textContent).toContain(
-                                item[hostComponent.columns[cellIndex].fieldName]
-                            );
-                        }
-                        if (cellIndex === 3) {
-                            const anchor = cells[cellIndex].querySelector('a');
-                            expect(anchor.textContent).toContain(
-                                `View (${item[hostComponent.columns[cellIndex].fieldName]})`
-                            );
-                            expect(anchor.href).toContain(
-                                item.variable === 'Host' ? '/c/sites' : '/c/content?filter=Banner'
-                            );
-                        }
-                    });
-                }
-            });
+        rows.forEach((row, rowIndex) => {
+            if (rowIndex) {
+                const cells = row.querySelectorAll('td');
+                const item = items[rowIndex - 1];
+                cells.forEach((_cell, cellIndex) => {
+                    if (cellIndex < 3) {
+                        expect(cells[cellIndex].querySelector('span').textContent).toContain(
+                            item[hostComponent.columns[cellIndex].fieldName]
+                        );
+                    }
+                    if (cellIndex === 3) {
+                        const anchor = cells[cellIndex].querySelector('a');
+                        expect(anchor.textContent).toContain(
+                            `View (${item[hostComponent.columns[cellIndex].fieldName]})`
+                        );
+                        expect(anchor.href).toContain(
+                            item.variable === 'Host' ? '/c/sites' : '/c/content?filter=Banner'
+                        );
+                    }
+                });
+            }
+        });
 
-            expect(hostComponent.url).toEqual(paginatorService.url);
-        })
-    );
+        expect(hostComponent.url).toEqual(paginatorService.url);
+    }));
 
     it('should not call paginatorService when firstPageData comes', () => {
         spyOn(paginatorService, 'getWithOffset');
@@ -283,72 +277,64 @@ describe('DotListingDataTableComponent', () => {
         expect(paginatorService.getWithOffset).not.toHaveBeenCalled();
     });
 
-    it(
-        'renderer with format date column',
-        fakeAsync(() => {
-            const dotStringFormatPipe = new DotStringFormatPipe();
-            const itemsWithFormat = items.map(item => {
-                item.field3 = 1496178801000;
-                return item;
-            });
-            spyOn(paginatorService, 'getWithOffset').and.returnValue(of(itemsWithFormat));
-            hostComponent.columns[2].format = 'date';
-            hostComponent.multipleSelection = true;
+    it('renderer with format date column', fakeAsync(() => {
+        const dotStringFormatPipe = new DotStringFormatPipe();
+        const itemsWithFormat = items.map((item) => {
+            item.field3 = 1496178801000;
+            return item;
+        });
+        spyOn(paginatorService, 'getWithOffset').and.returnValue(of(itemsWithFormat));
+        hostComponent.columns[2].format = 'date';
+        hostComponent.multipleSelection = true;
 
-            hostFixture.detectChanges();
-            tick(1);
-            hostFixture.detectChanges();
+        hostFixture.detectChanges();
+        tick(1);
+        hostFixture.detectChanges();
 
-            const rows = el.querySelectorAll('tr');
-            expect(8).toEqual(rows.length, 'tr');
+        const rows = el.querySelectorAll('tr');
+        expect(8).toEqual(rows.length, 'tr');
 
-            const headers = rows[0].querySelectorAll('th');
-            expect(5).toEqual(headers.length, 'th');
+        const headers = rows[0].querySelectorAll('th');
+        expect(5).toEqual(headers.length, 'th');
 
-            hostComponent.columns.forEach((_col, index) =>
-                expect(hostComponent.columns[index].header).toEqual(
-                    headers[index].textContent.trim()
-                )
-            );
+        hostComponent.columns.forEach((_col, index) =>
+            expect(hostComponent.columns[index].header).toEqual(headers[index].textContent.trim())
+        );
 
-            rows.forEach((row, rowIndex) => {
-                if (rowIndex) {
-                    const cells = row.querySelectorAll('td');
-                    const item = items[rowIndex - 1];
+        rows.forEach((row, rowIndex) => {
+            if (rowIndex) {
+                const cells = row.querySelectorAll('td');
+                const item = items[rowIndex - 1];
 
-                    cells.forEach((_cell, cellIndex) => {
-                        if (cellIndex < 4) {
-                            const textContent = cells[cellIndex].textContent;
-                            const itemContent = comp.columns[cellIndex].textContent
-                                ? dotStringFormatPipe.transform(
-                                      hostComponent.columns[cellIndex].textContent,
-                                      [item[comp.columns[cellIndex].fieldName]]
-                                  )
-                                : item[comp.columns[cellIndex].fieldName];
-                            expect(textContent).toContain(itemContent);
-                        }
-                    });
-                }
-            });
+                cells.forEach((_cell, cellIndex) => {
+                    if (cellIndex < 4) {
+                        const textContent = cells[cellIndex].textContent;
+                        const itemContent = comp.columns[cellIndex].textContent
+                            ? dotStringFormatPipe.transform(
+                                  hostComponent.columns[cellIndex].textContent,
+                                  [item[comp.columns[cellIndex].fieldName]]
+                              )
+                            : item[comp.columns[cellIndex].fieldName];
+                        expect(textContent).toContain(itemContent);
+                    }
+                });
+            }
+        });
 
-            expect(hostComponent.url).toEqual(paginatorService.url);
-        })
-    );
+        expect(hostComponent.url).toEqual(paginatorService.url);
+    }));
 
-    it(
-        'should renderer table without checkbox',
-        fakeAsync(() => {
-            spyOn(paginatorService, 'getWithOffset').and.returnValue(of(items));
-            hostFixture.detectChanges();
-            tick(1);
-            hostFixture.detectChanges();
-            const rows = el.querySelectorAll('tr');
-            expect(8).toEqual(rows.length);
+    it('should renderer table without checkbox', fakeAsync(() => {
+        spyOn(paginatorService, 'getWithOffset').and.returnValue(of(items));
+        hostFixture.detectChanges();
+        tick(1);
+        hostFixture.detectChanges();
+        const rows = el.querySelectorAll('tr');
+        expect(8).toEqual(rows.length);
 
-            const headers = rows[0].querySelectorAll('th');
-            expect(5).toEqual(headers.length);
-        })
-    );
+        const headers = rows[0].querySelectorAll('th');
+        expect(5).toEqual(headers.length);
+    }));
 
     it('should add a column if actions are received', () => {
         const fakeActions: DotActionMenuItem[] = [
@@ -372,81 +358,67 @@ describe('DotListingDataTableComponent', () => {
         expect(rows[0].cells.length).toEqual(5);
     });
 
-    it(
-        'should receive an action an execute the command after clickling over the action button',
-        fakeAsync(() => {
-            const fakeActions: DotActionMenuItem[] = [
-                {
-                    menuItem: {
-                        icon: 'fa fa-trash',
-                        label: 'Remove',
-                        command: () => {}
-                    }
+    it('should receive an action an execute the command after clickling over the action button', fakeAsync(() => {
+        const fakeActions: DotActionMenuItem[] = [
+            {
+                menuItem: {
+                    icon: 'fa fa-trash',
+                    label: 'Remove',
+                    command: () => {}
                 }
-            ];
-            spyOn(paginatorService, 'getWithOffset').and.returnValue(of(items));
+            }
+        ];
+        spyOn(paginatorService, 'getWithOffset').and.returnValue(of(items));
 
-            hostComponent.actions = fakeActions;
+        hostComponent.actions = fakeActions;
 
-            hostFixture.detectChanges();
-            tick(1);
-            hostFixture.detectChanges();
-            const actionButton = de.query(By.css('dot-action-menu-button'));
+        hostFixture.detectChanges();
+        tick(1);
+        hostFixture.detectChanges();
+        const actionButton = de.query(By.css('dot-action-menu-button'));
 
-            const spy = spyOn(fakeActions[0].menuItem, 'command');
+        const spy = spyOn(fakeActions[0].menuItem, 'command');
 
-            actionButton.nativeElement.children[0].click();
+        actionButton.nativeElement.children[0].click();
 
-            expect(spy).toHaveBeenCalled();
-        })
-    );
+        expect(spy).toHaveBeenCalled();
+    }));
 
-    it(
-        'should show the loading indicator while the data is received',
-        fakeAsync(() => {
-            expect(comp.loading).toEqual(true);
-            spyOn(paginatorService, 'getCurrentPage').and.returnValue(of(items));
-            hostFixture.detectChanges();
-            tick(1);
-            hostFixture.detectChanges();
-            comp.loadCurrentPage();
-            tick(1);
-            expect(comp.loading).toEqual(false);
-        })
-    );
+    it('should show the loading indicator while the data is received', fakeAsync(() => {
+        expect(comp.loading).toEqual(true);
+        spyOn(paginatorService, 'getCurrentPage').and.returnValue(of(items));
+        hostFixture.detectChanges();
+        tick(1);
+        hostFixture.detectChanges();
+        comp.loadCurrentPage();
+        tick(1);
+        expect(comp.loading).toEqual(false);
+    }));
 
-    it(
-        'should load first page of resutls and set pagination to 1',
-        fakeAsync(() => {
-            spyOn(paginatorService, 'get').and.returnValue(of(items));
-            hostFixture.detectChanges();
-            tick(1);
-            hostFixture.detectChanges();
-            comp.dataTable.first = 3;
-            comp.loadFirstPage();
-            tick(1);
-            expect(comp.dataTable.first).toBe(1);
-            expect(comp.items.length).toBe(7);
-        })
-    );
+    it('should load first page of resutls and set pagination to 1', fakeAsync(() => {
+        spyOn(paginatorService, 'get').and.returnValue(of(items));
+        hostFixture.detectChanges();
+        tick(1);
+        hostFixture.detectChanges();
+        comp.dataTable.first = 3;
+        comp.loadFirstPage();
+        tick(1);
+        expect(comp.dataTable.first).toBe(1);
+        expect(comp.items.length).toBe(7);
+    }));
 
-    it(
-        'should focus first row on arrowDown in Global Search Input',
-        fakeAsync(() => {
-            spyOn(comp, 'focusFirstRow').and.callThrough();
-            spyOn(paginatorService, 'get').and.returnValue(of(items));
-            comp.loadFirstPage();
-            hostFixture.detectChanges();
-            tick(1);
-            hostFixture.detectChanges();
-            comp.globalSearch.nativeElement.dispatchEvent(
-                new KeyboardEvent('keydown', { key: 'arrowDown' })
-            );
-            expect(comp.dataTable.tableViewChild.nativeElement.rows[1]).toBe(
-                document.activeElement
-            );
-        })
-    );
+    it('should focus first row on arrowDown in Global Search Input', fakeAsync(() => {
+        spyOn(comp, 'focusFirstRow').and.callThrough();
+        spyOn(paginatorService, 'get').and.returnValue(of(items));
+        comp.loadFirstPage();
+        hostFixture.detectChanges();
+        tick(1);
+        hostFixture.detectChanges();
+        comp.globalSearch.nativeElement.dispatchEvent(
+            new KeyboardEvent('keydown', { key: 'arrowDown' })
+        );
+        expect(comp.dataTable.tableViewChild.nativeElement.rows[1]).toBe(document.activeElement);
+    }));
 
     it('should set the pagination size in the Table', () => {
         spyOn(paginatorService, 'get').and.returnValue(of(items));
@@ -466,37 +438,32 @@ describe('DotListingDataTableComponent', () => {
         expect(comp.paginatorService.extraParams.get('name')).toEqual('DotCMS');
     });
 
-    it(
-        'should emit when a row is clicked or enter',
-        fakeAsync(() => {
-            spyOn(paginatorService, 'get').and.returnValue(of(items));
-            spyOn(comp.rowWasClicked, 'emit');
-            comp.loadFirstPage();
-            hostFixture.detectChanges();
-            tick(1);
-            hostFixture.detectChanges();
-            const firstRow: DebugElement = de.queryAll(By.css('tr'))[1];
-            firstRow.triggerEventHandler('click', null);
-            firstRow.triggerEventHandler('keyup.enter', null);
+    it('should emit when a row is clicked or enter', fakeAsync(() => {
+        spyOn(paginatorService, 'get').and.returnValue(of(items));
+        spyOn(comp.rowWasClicked, 'emit');
+        comp.loadFirstPage();
+        hostFixture.detectChanges();
+        tick(1);
+        hostFixture.detectChanges();
+        const firstRow: DebugElement = de.queryAll(By.css('tr'))[1];
+        firstRow.triggerEventHandler('click', null);
+        firstRow.triggerEventHandler('keyup.enter', null);
 
-            expect(comp.rowWasClicked.emit).toHaveBeenCalledTimes(2);
-        })
-    );
+        expect(comp.rowWasClicked.emit).toHaveBeenCalledTimes(2);
+    }));
 
     describe('with checkBox', () => {
         let bodyCheckboxes: DebugElement[];
 
-        beforeEach(
-            fakeAsync(() => {
-                spyOn(paginatorService, 'getWithOffset').and.returnValue(of(items));
-                hostComponent.checkbox = true;
+        beforeEach(fakeAsync(() => {
+            spyOn(paginatorService, 'getWithOffset').and.returnValue(of(items));
+            hostComponent.checkbox = true;
 
-                hostFixture.detectChanges();
-                tick(1);
-                hostFixture.detectChanges();
-                bodyCheckboxes = de.queryAll(By.css('p-tablecheckbox'));
-            })
-        );
+            hostFixture.detectChanges();
+            tick(1);
+            hostFixture.detectChanges();
+            bodyCheckboxes = de.queryAll(By.css('p-tablecheckbox'));
+        }));
 
         it('should renderer table', () => {
             const headerCheckBoxes = el.querySelectorAll('p-tableheadercheckbox');

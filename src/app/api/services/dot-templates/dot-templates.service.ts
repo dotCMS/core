@@ -26,11 +26,7 @@ export class DotTemplatesService {
      */
     get(): Observable<DotTemplate[]> {
         const url = '/api/v1/templates';
-        return this.coreWebService
-            .requestView<DotTemplate[]>({
-                url
-            })
-            .pipe(pluck('entity'));
+        return this.request<DotTemplate[]>({ url });
     }
 
     /**
@@ -66,12 +62,13 @@ export class DotTemplatesService {
 
     /**
      * Creates a template
-     * @returns Observable<DotTemplate>
+     *
+     * @param {DotTemplate} values
+     * @return Observable<DotTemplate>
      * @memberof DotTemplatesService
      */
     create(values: DotTemplate): Observable<DotTemplate> {
         const url = '/api/v1/templates';
-
         return this.request<DotTemplate>({ method: 'POST', url, body: values });
     }
 

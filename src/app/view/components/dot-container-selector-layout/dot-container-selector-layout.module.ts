@@ -2,24 +2,25 @@ import { ButtonModule } from 'primeng/button';
 import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { DotContainerSelectorComponent } from './dot-container-selector.component';
+import { DotContainerSelectorLayoutComponent } from './dot-container-selector-layout.component';
 import { NgModule } from '@angular/core';
 import { PaginatorService } from '@services/paginator';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
-import { TemplateContainersCacheService } from '@portlets/dot-edit-page/template-containers-cache.service';
+import { DotContainerSelectorModule } from '@components/dot-container-selector/dot-container-selector.module';
 
 @NgModule({
-    declarations: [DotContainerSelectorComponent],
-    exports: [DotContainerSelectorComponent],
+    declarations: [DotContainerSelectorLayoutComponent],
+    exports: [DotContainerSelectorLayoutComponent],
     imports: [
         CommonModule,
         FormsModule,
         ButtonModule,
         SearchableDropDownModule,
         DotPipesModule,
-        DotIconButtonModule
+        DotIconButtonModule,
+        DotContainerSelectorModule
     ],
-    providers: [PaginatorService, TemplateContainersCacheService]
+    providers: [PaginatorService]
 })
-export class DotContainerSelectorModule {}
+export class DotContainerSelectorLayoutModule {}

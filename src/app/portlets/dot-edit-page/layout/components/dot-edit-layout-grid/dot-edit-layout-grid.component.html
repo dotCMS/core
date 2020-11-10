@@ -17,13 +17,13 @@
         *ngFor="let gridBox of grid.boxes; let i = index"
         [(ngGridItem)]="gridBox.config"
     >
-        <dot-container-selector
+        <dot-container-selector-layout
             (change)="propagateGridLayoutChange($event)"
             (remove)="onRemoveContainer(i)"
             [data]="gridBox.containers"
             [multiple]="true"
         >
-        </dot-container-selector>
+        </dot-container-selector-layout>
         <div class="box__actions">
             <dot-icon-button-tooltip
                 class="box__add-box-class-button"

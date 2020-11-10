@@ -4,7 +4,7 @@ import { Component, DebugElement, Input, HostBinding, Output, EventEmitter } fro
 import { ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
-import { DotContainerSelectorModule } from '@components/dot-container-selector/dot-container-selector.module';
+import { DotContainerSelectorLayoutModule } from '@components/dot-container-selector-layout/dot-container-selector-layout.module';
 import { DotEditLayoutGridComponent } from './dot-edit-layout-grid.component';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { FormControl, FormGroup } from '@angular/forms';
@@ -118,7 +118,7 @@ describe('DotEditLayoutGridComponent', () => {
             ],
             imports: [
                 NgGridModule,
-                DotContainerSelectorModule,
+                DotContainerSelectorLayoutModule,
                 BrowserAnimationsModule,
                 DotIconButtonTooltipModule,
                 DotAutofocusModule
@@ -317,7 +317,7 @@ describe('DotEditLayoutGridComponent', () => {
     });
 
     it('should be multiple true on dot-container-selector', () => {
-        const containerSelector = de.query(By.css('dot-container-selector'));
+        const containerSelector = de.query(By.css('dot-container-selector-layout'));
         expect(containerSelector.attributes['ng-reflect-multiple']).toBeTruthy();
     });
 
