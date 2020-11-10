@@ -11,6 +11,7 @@ jobs:
       - name: GITHUB CONTEXT
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
       - name: ZenHub link PR to issue
         uses: coblox/zenhub-link-pr-to-issue@v0.1.1
         with:
