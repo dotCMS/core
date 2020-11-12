@@ -36,7 +36,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.PageContext;
 
-import com.dotmarketing.startup.runonce.Task201102UpdateColumnSitelicTable;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.beanutils.SuppressPropertiesBeanIntrospector;
 import org.apache.commons.logging.Log;
@@ -121,11 +120,6 @@ public class MainServlet extends ActionServlet {
       try {
         StartupTasksExecutor.getInstance().executeStartUpTasks();
         StartupTasksExecutor.getInstance().executeUpgrades();
-
-        final Task201102UpdateColumnSitelicTable siteLicenseTask = new Task201102UpdateColumnSitelicTable();
-        if (siteLicenseTask.forceRun()) {
-          siteLicenseTask.executeUpgrade();
-        }
 
         final Task00030ClusterInitialize clusterInitializeTask = new Task00030ClusterInitialize();
         if(clusterInitializeTask.forceRun()){
