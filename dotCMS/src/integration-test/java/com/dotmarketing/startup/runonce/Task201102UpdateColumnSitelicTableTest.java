@@ -12,6 +12,11 @@ import java.sql.SQLException;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+/**
+ * Upgrade task to update sitelic table structure in order to keep track of server uniqueness.
+ *
+ * @author victor
+ */
 public class Task201102UpdateColumnSitelicTableTest {
 
     @BeforeClass
