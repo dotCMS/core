@@ -133,7 +133,7 @@ public class MainServlet extends ActionServlet {
       }
 
       // Update license with server start time
-      LicenseManager.getInstance().updateLicenseStartTime();
+      LicenseManager.getInstance().updateServerStartTime();
 
       HashSet<String> suppressProperties = new HashSet<>();
       suppressProperties.add("class");
