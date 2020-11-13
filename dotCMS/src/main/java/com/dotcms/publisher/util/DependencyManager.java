@@ -185,6 +185,7 @@ public class DependencyManager {
 		for (PublishQueueElement asset : assets) {
 			//Check if the asset.Type is in the excludeClasses filter, if it is, the asset is not added to the bundle
 			if(publisherFilter.doesExcludeClassesContainsType(asset.getType())){
+				Logger.info(getClass(),"Asset Id: " + asset.getAsset() +  " will not be added to the bundle since it's type: " + asset.getType() + " must be excluded according to the filter");
 				continue;
 			}
 
@@ -195,7 +196,7 @@ public class DependencyManager {
 					if(st == null) {
 						Logger.warn(getClass(), "Structure id: "+ (asset.getAsset() != null ? asset.getAsset() : "N/A") +" does NOT have working or live version, not Pushed");
 					} else {
-						contentTypes.add(asset.getAsset(), st.getModDate());
+						contentTypes.add(asset.getAsset(), st.getModDate(),true);
 						contentTypesSet.add(asset.getAsset());
 					}
 
@@ -213,7 +214,7 @@ public class DependencyManager {
 					if(t == null || !UtilMethods.isSet(t.getIdentifier())) {
 						Logger.warn(getClass(), "Template id: "+ (asset.getAsset() != null ? asset.getAsset() : "N/A") +" does NOT have working or live version, not Pushed");
 					} else {
-						templates.add(asset.getAsset(), t.getModDate());
+						templates.add(asset.getAsset(), t.getModDate(),true);
 						templatesSet.add(asset.getAsset());
 					}
 
@@ -237,7 +238,7 @@ public class DependencyManager {
 					if(c == null) {
 						Logger.warn(getClass(), "Container id: "+ (asset.getAsset() != null ? asset.getAsset() : "N/A") +" does NOT have working or live version, not Pushed");
 					} else {
-						containers.add(asset.getAsset(), c.getModDate());
+						containers.add(asset.getAsset(), c.getModDate(),true);
 						containersSet.add(asset.getAsset());
 					}
 
@@ -251,7 +252,7 @@ public class DependencyManager {
 					if(f == null){
 						Logger.warn(getClass(), "Folder id: "+ (asset.getAsset() != null ? asset.getAsset() : "N/A") +" does NOT have working or live version, not Pushed");
 					} else {
-						folders.add(asset.getAsset(), f.getModDate());
+						folders.add(asset.getAsset(), f.getModDate(),true);
 						foldersSet.add(asset.getAsset());
 					}
 
@@ -265,7 +266,7 @@ public class DependencyManager {
 					if(h == null){
 						Logger.warn(getClass(), "Host id: "+ (asset.getAsset() != null ? asset.getAsset() : "N/A") +" does NOT have working or live version, not Pushed");
 					} else {
-						hosts.add(asset.getAsset(), h.getModDate());
+						hosts.add(asset.getAsset(), h.getModDate(),true);
 						hostsSet.add(asset.getAsset());
 					}
 
@@ -283,7 +284,7 @@ public class DependencyManager {
 					if(link == null || !InodeUtils.isSet(link.getInode())) {
 						Logger.warn(getClass(), "Link id: "+ (asset.getAsset() != null ? asset.getAsset() : "N/A") +" does NOT have working or live version, not Pushed");
 					} else {
-						links.add(asset.getAsset(),link.getModDate());
+						links.add(asset.getAsset(),link.getModDate(),true);
 						linksSet.add(asset.getAsset());
 					}
 
@@ -296,7 +297,7 @@ public class DependencyManager {
 				if(scheme == null){
 					Logger.warn(getClass(), "WorkflowScheme id: "+ (asset.getAsset() != null ? asset.getAsset() : "N/A") +" does NOT have working or live version, not Pushed");
 				} else {
-					workflows.add(asset.getAsset(),scheme.getModDate());
+					workflows.add(asset.getAsset(),scheme.getModDate(),true);
 				}
 			} else if (asset.getType().equals(PusheableAsset.LANGUAGE.getType())) {
 				Language language = APILocator.getLanguageAPI()
@@ -331,7 +332,7 @@ public class DependencyManager {
 	            final Identifier ident = APILocator.getIdentifierAPI().find(id);
 	            final List<Contentlet> contentlets = APILocator.getContentletAPI().findAllVersions(ident, false, user, false);
 				for(Contentlet con : contentlets){
-					contents.add(con.getIdentifier(), con.getModDate());
+					contents.add(con.getIdentifier(), con.getModDate(),true);
 					contentsSet.add(con.getIdentifier());
 				}
 			}
