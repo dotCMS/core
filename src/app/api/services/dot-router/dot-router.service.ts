@@ -5,6 +5,7 @@ import { PortletNav } from '@models/navigation';
 import { Subject } from 'rxjs';
 import { DotAppsSites } from '@shared/models/dot-apps/dot-apps.model';
 import { NavigationExtras } from '@angular/router';
+import { LOGOUT_URL } from 'dotcms-js';
 
 @Injectable()
 export class DotRouterService {
@@ -116,7 +117,7 @@ export class DotRouterService {
      * @memberof DotRouterService
      */
     doLogOut(): void {
-        window.location.href = '/dotAdmin/logout';
+        window.location.href = LOGOUT_URL;
     }
 
     /**

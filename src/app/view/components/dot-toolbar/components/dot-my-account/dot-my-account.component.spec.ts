@@ -246,7 +246,6 @@ describe('DotMyAccountComponent', () => {
         spyOn<any>(accountService, 'updateUser').and.returnValue(
             of({ entity: { reauthenticate: true } })
         );
-        spyOn(loginService, 'logOutUser').and.returnValue(of({}));
         spyOn(comp.close, 'emit');
 
         const user = {
