@@ -53,7 +53,7 @@
             </li>
             <li class="user-menu__item">
                 <a
-                    href="/dotAdmin/logout"
+                    [href]="logoutUrl"
                     *ngIf="!auth.loginAsUser"
                     id="dot-toolbar-user-link-logout"
                     [textContent]="'Logout' | dm"

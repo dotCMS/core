@@ -1,7 +1,7 @@
 import { Component, ViewChild, OnInit, Inject } from '@angular/core';
 import { DotDropdownComponent } from '@components/_common/dot-dropdown-component/dot-dropdown.component';
 import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
-import { LoginService, Auth, LoggerService } from 'dotcms-js';
+import { LoginService, Auth, LoggerService, LOGOUT_URL } from 'dotcms-js';
 import { LOCATION_TOKEN } from 'src/app/providers';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
@@ -17,6 +17,8 @@ export class DotToolbarUserComponent implements OnInit {
 
     showLoginAs = false;
     showMyAccount = false;
+
+    logoutUrl = LOGOUT_URL;
 
     constructor(
         @Inject(LOCATION_TOKEN) private location: Location,

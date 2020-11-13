@@ -1,5 +1,5 @@
 import { Component, ViewEncapsulation } from '@angular/core';
-import { LoginService } from 'dotcms-js';
+import { LoginService, LOGOUT_URL } from 'dotcms-js';
 import { DotRouterService } from '../../../../api/services/dot-router/dot-router.service';
 import { take } from 'rxjs/operators';
 
@@ -12,7 +12,7 @@ export class DotLogOutContainerComponent {
     constructor(loginService: LoginService, router: DotRouterService) {
         loginService.isLogin$.pipe(take(1)).subscribe((isLogin) => {
             if (isLogin) {
-                window.location.href = '/dotAdmin/logout';
+                window.location.href = LOGOUT_URL;
             } else {
                 router.goToLogin();
             }

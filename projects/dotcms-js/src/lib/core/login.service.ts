@@ -4,7 +4,6 @@
 import { CoreWebService } from './core-web.service';
 import { Injectable } from '@angular/core';
 import { Observable, Subject, of } from 'rxjs';
-import { Router } from '@angular/router';
 import { LoggerService } from './logger.service';
 import { HttpCode } from './util/http-code';
 import { pluck, tap, map } from 'rxjs/operators';
@@ -17,6 +16,8 @@ export interface DotLoginParams {
     language: string;
     backEndLogin: boolean;
 }
+
+export const LOGOUT_URL = '/dotAdmin/logout';
 
 /**
  * This Service get the server configuration to display in the login component
@@ -33,7 +34,6 @@ export class LoginService {
     private urls: any;
 
     constructor(
-        private router: Router,
         private coreWebService: CoreWebService,
         private dotcmsEventsService: DotcmsEventsService,
         private loggerService: LoggerService
@@ -59,7 +59,7 @@ export class LoginService {
                 this.loggerService.debug('User Logged In Date: ', this.auth.user.loggedInDate);
                 // if the destroyed event happens after the logged in date, so proceed!
                 if (!this.auth.user.loggedInDate || this.isLogoutAfterLastLogin(date)) {
-                    this.logOutUser().subscribe(() => {});
+                    this.logOutUser();
                 }
             });
     }
@@ -215,7 +215,9 @@ export class LoginService {
                     this.setAuth(auth);
                     this.coreWebService
                         .subscribeToHttpError(HttpCode.UNAUTHORIZED)
-                        .subscribe(() => this.logOutUser().subscribe(() => {}));
+                        .subscribe(() => {
+                            this.logOutUser();
+                        });
                     return response.entity;
                 })
             );
@@ -239,36 +241,6 @@ export class LoginService {
                         isLoginAs: true
                     });
                     return res;
-                })
-            );
-    }
-
-    /**
-     * Call the logout rest api
-     * @returns Observable<any>
-     */
-    public logOutUser(): Observable<any> {
-        return this.coreWebService
-            .requestView({
-                url: this.urls.logout
-            })
-            .pipe(
-                map((_response) => {
-                    const nullAuth = {
-                        loginAsUser: null,
-                        user: null,
-                        isLoginAs: false
-                    };
-
-                    this.loggerService.debug('Processing the logOutUser');
-                    this.setAuth(nullAuth);
-
-                    // on logout close the websocket
-                    this.dotcmsEventsService.destroy();
-
-                    this.loggerService.debug('Navigating to Public Login');
-
-                    this.router.navigate(['/public/login']);
                 })
             );
     }
@@ -321,8 +293,7 @@ export class LoginService {
 
     private isLogoutAfterLastLogin(date): boolean {
         return (
-            this.auth.user &&
-            this.auth.user.loggedInDate &&
+            this.auth?.user?.loggedInDate &&
             date &&
             Number(date) > Number(this.auth.user.loggedInDate)
         );
@@ -344,16 +315,12 @@ export class LoginService {
     }
 
     /**
-     * Request and store the login as _auth list.
+     * Call the logout rest api
+     * @returns Observable<any>
      */
-    // private loadLoginAsUsersList(includeNUsers: boolean, filter: string): Observable<any> {
-    //     return this.coreWebService
-    //         .requestView({
-    //             url: `${this.urls
-    //                 .loginAsUserList}?includeUsersCount=${includeNUsers}&filter=${filter}`
-    //         })
-    //         .pluck('entity');
-    // }
+    private logOutUser(): void {
+        window.location.href = LOGOUT_URL;
+    }
 }
 
 export interface User {
