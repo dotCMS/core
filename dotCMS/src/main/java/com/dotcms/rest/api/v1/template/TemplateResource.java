@@ -337,9 +337,10 @@ public class TemplateResource {
     private Template findTemplateBy (final String templateInode, final String templateIdentifier,
                                          final User user, final PageMode pageMode) throws DotDataException, DotSecurityException {
 
+        Template template = null;
         try {
             if (UtilMethods.isSet(templateInode)) {
-                return this.templateAPI.find(templateInode, user, pageMode.respectAnonPerms);
+                template = this.templateAPI.find(templateInode, user, pageMode.respectAnonPerms);
             }
         } catch (Exception e) {
 
@@ -347,7 +348,7 @@ public class TemplateResource {
             // if does not work by inode see if can by id
         }
 
-        if (UtilMethods.isSet(templateIdentifier)) {
+        if ((null == template || InodeUtils.isSet(template.getInode())) && UtilMethods.isSet(templateIdentifier)) {
 
             return pageMode.showLive?
                     this.templateAPI.findLiveTemplate(templateIdentifier, user, pageMode.respectAnonPerms):
