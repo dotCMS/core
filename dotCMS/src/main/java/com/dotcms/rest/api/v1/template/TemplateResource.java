@@ -331,19 +331,30 @@ public class TemplateResource {
 
     private Template findTemplateByForm (final TemplateForm templateForm, final User user, final PageMode pageMode) throws DotDataException, DotSecurityException {
 
-        final String templateInode = templateForm.getInode();
-        if (UtilMethods.isSet(templateInode)) {
-            return this.templateAPI.find(templateForm.getInode(), user, pageMode.respectAnonPerms);
+        return this.findTemplateBy(templateForm.getInode(), templateForm.getIdentifier(), user, pageMode);
+    }
+
+    private Template findTemplateBy (final String templateInode, final String templateIdentifier,
+                                         final User user, final PageMode pageMode) throws DotDataException, DotSecurityException {
+
+        try {
+            if (UtilMethods.isSet(templateInode)) {
+                return this.templateAPI.find(templateInode, user, pageMode.respectAnonPerms);
+            }
+        } catch (Exception e) {
+
+            Logger.debug(this, e.getMessage(), e);
+            // if does not work by inode see if can by id
         }
 
-        if (UtilMethods.isSet(templateForm.getIdentifier())) {
+        if (UtilMethods.isSet(templateIdentifier)) {
 
             return pageMode.showLive?
-                    this.templateAPI.findLiveTemplate(templateForm.getIdentifier(), user, pageMode.respectAnonPerms):
-                    this.templateAPI.findWorkingTemplate(templateForm.getIdentifier(), user, pageMode.respectAnonPerms);
+                    this.templateAPI.findLiveTemplate(templateIdentifier, user, pageMode.respectAnonPerms):
+                    this.templateAPI.findWorkingTemplate(templateIdentifier, user, pageMode.respectAnonPerms);
         }
 
-         throw new DoesNotExistException("Can not find the template");
+        throw new DoesNotExistException("Can not find the template");
     }
 
 
@@ -470,7 +481,7 @@ public class TemplateResource {
 
         for (final String templateInode : templatesToPublish) {
 
-            final Template template = this.templateAPI.find(templateInode, user, pageMode.respectAnonPerms);
+            final Template template = this.findTemplateBy(templateInode, templateInode, user, pageMode);
 
             if (null != template && InodeUtils.isSet(template.getInode())) {
 
@@ -538,7 +549,7 @@ public class TemplateResource {
 
         for (final String templateInode : templatesToUnpublish) {
 
-            final Template template = this.templateAPI.find(templateInode, user, pageMode.respectAnonPerms);
+            final Template template = this.findTemplateBy(templateInode, templateInode, user, pageMode);
 
             if (null != template && InodeUtils.isSet(template.getInode())) {
 
@@ -596,7 +607,7 @@ public class TemplateResource {
 
         Logger.debug(this, ()->"Copying the Template: " + templateInode);
 
-        final Template template = this.templateAPI.find(templateInode, user, pageMode.respectAnonPerms);
+        final Template template = this.findTemplateBy(templateInode, templateInode, user, pageMode);
 
         if (null == template || !InodeUtils.isSet(template.getInode())) {
 
@@ -638,7 +649,7 @@ public class TemplateResource {
 
         Logger.debug(this, ()->"Unlocking the Template: " + templateInode);
 
-        final Template template = this.templateAPI.find(templateInode, user, pageMode.respectAnonPerms);
+        final Template template = this.findTemplateBy(templateInode, templateInode, user, pageMode);
 
         if (null == template || !InodeUtils.isSet(template.getInode())) {
 
@@ -677,7 +688,7 @@ public class TemplateResource {
 
         Logger.debug(this, ()->"Doing archive of the Template: " + templateInode);
 
-        final Template template = this.templateAPI.find(templateInode, user, pageMode.respectAnonPerms);
+        final Template template = this.findTemplateBy(templateInode, templateInode, user, pageMode);
 
         if (null == template || !InodeUtils.isSet(template.getInode())) {
 
@@ -716,7 +727,7 @@ public class TemplateResource {
 
         Logger.debug(this, ()->"Doing unarchive of the Template: " + templateInode);
 
-        final Template template = this.templateAPI.find(templateInode, user, pageMode.respectAnonPerms);
+        final Template template = this.findTemplateBy(templateInode, templateInode, user, pageMode);
 
         if (null == template || !InodeUtils.isSet(template.getInode())) {
 
@@ -756,7 +767,7 @@ public class TemplateResource {
 
         Logger.debug(this, ()->"Deleting the Template: " + templateInode);
 
-        final Template template = this.templateAPI.find(templateInode, user, pageMode.respectAnonPerms);
+        final Template template = this.findTemplateBy(templateInode, templateInode, user, pageMode);
 
         if (null == template || !InodeUtils.isSet(template.getInode())) {
 
@@ -808,7 +819,7 @@ public class TemplateResource {
 
         for (final String templateInode : templatesInodesToPublish) {
 
-            final Template template = this.templateAPI.find(templateInode, user, pageMode.respectAnonPerms);
+            final Template template = this.findTemplateBy(templateInode, templateInode, user, pageMode);
 
             if (null == template || !InodeUtils.isSet(template.getInode())) {
 
