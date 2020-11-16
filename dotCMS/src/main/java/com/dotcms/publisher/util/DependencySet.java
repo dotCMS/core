@@ -128,7 +128,7 @@ public class DependencySet extends HashSet<String> {
 	 * @param isContentExplicitlyAdded boolean true - will skip last push_date verification
 	 * @return
 	 */
-	public boolean add(final String assetId, final Date assetModDate, final Boolean isContentExplicitlyAdded) {
+	public boolean add(final String assetId, final Date assetModDate, final boolean isContentExplicitlyAdded) {
 		return addOrClean( assetId, assetModDate, false, isContentExplicitlyAdded);
 	}
 
@@ -145,7 +145,7 @@ public class DependencySet extends HashSet<String> {
 		return addOrClean( assetId, assetModDate, true, false);
 	}
 
-	private boolean addOrClean ( final String assetId, final Date assetModDate, final Boolean cleanForUnpublish, final Boolean isContentExplicitlyAdded) {
+	private boolean addOrClean ( final String assetId, final Date assetModDate, final boolean cleanForUnpublish, final boolean isContentExplicitlyAdded) {
 
 		if ( !isPublish ) {
 
