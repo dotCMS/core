@@ -34,6 +34,7 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.collect.Lists;
@@ -140,10 +141,20 @@ public class DependencyManagerTest {
 
         final PushPublisherConfig config = new PushPublisherConfig();
 
-        final FileAssetContainer fileAssetContainer = new ContainerAsFileDataGen().nextPersisted();
+        FileAssetContainer fileAssetContainer = new ContainerAsFileDataGen()
+                .ignoreDefaultContentTypes()
+                .nextPersisted();
+
+        fileAssetContainer = (FileAssetContainer) APILocator.getContainerAPI()
+                .find(fileAssetContainer.getInode(), APILocator.systemUser(), true);
+
         final Host host = new SiteDataGen().nextPersisted();
-        final Template template = new TemplateDataGen()
+        final TemplateLayout templateLayout = new TemplateLayoutDataGen()
                 .withContainer(fileAssetContainer, ContainerUUID.UUID_START_VALUE)
+                .next();
+
+        final Template template = new TemplateDataGen()
+                .drawedBody(templateLayout)
                 .host(host)
                 .nextPersisted();
 
