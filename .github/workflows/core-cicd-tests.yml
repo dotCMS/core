@@ -60,17 +60,17 @@ jobs:
       - name: Fail provider
         run: |
           echo "jobRun=false" >> $GITHUB_ENV
-        if: env.jobRun == true && failure()
+        if: env.jobRun && failure()
       - name: Build Tests Base Image
         run: |
           dotcicd/library/pipeline.sh buildTestsBase
         env:
           LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
-        if: env.jobRun == true
+        if: env.jobRun
       - name: Run Unit Tests
         run: |
           dotcicd/library/pipeline.sh runUnit
-        if: env.jobRun == true
+        if: env.jobRun
   run-curl-tests-job:
     name: Curl Tests
     runs-on: ubuntu-latest
@@ -129,21 +129,21 @@ jobs:
       - name: Prepare dot-cicd
         run: |
           chmod +x .cicd/discover.sh && .cicd/discover.sh
-        if: env.jobRun == true
+        if: env.jobRun
       - name: Check Provider
         run: |
           dotcicd/library/checkProvider.sh github
-        if: env.jobRun == true
+        if: env.jobRun
       - name: Fail provider
         run: |
           echo "jobRun=false" >> $GITHUB_ENV
-        if: env.jobRun == true && failure()
+        if: env.jobRun && failure()
       - name: Build DotCMS Image
         run: |
           dotcicd/library/pipeline.sh buildBase
         env:
           LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
-        if: env.jobRun == true
+        if: env.jobRun
       - name: Run Curl Tests - postgres
         run: |
           dotcicd/library/pipeline.sh runCurl
@@ -152,7 +152,7 @@ jobs:
           databaseType: postgres
           PROVIDER_DB_USERNAME: postgres
           PROVIDER_DB_PASSWORD: postgres
-        if: (success() || failure()) && env.jobRun == true
+        if: (success() || failure()) && env.jobRun
   run-integration-tests-job:
     name: Integration Tests
     runs-on: ubuntu-latest
@@ -251,27 +251,27 @@ jobs:
       - name: Prepare dot-cicd
         run: |
           chmod +x .cicd/discover.sh && .cicd/discover.sh
-        if: env.jobRun == true
+        if: env.jobRun
       - name: Check Provider
         run: |
           dotcicd/library/checkProvider.sh github
-        if: env.jobRun == true
+        if: env.jobRun
       - name: Fail provider
         run: |
           echo "jobRun=false" >> $GITHUB_ENV
-        if: env.jobRun == true && failure()
+        if: env.jobRun && failure()
       - name: Build Tests Base Image
         run: |
           dotcicd/library/pipeline.sh buildTestsBase
         env:
           LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
-        if: env.jobRun == true
+        if: env.jobRun
       - name: Run Integration Tests - ${{ matrix.databaseType }}
         run: |
           dotcicd/library/pipeline.sh runIntegration
         env:
           databaseType: ${{ matrix.databaseType }}
-        if: (success() || failure()) && env.jobRun == true
+        if: (success() || failure()) && env.jobRun
   slack-notification:
     name: Notification
     runs-on: ubuntu-latest
