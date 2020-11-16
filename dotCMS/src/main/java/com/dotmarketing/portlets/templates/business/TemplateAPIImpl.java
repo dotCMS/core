@@ -225,14 +225,19 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	}
 
 	@WrapInTransaction
-	public void unarchive (final Template template) {
-
+	public boolean unarchive (final Template template, final User user) throws DotDataException {
 		Logger.debug(this, ()-> "Doing unarchive of the template: " + template.getIdentifier());
+		//Check Edit Permissions over Template
+		if(!this.permissionAPI.doesUserHavePermission(template, PERMISSION_EDIT, user)){
+			Logger.warn(this,"The user: " + user.getUserId() + " does not have Permissions to Edit the Template");
+			return false;
+		}
+		// Check that the template is archived
 		if (Try.of(()->template.isArchived()).getOrElseThrow(e -> new RuntimeException(e))) {
-
 			Try.run(()->WebAssetFactory.unArchiveAsset(template))
 					.getOrElseThrow(e -> new RuntimeException(e));
 		}
+		return true;
 	}
 
 	@WrapInTransaction

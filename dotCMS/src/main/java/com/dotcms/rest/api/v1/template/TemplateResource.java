@@ -730,42 +730,60 @@ public class TemplateResource {
     }
 
     /**
-     * Unarchive a template
+     * Unarchives template(s).
+     *
+     * This method receives a list of identifiers and unarchives the templates.
+     *
      * @param request            {@link HttpServletRequest}
      * @param response           {@link HttpServletResponse}
-     * @param templateInode      {@link String} template inode to unlock
+     * @param templatesToUnarchive {@link List} templates identifier to unarchive.
      * @return Response
      * @throws DotDataException
      * @throws DotSecurityException
      */
     @PUT
-    @Path("/{templateInode}/_unarchive")
+    @Path("/_unarchive")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response unarchive(@Context final HttpServletRequest  request,
-                                  @Context final HttpServletResponse response,
-                                  @PathParam("templateInode") final String templateInode) throws DotDataException, DotSecurityException {
+            @Context final HttpServletResponse response,
+            final List<String> templatesToUnarchive){
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response).rejectWhenNoUser(true).init();
         final User user         = initData.getUser();
         final PageMode pageMode = PageMode.get(request);
+        final List<String> unarchivedTemplates = new ArrayList<>();
+        final List<String> failedToUnarchive    = new ArrayList<>();
 
-        Logger.debug(this, ()->"Doing unarchive of the Template: " + templateInode);
+        if (!UtilMethods.isSet(templatesToUnarchive)) {
 
-        final Template template = this.findTemplateBy(templateInode, templateInode, user, pageMode);
-
-        if (null == template || !InodeUtils.isSet(template.getInode())) {
-
-            throw new DoesNotExistException("The  template inode: " + templateInode + " does not exists");
+            throw new IllegalArgumentException("The body must send a collection of template identifier such as: " +
+                    "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
         }
 
-        this.templateHelper.checkPermission(user, template, PERMISSION_WRITE);
-        this.templateAPI.unarchive(template);
+        for(final String templateId : templatesToUnarchive){
+            try{
+                final Template template = this.templateAPI.findWorkingTemplate(templateId,user,pageMode.respectAnonPerms);
+                if (null != template && InodeUtils.isSet(template.getInode()) && this.templateAPI.unarchive(template, user)) {
+                        ActivityLogger.logInfo(this.getClass(), "Unarchive Template Action", "User " +
+                                user.getPrimaryKey() + " unarchived template: " + template.getIdentifier());
+                        unarchivedTemplates.add(templateId);
+                } else {
+                    failedToUnarchive.add(templateId);
+                }
+            } catch(Exception e) {
+                Logger.error(this, e.getMessage(), e);
+                failedToUnarchive.add(templateId);
+            }
+        }
 
-        Logger.debug(this, "Unarchive done template: " + templateInode);
-        return Response.ok(new ResponseEntityView(true)).build();
+        return Response.ok(new ResponseEntityView(
+                CollectionsUtils.map(
+                        "unarchivedTemplates", unarchivedTemplates,
+                        "failedToUnarchive",   failedToUnarchive
+                ))).build();
     }
 
     /**

@@ -190,8 +190,9 @@ public interface TemplateAPI {
 	/**
 	 * If the template is archive will unarchive it
 	 * @param template {@link Template}
+	 * @param user     {@link User}
 	 */
-	void unarchive (Template template);
+	boolean unarchive (Template template, User user) throws DotDataException;
 
 	/**
 	 * Delete the specified template.
