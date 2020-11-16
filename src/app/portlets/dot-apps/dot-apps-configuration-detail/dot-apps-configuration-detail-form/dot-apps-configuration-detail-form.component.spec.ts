@@ -150,7 +150,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         });
 
         it('should load Label, Textarea & Hint with right attributes', () => {
-            const row = de.queryAll(By.css('.p-field'))[0];
+            const row = de.query(By.css('[data-testid="name"]'));
             expect(row.query(By.css('markdown'))).toBeTruthy();
             expect(row.query(By.css('label')).nativeElement.textContent).toBe(secrets[0].label);
             expect(
@@ -172,7 +172,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         });
 
         it('should load Checkbox & Hint with right attributes', () => {
-            const row = de.queryAll(By.css('.p-field'))[2];
+            const row = de.query(By.css('[data-testid="enabled"]'));
             expect(row.query(By.css('markdown'))).toBeTruthy();
             expect(row.query(By.css('p-checkbox')).nativeElement.attributes.id.value).toBe(
                 secrets[2].name
@@ -185,7 +185,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         });
 
         it('should load Label, Select & Hint with right attributes', () => {
-            const row = de.queryAll(By.css('.p-field'))[3];
+            const row = de.query(By.css('[data-testid="select"]'));
             expect(row.query(By.css('markdown'))).toBeTruthy();
             expect(row.query(By.css('label')).nativeElement.textContent).toBe(secrets[3].label);
             expect(
@@ -207,7 +207,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         });
 
         it('should load Label, Button & Hint with right attributes', () => {
-            const row = de.queryAll(By.css('.p-field'))[4];
+            const row = de.query(By.css('[data-testid="integration"]'));
             expect(row.query(By.css('label')).nativeElement.textContent).toBe(secrets[4].label);
             expect(
                 row.query(By.css('label')).nativeElement.classList.contains('form__label')
@@ -218,10 +218,18 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             );
         });
 
-        it('should Button open link on new tab when clicked', () => {
+        it('should Button be disabled when no configured app', () => {
+            const row = de.query(By.css('[data-testid="integration"]'));
+            const button = row.query(By.css('button')).nativeElement;
+            expect(button.disabled).toBe(true);
+        });
+
+        it('should Button open link on new tab when clicked on a configured app', () => {
+            component.appConfigured = true;
+            fixture.detectChanges();
             const openMock = jasmine.createSpy();
             window.open = openMock;
-            const row = de.queryAll(By.css('.p-field'))[4];
+            const row = de.query(By.css('[data-testid="integration"]'));
             const button = row.query(By.css('button')).nativeElement;
 
             button.click();
