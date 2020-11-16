@@ -315,6 +315,8 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 			identifier = identifierAPI.findFromInode(oldTemplate.getIdentifier());
 		}
 		else{
+			//sets the owner so it can be set at the identifier table
+			template.setOwner(user.getUserId());
 			identifier = (!existingId) ? APILocator.getIdentifierAPI().createNew(template, destination) :
 			                             APILocator.getIdentifierAPI().createNew(template, destination, template.getIdentifier());
 			template.setIdentifier(identifier.getId());
