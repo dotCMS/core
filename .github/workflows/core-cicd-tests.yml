@@ -45,32 +45,32 @@ jobs:
           echo "CURRENT_BRANCH=${CURRENT_BRANCH}" >> $GITHUB_ENV
 
           if [[ "${{ github.event_name }}" == "pull_request" || ${CURRENT_BRANCH} =~ master|^release-.*|^test-.* || ${COMMIT_MESSG} =~ run-all|run-unit ]]; then
-            echo "jobRun='true'" >> $GITHUB_ENV
+            echo "jobRun=true" >> $GITHUB_ENV
           else
-            echo "jobRun='false'" >> $GITHUB_ENV
+            echo "jobRun=false" >> $GITHUB_ENV
           fi
       - name: Prepare dot-cicd
         run: |
           chmod +x .cicd/discover.sh && .cicd/discover.sh
-#        if: env.jobRun == 'true'
+        if: env.jobRun == true
       - name: Check Provider
         run: |
           dotcicd/library/checkProvider.sh github
-        if: env.jobRun == 'true'
+        if: env.jobRun == true
       - name: Fail provider
         run: |
-          echo "jobRun='false'" >> $GITHUB_ENV
-        if: env.jobRun == 'true' && failure()
+          echo "jobRun=false" >> $GITHUB_ENV
+        if: env.jobRun == true && failure()
       - name: Build Tests Base Image
         run: |
           dotcicd/library/pipeline.sh buildTestsBase
         env:
           LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
-        if: env.jobRun == 'true'
+        if: env.jobRun == true
       - name: Run Unit Tests
         run: |
           dotcicd/library/pipeline.sh runUnit
-        if: env.jobRun == 'true'
+        if: env.jobRun == true
   run-curl-tests-job:
     name: Curl Tests
     runs-on: ubuntu-latest
@@ -122,28 +122,28 @@ jobs:
           fi
 
           if [[ ${IS_PR} == true || ${SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ run-all|run-curl ]]; then
-            echo "jobRun='true'" >> $GITHUB_ENV
+            echo "jobRun=true" >> $GITHUB_ENV
           else
-            echo "jobRun='false'" >> $GITHUB_ENV
+            echo "jobRun=false" >> $GITHUB_ENV
           fi
       - name: Prepare dot-cicd
         run: |
           chmod +x .cicd/discover.sh && .cicd/discover.sh
-        if: env.jobRun == 'true'
+        if: env.jobRun == true
       - name: Check Provider
         run: |
           dotcicd/library/checkProvider.sh github
-        if: env.jobRun == 'true'
+        if: env.jobRun == true
       - name: Fail provider
         run: |
-          echo "jobRun='false'" >> $GITHUB_ENV
-        if: env.jobRun == 'true' && failure()
+          echo "jobRun=false" >> $GITHUB_ENV
+        if: env.jobRun == true && failure()
       - name: Build DotCMS Image
         run: |
           dotcicd/library/pipeline.sh buildBase
         env:
           LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
-        if: env.jobRun == 'true'
+        if: env.jobRun == true
       - name: Run Curl Tests - postgres
         run: |
           dotcicd/library/pipeline.sh runCurl
@@ -152,7 +152,7 @@ jobs:
           databaseType: postgres
           PROVIDER_DB_USERNAME: postgres
           PROVIDER_DB_PASSWORD: postgres
-        if: (success() || failure()) && env.jobRun == 'true'
+        if: (success() || failure()) && env.jobRun == true
   run-integration-tests-job:
     name: Integration Tests
     runs-on: ubuntu-latest
@@ -242,36 +242,36 @@ jobs:
           fi
           echo "runMssql=${RUN_MSSQL}" >> $GITHUB_ENV
 
-          echo "jobRun='false'" >> $GITHUB_ENV
+          echo "jobRun=false" >> $GITHUB_ENV
           if [[ ${IS_PR} == true || ${SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ run-all|run-postgres|run-mysql|run-oracle|run-mssql|run-unit ]]; then
             if [[ (${RUN_POSTGRES} == true && "${{ matrix.databaseType }}" == 'postgres') || (${RUN_MYSQL} == true && "${{ matrix.databaseType }}" == 'mysql') || (${RUN_ORACLE}  == true && "${{ matrix.databaseType }}" == 'oracle') || (${RUN_MSSQL} == true && "${{ matrix.databaseType }}" == 'mssql') ]]; then
-              echo "jobRun='true'" >> $GITHUB_ENV
+              echo "jobRun=true" >> $GITHUB_ENV
             fi
           fi
       - name: Prepare dot-cicd
         run: |
           chmod +x .cicd/discover.sh && .cicd/discover.sh
-        if: env.jobRun == 'true'
+        if: env.jobRun == true
       - name: Check Provider
         run: |
           dotcicd/library/checkProvider.sh github
-        if: env.jobRun == 'true'
+        if: env.jobRun == true
       - name: Fail provider
         run: |
-          echo "jobRun='false'" >> $GITHUB_ENV
-        if: env.jobRun == 'true' && failure()
+          echo "jobRun=false" >> $GITHUB_ENV
+        if: env.jobRun == true && failure()
       - name: Build Tests Base Image
         run: |
           dotcicd/library/pipeline.sh buildTestsBase
         env:
           LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
-        if: env.jobRun == 'true'
+        if: env.jobRun == true
       - name: Run Integration Tests - ${{ matrix.databaseType }}
         run: |
           dotcicd/library/pipeline.sh runIntegration
         env:
           databaseType: ${{ matrix.databaseType }}
-        if: (success() || failure()) && env.jobRun == 'true'
+        if: (success() || failure()) && env.jobRun == true
   slack-notification:
     name: Notification
     runs-on: ubuntu-latest
