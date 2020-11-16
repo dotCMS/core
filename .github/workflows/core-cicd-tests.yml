@@ -33,7 +33,7 @@ jobs:
         if: github.event_name == 'pull_request'
       - name: Set Common Vars
         run: |
-          if [[ "${{ github.event_name }}" == 'pull_request' ]]; then
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             CURRENT_BRANCH="${{ github.head_ref }}"
             COMMIT_MESSG="${{ steps.get-latest-commit.outputs.latest_commit_message }}"
           else
@@ -44,7 +44,7 @@ jobs:
           echo "COMMIT_MESSG: ${COMMIT_MESSG}"
           echo "CURRENT_BRANCH=${CURRENT_BRANCH}" >> $GITHUB_ENV
 
-          if [[ "${{ github.event_name }}" == 'pull_request' || ${CURRENT_BRANCH} =~ master|^release-.*|^test-.* || ${COMMIT_MESSG} =~ run-all|run-unit ]]; then
+          if [[ "${{ github.event_name }}" == "pull_request" || ${CURRENT_BRANCH} =~ master|^release-.*|^test-.* || ${COMMIT_MESSG} =~ run-all|run-unit ]]; then
             echo "jobRun='true'" >> $GITHUB_ENV
           else
             echo "jobRun='false'" >> $GITHUB_ENV
@@ -97,7 +97,7 @@ jobs:
         if: github.event_name == 'pull_request'
       - name: Set Common Vars
         run: |
-          if [[ "${{ github.event_name }}" == 'pull_request' ]]; then
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             IS_PR=true
           else
             IS_PR=false
@@ -184,7 +184,7 @@ jobs:
         if: github.event_name == 'pull_request'
       - name: Set Common Vars
         run: |
-          if [[ "${{ github.event_name }}" == 'pull_request' ]]; then
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             IS_PR=true
           else
             IS_PR=false
@@ -289,7 +289,7 @@ jobs:
         run: echo "$GITHUB_CONTEXT"
       - name: Set Common Vars
         run: |
-          if [[ "${{ github.event_name }}" == 'pull_request' ]]; then
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             echo "CURRENT_BRANCH=${{ github.head_ref }}" >> $GITHUB_ENV
           else
             echo "CURRENT_BRANCH=$(basename ${{ github.ref }})" >> $GITHUB_ENV
