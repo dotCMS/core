@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.templates.business;
 
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_EDIT;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -197,14 +199,23 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	}
 
 	@WrapInTransaction
-	public boolean archive (final Template template, final User user, final boolean respectFrontendRoles) {
+	public boolean archive (final Template template, final User user, final boolean respectFrontendRoles)
+			throws DotDataException {
 
 		Logger.debug(this, ()-> "Doing archive of the template: " + template.getIdentifier());
+
+		//Check Edit Permissions over Template
+		if(!this.permissionAPI.doesUserHavePermission(template, PERMISSION_EDIT, user)){
+			Logger.warn(this,"The user: " + user.getUserId() + " does not have Permissions to Edit the Template");
+			return false;
+		}
+
+		//Check that the template is Unpublished, if is Live try to Unpublish
 		if (Try.of(()->template.isLive()).getOrElseThrow(e -> new RuntimeException(e))) {
 
 			if (!this.unpublishTemplate(template, user, respectFrontendRoles)) {
 
-				Logger.debug(this, "the template: " + template.getIdentifier() +
+				Logger.warn(this, "The template: " + template.getIdentifier() +
 						" could not be archived, b/c it was live and couldn't unpublish");
 				return false;
 			}

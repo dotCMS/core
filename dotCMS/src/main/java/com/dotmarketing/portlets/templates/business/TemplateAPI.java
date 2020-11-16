@@ -184,7 +184,8 @@ public interface TemplateAPI {
 	 * @param respectFrontendRoles
 	 * @return boolean true if success
 	 */
-	boolean archive (Template template, User user, boolean respectFrontendRoles);
+	boolean archive (Template template, User user, boolean respectFrontendRoles)
+            throws DotDataException;
 
 	/**
 	 * If the template is archive will unarchive it
