@@ -11,6 +11,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -142,41 +143,73 @@ public class CategoryAPIImpl implements CategoryAPI {
 		return permissionAPI.filterCollection(categories, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
 	}
 
+	/**
+	 * Saves a category
+	 *
+	 * When saving a new category the parent should be passed to the API
+	 * to check if the user has permissions to add children to the parent
+	 * and the parent will be associated to the passed category
+	 *
+	 * @param parent Parent can be null if saving an top level category
+	 * @param category Category to be saved
+	 * @param user user that is performing the save
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
 	@WrapInTransaction
 	public void save(final Category parent,
-					 Category object,
+					 Category category,
 					 final User user,
 					 final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
         // Checking that we have a unique key.
-	    object = checkUniqueKey(object, user);
+	    category = checkUniqueKey(category, user);
 
-	    boolean isANewCategory = false;
+	    final boolean isANewCategory = UtilMethods.isNotSet(category.getInode());
 
-		//Checking permissions
-		if(InodeUtils.isSet(object.getInode()) || parent == null) {
-			//Object is not new or is a top level category
-			//if it is a new top level category the user should be a cms administrator
-			// and that's checked in the permissions api
-			 if(!com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user, com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole().getId())){
-              if(!permissionAPI.doesUserHavePermission(object, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles))
-				throw new DotSecurityException("User doesn't have permission to edit the category = " + object.getInode());
+	    if(isANewCategory) {
+			//If parent is null is a top level category, we need to check permissions over the SYSTEM_HOST
+			if (!UtilMethods.isSet(parent)) {
+				if (!permissionAPI.doesUserHavePermission(APILocator.systemHost(),
+						PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles) ||
+						!permissionAPI.doesUserHavePermissions(APILocator.systemHost().getIdentifier(), PermissionableType.CATEGORY,
+								PermissionAPI.PERMISSION_EDIT, user)) {
+					Logger.error(this,
+							"User doesn't have permission to save the category at top level");
+					throw new DotSecurityException(
+							"User doesn't have permission to save the category at top level");
 			 }
 		} else {
-			//Object is new and a parent was provided so we check in the parent permissions
-			if(!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user, respectFrontendRoles))
-				throw new DotSecurityException("User doesn't have permission to save this category = " +
-						object.getInode() + " having as parent the category = " + parent.getInode());
-
-			isANewCategory = true;
+				if (!permissionAPI
+						.doesUserHavePermission(parent, PermissionAPI.PERMISSION_EDIT, user,
+								respectFrontendRoles)) {
+					Logger.error(this,
+							"User doesn't have permission to save the category having as parent the category = "
+									+ parent.getCategoryName());
+					throw new DotSecurityException(
+							"User doesn't have permission to save the category having as parent the category = "
+									+ parent.getCategoryName());
+				}
+			}
+		} else {
+	    	//Category already exists, just check permissions over the category itself
+			if (!permissionAPI
+					.doesUserHavePermission(category, PermissionAPI.PERMISSION_EDIT, user,
+							respectFrontendRoles)) {
+				Logger.error(this,
+						"User doesn't have permission to save the category");
+				throw new DotSecurityException(
+						"User doesn't have permission to save the category");
+			}
 		}
 
-		object.setModDate(new Date());
-		categoryFactory.save(object);
+		category.setModDate(new Date());
+		categoryFactory.save(category);
 
+		//if is a new category and is not top level, relate the category to the parent category
 		if(isANewCategory && parent != null) {
-			categoryFactory.addChild(parent, object, null);
-			permissionAPI.copyPermissions(parent, object);
+			categoryFactory.addChild(parent, category, null);
+			permissionAPI.copyPermissions(parent, category);
 		}
 
 	}
