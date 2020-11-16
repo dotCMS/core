@@ -9,8 +9,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.*;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.bundle.business.BundleAPI;
 import com.dotcms.publisher.business.PublishQueueElement;
@@ -18,19 +17,32 @@ import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.MultiTreeAPI;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
 import java.util.Date;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -121,6 +133,44 @@ public class DependencyManagerTest {
         //The dependency manager should include parent and child contentlets in the bundle
         validateDependencies(blogContentParent, blogContentChild, relationship, dependencyManager);
     }
+
+    @Test
+    public void test_Page_with_FileContainer_as_Dependencies()
+            throws DotSecurityException, DotBundleException, DotDataException {
+
+        final PushPublisherConfig config = new PushPublisherConfig();
+
+        final FileAssetContainer fileAssetContainer = new ContainerAsFileDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen()
+                .withContainer(fileAssetContainer, ContainerUUID.UUID_START_VALUE)
+                .host(host)
+                .nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
+
+        //Creates a bundle with just the child
+        createBundle(config, htmlPageAsset);
+
+        DependencyManager dependencyManager = new DependencyManager(user, config);
+        dependencyManager.setDependencies();
+
+        assertEquals(2, dependencyManager.getContents().size());
+        assertTrue(dependencyManager.getContents().contains(htmlPageAsset.getIdentifier()));
+
+        final String path = fileAssetContainer.getPath();
+        final Folder rootFolder = APILocator.getFolderAPI()
+                .findFolderByPath(path, fileAssetContainer.getHost(), user, false);
+
+        final List<FileAsset> fileAssetsByFolder = APILocator.getFileAssetAPI()
+                .findFileAssetsByFolder(rootFolder, APILocator.systemUser(), false);
+
+        for (final FileAsset fileAsset : fileAssetsByFolder) {
+            assertTrue(dependencyManager.getContents().contains(fileAsset.getIdentifier()));
+        }
+
+    }
+
 
     /**
      * <b>Method to test:</b> {@link DependencyManager#setDependencies()} <p>
