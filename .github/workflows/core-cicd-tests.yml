@@ -42,12 +42,12 @@ jobs:
           fi
 
           echo "COMMIT_MESSG: ${COMMIT_MESSG}"
-          echo ::set-env name=CURRENT_BRANCH::${CURRENT_BRANCH}
+          echo "CURRENT_BRANCH=${CURRENT_BRANCH}" >> $GITHUB_ENV
 
           if [[ "${{ github.event_name }}" == 'pull_request' || ${CURRENT_BRANCH} =~ master|^release-.*|^test-.* || ${COMMIT_MESSG} =~ run-all|run-unit ]]; then
-            echo ::set-env name=jobRun::'true'
+            echo "jobRun='true'" >> $GITHUB_ENV
           else
-            echo ::set-env name=jobRun::'false'
+            echo "jobRun='false'" >> $GITHUB_ENV
           fi
       - name: Prepare dot-cicd
         run: |
@@ -59,7 +59,7 @@ jobs:
         if: env.jobRun == 'true'
       - name: Fail provider
         run: |
-          echo ::set-env name=jobRun::'false'
+          echo "jobRun='false'" >> $GITHUB_ENV
         if: env.jobRun == 'true' && failure()
       - name: Build Tests Base Image
         run: |
@@ -112,8 +112,8 @@ jobs:
           fi
 
           echo "COMMIT_MESSG: ${COMMIT_MESSG}"
-          echo ::set-env name=CURRENT_BRANCH::"${CURRENT_BRANCH}"
-          echo ::set-env name=COMMIT_MESSG::${COMMIT_MESSG}
+          echo "CURRENT_BRANCH=${CURRENT_BRANCH}" >> $GITHUB_ENV
+          echo "COMMIT_MESSG=${COMMIT_MESSG}" >> $GITHUB_ENV
 
           if [[ ${CURRENT_BRANCH} =~ master|^release-.*|^test-.* ]]; then
             SPECIAL_BRANCH=true
@@ -122,9 +122,9 @@ jobs:
           fi
 
           if [[ ${IS_PR} == true || ${SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ run-all|run-curl ]]; then
-            echo ::set-env name=jobRun::'true'
+            echo "jobRun='true'" >> $GITHUB_ENV
           else
-            echo ::set-env name=jobRun::'false'
+            echo "jobRun='false'" >> $GITHUB_ENV
           fi
       - name: Prepare dot-cicd
         run: |
@@ -136,7 +136,7 @@ jobs:
         if: env.jobRun == 'true'
       - name: Fail provider
         run: |
-          echo ::set-env name=jobRun::'false'
+          echo "jobRun='false'" >> $GITHUB_ENV
         if: env.jobRun == 'true' && failure()
       - name: Build DotCMS Image
         run: |
@@ -199,8 +199,8 @@ jobs:
           fi
 
           echo "COMMIT_MESSG: ${COMMIT_MESSG}"
-          echo ::set-env name=CURRENT_BRANCH::${CURRENT_BRANCH}
-          echo ::set-env name=COMMIT_MESSG::${COMMIT_MESSG}
+          echo "CURRENT_BRANCH=${CURRENT_BRANCH}" >> $GITHUB_ENV
+          echo "COMMIT_MESSG=${COMMIT_MESSG}" >> $GITHUB_ENV
 
           if [[ ${CURRENT_BRANCH} =~ master|^release-.*|^test-.* ]]; then
             SPECIAL_BRANCH=true
@@ -219,33 +219,33 @@ jobs:
           else
             RUN_POSTGRES=false
           fi
-          echo ::set-env name=runPostgres::"${RUN_POSTGRES}"
+          echo "runPostgres=${RUN_POSTGRES}" >> $GITHUB_ENV
 
           if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ run-all|run-mysql ]]; then
             RUN_MYSQL=true
           else
             RUN_MYSQL=false
           fi
-          echo ::set-env name=runMysql::"${RUN_MYSQL}"
+          echo "runMysql=${RUN_MYSQL}" >> $GITHUB_ENV
 
           if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ run-all|run-oracle ]]; then
             RUN_ORACLE=true
           else
             RUN_ORACLE=false
           fi
-          echo ::set-env name=runOracle::"${RUN_ORACLE}"
+          echo "runOracle=${RUN_ORACLE}" >> $GITHUB_ENV
 
           if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ run-all|run-mssql ]]; then
             RUN_MSSQL=true
           else
             RUN_MSSQL=false
           fi
-          echo ::set-env name=runMssql::"${RUN_MSSQL}"
+          echo "runMssql=${RUN_MSSQL}" >> $GITHUB_ENV
 
-          echo ::set-env name=jobRun::'false'
+          echo "jobRun='false'" >> $GITHUB_ENV
           if [[ ${IS_PR} == true || ${SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ run-all|run-postgres|run-mysql|run-oracle|run-mssql|run-unit ]]; then
             if [[ (${RUN_POSTGRES} == true && "${{ matrix.databaseType }}" == 'postgres') || (${RUN_MYSQL} == true && "${{ matrix.databaseType }}" == 'mysql') || (${RUN_ORACLE}  == true && "${{ matrix.databaseType }}" == 'oracle') || (${RUN_MSSQL} == true && "${{ matrix.databaseType }}" == 'mssql') ]]; then
-              echo ::set-env name=jobRun::'true'
+              echo "jobRun='true'" >> $GITHUB_ENV
             fi
           fi
       - name: Prepare dot-cicd
@@ -258,7 +258,7 @@ jobs:
         if: env.jobRun == 'true'
       - name: Fail provider
         run: |
-          echo ::set-env name=jobRun::'false'
+          echo "jobRun='false'" >> $GITHUB_ENV
         if: env.jobRun == 'true' && failure()
       - name: Build Tests Base Image
         run: |
@@ -290,9 +290,9 @@ jobs:
       - name: Set Common Vars
         run: |
           if [[ "${{ github.event_name }}" == 'pull_request' ]]; then
-            echo ::set-env name=CURRENT_BRANCH::"${{ github.head_ref }}"
+            echo "CURRENT_BRANCH=${{ github.head_ref }}" >> $GITHUB_ENV
           else
-            echo ::set-env name=CURRENT_BRANCH::$(basename "${{ github.ref }}")
+            echo "CURRENT_BRANCH=$(basename ${{ github.ref }})" >> $GITHUB_ENV
           fi
       - name: Notify through CI/CD slack action
         env:
