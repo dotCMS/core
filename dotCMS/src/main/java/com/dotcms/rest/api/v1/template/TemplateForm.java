@@ -72,7 +72,7 @@ public class TemplateForm  extends Validated {
         if ((this.drawed || UtilMethods.isSet(this.layout)) &&
                 (!UtilMethods.isSet(this.theme))){
 
-            throw new BadRequestException("There is required on drawed templates");
+            throw new BadRequestException("Theme is required on drawed templates");
         }
 
     }

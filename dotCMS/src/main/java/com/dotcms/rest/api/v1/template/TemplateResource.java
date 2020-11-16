@@ -24,6 +24,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.business.TemplateConstants;
 import com.dotmarketing.portlets.templates.design.util.DesignTemplateUtil;
@@ -43,6 +44,7 @@ import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
@@ -869,7 +871,14 @@ public class TemplateResource {
 
         if(UtilMethods.isSet(templateForm.getTheme())) {
 
-            template.setThemeName(this.folderAPI.find(templateForm.getTheme(), user, pageMode.respectAnonPerms).getName());
+            final Folder themeFolder = this.folderAPI.find(templateForm.getTheme(), user, pageMode.respectAnonPerms);
+
+            if (null != themeFolder && InodeUtils.isSet(themeFolder.getInode())) {
+                template.setThemeName(this.folderAPI.find(templateForm.getTheme(), user, pageMode.respectAnonPerms).getName());
+            } else {
+
+                throw new BadRequestException("Invalid theme: " + templateForm.getTheme());
+            }
             template.setTheme(templateForm.getTheme());
         }
 
