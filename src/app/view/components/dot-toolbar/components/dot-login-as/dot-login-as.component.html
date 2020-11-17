@@ -13,6 +13,7 @@
             id="login-as-form"
             #formEl="ngForm"
             novalidate
+            class="p-fluid"
         >
             <div class="p-field">
                 <!--TODO: get rid of this let autoComplete when this is fixed: https://github.com/primefaces/primeng/issues/745-->
@@ -28,7 +29,7 @@
                     placeholder="{{ 'loginas.select.loginas.user' | dm }}"
                     formControlName="loginAsUser"
                     labelPropertyName="fullName"
-                    width="100%"
+                    overlayWidth="300px"
                 >
                 </dot-searchable-dropdown>
             </div>

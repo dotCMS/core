@@ -71,11 +71,23 @@ export class SearchableDropdownComponent
     @Input()
     persistentPlaceholder: boolean;
 
+    /**
+     * Sets the width of the searchable-dropdown button
+     *
+     * The CSS unit is **required**.
+     * @memberof SearchableDropdownComponent
+     */
     @Input()
-    width = '300';
+    width = '300px';
 
+    /**
+     * Sets the width of the searchable-dropdown overlay
+     *
+     * The CSS unit is **required**.
+     * @memberof SearchableDropdownComponent
+     */
     @Input()
-    overlayWidth;
+    overlayWidth = '300px';
 
     @Input()
     multiple: boolean;

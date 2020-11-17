@@ -116,7 +116,7 @@ export default {
         ],
         placeholder: 'Select something',
         labelPropertyName: 'label',
-        width: '300'
+        width: '300px'
     }
 } as Meta;
 
