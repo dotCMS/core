@@ -21,6 +21,7 @@ import javax.management.ObjectName;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
+
 import org.apache.commons.lang.SystemUtils;
 import org.apache.felix.framework.OSGIUtil;
 import org.apache.lucene.search.BooleanQuery;
@@ -143,8 +144,6 @@ public class InitServlet extends HttpServlet {
             CacheLocator.getCacheAdministrator().flushGroupLocalOnly("navCache", false);
         }
 
-        
-        
         try {
 
           APILocator.getVanityUrlAPI().populateAllVanityURLsCache();
