@@ -2,7 +2,8 @@ import { pluck } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
 import { CoreWebService } from 'dotcms-js';
 import { Observable } from 'rxjs';
-import { DotTheme } from '@portlets/dot-edit-page/shared/models/dot-theme.model';
+
+import { DotTheme } from '@shared/models/dot-edit-layout-designer';
 
 /**
  * Provide util methods to get themes information.

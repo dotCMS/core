@@ -1,10 +1,11 @@
-import { DotPageRender } from './dot-rendered-page.model';
-import { DotPageMode } from './dot-page-mode.enum';
 import { User } from 'dotcms-js';
-import { DotPage } from './dot-page.model';
-import { DotLayout } from './dot-layout.model';
-import { DotTemplate } from './dot-template.model';
+
 import { DotEditPageViewAs } from '@models/dot-edit-page-view-as/dot-edit-page-view-as.model';
+import { DotContainer } from '@shared/models/container/dot-container.model';
+import { DotLayout, DotTemplate } from '@shared/models/dot-edit-layout-designer';
+import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
+import { DotPage } from '@models/dot-page/dot-page.model';
+import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
 
 interface DotPageState {
     locked?: boolean;
@@ -31,7 +32,11 @@ export class DotPageRenderState extends DotPageRender {
         return this.dotRenderedPage.canCreateTemplate;
     }
 
-    get containers(): any {
+    get containers(): {
+        [key: string]: {
+            container: DotContainer;
+        };
+    } {
         return this.dotRenderedPage.containers;
     }
 

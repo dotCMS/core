@@ -1,0 +1,73 @@
+<dot-theme-selector
+    *ngIf="themeDialogVisibility"
+    [value]="currentTheme"
+    (selected)="changeThemeHandler($event)"
+    (close)="closeThemeDialog()"
+>
+</dot-theme-selector>
+<form [formGroup]="form" (ngSubmit)="onSave()" novalidate>
+    <dot-secondary-toolbar>
+        <div class="main-toolbar-left">
+            <dot-edit-page-info
+                [title]="title"
+                [apiLink]="apiLink"
+                [url]="url"
+            ></dot-edit-page-info>
+        </div>
+
+        <div class="main-toolbar-right">
+            <dot-global-message></dot-global-message>
+            <button
+                *ngIf="!currentTheme; else noPermission"
+                [pTooltip]="'org.dotcms.frontend.content.submission.not.proper.permissions' | dm"
+                tooltipPosition="left"
+                pButton
+                type="button"
+                class="dot-edit-layout__toolbar-action-themes p-button-text p-button-vertical"
+                [label]="'editpage.layout.theme.button.label' | dm"
+                (click)="themeDialogVisibility = !themeDialogVisibility"
+                disabled="false"
+            >
+                <span class="p-button-icon material-icons">brush</span>
+            </button>
+            <ng-template #noPermission>
+                <button
+                    pButton
+                    type="button"
+                    class="dot-edit-layout__toolbar-action-themes p-button-text p-button-vertical"
+                    [label]="currentTheme?.name || 'Themes'"
+                    (click)="themeDialogVisibility = !themeDialogVisibility"
+                >
+                    <span class="p-button-icon material-icons">brush</span>
+                </button>
+            </ng-template>
+            <dot-layout-properties [group]="form.get('layout')"></dot-layout-properties>
+            <dot-icon-button [size]="32" float icon="add" (click)="addGridBox()"></dot-icon-button>
+            <span class="toolbar__sep"></span>
+            <input
+                #templateName
+                pInputText
+                type="text"
+                class="dot-edit-layout__toolbar-template-name"
+                placeholder="{{ 'editpage.layout.toolbar.template.name' | dm }} *"
+                *ngIf="saveAsTemplate"
+                formControlName="title"
+            />
+            <button
+                pButton
+                type="button"
+                (click)="onCancel()"
+                label="{{ 'dot.common.cancel' | dm }}"
+                class="dot-edit-layout__toolbar-action-cancel p-button-secondary p-button-sm"
+            ></button>
+            <button
+                pButton
+                type="submit"
+                [disabled]="!isModelUpdated || !form.valid"
+                label="{{ 'editpage.layout.toolbar.action.save' | dm }}"
+                class="dot-edit-layout__toolbar-save p-button-sm"
+            ></button>
+        </div>
+    </dot-secondary-toolbar>
+    <dot-layout-designer formGroupName="layout"></dot-layout-designer>
+</form>

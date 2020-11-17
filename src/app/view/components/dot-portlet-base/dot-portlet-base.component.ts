@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 
 @Component({
     selector: 'dot-portlet-base',
@@ -6,6 +6,9 @@ import { Component, OnInit } from '@angular/core';
     styleUrls: ['./dot-portlet-base.component.scss']
 })
 export class DotPortletBaseComponent implements OnInit {
+    @Input()
+    boxed = true;
+
     constructor() {}
 
     ngOnInit(): void {}

@@ -10,17 +10,13 @@ import { DotDOMHtmlUtilService } from '../html/dot-dom-html-util.service';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
 import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.service';
 import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
-import { DotLayout } from '../../../shared/models/dot-layout.model';
-import { DotLayoutColumn } from '../../../shared/models/dot-layout-column.model';
-import { DotLayoutRow } from '../../../shared/models/dot-layout-row.model';
+import { DotLayout, DotLayoutColumn, DotLayoutRow } from '@shared/models/dot-edit-layout-designer';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotPageContainer } from '../../../shared/models/dot-page-container.model';
-import { DotPageContent } from '../../../shared/models/dot-page-content.model';
+import { DotPageContent, DotPageRenderState } from '@portlets/dot-edit-page/shared/models';
 import { getEditPageCss } from '../../shared/iframe-edit-mode.css';
 import { GOOGLE_FONTS } from '../html/iframe-edit-mode.js';
 import { MODEL_VAR_NAME } from '../html/iframe-edit-mode.js';
 import { DotCMSContentType } from 'dotcms-models';
-import { DotPageRenderState } from '../../../shared/models/dot-rendered-page-state.model';
 import { PageModelChangeEvent, PageModelChangeEventType } from './models';
 import {
     DotContentletEventRelocate,
@@ -28,6 +24,7 @@ import {
     DotContentletEventSelect,
     DotRelocatePayload
 } from './models/dot-contentlets-events.model';
+import { DotPageContainer } from '@models/dot-page-container/dot-page-container.model';
 
 export enum DotContentletAction {
     EDIT,

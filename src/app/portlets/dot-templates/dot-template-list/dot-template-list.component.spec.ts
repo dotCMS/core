@@ -7,6 +7,7 @@ import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { By } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';
 import { LoggerService, StringUtils } from 'dotcms-js';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 const templatesMock = [
     {
@@ -81,6 +82,13 @@ describe('DotTemplateListComponent', () => {
                 {
                     provide: ActivatedRoute,
                     useClass: ActivatedRouteMock
+                },
+                {
+                    provide: DotRouterService,
+                    useValue: {
+                        gotoPortlet: jasmine.createSpy(),
+                        goToEditTemplate: jasmine.createSpy()
+                    }
                 },
                 LoggerService,
                 StringUtils

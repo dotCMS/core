@@ -41,7 +41,7 @@
 .p-dialog .p-dialog-header .p-dialog-header-icon:focus {
     outline: 0 none;
     outline-offset: 0;
-    box-shadow: none;
+    box-shadow: $button-shadow-focus;
 }
 
 .p-dialog .p-dialog-header .p-dialog-header-icon:last-child {

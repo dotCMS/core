@@ -11,7 +11,7 @@ import { ComponentFixture, fakeAsync, tick, TestBed } from '@angular/core/testin
 import { DebugElement } from '@angular/core';
 import { DotContainerSelectorComponent } from './dot-container-selector.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { TemplateContainersCacheService } from '@portlets/dot-edit-page/template-containers-cache.service';
+import { DotTemplateContainersCacheService } from '@services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
@@ -55,7 +55,7 @@ describe('ContainerSelectorComponent', () => {
                 BrowserUtil,
                 IframeOverlayService,
                 PaginatorService,
-                TemplateContainersCacheService,
+                DotTemplateContainersCacheService,
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 ApiRoot,
                 UserModel,

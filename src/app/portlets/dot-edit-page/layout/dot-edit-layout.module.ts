@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { DotEditLayoutComponent } from './dot-edit-layout/dot-edit-layout.component';
-import { DotEditLayoutDesignerModule } from './dot-edit-layout-designer/dot-edit-layout-designer.module';
+import { DotEditLayoutDesignerModule } from '@components/dot-edit-layout-designer/dot-edit-layout-designer.module';
 
 const routes: Routes = [
     {

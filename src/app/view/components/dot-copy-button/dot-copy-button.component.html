@@ -9,5 +9,11 @@
     >{{ label }}</span
 >
 <ng-template #button>
-    <dot-icon-button icon="file_copy" (click)="copyUrlToClipboard($event)"></dot-icon-button>
+    <dot-icon-button
+        icon="file_copy"
+        [pTooltip]="tooltipText"
+        appendTo="body"
+        tooltipPosition="bottom"
+        (click)="copyUrlToClipboard($event)"
+    ></dot-icon-button>
 </ng-template>

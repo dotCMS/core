@@ -1,11 +1,12 @@
 import { catchError, map, pluck, take } from 'rxjs/operators';
-import { Observable } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 
+import { Observable } from 'rxjs';
 import { CoreWebService, DotRequestOptionsArgs } from 'dotcms-js';
-import { DotTemplate } from '@portlets/dot-edit-page/shared/models';
+
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotTemplate } from '@shared/models/dot-edit-layout-designer';
 
 /**
  * Provide util methods to handle templates in the system.
@@ -30,34 +31,19 @@ export class DotTemplatesService {
     }
 
     /**
-     * Get template by inode
+     * Get the template, pass the version default working
      *
-     * @param {string} inode
+     * @param {string} id
+     * @param {string} [version='working']
      * @returns {Observable<DotTemplate>}
      * @memberof DotTemplatesService
      */
-    getByInode(inode: string): Observable<DotTemplate> {
-        const url = `/api/v1/templates/${inode}`;
+    getById(id: string, version = 'working'): Observable<DotTemplate> {
+        const url = `/api/v1/templates/${id}/${version}`;
 
         return this.request<DotTemplate>({
             url
-        }).pipe(
-            map((template: DotTemplate) => {
-                const containers = Object.keys(template.containers).reduce((acc, item) => {
-                    return {
-                        ...acc,
-                        [item]: {
-                            container: template.containers[item]
-                        }
-                    };
-                }, {});
-
-                return {
-                    ...template,
-                    containers
-                };
-            })
-        );
+        });
     }
 
     /**
@@ -78,7 +64,6 @@ export class DotTemplatesService {
      * @memberof DotTemplatesService
      */
     update(values: DotTemplate): Observable<DotTemplate> {
-        console.log(JSON.stringify(values));
         const url = '/api/v1/templates';
 
         return this.request<DotTemplate>({ method: 'PUT', url, body: values });

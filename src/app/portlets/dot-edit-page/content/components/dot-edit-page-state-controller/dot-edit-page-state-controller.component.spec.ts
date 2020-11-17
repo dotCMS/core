@@ -13,11 +13,7 @@ import { DotEditPageStateControllerComponent } from './dot-edit-page-state-contr
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
 import { DotPersonalizeService } from '@services/dot-personalize/dot-personalize.service';
-import {
-    DotPageRenderState,
-    DotPageMode,
-    DotPageRender
-} from '@portlets/dot-edit-page/shared/models';
+import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models';
 import * as _ from 'lodash';
 import { mockUser } from '@tests/login-service.mock';
 import { mockDotRenderedPage } from '@tests/dot-page-render.mock';
@@ -27,6 +23,8 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { InputSwitchModule } from 'primeng/inputswitch';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TooltipModule } from 'primeng/tooltip';
+import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
+import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
 
 const mockDotMessageService = new MockDotMessageService({
     'editpage.toolbar.edit.page': 'Edit',

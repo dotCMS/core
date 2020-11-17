@@ -1,4 +1,4 @@
-import { DotTheme } from '@portlets/dot-edit-page/shared/models/dot-theme.model';
+import { DotTheme } from '@models/dot-edit-layout-designer';
 
 export const mockDotThemes: DotTheme[] = [
     {

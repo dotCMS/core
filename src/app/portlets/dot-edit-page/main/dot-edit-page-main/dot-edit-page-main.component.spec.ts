@@ -18,7 +18,7 @@ import { Injectable, Component, Output, EventEmitter } from '@angular/core';
 import { DotPageStateService } from '../../content/services/dot-page-state/dot-page-state.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
-import { DotPageRender } from '@portlets/dot-edit-page/shared/models';
+import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
 import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-handler/dot-workflow-event-handler.service';

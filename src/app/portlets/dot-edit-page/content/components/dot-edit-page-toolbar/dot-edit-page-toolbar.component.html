@@ -1,6 +1,10 @@
 <dot-secondary-toolbar>
     <div class="main-toolbar-left">
-        <dot-edit-page-info [pageState]="pageState"></dot-edit-page-info>
+        <dot-edit-page-info
+            [title]="pageState.page.title"
+            [url]="pageState.page.pageURI"
+            [apiLink]="apiLink"
+        ></dot-edit-page-info>
     </div>
 
     <div class="main-toolbar-right">

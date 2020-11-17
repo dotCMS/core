@@ -7,7 +7,7 @@ import { DotPageStateService } from '../../services/dot-page-state/dot-page-stat
 import { DotEditPageToolbarComponent } from './dot-edit-page-toolbar.component';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotPageMode } from '@portlets/dot-edit-page/shared/models/dot-page-mode.enum';
+
 import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -38,7 +38,7 @@ import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
-import { CoreWebServiceMock } from '../../../../../test/core-web.service.mock';
+import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { MockDotRouterService } from '@tests/dot-router-service.mock';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
@@ -51,6 +51,7 @@ import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ToolbarModule } from 'primeng/toolbar';
 import { ConfirmationService } from 'primeng/api';
+import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -190,10 +191,12 @@ describe('DotEditPageToolbarComponent', () => {
     });
 
     describe('dot-edit-page-info', () => {
-        it('should have pageState attr', () => {
+        it('should have the right attr', () => {
             fixtureHost.detectChanges();
-            const dotEditPageInfo = de.query(By.css('dot-edit-page-info'));
-            expect(dotEditPageInfo.componentInstance.pageState).toBe(mockDotRenderedPageState);
+            const dotEditPageInfo = de.query(By.css('dot-edit-page-info')).componentInstance;
+            expect(dotEditPageInfo.title).toBe('A title');
+            expect(dotEditPageInfo.url).toBe('/an/url/test');
+            expect(dotEditPageInfo.apiLink).toBe('api/v1/page/render/an/url/test?language_id=1');
         });
     });
 

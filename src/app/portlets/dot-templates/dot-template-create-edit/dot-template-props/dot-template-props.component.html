@@ -1,0 +1,20 @@
+<dot-form-dialog
+    [saveButtonDisabled]="!(isFormValid$ | async)"
+    (cancel)="onCancel()"
+    (save)="onSave()"
+>
+    <form class="p-fluid" [formGroup]="form">
+        <div class="p-field">
+            <label for="title">Title</label>
+            <input id="title" pInputText formControlName="title" autofocus />
+        </div>
+        <div class="p-field">
+            <label for="description">Description</label>
+            <textarea id="description" pInputTextarea formControlName="friendlyName"></textarea>
+        </div>
+        <div class="p-field">
+            <label for="title">Thumbnail</label>
+            <input id="title" type="text" pInputText />
+        </div>
+    </form>
+</dot-form-dialog>

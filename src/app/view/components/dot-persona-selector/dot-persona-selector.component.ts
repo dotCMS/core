@@ -6,9 +6,10 @@ import {
 } from '@components/_common/searchable-dropdown/component';
 import { DotPersona } from '@shared/models/dot-persona/dot-persona.model';
 import { delay, take } from 'rxjs/operators';
-import { DotPageRenderState, DotPageMode } from '@portlets/dot-edit-page/shared/models';
+import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models';
 import { DotAddPersonaDialogComponent } from '@components/dot-add-persona-dialog/dot-add-persona-dialog.component';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
+import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
 
 /**
  * It is dropdown of personas, it handle pagination and global search

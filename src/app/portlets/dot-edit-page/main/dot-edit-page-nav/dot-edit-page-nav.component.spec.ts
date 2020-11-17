@@ -15,7 +15,7 @@ import { Injectable, Component, Input } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
-import { DotPageRender } from '@portlets/dot-edit-page/shared/models';
+import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @Injectable()

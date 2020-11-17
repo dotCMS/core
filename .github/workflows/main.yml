@@ -1,12 +1,14 @@
 name: DotCMS/core-web Tests
 on:
     pull_request:
+        types: [synchronize, opened, reopened, ready_for_review]
     push:
         branches:
             - master
             - release-*
 jobs:
     build:
+        if: github.event.pull_request.draft == false
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             GH_TOKEN: ${{ secrets.GH_USER_TOKEN }}
