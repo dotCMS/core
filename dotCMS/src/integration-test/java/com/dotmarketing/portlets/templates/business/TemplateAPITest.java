@@ -350,7 +350,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         assertTrue(templateAPI.archive(templateSaved, user, false));
         assertTrue(templateSaved.isArchived());
 
-        templateAPI.unarchive(templateSaved);
+        templateAPI.unarchive(templateSaved,user);
         assertFalse(templateSaved.isArchived());
     }
 

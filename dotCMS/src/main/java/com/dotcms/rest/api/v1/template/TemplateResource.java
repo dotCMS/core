@@ -685,7 +685,7 @@ public class TemplateResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response archive(@Context final HttpServletRequest  request,
                                  @Context final HttpServletResponse response,
-                                 final List<String> templatesToArchive) throws DotDataException, DotSecurityException {
+                                 final List<String> templatesToArchive) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response).rejectWhenNoUser(true).init();
@@ -701,23 +701,17 @@ public class TemplateResource {
         }
 
         for(final String templateId : templatesToArchive){
-            final Template template = this.templateAPI.findWorkingTemplate(templateId,user,pageMode.respectAnonPerms);
-
-            if (null != template && InodeUtils.isSet(template.getInode())) {
-                try{
-                    if (this.templateAPI.archive(template, user, pageMode.respectAnonPerms)) {
-
-                        ActivityLogger.logInfo(this.getClass(), "Archive Template Action", "User " +
-                                user.getPrimaryKey() + " archived template: " + template.getIdentifier());
-                        archivedTemplates.add(templateId);
-                    } else {
-                        failedToArchive.add(templateId);
-                    }
-                } catch(Exception e) {
-                    Logger.error(this, e.getMessage(), e);
+            try{
+                final Template template = this.templateAPI.findWorkingTemplate(templateId,user,pageMode.respectAnonPerms);
+                if (null != template && InodeUtils.isSet(template.getInode()) && this.templateAPI.archive(template, user, pageMode.respectAnonPerms)) {
+                    ActivityLogger.logInfo(this.getClass(), "Archive Template Action", "User " +
+                            user.getPrimaryKey() + " archived template: " + template.getIdentifier());
+                    archivedTemplates.add(templateId);
+                } else {
                     failedToArchive.add(templateId);
                 }
-            } else {
+            } catch(Exception e) {
+                Logger.error(this, e.getMessage(), e);
                 failedToArchive.add(templateId);
             }
         }
@@ -725,7 +719,7 @@ public class TemplateResource {
         return Response.ok(new ResponseEntityView(
                 CollectionsUtils.map(
                         "archivedTemplates", archivedTemplates,
-                        "failedToArchived",   failedToArchive
+                        "failedToArchive",   failedToArchive
                 ))).build();
     }
 

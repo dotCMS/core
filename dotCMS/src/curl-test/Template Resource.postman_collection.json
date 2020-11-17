@@ -1,18 +1,736 @@
 {
 	"info": {
-		"_postman_id": "ca04fce0-52b8-4d12-9ab0-35b4a78c794a",
+		"_postman_id": "8ab13ec3-b9fb-4363-81ae-ae26b402ba48",
 		"name": "Template Resource",
 		"description": "Make the test for the template resource crud",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
+			"name": "Archive",
+			"item": [
+				{
+					"name": "Create New Template to Archive",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "99981376-79ce-4da4-8222-e35007aa5234",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"body check\", function () {",
+									"    pm.expect(jsonData.entity.body).to.eql('This is the body');",
+									"});",
+									"",
+									"pm.test(\"friendlyName check\", function () {",
+									"    pm.expect(jsonData.entity.friendlyName).to.eql('This is a postman test description');",
+									"});",
+									"",
+									"pm.test(\"Title check\", function () {",
+									"    pm.expect(jsonData.entity.title).to.eql('PostMan Test');",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"templateIdToArchive\", jsonData.entity.identifier);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\":\"PostMan Test\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						},
+						"description": "Creates a new template"
+					},
+					"response": []
+				},
+				{
+					"name": "Archive Template Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "f7158e56-9b10-4de3-ac88-f40425d89e29",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Archive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.archivedTemplates).to.have.lengthOf(1);",
+									"});",
+									"",
+									"pm.test(\"Failed To Archive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.failedToArchive).to.have.lengthOf(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToArchive}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_archive",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_archive"
+							]
+						},
+						"description": "Archive one template successfully"
+					},
+					"response": []
+				},
+				{
+					"name": "Re-Archive Template Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "341a7b9e-9caa-490d-b36e-6650ab982d2e",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Archive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.archivedTemplates).to.have.lengthOf(1);",
+									"});",
+									"",
+									"pm.test(\"Failed To Archive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.failedToArchive).to.have.lengthOf(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToArchive}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_archive",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_archive"
+							]
+						},
+						"description": "Archive one template successfully"
+					},
+					"response": []
+				},
+				{
+					"name": "Archive Template Failed To Archive Id Not Exist",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "667b0999-2132-4219-bbd7-c0e145d157cd",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Archive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.archivedTemplates).to.have.lengthOf(0);",
+									"});",
+									"",
+									"pm.test(\"Failed To Archive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.failedToArchive).to.have.lengthOf(1);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"Id-Not-Exist\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_archive",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_archive"
+							]
+						},
+						"description": "Archive one template successfully"
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Unarchive",
+			"item": [
+				{
+					"name": "Create New Template to Unarchive",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "00bc779f-ced9-46ba-8bcd-7f23f6788af2",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"body check\", function () {",
+									"    pm.expect(jsonData.entity.body).to.eql('This is the body');",
+									"});",
+									"",
+									"pm.test(\"friendlyName check\", function () {",
+									"    pm.expect(jsonData.entity.friendlyName).to.eql('This is a postman test description');",
+									"});",
+									"",
+									"pm.test(\"Title check\", function () {",
+									"    pm.expect(jsonData.entity.title).to.eql('PostMan Test');",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"templateIdToUnArchive\", jsonData.entity.identifier);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\":\"PostMan Test\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						},
+						"description": "Creates a new template"
+					},
+					"response": []
+				},
+				{
+					"name": "UnArchive Template Failed to Unarchive Template is not Archived",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "2ead5943-ebf4-498c-88dd-0472bebe7842",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Unarchive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.unarchivedTemplates).to.have.lengthOf(0);",
+									"});",
+									"",
+									"pm.test(\"Failed To Unarchive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.failedToUnarchive).to.have.lengthOf(1);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToUnArchive}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_unarchive",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_unarchive"
+							]
+						},
+						"description": "Archive one template successfully"
+					},
+					"response": []
+				},
+				{
+					"name": "UnArchive Template Failed to Unarchive Id Not Exist",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "bedcb1bb-365d-43f8-ab48-595939e49887",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Unarchive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.unarchivedTemplates).to.have.lengthOf(0);",
+									"});",
+									"",
+									"pm.test(\"Failed To Unarchive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.failedToUnarchive).to.have.lengthOf(1);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"Id-Not-Exist\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_unarchive",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_unarchive"
+							]
+						},
+						"description": "Archive one template successfully"
+					},
+					"response": []
+				},
+				{
+					"name": "Archive Template Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "bb2069a4-b762-47e1-b6e7-5eb7f2a67e82",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Archive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.archivedTemplates).to.have.lengthOf(1);",
+									"});",
+									"",
+									"pm.test(\"Failed To Archive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.failedToArchive).to.have.lengthOf(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToUnArchive}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_archive",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_archive"
+							]
+						},
+						"description": "Archive one template successfully"
+					},
+					"response": []
+				},
+				{
+					"name": "UnArchive Template Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "f0e97522-2876-427b-9b00-f67b38918f4a",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Unarchive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.unarchivedTemplates).to.have.lengthOf(1);",
+									"});",
+									"",
+									"pm.test(\"Failed To Unarchive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.failedToUnarchive).to.have.lengthOf(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToUnArchive}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_unarchive",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_unarchive"
+							]
+						},
+						"description": "Archive one template successfully"
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
 			"name": "Create New Template",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
-						"id": "e4345c2e-2b27-4316-a1ed-3089b9a93470",
+						"id": "4231aad9-eff1-4dbf-880c-21c129a2992c",
 						"exec": [
 							"var jsonData = pm.response.json();",
 							"",
@@ -93,7 +811,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "ae1bab8d-cd9f-4f2b-a6e9-bebc660c4573",
+						"id": "d8eb261e-3c4f-4e3c-aa08-5eb4ad814f74",
 						"exec": [
 							"pm.test(\"Status code should be 400\", function () {",
 							"    pm.response.to.have.status(400);",
@@ -156,7 +874,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "b7c9e706-9c76-4974-9d6f-da0841d5cf49",
+						"id": "1b1a3f6a-8913-4dfd-ae79-c359df76ddcb",
 						"exec": [
 							"var jsonData = pm.response.json();",
 							"",
@@ -236,7 +954,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "5a78d98d-b8e7-470a-9a92-2747a27a4db7",
+						"id": "c14099ff-1186-4169-b266-8076d349ea42",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -298,7 +1016,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "5a78d98d-b8e7-470a-9a92-2747a27a4db7",
+						"id": "61ab2895-60d8-48d2-8ef0-0abe2fc72263",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -375,7 +1093,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "5a78d98d-b8e7-470a-9a92-2747a27a4db7",
+						"id": "5bd0859e-9ad0-43c0-afea-cd874ea7bc65",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -452,7 +1170,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "5a78d98d-b8e7-470a-9a92-2747a27a4db7",
+						"id": "90d03fc4-dc80-4df0-a8d3-f6f153709a2d",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -529,7 +1247,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "18562ad0-b55b-4052-a371-5f83076124d3",
+						"id": "140d1be1-8873-4f42-a62e-3d1a725a9c5f",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -607,7 +1325,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "de1fb7e9-bd2a-4e52-8431-790c0a68125c",
+						"id": "95d32322-1f1c-49cf-beb8-1655903630ac",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -671,7 +1389,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "62c28595-2472-4eb7-b306-fe773cbd2c64",
+						"id": "90b2187b-6501-4c8a-9366-6c7659325e1c",
 						"exec": [
 							"pm.test(\"Status code should not exists yet 404\", function () {",
 							"    pm.response.to.have.status(404);",
@@ -735,7 +1453,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "84c724c5-4f72-417f-b245-5ff3b1adbda6",
+						"id": "18170528-a69e-4f08-96a9-257e878786e5",
 						"exec": [
 							"var jsonData = pm.response.json();",
 							"pm.test(\"Status code should be ok 200\", function () {",
@@ -814,7 +1532,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "e87ef6d6-2e83-421f-90e1-3139a69e08d7",
+						"id": "46ab26d9-b8f5-41cf-ba5f-77d3e4029515",
 						"exec": [
 							"pm.test(\"Status code should be ok 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -882,7 +1600,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "beb76665-29c1-4409-a6e9-bfebd8976ff0",
+						"id": "12be76db-f9e8-480a-bfd0-d48f87b44b65",
 						"exec": [
 							"var jsonData = pm.response.json();",
 							"",
@@ -962,7 +1680,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "55fd70d6-6ff8-43f7-a17f-ece72d752ce6",
+						"id": "8cb719ea-67bd-4881-aa01-40b78a8cc716",
 						"exec": [
 							"pm.test(\"Status code should not exists yet 404\", function () {",
 							"    pm.response.to.have.status(404);",
@@ -1026,7 +1744,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "0b8ac8a7-1063-47af-8713-b6c03706c926",
+						"id": "2cf813e5-c966-40c9-970c-969ebee0c694",
 						"exec": [
 							"pm.test(\"Status code should be ok 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -1094,82 +1812,12 @@
 			"response": []
 		},
 		{
-			"name": "Archive Template",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "e1c588fd-a786-4906-b40e-f94241459804",
-						"exec": [
-							"pm.test(\"Status code should be ok 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
-						}
-					]
-				},
-				"method": "PUT",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/templates/{{temporaryInode}}/_archive",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"templates",
-						"{{temporaryInode}}",
-						"_archive"
-					]
-				},
-				"description": "Archive the template"
-			},
-			"response": []
-		},
-		{
 			"name": "Get Templates Archive",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
-						"id": "ee71adf7-902c-4aef-8cec-2409093479be",
+						"id": "af57974c-39a8-4512-bf34-1a969d698797",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -1243,7 +1891,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "d5f673b4-558b-400a-889d-6955a7f76255",
+						"id": "c6dec935-64e1-4791-a6b4-3a49d4866040",
 						"exec": [
 							"pm.test(\"Status code should be ok 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -1308,152 +1956,12 @@
 			"response": []
 		},
 		{
-			"name": "Unarchive Template",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "e8bd0fd8-ffc6-4953-85b0-d4675d67a21e",
-						"exec": [
-							"pm.test(\"Status code should be ok 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
-						}
-					]
-				},
-				"method": "PUT",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/templates/{{temporaryInode}}/_unarchive",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"templates",
-						"{{temporaryInode}}",
-						"_unarchive"
-					]
-				},
-				"description": "unarchive the template"
-			},
-			"response": []
-		},
-		{
-			"name": "Archive Template #2",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "7d59cbaa-2619-4502-9c6d-905679cb870f",
-						"exec": [
-							"pm.test(\"Status code should be ok 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
-						}
-					]
-				},
-				"method": "PUT",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/templates/{{temporaryInode}}/_archive",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"templates",
-						"{{temporaryInode}}",
-						"_archive"
-					]
-				},
-				"description": "archive the template 2"
-			},
-			"response": []
-		},
-		{
 			"name": "Delete Template",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
-						"id": "cd8da826-55f6-4820-a2f8-968fa40bcaba",
+						"id": "fd6c1a88-7e2f-4095-8d6d-bbae45216aa4",
 						"exec": [
 							"pm.test(\"Status code should be ok 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -1522,7 +2030,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "d99e6692-f1f4-40ea-88ff-0bb4381df9ce",
+						"id": "d67a4d0f-f326-4d3b-9438-43ab709b8ed0",
 						"exec": [
 							"pm.test(\"Status code should be 404 since was deleted\", function () {",
 							"    pm.response.to.have.status(404);",
@@ -1583,29 +2091,39 @@
 	],
 	"variable": [
 		{
-			"id": "7e26a79b-8e46-4580-96ef-b018b149302b",
+			"id": "d8b892f5-5afa-4a22-a1ea-b8b750a85e92",
 			"key": "temporalInode",
 			"value": "27928cad-5c13-41a9-bcf1-ce23a6cb55c8"
 		},
 		{
-			"id": "5c68fa54-28b7-4509-b8a1-96c83bbe766c",
+			"id": "a9b7eb63-5e43-4d52-bbd3-6881c50abc71",
 			"key": "temporalIdentifier",
 			"value": "037debee-59cb-42b7-b0d1-1cab580c2b76"
 		},
 		{
-			"id": "cfc58119-012f-4e8c-a853-5aa7237c0647",
+			"id": "644b6012-c921-468d-a9f9-1e4422452fc2",
 			"key": "temporaryInode",
 			"value": "3e233eda-31e4-4cd4-9741-adffad0697ce"
 		},
 		{
-			"id": "7e284f9d-ec06-46bc-acdf-2a673061c405",
+			"id": "b4de4874-45cf-4a23-89d1-98c6fc8d265d",
 			"key": "temporaryIdentifier",
 			"value": "b6b41cff-9247-47eb-8f97-b7df0462916c"
 		},
 		{
-			"id": "a6705514-61f7-4973-9ebb-fa842b128472",
+			"id": "ff2087a4-a3d3-48a1-aa7b-d0c16a833aa3",
 			"key": "templateIdentifier",
 			"value": "b6b41cff-9247-47eb-8f97-b7df0462916c"
+		},
+		{
+			"id": "51b24924-87cf-4ef5-bd1a-5bfdce85be69",
+			"key": "templateIdToArchive",
+			"value": "602490ff-0bbf-4f93-96b0-041b9ece05b4"
+		},
+		{
+			"id": "6ba438c2-1eb0-4c3d-b586-bda2b2730487",
+			"key": "templateIdToUnArchive",
+			"value": "54f9e04f-5f59-48e9-aed6-bbbeebc22be2"
 		}
 	],
 	"protocolProfileBehavior": {}

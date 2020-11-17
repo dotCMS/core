@@ -185,14 +185,14 @@ public interface TemplateAPI {
 	 * @return boolean true if success
 	 */
 	boolean archive (Template template, User user, boolean respectFrontendRoles)
-            throws DotDataException;
+			throws DotDataException, DotSecurityException;
 
 	/**
 	 * If the template is archive will unarchive it
 	 * @param template {@link Template}
 	 * @param user     {@link User}
 	 */
-	boolean unarchive (Template template, User user) throws DotDataException;
+	boolean unarchive (Template template, User user) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Delete the specified template.
@@ -346,5 +346,13 @@ public interface TemplateAPI {
 	 * @throws DotDataException
 	 */
 	List<Template> findTemplatesByContainerInode(final String containerInode) throws DotDataException;
+
+	/**
+	 * Check if a template is archived.
+	 * @param template
+	 * @return true if template is archived, false if not.
+	 * @throws DotDataException
+	 */
+	boolean isArchived(final Template template) throws DotDataException;
 
 }

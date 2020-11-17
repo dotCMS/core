@@ -200,9 +200,14 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 	@WrapInTransaction
 	public boolean archive (final Template template, final User user, final boolean respectFrontendRoles)
-			throws DotDataException {
+			throws DotDataException, DotSecurityException {
 
 		Logger.debug(this, ()-> "Doing archive of the template: " + template.getIdentifier());
+
+		//Check that the template is not already archived
+		if(isArchived(template)){
+			return true;
+		}
 
 		//Check Edit Permissions over Template
 		if(!this.permissionAPI.doesUserHavePermission(template, PERMISSION_EDIT, user)){
@@ -225,7 +230,8 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	}
 
 	@WrapInTransaction
-	public boolean unarchive (final Template template, final User user) throws DotDataException {
+	public boolean unarchive (final Template template, final User user)
+			throws DotDataException, DotSecurityException {
 		Logger.debug(this, ()-> "Doing unarchive of the template: " + template.getIdentifier());
 		//Check Edit Permissions over Template
 		if(!this.permissionAPI.doesUserHavePermission(template, PERMISSION_EDIT, user)){
@@ -233,11 +239,15 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 			return false;
 		}
 		// Check that the template is archived
-		if (Try.of(()->template.isArchived()).getOrElseThrow(e -> new RuntimeException(e))) {
-			Try.run(()->WebAssetFactory.unArchiveAsset(template))
-					.getOrElseThrow(e -> new RuntimeException(e));
+		if(isArchived(template)){
+			APILocator.getVersionableAPI().setDeleted(template, false);
+			return true;
 		}
-		return true;
+		return false;
+	}
+
+	public boolean isArchived(final Template template) throws DotDataException {
+		return APILocator.getVersionableAPI().isDeleted(template);
 	}
 
 	@WrapInTransaction
