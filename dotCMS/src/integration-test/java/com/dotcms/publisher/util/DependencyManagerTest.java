@@ -135,6 +135,14 @@ public class DependencyManagerTest {
         validateDependencies(blogContentParent, blogContentChild, relationship, dependencyManager);
     }
 
+    /**
+     * <b>Method to test:</b> {@link DependencyManager#setDependencies()} <p>
+     * <b>Given Scenario:</b> A Page using a FileContainer and the FileContainer jus has the container.vtl file<p>
+     * <b>ExpectedResult:</b> Should include the container.vtl file as dependencies
+     * @throws DotSecurityException
+     * @throws DotBundleException
+     * @throws DotDataException
+     */
     @Test
     public void test_Page_with_FileContainer_as_Dependencies()
             throws DotSecurityException, DotBundleException, DotDataException {
