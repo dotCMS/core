@@ -33,8 +33,6 @@ public class ServerHeartbeatJob implements Job {
 		try{
 
 			LicenseManager.getInstance().takeLicenseFromRepoIfNeeded();
-
-
 			LicenseUtil.updateLicenseHeartbeat();
 
 			ClusterFactory.rewireClusterIfNeeded();
