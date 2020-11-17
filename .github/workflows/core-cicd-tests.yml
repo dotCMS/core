@@ -51,11 +51,11 @@ jobs:
           fi
       - name: Prepare dot-cicd
         run: |
-          echo "${env}"
           chmod +x .cicd/discover.sh && .cicd/discover.sh
         if: ${{ env.jobRun }}
       - name: Check Provider
         run: |
+          echo "${{ env }}"
           dotcicd/library/checkProvider.sh github
         if: ${{ env.jobRun }}
       - name: Fail provider
