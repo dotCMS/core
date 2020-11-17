@@ -55,7 +55,8 @@ jobs:
         if: ${{ env.jobRun }}
       - name: Check Provider
         run: |
-          echo "${{ env }}"
+          echo "${{ env.CURRENT_BRANCH }}"
+          echo "${{ env.jobrun }}"
           dotcicd/library/checkProvider.sh github
         if: ${{ env.jobRun }}
       - name: Fail provider
