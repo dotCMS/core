@@ -160,7 +160,7 @@ describe('DotAppsImportExportDialogComponent', () => {
             hostComponent.action = 'Export';
         });
 
-        it(`should have right labels and accept be disabled`, async () => {
+        it(`should have right params and accept be disabled`, async () => {
             hostFixture.detectChanges();
             comp.form.setValue({
                 password: ''
@@ -172,7 +172,8 @@ describe('DotAppsImportExportDialogComponent', () => {
                 messageServiceMock.get('apps.confirmation.export.header')
             );
             expect(dialog.componentInstance.appendToBody).toBe(true);
-            expect(inputPassword.nativeElement.placeholder).toBe(
+            expect(inputPassword.attributes['pPassword']).not.toBeUndefined();
+                expect(inputPassword.nativeElement.placeholder).toBe(
                 messageServiceMock.get('apps.confirmation.export.password.label')
             );
             expect(dialog.componentInstance.actions.accept.label).toBe(

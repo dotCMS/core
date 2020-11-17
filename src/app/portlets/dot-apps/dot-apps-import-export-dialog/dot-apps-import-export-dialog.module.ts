@@ -9,11 +9,13 @@ import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotAutofocusModule } from 'projects/dot-rules/src/lib/directives/dot-autofocus/dot-autofocus.module';
 import { ReactiveFormsModule } from '@angular/forms';
 import { DotAppsImportExportDialogComponent } from './dot-apps-import-export-dialog.component';
+import { PasswordModule } from 'primeng/password';
 
 @NgModule({
     imports: [
         InputTextModule,
         CommonModule,
+        PasswordModule,
         DotDialogModule,
         DotAutofocusModule,
         ReactiveFormsModule,

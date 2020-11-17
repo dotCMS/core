@@ -86,7 +86,7 @@ const routeDatamock = {
 };
 class ActivatedRouteMock {
     get data() {
-        return of(routeDatamock);
+        return {};
     }
 }
 
@@ -128,6 +128,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
     let component: DotAppsConfigurationDetailComponent;
     let fixture: ComponentFixture<DotAppsConfigurationDetailComponent>;
     let appsServices: DotAppsService;
+    let activatedRoute: ActivatedRoute;
     let routerService: DotRouterService;
 
     const messageServiceMock = new MockDotMessageService(messages);
@@ -185,12 +186,14 @@ describe('DotAppsConfigurationDetailComponent', () => {
             component = fixture.debugElement.componentInstance;
             appsServices = TestBed.inject(DotAppsService);
             routerService = TestBed.inject(DotRouterService);
+            activatedRoute = TestBed.inject(ActivatedRoute);
             spyOn(appsServices, 'saveSiteConfiguration').and.callThrough();
         })
     );
 
     describe('Without dynamic params', () => {
         beforeEach(() => {
+            spyOnProperty(activatedRoute, 'data').and.returnValue(of(routeDatamock));
             fixture.detectChanges();
         });
 
@@ -200,10 +203,12 @@ describe('DotAppsConfigurationDetailComponent', () => {
 
         it('should set labels and buttons with right values', () => {
             expect(
-                fixture.debugElement.query(By.css('[data-testid="cancelBtn"]')).nativeElement.innerText
+                fixture.debugElement.query(By.css('[data-testid="cancelBtn"]')).nativeElement
+                    .innerText
             ).toContain(messageServiceMock.get('Cancel'));
             expect(
-                fixture.debugElement.query(By.css('[data-testid="saveBtn"]')).nativeElement.innerText
+                fixture.debugElement.query(By.css('[data-testid="saveBtn"]')).nativeElement
+                    .innerText
             ).toContain(messageServiceMock.get('Save'));
             expect(
                 fixture.debugElement.query(By.css('.dot-apps-configuration-detail__host-name'))
@@ -312,11 +317,14 @@ describe('DotAppsConfigurationDetailComponent', () => {
                     value: 'test'
                 }
             ];
-            routeDatamock.data = {
+            const mockRoute = { data: {} };
+            mockRoute.data = {
                 ...appData,
                 allowExtraParams: true,
                 sites: sitesDynamic
             };
+            spyOnProperty(activatedRoute, 'data').and.returnValue(of(mockRoute));
+
             fixture.detectChanges();
         });
 

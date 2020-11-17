@@ -25,7 +25,8 @@ import { take, takeUntil } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-apps-import-export-dialog',
-    templateUrl: './dot-apps-import-export-dialog.component.html'
+    templateUrl: './dot-apps-import-export-dialog.component.html',
+    styleUrls: ['./dot-apps-import-export-dialog.component.scss']
 })
 export class DotAppsImportExportDialogComponent implements OnChanges, OnDestroy {
     @ViewChild('importFile') importFile: ElementRef;
