@@ -805,8 +805,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 								   final Field field,
 								   final Object valueObj,
 								   final boolean fileMetadata) throws DotDataException, DotSecurityException {
-
-		final Map<String,Object> keyValueMap = valueObj instanceof Map ? (Map)valueObj : KeyValueFieldUtil.JSONValueToHashMap((String) valueObj);
+		@SuppressWarnings("unchecked")
+		final Map<String,Object> keyValueMap = valueObj instanceof Map ? new HashMap<>((Map<String,Object>)valueObj) : KeyValueFieldUtil.JSONValueToHashMap((String) valueObj);
 		Set<String> allowedFields = new HashSet<>();
 
 		if(fileMetadata) {
