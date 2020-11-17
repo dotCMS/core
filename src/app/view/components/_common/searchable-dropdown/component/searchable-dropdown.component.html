@@ -17,7 +17,7 @@
         icon="pi pi-chevron-down"
         iconPos="right"
         type="button"
-        [ngStyle]="{ width: width + 'px' }"
+        [ngStyle]="{ width: width }"
         [disabled]="disabled"
     ></button>
 </ng-template>
@@ -28,7 +28,7 @@
     (onShow)="showOverlayHandler()"
     [dismissable]="true"
     [styleClass]="cssClass"
-    [style]="{ 'min-height': overlayPanelMinHeight + 'px', width: (overlayWidth || width) + 'px' }"
+    [style]="{ 'min-height': overlayPanelMinHeight + 'px', width: overlayWidth }"
     appendTo="body"
 >
     <header class="searchable-dropdown__search">
