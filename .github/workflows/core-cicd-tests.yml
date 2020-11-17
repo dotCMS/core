@@ -51,6 +51,7 @@ jobs:
           fi
       - name: Prepare dot-cicd
         run: |
+          echo "${env}"
           chmod +x .cicd/discover.sh && .cicd/discover.sh
         if: ${{ env.jobRun }}
       - name: Check Provider
@@ -242,12 +243,14 @@ jobs:
           fi
           echo "runMssql=${RUN_MSSQL}" >> $GITHUB_ENV
 
+          JOB_RUN=false
           echo "jobRun=false" >> $GITHUB_ENV
           if [[ ${IS_PR} == true || ${SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ run-all|run-postgres|run-mysql|run-oracle|run-mssql|run-unit ]]; then
             if [[ (${RUN_POSTGRES} == true && "${{ matrix.databaseType }}" == "postgres") || (${RUN_MYSQL} == true && "${{ matrix.databaseType }}" == "mysql") || (${RUN_ORACLE}  == true && "${{ matrix.databaseType }}" == "oracle") || (${RUN_MSSQL} == true && "${{ matrix.databaseType }}" == "mssql") ]]; then
-              echo "jobRun=true" >> $GITHUB_ENV
+              JOB_RUN=true
             fi
           fi
+          echo "jobRun=${JOB_RUN}" >> $GITHUB_ENV
       - name: Prepare dot-cicd
         run: |
           chmod +x .cicd/discover.sh && .cicd/discover.sh
