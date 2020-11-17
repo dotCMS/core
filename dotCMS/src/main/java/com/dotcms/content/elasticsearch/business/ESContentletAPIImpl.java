@@ -35,12 +35,12 @@ import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.rendering.velocity.services.PageLoader;
-import com.dotcms.repackage.com.google.common.base.Preconditions;
-import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
-import com.dotcms.repackage.com.google.common.collect.Lists;
-import com.dotcms.repackage.com.google.common.collect.Maps;
-import com.dotcms.repackage.com.google.common.collect.Sets;
-import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import org.apache.commons.io.FileUtils;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
@@ -5005,29 +5005,33 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             final Identifier contIdent = APILocator.getIdentifierAPI().find(contentlet);
-            if(contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET){
-                //Parse file META-DATA
-                final File binFile =  getBinaryFile(contentlet.getInode(), FileAssetAPI.BINARY_FIELD, user);
-                if(binFile != null){
-                    contentlet.setProperty(FileAssetAPI.FILE_NAME_FIELD, binFile.getName());
-                    if(!UtilMethods.isSet(contentlet.getStringProperty(FileAssetAPI.DESCRIPTION))){
-                        String desc = UtilMethods.getFileName(binFile.getName());
-                        contentlet.setProperty(FileAssetAPI.DESCRIPTION, desc);
-                    }
-                    final Map<String, String> metaMap = APILocator.getFileAssetAPI().getMetaDataMap(contentlet, binFile);
+            if(contentlet.isFileAsset()){
+               final boolean legacyParseFileAssetMetadata = Config.getBooleanProperty("legacy.fileAsset.metadata", false);
+               if(legacyParseFileAssetMetadata){
+                    //Parse file META-DATA
+                    final File binFile =  getBinaryFile(contentlet.getInode(), FileAssetAPI.BINARY_FIELD, user);
+                    if(binFile != null){
+                        contentlet.setProperty(FileAssetAPI.FILE_NAME_FIELD, binFile.getName());
+                        if(!UtilMethods.isSet(contentlet.getStringProperty(FileAssetAPI.DESCRIPTION))){
+                            String desc = UtilMethods.getFileName(binFile.getName());
+                            contentlet.setProperty(FileAssetAPI.DESCRIPTION, desc);
+                        }
 
-                    if(metaMap != null) {
-                        final Gson gson = new GsonBuilder().disableHtmlEscaping().create();
-                        contentlet.setProperty(FileAssetAPI.META_DATA_FIELD, gson.toJson(metaMap));
-                        contentlet = contentFactory.save(contentlet);
-                        contentlet.setIndexPolicy(indexPolicy);
-                        contentlet.setIndexPolicyDependencies(indexPolicyDependencies);
-                    }
-                }
+                        final Map<String, String> metaMap = APILocator.getFileAssetAPI().getMetaDataMap(contentlet, binFile);
 
-                // clear possible CSS cache
-                CacheLocator.getCSSCache().remove(contIdent.getHostId(), contIdent.getURI(), true);
-                CacheLocator.getCSSCache().remove(contIdent.getHostId(), contIdent.getURI(), false);
+                        if(metaMap != null) {
+                            final Gson gson = new GsonBuilder().disableHtmlEscaping().create();
+                            contentlet.setProperty(FileAssetAPI.META_DATA_FIELD, gson.toJson(metaMap));
+                            contentlet = contentFactory.save(contentlet);
+                            contentlet.setIndexPolicy(indexPolicy);
+                            contentlet.setIndexPolicyDependencies(indexPolicyDependencies);
+                        }
+                    }
+
+                    // clear possible CSS cache
+                    CacheLocator.getCSSCache().remove(contIdent.getHostId(), contIdent.getURI(), true);
+                    CacheLocator.getCSSCache().remove(contIdent.getHostId(), contIdent.getURI(), false);
+               }
             }
 
             // both file & page as content might trigger a menu cache flush

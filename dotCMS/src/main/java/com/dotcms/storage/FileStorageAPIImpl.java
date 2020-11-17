@@ -3,13 +3,12 @@ package com.dotcms.storage;
 import com.dotcms.util.MimeTypeUtils;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.contentlet.business.ContentletCache;
+import com.dotmarketing.portlets.contentlet.business.MetadataCache;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
@@ -18,7 +17,6 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
-import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Predicate;
 
@@ -33,7 +31,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
     private volatile ObjectWriterDelegate objectWriterDelegate;
     private volatile MetadataGenerator metadataGenerator;
     private final StoragePersistenceProvider persistenceProvider;
-    private final ContentletCache contentletCache;
+    private final MetadataCache metadataCache;
 
     /**
      * Testing constructor
@@ -46,12 +44,12 @@ public class FileStorageAPIImpl implements FileStorageAPI {
     FileStorageAPIImpl(final ObjectReaderDelegate objectReaderDelegate,
             final ObjectWriterDelegate objectWriterDelegate,
             final MetadataGenerator metadataGenerator,
-            final StoragePersistenceProvider persistenceProvider, final ContentletCache contentletCache) {
+            final StoragePersistenceProvider persistenceProvider, final MetadataCache metadataCache) {
         this.objectReaderDelegate = objectReaderDelegate;
         this.objectWriterDelegate = objectWriterDelegate;
         this.metadataGenerator = metadataGenerator;
         this.persistenceProvider = persistenceProvider;
-        this.contentletCache = contentletCache;
+        this.metadataCache = metadataCache;
     }
 
     /**
@@ -59,7 +57,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
      */
     public FileStorageAPIImpl() {
         this(new JsonReaderDelegate<>(Map.class), new JsonWriterDelegate(),
-                new TikaMetadataGenerator(), StoragePersistenceProvider.INSTANCE.get(), CacheLocator.getContentletCache());
+                new TikaMetadataGenerator(), StoragePersistenceProvider.INSTANCE.get(), CacheLocator.getMetadataCache());
     }
 
     /**
@@ -121,6 +119,9 @@ public class FileStorageAPIImpl implements FileStorageAPI {
             mapBuilder.put(SHA226_META_KEY,
                     Try.of(() -> FileUtil.sha256toUnixHash(binary)).getOrElse("unknown"));
 
+            //TODO: Test this!
+            mapBuilder.put(IS_IMAGE_META_KEY, UtilMethods.isImage(relPath));
+
         }
 
         return mapBuilder.build();
@@ -179,7 +180,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         //if the entry isn't already there skip and simply store in cache.
         if (!storage.existsObject(storageKey.getGroup(), storageKey.getPath())) {
             if (this.validBinary(binary)) {
-                Logger.warn(FileStorageAPIImpl.class, String.format(
+                Logger.info(FileStorageAPIImpl.class, ()->String.format(
                         "Object identified by `/%s/%s` didn't exist in storage %s will be generated.",
                         storageKey.getGroup(), storageKey,
                         configuration.isFull() ? "full-metadata" : "basic-metadata"));
@@ -228,7 +229,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
      * @param metadataMap
      */
     private void putIntoCache(final String cacheKey, final Map<String, Serializable> metadataMap) {
-        contentletCache.addMetadataMap(cacheKey, metadataMap);
+        metadataCache.addMetadataMap(cacheKey, metadataMap);
     }
 
     /**
@@ -243,7 +244,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
         final Map<String, Serializable> objectMap = (Map<String, Serializable>) storage
                 .pullObject(storageKey.getGroup(), storageKey.getPath(), this.objectReaderDelegate);
-        Logger.info(this, "Metadata read from: " + storageKey.getPath());
+        Logger.info(this, "Metadata read from path: " + storageKey.getPath());
 
         return objectMap;
     }
@@ -307,7 +308,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
             throws DotDataException {
 
         if (requestMetaData.isCache()) {
-            final Map<String, Serializable> metadataMap = contentletCache
+            final Map<String, Serializable> metadataMap = metadataCache
                     .getMetadataMap(requestMetaData.getCacheKeySupplier().get());
             if (null != metadataMap) {
                 return metadataMap;
@@ -326,8 +327,9 @@ public class FileStorageAPIImpl implements FileStorageAPI {
             Logger.info(FileStorageAPIImpl.class,
                     "Retrieve the meta data from storage, path: " + storageKey.getPath());
             if (null != requestMetaData.getCacheKeySupplier()) {
-                 putIntoCache(requestMetaData.getCacheKeySupplier().get(),
-                        requestMetaData.getWrapMetadataMapForCache().apply(metadataMap));
+                final Map<String, Serializable> projection = requestMetaData.getProjectionMapForCache().apply(metadataMap);
+                putIntoCache(requestMetaData.getCacheKeySupplier().get(), projection);
+                return projection;
             }
 
         }

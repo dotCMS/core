@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
 
 /**
  * Encapsulates the generation of the contentlet metadata, in addition the interaction of the file system and cache to stores the metadata and the actual generation of the meta
@@ -23,11 +24,11 @@ public interface FileMetadataAPI {
      *
      * Note: if the basicBinaryFieldNameSet has field which is also include on the fullBinaryFieldNameSet, it will be skipped.
      * @param contentlet Contentlet
-     * @param basicBinaryFieldNameSet {@link Set} fields to generate basic metadata
-     * @param fullBinaryFieldNameSet  {@link Set} fields to generate full metadata
+     * @param basicBinaryFieldNameSet {@link SortedSet} fields to generate basic metadata
+     * @param fullBinaryFieldNameSet  {@link SortedSet} fields to generate full metadata
      * @return ContentletMetadata
      */
-    ContentletMetadata  generateContentletMetadata (Contentlet contentlet, Set<String> basicBinaryFieldNameSet, Set<String> fullBinaryFieldNameSet)
+    ContentletMetadata  generateContentletMetadata (Contentlet contentlet, SortedSet<String> basicBinaryFieldNameSet, SortedSet<String> fullBinaryFieldNameSet)
             throws IOException, DotDataException;
 
     /**
@@ -40,7 +41,7 @@ public interface FileMetadataAPI {
             throws IOException, DotDataException;
 
     /**
-     * Retrieves the metadata for the contentlet
+     * Retrieves the basic metadata projection for the contentlet
      * @param contentlet  {@link Contentlet}
      * @param field       {@link Field}
      * @return Map
@@ -49,7 +50,7 @@ public interface FileMetadataAPI {
 
 
     /**
-     * Retrieves the metadata for the contentlet
+     * Retrieves the basic metadata for the contentlet (a projection over the full MD)
      * @param contentlet          {@link Contentlet}
      * @param fieldVariableName  {@link String}
      * @return Map
@@ -58,11 +59,19 @@ public interface FileMetadataAPI {
             throws DotDataException;
 
     /**
-     * Retrieves the metadata for the contentlet
+     * Retrieves the full metadata for the contentlet
+     * When we specify that we must not perform a cache read it means we will nbe loading the FM stored in disc
      * @param contentlet          {@link Contentlet}
      * @param fieldVariableName  {@link String}
      * @return Map
      */
     Map<String, Serializable> getMetadataNoCache(Contentlet contentlet, String fieldVariableName)
             throws DotDataException;
+
+    /**
+     * Compiles all metadata for the contentlet returning a natural ordered map.
+     * @param contentlet {@link Contentlet}
+     * @return Map
+     */
+    Map<String, Map<String, Serializable>> collectFieldsMetadata(final Contentlet contentlet);
 }

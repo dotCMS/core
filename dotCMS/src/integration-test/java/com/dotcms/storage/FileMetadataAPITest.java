@@ -13,12 +13,14 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.datagen.TestDataUtils.TestFile;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableSet;
@@ -31,6 +33,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -39,13 +42,14 @@ import org.junit.runner.RunWith;
 @RunWith(DataProviderRunner.class)
 public class FileMetadataAPITest {
 
-    private static final String FILE_ASSET = "fileAsset";
+    private static final String WRITE_METADATA_ON_REINDEX = ESMappingAPIImpl.WRITE_METADATA_ON_REINDEX;
+    private static final String FILE_ASSET = FileAssetAPI.BINARY_FIELD;
     private static FileMetadataAPI contentletMetadataAPI;
 
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
-        contentletMetadataAPI = APILocator.getContentletMetadataAPI();
+        contentletMetadataAPI = APILocator.getFileMetadataAPI();
     }
 
     /**
@@ -85,29 +89,37 @@ public class FileMetadataAPITest {
     @DataProvider
     public static Object[] getFileAssetMetadataTestCases() {
         final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-        return new Object[]{
-                new TestCase(langId, StorageType.FILE_SYSTEM, TestFile.JPG,
-                        getFileAssetContent(true, langId, TestFile.JPG)),
-                new TestCase(langId, StorageType.FILE_SYSTEM, TestFile.GIF,
-                        getFileAssetContent(true, langId, TestFile.GIF)),
-                new TestCase(langId, StorageType.FILE_SYSTEM, TestFile.PNG,
-                        getFileAssetContent(true, langId, TestFile.PNG)),
-                new TestCase(langId, StorageType.FILE_SYSTEM, TestFile.SVG,
-                        getFileAssetContent(true, langId, TestFile.SVG)),
-                new TestCase(langId, StorageType.FILE_SYSTEM, TestFile.PDF,
-                        getFileAssetContent(true, langId, TestFile.PDF)),
+        final boolean defaultValue = Config.getBooleanProperty(WRITE_METADATA_ON_REINDEX, true);
+        //disconnect the MD generation on indexing so we can test the generation directly using the API.
+        Config.setProperty(WRITE_METADATA_ON_REINDEX, false);
+        try {
+            return new Object[]{
+                    new TestCase(langId, StorageType.FILE_SYSTEM, TestFile.JPG,
+                            getFileAssetContent(true, langId, TestFile.JPG)),
+                    new TestCase(langId, StorageType.FILE_SYSTEM, TestFile.GIF,
+                            getFileAssetContent(true, langId, TestFile.GIF)),
+                    new TestCase(langId, StorageType.FILE_SYSTEM, TestFile.PNG,
+                            getFileAssetContent(true, langId, TestFile.PNG)),
+                    new TestCase(langId, StorageType.FILE_SYSTEM, TestFile.SVG,
+                            getFileAssetContent(true, langId, TestFile.SVG)),
+                    new TestCase(langId, StorageType.FILE_SYSTEM, TestFile.PDF,
+                            getFileAssetContent(true, langId, TestFile.PDF)),
 
-                new TestCase(langId, StorageType.DB, TestFile.JPG,
-                        getFileAssetContent(true, langId, TestFile.JPG)),
-                new TestCase(langId, StorageType.DB, TestFile.GIF,
-                        getFileAssetContent(true, langId, TestFile.GIF)),
-                new TestCase(langId, StorageType.DB, TestFile.PNG,
-                        getFileAssetContent(true, langId, TestFile.PNG)),
-                new TestCase(langId, StorageType.DB, TestFile.SVG,
-                        getFileAssetContent(true, langId, TestFile.SVG)),
-                new TestCase(langId, StorageType.DB, TestFile.PDF,
-                        getFileAssetContent(true, langId, TestFile.PDF)),
-        };
+                    new TestCase(langId, StorageType.DB, TestFile.JPG,
+
+                            getFileAssetContent(true, langId, TestFile.JPG)),
+                    new TestCase(langId, StorageType.DB, TestFile.GIF,
+                            getFileAssetContent(true, langId, TestFile.GIF)),
+                    new TestCase(langId, StorageType.DB, TestFile.PNG,
+                            getFileAssetContent(true, langId, TestFile.PNG)),
+                    new TestCase(langId, StorageType.DB, TestFile.SVG,
+                            getFileAssetContent(true, langId, TestFile.SVG)),
+                    new TestCase(langId, StorageType.DB, TestFile.PDF,
+                            getFileAssetContent(true, langId, TestFile.PDF)),
+            };
+        } finally {
+            Config.setProperty(WRITE_METADATA_ON_REINDEX, defaultValue);
+        }
     }
 
     static class TestCase{
@@ -162,7 +174,7 @@ public class FileMetadataAPITest {
         });
     }
 
-    private static Set<String> basicMetadataFields = ImmutableSet.of("sha256", "path","title","modDate","contentType");
+    private static Set<String> basicMetadataFields = ImmutableSet.of("sha256", "path","title","modDate","contentType", "isImage");
 
     /**
      * validate basic layout expected in the basic md for File-Asset
@@ -170,8 +182,9 @@ public class FileMetadataAPITest {
      * @param metaData
      */
     private void validateBasicStrict(final Map<String, Serializable> metaData){
+        final int expectedFields = 6;
         validateBasic(metaData);
-        assertEquals("we're expecting exactly 5 entries.",5,metaData.size());
+        assertEquals(String.format("we're expecting exactly `%d` entries.",expectedFields),expectedFields, metaData.size());
     }
 
     //SVG  do not have dimensions, but that's a known issue we're willing to forgive.
@@ -248,7 +261,7 @@ public class FileMetadataAPITest {
         final Contentlet multipleBinariesContent = getMultipleBinariesContent(true, langId, null);
 
         final FileMetadataAPIImpl impl = (FileMetadataAPIImpl) contentletMetadataAPI;
-        final Tuple2<Set<String>, Set<String>> binaryFields = impl
+        final Tuple2<SortedSet<String>, SortedSet<String>> binaryFields = impl
                 .findBinaryFields(multipleBinariesContent);
 
         final Set<String> allBinaryFields = binaryFields._1;
@@ -275,8 +288,11 @@ public class FileMetadataAPITest {
     @UseDataProvider("getStorageType")
     public void Test_Get_Metadata_No_Cache(final StorageType storageType) throws IOException, DotDataException {
         final String stringProperty = Config.getStringProperty(DEFAULT_STORAGE_TYPE);
+        //disconnect the MD generation on indexing so we can test directly here.
+        final boolean defaultValue = Config.getBooleanProperty(WRITE_METADATA_ON_REINDEX, true);
         try {
             Config.setProperty(DEFAULT_STORAGE_TYPE, storageType.name());
+            Config.setProperty(WRITE_METADATA_ON_REINDEX, false);
             final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
             final Contentlet fileAssetContent = getFileAssetContent(true, langId, TestFile.PDF);
 
@@ -313,6 +329,7 @@ public class FileMetadataAPITest {
 
         } finally {
             Config.setProperty(DEFAULT_STORAGE_TYPE, stringProperty);
+            Config.setProperty(WRITE_METADATA_ON_REINDEX, defaultValue);
         }
     }
 
@@ -327,7 +344,10 @@ public class FileMetadataAPITest {
     @UseDataProvider("getStorageType")
     public void Test_GetMetadata(final StorageType storageType) throws IOException, DotDataException {
         final String stringProperty = Config.getStringProperty(DEFAULT_STORAGE_TYPE);
+        //disconnect the MD generation on indexing so we can test directly here.
+        final boolean defaultValue = Config.getBooleanProperty(WRITE_METADATA_ON_REINDEX, true);
         try {
+            Config.setProperty(WRITE_METADATA_ON_REINDEX, false);
             Config.setProperty(DEFAULT_STORAGE_TYPE, storageType.name());
             final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
             final Contentlet fileAssetContent = getFileAssetContent(true, langId, TestFile.PDF);
@@ -359,6 +379,7 @@ public class FileMetadataAPITest {
 
         } finally {
             Config.setProperty(DEFAULT_STORAGE_TYPE, stringProperty);
+            Config.setProperty(WRITE_METADATA_ON_REINDEX, defaultValue);
         }
     }
 

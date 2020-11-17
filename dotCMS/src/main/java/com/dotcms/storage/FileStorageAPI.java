@@ -11,7 +11,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 /**
- * This class is in charge of resolve File (on diff storages), metadata, etc.
+ * This class is in charge of resolve File (on diff repositories), metadata, etc.
  * @author jsanca
  */
 public interface FileStorageAPI {

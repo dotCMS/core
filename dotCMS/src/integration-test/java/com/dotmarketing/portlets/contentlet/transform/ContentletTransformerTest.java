@@ -3,7 +3,6 @@ package com.dotmarketing.portlets.contentlet.transform;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.IDENTIFIER_KEY;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.COMMON_PROPS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
-import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.META_DATA_FIELD;
 import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.MIMETYPE_FIELD;
 import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.TITLE_FIELD;
 import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.UNDERLYING_FILENAME;
@@ -19,6 +18,8 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.api.APIProvider;
+import com.dotcms.api.APIProvider.Builder;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
@@ -40,7 +41,6 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.struts.ContentletForm;
 import com.dotmarketing.portlets.contentlet.transform.strategy.AbstractTransformStrategy;
@@ -48,8 +48,6 @@ import com.dotmarketing.portlets.contentlet.transform.strategy.DefaultTransformS
 import com.dotmarketing.portlets.contentlet.transform.strategy.FileAssetViewStrategy;
 import com.dotmarketing.portlets.contentlet.transform.strategy.StrategyResolverImpl;
 import com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions;
-import com.dotcms.api.APIProvider;
-import com.dotcms.api.APIProvider.Builder;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
@@ -559,7 +557,6 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         map.put(Contentlet.INODE_KEY, inode);
         map.put(Contentlet.CONTENT_TYPE_KEY, fileAssetContentType);
         map.put(Contentlet.BASE_TYPE_KEY, BaseContentType.FILEASSET);
-        map.put(META_DATA_FIELD, ContentletCache.CACHED_METADATA);
 
         final ImageField field = mock(ImageField.class);
         when(field.variable()).thenReturn("imageVar");
@@ -593,7 +590,6 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         when(fileAsset.getUnderlyingFileName()).thenReturn(underlyingFileName);
         when(fileAsset.getWidth()).thenReturn(width);
         when(fileAsset.getHeight()).thenReturn(height);
-        when(fileAsset.getMetaData()).thenReturn("Meta");
 
         when(fileAssetAPI.fromContentlet(any(Contentlet.class))).thenReturn(fileAsset);
 
@@ -611,7 +607,6 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         final String extension = (String)mapView.get("extension");
         final Integer returnedWidth = (Integer)mapView.get("width");
         final Integer returnedHeight = (Integer)mapView.get("height");
-        final String meta = (String)mapView.get(META_DATA_FIELD);
         final String returnedUnderlyingFileName = (String)mapView.get(UNDERLYING_FILENAME);
 
         //FLAG Alias is OFF
@@ -627,7 +622,6 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         assertEquals(height, returnedHeight.intValue());
         assertEquals(width, returnedWidth.intValue());
         assertEquals(underlyingFileName, returnedUnderlyingFileName);
-        assertEquals(ContentletCache.CACHED_METADATA, meta);
 
     }
 

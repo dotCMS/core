@@ -2,15 +2,13 @@ package com.dotcms.contenttype.util;
 
 // import com.fasterxml.jackson.core.JsonFactory;
 // import com.fasterxml.jackson.databind.ObjectMapper;
+
 import com.dotcms.util.marshal.DotTypeToken;
 import com.dotcms.util.marshal.MarshalFactory;
-import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
-
 import io.vavr.control.Try;
-
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -27,19 +25,6 @@ public class KeyValueFieldUtil {
   public static Map<String, Object> JSONValueToHashMap(final String json) {
     LinkedHashMap<String, Object> keyValueMap = new LinkedHashMap<String, Object>();
     if (UtilMethods.isSet(json)) {
-
-      if (json.equals(ContentletCache.CACHED_METADATA)) {
-        /*
-         * Contentlet.get(key) already verify for the metadata field if the data is cached in order to get
-         * the information from cache.
-         * 
-         * Anyone calling this method for metadata should do the same, verify if the data is cached and if
-         * it is load that cached data before to call this method.
-         */
-        Logger.warn(KeyValueFieldUtil.class,
-            "Trying to parse JSON content for cached Metadata, it is required first to search the data into the cache.");
-        return keyValueMap;
-      }
 
       /*
        * TypeReference<LinkedHashMap<String,Object>> typeRef = new

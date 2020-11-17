@@ -7,7 +7,7 @@ import java.util.Map;
  * Encapsulates a collection with field with full metadata generation and
  * all fields with basic metadata
  */
-public class ContentletMetadata {
+public class ContentletMetadata implements Serializable {
 
     private final Map<String, Map<String, Serializable>> fullMetadataMap;
     private final Map<String, Map<String, Serializable>> basicMetadataMap;

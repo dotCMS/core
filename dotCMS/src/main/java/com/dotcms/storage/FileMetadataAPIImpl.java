@@ -1,6 +1,7 @@
 package com.dotcms.storage;
 
 import static com.dotcms.storage.FileStorageAPI.BASIC_METADATA_FIELDS;
+
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
@@ -8,7 +9,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.contentlet.business.ContentletCache;
+import com.dotmarketing.portlets.contentlet.business.MetadataCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -16,6 +17,8 @@ import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSortedMap.Builder;
+import com.google.common.collect.Ordering;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
@@ -31,6 +34,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 /**
@@ -44,16 +49,16 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
     private static final String DOT_METADATA = "dotmetadata";
     private static final String DEFAULT_METADATA_GROUP_NAME = DOT_METADATA;
     private final FileStorageAPI fileStorageAPI;
-    private final ContentletCache contentletCache;
+    private final MetadataCache metadataCache;
 
     public FileMetadataAPIImpl() {
-        this(APILocator.getFileStorageAPI(), CacheLocator.getContentletCache());
+        this(APILocator.getFileStorageAPI(), CacheLocator.getMetadataCache());
     }
 
     @VisibleForTesting
-    FileMetadataAPIImpl(final FileStorageAPI fileStorageAPI, final ContentletCache contentletCache) {
+    FileMetadataAPIImpl(final FileStorageAPI fileStorageAPI, final MetadataCache metadataCache) {
         this.fileStorageAPI = fileStorageAPI;
-        this.contentletCache = contentletCache;
+        this.metadataCache = metadataCache;
     }
 
     /**
@@ -66,12 +71,12 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      */
     @Override
     public ContentletMetadata generateContentletMetadata(final Contentlet contentlet,
-                                                         final Set<String> basicBinaryFieldNameSet,
-                                                         final Set<String> fullBinaryFieldNameSet)
+                                                         final SortedSet<String> basicBinaryFieldNameSet,
+                                                         final SortedSet<String> fullBinaryFieldNameSet)
             throws IOException, DotDataException {
 
-        final ImmutableMap.Builder<String, Map<String, Serializable>> fullMetadataMap  = new ImmutableMap.Builder<>();
-        final ImmutableMap.Builder<String, Map<String, Serializable>> basicMetadataMap = new ImmutableMap.Builder<>();
+        final ImmutableMap.Builder<String, Map<String, Serializable>> fullMetadataBuilder  = new ImmutableMap.Builder<>();
+        final ImmutableMap.Builder<String, Map<String, Serializable>> basicMetadataBuilder = new ImmutableMap.Builder<>();
         final  Map<String, Field>  fieldMap   = contentlet.getContentType().fieldMap();
         /*
 		Verify if it is enabled the option to always regenerate metadata files on reindex,
@@ -83,11 +88,11 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
         Logger.debug(this, ()-> "Generating the metadata for contentlet, id = " + contentlet.getIdentifier());
 
         // Full MD is stored in disc (FS or DB)
-        this.generateFullMetadata (contentlet, fullBinaryFieldNameSet, fullMetadataMap, fieldMap, alwaysRegenerateMetadata);
+        this.generateFullMetadata (contentlet, fullBinaryFieldNameSet, fullMetadataBuilder, fieldMap, alwaysRegenerateMetadata);
         //Basic MD lives only in cache
-        this.generateBasicMetadata(contentlet, basicBinaryFieldNameSet, fullBinaryFieldNameSet, basicMetadataMap, fieldMap, alwaysRegenerateMetadata);
+        this.generateBasicMetadata(contentlet, basicBinaryFieldNameSet, fullBinaryFieldNameSet, basicMetadataBuilder, fieldMap, alwaysRegenerateMetadata);
 
-        return new ContentletMetadata(fullMetadataMap.build(), basicMetadataMap.build());
+        return new ContentletMetadata(fullMetadataBuilder.build(), basicMetadataBuilder.build());
     }
 
     /**
@@ -127,7 +132,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
                     metadataMap = this.fileStorageAPI.generateBasicMetaData(file,
                             metadataKey -> metadataFields.isEmpty() || metadataFields
                                     .contains(metadataKey));
-                    contentletCache.addMetadataMap(contentlet.getInode() + StringPool.COLON + basicBinaryFieldName, metadataMap);
+                    metadataCache.addMetadataMap(contentlet.getInode() + StringPool.COLON + basicBinaryFieldName, metadataMap);
                 } else {
 
 
@@ -147,7 +152,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
                 basicMetadataMap.put(basicBinaryFieldName, metadataMap);
             } else {
                //We're dealing with a  non required neither set binary field. No need to throw an exception. Just continue processing.
-               Logger.warn(FileMetadataAPIImpl.class, String.format("The binary field : `%s`, is null, does not exists or can not be accessed",basicBinaryFieldName));
+               Logger.warn(FileMetadataAPIImpl.class,String.format("The Contentlet named `%s` references a binary field: `%s` that is null, does not exists or can not be access.", contentlet.getTitle(), basicBinaryFieldName));
             }
         }
     }
@@ -197,8 +202,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
 
                 fullMetadataMap.put(fullBinaryFieldName, metadataMap);
             } else {
-
-                throw new IOException("The file: " + file + ", is null, does not exists or can not access");
+                Logger.warn(FileMetadataAPIImpl.class,String.format("The Contentlet named `%s` references a binary field: `%s` that is null, does not exists or can not be access.", contentlet.getTitle(), fullBinaryFieldName));
             }
         }
     }
@@ -248,7 +252,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
     public ContentletMetadata generateContentletMetadata(final Contentlet contentlet)
             throws IOException, DotDataException {
 
-        final Tuple2<Set<String>, Set<String>> binaryFields = this.findBinaryFields(contentlet);
+        final Tuple2<SortedSet<String>, SortedSet<String>> binaryFields = this.findBinaryFields(contentlet);
         return this.generateContentletMetadata(contentlet, binaryFields._1(), binaryFields._2());
     }
 
@@ -330,13 +334,12 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @param contentlet
      * @return
      */
-    @VisibleForTesting
-    Tuple2<Set<String>, Set<String>> findBinaryFields(final Contentlet contentlet) {
+    Tuple2<SortedSet<String>, SortedSet<String>> findBinaryFields(final Contentlet contentlet) {
 
         final List<Field> binaryFields = contentlet.getContentType().fields(BinaryField.class);
 
-        final Set<String> basicBinaryFieldNameSet = new HashSet<>();
-        final Set<String> fullBinaryFieldNameSet  = new HashSet<>();
+        final SortedSet<String> basicBinaryFieldNameSet = new TreeSet<>();
+        final SortedSet<String> fullBinaryFieldNameSet  = new TreeSet<>();
 
         if (UtilMethods.isSet(binaryFields)) {
 
@@ -352,6 +355,32 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
         }
 
         return Tuple.of(basicBinaryFieldNameSet, fullBinaryFieldNameSet);
+    }
+
+
+    /**
+     * This builds a View compiling all basic md
+     * @param contentlet
+     * @return
+     */
+    public Map<String, Map<String, Serializable>> collectFieldsMetadata(final Contentlet contentlet) {
+
+        final Builder<String, Map<String, Serializable>> builder = new Builder<>(Ordering.natural());
+        final Tuple2<SortedSet<String>, SortedSet<String>> binaryFields = findBinaryFields(contentlet);
+
+        try {
+            for (final String basicMetaFieldName : binaryFields._1()) {
+                final Map<String, Serializable> metadata = getMetadata(contentlet, basicMetaFieldName);
+                if(null != metadata){
+                    builder.put(basicMetaFieldName, metadata);
+                }
+            }
+
+        } catch (DotDataException e) {
+            Logger.error(Contentlet.class, e);
+        }
+
+        return builder.build();
     }
 
 }

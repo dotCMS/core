@@ -1,6 +1,5 @@
 package com.dotcms.storage;
 
-import com.dotmarketing.util.UtilMethods;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.function.Function;
@@ -30,9 +29,9 @@ public class RequestMetadata {
 
     /**
      * In case the metadata is retrieved from the storage instead of the cache,
-     * you can wrap the metadata recovery from the storage in order to add, mod or remove values
+     * you can wrap the metadata recovered from the storage in order to add, mod or remove values
      */
-    private final Function<Map<String, Serializable>, Map<String, Serializable>> wrapMetadataMapForCache;
+    private final Function<Map<String, Serializable>, Map<String, Serializable>> projectionMapForCache;
 
     /**
      * Builder based constructor
@@ -42,7 +41,7 @@ public class RequestMetadata {
         this.cache                   = builder.cache;
         this.cacheKeySupplier        = builder.cacheKeySupplier;
         this.storageKey              = builder.storageKey;
-        this.wrapMetadataMapForCache = builder.wrapMetadataMapForCache;
+        this.projectionMapForCache = builder.wrapMetadataMapForCache;
     }
 
     public StorageKey getStorageKey() {
@@ -61,8 +60,8 @@ public class RequestMetadata {
         return cacheKeySupplier;
     }
 
-    public Function<Map<String, Serializable>, Map<String, Serializable>> getWrapMetadataMapForCache() {
-        return wrapMetadataMapForCache;
+    public Function<Map<String, Serializable>, Map<String, Serializable>> getProjectionMapForCache() {
+        return projectionMapForCache;
     }
 
     /**

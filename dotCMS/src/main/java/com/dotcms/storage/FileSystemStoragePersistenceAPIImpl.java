@@ -58,6 +58,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
      * @param folder {@link File}
      */
     void addGroupMapping(final String groupName, final File folder) {
+
         if (!folder.isDirectory() || !folder.exists() || !folder.canWrite()) {
             throw new IllegalArgumentException(String.format(
                     "Invalid attempt of mapping an non existing or writable folder. Argument`%s` must be a valid. ",

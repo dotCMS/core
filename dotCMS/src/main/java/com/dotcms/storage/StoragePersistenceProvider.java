@@ -88,7 +88,11 @@ public final class StoragePersistenceProvider {
     private static void initFileSystemStorage(final Map<StorageType, StoragePersistenceAPI> storageMap) {
         final FileSystemStoragePersistenceAPIImpl fileSystemStorage = new FileSystemStoragePersistenceAPIImpl();
         final String metadataGroupName = Config.getStringProperty(METADATA_GROUP_NAME, "dotmetadata");
-        fileSystemStorage.addGroupMapping(metadataGroupName, new File(APILocator.getFileAssetAPI().getRealAssetsRootPath()));
+        final File assetsDir = new File(APILocator.getFileAssetAPI().getRealAssetsRootPath());
+        if(!assetsDir.exists()){
+           assetsDir.mkdirs();
+        }
+        fileSystemStorage.addGroupMapping(metadataGroupName, assetsDir);
         storageMap.put(StorageType.FILE_SYSTEM, fileSystemStorage);
     }
 

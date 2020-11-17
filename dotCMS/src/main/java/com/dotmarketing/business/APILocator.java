@@ -544,7 +544,7 @@ public class APILocator extends Locator<APIIndex>{
 	 * Creates the {@link FileStorageAPI}
 	 * @return FileStorageAPI
 	 */
-	public static FileMetadataAPI getContentletMetadataAPI(){
+	public static FileMetadataAPI getFileMetadataAPI(){
 		return (FileMetadataAPI) getInstance(APIIndex.CONTENTLET_METADATA_API);
 	}
 

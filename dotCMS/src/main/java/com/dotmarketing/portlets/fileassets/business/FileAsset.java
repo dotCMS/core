@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.fileassets.business;
 
+import com.dotcms.rendering.velocity.viewtools.util.ConversionUtils;
 import com.dotcms.util.Loadable;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -14,6 +15,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.ImageUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
@@ -22,9 +24,11 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.nio.file.Files;
 import java.util.Date;
 import java.util.Map;
+import java.util.Optional;
 
 public class FileAsset extends Contentlet implements IFileAsset, Loadable {
 
@@ -53,20 +57,34 @@ public class FileAsset extends Contentlet implements IFileAsset, Loadable {
 		this.fileSizeInternal = contentlet.fileSizeInternal;
 	}
 
+   //Should I remove?
+    @Deprecated
 	public String getMetaData(){
-		if(metaData ==null){
-			metaData=(String) super.get(FileAssetAPI.META_DATA_FIELD);
+		if(metaData == null){
+		   metaData = ConversionUtils.toString(getMetaDataMap());
 		}
 		return metaData;
 
 	}
-	
+
+	/**
+	 * Metadata as map getter. Use to get a compiled view including MD for all binaries
+	 * @return
+	 */
+	public Map<String, Serializable> getMetaDataMap(){
+		final Optional<Map<String, Map<String, Serializable>>> optionalMetadata = super.getLazyMetadata();
+		if(optionalMetadata.isPresent()){
+		   return optionalMetadata.get().get(FileAssetAPI.BINARY_FIELD);
+		}
+		return ImmutableMap.of();
+	}
+
 	public long getLanguageId(){
 		return super.getLanguageId();
 	}
 
 
-
+	//Should I remove?
 	public void setMetaData(String metaData) {
 		this.metaData = metaData;
 	}

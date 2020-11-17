@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.contentlet.model;
 
+import static com.dotmarketing.portlets.contentlet.business.MetadataCache.EMPTY_METADATA_MAP;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -36,7 +38,6 @@ import com.dotmarketing.portlets.categories.business.Categorizable;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.contentlet.business.BinaryFileFilter;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -270,7 +271,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     setDisabledWysiwyg(new ArrayList<>());
     getWritableNullProperties();
     this.needsReindex = false;
-    
+
   }
 
     @Override
@@ -1229,8 +1230,13 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @param velocityVarName
 	 * @return
 	 */
+	@SuppressWarnings("unchecked")
 	public Map<String, Object> getKeyValueProperty(String velocityVarName) {
-		return com.dotmarketing.portlets.structure.model.KeyValueFieldUtil.JSONValueToHashMap((String) get(velocityVarName));
+		final Object value = get(velocityVarName);
+		if(value instanceof Map){
+		   return (Map)value;
+	    }
+		return com.dotmarketing.portlets.structure.model.KeyValueFieldUtil.JSONValueToHashMap((String) value);
 	}
 
 	/**
@@ -1245,76 +1251,99 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 			return false;
 	}
 
-	/**
-	 *
-	 * @param inode
-	 * @param structureInode
-	 * @return
-	 */
-	@JsonIgnore
-    public static Object lazyMetadataLoad ( String inode, String structureInode ) {
-
-        String cachedMetadata = CacheLocator.getContentletCache().getMetadata( inode );
-        if ( cachedMetadata == null ) {
-            // lazy load from db
-            try {
-                Structure st = CacheLocator.getContentTypeCache().getStructureByInode( structureInode );
-                Object fieldVal = APILocator.getContentletAPI().loadField( inode, st.getFieldVar( FileAssetAPI.META_DATA_FIELD ) );
-                if ( fieldVal != null && UtilMethods.isSet( fieldVal.toString() ) ) {
-                    String loadedMetadata = fieldVal.toString();
-                    CacheLocator.getContentletCache().addMetadata( inode, loadedMetadata );
-                    return loadedMetadata;
-                } else
-                    return "";
-            } catch ( DotDataException e ) {
-                Logger.error( Contentlet.class, "error lazy loading metadata field", e );
-                return "";
-            }
-        } else if ( cachedMetadata.equals( ContentletCache.EMPTY_METADATA ) ) {
-            return "";
-        } else {
-            // normal metadata from cache
-            return cachedMetadata;
-        }
-    }
+	private Map<String, Map<String, Serializable>> contentletMetadata;
 
     /**
-     *
-     * @param structureInode
-     * @param fieldVelVarName
-     * @param value
+     * computes lazily all binary fields metadata
      * @return
      */
-    public static boolean isMetadataFieldCached ( String structureInode, String fieldVelVarName, Object value ) {
+	@JsonIgnore
+	public Optional<Map<String, Map<String, Serializable>>> getLazyMetadata() {
+		if(null == contentletMetadata){
+			contentletMetadata = APILocator.getFileMetadataAPI().collectFieldsMetadata(this);
+		}
+		return Optional.ofNullable(contentletMetadata);
+	}
 
-        if ( fieldVelVarName instanceof String && fieldVelVarName.equals( FileAssetAPI.META_DATA_FIELD ) ) {
-            Structure st = CacheLocator.getContentTypeCache().getStructureByInode( structureInode );
-            Field f = st.getFieldVar( FileAssetAPI.META_DATA_FIELD );
-            return st.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET && UtilMethods.isSet( f.getInode() )
-                    && value != null && value.equals( ContentletCache.CACHED_METADATA );
-        }
-        return false;
-    }
+	/**
+	 * Returns the metadata associated to the field, it will expected that the field is actually a binary
+	 * @see #getBinaryMetadata(com.dotcms.contenttype.model.field.Field)
+	 * @param field {@link Field}
+	 * @return Map
+	 */
+	@Deprecated
+	@JsonIgnore
+	public Map<String, Serializable> getBinaryMetadata (final Field field) throws DotDataException {
+
+		return this.getBinaryMetadata(field.getVelocityVarName());
+	}
+
+	/**
+	 * Returns the metadata associated to the field, it will expected that the field is actually a binary
+	 * @param field {@link com.dotcms.contenttype.model.field.Field}
+	 * @return Map
+	 */
+	@JsonIgnore
+	public Map<String, Serializable> getBinaryMetadata (final com.dotcms.contenttype.model.field.Field field)
+			throws DotDataException {
+
+		return this.getBinaryMetadata(field.variable());
+	}
+
+	/**
+	 *  Returns the metadata associated to the field, it will expected that the field is actually a binary
+	 * @param fieldVariableName {@link String}
+	 * @return Map
+	 */
+	@JsonIgnore
+	public Map<String, Serializable> getBinaryMetadata (final String fieldVariableName)
+			throws DotDataException {
+
+		return APILocator.getFileMetadataAPI().getMetadata(this, fieldVariableName);
+	}
+
 
     /**
 	 * Returns an object from the underlying contentlet Map
 	 * @param key
 	 * @return
 	 */
-	public Object get(String key){
-		if(map ==null || key ==null){
+	public Object get(final String key) {
+		if (map == null || key == null) {
 			return null;
 		}
 
-		Object value=map.get(key);
+		Object value = map.get(key);
 
-		if(isMetadataFieldCached(getStructureInode(), key, value)) {
-		    return lazyMetadataLoad(getInode(),getStructureInode());
+		if (InodeUtils.isSet(getInode()) && FileAssetAPI.META_DATA_FIELD.equals(key)) {
+
+			//if the metaData attribute is requested from a fileAsset that's is pretty straight forward
+			// we simply return the the MD associated with the field `fileAsset`
+			if (isFileAsset()) {
+				final Map<String, Serializable> fileAssetMetadata = Try
+						.of(() -> getBinaryMetadata(FileAssetAPI.BINARY_FIELD)).getOrNull();
+				if (null != fileAssetMetadata) {
+					return fileAssetMetadata;
+				}
+			}
+			//if the CT isn't a fileAsset and has several binaries we'll get the MD from the first indexed one.
+			final Optional<Map<String, Map<String, Serializable>>> optional = getLazyMetadata();
+			if (optional.isPresent()) {
+				final Map<String, Map<String, Serializable>> binaryFieldsMetadata = optional.get();
+				if (!binaryFieldsMetadata.isEmpty()) {
+					final String firstIndexedBinary = binaryFieldsMetadata.keySet().iterator()
+							.next();
+					return binaryFieldsMetadata.get(firstIndexedBinary);
+				}
+			}
+
+			return EMPTY_METADATA_MAP;
 		}
-		if(value==null) {
-  		 value=Try.of(()-> getConstantValue(key)).getOrNull();
+
+		if (value == null) {
+			value = Try.of(() -> getConstantValue(key)).getOrNull();
 		}
-		
+
 		return value;
 
 	}

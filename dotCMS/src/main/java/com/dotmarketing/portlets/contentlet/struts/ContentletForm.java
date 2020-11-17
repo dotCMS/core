@@ -1,6 +1,8 @@
 package com.dotmarketing.portlets.contentlet.struts;
 
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.rendering.velocity.viewtools.util.ConversionUtils;
 import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.org.apache.struts.validator.ValidatorForm;
@@ -10,19 +12,25 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
+import com.liferay.portal.util.PortalUtil;
+import io.vavr.control.Try;
+import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang.builder.HashCodeBuilder;
@@ -567,15 +575,38 @@ public class ContentletForm extends ValidatorForm {
 			   }
 
 		   } catch ( Exception e ) {
-			   Logger.error( this, "An error has ocurred trying to get the value for the field: " + velocityVariableName );
+			   Logger.error( this, "An error has occurred trying to get the value for the field: " + velocityVariableName );
 		   }
 
-           if ( InodeUtils.isSet( getInode() ) && Contentlet.isMetadataFieldCached( getStructureInode(), velocityVariableName, value ) ) {
-               return Contentlet.lazyMetadataLoad( getInode(), getStructureInode() );
-           }
+		   final Optional<Map<String, Serializable>> optionalMetadata = loadMetadataIfAny(velocityVariableName, getInode());
+		   if (optionalMetadata.isPresent()) {
+			   return ConversionUtils.toString(optionalMetadata.get());
+		   }
 
-           return value;
+		   return value;
        }
+
+
+	final Optional<Map<String, Serializable>> loadMetadataIfAny(final String velocityVariableName,
+			final String inode)  {
+		if (InodeUtils.isSet(getInode()) && FileAssetAPI.META_DATA_FIELD
+				.equals(velocityVariableName)) {
+			final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+			if (null != request) {
+				final User user = PortalUtil.getUser(request);
+				final Contentlet contentlet = Try.of(() -> APILocator.getContentletAPI()
+						.find(inode, user, false)).getOrNull();
+				if (null != contentlet && contentlet.isFileAsset()) {
+					return Optional.ofNullable(
+					     Try.of(()->
+							APILocator.getFileMetadataAPI().getMetadataNoCache(contentlet,FileAssetAPI.BINARY_FIELD)
+					       ).getOrNull()
+					);
+				}
+			}
+		}
+		return Optional.empty();
+	}
 
 	private Boolean isHTMLPage () {
 

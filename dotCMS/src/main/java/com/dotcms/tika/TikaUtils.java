@@ -213,28 +213,13 @@ public class TikaUtils {
                 this.writeCompressJsonMetadataFile (contentMetaFile,
                         UtilMethods.isSet(metaDataMap)?metaDataMap:Collections.emptyMap());
             }
-            
-            if (contentlet.isFileAsset() && UtilMethods.isSet(metaDataMap) && !metaDataMap.isEmpty()) {
-                this.saveMetadataOnFileAsset(contentlet, metaDataMap);
-            }
-            
+
         } else {
 
             metaDataMap = this.readCompressedJsonMetadataFile (contentMetaFile);
         }
 
-
-
         return metaDataMap;
-    }
-
-    @WrapInTransaction
-    private void saveMetadataOnFileAsset(final Contentlet contentlet, final Map<String, Object> metaDataMap) {
-
-        final Gson gson = new GsonBuilder().disableHtmlEscaping().create();
-        contentlet.setProperty(FileAssetAPI.META_DATA_FIELD, gson.toJson(metaDataMap));
-        //Save the parsed metadata to the contentlet
-        Try.of(()->FactoryLocator.getContentletFactory().save(contentlet));
     }
 
 
