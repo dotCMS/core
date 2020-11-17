@@ -10,7 +10,6 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.TemplatePaginator;
-import com.dotcms.util.pagination.TemplateView;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
