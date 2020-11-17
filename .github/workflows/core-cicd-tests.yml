@@ -52,25 +52,25 @@ jobs:
       - name: Prepare dot-cicd
         run: |
           chmod +x .cicd/discover.sh && .cicd/discover.sh
-        if: env.jobRun == "true"
+        if: ${{ env.jobRun }} == true
       - name: Check Provider
         run: |
           dotcicd/library/checkProvider.sh github
-        if: env.jobRun == "true"
+        if: ${{ env.jobRun }} == true
       - name: Fail provider
         run: |
           echo "jobRun=false" >> $GITHUB_ENV
-        if: env.jobRun == "true" && failure()
+        if: ${{ env.jobRun }} == true && failure()
       - name: Build Tests Base Image
         run: |
           dotcicd/library/pipeline.sh buildTestsBase
         env:
           LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
-        if: env.jobRun == "true"
+        if: ${{ env.jobRun }} == true
       - name: Run Unit Tests
         run: |
           dotcicd/library/pipeline.sh runUnit
-        if: env.jobRun == "true"
+        if: ${{ env.jobRun }} == true
   run-curl-tests-job:
     name: Curl Tests
     runs-on: ubuntu-latest
