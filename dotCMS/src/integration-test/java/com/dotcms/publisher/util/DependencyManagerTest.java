@@ -33,6 +33,7 @@ import com.liferay.portal.model.User;
 import java.util.Date;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -40,6 +41,21 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
+
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.factories.MultiTreeAPI;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
+import com.dotmarketing.portlets.templates.model.Template;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 
 /**
  * @author nollymar
@@ -277,6 +293,61 @@ public class DependencyManagerTest {
                 .setContentlet(contentlet)
                 .nextPersisted();
         return contentlet;
+    }
+    
+    /**
+     * <b>Method to test:</b> {@link DependencyManager#setDependencies()} <p>
+     * <b>Given Scenario:</b> A Page using a FileContainer and the FileContainer jus has the container.vtl file<p>
+     * <b>ExpectedResult:</b> Should include the container.vtl file as dependencies
+     * @throws DotSecurityException
+     * @throws DotBundleException
+     * @throws DotDataException
+     */
+    @Test
+    public void test_Page_with_FileContainer_as_Dependencies()
+            throws DotSecurityException, DotBundleException, DotDataException {
+
+        final PushPublisherConfig config = new PushPublisherConfig();
+
+        FileAssetContainer fileAssetContainer = new ContainerAsFileDataGen()
+                .ignoreDefaultContentTypes()
+                .nextPersisted();
+
+        fileAssetContainer = (FileAssetContainer) APILocator.getContainerAPI()
+                .find(fileAssetContainer.getInode(), APILocator.systemUser(), true);
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final TemplateLayout templateLayout = new TemplateLayoutDataGen()
+                .withContainer(fileAssetContainer, ContainerUUID.UUID_START_VALUE)
+                .next();
+
+        final Template template = new TemplateDataGen()
+                .drawedBody(templateLayout)
+                .host(host)
+                .nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
+
+        //Creates a bundle with just the child
+        createBundle(config, htmlPageAsset);
+
+        DependencyManager dependencyManager = new DependencyManager(user, config);
+        dependencyManager.setDependencies();
+
+        assertEquals(2, dependencyManager.getContents().size());
+        assertTrue(dependencyManager.getContents().contains(htmlPageAsset.getIdentifier()));
+
+        final String path = fileAssetContainer.getPath();
+        final Folder rootFolder = APILocator.getFolderAPI()
+                .findFolderByPath(path, fileAssetContainer.getHost(), user, false);
+
+        final List<FileAsset> fileAssetsByFolder = APILocator.getFileAssetAPI()
+                .findFileAssetsByFolder(rootFolder, APILocator.systemUser(), false);
+
+        for (final FileAsset fileAsset : fileAssetsByFolder) {
+            assertTrue(dependencyManager.getContents().contains(fileAsset.getIdentifier()));
+        }
+
     }
 
     /**
