@@ -175,7 +175,7 @@ public interface TemplateAPI {
 	 * @param template {@link Template}
 	 * @param user     {@link User}
 	 */
-	void unlock (Template template, User user);
+	void unlock (Template template, User user) throws DotSecurityException, DotDataException;
 
 	/**
 	 * Archive the template, it should be unpublish, but if it is not, then will be unpublish and consequently archive.
@@ -184,7 +184,7 @@ public interface TemplateAPI {
 	 * @param respectFrontendRoles
 	 * @return boolean true if success
 	 */
-	boolean archive (Template template, User user, boolean respectFrontendRoles)
+	void archive (Template template, User user, boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException;
 
 	/**
@@ -192,7 +192,7 @@ public interface TemplateAPI {
 	 * @param template {@link Template}
 	 * @param user     {@link User}
 	 */
-	boolean unarchive (Template template, User user) throws DotDataException, DotSecurityException;
+	void unarchive (Template template, User user) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Delete the specified template.
@@ -207,8 +207,8 @@ public interface TemplateAPI {
 	 * @throws DotSecurityException
 	 * @throws Exception
 	 */
-	boolean deleteTemplate(Template template, User user, boolean respectFrontendRoles)
-			throws DotDataException;
+	void deleteTemplate(Template template, User user, boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException;
 
 	/**
 	 * Deletes the template by inode

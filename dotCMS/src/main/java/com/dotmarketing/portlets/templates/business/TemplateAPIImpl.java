@@ -6,16 +6,20 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.enterprise.license.LicenseManager;
+import com.dotcms.rendering.velocity.services.TemplateLoader;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotmarketing.beans.*;
 import com.dotmarketing.business.*;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.PublishFactory;
+import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -192,27 +196,22 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	}
 
 	@WrapInTransaction
-	public void unlock (final Template template, final User user) {
+	public void unlock (final Template template, final User user)
+			throws DotSecurityException, DotDataException {
 
-		Try.run(()->this.versionableAPI.get().setLocked(template, false, user))
-				.getOrElseThrow(e -> new RuntimeException(e));
+		this.versionableAPI.get().setLocked(template, false, user);
 	}
 
 	@WrapInTransaction
-	public boolean archive (final Template template, final User user, final boolean respectFrontendRoles)
+	public void archive (final Template template, final User user, final boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
 
 		Logger.debug(this, ()-> "Doing archive of the template: " + template.getIdentifier());
 
-		//Check that the template is not already archived
-		if(isArchived(template)){
-			return true;
-		}
-
 		//Check Edit Permissions over Template
 		if(!this.permissionAPI.doesUserHavePermission(template, PERMISSION_EDIT, user)){
-			Logger.warn(this,"The user: " + user.getUserId() + " does not have Permissions to Edit the Template");
-			return false;
+			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to Edit the Template");
+			throw new DotSecurityException("User does not have Permissions to Edit the Template");
 		}
 
 		//Check that the template is Unpublished, if is Live try to Unpublish
@@ -220,30 +219,53 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 			if (!this.unpublishTemplate(template, user, respectFrontendRoles)) {
 
-				Logger.warn(this, "The template: " + template.getIdentifier() +
-						" could not be archived, b/c it was live and couldn't unpublish");
-				return false;
+				Logger.error(this, "The template: " + template.getIdentifier() +
+						" could not be archived. Because it was live and couldn't be unpublished");
+				throw new DotStateException("The template could not be archived. Because it was live and couldn't be unpublished");
 			}
 		}
 
-		return Try.of(()-> WebAssetFactory.archiveAsset(template, user.getUserId())).getOrElseThrow(e -> new RuntimeException(e));
+		archive(template);
 	}
 
+	/**
+	 * This method was extracted from {@link WebAssetFactory#archiveAsset(WebAsset, String)} }, since in the future
+	 * template wont inherit from WebAsset
+	 * @param template
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	private void archive(final Template template) throws DotSecurityException, DotDataException {
+		final Template templateLiveVersion = findLiveTemplate(template.getIdentifier(),APILocator.systemUser(),false);
+		final Template templateWorkingVersion = findWorkingTemplate(template.getIdentifier(),APILocator.systemUser(),false);
+		if(templateLiveVersion!=null){
+			APILocator.getVersionableAPI().removeLive(template.getIdentifier());
+		}
+		//Reset the mod date
+		templateWorkingVersion.setModDate(new Date ());
+		// sets deleted to true
+		APILocator.getVersionableAPI().setDeleted(templateWorkingVersion, true);
+		templateFactory.save(templateWorkingVersion);
+	}
+
+
 	@WrapInTransaction
-	public boolean unarchive (final Template template, final User user)
+	public void unarchive (final Template template, final User user)
 			throws DotDataException, DotSecurityException {
 		Logger.debug(this, ()-> "Doing unarchive of the template: " + template.getIdentifier());
 		//Check Edit Permissions over Template
 		if(!this.permissionAPI.doesUserHavePermission(template, PERMISSION_EDIT, user)){
-			Logger.warn(this,"The user: " + user.getUserId() + " does not have Permissions to Edit the Template");
-			return false;
+			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to Edit the Template");
+			throw new DotSecurityException("User does not have Permissions to Edit the Template");
 		}
 		// Check that the template is archived
-		if(isArchived(template)){
-			APILocator.getVersionableAPI().setDeleted(template, false);
-			return true;
+		if(!isArchived(template)){
+			Logger.error(this, "The Template: " + template.getName() + " can not be unarchive. "
+					+ "Because it is not archived");
+			throw new DotDataValidationException("Template must be archived before it can be unarchived");
 		}
-		return false;
+
+		APILocator.getVersionableAPI().setDeleted(template, false);
 	}
 
 	public boolean isArchived(final Template template) throws DotDataException {
@@ -251,21 +273,21 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	}
 
 	@WrapInTransaction
-	public boolean deleteTemplate(final Template template, final User user, final boolean respectFrontendRoles)
-			throws DotDataException {
+	public void deleteTemplate(final Template template, final User user, final boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException {
 
 		Logger.debug(this, ()-> "Doing delete of the template: " + template.getIdentifier());
 
 		//Check Edit Permissions over Template
 		if(!this.permissionAPI.doesUserHavePermission(template, PERMISSION_EDIT, user)){
 			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to Edit the Template");
-			return false;
+			throw new DotSecurityException("User does not have Permissions to Edit the Template");
 		}
 
 		//Check that the template is archived
 		if(!isArchived(template)) {
 			Logger.error(this,"The template: " + template.getIdentifier() + " must be archived before it can be deleted");
-			return false;
+			throw new DotStateException("Template must be archived before it can be deleted");
 		}
 
 		//Check that template do not have dependencies (pages referencing the template),
@@ -274,10 +296,44 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		if(checkDependencies!= null && !checkDependencies.isEmpty()){
 			Logger.error(this, "The Template: " + template.getName() + " can not be deleted. "
 					+ "Because it has pages referencing to it: " + checkDependencies);
-			return false;
+			throw new DotDataValidationException("Template still has pages referencing to it: " + checkDependencies);
 		}
 
-		return Try.of(() -> WebAssetFactory.deleteAsset(template, user)).getOrElseThrow(e -> new RuntimeException(e));
+		deleteTemplate(template);
+	}
+
+	/**
+	 * This method was extracted from {@link WebAssetFactory#deleteAsset(WebAsset, User)}, since in the future
+	 * template wont inherit from WebAsset
+	 * @param template
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	private void deleteTemplate(final Template template)
+			throws DotDataException, DotSecurityException {
+		// Delete the IDENTIFIER entry from cache
+		CacheLocator.getIdentifierCache().removeFromCacheByVersionable(template);
+		//Delete Version Info
+		APILocator.getVersionableAPI().deleteVersionInfo(template.getIdentifier());
+		//Invalidate Template
+		new TemplateLoader().invalidate(template);
+		//Find all Versions
+		final Identifier identifier = APILocator.getIdentifierAPI().find(template.getIdentifier());
+		final List<Template> allVersions = findAllVersions(identifier,APILocator.systemUser(),false,true);
+		for(final Template template1 : allVersions) {
+			//Delete the permission and the inode of each version of the asset
+			permissionAPI.removePermissions(template1);
+			InodeFactory.deleteInode(template1);
+		}
+		//Delete Tree entries
+		final List<Tree> treeList = new ArrayList<>();
+		treeList.addAll(TreeFactory.getTreesByChild(identifier.getInode()));
+		treeList.addAll(TreeFactory.getTreesByParent(identifier.getInode()));
+		for(Tree tree : treeList) {
+			TreeFactory.deleteTree(tree);
+		}
+		//Delete Identifier
+		APILocator.getIdentifierAPI().delete(identifier);
 	}
 
 	@Override

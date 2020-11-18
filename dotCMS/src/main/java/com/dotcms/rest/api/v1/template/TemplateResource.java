@@ -1,11 +1,12 @@
 package com.dotcms.rest.api.v1.template;
 
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.BulkResultView;
+import com.dotcms.rest.api.FailedResultView;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.ContainerPaginator;
@@ -26,7 +27,6 @@ import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
-import com.dotmarketing.portlets.templates.business.TemplateConstants;
 import com.dotmarketing.portlets.templates.design.util.DesignTemplateUtil;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.ActivityLogger;
@@ -36,9 +36,7 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import com.liferay.util.servlet.SessionDialogMessage;
 import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 
@@ -631,38 +629,38 @@ public class TemplateResource {
      * Unlock a template
      * @param request            {@link HttpServletRequest}
      * @param response           {@link HttpServletResponse}
-     * @param templateInode      {@link String} template inode to unlock
+     * @param templateId      {@link String} template identifier to unlock
      * @return Response
      * @throws DotDataException
      * @throws DotSecurityException
      */
     @PUT
-    @Path("/{templateInode}/_unlock")
+    @Path("/{templateId}/_unlock")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response unlock(@Context final HttpServletRequest  request,
                                @Context final HttpServletResponse response,
-                               @PathParam("templateInode") final String templateInode) throws DotDataException, DotSecurityException {
+                               @PathParam("templateId") final String templateId) throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response).rejectWhenNoUser(true).init();
         final User user         = initData.getUser();
         final PageMode pageMode = PageMode.get(request);
 
-        Logger.debug(this, ()->"Unlocking the Template: " + templateInode);
+        Logger.debug(this, ()->"Unlocking the Template: " + templateId);
 
-        final Template template = this.findTemplateBy(templateInode, templateInode, user, pageMode);
+        final Template template = this.templateAPI.findWorkingTemplate(templateId,user,pageMode.respectAnonPerms);
 
         if (null == template || !InodeUtils.isSet(template.getInode())) {
 
-            throw new DoesNotExistException("The  template inode: " + templateInode + " does not exists");
+            throw new DoesNotExistException("Template with Id: " + templateId + " does not exists");
         }
 
         this.templateHelper.checkPermission(user, template, PERMISSION_READ);
         this.templateAPI.unlock(template, user);
 
-        Logger.debug(this, "Unlocked template: " + templateInode);
+        Logger.debug(this, "Unlocked template: " + templateId);
         return Response.ok(new ResponseEntityView(true)).build();
     }
 
@@ -692,8 +690,8 @@ public class TemplateResource {
                 .requestAndResponse(request, response).rejectWhenNoUser(true).init();
         final User user         = initData.getUser();
         final PageMode pageMode = PageMode.get(request);
-        final List<String> archivedTemplates = new ArrayList<>();
-        final List<String> failedToArchive    = new ArrayList<>();
+        Long archivedTemplatesCount = 0L;
+        final List<FailedResultView> failedToArchive    = new ArrayList<>();
 
         if (!UtilMethods.isSet(templatesToArchive)) {
 
@@ -704,24 +702,24 @@ public class TemplateResource {
         for(final String templateId : templatesToArchive){
             try{
                 final Template template = this.templateAPI.findWorkingTemplate(templateId,user,pageMode.respectAnonPerms);
-                if (null != template && InodeUtils.isSet(template.getInode()) && this.templateAPI.archive(template, user, pageMode.respectAnonPerms)) {
+                if (null != template && InodeUtils.isSet(template.getInode())){
+                    this.templateAPI.archive(template, user, pageMode.respectAnonPerms);
                     ActivityLogger.logInfo(this.getClass(), "Archive Template Action", "User " +
                             user.getPrimaryKey() + " archived template: " + template.getIdentifier());
-                    archivedTemplates.add(templateId);
+                    archivedTemplatesCount++;
                 } else {
-                    failedToArchive.add(templateId);
+                    Logger.error(this, "Template with Id: " + templateId + " does not exists");
+                    failedToArchive.add(new FailedResultView(templateId,"Template Does Not Exists"));
                 }
             } catch(Exception e) {
-                Logger.error(this, e.getMessage(), e);
-                failedToArchive.add(templateId);
+                Logger.debug(this,e.getMessage(),e);
+                failedToArchive.add(new FailedResultView(templateId,e.getMessage()));
             }
         }
 
         return Response.ok(new ResponseEntityView(
-                CollectionsUtils.map(
-                        "archivedTemplates", archivedTemplates,
-                        "failedToArchive",   failedToArchive
-                ))).build();
+                new BulkResultView(archivedTemplatesCount,0L,failedToArchive)))
+                .build();
     }
 
     /**
@@ -751,8 +749,8 @@ public class TemplateResource {
                 .requestAndResponse(request, response).rejectWhenNoUser(true).init();
         final User user         = initData.getUser();
         final PageMode pageMode = PageMode.get(request);
-        final List<String> unarchivedTemplates = new ArrayList<>();
-        final List<String> failedToUnarchive    = new ArrayList<>();
+        Long unarchivedTemplatesCount = 0L;
+        final List<FailedResultView> failedToUnarchive    = new ArrayList<>();
 
         if (!UtilMethods.isSet(templatesToUnarchive)) {
 
@@ -763,24 +761,24 @@ public class TemplateResource {
         for(final String templateId : templatesToUnarchive){
             try{
                 final Template template = this.templateAPI.findWorkingTemplate(templateId,user,pageMode.respectAnonPerms);
-                if (null != template && InodeUtils.isSet(template.getInode()) && this.templateAPI.unarchive(template, user)) {
-                        ActivityLogger.logInfo(this.getClass(), "Unarchive Template Action", "User " +
-                                user.getPrimaryKey() + " unarchived template: " + template.getIdentifier());
-                        unarchivedTemplates.add(templateId);
+                if (null != template && InodeUtils.isSet(template.getInode())){
+                    this.templateAPI.unarchive(template, user);
+                    ActivityLogger.logInfo(this.getClass(), "Unarchive Template Action", "User " +
+                            user.getPrimaryKey() + " unarchived template: " + template.getIdentifier());
+                    unarchivedTemplatesCount++;
                 } else {
-                    failedToUnarchive.add(templateId);
+                    Logger.error(this, "Template with Id: " + templateId + " does not exists");
+                    failedToUnarchive.add(new FailedResultView(templateId,"Template Does Not Exists"));
                 }
             } catch(Exception e) {
-                Logger.error(this, e.getMessage(), e);
-                failedToUnarchive.add(templateId);
+                Logger.debug(this, e.getMessage(), e);
+                failedToUnarchive.add(new FailedResultView(templateId,e.getMessage()));
             }
         }
 
         return Response.ok(new ResponseEntityView(
-                CollectionsUtils.map(
-                        "unarchivedTemplates", unarchivedTemplates,
-                        "failedToUnarchive",   failedToUnarchive
-                ))).build();
+                new BulkResultView(unarchivedTemplatesCount,0L,failedToUnarchive)))
+                .build();
     }
 
     /**
@@ -808,8 +806,8 @@ public class TemplateResource {
                 .requestAndResponse(request, response).rejectWhenNoUser(true).init();
         final User user         = initData.getUser();
         final PageMode pageMode = PageMode.get(request);
-        final List<String> deletedTemplates  = new ArrayList<>();
-        final List<String> failedToDelete  = new ArrayList<>();
+        Long deletedTemplatesCount  = 0L;
+        final List<FailedResultView> failedToDelete  = new ArrayList<>();
 
         if (!UtilMethods.isSet(templatesToDelete)) {
 
@@ -820,25 +818,24 @@ public class TemplateResource {
         for(final String templateId : templatesToDelete){
             try{
                 final Template template = this.templateAPI.findWorkingTemplate(templateId,user,pageMode.respectAnonPerms);
-                if (null != template && InodeUtils.isSet(template.getInode()) &&
-                        this.templateAPI.deleteTemplate(template, user, pageMode.respectAnonPerms)) {
+                if (null != template && InodeUtils.isSet(template.getInode())){
+                    this.templateAPI.deleteTemplate(template, user, pageMode.respectAnonPerms);
                     ActivityLogger.logInfo(this.getClass(), "Delete Template Action", "User " +
                             user.getPrimaryKey() + " deleted template: " + template.getIdentifier());
-                    deletedTemplates.add(templateId);
+                    deletedTemplatesCount++;
                 } else {
-                    failedToDelete.add(templateId);
+                    Logger.error(this, "Template with Id: " + templateId + " does not exists");
+                    failedToDelete.add(new FailedResultView(templateId,"Template Does Not Exists"));
                 }
             } catch(Exception e){
-                Logger.error(this,e.getMessage(),e);
-                failedToDelete.add(templateId);
+                Logger.debug(this,e.getMessage(),e);
+                failedToDelete.add(new FailedResultView(templateId,e.getMessage()));
             }
         }
 
         return Response.ok(new ResponseEntityView(
-                CollectionsUtils.map(
-                        "deletedTemplates", deletedTemplates,
-                        "failedToDelete",   failedToDelete
-                ))).build();
+                new BulkResultView(deletedTemplatesCount,0L,failedToDelete)))
+                .build();
     }
 
     @WrapInTransaction
