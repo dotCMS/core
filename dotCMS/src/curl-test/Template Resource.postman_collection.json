@@ -104,11 +104,11 @@
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"Archive Template Check\", function () {",
-									"    pm.expect(jsonData.entity.archivedTemplates).to.have.lengthOf(1);",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(1);",
 									"});",
 									"",
 									"pm.test(\"Failed To Archive Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failedToArchive).to.have.lengthOf(0);",
+									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(0);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -182,11 +182,11 @@
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"Archive Template Check\", function () {",
-									"    pm.expect(jsonData.entity.archivedTemplates).to.have.lengthOf(1);",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(1);",
 									"});",
 									"",
 									"pm.test(\"Failed To Archive Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failedToArchive).to.have.lengthOf(0);",
+									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(0);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -260,11 +260,11 @@
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"Archive Template Check\", function () {",
-									"    pm.expect(jsonData.entity.archivedTemplates).to.have.lengthOf(0);",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(0);",
 									"});",
 									"",
 									"pm.test(\"Failed To Archive Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failedToArchive).to.have.lengthOf(1);",
+									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(1);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -300,7 +300,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "[\"Id-Not-Exist\"]",
+							"raw": "[\"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\"]",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -424,11 +424,11 @@
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"Unarchive Template Check\", function () {",
-									"    pm.expect(jsonData.entity.unarchivedTemplates).to.have.lengthOf(0);",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(0);",
 									"});",
 									"",
 									"pm.test(\"Failed To Unarchive Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failedToUnarchive).to.have.lengthOf(1);",
+									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(1);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -502,11 +502,11 @@
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"Unarchive Template Check\", function () {",
-									"    pm.expect(jsonData.entity.unarchivedTemplates).to.have.lengthOf(0);",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(0);",
 									"});",
 									"",
 									"pm.test(\"Failed To Unarchive Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failedToUnarchive).to.have.lengthOf(1);",
+									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(1);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -542,7 +542,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "[\"Id-Not-Exist\"]",
+							"raw": "[\"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\"]",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -580,11 +580,11 @@
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"Archive Template Check\", function () {",
-									"    pm.expect(jsonData.entity.archivedTemplates).to.have.lengthOf(1);",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(1);",
 									"});",
 									"",
 									"pm.test(\"Failed To Archive Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failedToArchive).to.have.lengthOf(0);",
+									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(0);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -658,11 +658,11 @@
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"Unarchive Template Check\", function () {",
-									"    pm.expect(jsonData.entity.unarchivedTemplates).to.have.lengthOf(1);",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(1);",
 									"});",
 									"",
 									"pm.test(\"Failed To Unarchive Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failedToUnarchive).to.have.lengthOf(0);",
+									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(0);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -822,11 +822,11 @@
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"Delete Template Check\", function () {",
-									"    pm.expect(jsonData.entity.deletedTemplates).to.have.lengthOf(0);",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(0);",
 									"});",
 									"",
 									"pm.test(\"Failed To Delete Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failedToDelete).to.have.lengthOf(1);",
+									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(1);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -898,11 +898,11 @@
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"Archive Template Check\", function () {",
-									"    pm.expect(jsonData.entity.archivedTemplates).to.have.lengthOf(1);",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(1);",
 									"});",
 									"",
 									"pm.test(\"Failed To Archive Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failedToArchive).to.have.lengthOf(0);",
+									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(0);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -976,11 +976,11 @@
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"Delete Template Check\", function () {",
-									"    pm.expect(jsonData.entity.deletedTemplates).to.have.lengthOf(1);",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(1);",
 									"});",
 									"",
 									"pm.test(\"Failed To Delete Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failedToDelete).to.have.lengthOf(0);",
+									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(0);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -1052,11 +1052,11 @@
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"Delete Template Check\", function () {",
-									"    pm.expect(jsonData.entity.deletedTemplates).to.have.lengthOf(0);",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(0);",
 									"});",
 									"",
 									"pm.test(\"Failed To Delete Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failedToDelete).to.have.lengthOf(1);",
+									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(1);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -1092,7 +1092,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "[\"ID-NOT-EXIST\"]",
+							"raw": "[\"{{templateIdToDelete}}\"]",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -2350,44 +2350,44 @@
 	],
 	"variable": [
 		{
-			"id": "5b2f8271-3c83-4e37-b442-8946ac72d3ed",
+			"id": "c8867d6e-629c-4e2f-b95d-928d0c339056",
 			"key": "temporalInode",
 			"value": "27928cad-5c13-41a9-bcf1-ce23a6cb55c8"
 		},
 		{
-			"id": "ba834747-5c25-40ef-aeaa-9728baff6c2c",
+			"id": "029e0985-08d0-4f8d-9e5b-74b7850b9d74",
 			"key": "temporalIdentifier",
 			"value": "037debee-59cb-42b7-b0d1-1cab580c2b76"
 		},
 		{
-			"id": "4892dfc1-b030-4a98-86de-02449aae2fc8",
+			"id": "e239a8e3-d7c3-47a7-b642-1a2b1153663d",
 			"key": "temporaryInode",
 			"value": "3e233eda-31e4-4cd4-9741-adffad0697ce"
 		},
 		{
-			"id": "e2fc436b-fa3c-483f-b355-9d9c94d78e72",
+			"id": "448c9d79-3679-417b-958a-0f42f877ca34",
 			"key": "temporaryIdentifier",
 			"value": "b6b41cff-9247-47eb-8f97-b7df0462916c"
 		},
 		{
-			"id": "baf488cf-43cb-4edd-80ec-dc2706b590cc",
+			"id": "1dc380ab-eeb4-4b20-a8c4-8e585ab88c30",
 			"key": "templateIdentifier",
 			"value": "b6b41cff-9247-47eb-8f97-b7df0462916c"
 		},
 		{
-			"id": "e4c54437-8e95-4699-926b-a5c5862d3204",
+			"id": "f3f8a2cc-9c0e-4635-ae70-4257e78e74ad",
 			"key": "templateIdToArchive",
-			"value": "39437daa-bb09-4993-a3ac-ceb0017f5237"
+			"value": "9c67245d-2723-49fb-80de-d37306215b63"
 		},
 		{
-			"id": "1678feec-b750-4fc8-8a01-2e4e87601e71",
+			"id": "e86c404c-99a4-4280-a620-6838caa076d8",
 			"key": "templateIdToUnArchive",
-			"value": "54f9e04f-5f59-48e9-aed6-bbbeebc22be2"
+			"value": "127e407d-dbc2-4c80-814e-11ac9b606f52"
 		},
 		{
-			"id": "08b43d94-05fd-4366-b050-2d73b93cec95",
+			"id": "563ac0e4-b1ef-42fa-b0fe-8a8082cb7a2c",
 			"key": "templateIdToDelete",
-			"value": "48e2ba88-2825-457b-b7a5-7af971ad9355"
+			"value": "cec54f64-1546-43dc-b04f-4b255e871dcd"
 		}
 	],
 	"protocolProfileBehavior": {}

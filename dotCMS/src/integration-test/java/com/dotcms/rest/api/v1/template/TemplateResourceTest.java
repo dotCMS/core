@@ -11,6 +11,7 @@ import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.api.BulkResultView;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -67,8 +68,8 @@ public class TemplateResourceTest {
     /**
      * Method to test: archive in the TemplateResource
      * Given Scenario: Create a template on working state, and try to archive it.
-     * ExpectedResult: The endpoint should return 200, the entity must contain the identifier of the
-     *                  archived template (on the archivedTemplates key)
+     * ExpectedResult: The endpoint should return 200, the successCount must be 1 because
+     *                  the action was executed successfully over 1 template
      *
      */
     @Test
@@ -85,15 +86,15 @@ public class TemplateResourceTest {
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        final HashMap<String,ArrayList<String>> results = HashMap.class.cast(responseEntityView.getEntity());
-        Assert.assertTrue(results.get("archivedTemplates").contains(template.getIdentifier()));
+        final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
     }
 
     /**
      * Method to test: archive in the TemplateResource
      * Given Scenario: Create a template on live state, and try to archive it.
-     * ExpectedResult: The endpoint should return 200, the entity must contain the identifier of the
-     *                  archived template (on the archivedTemplates key)
+     * ExpectedResult: The endpoint should return 200, the successCount must be 1 because
+     *                  the action was executed successfully over 1 template
      *
      */
     @Test
@@ -108,15 +109,15 @@ public class TemplateResourceTest {
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        final HashMap<String,ArrayList<String>> results = HashMap.class.cast(responseEntityView.getEntity());
-        Assert.assertTrue(results.get("archivedTemplates").contains(template.getIdentifier()));
+        final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
     }
 
     /**
      * Method to test: archive in the TemplateResource
      * Given Scenario: Create a template and archive it. Then try again the archive endpoint
-     * ExpectedResult: The endpoint should return 200, the entity must contain the identifier of the
-     *                  archived template(on the archivedTemplates key)
+     * ExpectedResult: The endpoint should return 200, the successCount must be 1 because
+     *                  the action was executed successfully over 1 template
      *
      */
     @Test
@@ -133,9 +134,8 @@ public class TemplateResourceTest {
         Assert.assertEquals(Status.OK.getStatusCode(), responseResource.getStatus());
         ResponseEntityView responseEntityView = ResponseEntityView.class
                 .cast(responseResource.getEntity());
-        HashMap<String, ArrayList<String>> results = HashMap.class
-                .cast(responseEntityView.getEntity());
-        Assert.assertTrue(results.get("archivedTemplates").contains(template.getIdentifier()));
+        BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
         //Call again the resource
         responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(), "admin"), response,
                 new ArrayList<>(
@@ -143,17 +143,17 @@ public class TemplateResourceTest {
         Assert.assertEquals(Status.OK.getStatusCode(), responseResource.getStatus());
         responseEntityView = ResponseEntityView.class
                 .cast(responseResource.getEntity());
-        results = HashMap.class
-                .cast(responseEntityView.getEntity());
-        Assert.assertTrue(results.get("archivedTemplates").contains(template.getIdentifier()));
+        results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
     }
 
     /**
      * Method to test: archive in the TemplateResource
      * Given Scenario: Create a template on live state and create a UUID that does not belong to a template,
      *                  and try to archive both.
-     * ExpectedResult: The endpoint should return 200, the entity must contain the identifier of the
-     *                  archived template (on the archivedTemplates key)  and the other uuid (on the failedToArchived key).
+     * ExpectedResult: The endpoint should return 200, the successCount must be 1 because
+     *                  the action was executed successfully over 1 template and the failed array size
+     *                   must be 1 because the action failed over 1 template
      *
      */
     @Test
@@ -169,17 +169,17 @@ public class TemplateResourceTest {
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        final HashMap<String,ArrayList<String>> results = HashMap.class.cast(responseEntityView.getEntity());
-        Assert.assertTrue(results.get("archivedTemplates").contains(template.getIdentifier()));
-        Assert.assertTrue(results.get("failedToArchive").contains(uuid));
+        final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        Assert.assertEquals(1,results.getFailed().size());
     }
 
     /**
      * Method to test: archive in the TemplateResource
      * Given Scenario: Create a template on live state, and as a limited user without edit permissions
      *                  over the template, try to archive it.
-     * ExpectedResult: The endpoint should return 200, the entity must contain the identifier of the
-     *                  archived template(on the failedToArchived key)
+     * ExpectedResult: The endpoint should return 200, the failed array size
+     *                   must be 1 because the action failed over 1 template
      *
      */
     @Test
@@ -200,15 +200,16 @@ public class TemplateResourceTest {
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        final HashMap<String,ArrayList<String>> results = HashMap.class.cast(responseEntityView.getEntity());
-        Assert.assertTrue(results.get("failedToArchive").contains(template.getIdentifier()));
+        final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
+        Assert.assertEquals(1,results.getFailed().size());
     }
 
     /**
      * Method to test: unarchive in the TemplateResource
      * Given Scenario: Create a template and archive it. Then try to unarchive the template.
-     * ExpectedResult: The endpoint should return 200, the entity must contain the identifier of the
-     *                  archived template(on the unarchivedTemplates key)
+     * ExpectedResult: The endpoint should return 200, the successCount must be 1 because
+     *                  the action was executed successfully over 1 template
      *
      */
     @Test
@@ -223,23 +224,23 @@ public class TemplateResourceTest {
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        HashMap<String,ArrayList<String>> results = HashMap.class.cast(responseEntityView.getEntity());
-        Assert.assertTrue(results.get("archivedTemplates").contains(template.getIdentifier()));
+        BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
         //Call Resource to UnArchive
         responseResource = resource.unarchive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Collections.singleton(template.getIdentifier())));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        results = HashMap.class.cast(responseEntityView.getEntity());
-        Assert.assertTrue(results.get("unarchivedTemplates").contains(template.getIdentifier()));
+        results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
     }
 
     /**
      * Method to test: unarchive in the TemplateResource
      * Given Scenario: Create a template on live state. Then try to unarchive the template.
-     * ExpectedResult: The endpoint should return 200, the entity must contain the identifier of the
-     *                  archived template(on the failedToUnarchived key)
+     * ExpectedResult: The endpoint should return 200, the failed array size
+     *                   must be 1 because the action failed over 1 template
      *
      */
     @Test
@@ -254,15 +255,16 @@ public class TemplateResourceTest {
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        final HashMap<String,ArrayList<String>> results = HashMap.class.cast(responseEntityView.getEntity());
-        Assert.assertTrue(results.get("failedToUnarchive").contains(template.getIdentifier()));
+        final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
+        Assert.assertEquals(1,results.getFailed().size());
     }
 
     /**
      * Method to test: unarchive in the TemplateResource
      * Given Scenario: Create a template on working state. Then try to unarchive the template.
-     * ExpectedResult: The endpoint should return 200, the entity must contain the identifier of the
-     *                  archived template(on the failedToUnarchived key)
+     * ExpectedResult: The endpoint should return 200, the failed array size
+     *                   must be 1 because the action failed over 1 template
      *
      */
     @Test
@@ -279,16 +281,18 @@ public class TemplateResourceTest {
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        final HashMap<String,ArrayList<String>> results = HashMap.class.cast(responseEntityView.getEntity());
-        Assert.assertTrue(results.get("failedToUnarchive").contains(template.getIdentifier()));
+        final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
+        Assert.assertEquals(1,results.getFailed().size());
     }
 
     /**
      * Method to test: unarchive in the TemplateResource
      * Given Scenario: Create a template on live state and archive it. Also generate a UUID that does not belong to a template.
      *                   Now, try to unarchive both ids.
-     * ExpectedResult: The endpoint should return 200, the entity must contain the identifier of the
-     *                  archived template(on the unarchivedTemplates key) and the UUID (on the failedToUnarchive key)
+     * ExpectedResult: The endpoint should return 200, the successCount must be 1 because
+     *                  the action was executed successfully over 1 template and the failed array size
+     *                   must be 1 because the action failed over 1 template
      *
      */
     @Test
@@ -304,25 +308,26 @@ public class TemplateResourceTest {
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        HashMap<String,ArrayList<String>> results = HashMap.class.cast(responseEntityView.getEntity());
-        Assert.assertTrue(results.get("archivedTemplates").contains(template.getIdentifier()));
+        BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        Assert.assertEquals(0,results.getFailed().size());
         //Call Resource to UnArchive
         responseResource = resource.unarchive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Arrays.asList(template.getIdentifier(),uuid)));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        results = HashMap.class.cast(responseEntityView.getEntity());
-        Assert.assertTrue(results.get("unarchivedTemplates").contains(template.getIdentifier()));
-        Assert.assertTrue(results.get("failedToUnarchive").contains(uuid));
+        results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        Assert.assertEquals(1,results.getFailed().size());
     }
 
     /**
      * Method to test: unarchive in the TemplateResource
      * Given Scenario: Create a template on live state, and archive it (as Admin).
      *                    Then try to unarchive the template, as a limited user that does not have permissions.
-     * ExpectedResult: The endpoint should return 200, the entity must contain the identifier of the
-     *                  archived template(on the failedToUnarchived key)
+     * ExpectedResult: The endpoint should return 200, the failed array size
+     *                   must be 1 because the action failed over 1 template
      *
      */
     @Test
@@ -338,8 +343,9 @@ public class TemplateResourceTest {
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        HashMap<String,ArrayList<String>> results = HashMap.class.cast(responseEntityView.getEntity());
-        Assert.assertTrue(results.get("archivedTemplates").contains(template.getIdentifier()));
+        BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        Assert.assertEquals(0,results.getFailed().size());
 
         //Create the limited user
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
@@ -353,15 +359,16 @@ public class TemplateResourceTest {
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        results = HashMap.class.cast(responseEntityView.getEntity());
-        Assert.assertTrue(results.get("failedToUnarchive").contains(template.getIdentifier()));
+        results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
+        Assert.assertEquals(1,results.getFailed().size());
     }
 
     /**
      * Method to test: delete in the TemplateResource
      * Given Scenario: Create a template on live state, archive it and delete it.
-     * ExpectedResult: The endpoint should return 200, the entity must contain the identifier of the
-     *                  deleted template(on the deletedTemplates key)
+     * ExpectedResult: The endpoint should return 200, the successCount must be 1 because
+     *                  the action was executed successfully over 1 template
      *
      */
     @Test
@@ -376,8 +383,9 @@ public class TemplateResourceTest {
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        HashMap<String,ArrayList<String>> results = HashMap.class.cast(responseEntityView.getEntity());
-        Assert.assertTrue(results.get("archivedTemplates").contains(template.getIdentifier()));
+        BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        Assert.assertEquals(0,results.getFailed().size());
 
         //Call Resource to Delete
         responseResource = resource.delete(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
@@ -385,16 +393,17 @@ public class TemplateResourceTest {
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        results = HashMap.class.cast(responseEntityView.getEntity());
-        Assert.assertTrue(results.get("deletedTemplates").contains(template.getIdentifier()));
+        results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        Assert.assertEquals(0,results.getFailed().size());
     }
 
     /**
      * Method to test: delete in the TemplateResource
      * Given Scenario: Create a template on live state, and try to delete it. Since the template is
      *                  not archived it could not be deleted.
-     * ExpectedResult: The endpoint should return 200, the entity must contain the identifier of the
-     *                  deleted template(on the failedToDelete key)
+     * ExpectedResult: The endpoint should return 200, the failed array size
+     *                   must be 1 because the action failed over 1 template
      *
      */
     @Test
@@ -408,9 +417,10 @@ public class TemplateResourceTest {
                 Collections.singleton(template.getIdentifier())));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
-        ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        HashMap<String,ArrayList<String>> results = HashMap.class.cast(responseEntityView.getEntity());
-        Assert.assertTrue(results.get("failedToDelete").contains(template.getIdentifier()));
+        final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+        final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
+        Assert.assertEquals(1,results.getFailed().size());
 
     }
 
@@ -418,8 +428,9 @@ public class TemplateResourceTest {
      * Method to test: delete in the TemplateResource
      * Given Scenario: Create a template on live state and archive it. Also create a UUID that does not
      *                  belong to any template. Try to delete both.
-     * ExpectedResult: The endpoint should return 200, the entity must contain the identifier of the
-     *                  deleted template(on the deletedTemplates key) and the UUID (on the failedToDelete key)
+     * ExpectedResult: The endpoint should return 200, the successCount must be 1 because
+     *                  the action was executed successfully over 1 template and the failed array size
+     *                   must be 1 because the action failed over 1 template
      *
      */
     @Test
@@ -435,8 +446,9 @@ public class TemplateResourceTest {
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        HashMap<String,ArrayList<String>> results = HashMap.class.cast(responseEntityView.getEntity());
-        Assert.assertTrue(results.get("archivedTemplates").contains(template.getIdentifier()));
+        BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        Assert.assertEquals(0,results.getFailed().size());
 
         //Call Resource to Delete
         responseResource = resource.delete(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
@@ -444,17 +456,17 @@ public class TemplateResourceTest {
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        results = HashMap.class.cast(responseEntityView.getEntity());
-        Assert.assertTrue(results.get("deletedTemplates").contains(template.getIdentifier()));
-        Assert.assertTrue(results.get("failedToDelete").contains(uuid));
+        results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        Assert.assertEquals(1,results.getFailed().size());
     }
 
     /**
      * Method to test: delete in the TemplateResource
      * Given Scenario: Create a template on live state, and archive it (as Admin). Now as a Limited User
      *                  without Edit Permissions try to delete the template.
-     * ExpectedResult: The endpoint should return 200, the entity must contain the identifier of the
-     *                  deleted template(on the failedToDelete key)
+     * ExpectedResult: The endpoint should return 200, the failed array size
+     *                   must be 1 because the action failed over 1 template
      *
      */
     @Test
@@ -470,8 +482,9 @@ public class TemplateResourceTest {
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        HashMap<String,ArrayList<String>> results = HashMap.class.cast(responseEntityView.getEntity());
-        Assert.assertTrue(results.get("archivedTemplates").contains(template.getIdentifier()));
+        BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        Assert.assertEquals(0,results.getFailed().size());
 
         //Create the limited user
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
@@ -485,16 +498,17 @@ public class TemplateResourceTest {
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        results = HashMap.class.cast(responseEntityView.getEntity());
-        Assert.assertTrue(results.get("failedToDelete").contains(template.getIdentifier()));
+        results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
+        Assert.assertEquals(1,results.getFailed().size());
     }
 
     /**
      * Method to test: delete in the TemplateResource
      * Given Scenario: Create a template on live state, a page that uses that template. Then archive the
      *                  template and try to delete it. Since it still has dependencies should fail.
-     * ExpectedResult: The endpoint should return 200, the entity must contain the identifier of the
-     *                  deleted template(on the failedToDelete key)
+     * ExpectedResult: The endpoint should return 200, the failed array size
+     *                   must be 1 because the action failed over 1 template
      *
      */
     @Test
@@ -511,16 +525,18 @@ public class TemplateResourceTest {
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        HashMap<String,ArrayList<String>> results = HashMap.class.cast(responseEntityView.getEntity());
-        Assert.assertTrue(results.get("archivedTemplates").contains(template.getIdentifier()));
+        BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        Assert.assertEquals(0,results.getFailed().size());
         //Call Resource to Delete
         responseResource = resource.delete(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Collections.singleton(template.getIdentifier())));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        results = HashMap.class.cast(responseEntityView.getEntity());
-        Assert.assertTrue(results.get("failedToDelete").contains(template.getIdentifier()));
+        results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
+        Assert.assertEquals(1,results.getFailed().size());
 
     }
 

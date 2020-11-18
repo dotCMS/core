@@ -321,7 +321,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         assertEquals(templateSaved.getTitle(), title);
         assertFalse(templateSaved.isLive());
 
-        assertTrue(templateAPI.archive(templateSaved, user, false));
+        templateAPI.archive(templateSaved, user, false);
         assertTrue(templateSaved.isArchived());
     }
 
@@ -347,7 +347,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         assertEquals(templateSaved.getTitle(), title);
         assertFalse(templateSaved.isLive());
 
-        assertTrue(templateAPI.archive(templateSaved, user, false));
+        templateAPI.archive(templateSaved, user, false);
         assertTrue(templateSaved.isArchived());
 
         templateAPI.unarchive(templateSaved,user);
