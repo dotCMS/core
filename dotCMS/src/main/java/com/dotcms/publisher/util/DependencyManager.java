@@ -63,6 +63,9 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.commons.lang.StringUtils;
 
+
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.set;
 /**
  * The main purpose of this class is to determine all possible content
  * dependencies associated to the asset(s) the user wants to push via the Push
@@ -1157,6 +1160,13 @@ public class DependencyManager {
 				}
 			}
 		}
+
+		final String detailPageId = structure.getDetailPage();
+
+		if (UtilMethods.isSet(detailPageId)) {
+			contentsSet.add(detailPageId);
+			setHTMLPagesDependencies(set(detailPageId), publisherFilter);
+		}
 	}
 
 	/**
@@ -1439,4 +1449,18 @@ public class DependencyManager {
         return relationships;
     }
 
+	@VisibleForTesting
+	Set getContentTypes() {
+		return contentTypesSet;
+	}
+
+	@VisibleForTesting
+	Set getTemplates() {
+		return templates;
+	}
+
+	@VisibleForTesting
+	Set getContainers() {
+		return containers;
+	}
 }

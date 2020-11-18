@@ -9,8 +9,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.*;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.bundle.business.BundleAPI;
 import com.dotcms.publisher.business.PublishQueueElement;
@@ -18,15 +17,24 @@ import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+
+import com.dotmarketing.factories.MultiTreeAPI;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
@@ -124,6 +132,84 @@ public class DependencyManagerTest {
 
     /**
      * <b>Method to test:</b> {@link DependencyManager#setDependencies()} <p>
+     * <b>Given Scenario:</b> A {@link ContentType} with a page as detail page<p>
+     * <b>ExpectedResult:</b> Should include the detail page as dependencies
+     * @throws DotSecurityException
+     * @throws DotBundleException
+     * @throws DotDataException
+     */
+    @Test
+    public void test_Content_Type_with_detail_Page()
+            throws DotSecurityException, DotBundleException, DotDataException {
+
+        final PushPublisherConfig config = new PushPublisherConfig();
+        final User systemUser = APILocator.systemUser();
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final String baseUrl = String.format("/test%s", System.currentTimeMillis());
+
+        final ContentType contentTypeForContent = new ContentTypeDataGen().nextPersisted();
+
+        final Container container = new ContainerDataGen()
+                .withContentType(contentTypeForContent, "Testing")
+                .nextPersisted();
+
+        final TemplateLayout templateLayout = new TemplateLayoutDataGen()
+                .withContainer(container, ContainerUUID.UUID_START_VALUE)
+                .next();
+
+        final Template template = new TemplateDataGen()
+                .drawedBody(templateLayout)
+                .host(host)
+                .nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Contentlet contentlet = createContentlet(contentTypeForContent, container, htmlPageAsset);
+        final ContentType contentType = new ContentTypeDataGen().user(systemUser)
+                .host(host)
+                .detailPage(htmlPageAsset.getIdentifier())
+                .urlMapPattern(String.format("%s/{text}", baseUrl))
+                .nextPersisted();
+
+        //Creates a bundle with just the child
+        createBundle(config, contentType);
+
+        DependencyManager dependencyManager = new DependencyManager(DependencyManagerTest.user, config);
+        dependencyManager.setDependencies();
+
+        assertEquals(2, dependencyManager.getContentTypes().size());
+        assertTrue(dependencyManager.getContentTypes().contains(contentType.id()));
+        assertTrue(dependencyManager.getContentTypes().contains(contentlet.getContentType().id()));
+
+        assertEquals(2, dependencyManager.getContents().size());
+        assertTrue(dependencyManager.getContents().contains(htmlPageAsset.getIdentifier()));
+        assertTrue(dependencyManager.getContents().contains(contentlet.getIdentifier()));
+
+        assertEquals(1, dependencyManager.getTemplates().size());
+        assertTrue(dependencyManager.getTemplates().contains(template.getIdentifier()));
+
+        assertEquals(1, dependencyManager.getContainers().size());
+        assertTrue(dependencyManager.getContainers().contains(container.getIdentifier()));
+    }
+
+    private Contentlet createContentlet(
+            final ContentType contentType,
+            final Container container,
+            final HTMLPageAsset htmlPageAsset) {
+
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).nextPersisted();
+        new MultiTreeDataGen()
+                .setPage(htmlPageAsset)
+                .setContainer(container)
+                .setContentlet(contentlet)
+                .nextPersisted();
+        return contentlet;
+    }
+
+    /**
+     * <b>Method to test:</b> {@link DependencyManager#setDependencies()} <p>
+>>>>>>> Stashed changes
      * <b>Given Scenario:</b> A bundle contains a content with a relationship <p>
      * <b>ExpectedResult:</b> The Dependency Manager should include all related content to the bundle
      * @throws DotSecurityException
@@ -200,6 +286,21 @@ public class DependencyManagerTest {
      */
     private void createBundle(final PushPublisherConfig config, final Contentlet contentlet)
             throws DotDataException {
+        createBundle(config, PusheableAsset.CONTENTLET, contentlet.getInode(), contentlet.getIdentifier());
+    }
+
+    private void createBundle(final PushPublisherConfig config, final ContentType contentType)
+            throws DotDataException {
+        createBundle(config, PusheableAsset.CONTENT_TYPE, contentType.inode(), contentType.id());
+    }
+
+    private void createBundle(
+            final PushPublisherConfig config,
+            final PusheableAsset pusheableAsset,
+            final String inode,
+            final String id)
+
+        throws DotDataException {
         final String bundleName = "testDependencyManagerBundle" + System.currentTimeMillis();
         Bundle bundle = new Bundle(bundleName, new Date(), null, user.getUserId());
         bundleAPI.saveBundle(bundle);
@@ -208,17 +309,17 @@ public class DependencyManagerTest {
         final PublishQueueElement publishQueueElement = new PublishQueueElement();
         publishQueueElement.setId(1);
         publishQueueElement.setOperation(Operation.PUBLISH.ordinal());
-        publishQueueElement.setAsset(contentlet.getInode());
+        publishQueueElement.setAsset(inode);
         publishQueueElement.setEnteredDate(new Date());
         publishQueueElement.setPublishDate(new Date());
         publishQueueElement.setBundleId(bundle.getId());
-        publishQueueElement.setType(PusheableAsset.CONTENTLET.getType());
+        publishQueueElement.setType(pusheableAsset.getType());
 
         config.setAssets(Lists.newArrayList(publishQueueElement));
         config.setId(bundle.getId());
         config.setOperation(Operation.PUBLISH);
         config.setDownloading(true);
-        config.setLuceneQueries(Lists.newArrayList("+identifier:" + contentlet.getIdentifier()));
+        config.setLuceneQueries(Lists.newArrayList("+identifier:" + id));
     }
 
     /**
