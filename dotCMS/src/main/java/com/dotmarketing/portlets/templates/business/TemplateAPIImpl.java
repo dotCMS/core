@@ -251,26 +251,33 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	}
 
 	@WrapInTransaction
-	public boolean deleteTemplate(final Template template, final User user, final boolean respectFrontendRoles) {
+	public boolean deleteTemplate(final Template template, final User user, final boolean respectFrontendRoles)
+			throws DotDataException {
 
 		Logger.debug(this, ()-> "Doing delete of the template: " + template.getIdentifier());
 
-		if (Try.of(()->template.isArchived()).getOrElseThrow(e -> new RuntimeException(e))) {
-
-			if(Try.of(()->this.permissionAPI.doesUserHavePermission(
-					template, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles))
-					.getOrElseThrow(e -> new RuntimeException(e))) {
-
-				return Try.of(() -> WebAssetFactory.deleteAsset(template, user))
-						.getOrElseThrow(e -> new RuntimeException(e));
-			} else {
-
-				throw new SecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
-			}
-		} else {
-
-			throw new DotStateException("The template: " + template.getName() + " must be archived before it can be deleted");
+		//Check Edit Permissions over Template
+		if(!this.permissionAPI.doesUserHavePermission(template, PERMISSION_EDIT, user)){
+			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to Edit the Template");
+			return false;
 		}
+
+		//Check that the template is archived
+		if(!isArchived(template)) {
+			Logger.error(this,"The template: " + template.getIdentifier() + " must be archived before it can be deleted");
+			return false;
+		}
+
+		//Check that template do not have dependencies (pages referencing the template),
+		// use system user b/c user executing the delete could no have access to all pages
+		final Map<String,String> checkDependencies = checkPageDependencies(template,APILocator.systemUser(),false);
+		if(checkDependencies!= null && !checkDependencies.isEmpty()){
+			Logger.error(this, "The Template: " + template.getName() + " can not be deleted. "
+					+ "Because it has pages referencing to it: " + checkDependencies);
+			return false;
+		}
+
+		return Try.of(() -> WebAssetFactory.deleteAsset(template, user)).getOrElseThrow(e -> new RuntimeException(e));
 	}
 
 	@Override

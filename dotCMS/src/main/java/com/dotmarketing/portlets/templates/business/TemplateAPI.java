@@ -207,7 +207,8 @@ public interface TemplateAPI {
 	 * @throws DotSecurityException
 	 * @throws Exception
 	 */
-	boolean deleteTemplate(Template template, User user, boolean respectFrontendRoles);
+	boolean deleteTemplate(Template template, User user, boolean respectFrontendRoles)
+			throws DotDataException;
 
 	/**
 	 * Deletes the template by inode

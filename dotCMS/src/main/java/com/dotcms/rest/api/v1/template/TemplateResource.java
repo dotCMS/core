@@ -670,6 +670,7 @@ public class TemplateResource {
      * Archives template(s).
      *
      * This method receives a list of identifiers and archives the templates.
+     * To archive a template successfully the user needs to have Edit Permissions.
      *
      * @param request            {@link HttpServletRequest}
      * @param response           {@link HttpServletResponse}
@@ -727,6 +728,8 @@ public class TemplateResource {
      * Unarchives template(s).
      *
      * This method receives a list of identifiers and unarchives the templates.
+     * To unarchive a template successfully the user needs to have Edit Permissions and the template
+     * needs to be archived.
      *
      * @param request            {@link HttpServletRequest}
      * @param response           {@link HttpServletResponse}
@@ -781,120 +784,60 @@ public class TemplateResource {
     }
 
     /**
-     * Deletes a template
-     * Pre: template must not has dependencies
+     * Deletes Template(s).
+     *
+     * This method receives a list of identifiers and deletes the templates.
+     * To delete a template successfully the user needs to have Edit Permissions over it and
+     * it must be archived and no dependencies (pages referencing the template).
      * @param request            {@link HttpServletRequest}
      * @param response           {@link HttpServletResponse}
-     * @param templateInode      {@link String} template inode to look for the template and then, delete it
+     * @param templatesToDelete {@link String} template identifier to look for and then delete it
      * @return Response
      * @throws DotDataException
      * @throws DotSecurityException
      */
     @DELETE
-    @Path("/{templateInode}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response delete(@Context final HttpServletRequest  request,
-                                    @Context final HttpServletResponse response,
-                                    @PathParam("templateInode") final String templateInode) throws Exception {
+                                 @Context final HttpServletResponse response,
+                                 final List<String> templatesToDelete) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response).rejectWhenNoUser(true).init();
         final User user         = initData.getUser();
         final PageMode pageMode = PageMode.get(request);
+        final List<String> deletedTemplates  = new ArrayList<>();
+        final List<String> failedToDelete  = new ArrayList<>();
 
-        Logger.debug(this, ()->"Deleting the Template: " + templateInode);
+        if (!UtilMethods.isSet(templatesToDelete)) {
 
-        final Template template = this.findTemplateBy(templateInode, templateInode, user, pageMode);
-
-        if (null == template || !InodeUtils.isSet(template.getInode())) {
-
-            throw new DoesNotExistException("The  template inode: " + templateInode + " does not exists");
+            throw new IllegalArgumentException("The body must send a collection of template identifier such as: " +
+                    "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
         }
 
-        final SessionDialogMessage error = new SessionDialogMessage(
-                LanguageUtil.get(user, "Delete-Template"),
-                LanguageUtil.get(user, TemplateConstants.TEMPLATE_DELETE_ERROR),
-                LanguageUtil.get(user.getLocale(), "message.template.dependencies.top", TemplateConstants.TEMPLATE_DEPENDENCY_SEARCH_LIMIT) +
-                        "<br>" + LanguageUtil.get(user.getLocale(), "message.template.dependencies.query",
-                        "<br>+baseType:" + BaseContentType.HTMLPAGE.getType() +
-                                " +catchall:" + template.getIdentifier()
-                ));
-
-        return this.canTemplateBeDeleted(template, user, error)?
-             Response.ok(new ResponseEntityView(this.templateAPI.deleteTemplate(template,user, pageMode.respectAnonPerms))).build():
-             Response.status(Response.Status.BAD_REQUEST).entity(map("message", error)).build();
-    }
-
-    /**
-     * Deletes a template
-     * Pre: template must not has dependencies
-     * @param request            {@link HttpServletRequest}
-     * @param response           {@link HttpServletResponse}
-     * @param templatesInodesToPublish {@link String} template inodes to look for the template and then, delete it
-     * @return Response
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    @DELETE
-    @JSONP
-    @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response deleteTemplates(@Context final HttpServletRequest  request,
-                                 @Context final HttpServletResponse response,
-                                 final List<String> templatesInodesToPublish) throws Exception {
-
-        final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
-        final User user         = initData.getUser();
-        final PageMode pageMode = PageMode.get(request);
-        final List<String> deletedInodes  = new ArrayList<>();
-        final List<String> failedInodes   = new ArrayList<>();
-        final List<String> notFoundInodes = new ArrayList<>();
-        final List<String> canNotInodes   = new ArrayList<>();
-
-        Logger.debug(this, ()->"Deleting the Templates: " + templatesInodesToPublish);
-
-        for (final String templateInode : templatesInodesToPublish) {
-
-            final Template template = this.findTemplateBy(templateInode, templateInode, user, pageMode);
-
-            if (null == template || !InodeUtils.isSet(template.getInode())) {
-
-                Logger.info(this, ()->"The  template inode: " + templateInode + " does not exists");
-                notFoundInodes.add(templateInode);
-                continue;
-            }
-
-            final Map<String, String> resultMap = this.templateAPI.checkPageDependencies(
-                    template, user, false);
-            if (resultMap != null && !resultMap.isEmpty()) {
-
-                Logger.info(this, ()->"The  template inode: " + templateInode +
-                        " can not be deleted.  checkPageDependencies: " + resultMap);
-                canNotInodes.add(templateInode);
-                continue;
-            }
-
-            if (!Try.of(()->this.templateAPI.deleteTemplate(template, user, pageMode.respectAnonPerms))
-                    .onFailure(e -> Logger.error(TemplateResource.class, e.getMessage(), e)).getOrElse(false)) {
-
-                Logger.info(this, ()->"The  template inode: " + templateInode + " deletion failed");
-                failedInodes.add(templateInode);
-            } else {
-
-                Logger.info(this, ()->"The  template inode: " + templateInode + ", deletion successful");
-                deletedInodes.add(templateInode);
+        for(final String templateId : templatesToDelete){
+            try{
+                final Template template = this.templateAPI.findWorkingTemplate(templateId,user,pageMode.respectAnonPerms);
+                if (null != template && InodeUtils.isSet(template.getInode()) &&
+                        this.templateAPI.deleteTemplate(template, user, pageMode.respectAnonPerms)) {
+                    ActivityLogger.logInfo(this.getClass(), "Delete Template Action", "User " +
+                            user.getPrimaryKey() + " deleted template: " + template.getIdentifier());
+                    deletedTemplates.add(templateId);
+                } else {
+                    failedToDelete.add(templateId);
+                }
+            } catch(Exception e){
+                Logger.error(this,e.getMessage(),e);
+                failedToDelete.add(templateId);
             }
         }
 
         return Response.ok(new ResponseEntityView(
                 CollectionsUtils.map(
-                        "deletedInodes",  deletedInodes,
-                        "notFoundInodes", notFoundInodes,
-                        "canNotInodes",   canNotInodes,
-                        "failedInodes",   failedInodes
+                        "deletedTemplates", deletedTemplates,
+                        "failedToDelete",   failedToDelete
                 ))).build();
     }
 
@@ -963,28 +906,5 @@ public class TemplateResource {
                 + "Template: " + template.getTitle(), host.getTitle() != null? host.getTitle():"default");
 
         return template;
-    }
-
-    /**
-     * Returns true if a template is not being used by any html pages and can be deleted, false otherwise
-     * @param template
-     * @param user
-     * @return true if template can be deleted
-     */
-    private boolean canTemplateBeDeleted (final Template template, final User user, final SessionDialogMessage errorMessage) {
-
-        final Map<String, String> resultMap = this.templateAPI.checkPageDependencies(template, user, false);
-
-        if (resultMap != null && !resultMap.isEmpty()) {
-
-            for (final Map.Entry<String, String> entry: resultMap.entrySet()) {
-
-                errorMessage.addMessage(entry.getKey(),entry.getValue());
-            }
-
-            return false;
-        }
-
-        return true;
     }
 }
