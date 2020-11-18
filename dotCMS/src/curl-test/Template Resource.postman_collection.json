@@ -725,6 +725,398 @@
 			"protocolProfileBehavior": {}
 		},
 		{
+			"name": "Delete",
+			"item": [
+				{
+					"name": "Create New Template to Delete",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "392cef6e-d7bc-4248-80d6-22fc60ced406",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"body check\", function () {",
+									"    pm.expect(jsonData.entity.body).to.eql('This is the body');",
+									"});",
+									"",
+									"pm.test(\"friendlyName check\", function () {",
+									"    pm.expect(jsonData.entity.friendlyName).to.eql('This is a postman test description');",
+									"});",
+									"",
+									"pm.test(\"Title check\", function () {",
+									"    pm.expect(jsonData.entity.title).to.eql('PostMan Test');",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"templateIdToDelete\", jsonData.entity.identifier);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\":\"PostMan Test\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						},
+						"description": "Creates a new template"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Template Failed To Delete Template is not Archived",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "1ba53325-57e0-4010-81ef-9720b73c7a6f",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Delete Template Check\", function () {",
+									"    pm.expect(jsonData.entity.deletedTemplates).to.have.lengthOf(0);",
+									"});",
+									"",
+									"pm.test(\"Failed To Delete Template Check\", function () {",
+									"    pm.expect(jsonData.entity.failedToDelete).to.have.lengthOf(1);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToDelete}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Archive Template Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "4e325785-4a96-45e5-aed1-0cae8e272961",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Archive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.archivedTemplates).to.have.lengthOf(1);",
+									"});",
+									"",
+									"pm.test(\"Failed To Archive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.failedToArchive).to.have.lengthOf(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToDelete}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_archive",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_archive"
+							]
+						},
+						"description": "Archive one template successfully"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Template Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "5926722b-8b55-410c-835f-3ed578da33f9",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Delete Template Check\", function () {",
+									"    pm.expect(jsonData.entity.deletedTemplates).to.have.lengthOf(1);",
+									"});",
+									"",
+									"pm.test(\"Failed To Delete Template Check\", function () {",
+									"    pm.expect(jsonData.entity.failedToDelete).to.have.lengthOf(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToDelete}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Template Failed To Delete Template Id Not Exist",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "bc01fb83-5334-4feb-808a-75d9979bc4a5",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Delete Template Check\", function () {",
+									"    pm.expect(jsonData.entity.deletedTemplates).to.have.lengthOf(0);",
+									"});",
+									"",
+									"pm.test(\"Failed To Delete Template Check\", function () {",
+									"    pm.expect(jsonData.entity.failedToDelete).to.have.lengthOf(1);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"ID-NOT-EXIST\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
 			"name": "Create New Template",
 			"event": [
 				{
@@ -1954,176 +2346,48 @@
 				"description": "unlock the template"
 			},
 			"response": []
-		},
-		{
-			"name": "Delete Template",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "fd6c1a88-7e2f-4095-8d6d-bbae45216aa4",
-						"exec": [
-							"pm.test(\"Status code should be ok 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
-						}
-					]
-				},
-				"method": "DELETE",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/templates/{{temporaryInode}}",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"templates",
-						"{{temporaryInode}}"
-					]
-				},
-				"description": "deletes the template"
-			},
-			"response": []
-		},
-		{
-			"name": "Get Template Working Copy",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "d67a4d0f-f326-4d3b-9438-43ab709b8ed0",
-						"exec": [
-							"pm.test(\"Status code should be 404 since was deleted\", function () {",
-							"    pm.response.to.have.status(404);",
-							"});",
-							"",
-							"",
-							"",
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/templates/{{temporaryIdentifier}}/working",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"templates",
-						"{{temporaryIdentifier}}",
-						"working"
-					]
-				},
-				"description": "Get a single template"
-			},
-			"response": []
 		}
 	],
 	"variable": [
 		{
-			"id": "d8b892f5-5afa-4a22-a1ea-b8b750a85e92",
+			"id": "5b2f8271-3c83-4e37-b442-8946ac72d3ed",
 			"key": "temporalInode",
 			"value": "27928cad-5c13-41a9-bcf1-ce23a6cb55c8"
 		},
 		{
-			"id": "a9b7eb63-5e43-4d52-bbd3-6881c50abc71",
+			"id": "ba834747-5c25-40ef-aeaa-9728baff6c2c",
 			"key": "temporalIdentifier",
 			"value": "037debee-59cb-42b7-b0d1-1cab580c2b76"
 		},
 		{
-			"id": "644b6012-c921-468d-a9f9-1e4422452fc2",
+			"id": "4892dfc1-b030-4a98-86de-02449aae2fc8",
 			"key": "temporaryInode",
 			"value": "3e233eda-31e4-4cd4-9741-adffad0697ce"
 		},
 		{
-			"id": "b4de4874-45cf-4a23-89d1-98c6fc8d265d",
+			"id": "e2fc436b-fa3c-483f-b355-9d9c94d78e72",
 			"key": "temporaryIdentifier",
 			"value": "b6b41cff-9247-47eb-8f97-b7df0462916c"
 		},
 		{
-			"id": "ff2087a4-a3d3-48a1-aa7b-d0c16a833aa3",
+			"id": "baf488cf-43cb-4edd-80ec-dc2706b590cc",
 			"key": "templateIdentifier",
 			"value": "b6b41cff-9247-47eb-8f97-b7df0462916c"
 		},
 		{
-			"id": "51b24924-87cf-4ef5-bd1a-5bfdce85be69",
+			"id": "e4c54437-8e95-4699-926b-a5c5862d3204",
 			"key": "templateIdToArchive",
-			"value": "602490ff-0bbf-4f93-96b0-041b9ece05b4"
+			"value": "39437daa-bb09-4993-a3ac-ceb0017f5237"
 		},
 		{
-			"id": "6ba438c2-1eb0-4c3d-b586-bda2b2730487",
+			"id": "1678feec-b750-4fc8-8a01-2e4e87601e71",
 			"key": "templateIdToUnArchive",
 			"value": "54f9e04f-5f59-48e9-aed6-bbbeebc22be2"
+		},
+		{
+			"id": "08b43d94-05fd-4366-b050-2d73b93cec95",
+			"key": "templateIdToDelete",
+			"value": "48e2ba88-2825-457b-b7a5-7af971ad9355"
 		}
 	],
 	"protocolProfileBehavior": {}

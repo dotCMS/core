@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.template;
 
+import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestUserUtils;
@@ -15,6 +16,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
@@ -353,6 +355,173 @@ public class TemplateResourceTest {
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         results = HashMap.class.cast(responseEntityView.getEntity());
         Assert.assertTrue(results.get("failedToUnarchive").contains(template.getIdentifier()));
+    }
+
+    /**
+     * Method to test: delete in the TemplateResource
+     * Given Scenario: Create a template on live state, archive it and delete it.
+     * ExpectedResult: The endpoint should return 200, the entity must contain the identifier of the
+     *                  deleted template(on the deletedTemplates key)
+     *
+     */
+    @Test
+    public void test_deleteTemplate_templateIsArchived_success(){
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHost = new SiteDataGen().nextPersisted();
+        //Create template
+        final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
+        //Call Resource to Archive
+        Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+                Collections.singleton(template.getIdentifier())));
+        //Check that the response is 200, OK
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+        HashMap<String,ArrayList<String>> results = HashMap.class.cast(responseEntityView.getEntity());
+        Assert.assertTrue(results.get("archivedTemplates").contains(template.getIdentifier()));
+
+        //Call Resource to Delete
+        responseResource = resource.delete(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+                Collections.singleton(template.getIdentifier())));
+        //Check that the response is 200, OK
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+        results = HashMap.class.cast(responseEntityView.getEntity());
+        Assert.assertTrue(results.get("deletedTemplates").contains(template.getIdentifier()));
+    }
+
+    /**
+     * Method to test: delete in the TemplateResource
+     * Given Scenario: Create a template on live state, and try to delete it. Since the template is
+     *                  not archived it could not be deleted.
+     * ExpectedResult: The endpoint should return 200, the entity must contain the identifier of the
+     *                  deleted template(on the failedToDelete key)
+     *
+     */
+    @Test
+    public void test_deleteTemplate_templateIsLive_failedToDelete(){
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHost = new SiteDataGen().nextPersisted();
+        //Create template
+        final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
+        //Call Resource to Archive
+        Response responseResource = resource.delete(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+                Collections.singleton(template.getIdentifier())));
+        //Check that the response is 200, OK
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+        HashMap<String,ArrayList<String>> results = HashMap.class.cast(responseEntityView.getEntity());
+        Assert.assertTrue(results.get("failedToDelete").contains(template.getIdentifier()));
+
+    }
+
+    /**
+     * Method to test: delete in the TemplateResource
+     * Given Scenario: Create a template on live state and archive it. Also create a UUID that does not
+     *                  belong to any template. Try to delete both.
+     * ExpectedResult: The endpoint should return 200, the entity must contain the identifier of the
+     *                  deleted template(on the deletedTemplates key) and the UUID (on the failedToDelete key)
+     *
+     */
+    @Test
+    public void test_deleteTemplates_OneTemplateIdDoesNotExist_OneTemplateIdExists(){
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHost = new SiteDataGen().nextPersisted();
+        final String uuid = UUIDGenerator.generateUuid();
+        //Create template
+        final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
+        //Call Resource to Archive
+        Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+                Collections.singleton(template.getIdentifier())));
+        //Check that the response is 200, OK
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+        HashMap<String,ArrayList<String>> results = HashMap.class.cast(responseEntityView.getEntity());
+        Assert.assertTrue(results.get("archivedTemplates").contains(template.getIdentifier()));
+
+        //Call Resource to Delete
+        responseResource = resource.delete(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+                Arrays.asList(template.getIdentifier(),uuid)));
+        //Check that the response is 200, OK
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+        results = HashMap.class.cast(responseEntityView.getEntity());
+        Assert.assertTrue(results.get("deletedTemplates").contains(template.getIdentifier()));
+        Assert.assertTrue(results.get("failedToDelete").contains(uuid));
+    }
+
+    /**
+     * Method to test: delete in the TemplateResource
+     * Given Scenario: Create a template on live state, and archive it (as Admin). Now as a Limited User
+     *                  without Edit Permissions try to delete the template.
+     * ExpectedResult: The endpoint should return 200, the entity must contain the identifier of the
+     *                  deleted template(on the failedToDelete key)
+     *
+     */
+    @Test
+    public void test_deleteTemplate_LimitedUserWithoutEditPermissions_failedToDelete()
+            throws DotDataException, DotSecurityException {
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHost = new SiteDataGen().nextPersisted();
+        //Create template
+        final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
+        //Call Resource to Archive
+        Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+                Collections.singleton(template.getIdentifier())));
+        //Check that the response is 200, OK
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+        HashMap<String,ArrayList<String>> results = HashMap.class.cast(responseEntityView.getEntity());
+        Assert.assertTrue(results.get("archivedTemplates").contains(template.getIdentifier()));
+
+        //Create the limited user
+        final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
+        final String password = "admin";
+        limitedUser.setPassword(password);
+        APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
+
+        //Call Resource to Delete
+        responseResource = resource.delete(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+                Collections.singleton(template.getIdentifier())));
+        //Check that the response is 200, OK
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+        results = HashMap.class.cast(responseEntityView.getEntity());
+        Assert.assertTrue(results.get("failedToDelete").contains(template.getIdentifier()));
+    }
+
+    /**
+     * Method to test: delete in the TemplateResource
+     * Given Scenario: Create a template on live state, a page that uses that template. Then archive the
+     *                  template and try to delete it. Since it still has dependencies should fail.
+     * ExpectedResult: The endpoint should return 200, the entity must contain the identifier of the
+     *                  deleted template(on the failedToDelete key)
+     *
+     */
+    @Test
+    public void test_deleteTemplate_pageStillReferencingTemplate_failedToDelete(){
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHost = new SiteDataGen().nextPersisted();
+        //Create template
+        final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
+        //Create a page that uses that template
+        final HTMLPageAsset page = new HTMLPageDataGen(newHost,template).nextPersisted();
+        //Call Resource to Archive
+        Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+                Collections.singleton(template.getIdentifier())));
+        //Check that the response is 200, OK
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+        HashMap<String,ArrayList<String>> results = HashMap.class.cast(responseEntityView.getEntity());
+        Assert.assertTrue(results.get("archivedTemplates").contains(template.getIdentifier()));
+        //Call Resource to Delete
+        responseResource = resource.delete(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+                Collections.singleton(template.getIdentifier())));
+        //Check that the response is 200, OK
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+        results = HashMap.class.cast(responseEntityView.getEntity());
+        Assert.assertTrue(results.get("failedToDelete").contains(template.getIdentifier()));
+
     }
 
 }
