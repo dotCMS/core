@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
+import io.vavr.control.Try;
 import java.awt.Dimension;
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -124,6 +125,7 @@ public class FileAsset extends Contentlet implements IFileAsset, Loadable {
 	private long fileSizeInternal = 0;
 
 	public long getFileSize() {
+		this.fileSizeInternal =	Try.of(() -> Integer.parseInt(getMetaDataMap().get("length").toString())).getOrElse(0);
 		if(this.fileSizeInternal == 0) {
 		   this.fileSizeInternal = computeFileSize(getFileAsset());
 		}
@@ -147,15 +149,24 @@ public class FileAsset extends Contentlet implements IFileAsset, Loadable {
 	}
 
 	private Dimension computeFileDimension(final File file) {
+
+		final int height = Try.of(() -> Integer.parseInt(getMetaDataMap().get("height").toString())).getOrElse(0);
+		final int width = Try.of(() -> Integer.parseInt(getMetaDataMap().get("width").toString())).getOrElse(0);
+
+        if(height > 0 && width > 0){
+           fileDimension = new Dimension(width, height);
+           Logger.debug(FileAsset.class,"Dimensions already computed and extracted from metadata.");
+        }
+
 		if (fileDimension == null) {
 			try {
-    				return (fileDimension = ImageUtil.getInstance().getDimension(file));
+    			return (fileDimension = ImageUtil.getInstance().getDimension(file));
 			} catch (Throwable e) {
 				Logger.debug(this,
 						"Error computing dimensions for file asset with id: " + getIdentifier(), e);
 			}
 		}
-		return null;
+		return fileDimension;
 	}
 
     //Lazy Suppliers are memoized. Meaning that this truly guarantees the computation takes place once.
@@ -178,12 +189,16 @@ public class FileAsset extends Contentlet implements IFileAsset, Loadable {
 
 	/**
 	 *
-	 * @param fileAsset
 	 * @return
 	 */
-  private String computeUnderlyingFileName(final File fileAsset){
-	  return (this.underlyingFileName = fileAsset != null ? fileAsset.getName() : null);
-  }
+	private String computeUnderlyingFileName(final File fileAsset) {
+		this.underlyingFileName = Try.of(() -> getMetaDataMap().get("title").toString())
+				.getOrNull();
+		if (null != this.underlyingFileName) {
+			return this.underlyingFileName;
+		}
+		return (this.underlyingFileName = fileAsset != null ? fileAsset.getName() : null);
+	}
 
 	/***
 	 * This access the logical file name stored on the table Identifier
@@ -200,14 +215,18 @@ public class FileAsset extends Contentlet implements IFileAsset, Loadable {
 	}
 
 	public String getMimeType() {
-		String mimeType = APILocator.getFileAssetAPI().getMimeType(getUnderlyingFileName());
 
+		String mimeType = Try.of(() -> getMetaDataMap().get("contentType").toString()).getOrNull();
+		if(null != mimeType){
+		   return mimeType;
+		}
+
+		mimeType = APILocator.getFileAssetAPI().getMimeType(getUnderlyingFileName());
 
 		if (mimeType == null || UNKNOWN_MIME_TYPE.equals(mimeType)){
 			mimeType = "application/octet-stream";
 		}
 
-		
 		return mimeType;
 	}
 

@@ -373,15 +373,19 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					final Map<String, Map<String, Serializable>> fullMetadataMap = metadata
 							.getFullMetadataMap();
 
-					//If there's any binary Here we'd expect only one single entry in the metadata.
-					fullMetadataMap.forEach((metadataKey, metadataValue) -> {
-						if (null != metadataValue) {
-							mlowered.put(
-									FileAssetAPI.META_DATA_FIELD.toLowerCase() + StringPool.PERIOD
-											+ metadataKey.toLowerCase(), metadataValue);
-							if (metadataKey.contains(FileAssetAPI.CONTENT_FIELD)) {
-								sw.append(metadataValue.toString()).append(' ');
-							}
+                    //Full metadata map is expected to have one single entry
+					fullMetadataMap.forEach((field, metadataValues) -> {
+						if (null != metadataValues) {
+						    metadataValues.forEach((metadataKey, metadataValue) -> {
+						        final String  metadataStringValue = metadataValue.toString();
+								mlowered.put(FileAssetAPI.META_DATA_FIELD.toLowerCase() + StringPool.PERIOD + metadataKey.toLowerCase(), metadataStringValue);
+								if (metadataKey.contains(FileAssetAPI.CONTENT_FIELD)) {
+									sw.append(metadataValue.toString()).append(' ');
+								}
+								if(FileAssetAPI.CONTENT_FIELD.equals(metadataKey)){
+									mlowered.put(FileAssetAPI.META_DATA_FIELD.toLowerCase() + StringPool.PERIOD + "content", metadataStringValue);
+								}
+						    });
 						}
 					});
 				}
