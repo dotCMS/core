@@ -790,7 +790,7 @@ public class AppsAPIImpl implements AppsAPI {
         for (final Entry<String, List<AppSecrets>> importEntry : importedSecretsBySiteId
                 .entrySet()) {
             final String siteId = importEntry.getKey();
-            final Host site = hostAPI.find(siteId, user, false);
+            final Host site = Host.SYSTEM_HOST.equalsIgnoreCase(siteId) ? hostAPI.findSystemHost() : hostAPI.find(siteId, user, false);
             if (null == site) {
                 if (failSilently) {
                     Logger.warn(AppsAPIImpl.class, () -> String

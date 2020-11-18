@@ -1309,7 +1309,7 @@ public class AppsAPIImplTest {
     /**
      * Method to test {@link AppsAPIImpl#exportSecrets(Key, boolean, Map, User)} and {@link AppsAPIImpl#collectSecretsForExport(Map, User)}
      * Given scenario: We're testing exporting secrets generated for different sites (one being SYSTEM_HOST)
-     * Expected results:  We should be able to recover everthing that initially got exported using the "exportAll" param regardless of site.
+     * Expected results:  We should be able to recover everything that initially got exported using the "exportAll" param regardless of site.
      * @throws DotDataException
      * @throws IOException
      * @throws AlreadyExistException

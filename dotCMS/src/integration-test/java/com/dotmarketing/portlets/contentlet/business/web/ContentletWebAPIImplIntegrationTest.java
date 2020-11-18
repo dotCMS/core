@@ -46,18 +46,18 @@ public class ContentletWebAPIImplIntegrationTest {
     final String body =
             "<html>" +
                     "<head>" +
-                        "#dotParse('%1$s/application/themes/landing-page/html_head.vtl')" +
+                        "#dotParse('//%1$s/application/themes/landing-page/html_head.vtl')" +
                         "<link rel=\"stylesheet\" type=\"text/css\" href=\"/html/css/template/reset-fonts-grids.css\" />" +
                     "</head>" +
                     "<body>" +
                         "<div id=\"resp-template\" name=\"globalContainer\">" +
                         "<div id=\"hd-template\">" +
-                        "#dotParse('%1$s/application/themes/landing-page/header.vtl')" +
+                        "#dotParse('//%1$s/application/themes/landing-page/header.vtl')" +
                         "</div>" +
                         "<div id=\"bd-template\">" +
                             "<div id=\"yui-main-template\">" +
                                 "<div class=\"yui-b-template\" id=\"splitBody0\">" +
-                                    "#parseContainer('%1$s/application/containers/default/','1')" +
+                                    "#parseContainer('//%1$s/application/containers/default/','1')" +
                                 "</div>" +
                             "</div>" +
                         "</div>" +
@@ -136,6 +136,79 @@ public class ContentletWebAPIImplIntegrationTest {
         assertEquals(newHostname, containerFromDataBase.getHost().getName());
     }
 
+    /**
+     * Method to Test: {@link ContentletWebAPIImpl#saveContent(Map, boolean, boolean, User)}
+     * When: Change a Host' name and the new host name is a substring from the old ones
+     * Should: Update the container path into the template
+     *
+     * */
+    @Test
+    public void whenNewNameIsSubstring() throws Exception {
+
+        final User user = APILocator.systemUser();
+        init();
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        Container container = createContainer(user, host);
+        Template template = createTemplate(host, container);
+
+        final ContentletWebAPIImpl contentletWebAPI = new ContentletWebAPIImpl();
+        final Map<String, Object> hostMap = host.getMap();
+        final String oldHostName = host.getHostname();
+        final String newHostname = oldHostName.substring(0, (int) (oldHostName.length()/2));
+        hostMap.put("text1", newHostname);
+        hostMap.put("contentletInode", hostMap.get("inode"));
+
+        contentletWebAPI.saveContent(hostMap, false, false, user);
+        waitUntilJobIsFinish();
+
+        final Host hostFromDataBse = APILocator.getHostAPI().find(host.getIdentifier(), user, false);
+        assertEquals(newHostname, hostFromDataBse.getHostname());
+
+        final TemplateLayout templateLayout = DotTemplateTool.themeLayout(template.getInode());
+        final String drawedBodyJson = JsonTransformer.mapper.writeValueAsString(templateLayout);
+        assertFalse(drawedBodyJson.contains(String.format("//%s/", oldHostName)));
+        assertTrue(drawedBodyJson.contains(String.format("//%s/", newHostname)));
+    }
+
+
+    /**
+     * Method to Test: {@link ContentletWebAPIImpl#saveContent(Map, boolean, boolean, User)}
+     * When: Change a Host' name and the new host name contains the old one
+     * Should: Update the container path into the template
+     *
+     * */
+    @Test
+    public void whenOldNameIsSubstring() throws Exception {
+
+        final User user = APILocator.systemUser();
+        init();
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        Container container = createContainer(user, host);
+        Template template = createTemplate(host, container);
+
+        final ContentletWebAPIImpl contentletWebAPI = new ContentletWebAPIImpl();
+        final Map<String, Object> hostMap = host.getMap();
+        final String oldHostName = host.getHostname();
+        final String newHostname = oldHostName + "_new";
+        hostMap.put("text1", newHostname);
+        hostMap.put("contentletInode", hostMap.get("inode"));
+
+        contentletWebAPI.saveContent(hostMap, false, false, user);
+        waitUntilJobIsFinish();
+
+        final Host hostFromDataBse = APILocator.getHostAPI().find(host.getIdentifier(), user, false);
+        assertEquals(newHostname, hostFromDataBse.getHostname());
+
+        final TemplateLayout templateLayout = DotTemplateTool.themeLayout(template.getInode());
+        final String drawedBodyJson = JsonTransformer.mapper.writeValueAsString(templateLayout);
+        assertFalse(drawedBodyJson.contains(String.format("//%s/", oldHostName)));
+        assertTrue(drawedBodyJson.contains(String.format("//%s/", newHostname)));
+    }
+
     private void checkTemplate(
             final String templateInode,
             final User user,
@@ -163,7 +236,7 @@ public class ContentletWebAPIImplIntegrationTest {
 
         final String drawedBodyHTML = "" +
                 "<div style=\"display: none;\" title=\"container_854ad819-8381-434d-a70f-6e2330985ea4\" id=\"splitBody0_div_854ad819-8381-434d-a70f-6e2330985ea4_1572981893151\">" +
-                "#parseContainer('//%s','1572981893151')" +
+                "#parseContainer('//%s/','1572981893151')" +
                 "</div>";
 
         final User user = APILocator.systemUser();

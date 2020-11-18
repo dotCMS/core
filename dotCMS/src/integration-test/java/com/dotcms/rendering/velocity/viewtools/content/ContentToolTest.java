@@ -17,6 +17,7 @@ import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.CollectionsUtils;
@@ -34,7 +35,10 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.rules.model.Condition;
+import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
@@ -45,6 +49,7 @@ import com.tngtech.java.junit.dataprovider.UseDataProvider;
 
 import io.vavr.control.Try;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
@@ -407,7 +412,11 @@ public class ContentToolTest extends IntegrationTestBase {
                 .relationType(relationType).required(false).build();
     }
 
-    private ContentTool getContentTool(final long languageId){
+    private ContentTool getContentTool(final long languageId) {
+	    return getContentTool(languageId, PageMode.PREVIEW_MODE);
+    }
+
+    private ContentTool getContentTool(final long languageId, final PageMode pageMode){
         // Mock ContentTool to retrieve content in Spanish language
         final ViewContext viewContext = mock(ViewContext.class);
         final Context velocityContext = mock(Context.class);
@@ -419,7 +428,12 @@ public class ContentToolTest extends IntegrationTestBase {
         when(request.getParameter("host_id")).thenReturn(defaultHost.getInode());
         when(request.getParameter("language_id")).thenReturn(String.valueOf(languageId));
         when(request.getSession(false)).thenReturn(session);
+        when(request.getSession(true)).thenReturn(session);
+        when(request.getSession()).thenReturn(session);
+        when(request.getParameter(com.dotmarketing.util.WebKeys.PAGE_MODE_PARAMETER)).thenReturn(pageMode.name());
         when(session.getAttribute(com.dotmarketing.util.WebKeys.CMS_USER)).thenReturn(user);
+
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 
         final ContentTool contentTool = new ContentTool();
         contentTool.init(viewContext);
@@ -598,4 +612,187 @@ public class ContentToolTest extends IntegrationTestBase {
         assertEquals(0, contents.size());
     }
 
+    /**
+     * Method to Test: {@link ContentTool#pull(String, int, String)}
+     * When:
+     * - With the PageMode in {@link PageMode#PREVIEW_MODE} and {@link PageMode#EDIT_MODE}
+     * - Create a {@link Relationship}
+     * - Create a parent content and publish it
+     * - Create one child and publish it
+     * - Create another child and just save not publish it
+     * - Create a third child and publish it, later create a different working version
+     * - Use the pull method to get the parent related content.
+     * - Later try to get the child using the parent content properties
+     * Should: Return all the child with the working version
+     * 
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void testPullRelatedParentContentType() throws DotDataException, DotSecurityException {
+
+        final ContentType parentContentType = new ContentTypeDataGen().nextPersisted();
+        final ContentType childContentType = new ContentTypeDataGen().nextPersisted();
+
+        Field field = createField(
+                childContentType.variable(),
+                parentContentType.id(),
+                childContentType.variable(),
+                String.valueOf(RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()));
+
+        field = fieldAPI.save(field, user);
+
+        //creates a new parent contentlet and publishes it
+        final Contentlet parentContentlet = new ContentletDataGen(parentContentType.id())
+                .nextPersisted();
+        ContentletDataGen.publish(parentContentlet);
+
+        //creates children contentlets and publishes them
+        final Contentlet childContentlet1 = new ContentletDataGen(childContentType.id())
+                .languageId(defaultLanguage.getId())
+                .nextPersisted();
+
+        final Contentlet childContentlet2 = new ContentletDataGen(childContentType.id())
+                .languageId(defaultLanguage.getId())
+                .nextPersisted();
+
+        Contentlet childContentlet3Live = new ContentletDataGen(childContentType.id())
+                .languageId(defaultLanguage.getId())
+                .nextPersisted();
+
+        ContentletDataGen.publish(childContentlet1);
+        ContentletDataGen.publish(childContentlet3Live);
+
+        final Contentlet checkout = ContentletDataGen.checkout(childContentlet3Live);
+        final Contentlet childContentlet3Working = ContentletDataGen.checkin(checkout);
+
+        final String fullFieldVar =
+                parentContentType.variable() + StringPool.PERIOD + field.variable();
+
+        final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
+
+        //relates parent contentlet with the child contentlet
+        contentletAPI.relateContent(parentContentlet, relationship,
+                CollectionsUtils.list(childContentlet1, childContentlet2, childContentlet3Working),
+                user, false);
+
+        //refresh relationships in the ES index
+        contentletAPI.reindex(parentContentlet);
+        contentletAPI.reindex(childContentlet1);
+        contentletAPI.reindex(childContentlet2);
+        contentletAPI.reindex(childContentlet3Working);
+
+        final PageMode[] pageModes = {PageMode.PREVIEW_MODE, PageMode.EDIT_MODE};
+
+        for (final PageMode pageMode : pageModes) {
+
+            final ContentTool contentTool = getContentTool(defaultLanguage.getId(), pageMode);
+
+            final String query = String.format("+contentType:%s", parentContentType.variable());
+            final List<ContentMap> parentContent = contentTool.pull(query, 10, "modDate desc");
+
+            assertNotNull(parentContent);
+            assertEquals(1, parentContent.size());
+
+            final Collection<ContentMap> relatedContent = (Collection) parentContent.get(0).get(field.variable());
+
+            assertEquals(3, relatedContent.size());
+            assertTrue(
+                    relatedContent.stream()
+                            .map(contentlet -> contentlet.get("inode"))
+                            .allMatch(inode -> inode.equals(childContentlet1.getInode())
+                                    || inode.equals(childContentlet2.getInode())
+                                    || inode.equals(childContentlet3Working.getInode())
+                            ));
+        }
+    }
+
+    /**
+     * Method to Test: {@link ContentTool#pull(String, int, String)}
+     * When:
+     * - With the PageMode in {@link PageMode#LIVE}
+     * - Create a {@link Relationship}
+     * - Create a parent content and publish it
+     * - Create one child and publish it
+     * - Create another child and just save not publish it
+     * - Create a third child and publish it, later create a different working version
+     * - Use the pull method to get the parent related content.
+     * - Later try to get the child using the parent content properties
+     * Should: Return just two childs with the live version
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void testPullRelatedParentContentTypeInLiveMode() throws DotDataException, DotSecurityException {
+
+        final ContentType parentContentType = new ContentTypeDataGen().nextPersisted();
+        final ContentType childContentType = new ContentTypeDataGen().nextPersisted();
+
+        Field field = createField(
+                childContentType.variable(),
+                parentContentType.id(),
+                childContentType.variable(),
+                String.valueOf(RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()));
+
+        field = fieldAPI.save(field, user);
+
+        //creates a new parent contentlet and publishes it
+        final Contentlet parentContentlet = new ContentletDataGen(parentContentType.id())
+                .nextPersisted();
+        ContentletDataGen.publish(parentContentlet);
+
+        //creates children contentlets and publishes them
+        final Contentlet childContentlet1 = new ContentletDataGen(childContentType.id())
+                .languageId(defaultLanguage.getId())
+                .nextPersisted();
+
+        final Contentlet childContentlet2 = new ContentletDataGen(childContentType.id())
+                .languageId(defaultLanguage.getId())
+                .nextPersisted();
+
+        Contentlet childContentlet3Live = new ContentletDataGen(childContentType.id())
+                .languageId(defaultLanguage.getId())
+                .nextPersisted();
+
+        ContentletDataGen.publish(childContentlet1);
+        ContentletDataGen.publish(childContentlet3Live);
+
+        final Contentlet checkout = ContentletDataGen.checkout(childContentlet3Live);
+        final Contentlet childContentlet3Working = ContentletDataGen.checkin(checkout);
+
+        final String fullFieldVar =
+                parentContentType.variable() + StringPool.PERIOD + field.variable();
+
+        final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
+
+        //relates parent contentlet with the child contentlet
+        contentletAPI.relateContent(parentContentlet, relationship,
+                CollectionsUtils.list(childContentlet1, childContentlet2, childContentlet3Working),
+                user, false);
+
+        //refresh relationships in the ES index
+        contentletAPI.reindex(parentContentlet);
+        contentletAPI.reindex(childContentlet1);
+        contentletAPI.reindex(childContentlet2);
+        contentletAPI.reindex(childContentlet3Working);
+
+        final ContentTool contentTool = getContentTool(defaultLanguage.getId(), PageMode.LIVE);
+
+        final String query = String.format("+contentType:%s", parentContentType.variable());
+        final List<ContentMap> parentContent = contentTool.pull(query, 10, "modDate desc");
+
+        assertNotNull(parentContent);
+        assertEquals(1, parentContent.size());
+
+        final Collection<ContentMap> relatedContent = (Collection) parentContent.get(0).get(field.variable());
+
+        assertEquals(2, relatedContent.size());
+        assertTrue(
+                relatedContent.stream()
+                        .map(contentlet -> contentlet.get("inode"))
+                        .allMatch(inode -> inode.equals(childContentlet1.getInode())
+                                || inode.equals(childContentlet3Live.getInode())
+                        ));
+    }
 }
