@@ -45,17 +45,17 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
         final String outputFile = outputPath + File.separator
                 + getIntegrityType().getDataToCheckCSVName();
 
-        File csvFile = null;
+        File csvFile;
         CsvWriter writer = null;
 
         try {
             csvFile = new File(outputFile);
             writer = new CsvWriter(new FileWriter(csvFile, true), '|');
 
-            Connection conn = DbConnectionFactory.getConnection();
-            try (PreparedStatement statement = conn
+            final Connection conn = DbConnectionFactory.getConnection();
+            try (final PreparedStatement statement = conn
                     .prepareStatement("select inode, velocity_var_name from structure ")) {
-                try (ResultSet rs = statement.executeQuery()) {
+                try (final ResultSet rs = statement.executeQuery()) {
                     int count = 0;
 
                     while (rs.next()) {
@@ -70,8 +70,9 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
                         }
                     }
                 }
-            } catch (SQLException e) {
-                throw new DotDataException(e.getMessage(), e);
+            } catch (final SQLException e) {
+                throw new DotDataException(String.format("An error occurred when generating the CSV file '%s': %s",
+                        outputFile, e.getMessage()), e);
             }
         } finally {
             if (writer != null) {
@@ -85,14 +86,14 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
     @Override
     public boolean generateIntegrityResults(final String endpointId) throws Exception {
         try {
-            CsvReader structures = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator
+            final CsvReader structures = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator
                     + endpointId + File.separator + getIntegrityType().getDataToCheckCSVName(),
                     '|', Charset.forName("UTF-8"));
             boolean tempCreated = false;
             DotConnect dc = new DotConnect();
-            String tempTableName = getTempTableName(endpointId);
+            final String tempTableName = getTempTableName(endpointId);
 
-            String tempKeyword = DbConnectionFactory.getTempKeyword();
+            final String tempKeyword = DbConnectionFactory.getTempKeyword();
 
             String createTempTable = "create " + tempKeyword + " table " + tempTableName
                     + " (inode varchar(36) not null, velocity_var_name varchar(255) not null, "
@@ -120,13 +121,12 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
 					dc.addParam(structureInode);
 					dc.addParam(verVarName);
 					dc.loadResult();
-				} catch (DotDataException e) {
+				} catch (final DotDataException e) {
 					structures.close();
 					final String assetId = UtilMethods.isSet(structureInode) ? structureInode
 							: "";
-					throw new DotDataException(
-							"An error occured when generating temp table for asset: "
-									+ assetId, e);
+                    throw new DotDataException(String.format("An error occured when generating temp table for asset " +
+                            "'%s': %s", assetId, e.getMessage()), e);
 				}
             }
 
@@ -142,7 +142,7 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
                     + "join " + tempTableName
                     + " st on s.velocity_var_name = st.velocity_var_name and s.inode <> st.inode");
 
-            List<Map<String, Object>> results = dc.loadObjectResults();
+            final List<Map<String, Object>> results = dc.loadObjectResults();
 
             if (!results.isEmpty()) {
                 // if we have conflicts, lets create a table out of them
@@ -161,8 +161,9 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
             }
 
             return !results.isEmpty();
-        } catch (Exception e) {
-            throw new Exception("Error running the Structures Integrity Check", e);
+        } catch (final Exception e) {
+            throw new Exception(String.format("Error running the Structures Integrity Check in Endpoint '%s': %s",
+                    endpointId, e.getMessage()), e);
         }
     }
 
@@ -175,20 +176,19 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
      */
     @Override
     public void executeFix(String serverId) throws DotDataException, DotSecurityException {
-        DotConnect dc = new DotConnect();
+        final DotConnect dc = new DotConnect();
 
         try {
             dc.setSQL("select local_inode, remote_inode from "
                     + getIntegrityType().getResultsTableName() + " where endpoint_id = ?");
             dc.addParam(serverId);
-            List<Map<String, Object>> results = dc.loadObjectResults();
-            User systemUser = APILocator.getUserAPI().getSystemUser();
-            
-            for (Map<String, Object> result : results) {
+            final List<Map<String, Object>> results = dc.loadObjectResults();
+
+            for (final Map<String, Object> result : results) {
                 final String oldStructureInode = (String) result.get("local_inode");
                 final String newStructureInode = (String) result.get("remote_inode");
 
-                Structure st = CacheLocator.getContentTypeCache().getStructureByInode(oldStructureInode);
+                final Structure st = CacheLocator.getContentTypeCache().getStructureByInode(oldStructureInode);
 
                 // Inconsistency fix process
                 final String TEMP_INODE = "TEMP_INODE_" + System.currentTimeMillis();
@@ -266,7 +266,7 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
 				// remove folders from cache
 				dc.setSQL("SELECT inode FROM folder WHERE default_file_type = '"
 						+ oldStructureInode + "'");
-				List<Map<String, Object>> referencedFolders = dc
+				final List<Map<String, Object>> referencedFolders = dc
 						.loadObjectResults();
 				if (!referencedFolders.isEmpty()) {
 
@@ -279,30 +279,30 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
                 // lets save old structure columns values first
                 dc.setSQL("select * from structure where inode = ?");
                 dc.addParam(oldStructureInode);
-                Map<String, Object> oldFolderRow = dc.loadObjectResults().get(0);
-                String name = (String) oldFolderRow.get("name");
-                String description = (String) oldFolderRow.get("description");
-                Boolean defaultStructure = DbConnectionFactory.isDBTrue(oldFolderRow.get(
+                final Map<String, Object> oldFolderRow = dc.loadObjectResults().get(0);
+                final String name = (String) oldFolderRow.get("name");
+                final String description = (String) oldFolderRow.get("description");
+                final Boolean defaultStructure = DbConnectionFactory.isDBTrue(oldFolderRow.get(
                         "default_structure").toString());
-                String reviewInterval = (String) oldFolderRow.get("review_interval");
-                String reviewerRole = (String) oldFolderRow.get("reviewer_role");
-                String detailPage = (String) oldFolderRow.get("page_detail");
+                final String reviewInterval = (String) oldFolderRow.get("review_interval");
+                final String reviewerRole = (String) oldFolderRow.get("reviewer_role");
+                final String detailPage = (String) oldFolderRow.get("page_detail");
 
                 Integer structureType = null;
                 if (oldFolderRow.get("structuretype") != null) {
                     structureType = Integer.valueOf(oldFolderRow.get("structuretype").toString());
                 }
 
-                Boolean system = DbConnectionFactory
+                final Boolean system = DbConnectionFactory
                         .isDBTrue(oldFolderRow.get("system").toString());
-                Boolean fixed = DbConnectionFactory.isDBTrue(oldFolderRow.get("fixed").toString());
-                String velocityVarName = (String) oldFolderRow.get("velocity_var_name");
-                String urlMapPattern = (String) oldFolderRow.get("url_map_pattern");
-                String host = (String) oldFolderRow.get("host");
-                String folder = (String) oldFolderRow.get("folder");
-                String expireDateVar = (String) oldFolderRow.get("expire_date_var");
-                String publishDateVar = (String) oldFolderRow.get("publish_date_var");
-                Date modDate = (Date) oldFolderRow.get("mod_date");
+                final Boolean fixed = DbConnectionFactory.isDBTrue(oldFolderRow.get("fixed").toString());
+                final String velocityVarName = (String) oldFolderRow.get("velocity_var_name");
+                final String urlMapPattern = (String) oldFolderRow.get("url_map_pattern");
+                final String host = (String) oldFolderRow.get("host");
+                final String folder = (String) oldFolderRow.get("folder");
+                final String expireDateVar = (String) oldFolderRow.get("expire_date_var");
+                final String publishDateVar = (String) oldFolderRow.get("publish_date_var");
+                final Date modDate = (Date) oldFolderRow.get("mod_date");
 
                 dc.executeStatement("delete from structure where inode = '" + oldStructureInode
                         + "'");
@@ -311,10 +311,10 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
 
                 dc.setSQL("select * from inode where inode = ?");
                 dc.addParam(oldStructureInode);
-                Map<String, Object> oldInodeRow = dc.loadObjectResults().get(0);
-                String owner = (String) oldInodeRow.get("owner");
-                Date idate = (Date) oldInodeRow.get("idate");
-                String type = (String) oldInodeRow.get("type");
+                final Map<String, Object> oldInodeRow = dc.loadObjectResults().get(0);
+                final String owner = (String) oldInodeRow.get("owner");
+                final Date idate = (Date) oldInodeRow.get("idate");
+                final String type = (String) oldInodeRow.get("type");
 
                 dc.executeStatement("delete from inode where inode = '" + oldStructureInode + "'");
 
@@ -374,8 +374,9 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
                 dc.executeStatement("delete from structure where inode = '" + TEMP_INODE + "'" );
                 dc.executeStatement("delete from inode where inode = '" + TEMP_INODE + "'" );
             }
-        } catch (SQLException e) {
-            throw new DotDataException(e.getMessage(), e);
+        } catch (final SQLException e) {
+            throw new DotDataException(String.format("An error occurred when executing the fix for Content Types in " +
+                    "Endpoint '%s': %s", serverId, e.getMessage()), e);
         }
     }
 

@@ -522,9 +522,7 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 		this.addAFileIFrame.src = addFilePorletURL;
 		this.addFileDialog.show();
 		dojo.global.closeAddFileDialog = dojo.hitch(this, this._closeAddFileDialog);
-		/* hack for IE only - iframe onload doesn't work */
-		if(dojo.isIE)
-			dojo.global.fileSubmitted = dojo.hitch(this, this._fileSubmitted);
+        dojo.global.fileSubmitted = dojo.hitch(this, this._fileSubmitted);
 	},
 
 	_getRequestParameter: function (name, url)

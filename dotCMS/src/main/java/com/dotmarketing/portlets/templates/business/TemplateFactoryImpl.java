@@ -7,6 +7,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode.Type;
 import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -53,13 +54,13 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		Template template = templateCache.get(inode);
 		
 		if(template==null){
-		
-		
 			HibernateUtil hu = new HibernateUtil(Template.class);
 			template = (Template) hu.load(inode);
+
 			if(template != null && template.getInode() != null)
 				templateCache.add(inode, template);
 		}
+
 		return template;
 	}
 
@@ -135,6 +136,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 	@SuppressWarnings("unchecked")
 	public Template findWorkingTemplateByName(String name, Host host) throws DotDataException {
+
 		DotConnect dc = new DotConnect();
 		dc.setSQL(templateWithNameSQL);
 		dc.addParam(host.getIdentifier());
@@ -152,11 +154,13 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 	}
 
+
 	@Override
-	public List<Template> findTemplates(User user, boolean includeArchived,
-			Map<String, Object> params, String hostId, String inode, String identifier, String parent,
-			int offset, int limit, String orderBy) throws DotSecurityException,
+    public List<Template> findTemplates(final User user, final boolean includeArchived,
+            Map<String, Object> params, final String hostId, final String inode, String identifier, String parent,
+            int offset, int limit, final String orderByIncoming) throws DotSecurityException,
 			DotDataException {
+
 
 		PaginatedArrayList<Template> assets = new PaginatedArrayList<Template>();
 		List<Permissionable> toReturn = new ArrayList<Permissionable>();
@@ -173,38 +177,13 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 		List<Object> paramValues =null;
 		if(params!=null && params.size()>0){
-			conditionBuffer.append(" and (");
+            conditionBuffer.append(" and ( false ");
 			paramValues = new ArrayList<>();
-			int counter = 0;
 			for (Map.Entry<String, Object> entry : params.entrySet()) {
-				if(counter==0){
 					if(entry.getValue() instanceof String){
 						if(entry.getKey().equalsIgnoreCase("inode")){
-							conditionBuffer.append(" asset.");
-							conditionBuffer.append(entry.getKey());
-							conditionBuffer.append(" = '");
-							conditionBuffer.append(entry.getValue());
-							conditionBuffer.append("'");
-						}else{
-							conditionBuffer.append(" lower(asset.");
-							conditionBuffer.append(entry.getKey());
-							conditionBuffer.append(") like ? ");
-							paramValues.add("%"+ ((String)entry.getValue()).toLowerCase()+"%");
-						}
-					}else{
-						conditionBuffer.append(" asset.");
-						conditionBuffer.append(entry.getKey());
-						conditionBuffer.append(" = ");
-						conditionBuffer.append(entry.getValue());
-					}
-				}else{
-					if(entry.getValue() instanceof String){
-						if(entry.getKey().equalsIgnoreCase("inode")){
-							conditionBuffer.append(" OR asset.");
-							conditionBuffer.append(entry.getKey());
-							conditionBuffer.append(" = '");
-							conditionBuffer.append(entry.getValue());
-							conditionBuffer.append("'");
+						conditionBuffer.append(" OR asset.inode = ? ");
+						paramValues.add((String)entry.getValue());
 						}else{
 							conditionBuffer.append(" OR lower(asset.");
 							conditionBuffer.append(entry.getKey());
@@ -214,15 +193,13 @@ public class TemplateFactoryImpl implements TemplateFactory {
 					}else{
 						conditionBuffer.append(" OR asset.");
 						conditionBuffer.append(entry.getKey());
-						conditionBuffer.append(" = ");
-						conditionBuffer.append(entry.getValue());
+                    conditionBuffer.append(" = ? ");
+                    paramValues.add((String)entry.getValue());
 					}
 				}
-
-				counter+=1;
-			}
 			conditionBuffer.append(" ) ");
 		}
+		DotConnect dc = new DotConnect();
 
 		StringBuffer query = new StringBuffer();
 		query.append("select asset.*, inode.* from ");
@@ -240,27 +217,27 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		query.append(" and versioninfo.identifier=asset.identifier ")
 			.append(" and show_on_menu = ").append(DbConnectionFactory.getDBTrue());
 
+		List<String> additionalParams = new ArrayList<>();
 		if(UtilMethods.isSet(hostId)){
-			query.append(" and identifier.host_inode = '");
-			query.append(hostId);
-			query.append("'");
-		}
-		if(UtilMethods.isSet(inode)){
-			query.append(" and asset.inode = '");
-			query.append(inode);
-			query.append("'");
-		}
-		if(UtilMethods.isSet(identifier)){
-			query.append(" and asset.identifier = '");
-			query.append(identifier);
-			query.append("'");
-		}
-		if(!UtilMethods.isSet(orderBy)){
-			orderBy = "mod_date desc";
+			query.append(" and identifier.host_inode = ?");
+			additionalParams.add(hostId);
 		}
 
+		if(UtilMethods.isSet(inode)){
+			query.append(" and asset.inode =  ? ");
+			additionalParams.add(inode);
+		}
+		if(UtilMethods.isSet(identifier)){
+			query.append(" and asset.identifier = ? ");
+			additionalParams.add(identifier);
+		}
+
+		String orderBy = SQLUtil.sanitizeSortBy(orderByIncoming) ;
+		orderBy = UtilMethods.isSet(orderBy) ? orderBy : "mod_date desc";
+
+
 		List<Template> resultList;
-		DotConnect dc = new DotConnect();
+
 		int countLimit = 100;
 		int size = 0;
 		try {
@@ -269,6 +246,9 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			query.append(" order by asset.");
 			query.append(orderBy);
 			dc.setSQL(query.toString());
+
+			additionalParams.forEach(p->dc.addParam(p));
+
 
 			if(paramValues!=null && paramValues.size()>0){
 				for (Object value : paramValues) {
@@ -528,7 +508,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
        HibernateUtil.saveOrUpdate(templateToUpdate);
        templateCache.add(templateToUpdate.getInode(), templateToUpdate);
        new TemplateLoader().invalidate(templateToUpdate);
-   };
+   }
 
    /**
 	 * Method will replace user references of the given userId in templates

@@ -49,17 +49,17 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
         final String outputFile = outputPath + File.separator
                 + getIntegrityType().getDataToCheckCSVName();
 
-        File csvFile = null;
+        File csvFile;
         CsvWriter writer = null;
 
         try {
             csvFile = new File(outputFile);
             writer = new CsvWriter(new FileWriter(csvFile, true), '|');
 
-            Connection conn = DbConnectionFactory.getConnection();
-            try (PreparedStatement statement = conn
+            final Connection conn = DbConnectionFactory.getConnection();
+            try (final PreparedStatement statement = conn
                     .prepareStatement("select f.inode, f.identifier, i.parent_path, i.asset_name, i.host_inode from folder f join identifier i on f.identifier = i.id ")) {
-                try (ResultSet rs = statement.executeQuery()) {
+                try (final ResultSet rs = statement.executeQuery()) {
                     int count = 0;
 
                     while (rs.next()) {
@@ -77,8 +77,9 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
                         }
                     }
                 }
-            } catch (SQLException e) {
-                throw new DotDataException(e.getMessage(), e);
+            } catch (final SQLException e) {
+                throw new DotDataException(String.format("An error occurred when generating the CSV file for Folders " +
+                        "to '%s': %s", outputFile, e.getMessage()), e);
             }
         } finally {
             // Close writer
@@ -99,11 +100,11 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
 
             boolean tempCreated = false;
             DotConnect dc = new DotConnect();
-            String tempTableName = getTempTableName(endpointId);
+            final String tempTableName = getTempTableName(endpointId);
 
             // lets create a temp table and insert all the records coming from
             // the CSV file
-            String tempKeyword = DbConnectionFactory.getTempKeyword();
+            final String tempKeyword = DbConnectionFactory.getTempKeyword();
 
             String createTempTable = "create "
                     + tempKeyword
@@ -146,13 +147,12 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
                     dc.addParam((parentPath + assetName).toLowerCase());
 					dc.addParam(hostIdentifier);
 					dc.loadResult();
-				} catch (DotDataException e) {
+				} catch (final DotDataException e) {
 					folders.close();
 					final String assetId = UtilMethods.isSet(folderIdentifier) ? folderIdentifier
 							: "";
-					throw new DotDataException(
-							"An error occured when generating temp table for asset: "
-									+ assetId, e);
+                    throw new DotDataException(String.format("An error occurred when generating temp table for asset " +
+                            "'%s': %s", assetId, e.getMessage()), e);
 				}
             }
 
@@ -171,7 +171,7 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
                     + "join contentlet_version_info cvi on c.inode = cvi.working_inode "
                     + "where asset_type = 'folder' and f.inode <> ft.inode order by c.title, iden.asset_name");
 
-            List<Map<String, Object>> results = dc.loadObjectResults();
+            final List<Map<String, Object>> results = dc.loadObjectResults();
 
             if (!results.isEmpty()) {
                 // if we have conflicts, lets create a table out of them
@@ -206,8 +206,9 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
             }
 
             return (Long) dc.getRecordCount(getIntegrityType().getResultsTableName(), "where endpoint_id = '"+ endpointId+ "'") > 0;
-        } catch (Exception e) {
-            throw new Exception("Error running the Folders Integrity Check", e);
+        } catch (final Exception e) {
+            throw new Exception(String.format("Error running the Folders Integrity Check for Endpoint '%s': %s",
+                    endpointId, e.getMessage()), e);
         }
     }
 
@@ -223,7 +224,7 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
     @Override
     public void executeFix(final String serverId) throws DotDataException, DotSecurityException {
 
-        DotConnect dc = new DotConnect();
+        final DotConnect dc = new DotConnect();
 
         try {
             // lets remove from the index all the content under each conflicted
@@ -231,9 +232,9 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
             dc.setSQL("select local_inode, remote_inode, local_identifier, remote_identifier from "
                     + getIntegrityType().getResultsTableName() + " where endpoint_id = ?");
             dc.addParam(serverId);
-            List<Map<String, Object>> results = dc.loadObjectResults();
+            final List<Map<String, Object>> results = dc.loadObjectResults();
 
-            for (Map<String, Object> result : results) {
+            for (final Map<String, Object> result : results) {
 
                 String oldFolderInode = (String) result.get("local_inode");
                 String newFolderInode = (String) result.get("remote_inode");
@@ -241,7 +242,7 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
                 String newFolderIdentifier = (String) result.get("remote_identifier");
 
                 //First we need to verify if the new folder identifier already exist
-                Identifier identifierFound = APILocator.getIdentifierAPI().find(newFolderIdentifier);
+                final Identifier identifierFound = APILocator.getIdentifierAPI().find(newFolderIdentifier);
                 if ( identifierFound != null && UtilMethods.isSet(identifierFound.getId()) ) {
 
                     //We need to change the ids of the existing folder
@@ -255,8 +256,9 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
                 applyFixTo(dc, oldFolderInode, newFolderInode, oldFolderIdentifier, newFolderIdentifier);
             }
 
-        } catch (SQLException e) {
-            throw new DotDataException(e.getMessage(), e);
+        } catch (final SQLException e) {
+            throw new DotDataException(String.format("An error occurred when executing the Folder Integrity fix for " +
+                    "serverId '%s': %s", serverId, e.getMessage()), e);
         }
     }
 
