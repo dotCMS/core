@@ -17,7 +17,8 @@
 <%@page import="com.dotmarketing.util.DateUtil" %>
 <%@page import="com.dotmarketing.util.Logger" %>
 <%@ page import="com.dotmarketing.portlets.workflows.business.WorkflowAPI" %>
-
+<%@page import="java.util.Date" %>
+<%@page import="java.util.Optional" %>
 
 <%!
 
@@ -491,11 +492,15 @@ public String getGravatar(String postedBy){
 			    </tr>
 			
 			    <%if (contentlet.isLocked()) {%>
+                    <% 
+                        Optional<Date> date = APILocator.getVersionableAPI().getLockedOn(contentlet); 
+                        Optional<String> userId = APILocator.getVersionableAPI().getLockedBy(contentlet);
+                    %>
 			        <tr>
 			            <td>
 			                <b><%= LanguageUtil.get(pageContext, "Locked") %></b>:
-			                <%=APILocator.getUserAPI().loadUserById(APILocator.getVersionableAPI().getLockedBy(contentlet), APILocator.getUserAPI().getSystemUser(), false).getFullName() %>
-			                <span class="lockedAgo" style="display: inline">(<%=UtilMethods.capitalize( DateUtil.prettyDateSince(APILocator.getVersionableAPI().getLockedOn(contentlet), user.getLocale())) %>)</span>
+			                <%=userId.isPresent()?APILocator.getUserAPI().loadUserById(userId.get(), APILocator.getUserAPI().getSystemUser(), false).getFullName():"--" %>
+			                <span class="lockedAgo" style="display: inline">(<%=date.isPresent()? UtilMethods.capitalize(DateUtil.prettyDateSince(date.get(), user.getLocale())): "--" %>)</span>
 			            </td>
 			        </tr>
 			    <%} %>
