@@ -23,6 +23,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.io.IOException;
@@ -94,49 +95,62 @@ public class Task00050LoadAppsSecrets implements StartupTask {
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(serverDir,
                     entry -> matchesFileName(entry.getFileName().toString()))) {
                 for (final Path path : stream) {
+                    Logger.info(Task00050LoadAppsSecrets.class,String.format("Importing contents from file: `%s`",path));
+                    boolean importFileHasErrors = false;
                     try {
-                        final Map<String, List<AppSecrets>> secretsBySiteId = importSecrets(
-                                path, key);
-                        for (final Entry<String, List<AppSecrets>> importEntry : secretsBySiteId
-                                .entrySet()) {
+                        final Map<String, List<AppSecrets>> secretsBySiteId = importSecrets(path, key);
+                        for (final Entry<String, List<AppSecrets>> importEntry : secretsBySiteId.entrySet()) {
                             final String siteId = importEntry.getKey();
-                            if (Host.SYSTEM_HOST.equalsIgnoreCase(siteId) || findSite(siteId,
-                                    dotConnect)) {
+                            if (Host.SYSTEM_HOST.equalsIgnoreCase(siteId) || findSite(siteId, dotConnect)) {
                                 final List<AppSecrets> appSecrets = importEntry.getValue();
                                 for (final AppSecrets secrets : appSecrets) {
                                     if (!secrets.getSecrets().isEmpty()) {
                                         final AppDescriptor descriptor = descriptorsMap
                                                 .get(secrets.getKey().toLowerCase());
                                         if (null != descriptor) {
-                                            validateForSave(mapForValidation(secrets), descriptor);
-                                            final char[] chars = toJsonAsChars(secrets);
-                                            final String internalKey = internalKey(secrets.getKey(),
-                                                    siteId);
-                                            keyStoreHelper.saveValue(internalKey, chars);
-                                            importCount++;
+                                            try {
+                                                validateForSave(mapForValidation(secrets), descriptor);
+                                                final char[] chars = toJsonAsChars(secrets);
+                                                final String internalKey = internalKey(secrets.getKey(), siteId);
+                                                keyStoreHelper.saveValue(internalKey, chars);
+                                                importCount++;
+                                                Logger.error(Task00050LoadAppsSecrets.class, String.format(
+                                                    "Secret for key `%s` and site `%s` imported successfully. ",
+                                                    secrets.getKey(), siteId));
+                                            } catch (IllegalArgumentException e) {
+                                                Logger.error(Task00050LoadAppsSecrets.class, e);
+                                                importFileHasErrors = true;
+                                            }
                                         } else {
-                                            throw new DotDataException(String.format(
-                                                    "I cant't import a secret meant for a descriptor `%s` that doesn't exist locally.",
+                                            Logger.error(Task00050LoadAppsSecrets.class, String.format(
+                                                    "Cant't import a secret meant for a descriptor `%s` that doesn't exist locally.",
                                                     secrets.getKey()));
+                                            importFileHasErrors = true;
                                         }
                                     } else {
-                                        throw new DotDataException(
-                                                "I cant't import a secret that was generated empty.");
+                                        Logger.error(Task00050LoadAppsSecrets.class,
+                                                "Cant't import a secret that was generated empty.");
+                                        importFileHasErrors = true;
                                     }
                                 }
                             } else {
-                                throw new DotDataException(String.format(
-                                        "I cant't import a secret that belongs into a unknown site `%s`.",
-                                        siteId));
+                                Logger.error(Task00050LoadAppsSecrets.class, String.format(
+                                         "Cant't import a secret that belongs into a unknown site `%s`. ", siteId));
+                                importFileHasErrors = true;
                             }
                         }
+                        //if we had an error or nothing came on the file.
+                        importFileHasErrors = importFileHasErrors || secretsBySiteId.isEmpty();
                     } finally {
-                        path.toFile().delete();
+                        if (!importFileHasErrors) {
+                            path.toFile().delete();
+                        }
                     }
                 }
             }
         } catch (Exception e) {
-            throw new DotDataException("Error Importing AppSecret from starer ", e);
+            Logger.error(Task00050LoadAppsSecrets.class, "Error Importing AppSecret from starter.",
+                    e);
         }
     }
 

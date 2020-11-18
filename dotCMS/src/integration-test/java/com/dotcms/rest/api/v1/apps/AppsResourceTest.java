@@ -25,6 +25,7 @@ import com.dotcms.rest.api.v1.apps.view.AppView;
 import com.dotcms.rest.api.v1.apps.view.SecretView;
 import com.dotcms.rest.api.v1.apps.view.SecretView.SecretViewSerializer;
 import com.dotcms.rest.api.v1.apps.view.SiteView;
+import com.dotcms.rest.api.v1.apps.view.ViewUtil;
 import com.dotcms.security.apps.AppDescriptorHelper;
 import com.dotcms.security.apps.AppsAPI;
 import com.dotcms.security.apps.AppsAPIImpl;
@@ -759,11 +760,13 @@ public class AppsResourceTest extends IntegrationTestBase {
                         try(JsonGenerator jsonGenerator = createJsonGenerator(writer)){
                         final String key = secretEntry.getKey();
                         final SecretView view = secretEntry.getValue();
+                        ViewUtil.newStackContext(appDetailedView);
+                        ViewUtil.currentSite(siteId);
                         final SecretViewSerializer secretViewSerializer = new SecretViewSerializer();
                         secretViewSerializer.serialize(view, jsonGenerator, null);
                         jsonGenerator.flush();
                         final String asJson = writer.toString();
-
+                        ViewUtil.disposeStackContext();
                         Logger.debug(AppsResourceTest.class, () -> String.format(" `%s` ", asJson));
 
                         final ParamDescriptor descriptorParam = dataGen.paramMap().get(key);
