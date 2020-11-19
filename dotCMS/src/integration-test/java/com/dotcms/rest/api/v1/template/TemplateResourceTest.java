@@ -25,7 +25,6 @@ import com.liferay.util.Base64;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
@@ -93,12 +92,13 @@ public class TemplateResourceTest {
     /**
      * Method to test: archive in the TemplateResource
      * Given Scenario: Create a template on live state, and try to archive it.
-     * ExpectedResult: The endpoint should return 200, the successCount must be 1 because
-     *                  the action was executed successfully over 1 template
+     *                  Should fail since the template needs to be unpublished first.
+     * ExpectedResult: The endpoint should return 200, the failed array size
+     *                   must be 1 because the action failed over 1 template
      *
      */
     @Test
-    public void test_archiveTemplate_templateIsLive_success() {
+    public void test_archiveTemplate_templateIsLive_failedToArchive() {
         final String title = "Template" + System.currentTimeMillis();
         final Host newHost = new SiteDataGen().nextPersisted();
         //Create template
@@ -110,7 +110,8 @@ public class TemplateResourceTest {
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
+        Assert.assertEquals(1,results.getFailed().size());
     }
 
     /**
@@ -121,11 +122,13 @@ public class TemplateResourceTest {
      *
      */
     @Test
-    public void test_archiveTemplate_templateIsAlreadyArchived_success() {
+    public void test_archiveTemplate_templateIsAlreadyArchived_success()
+            throws DotSecurityException, DotDataException {
         final String title = "Template" + System.currentTimeMillis();
         final Host newHost = new SiteDataGen().nextPersisted();
-        //Create template working
-        final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
+        //Create template
+        Template template = new TemplateDataGen().title(title).next();
+        template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource
         Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(), "admin"), response,
                         new ArrayList<>(
@@ -149,7 +152,7 @@ public class TemplateResourceTest {
 
     /**
      * Method to test: archive in the TemplateResource
-     * Given Scenario: Create a template on live state and create a UUID that does not belong to a template,
+     * Given Scenario: Create a template on working state and create a UUID that does not belong to a template,
      *                  and try to archive both.
      * ExpectedResult: The endpoint should return 200, the successCount must be 1 because
      *                  the action was executed successfully over 1 template and the failed array size
@@ -157,12 +160,14 @@ public class TemplateResourceTest {
      *
      */
     @Test
-    public void test_archiveTemplates_OneTemplateIdDoesNotExist_OneTemplateIdExists() {
+    public void test_archiveTemplates_OneTemplateIdDoesNotExist_OneTemplateIdExists()
+            throws DotSecurityException, DotDataException {
         final String title = "Template" + System.currentTimeMillis();
         final Host newHost = new SiteDataGen().nextPersisted();
         final String uuid = UUIDGenerator.generateUuid();
         //Create template
-        final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
+        Template template = new TemplateDataGen().title(title).next();
+        template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource
         final Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Arrays.asList(template.getIdentifier(), uuid)));
@@ -176,7 +181,7 @@ public class TemplateResourceTest {
 
     /**
      * Method to test: archive in the TemplateResource
-     * Given Scenario: Create a template on live state, and as a limited user without edit permissions
+     * Given Scenario: Create a template on working state, and as a limited user without edit permissions
      *                  over the template, try to archive it.
      * ExpectedResult: The endpoint should return 200, the failed array size
      *                   must be 1 because the action failed over 1 template
@@ -188,7 +193,8 @@ public class TemplateResourceTest {
         final String title = "Template" + System.currentTimeMillis();
         final Host newHost = new SiteDataGen().nextPersisted();
         //Create template
-        final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
+        Template template = new TemplateDataGen().title(title).next();
+        template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Create the limited user
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
         final String password = "admin";
@@ -213,11 +219,13 @@ public class TemplateResourceTest {
      *
      */
     @Test
-    public void test_unarchiveTemplate_templateIsArchived_success() {
+    public void test_unarchiveTemplate_templateIsArchived_success()
+            throws DotSecurityException, DotDataException {
         final String title = "Template" + System.currentTimeMillis();
         final Host newHost = new SiteDataGen().nextPersisted();
         //Create template
-        final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
+        Template template = new TemplateDataGen().title(title).next();
+        template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource to Archive
         Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Collections.singleton(template.getIdentifier())));
@@ -288,7 +296,7 @@ public class TemplateResourceTest {
 
     /**
      * Method to test: unarchive in the TemplateResource
-     * Given Scenario: Create a template on live state and archive it. Also generate a UUID that does not belong to a template.
+     * Given Scenario: Create a template on working state and archive it. Also generate a UUID that does not belong to a template.
      *                   Now, try to unarchive both ids.
      * ExpectedResult: The endpoint should return 200, the successCount must be 1 because
      *                  the action was executed successfully over 1 template and the failed array size
@@ -296,12 +304,14 @@ public class TemplateResourceTest {
      *
      */
     @Test
-    public void test_unarchiveTemplates_OneTemplateIdDoesNotExist_OneTemplateIdExists(){
+    public void test_unarchiveTemplates_OneTemplateIdDoesNotExist_OneTemplateIdExists()
+            throws DotSecurityException, DotDataException {
         final String title = "Template" + System.currentTimeMillis();
         final Host newHost = new SiteDataGen().nextPersisted();
         final String uuid = UUIDGenerator.generateUuid();
         //Create template
-        final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
+        Template template = new TemplateDataGen().title(title).next();
+        template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource to Archive
         Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Collections.singleton(template.getIdentifier())));
@@ -324,7 +334,7 @@ public class TemplateResourceTest {
 
     /**
      * Method to test: unarchive in the TemplateResource
-     * Given Scenario: Create a template on live state, and archive it (as Admin).
+     * Given Scenario: Create a template on working state, and archive it (as Admin).
      *                    Then try to unarchive the template, as a limited user that does not have permissions.
      * ExpectedResult: The endpoint should return 200, the failed array size
      *                   must be 1 because the action failed over 1 template
@@ -336,7 +346,8 @@ public class TemplateResourceTest {
         final String title = "Template" + System.currentTimeMillis();
         final Host newHost = new SiteDataGen().nextPersisted();
         //Create template
-        final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
+        Template template = new TemplateDataGen().title(title).next();
+        template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource to Archive
         Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Collections.singleton(template.getIdentifier())));
@@ -366,17 +377,19 @@ public class TemplateResourceTest {
 
     /**
      * Method to test: delete in the TemplateResource
-     * Given Scenario: Create a template on live state, archive it and delete it.
+     * Given Scenario: Create a template on working state, archive it and delete it.
      * ExpectedResult: The endpoint should return 200, the successCount must be 1 because
      *                  the action was executed successfully over 1 template
      *
      */
     @Test
-    public void test_deleteTemplate_templateIsArchived_success(){
+    public void test_deleteTemplate_templateIsArchived_success()
+            throws DotSecurityException, DotDataException {
         final String title = "Template" + System.currentTimeMillis();
         final Host newHost = new SiteDataGen().nextPersisted();
         //Create template
-        final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
+        Template template = new TemplateDataGen().title(title).next();
+        template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource to Archive
         Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Collections.singleton(template.getIdentifier())));
@@ -426,7 +439,7 @@ public class TemplateResourceTest {
 
     /**
      * Method to test: delete in the TemplateResource
-     * Given Scenario: Create a template on live state and archive it. Also create a UUID that does not
+     * Given Scenario: Create a template on working state and archive it. Also create a UUID that does not
      *                  belong to any template. Try to delete both.
      * ExpectedResult: The endpoint should return 200, the successCount must be 1 because
      *                  the action was executed successfully over 1 template and the failed array size
@@ -434,12 +447,14 @@ public class TemplateResourceTest {
      *
      */
     @Test
-    public void test_deleteTemplates_OneTemplateIdDoesNotExist_OneTemplateIdExists(){
+    public void test_deleteTemplates_OneTemplateIdDoesNotExist_OneTemplateIdExists()
+            throws DotSecurityException, DotDataException {
         final String title = "Template" + System.currentTimeMillis();
         final Host newHost = new SiteDataGen().nextPersisted();
         final String uuid = UUIDGenerator.generateUuid();
         //Create template
-        final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
+        Template template = new TemplateDataGen().title(title).next();
+        template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource to Archive
         Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Collections.singleton(template.getIdentifier())));
@@ -463,7 +478,7 @@ public class TemplateResourceTest {
 
     /**
      * Method to test: delete in the TemplateResource
-     * Given Scenario: Create a template on live state, and archive it (as Admin). Now as a Limited User
+     * Given Scenario: Create a template on working state, and archive it (as Admin). Now as a Limited User
      *                  without Edit Permissions try to delete the template.
      * ExpectedResult: The endpoint should return 200, the failed array size
      *                   must be 1 because the action failed over 1 template
@@ -475,7 +490,8 @@ public class TemplateResourceTest {
         final String title = "Template" + System.currentTimeMillis();
         final Host newHost = new SiteDataGen().nextPersisted();
         //Create template
-        final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
+        Template template = new TemplateDataGen().title(title).next();
+        template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Call Resource to Archive
         Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Collections.singleton(template.getIdentifier())));
@@ -512,11 +528,13 @@ public class TemplateResourceTest {
      *
      */
     @Test
-    public void test_deleteTemplate_pageStillReferencingTemplate_failedToDelete(){
+    public void test_deleteTemplate_pageStillReferencingTemplate_failedToDelete()
+            throws DotSecurityException, DotDataException {
         final String title = "Template" + System.currentTimeMillis();
         final Host newHost = new SiteDataGen().nextPersisted();
         //Create template
-        final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
+        Template template = new TemplateDataGen().title(title).next();
+        template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
         //Create a page that uses that template
         final HTMLPageAsset page = new HTMLPageDataGen(newHost,template).nextPersisted();
         //Call Resource to Archive
@@ -700,4 +718,157 @@ public class TemplateResourceTest {
         Assert.assertEquals(1,results.getFailed().size());
     }
 
+    /**
+     * Method to test: unpublish in the TemplateResource
+     * Given Scenario: Create a template on live state, and unpublish it.
+     * ExpectedResult: The endpoint should return 200, the successCount must be 1 because
+     *                  the action was executed successfully over 1 template
+     *
+     */
+    @Test
+    public void test_unpublishTemplate_success() {
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHost = new SiteDataGen().nextPersisted();
+        //Create template
+        final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
+        //Call Resource
+        final Response responseResource = resource.unpublish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+                Collections.singleton(template.getIdentifier())));
+        //Check that the response is 200, OK
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+        final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        Assert.assertEquals(0,results.getFailed().size());
+    }
+
+    /**
+     * Method to test: unpublish in the TemplateResource
+     * Given Scenario: Create a template on live state, and unpublish it. Now try to
+     *                  unpublish it again.
+     * ExpectedResult: The endpoint should return 200, the successCount must be 1 because
+     *                  the action was executed successfully over 1 template
+     *
+     */
+    @Test
+    public void test_unpublishTemplate_templateIsAlreadyUnpublished_success() {
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHost = new SiteDataGen().nextPersisted();
+        //Create template
+        final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
+        //Call Resource
+        Response responseResource = resource.unpublish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+                Collections.singleton(template.getIdentifier())));
+        //Check that the response is 200, OK
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+        BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        Assert.assertEquals(0,results.getFailed().size());
+
+        //Call Resource again
+        responseResource = resource.unpublish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+                Collections.singleton(template.getIdentifier())));
+        //Check that the response is 200, OK
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+        results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        Assert.assertEquals(0,results.getFailed().size());
+    }
+
+    /**
+     * Method to test: unpublish in the TemplateResource
+     * Given Scenario: Create a template on working state, and archive it. Now try to unpublish,
+     *                  since the template is archived it could not be unpublished.
+     * ExpectedResult: The endpoint should return 200, the failed array size
+     *                   must be 1 because the action failed over 1 template
+     *
+     */
+    @Test
+    public void test_unpublishTemplate_templateIsArchived_failedToUnpublish()
+            throws DotSecurityException, DotDataException {
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHost = new SiteDataGen().nextPersisted();
+        //Create template
+        Template template = new TemplateDataGen().title(title).next();
+        template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
+        //Call Resource
+        Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+                Collections.singleton(template.getIdentifier())));
+        //Check that the response is 200, OK
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+        BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        Assert.assertEquals(0,results.getFailed().size());
+
+        //Call Resource
+        responseResource = resource.unpublish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+                Collections.singleton(template.getIdentifier())));
+        //Check that the response is 200, OK
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+        results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
+        Assert.assertEquals(1,results.getFailed().size());
+    }
+
+    /**
+     * Method to test: unpublish in the TemplateResource
+     * Given Scenario: Create a template on live state. Also create a UUID that does not
+     *                  belong to any template. Try to unpublish both.
+     * ExpectedResult: The endpoint should return 200, the successCount must be 1 because
+     *                  the action was executed successfully over 1 template and the failed array size
+     *                   must be 1 because the action failed over 1 template
+     *
+     */
+    @Test
+    public void test_unpublishTemplate_OneTemplateIdDoesNotExist_OneTemplateIdExists(){
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHost = new SiteDataGen().nextPersisted();
+        final String uuid = UUIDGenerator.generateUuid();
+        //Create template
+        final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
+        //Call Resource
+        final Response responseResource = resource.unpublish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+                Arrays.asList(template.getIdentifier(), uuid)));
+        //Check that the response is 200, OK
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+        final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        Assert.assertEquals(1,results.getFailed().size());
+    }
+
+    /**
+     * Method to test: unpublish in the TemplateResource
+     * Given Scenario: Create a template on live state. Now as a Limited User
+     *                  without Edit Permissions try to unpublish the template.
+     * ExpectedResult: The endpoint should return 200, the failed array size
+     *                   must be 1 because the action failed over 1 template
+     *
+     */
+    @Test
+    public void test_unpublishTemplate_LimitedUserWithoutEditPermissions_failedToPublish()
+            throws DotDataException, DotSecurityException {
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHost = new SiteDataGen().nextPersisted();
+        //Create template
+        final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
+        //Create the limited user
+        final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
+        final String password = "admin";
+        limitedUser.setPassword(password);
+        APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
+        //Call Resource
+        final Response responseResource = resource.unpublish(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+                Arrays.asList(template.getIdentifier())));
+        //Check that the response is 200, OK
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+        final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
+        Assert.assertEquals(1,results.getFailed().size());
+    }
 }

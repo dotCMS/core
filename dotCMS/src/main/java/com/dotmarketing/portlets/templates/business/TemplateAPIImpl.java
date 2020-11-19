@@ -27,7 +27,6 @@ import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -186,7 +185,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 		Logger.debug(this, ()-> "Publishing the template: " + template.getIdentifier());
 
-		//Check Edit Permissions over Template
+		//Check Publish Permissions over Template
 		if(!this.permissionAPI.doesUserHavePermission(template, PERMISSION_PUBLISH, user)){
 			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to Publish the Template");
 			throw new DotSecurityException("User does not have Permissions to Publish the Template");
@@ -232,13 +231,44 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	}
 
 	@WrapInTransaction
-	public boolean unpublishTemplate(final Template template, final User user, final boolean respectFrontendRoles) {
+	public void unpublishTemplate(final Template template, final User user, final boolean respectFrontendRoles)
+			throws DotSecurityException, DotDataException {
 
 		Logger.debug(this, ()-> "Unpublishing the template: " + template.getIdentifier());
-		final Folder parent = Try.of(()->APILocator.getFolderAPI()
-				.findParentFolder(template, user, respectFrontendRoles)).getOrElseThrow(e -> new RuntimeException(e));
-		return Try.of(()->WebAssetFactory.unPublishAsset(template, user.getUserId(), parent))
-				.getOrElseThrow(e -> new RuntimeException(e));
+
+		//Check Edit Permissions over Template
+		if(!this.permissionAPI.doesUserHavePermission(template, PERMISSION_EDIT, user)){
+			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to Edit the Template");
+			throw new DotSecurityException("User does not have Permissions to Edit the Template");
+		}
+
+		// Check that the template is archived
+		if(isArchived(template)){
+			Logger.error(this, "The Template: " + template.getName() + " can not be unpublish. "
+					+ "Because it is archived");
+			throw new DotStateException("Template can not be unpublished because is archived");
+		}
+
+		unpublishTemplate(template,user);
+	}
+
+	/**
+	 * This method was extracted from {@link WebAssetFactory#unPublishAsset(WebAsset, String, Inode)},
+	 * since in the future template wont inherit from WebAsset
+	 * @param template
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	private void unpublishTemplate(final Template template,final User user)
+			throws DotSecurityException, DotDataException {
+		final Template templateWorkingVersion = findWorkingTemplate(template.getIdentifier(),APILocator.systemUser(),false);
+		//Remove live version from version_info
+		APILocator.getVersionableAPI().removeLive(template.getIdentifier());
+		templateWorkingVersion.setModDate(new java.util.Date());
+		templateWorkingVersion.setModUser(user.getUserId());
+		templateFactory.save(template);
+		//remove template from the live directory
+		new TemplateLoader().invalidate(template);
 	}
 
 	@WrapInTransaction
@@ -260,15 +290,11 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 			throw new DotSecurityException("User does not have Permissions to Edit the Template");
 		}
 
-		//Check that the template is Unpublished, if is Live try to Unpublish
-		if (Try.of(()->template.isLive()).getOrElseThrow(e -> new RuntimeException(e))) {
-
-			if (!this.unpublishTemplate(template, user, respectFrontendRoles)) {
-
-				Logger.error(this, "The template: " + template.getIdentifier() +
-						" could not be archived. Because it was live and couldn't be unpublished");
-				throw new DotStateException("The template could not be archived. Because it was live and couldn't be unpublished");
-			}
+		//Check that the template is Unpublished
+		if (template.isLive()) {
+			Logger.error(this, "The Template: " + template.getName() + " can not be archive. "
+					+ "Because it is live.");
+			throw new DotStateException("Template must be unpublished before it can be archived");
 		}
 
 		archive(template,user);

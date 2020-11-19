@@ -479,7 +479,7 @@ public class TemplateResource {
 
         if (!UtilMethods.isSet(templatesToPublish)) {
 
-            throw new IllegalArgumentException("The body must send a collection of template inodes such as: " +
+            throw new IllegalArgumentException("The body must send a collection of template identifiers such as: " +
                     "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
         }
 
@@ -507,11 +507,15 @@ public class TemplateResource {
     }
 
     /**
-     * Unpublish a list of template inodes
-     * Return the list of a success unpublished and failed
+     * Unpublishes Template(s)
+     *
+     * This method receives a list of identifiers and unpublishes the templates.
+     * To publish a template successfully the user needs to have Publish Permissions and the template
+     * can not be archived.
+     *
      * @param request            {@link HttpServletRequest}
      * @param response           {@link HttpServletResponse}
-     * @param templatesToUnpublish {@link List} list of template inodes to unpublish
+     * @param templatesToUnpublish {@link List} list of template ids to unpublish
      * @return Response
      * @throws DotDataException
      * @throws DotSecurityException
@@ -523,54 +527,42 @@ public class TemplateResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response unpublish(@Context final HttpServletRequest  request,
                                   @Context final HttpServletResponse response,
-                                  final List<String> templatesToUnpublish) throws DotDataException, DotSecurityException {
+                                  final List<String> templatesToUnpublish) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response).rejectWhenNoUser(true).init();
         final User user         = initData.getUser();
-        final Host host         = this.hostWebAPI.getCurrentHostNoThrow(request);
         final PageMode pageMode = PageMode.get(request);
-        final List<String> publishedInodes = new ArrayList<>();
-        final List<String> failedInodes    = new ArrayList<>();
+        Long unpublishedTemplatesCount = 0L;
+        final List<FailedResultView> failedToUnpublish    = new ArrayList<>();
 
         if (!UtilMethods.isSet(templatesToUnpublish)) {
 
-            throw new IllegalArgumentException("The body must send a collection of template inodes such as: " +
+            throw new IllegalArgumentException("The body must send a collection of template identifiers such as: " +
                     "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
         }
 
-        for (final String templateInode : templatesToUnpublish) {
-
-            final Template template = this.findTemplateBy(templateInode, templateInode, user, pageMode);
-
-            if (null != template && InodeUtils.isSet(template.getInode())) {
-
-                try {
-
-                    if (this.templateAPI.unpublishTemplate(template, user, pageMode.respectAnonPerms)) {
-
-                        ActivityLogger.logInfo(this.getClass(), "UnPublish Template action", "User " +
-                                user.getPrimaryKey() + " unpublishing template" + template.getTitle(), host.getTitle() != null ? host.getTitle() : "default");
-                        publishedInodes.add(templateInode);
-                    } else {
-                        failedInodes.add(templateInode);
-                    }
-                } catch(Exception wax) {
-
-                    Logger.error(this, wax.getMessage(), wax);
-                    failedInodes.add(templateInode);
+        for (final String templateId : templatesToUnpublish) {
+            try{
+                final Template template = this.templateAPI.findWorkingTemplate(templateId,user,pageMode.respectAnonPerms);
+                if (null != template && InodeUtils.isSet(template.getInode())){
+                    this.templateAPI.unpublishTemplate(template, user, pageMode.respectAnonPerms);
+                    ActivityLogger.logInfo(this.getClass(), "Unpublish Template Action", "User " +
+                            user.getPrimaryKey() + " unpublished template: " + template.getIdentifier());
+                    unpublishedTemplatesCount++;
+                } else {
+                    Logger.error(this, "Template with Id: " + templateId + " does not exists");
+                    failedToUnpublish.add(new FailedResultView(templateId,"Template Does Not Exists"));
                 }
-            } else {
-
-                failedInodes.add(templateInode);
+            } catch(Exception e) {
+                Logger.debug(this, e.getMessage(), e);
+                failedToUnpublish.add(new FailedResultView(templateId,e.getMessage()));
             }
         }
 
         return Response.ok(new ResponseEntityView(
-                CollectionsUtils.map(
-                        "unpublishedInodes", publishedInodes,
-                        "failedInodes",   failedInodes
-                ))).build();
+                new BulkResultView(unpublishedTemplatesCount,0L,failedToUnpublish)))
+                .build();
     }
 
     /**

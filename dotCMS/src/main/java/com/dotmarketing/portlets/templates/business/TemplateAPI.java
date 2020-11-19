@@ -167,9 +167,9 @@ public interface TemplateAPI {
 	 * @param template {@link Template} to unpublish (valid template)
 	 * @param user     {@link User} user to check the permissions
 	 * @param respectFrontendRoles {@link Boolean}
-	 * @return boolean true if publish
 	 */
-	boolean unpublishTemplate(Template template, User user, boolean respectFrontendRoles);
+	void unpublishTemplate(Template template, User user, boolean respectFrontendRoles)
+			throws DotSecurityException, DotDataException;
 
 	/**
 	 * Unlock the template

@@ -295,7 +295,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         templateAPI.publishTemplate(templateSaved, user, false);
         assertTrue(templateSaved.isLive());
 
-        assertTrue(templateAPI.unpublishTemplate(templateSaved, user, false));
+        templateAPI.unpublishTemplate(templateSaved, user, false);
         assertFalse(templateSaved.isLive());
     }
 
