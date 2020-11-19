@@ -50,18 +50,15 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.commons.lang.StringUtils;
+
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.set;
 
 /**
  * The main purpose of this class is to determine all possible content
@@ -1040,21 +1037,24 @@ public class DependencyManager {
  	 * @param fileAssetContainer
 	 * @return
 	 */
-	private Set<Folder> collectFileAssetContainerDependencies(final FileAssetContainer fileAssetContainer){
-       final Set<Folder> collectedFolders = new HashSet<>();
-       final List<FileAsset> fileAssets = fileAssetContainer.getContainerStructuresAssets();
-       for(final FileAsset fileAsset:fileAssets){
-		   try {
-			   final Folder folder = APILocator.getFolderAPI().findFolderByPath(fileAsset.getPath(), fileAsset.getHost(),user, false);
-			   if(UtilMethods.isSet(folder)) {
-				  collectedFolders.add(folder);
-			   }
-		   } catch (DotSecurityException | DotDataException e) {
-			   Logger.error(this, "Error collecting folders for FileAssetContainer " + fileAsset.getFileName() ,e);
-		   }
-       }
-       return collectedFolders;
-    }
+	private Set<Folder> collectFileAssetContainerDependencies(final FileAssetContainer fileAssetContainer) {
+		try {
+			final String path = fileAssetContainer.getPath();
+			final Folder rootFolder = APILocator.getFolderAPI()
+					.findFolderByPath(path, fileAssetContainer.getHost(), user, false);
+			final List<Folder> subFolders = APILocator.getFolderAPI()
+					.findSubFolders(rootFolder, user, false);
+
+			final Set<Folder> dependenciesFolders = new HashSet<>();
+			dependenciesFolders.add(rootFolder);
+			dependenciesFolders.addAll(subFolders);
+
+			return dependenciesFolders;
+		}catch (DotSecurityException | DotDataException e) {
+			Logger.error(DependencyManager.class, e);
+			return Collections.emptySet();
+		}
+	}
 
 	/**
 	 * For given Structures adds its dependencies:
@@ -1157,6 +1157,13 @@ public class DependencyManager {
 								publisherFilter);
 				}
 			}
+		}
+
+		final String detailPageId = structure.getDetailPage();
+
+		if (UtilMethods.isSet(detailPageId)) {
+			contentsSet.add(detailPageId);
+			setHTMLPagesDependencies(set(detailPageId), publisherFilter);
 		}
 	}
 
@@ -1440,4 +1447,18 @@ public class DependencyManager {
         return relationships;
     }
 
+	@VisibleForTesting
+	Set getContentTypes() {
+		return contentTypesSet;
+	}
+
+	@VisibleForTesting
+	Set getTemplates() {
+		return templates;
+	}
+
+	@VisibleForTesting
+	Set getContainers() {
+		return containers;
+	}
 }
