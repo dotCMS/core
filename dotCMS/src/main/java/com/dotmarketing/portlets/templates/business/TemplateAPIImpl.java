@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.templates.business;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_EDIT;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -17,6 +18,7 @@ import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.TreeFactory;
@@ -179,10 +181,54 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	}
 
 	@WrapInTransaction
-	public boolean publishTemplate(final Template template, final User user, final boolean respectFrontendRoles) {
+	public void publishTemplate(final Template template, final User user, final boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException, WebAssetException {
 
 		Logger.debug(this, ()-> "Publishing the template: " + template.getIdentifier());
-		return Try.of(()->PublishFactory.publishAsset(template, user, respectFrontendRoles)).getOrElseThrow(e -> new RuntimeException(e));
+
+		//Check Edit Permissions over Template
+		if(!this.permissionAPI.doesUserHavePermission(template, PERMISSION_PUBLISH, user)){
+			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to Publish the Template");
+			throw new DotSecurityException("User does not have Permissions to Publish the Template");
+		}
+
+		// Check that the template is archived
+		if(isArchived(template)){
+			Logger.error(this, "The Template: " + template.getName() + " can not be publish. "
+					+ "Because it is archived");
+			throw new DotStateException("Template can not be published because is archived");
+		}
+
+		publishTemplate(template,user);
+	}
+
+	/**
+	 * This method was extracted from {@link PublishFactory#publishAsset(Inode, User, boolean)},
+	 * since in the future template wont inherit from WebAsset
+	 * @param template
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	private void publishTemplate(final Template template,final User user)
+			throws DotSecurityException, DotDataException, WebAssetException {
+		final Template templateWorkingVersion = findWorkingTemplate(template.getIdentifier(),APILocator.systemUser(),false);
+		//Sets Working as Live
+		APILocator.getVersionableAPI().setLive(templateWorkingVersion);
+		//Gets all Containers In the Template
+		final List<Container> containersInTemplate = APILocator.getTemplateAPI().getContainersInTemplate(template, APILocator.getUserAPI().getSystemUser(), false);
+		for(final Container container : containersInTemplate){
+			Logger.debug(PublishFactory.class, "*****I'm a Template -- Publishing my Container Child= " + container.getInode());
+			if(!container.isLive()){
+				PublishFactory.publishAsset(container,user, false);
+			}
+		}
+		templateWorkingVersion.setModDate(new java.util.Date());
+		templateWorkingVersion.setModUser(user.getUserId());
+		templateFactory.save(template);
+		//Clean-up the cache for this template
+		CacheLocator.getTemplateCache().remove(template.getInode());
+		//writes the template to a live directory under velocity folder
+		new TemplateLoader().invalidate(template);
 	}
 
 	@WrapInTransaction
@@ -225,7 +271,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 			}
 		}
 
-		archive(template);
+		archive(template,user);
 	}
 
 	/**
@@ -235,14 +281,14 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	private void archive(final Template template) throws DotSecurityException, DotDataException {
+	private void archive(final Template template, final User user) throws DotSecurityException, DotDataException {
 		final Template templateLiveVersion = findLiveTemplate(template.getIdentifier(),APILocator.systemUser(),false);
 		final Template templateWorkingVersion = findWorkingTemplate(template.getIdentifier(),APILocator.systemUser(),false);
 		if(templateLiveVersion!=null){
 			APILocator.getVersionableAPI().removeLive(template.getIdentifier());
 		}
-		//Reset the mod date
-		templateWorkingVersion.setModDate(new Date ());
+		templateWorkingVersion.setModDate(new java.util.Date());
+		templateWorkingVersion.setModUser(user.getUserId());
 		// sets deleted to true
 		APILocator.getVersionableAPI().setDeleted(templateWorkingVersion, true);
 		templateFactory.save(templateWorkingVersion);
@@ -262,10 +308,12 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		if(!isArchived(template)){
 			Logger.error(this, "The Template: " + template.getName() + " can not be unarchive. "
 					+ "Because it is not archived");
-			throw new DotDataValidationException("Template must be archived before it can be unarchived");
+			throw new DotStateException("Template must be archived before it can be unarchived");
 		}
-
+		template.setModDate(new java.util.Date());
+		template.setModUser(user.getUserId());
 		APILocator.getVersionableAPI().setDeleted(template, false);
+		templateFactory.save(template);
 	}
 
 	public boolean isArchived(final Template template) throws DotDataException {

@@ -540,4 +540,164 @@ public class TemplateResourceTest {
 
     }
 
+    /**
+     * Method to test: publish in the TemplateResource
+     * Given Scenario: Create a template on working state, and publish it.
+     * ExpectedResult: The endpoint should return 200, the successCount must be 1 because
+     *                  the action was executed successfully over 1 template
+     *
+     */
+    @Test
+    public void test_publishTemplate_success() throws DotSecurityException, DotDataException {
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHost = new SiteDataGen().nextPersisted();
+        //Create template
+        Template template = new TemplateDataGen().title(title).next();
+        template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
+        //Call Resource
+        final Response responseResource = resource.publish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+                Collections.singleton(template.getIdentifier())));
+        //Check that the response is 200, OK
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+        final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        Assert.assertEquals(0,results.getFailed().size());
+    }
+
+    /**
+     * Method to test: publish in the TemplateResource
+     * Given Scenario: Create a template on working state, and publish it. Now try to
+     *                  publish it again.
+     * ExpectedResult: The endpoint should return 200, the successCount must be 1 because
+     *                  the action was executed successfully over 1 template
+     *
+     */
+    @Test
+    public void test_publishTemplate_templateIsAlreadyPublished_success()
+            throws DotSecurityException, DotDataException {
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHost = new SiteDataGen().nextPersisted();
+        //Create template
+        Template template = new TemplateDataGen().title(title).next();
+        template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
+        //Call Resource
+        Response responseResource = resource.publish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+                Collections.singleton(template.getIdentifier())));
+        //Check that the response is 200, OK
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+        BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        Assert.assertEquals(0,results.getFailed().size());
+
+        //Call Resource again
+        responseResource = resource.publish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+                Collections.singleton(template.getIdentifier())));
+        //Check that the response is 200, OK
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+        results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        Assert.assertEquals(0,results.getFailed().size());
+    }
+
+    /**
+     * Method to test: publish in the TemplateResource
+     * Given Scenario: Create a template on working state, and archive it. Since the template is
+     *                  archived it could not be published.
+     * ExpectedResult: The endpoint should return 200, the failed array size
+     *                   must be 1 because the action failed over 1 template
+     *
+     */
+    @Test
+    public void test_publishTemplate_templateIsArchived_failedToPublish()
+            throws DotSecurityException, DotDataException {
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHost = new SiteDataGen().nextPersisted();
+        //Create template
+        Template template = new TemplateDataGen().title(title).next();
+        template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
+        //Call Resource
+        Response responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+                Collections.singleton(template.getIdentifier())));
+        //Check that the response is 200, OK
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+        BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        Assert.assertEquals(0,results.getFailed().size());
+
+        //Call Resource
+        responseResource = resource.publish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+                Collections.singleton(template.getIdentifier())));
+        //Check that the response is 200, OK
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+        results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
+        Assert.assertEquals(1,results.getFailed().size());
+    }
+
+    /**
+     * Method to test: publish in the TemplateResource
+     * Given Scenario: Create a template on working state. Also create a UUID that does not
+     *                  belong to any template. Try to publish both.
+     * ExpectedResult: The endpoint should return 200, the successCount must be 1 because
+     *                  the action was executed successfully over 1 template and the failed array size
+     *                   must be 1 because the action failed over 1 template
+     *
+     */
+    @Test
+    public void test_publishTemplate_OneTemplateIdDoesNotExist_OneTemplateIdExists()
+            throws DotSecurityException, DotDataException {
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHost = new SiteDataGen().nextPersisted();
+        final String uuid = UUIDGenerator.generateUuid();
+        //Create template
+        Template template = new TemplateDataGen().title(title).next();
+        template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
+        //Call Resource
+        final Response responseResource = resource.publish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+                Arrays.asList(template.getIdentifier(), uuid)));
+        //Check that the response is 200, OK
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+        final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
+        Assert.assertEquals(1,results.getFailed().size());
+    }
+
+    /**
+     * Method to test: publish in the TemplateResource
+     * Given Scenario: Create a template on working state. Now as a Limited User
+     *                  without Publish Permissions try to publish the template.
+     * ExpectedResult: The endpoint should return 200, the failed array size
+     *                   must be 1 because the action failed over 1 template
+     *
+     */
+    @Test
+    public void test_publishTemplate_LimitedUserWithoutPublishPermissions_failedToPublish()
+            throws DotDataException, DotSecurityException {
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHost = new SiteDataGen().nextPersisted();
+        //Create template
+        Template template = new TemplateDataGen().title(title).next();
+        template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
+        //Create the limited user
+        final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
+        final String password = "admin";
+        limitedUser.setPassword(password);
+        APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
+        //Call Resource
+        final Response responseResource = resource.publish(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,new ArrayList<>(
+                Arrays.asList(template.getIdentifier())));
+        //Check that the response is 200, OK
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+        final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
+        Assert.assertEquals(1,results.getFailed().size());
+    }
+
 }

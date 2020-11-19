@@ -23,6 +23,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -375,7 +376,8 @@ public class TemplateResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response saveNewAndPublish(@Context final HttpServletRequest  request,
                                   @Context final HttpServletResponse response,
-                                  final TemplateForm templateForm) throws DotDataException, DotSecurityException {
+                                  final TemplateForm templateForm)
+            throws DotDataException, DotSecurityException, WebAssetException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response).rejectWhenNoUser(true).init();
@@ -410,7 +412,8 @@ public class TemplateResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response saveAndPublish(@Context final HttpServletRequest  request,
                                @Context final HttpServletResponse response,
-                               final TemplateForm templateForm) throws DotDataException, DotSecurityException {
+                               final TemplateForm templateForm)
+            throws DotDataException, DotSecurityException, WebAssetException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response).rejectWhenNoUser(true).init();
@@ -436,23 +439,24 @@ public class TemplateResource {
                                      final User user,
                                      final Host host,
                                      final PageMode pageMode,
-                                     final Template template) throws DotDataException, DotSecurityException {
+                                     final Template template)
+            throws DotDataException, DotSecurityException, WebAssetException {
 
         final Template savedTemplate = this.fillAndSaveTemplate(templateForm, user, host, pageMode, template);
-        if (!this.templateAPI.publishTemplate(savedTemplate, user, pageMode.respectAnonPerms)) {
-
-            throw new DotStateException("Can not publish the template: " + templateForm.getTitle());
-        }
-
+        this.templateAPI.publishTemplate(savedTemplate, user, pageMode.respectAnonPerms);
         return savedTemplate;
     }
 
     /**
-     * Publish a list of template inodes
-     * Return the list of a success published and failed
+     * Publishes Template(s)
+     *
+     * This method receives a list of identifiers and publishes the templates.
+     * To publish a template successfully the user needs to have Publish Permissions and the template
+     * can not be archived.
+     *
      * @param request            {@link HttpServletRequest}
      * @param response           {@link HttpServletResponse}
-     * @param templatesToPublish {@link List} list of template inodes to publish
+     * @param templatesToPublish {@link List} list of template ids to publish
      * @return Response
      * @throws DotDataException
      * @throws DotSecurityException
@@ -464,15 +468,14 @@ public class TemplateResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response publish(@Context final HttpServletRequest  request,
                                @Context final HttpServletResponse response,
-                               final List<String> templatesToPublish) throws DotDataException, DotSecurityException {
+                               final List<String> templatesToPublish){
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response).rejectWhenNoUser(true).init();
         final User user         = initData.getUser();
-        final Host host         = this.hostWebAPI.getCurrentHostNoThrow(request);
         final PageMode pageMode = PageMode.get(request);
-        final List<String> publishedInodes = new ArrayList<>();
-        final List<String> failedInodes    = new ArrayList<>();
+        Long publishedTemplatesCount = 0L;
+        final List<FailedResultView> failedToPublish    = new ArrayList<>();
 
         if (!UtilMethods.isSet(templatesToPublish)) {
 
@@ -480,39 +483,27 @@ public class TemplateResource {
                     "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
         }
 
-        for (final String templateInode : templatesToPublish) {
-
-            final Template template = this.findTemplateBy(templateInode, templateInode, user, pageMode);
-
-            if (null != template && InodeUtils.isSet(template.getInode())) {
-
-                try {
-
-                    if (this.templateAPI.publishTemplate(template, user, pageMode.respectAnonPerms)) {
-
-                        ActivityLogger.logInfo(this.getClass(), "Publish Template action", "User " +
-                                user.getPrimaryKey() + " publishing template" + template.getTitle(), host.getTitle() != null ? host.getTitle() : "default");
-                        publishedInodes.add(templateInode);
-                    } else {
-
-                        failedInodes.add(templateInode);
-                    }
-                } catch(Exception e) {
-
-                    Logger.error(this, e.getMessage(), e);
-                    failedInodes.add(templateInode);
+        for (final String templateId : templatesToPublish) {
+            try{
+                final Template template = this.templateAPI.findWorkingTemplate(templateId,user,pageMode.respectAnonPerms);
+                if (null != template && InodeUtils.isSet(template.getInode())){
+                    this.templateAPI.publishTemplate(template, user, pageMode.respectAnonPerms);
+                    ActivityLogger.logInfo(this.getClass(), "Publish Template Action", "User " +
+                            user.getPrimaryKey() + " published template: " + template.getIdentifier());
+                    publishedTemplatesCount++;
+                } else {
+                    Logger.error(this, "Template with Id: " + templateId + " does not exists");
+                    failedToPublish.add(new FailedResultView(templateId,"Template Does Not Exists"));
                 }
-            } else {
-
-                failedInodes.add(templateInode);
+            } catch(Exception e) {
+                Logger.debug(this, e.getMessage(), e);
+                failedToPublish.add(new FailedResultView(templateId,e.getMessage()));
             }
         }
 
         return Response.ok(new ResponseEntityView(
-                CollectionsUtils.map(
-                "publishedInodes", publishedInodes,
-                "failedInodes",   failedInodes
-                ))).build();
+                new BulkResultView(publishedTemplatesCount,0L,failedToPublish)))
+                .build();
     }
 
     /**

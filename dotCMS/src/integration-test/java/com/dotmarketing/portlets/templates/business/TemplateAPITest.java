@@ -266,7 +266,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         assertEquals(templateSaved.getTitle(), title);
         assertFalse(templateSaved.isLive());
 
-        assertTrue(templateAPI.publishTemplate(templateSaved, user, false));
+        templateAPI.publishTemplate(templateSaved, user, false);
         assertTrue(templateSaved.isLive());
     }
 
@@ -292,7 +292,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         assertEquals(templateSaved.getTitle(), title);
         assertFalse(templateSaved.isLive());
 
-        assertTrue(templateAPI.publishTemplate(templateSaved, user, false));
+        templateAPI.publishTemplate(templateSaved, user, false);
         assertTrue(templateSaved.isLive());
 
         assertTrue(templateAPI.unpublishTemplate(templateSaved, user, false));

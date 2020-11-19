@@ -5,6 +5,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
@@ -157,9 +158,9 @@ public interface TemplateAPI {
 	 * @param template {@link Template} to publish (valid template)
 	 * @param user     {@link User} user to check the permissions
 	 * @param respectFrontendRoles {@link Boolean}
-	 * @return boolean true if publish
 	 */
-	boolean publishTemplate(Template template, User user, boolean respectFrontendRoles);
+	void publishTemplate(Template template, User user, boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException, WebAssetException;
 
 	/**
 	 * Unpublish a template if has the appropiate permissions
@@ -182,7 +183,6 @@ public interface TemplateAPI {
 	 * @param template {@link Template}
 	 * @param user     {@link User}
 	 * @param respectFrontendRoles
-	 * @return boolean true if success
 	 */
 	void archive (Template template, User user, boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException;
@@ -203,7 +203,6 @@ public interface TemplateAPI {
 	 * @param template {@link Template}
 	 * @param user     {@link User}
 	 * @param respectFrontendRoles {@link Boolean}
-	 * @return boolean
 	 * @throws DotSecurityException
 	 * @throws Exception
 	 */
