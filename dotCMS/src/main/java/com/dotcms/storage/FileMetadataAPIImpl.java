@@ -299,7 +299,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @return
      */
     @Override
-    public Map<String, Serializable> getMetadataNoCache(final Contentlet contentlet,
+    public Map<String, Serializable> getFullMetadataNoCache(final Contentlet contentlet,
             final String fieldVariableName) throws DotDataException {
 
         final StorageType storageType = StoragePersistenceProvider.getStorageType();

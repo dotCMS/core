@@ -36,6 +36,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -218,6 +219,7 @@ public class FileMetadataAPITest {
             final Contentlet multipleBinariesContent = getMultipleBinariesContent(true, langId, null);
 
             //Multiple binary fields
+            //since the index operation performs this very same operation here the method generateContentletMetadata should retrieve the existing metadata.
             final ContentletMetadata multiBinaryMetadata = contentletMetadataAPI
                     .generateContentletMetadata(multipleBinariesContent);
             assertNotNull(multiBinaryMetadata);
@@ -278,7 +280,7 @@ public class FileMetadataAPITest {
     }
 
     /**
-     *  Method to test: {@link FileMetadataAPIImpl#getMetadataNoCache(Contentlet, String)}
+     *  Method to test: {@link FileMetadataAPIImpl#getFullMetadataNoCache(Contentlet, String)}
      *  Given scenario: We create a new piece of content then we call getMetadataNoCache. Then we call it again after calling generateContentletMetadata
      *  Expected Result: Until generateContentletMetadata gets called no metadata should be returned
      * @param storageType
@@ -303,7 +305,7 @@ public class FileMetadataAPITest {
             removeAnyMetadata(file);
 
             Map<String, Serializable> fileAssetMD = contentletMetadataAPI
-                    .getMetadataNoCache(fileAssetContent, fileAssetField);
+                    .getFullMetadataNoCache(fileAssetContent, fileAssetField);
             //Expect no metadata it hasn't been generated
             assertNull(fileAssetMD);
 
@@ -312,7 +314,7 @@ public class FileMetadataAPITest {
             assertNotNull(metadata);
 
             fileAssetMD = contentletMetadataAPI
-                    .getMetadataNoCache(fileAssetContent, fileAssetField);
+                    .getFullMetadataNoCache(fileAssetContent, fileAssetField);
             assertFalse(fileAssetMD.isEmpty());
 
             //This might seem a little unnecessary but by doing this we verify the fields in the resulting map are the ones allowed to be preset in the metadata generation
@@ -358,6 +360,7 @@ public class FileMetadataAPITest {
             final File file = (File) fileAssetContent.get(fileAssetField);
             removeAnyMetadata(file);
 
+            //TODO: This method needs to be updated so that we automatically generate and cache MD in case it hasn't been generated before.
             Map<String, Serializable> fileAssetMD = contentletMetadataAPI
                     .getMetadata(fileAssetContent, fileAssetField);
             //Expect no metadata it has not been generated
@@ -385,7 +388,10 @@ public class FileMetadataAPITest {
 
     @DataProvider
     public static Object[] getStorageType() {
-        return new Object[]{StorageType.FILE_SYSTEM, StorageType.DB};
+        return new Object[]{
+         StorageType.FILE_SYSTEM,
+         StorageType.DB
+        };
     }
 
 }

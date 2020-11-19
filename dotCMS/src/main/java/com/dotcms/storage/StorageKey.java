@@ -55,7 +55,10 @@ public class StorageKey implements Serializable {
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this, ToStringStyle.SIMPLE_STYLE).toString();
+        return String.format(
+               "StorageKey{ storage=`%s`,\n group=`%s`, \n path=`%s` \n }",
+               storage, group, path
+        );
     }
 
     /**

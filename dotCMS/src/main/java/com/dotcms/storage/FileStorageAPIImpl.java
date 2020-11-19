@@ -9,6 +9,7 @@ import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
@@ -16,6 +17,7 @@ import java.io.File;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Predicate;
@@ -150,8 +152,11 @@ public class FileStorageAPIImpl implements FileStorageAPI {
                     }
                 }
             }
-            //basic meta data should override any previous value that might have exist already.
-            metadataMap.putAll(this.generateBasicMetaData(binary, metaDataKeyFilter));
+            //Add the additional metadata that only exists on basic Metadata
+            //do not replace any existing value already calculated by tika
+            final Map<String, Serializable> patchMap = generateBasicMetaData(binary, metaDataKeyFilter);
+            patchMap.forEach(metadataMap::putIfAbsent);
+
         } catch (Exception e) {
 
             Logger.error(this, e.getMessage(), e);
@@ -258,8 +263,10 @@ public class FileStorageAPIImpl implements FileStorageAPI {
     private void storeMetadata(final StorageKey storageKey, final StoragePersistenceAPI storage,
             final Map<String, Serializable> metadataMap) throws DotDataException {
 
-            storage.pushObject(storageKey.getGroup(), storageKey.getPath(),
-                    this.objectWriterDelegate, (Serializable) metadataMap, metadataMap);
+            final Map <String, Serializable> paramsMap = new HashMap<>(metadataMap);
+            paramsMap.put("hashObject", true);
+        storage.pushObject(storageKey.getGroup(), storageKey.getPath(),
+                    this.objectWriterDelegate, (Serializable) metadataMap, paramsMap);
             Logger.info(this, "Metadata wrote on: " + storageKey.getPath());
 
     }

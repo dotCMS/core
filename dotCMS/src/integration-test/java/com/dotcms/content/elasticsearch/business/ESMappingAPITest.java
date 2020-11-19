@@ -137,7 +137,8 @@ public class ESMappingAPITest {
         fileAsset.setIndexPolicy(IndexPolicy.FORCE);
 
         // Create a piece of content for the default host
-        final Map<String,Object>  contentletMap = esMappingAPI.toMap(APILocator.getContentletAPI().checkin(fileAsset, user, false));
+        final Contentlet newContent = APILocator.getContentletAPI().checkin(fileAsset, user, false);
+        final Map<String,Object>  contentletMap = esMappingAPI.toMap(newContent);
 
         assertNotNull(contentletMap);
         assertEquals(fileNameField1.toLowerCase(), contentletMap.get(contentTypeVariable + ".filename"));

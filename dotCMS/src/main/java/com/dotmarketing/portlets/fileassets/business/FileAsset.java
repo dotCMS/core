@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.fileassets.business;
 
-import com.dotcms.rendering.velocity.viewtools.util.ConversionUtils;
 import com.dotcms.util.Loadable;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -33,8 +32,6 @@ import java.util.Optional;
 
 public class FileAsset extends Contentlet implements IFileAsset, Loadable {
 
-	private String metaData;
-
     private File file;
 
 	public static final String UNKNOWN_MIME_TYPE = "unknown";
@@ -58,16 +55,6 @@ public class FileAsset extends Contentlet implements IFileAsset, Loadable {
 		this.fileSizeInternal = contentlet.fileSizeInternal;
 	}
 
-   //Should I remove?
-    @Deprecated
-	public String getMetaData(){
-		if(metaData == null){
-		   metaData = ConversionUtils.toString(getMetaDataMap());
-		}
-		return metaData;
-
-	}
-
 	/**
 	 * Metadata as map getter. Use to get a compiled view including MD for all binaries
 	 * @return
@@ -82,12 +69,6 @@ public class FileAsset extends Contentlet implements IFileAsset, Loadable {
 
 	public long getLanguageId(){
 		return super.getLanguageId();
-	}
-
-
-	//Should I remove?
-	public void setMetaData(String metaData) {
-		this.metaData = metaData;
 	}
 
 	public void setMenuOrder(int sortOrder) {
@@ -125,8 +106,10 @@ public class FileAsset extends Contentlet implements IFileAsset, Loadable {
 	private long fileSizeInternal = 0;
 
 	public long getFileSize() {
+	    //TODO: WE only need the Metadata Map to extract the MD
 		this.fileSizeInternal =	Try.of(() -> Integer.parseInt(getMetaDataMap().get("length").toString())).getOrElse(0);
 		if(this.fileSizeInternal == 0) {
+		   //TODO: Remove any code hooked up with the file. It it not necessary
 		   this.fileSizeInternal = computeFileSize(getFileAsset());
 		}
 		return this.fileSizeInternal > 0 ? this.fileSizeInternal : 0;
@@ -149,11 +132,13 @@ public class FileAsset extends Contentlet implements IFileAsset, Loadable {
 	}
 
 	private Dimension computeFileDimension(final File file) {
-
+        //TODO: WE only need the Metadata Map to extract the MD no need to interact with the File Asset
 		final int height = Try.of(() -> Integer.parseInt(getMetaDataMap().get("height").toString())).getOrElse(0);
 		final int width = Try.of(() -> Integer.parseInt(getMetaDataMap().get("width").toString())).getOrElse(0);
 
         if(height > 0 && width > 0){
+           //TODO: Remove this dimension thing
+           //Refactor so we only use the metadata map
            fileDimension = new Dimension(width, height);
            Logger.debug(FileAsset.class,"Dimensions already computed and extracted from metadata.");
         }
@@ -192,11 +177,13 @@ public class FileAsset extends Contentlet implements IFileAsset, Loadable {
 	 * @return
 	 */
 	private String computeUnderlyingFileName(final File fileAsset) {
+		//TODO: WE only need the Metadata Map to extract the MD no need to interact with the File Asset
 		this.underlyingFileName = Try.of(() -> getMetaDataMap().get("title").toString())
 				.getOrNull();
 		if (null != this.underlyingFileName) {
 			return this.underlyingFileName;
 		}
+		//Remove  any interaction with  fileAsset
 		return (this.underlyingFileName = fileAsset != null ? fileAsset.getName() : null);
 	}
 

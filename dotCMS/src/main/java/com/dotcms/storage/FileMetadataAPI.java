@@ -65,7 +65,7 @@ public interface FileMetadataAPI {
      * @param fieldVariableName  {@link String}
      * @return Map
      */
-    Map<String, Serializable> getMetadataNoCache(Contentlet contentlet, String fieldVariableName)
+    Map<String, Serializable> getFullMetadataNoCache(Contentlet contentlet, String fieldVariableName)
             throws DotDataException;
 
     /**

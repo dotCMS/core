@@ -365,7 +365,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
                 mlowered.put(lowerCaseKey, lowerCaseValue);
 			}
-
+             //TODO: Revise if any of these files are required to have the _dotraw postfix I think  there is a 'contenttype_dotraw'
+             //TODO: This code needs to add so
 			if (Config.getBooleanProperty(WRITE_METADATA_ON_REINDEX, true)){
 				if (contentlet.isLive() || contentlet.isWorking()) {
 					final ContentletMetadata metadata = fileMetadataAPI
@@ -378,9 +379,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 						if (null != metadataValues) {
 						    metadataValues.forEach((metadataKey, metadataValue) -> {
 						        final String  metadataStringValue = metadataValue.toString();
-								mlowered.put(FileAssetAPI.META_DATA_FIELD.toLowerCase() + StringPool.PERIOD + metadataKey.toLowerCase(), metadataStringValue);
+								mlowered.put(FileAssetAPI.META_DATA_FIELD.toLowerCase() + StringPool.PERIOD + metadataKey.toLowerCase(), metadataValue);
 								if (metadataKey.contains(FileAssetAPI.CONTENT_FIELD)) {
-									sw.append(metadataValue.toString()).append(' ');
+									sw.append(metadataStringValue).append(' ');
 								}
 								if(FileAssetAPI.CONTENT_FIELD.equals(metadataKey)){
 									mlowered.put(FileAssetAPI.META_DATA_FIELD.toLowerCase() + StringPool.PERIOD + "content", metadataStringValue);
