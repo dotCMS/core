@@ -23,6 +23,7 @@ public class TemplateView {
     private final boolean deleted;
     private final boolean live;
     private final boolean locked;
+    private final String lockedBy;
     private final boolean working;
     private final boolean isNew;
     private final boolean hasLiveVersion;
@@ -60,6 +61,7 @@ public class TemplateView {
         this.deleted = builder.deleted;
         this.live = builder.live;
         this.locked = builder.locked;
+        this.lockedBy = builder.lockedBy;
         this.working = builder.working;
         this.isNew = builder.isNew;
         this.hasLiveVersion = builder.hasLiveVersion;
@@ -146,6 +148,8 @@ public class TemplateView {
     public boolean isLocked() {
         return locked;
     }
+
+    public String getLockedBy(){ return lockedBy;}
 
     public boolean isWorking() {
         return working;
@@ -247,6 +251,7 @@ public class TemplateView {
         private  boolean deleted;
         private  boolean live;
         private  boolean locked;
+        private String lockedBy;
         private  boolean working;
         private  boolean isNew;
         private  boolean hasLiveVersion;
@@ -333,6 +338,11 @@ public class TemplateView {
 
         public Builder  locked (final boolean locked) {
             this.locked = locked;
+            return this;
+        }
+
+        public Builder lockedBy(final String lockedBy){
+            this.lockedBy = lockedBy;
             return this;
         }
 

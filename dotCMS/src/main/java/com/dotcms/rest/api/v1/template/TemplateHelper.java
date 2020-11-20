@@ -83,6 +83,7 @@ public class TemplateHelper {
                 .deleted(Try.of(()->template.isDeleted()).getOrElse(false))
                 .live(Try.of(()->template.isLive()).getOrElse(false))
                 .locked(Try.of(()->template.isLocked()).getOrElse(false))
+                .lockedBy(Try.of(()->APILocator.getVersionableAPI().getLockedBy(template).orElse(null)).get())
                 .working(Try.of(()->template.isWorking()).getOrElse(false))
 
                 .canRead(Try.of(()-> APILocator.getPermissionAPI().doesUserHavePermission(template, PermissionAPI.PERMISSION_READ, user)).getOrElse(false))
