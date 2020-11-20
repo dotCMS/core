@@ -379,19 +379,18 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 						if (null != metadataValues) {
 						    metadataValues.forEach((metadataKey, metadataValue) -> {
 						        final String  metadataStringValue = metadataValue.toString();
-								mlowered.put(FileAssetAPI.META_DATA_FIELD.toLowerCase() + StringPool.PERIOD + metadataKey.toLowerCase(), metadataValue);
+								final String compositeKey = FileAssetAPI.META_DATA_FIELD.toLowerCase() + StringPool.PERIOD + metadataKey.toLowerCase();
+								mlowered.put(compositeKey, preProcessValue(compositeKey, metadataValue));
 								if (metadataKey.contains(FileAssetAPI.CONTENT_FIELD)) {
 									sw.append(metadataStringValue).append(' ');
-								}
-								if(FileAssetAPI.CONTENT_FIELD.equals(metadataKey)){
-									mlowered.put(FileAssetAPI.META_DATA_FIELD.toLowerCase() + StringPool.PERIOD + "content", metadataStringValue);
 								}
 						    });
 						}
 					});
 				}
 			}
-/*
+
+/*          TODO: Remove this code
 			final Optional<Field> binaryField = this.findFirstBinaryFieldIndexable(contentlet);
 			if (binaryField.isPresent()) {
 				this.generateBinaryMetadata(contentlet, sw, mlowered, binaryField.get());
@@ -423,6 +422,16 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		}
 	}
 
+
+    private Object preProcessValue(final String compositeKey, final Object value){
+        if("metadata.content".equals(compositeKey)){
+           //This "NO_METADATA" constant is getting relocated from tika utils
+           return value == null ? "NO_METADATA" : value.toString().toLowerCase();
+        }
+        return value;
+    }
+
+    /*
 	private void generateBinaryMetadata(final Contentlet contentlet,
 										final StringWriter stringWriter,
 										final Map<String, Object> mapLowered,
@@ -432,10 +441,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		final boolean regenerateMissingMetadata = Config
 				.getBooleanProperty("regenerate.missing.metadata.on.reindex", true);
 
-		/*
+
 		Verify if it is enabled the option to always regenerate metadata files on reindex,
 		enabling this could affect greatly the performance of a reindex process.
-		 */
+
 		final boolean alwaysRegenerateMetadata = Config
 				.getBooleanProperty("always.regenerate.metadata.on.reindex", false);
 
@@ -477,6 +486,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			}
 		}
 	}
+	*/
 
 	private Optional<Field> findFirstBinaryFieldIndexable(final Contentlet contentlet) {
 

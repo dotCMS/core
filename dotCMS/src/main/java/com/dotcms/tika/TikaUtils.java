@@ -530,6 +530,7 @@ public class TikaUtils {
 
     /**
      * Writes the content of a given Reader into the Contentlet metadata file
+     * TODO: Probably this won't be needed any longer consider removing it and all code using it.
      */
     private Map<String, String> writeMetadata(Reader fullText, File contentMetadataFile)
             throws IOException {
