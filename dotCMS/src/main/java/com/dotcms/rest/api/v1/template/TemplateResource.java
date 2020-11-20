@@ -447,6 +447,73 @@ public class TemplateResource {
         return savedTemplate;
     }
 
+    @WrapInTransaction
+    private Template fillAndSaveTemplate(final TemplateForm templateForm,
+            final User user,
+            final Host host,
+            final PageMode pageMode,
+            final Template template) throws DotSecurityException, DotDataException {
+
+        if(UtilMethods.isSet(templateForm.getTheme())) {
+
+            final Folder themeFolder = this.folderAPI.find(templateForm.getTheme(), user, pageMode.respectAnonPerms);
+
+            if (null != themeFolder && InodeUtils.isSet(themeFolder.getInode())) {
+                template.setThemeName(this.folderAPI.find(templateForm.getTheme(), user, pageMode.respectAnonPerms).getName());
+            } else {
+
+                throw new BadRequestException("Invalid theme: " + templateForm.getTheme());
+            }
+            template.setTheme(templateForm.getTheme());
+        }
+
+        template.setBody(templateForm.getBody());
+        template.setCountContainers(templateForm.getCountAddContainer());
+        template.setCountAddContainer(templateForm.getCountAddContainer());
+        template.setSortOrder(templateForm.getSortOrder());
+        template.setTitle(templateForm.getTitle());
+        template.setModUser(user.getUserId());
+        template.setOwner(user.getUserId());
+        template.setModDate(new Date());
+        if (null != templateForm.getLayout()) {
+            template.setDrawedBody(this.templateHelper.toTemplateLayout(templateForm.getLayout()));
+            template.setDrawed(true);
+        } else {
+            template.setDrawedBody(templateForm.getDrawedBody());
+        }
+        template.setFooter(templateForm.getFooter());
+        template.setFriendlyName(templateForm.getFriendlyName());
+        template.setHeadCode(templateForm.getHeadCode());
+        template.setImage(templateForm.getImage());
+        template.setSelectedimage(templateForm.getSelectedimage());
+        template.setHeader(templateForm.getHeader());
+
+        if (templateForm.isDrawed()) { // todo: not sure if this needed
+
+            final String themeHostId = APILocator.getFolderAPI().find(templateForm.getTheme(), user, pageMode.respectAnonPerms).getHostId();
+            final String themePath   = themeHostId.equals(host.getInode())?
+                    Template.THEMES_PATH + template.getThemeName() + "/":
+                    "//" + APILocator.getHostAPI().find(themeHostId, user, pageMode.respectAnonPerms).getHostname()
+                            + Template.THEMES_PATH + template.getThemeName() + "/";
+
+            final StringBuffer endBody = DesignTemplateUtil.getBody(template.getBody(), template.getHeadCode(),
+                    themePath, templateForm.isHeaderCheck(), templateForm.isFooterCheck());
+
+            // set the drawedBody for future edit
+            //template.setDrawedBody(template.getBody());
+            // set the real body
+            template.setBody(endBody.toString());
+        }
+
+        this.versionableAPI.setLocked(
+                this.templateAPI.saveTemplate(template, host, user, pageMode.respectAnonPerms), false, user);
+
+        ActivityLogger.logInfo(this.getClass(), "Saved Template", "User " + user.getPrimaryKey()
+                + "Template: " + template.getTitle(), host.getTitle() != null? host.getTitle():"default");
+
+        return template;
+    }
+
     /**
      * Publishes Template(s)
      *
@@ -853,72 +920,5 @@ public class TemplateResource {
         return Response.ok(new ResponseEntityView(
                 new BulkResultView(deletedTemplatesCount,0L,failedToDelete)))
                 .build();
-    }
-
-    @WrapInTransaction
-    private Template fillAndSaveTemplate(final TemplateForm templateForm,
-                                         final User user,
-                                         final Host host,
-                                         final PageMode pageMode,
-                                         final Template template) throws DotSecurityException, DotDataException {
-
-        if(UtilMethods.isSet(templateForm.getTheme())) {
-
-            final Folder themeFolder = this.folderAPI.find(templateForm.getTheme(), user, pageMode.respectAnonPerms);
-
-            if (null != themeFolder && InodeUtils.isSet(themeFolder.getInode())) {
-                template.setThemeName(this.folderAPI.find(templateForm.getTheme(), user, pageMode.respectAnonPerms).getName());
-            } else {
-
-                throw new BadRequestException("Invalid theme: " + templateForm.getTheme());
-            }
-            template.setTheme(templateForm.getTheme());
-        }
-
-        template.setBody(templateForm.getBody());
-        template.setCountContainers(templateForm.getCountAddContainer());
-        template.setCountAddContainer(templateForm.getCountAddContainer());
-        template.setSortOrder(templateForm.getSortOrder());
-        template.setTitle(templateForm.getTitle());
-        template.setModUser(user.getUserId());
-        template.setOwner(user.getUserId());
-        template.setModDate(new Date());
-        if (null != templateForm.getLayout()) {
-            template.setDrawedBody(this.templateHelper.toTemplateLayout(templateForm.getLayout()));
-            template.setDrawed(true);
-        } else {
-            template.setDrawedBody(templateForm.getDrawedBody());
-        }
-        template.setFooter(templateForm.getFooter());
-        template.setFriendlyName(templateForm.getFriendlyName());
-        template.setHeadCode(templateForm.getHeadCode());
-        template.setImage(templateForm.getImage());
-        template.setSelectedimage(templateForm.getSelectedimage());
-        template.setHeader(templateForm.getHeader());
-
-        if (templateForm.isDrawed()) { // todo: not sure if this needed
-
-            final String themeHostId = APILocator.getFolderAPI().find(templateForm.getTheme(), user, pageMode.respectAnonPerms).getHostId();
-            final String themePath   = themeHostId.equals(host.getInode())?
-                    Template.THEMES_PATH + template.getThemeName() + "/":
-                    "//" + APILocator.getHostAPI().find(themeHostId, user, pageMode.respectAnonPerms).getHostname()
-                            + Template.THEMES_PATH + template.getThemeName() + "/";
-
-            final StringBuffer endBody = DesignTemplateUtil.getBody(template.getBody(), template.getHeadCode(),
-                    themePath, templateForm.isHeaderCheck(), templateForm.isFooterCheck());
-
-            // set the drawedBody for future edit
-            //template.setDrawedBody(template.getBody());
-            // set the real body
-            template.setBody(endBody.toString());
-        }
-
-        this.versionableAPI.setLocked(
-                this.templateAPI.saveTemplate(template, host, user, pageMode.respectAnonPerms), false, user);
-
-        ActivityLogger.logInfo(this.getClass(), "Saved Template", "User " + user.getPrimaryKey()
-                + "Template: " + template.getTitle(), host.getTitle() != null? host.getTitle():"default");
-
-        return template;
     }
 }
