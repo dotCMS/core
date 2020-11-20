@@ -203,6 +203,12 @@ public class TemplateResourceTest {
         final String password = "admin";
         limitedUser.setPassword(password);
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
+        //Give Permissions Over the Folder
+        Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                template.getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                PermissionAPI.PERMISSION_READ, true);
+        APILocator.getPermissionAPI().save(permissions, template, APILocator.systemUser(), false);
         //Call Resource
         final Response responseResource = resource.archive(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Arrays.asList(template.getIdentifier())));
@@ -366,6 +372,12 @@ public class TemplateResourceTest {
         final String password = "admin";
         limitedUser.setPassword(password);
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
+        //Give Permissions Over the Folder
+        Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                template.getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                PermissionAPI.PERMISSION_READ, true);
+        APILocator.getPermissionAPI().save(permissions, template, APILocator.systemUser(), false);
 
         //Call Resource to UnArchive
         responseResource = resource.unarchive(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,new ArrayList<>(
@@ -510,6 +522,12 @@ public class TemplateResourceTest {
         final String password = "admin";
         limitedUser.setPassword(password);
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
+        //Give Permissions Over the Folder
+        Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                template.getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                PermissionAPI.PERMISSION_READ, true);
+        APILocator.getPermissionAPI().save(permissions, template, APILocator.systemUser(), false);
 
         //Call Resource to Delete
         responseResource = resource.delete(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,new ArrayList<>(
@@ -710,6 +728,12 @@ public class TemplateResourceTest {
         final String password = "admin";
         limitedUser.setPassword(password);
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
+        //Give Permissions Over the Folder
+        Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                template.getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                PermissionAPI.PERMISSION_READ, true);
+        APILocator.getPermissionAPI().save(permissions, template, APILocator.systemUser(), false);
         //Call Resource
         final Response responseResource = resource.publish(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Arrays.asList(template.getIdentifier())));
@@ -864,6 +888,12 @@ public class TemplateResourceTest {
         final String password = "admin";
         limitedUser.setPassword(password);
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
+        //Give Permissions Over the Folder
+        Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                template.getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                PermissionAPI.PERMISSION_READ, true);
+        APILocator.getPermissionAPI().save(permissions, template, APILocator.systemUser(), false);
         //Call Resource
         final Response responseResource = resource.unpublish(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Arrays.asList(template.getIdentifier())));
