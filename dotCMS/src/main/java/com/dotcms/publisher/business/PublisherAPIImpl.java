@@ -1,7 +1,5 @@
 package com.dotcms.publisher.business;
 
-import static com.dotcms.util.CollectionsUtils.list;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.publisher.bundle.bean.Bundle;
@@ -19,7 +17,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.common.db.Params;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -746,37 +743,6 @@ public class PublisherAPIImpl extends PublisherAPI{
 
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to delete element "+identifier+" :"+e.getMessage(), e);
-		}
-	}
-
-	@WrapInTransaction
-	@Override
-	public void deleteElementsFromPublishQueueTable(final List<String> identifiers, final long languageId) throws DotPublisherException{
-		try{
-			final List<Params> params = list();
-
-			for (String identifier : identifiers) {
-				if(languageId > 0) {
-					params.add(new Params.Builder().add(identifier, languageId).build());
-				} else {
-					params.add(new Params.Builder().add(identifier).build());
-				}
-			}
-
-			final DotConnect dc = new DotConnect();
-			String sql;
-
-			if (languageId > 0) {
-				sql = DELETE_ELEMENT_IN_LANGUAGE_FROM_QUEUE;
-			} else {
-				sql = DELETEELEMENTFROMQUEUESQL;
-			}
-
-			dc.executeBatch(sql, params);
-
-		}catch(Exception e){
-			Logger.error(PublisherUtil.class,e.getMessage(),e);
-			throw new DotPublisherException("Unable to delete elements from Publish Queue :"+e.getMessage(), e);
 		}
 	}
 

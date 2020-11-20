@@ -1,11 +1,9 @@
 package com.dotcms.cluster.business;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.enterprise.cluster.ClusterFactory;
-import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.ThreadUtils;
@@ -78,12 +76,6 @@ public class ServerAPIImplTest {
             }
         }).forEach(f -> FileUtil.deltree(f));
         assertEquals(serverApi.readServerId(), serverApi.getOldestServer());
-    }
-
-    @Test
-    public void testGetServerStartTime() {
-        final ServerAPI serverApi = APILocator.getServerAPI();
-        assertNotNull(serverApi.getServerStartTime());
     }
 
 }

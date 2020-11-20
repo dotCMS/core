@@ -27,18 +27,6 @@ public class MimeTypeUtilsTest extends UnitTestBase {
     }
 
     @Test
-    public void test_null_file_mime_type(){
-
-        File testing  = null;
-        assert(MimeTypeUtils.getMimeType(testing).equals(FileAsset.UNKNOWN_MIME_TYPE));
-        
-
-    }
-
-    
-    
-    
-    @Test
     public void test_wrong_mime_MimeType_all(){
 
         boolean match = MimeTypeUtils.match("*/pdf", "pdf");

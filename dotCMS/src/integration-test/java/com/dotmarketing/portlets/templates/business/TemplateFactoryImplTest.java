@@ -70,38 +70,41 @@ public class TemplateFactoryImplTest extends IntegrationTestBase {
         Template template = null;
         Template anotherTemplate = null;
 
+        PaginationUtil utils = new PaginationUtil(new TemplatePaginator(APILocator.getTemplateAPI(),
+                        new TemplateHelper(APILocator.getPermissionAPI(), APILocator.getRoleAPI())));
+
+
         template = new Template();
         final String uniqueString = UUIDGenerator.generateUuid() + SQLUtilTest.MALICIOUS_SQL_CONDITION;
         final String uniqueTitle = uniqueString + " This one will not show up";
         template.setTitle(uniqueTitle);
         template.setBody("<html><body> Empty Template </body></html>");
-        templateAPI.saveTemplate(template, host, user, false);
+        template = templateAPI.saveTemplate(template, host, user, false);
 
         anotherTemplate = new Template();
         anotherTemplate.setTitle("I am not invited");
         anotherTemplate.setBody("<html><body> Empty Template </body></html>");
-        templateAPI.saveTemplate(anotherTemplate, host, user, false);
+        anotherTemplate = templateAPI.saveTemplate(anotherTemplate, host, user, false);
 
 
         final TemplateFactory templateFactory = new TemplateFactoryImpl();
 
-        List<Template> templates = templateFactory.
-                findTemplates(user, false, ImmutableMap.of("filter", uniqueString), host.getIdentifier(), null, null, null, 0, 10, null);
+        List<Template> templates = templateFactory.findTemplates(user, false, ImmutableMap.of("title", uniqueString), host.getIdentifier(), null, null, null, 0, 10, null);
 
         assert templates.size() ==1;
         
         template = new Template();
         template.setTitle(uniqueTitle);
         template.setBody("<html><body> Empty Template </body></html>");
-        templateAPI.saveTemplate(template, host, user, false);
+        template = templateAPI.saveTemplate(template, host, user, false);
 
         anotherTemplate = new Template();
         anotherTemplate.setTitle("I am not invited");
         anotherTemplate.setBody("<html><body> Empty Template </body></html>");
-        templateAPI.saveTemplate(anotherTemplate, host, user, false);
+        anotherTemplate = templateAPI.saveTemplate(anotherTemplate, host, user, false);
         
         
-        templates = templateFactory.findTemplates(user, false, ImmutableMap.of("filter", uniqueString), host.getIdentifier(), null, null, null, 0, 10, SQLUtilTest.MALICIOUS_SQL_ORDER_BY);
+        templates = templateFactory.findTemplates(user, false, ImmutableMap.of("title", uniqueString), host.getIdentifier(), null, null, null, 0, 10, SQLUtilTest.MALICIOUS_SQL_ORDER_BY);
 
         assert templates.size() ==2;
 

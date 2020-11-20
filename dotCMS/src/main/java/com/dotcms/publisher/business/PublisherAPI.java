@@ -1,6 +1,5 @@
 package com.dotcms.publisher.business;
 
-import com.dotcms.business.WrapInTransaction;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -315,10 +314,6 @@ public abstract class PublisherAPI {
 	 *             An error occurred when deleting the entry.
 	 */
 	public abstract void deleteElementFromPublishQueueTable(String identifier, long languageId) throws DotPublisherException;
-
-	@WrapInTransaction
-	public abstract void deleteElementsFromPublishQueueTable(List<String> identifier,
-			long languageId) throws DotPublisherException;
 
 	/**
 	 * Delete element(s) from publishing_queue table by bundleid
