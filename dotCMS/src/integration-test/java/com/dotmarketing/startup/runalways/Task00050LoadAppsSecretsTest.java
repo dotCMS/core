@@ -133,7 +133,7 @@ public class Task00050LoadAppsSecretsTest {
      * gets removed to simulate a scenario on which we import a secret for a non-exiting site on a
      * receiver node Expected Result: The import operation must fail.
      */
-    @Test
+    @Test(expected = DotDataException.class)
     public void Test_UpgradeTask_Expect_Failure_Due_To_Invalid_Site()
             throws DotDataException, DotSecurityException, AlreadyExistException, IOException {
         final Host site = new SiteDataGen().nextPersisted();
@@ -157,13 +157,12 @@ public class Task00050LoadAppsSecretsTest {
         final Task00050LoadAppsSecrets task = new Task00050LoadAppsSecrets();
         Assert.assertTrue(task.forceRun());
         task.executeUpgrade();
-        //it must have failed zero imported secrets is the expecte
-        Assert.assertEquals(0, task.getImportCount());
+        Assert.assertEquals(1, task.getImportCount());
         final AppsAPI api = APILocator.getAppsAPI();
         final Optional<AppSecrets> secrets = api.getSecrets(descriptor.getKey(), site, admin);
-        Assert.assertFalse(secrets.isPresent());
-        //Since there were errors the file should continue to exist.
-        Assert.assertTrue(fileToImport.exists());
+        Assert.assertTrue(secrets.isPresent());
+        //finally test file got removed.
+        Assert.assertFalse(fileToImport.exists());
     }
 
     /**
@@ -171,7 +170,7 @@ public class Task00050LoadAppsSecretsTest {
      * Then we remove the app-descriptor and attempt a reimport Expected Result: The import must
      * fail due to the no longer existing descriptor.
      */
-    @Test
+    @Test(expected = DotDataException.class)
     public void Test_UpgradeTask_Expect_Failure_Due_To_Invalid_Descriptor()
             throws DotDataException, DotSecurityException, AlreadyExistException, IOException {
         final Host site = new SiteDataGen().nextPersisted();
@@ -193,12 +192,12 @@ public class Task00050LoadAppsSecretsTest {
         final Task00050LoadAppsSecrets task = new Task00050LoadAppsSecrets();
         Assert.assertTrue(task.forceRun());
         task.executeUpgrade();
-        Assert.assertEquals(0, task.getImportCount());
+        Assert.assertEquals(1, task.getImportCount());
         final AppsAPI api = APILocator.getAppsAPI();
         final Optional<AppSecrets> secrets = api.getSecrets(descriptor.getKey(), site, admin);
-        Assert.assertFalse(secrets.isPresent());
-        //Since there were errors the file should continue to exist.
-        Assert.assertTrue(fileToImport.exists());
+        Assert.assertTrue(secrets.isPresent());
+        //finally test file got removed.
+        Assert.assertFalse(fileToImport.exists());
     }
 
     /**

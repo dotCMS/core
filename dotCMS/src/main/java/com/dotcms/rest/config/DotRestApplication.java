@@ -2,7 +2,6 @@ package com.dotcms.rest.config;
 
 import com.dotcms.auth.providers.saml.v1.DotSamlResource;
 import com.dotcms.contenttype.model.field.FieldTypeResource;
-import com.dotcms.rest.PublishQueueResource;
 import com.dotcms.rest.RulesEnginePortlet;
 import com.dotcms.rest.TagResource;
 import com.dotcms.rest.api.v1.apps.AppsResource;
@@ -162,7 +161,6 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 			.add(LoggerResource.class)
 			.add(TemplateResource.class)
 			.add(MaintenanceResource.class)
-			.add(PublishQueueResource.class)
 			.build();
 
 

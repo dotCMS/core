@@ -143,7 +143,7 @@
 		var ids="";
 		var nodes = dojo.query('.queue_to_delete');
 		   dojo.forEach(nodes, function(node) {
-			   if(dijit.getEnclosingWidget(node).checked && !dijit.getEnclosingWidget(node).disabled){
+			   if(dijit.getEnclosingWidget(node).checked){
 				   var nodeValue = dijit.getEnclosingWidget(node).value;
 				   ids+=","+nodeValue.split("$")[0];
 			   }

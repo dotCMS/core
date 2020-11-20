@@ -12,7 +12,6 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -32,7 +31,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import java.util.Map;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -452,12 +450,6 @@ public class TemplateAPITest extends IntegrationTestBase {
 
     }
 
-    /**
-     * Method to test: {@link TemplateAPI#findLiveTemplate(String, User, boolean)}
-     * Given Scenario: Saves a new template and checks if is Live (false), then publish the template
-     * and check again if is live (true).
-     * ExpectedResult: template after been published should be live = true
-     */
     @Test
     public void findLiveTemplate() throws Exception {
 
@@ -468,71 +460,56 @@ public class TemplateAPITest extends IntegrationTestBase {
 
         Template live = templateAPI
                 .findLiveTemplate(template.getIdentifier(), user, false);
-        assertNull(live);//template has not been published
+        assertTrue(live==null || !InodeUtils.isSet(live.getInode()));
 
-        //Publish template
         versionableAPI.setLive(template);
 
         live = templateAPI.findLiveTemplate(template.getIdentifier(), user, false);
-        assertNotNull(live);//template has been published
-        assertEquals(template.getInode(),live.getInode());//inode live is the template inode
-        assertFalse(live.getOwner().isEmpty());//check owner was pulled
-        assertFalse(live.getIDate().toString().isEmpty());//check idate was pulled
+        assertTrue(live!=null && InodeUtils.isSet(live.getInode()));
+        assertEquals(template.getInode(),live.getInode());
 
         templateAPI.delete(template, user, false);
     }
 
-    /**
-     * Method to test: {@link TemplateAPI#findTemplates(User, boolean, Map, String, String, String, String, int, int, String)}
-     * Given Scenario: Saves a new template and finds all the templates the user can use
-     * ExpectedResult: list of templates the user can use, it must contain the template created for this test
-     */
     @Test
     public void testFindTemplates() throws DotDataException, DotSecurityException {
-        final String title = "testTemplate_" + System.currentTimeMillis();
-        final Template template = new TemplateDataGen().title(title).nextPersisted();
-
         final List<Template> result = templateAPI
                 .findTemplates(user, false, null, host.getIdentifier(), null, null, null, 0, -1,
                         null);
 
         assertNotNull(result);
-        assertFalse(result.isEmpty());
-        assertTrue(result.contains(template));
-        assertFalse(result.get(0).getOwner().isEmpty());//check owner was pulled
-        assertFalse(result.get(0).getIDate().toString().isEmpty());//check idate was pulled
-
+        assertTrue(!result.isEmpty());
     }
 
-    /**
-     * Method to test: {@link TemplateFactory#findWorkingTemplateByName(String, Host)}
-     * Given Scenario: Saves a new template and find the working version of it using the template.title and host
-     * ExpectedResult: working version of the template
-     */
     @Test
     public void testFindWorkingTemplateByName() throws Exception {
-        final String title = "testTemplate_" + System.currentTimeMillis();
-        final Template template_version1 = new TemplateDataGen().title(title).host(host).nextPersisted();
-        Thread.sleep(1000);
-        template_version1.setTitle(title + "_1");
-        template_version1.setInode("");
-        final Template template_version2 = TemplateDataGen.save(template_version1);
+        Template template = new Template();
+        final TemplateFactory templateFactory = new TemplateFactoryImpl();
+        template.setTitle("empty test template " + UUIDGenerator.generateUuid());
+        template.setBody("<html><body> I'm mostly empty </body></html>");
+        template.setOwner("template's owner");
 
-        final Template result = FactoryLocator.getTemplateFactory().findWorkingTemplateByName(title + "_1", host);
-        assertNotNull(result);
-        assertEquals(template_version2.getInode(), result.getInode());
-        assertFalse(result.getOwner().isEmpty());//check owner was pulled
-        assertFalse(result.getIDate().toString().isEmpty());//check idate was pulled
+        try {
+            template = templateAPI.saveTemplate(template, host, user, false);
+
+            final Template result = templateFactory.findWorkingTemplateByName(template.getTitle(), host);
+
+            assertNotNull(result);
+            assertEquals(template.getInode(), result.getInode());
+            assertTrue(template.getOwner()!=null && template.getOwner().equals(result.getOwner()));
+        } finally {
+            if (template.getInode() != null) {
+                templateAPI.delete(template, user, false);
+            }
+        }
     }
 
-
-    /**
-     * Method to test: {@link TemplateAPI#findWorkingTemplate(String, User, boolean)}
-     * Given Scenario: Tries to find a non-existent working template
-     * ExpectedResult: null template
-     */
+    
+    
     @Test
     public void testFindWorkingTemplateNoNPE() throws DotDataException, DotSecurityException {
+
+
         try {
             final Template template = templateAPI.findWorkingTemplate("NO_TEMPLATE",
                     APILocator.getUserAPI().getSystemUser(), false);
@@ -541,16 +518,11 @@ public class TemplateAPITest extends IntegrationTestBase {
 
         }
         catch(NullPointerException e) {
-            Logger.error(this, "getting non-existent template should not throw an NPE", e);
-            assertTrue("getting non-existent template should not throw an NPE", false);
+            Logger.error(this, "getting non-existant template should not throw an NPE", e);
+            assertTrue("getting non-existant template should not throw an NPE", false);
         }
     }
 
-    /**
-     * Method to test: {@link TemplateAPI#findWorkingTemplate(String, User, boolean)}
-     * Given Scenario: Tries to find a non-existent live template
-     * ExpectedResult: null template
-     */
     @Test
     public void testFindLiveTemplateNoNPE() throws DotDataException, DotSecurityException {
 
@@ -563,34 +535,19 @@ public class TemplateAPITest extends IntegrationTestBase {
             
         }
         catch(NullPointerException e) {
-            Logger.error(this, "getting non-existent template should not throw an NPE", e);
-            assertTrue("getting non-existent template should not throw an NPE", false);
+            Logger.error(this, "getting non-existant template should not throw an NPE", e);
+            assertTrue("getting non-existant template should not throw an NPE", false);
         }
     }
-
-    /**
-     * Method to test: {@link TemplateAPI#findTemplatesAssignedTo(Host,boolean)}
-     * Given Scenario: Finds all templates under a host
-     * ExpectedResult: list of templates that live under a host
-     */
+    
     @Test
-    public void testFindTemplatesAssignedTo() throws DotDataException {
-        final String title = "testTemplate_" + System.currentTimeMillis();
-        final Template template = new TemplateDataGen().title(title).nextPersisted();
-
+    public void testFindTemplatesAssignedTo() throws DotDataException, DotSecurityException {
         final List<Template> result = templateAPI.findTemplatesAssignedTo(host);
+
         assertNotNull(result);
-        assertFalse(result.isEmpty());
-        assertTrue(result.contains(template));
-        assertFalse(result.get(0).getOwner().isEmpty());//check owner was pulled
-        assertFalse(result.get(0).getIDate().toString().isEmpty());//check idate was pulled
+        assertTrue(!result.isEmpty());
     }
 
-    /**
-     * Method to test: {@link TemplateAPI#copy(Template, User)}
-     * Given Scenario: Creates a template and then a copy of it
-     * ExpectedResult: template copied successfully
-     */
     @Test
     public void copyTemplate() throws Exception {
         Template oldTemplate = null;
@@ -670,11 +627,6 @@ public class TemplateAPITest extends IntegrationTestBase {
         }
     }
 
-    /**
-     * Method to test: {@link TemplateAPI#findTemplatesUserCanUse(User, String, String, boolean, int, int)}
-     * Given Scenario: Finds all the templates an user can use that matches the filter
-     * ExpectedResult: list of templates that live under a host
-     */
     @Test
     public void testFindTemplatesUserCanUse_IncludeUniqueFilter_ShouldListOnlyOneResult() throws Exception {
         Template template = null;
@@ -697,8 +649,6 @@ public class TemplateAPITest extends IntegrationTestBase {
 
             assertEquals(1, filteredTemplates.size());
             assertEquals(uniqueTitle, filteredTemplates.get(0).getTitle());
-            assertFalse(filteredTemplates.get(0).getOwner().isEmpty());//check owner was pulled
-            assertFalse(filteredTemplates.get(0).getIDate().toString().isEmpty());//check idate was pulled
 
         } finally {
             if (template != null) {
@@ -726,8 +676,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         final Template templateFound = templateAPI.find(template.getInode(),user,false);
 
         assertEquals(title,templateFound.getTitle());
-        assertFalse(templateFound.getOwner().isEmpty());//check owner was pulled
-        assertFalse(templateFound.getIDate().toString().isEmpty());//check idate was pulled
+
     }
 
     /**
@@ -761,8 +710,6 @@ public class TemplateAPITest extends IntegrationTestBase {
         final List<Template> templateAllVersions = templateAPI.findAllVersions(identifier,user,false);
         assertNotNull(templateAllVersions);
         assertEquals(3,templateAllVersions.size());
-        assertFalse(templateAllVersions.get(0).getOwner().isEmpty());//check owner was pulled
-        assertFalse(templateAllVersions.get(0).getIDate().toString().isEmpty());//check idate was pulled
     }
 
     /**
@@ -777,24 +724,6 @@ public class TemplateAPITest extends IntegrationTestBase {
         identifier.setId(UUIDGenerator.generateUuid());
         final List<Template> templateAllVersions = templateAPI.findAllVersions(identifier,user,false);
         assertTrue(templateAllVersions.isEmpty());
-    }
-
-    /**
-     * Method to test: {@link TemplateAPI#saveTemplate(Template, Host, User, boolean)}
-     * Given Scenario: Saves a new template and checks that the owner and create_date
-     * is being save on the identifier table
-     * ExpectedResult: owner and create_date columns on the identifier tables must have values
-     */
-    @Test
-    public void test_newTemplate_checkIfSavesOwnerAndCreateDateOnIdentifier() throws Exception {
-        final String title = "testTemplate_" + System.currentTimeMillis();
-        final Template template = new TemplateDataGen().title(title).nextPersisted();
-        final Identifier identifier = APILocator.getIdentifierAPI().find(template.getIdentifier());
-        assertNotNull(identifier);
-        assertNotNull(identifier.getOwner());
-        assertNotNull(identifier.getCreateDate());
-        assertFalse(identifier.getOwner().isEmpty());
-        assertFalse(identifier.getCreateDate().toString().isEmpty());
     }
 
 }

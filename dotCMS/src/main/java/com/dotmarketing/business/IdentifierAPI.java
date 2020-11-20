@@ -1,6 +1,5 @@
 package com.dotmarketing.business;
 
-import com.dotmarketing.exception.DotSecurityException;
 import java.util.List;
 
 import com.dotmarketing.beans.Host;
@@ -164,16 +163,5 @@ public interface IdentifierAPI {
 	 * @throws DotDataException
 	 */
 	public String getAssetTypeFromDB(String identifier) throws DotDataException;
-
-	/**
-	 * Method will change user references of the given userId in Identifier
-	 * with the replacement user Id
-	 * @param userId User Identifier
-	 * @param replacementUserId The user id of the replacement user
-	 * @throws DotDataException There is a data inconsistency
-	 * @throws DotStateException There is a data inconsistency
-	 * @throws DotSecurityException
-	 */
-	public void updateUserReferences(final String userId, final String replacementUserId)throws DotDataException, DotSecurityException;
 
 }

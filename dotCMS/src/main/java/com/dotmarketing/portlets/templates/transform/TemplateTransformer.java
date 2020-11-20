@@ -39,7 +39,7 @@ public class TemplateTransformer implements DBTransformer {
         template = new Template();
         template.setInode(String.valueOf(map.get("inode")));
         template.setOwner(String.valueOf(map.get("owner")));
-        template.setIDate((Date) map.get("create_date"));
+        template.setIDate((Date) map.get("idate"));
         template.setShowOnMenu(ConversionUtils.toBooleanFromDb(map.getOrDefault("show_on_menu",false)));
         template.setTitle(String.valueOf(map.get("title")));
         template.setModDate((Date) map.get("mod_date"));

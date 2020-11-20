@@ -2431,7 +2431,7 @@ alter table container_structures add constraint FK_cs_inode foreign key (contain
 
 
 -- license repo
-create table sitelic(id varchar(36) primary key, serverid varchar(100), license text not null, lastping timestamp not null, startup_time bigint);
+create table sitelic(id varchar(36) primary key, serverid varchar(100), license text not null, lastping timestamp not null);
 
 -- Integrity Checker
 create table folders_ir(folder varchar(255), local_inode varchar(36), remote_inode varchar(36), local_identifier varchar(36), remote_identifier varchar(36), endpoint_id varchar(40), PRIMARY KEY (local_inode, endpoint_id));

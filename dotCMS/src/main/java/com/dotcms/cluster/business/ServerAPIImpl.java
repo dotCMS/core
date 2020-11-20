@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
@@ -277,15 +276,5 @@ public class ServerAPIImpl implements ServerAPI {
     public Server getCurrentServer() throws DotDataException {
 
         return getOrCreateMyServer();
-    }
-
-    /**
-     * Gets the servers start time
-     *
-     * @return milliseconds representing the date-time when the server started.
-     */
-    @Override
-    public long getServerStartTime() {
-        return ManagementFactory.getRuntimeMXBean().getStartTime();
     }
 }

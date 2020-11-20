@@ -1,10 +1,6 @@
 package com.dotcms.rest.api.v1.apps.view;
 
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
-import com.liferay.portal.model.User;
-import com.liferay.portal.util.PortalUtil;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -13,18 +9,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.RuntimeSingleton;
+import org.apache.velocity.runtime.parser.ParseException;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
 
-public class ViewUtil {
+class ViewUtil {
 
     private static final ThreadLocal<StackContext> threadLocal = new ThreadLocal<>();
 
-    public static void newStackContext(final AppView appView) {
+    static void newStackContext(final AppView appView) {
         threadLocal.set(new StackContext(appView));
     }
 
@@ -32,7 +28,7 @@ public class ViewUtil {
         return threadLocal.get();
     }
 
-    public static void currentSite(final String siteId) {
+    static void currentSite(final String siteId) {
         final StackContext currentStack = currentStackContext();
         if(null == currentStack){
             throw new IllegalStateException("Create stack hasn't been called yet.");
@@ -40,7 +36,7 @@ public class ViewUtil {
         currentStack.currentSite = siteId;
     }
 
-    public static void pushSecret(final Map<String, Object> map) {
+    static void pushSecret(final Map<String, Object> map) {
         final StackContext context = currentStackContext();
         if(null == context){
             throw new IllegalStateException("Create stack hasn't been called yet.");
@@ -52,7 +48,7 @@ public class ViewUtil {
         context.secretsBySite.computeIfAbsent(context.currentSite, k -> new ArrayList<>()).add(map);
     }
 
-    public static void disposeStackContext() {
+    static void disposeStackContext() {
         threadLocal.remove();
     }
 
@@ -156,12 +152,6 @@ public class ViewUtil {
                         }
                     }
                 }
-            }
-
-            final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-            if(null != request){
-                final User user = PortalUtil.getUser(request);
-                velocityContext.put("user", user);
             }
 
             final StringWriter stringWriter = new StringWriter();

@@ -3,7 +3,6 @@ package com.dotmarketing.business;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import java.util.List;
 
@@ -249,16 +248,5 @@ public abstract class IdentifierFactory {
 	 * @throws DotDataException
 	 */
 	abstract protected String getAssetTypeFromDB(String identifier) throws DotDataException;
-
-	/**
-	 * Method will change user references of the given userId in Identifier
-	 * with the replacement user Id
-	 * @param userId User Identifier
-	 * @param replacementUserId The user id of the replacement user
-	 * @throws DotDataException There is a data inconsistency
-	 * @throws DotStateException There is a data inconsistency
-	 * @throws DotSecurityException
-	 */
-	abstract protected void updateUserReferences(final String userId, final String replacementUserId)throws DotDataException, DotSecurityException;
 
 }

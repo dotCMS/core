@@ -814,7 +814,6 @@ public class ContentletAjax {
 								final boolean hasQuotes = fieldValue != null && fieldValue.length() > 1 && fieldValue.endsWith("\"") && fieldValue.startsWith("\"");
 								if(hasQuotes){
 									fieldValue = CharMatcher.is('\"').trimFrom(fieldValue);
-									fieldValue = fieldValue.trim();
 								}
 
 								String valueDelimiter = wildCard;

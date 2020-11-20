@@ -183,7 +183,6 @@ public class TaskLocatorUtil {
 		.add(Task01096CreateContainerStructuresTable.class)
 		.add(Task03005CreateModDateForFieldIfNeeded.class)
 		.add(Task03010AddContentletIdentifierIndex.class)
-		.add(Task201102UpdateColumnSitelicTable.class)
 		.add(Task03015CreateClusterConfigModel.class)
 		.add(Task03020PostgresqlIndiciesFK.class)
 		.add(Task03025CreateFoundationForNotificationSystem.class)
