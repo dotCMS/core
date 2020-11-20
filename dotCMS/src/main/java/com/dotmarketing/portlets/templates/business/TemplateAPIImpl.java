@@ -275,7 +275,30 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	public void unlock (final Template template, final User user)
 			throws DotSecurityException, DotDataException {
 
+		Logger.debug(this, ()->"Unlocking the Template: " + template.getIdentifier());
+
+		//Check Edit Permissions over Template
+		if(!this.permissionAPI.doesUserHavePermission(template, PERMISSION_EDIT, user)){
+			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to Edit the Template");
+			throw new DotSecurityException("User does not have Permissions to Edit the Template");
+		}
+
 		this.versionableAPI.get().setLocked(template, false, user);
+	}
+
+	@WrapInTransaction
+	public void lock (final Template template, final User user)
+			throws DotSecurityException, DotDataException {
+
+		Logger.debug(this, ()->"Locking the Template: " + template.getIdentifier());
+
+		//Check Edit Permissions over Template
+		if(!this.permissionAPI.doesUserHavePermission(template, PERMISSION_EDIT, user)){
+			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to Edit the Template");
+			throw new DotSecurityException("User does not have Permissions to Edit the Template");
+		}
+
+		this.versionableAPI.get().setLocked(template, true, user);
 	}
 
 	@WrapInTransaction

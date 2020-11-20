@@ -14,7 +14,10 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.BulkResultView;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -870,5 +873,133 @@ public class TemplateResourceTest {
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
         Assert.assertEquals(1,results.getFailed().size());
+    }
+
+    /**
+     * Method to test: lock in the TemplateResource
+     * Given Scenario: Create a template on working state, and lock it.
+     * ExpectedResult: The endpoint should return 200.
+     *
+     */
+    @Test
+    public void test_lockTemplate_success()
+            throws DotSecurityException, DotDataException {
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHost = new SiteDataGen().nextPersisted();
+        //Create template
+        Template template = new TemplateDataGen().title(title).next();
+        template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
+        //Call Resource
+        Response responseResource = resource.lock(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,template.getIdentifier());
+        //Check that the response is 200, OK
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+    }
+
+    /**
+     * Method to test: lock in the TemplateResource
+     * Given Scenario: Create a template on live state. Now as a Limited User
+     *                  without Edit Permissions try to lock the template.
+     * ExpectedResult: Should throw a DotSecurityException
+     *
+     */
+    @Test (expected = DotSecurityException.class)
+    public void test_lockTemplate_LimitedUserWithoutEditPermissions_failedToLock()
+            throws DotDataException, DotSecurityException {
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHost = new SiteDataGen().nextPersisted();
+        //Create template
+        final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
+        //Create the limited user
+        final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
+        final String password = "admin";
+        limitedUser.setPassword(password);
+        APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
+        //Give Permissions Over the Folder
+        Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                template.getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                PermissionAPI.PERMISSION_READ, true);
+        APILocator.getPermissionAPI().save(permissions, template, APILocator.systemUser(), false);
+        //Call Resource
+        resource.lock(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,template.getIdentifier());
+
+    }
+
+    /**
+     * Method to test: lock in the TemplateResource
+     * Given Scenario: Create a UUID that does not belong to any template and try to lock.
+     * ExpectedResult: Should throw a DoesNotExistException
+     *
+     */
+    @Test (expected = DoesNotExistException.class)
+    public void test_lockTemplate_IdDoesNotBelongToAnyTemplate_failedToLock()
+            throws DotSecurityException, DotDataException {
+        final String uuid = UUIDGenerator.generateUuid();
+        //Call Resource
+        resource.lock(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,uuid);
+    }
+
+    /**
+     * Method to test: unlock in the TemplateResource
+     * Given Scenario: Create a template on working state, and unlock it.
+     * ExpectedResult: The endpoint should return 200.
+     *
+     */
+    @Test
+    public void test_unlockTemplate_success()
+            throws DotSecurityException, DotDataException {
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHost = new SiteDataGen().nextPersisted();
+        //Create template
+        Template template = new TemplateDataGen().title(title).next();
+        template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
+        //Call Resource
+        Response responseResource = resource.unlock(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,template.getIdentifier());
+        //Check that the response is 200, OK
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+    }
+
+    /**
+     * Method to test: unlock in the TemplateResource
+     * Given Scenario: Create a template on live state. Now as a Limited User
+     *                  without Edit Permissions try to unlock the template.
+     * ExpectedResult: Should throw a DotSecurityException
+     *
+     */
+    @Test (expected = DotSecurityException.class)
+    public void test_unlockTemplate_LimitedUserWithoutEditPermissions_failedToUnLock()
+            throws DotDataException, DotSecurityException {
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHost = new SiteDataGen().nextPersisted();
+        //Create template
+        final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
+        //Create the limited user
+        final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
+        final String password = "admin";
+        limitedUser.setPassword(password);
+        APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
+        //Give Permissions Over the Folder
+        Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                template.getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                PermissionAPI.PERMISSION_READ, true);
+        APILocator.getPermissionAPI().save(permissions, template, APILocator.systemUser(), false);
+        //Call Resource
+        resource.unlock(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,template.getIdentifier());
+
+    }
+
+    /**
+     * Method to test: unlock in the TemplateResource
+     * Given Scenario: Create a UUID that does not belong to any template and try to unlock.
+     * ExpectedResult: Should throw a DoesNotExistException
+     *
+     */
+    @Test (expected = DoesNotExistException.class)
+    public void test_unlockTemplate_IdDoesNotBelongToAnyTemplate_failedToUnLock()
+            throws DotSecurityException, DotDataException {
+        final String uuid = UUIDGenerator.generateUuid();
+        //Call Resource
+        resource.unlock(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,uuid);
     }
 }

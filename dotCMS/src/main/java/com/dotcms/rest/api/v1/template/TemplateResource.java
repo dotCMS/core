@@ -609,6 +609,43 @@ public class TemplateResource {
     }
 
     /**
+     * Lock a template
+     * @param request            {@link HttpServletRequest}
+     * @param response           {@link HttpServletResponse}
+     * @param templateId      {@link String} template identifier to lock
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @PUT
+    @Path("/{templateId}/_lock")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response lock(@Context final HttpServletRequest  request,
+            @Context final HttpServletResponse response,
+            @PathParam("templateId") final String templateId) throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+        final User user         = initData.getUser();
+        final PageMode pageMode = PageMode.get(request);
+
+        final Template template = this.templateAPI.findWorkingTemplate(templateId,user,pageMode.respectAnonPerms);
+
+        if (null == template || !InodeUtils.isSet(template.getInode())) {
+            throw new DoesNotExistException("Template with Id: " + templateId + " does not exists");
+        }
+
+        this.templateAPI.lock(template, user);
+
+        ActivityLogger.logInfo(this.getClass(), "Locked Template Action", "User " +
+                user.getPrimaryKey() + " locked template: " + template.getIdentifier());
+
+        return Response.ok(new ResponseEntityView("Template Locked Successfully")).build();
+    }
+
+    /**
      * Unlock a template
      * @param request            {@link HttpServletRequest}
      * @param response           {@link HttpServletResponse}
@@ -631,20 +668,17 @@ public class TemplateResource {
         final User user         = initData.getUser();
         final PageMode pageMode = PageMode.get(request);
 
-        Logger.debug(this, ()->"Unlocking the Template: " + templateId);
-
         final Template template = this.templateAPI.findWorkingTemplate(templateId,user,pageMode.respectAnonPerms);
 
         if (null == template || !InodeUtils.isSet(template.getInode())) {
-
             throw new DoesNotExistException("Template with Id: " + templateId + " does not exists");
         }
 
-        this.templateHelper.checkPermission(user, template, PERMISSION_READ);
         this.templateAPI.unlock(template, user);
 
-        Logger.debug(this, "Unlocked template: " + templateId);
-        return Response.ok(new ResponseEntityView(true)).build();
+        ActivityLogger.logInfo(this.getClass(), "Unlocked Template Action", "User " +
+                user.getPrimaryKey() + " unlocked template: " + template.getIdentifier());
+        return Response.ok(new ResponseEntityView("Template Unlocked Successfully")).build();
     }
 
     /**

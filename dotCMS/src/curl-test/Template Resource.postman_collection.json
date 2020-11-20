@@ -3253,6 +3253,919 @@
 			"protocolProfileBehavior": {}
 		},
 		{
+			"name": "Lock",
+			"item": [
+				{
+					"name": "Create New Template to Lock",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "13ad1400-a0b3-45be-bdc1-9d5dd48b68a7",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"body check\", function () {",
+									"    pm.expect(jsonData.entity.body).to.eql('This is the body');",
+									"});",
+									"",
+									"pm.test(\"friendlyName check\", function () {",
+									"    pm.expect(jsonData.entity.friendlyName).to.eql('This is a postman test description');",
+									"});",
+									"",
+									"pm.test(\"Title check\", function () {",
+									"    pm.expect(jsonData.entity.title).to.eql('PostMan Test');",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"templateIdToLock\", jsonData.entity.identifier);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\":\"PostMan Test\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						},
+						"description": "Creates a new template"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Template Lock False And LockedBy Null",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "b40556ce-7054-4e83-bc90-02b3e2599387",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Lock Check\", function () {",
+									"    pm.expect(jsonData.entity[0].locked).to.eql(false);",
+									"});",
+									"",
+									"pm.test(\"Locked By Check\", function () {",
+									"    pm.expect(jsonData.entity[0].lockedBy).to.eql(null);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates?filter={{templateIdToLock}}&archive=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "{{templateIdToLock}}"
+								},
+								{
+									"key": "archive",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Get a since template"
+					},
+					"response": []
+				},
+				{
+					"name": "Lock Template Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "0d5fb980-27e4-4553-a902-52a50181b824",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToPublish}}\"]\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/{{templateIdToLock}}/_lock",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"{{templateIdToLock}}",
+								"_lock"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Template Lock True And LockedBy Not Null",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "b26dc603-7c24-4e6d-b2a0-620925498c28",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Lock Check\", function () {",
+									"    pm.expect(jsonData.entity[0].locked).to.eql(true);",
+									"});",
+									"",
+									"pm.test(\"Locked By Check\", function () {",
+									"    pm.expect(jsonData.entity[0].lockedBy).to.not.eql(null);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates?filter={{templateIdToLock}}&archive=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "{{templateIdToLock}}"
+								},
+								{
+									"key": "archive",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Get a since template"
+					},
+					"response": []
+				},
+				{
+					"name": "Lock Template Failed To Lock Id Not Exist",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "6f3722c6-2ec2-4b77-8108-8143132ba1a5",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.test(\"Status code should be ok 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToPublish}}\"]\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/_lock",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+								"_lock"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Unlock",
+			"item": [
+				{
+					"name": "Create New Template to UnLock",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "97c12626-fd53-407a-a5d2-746f89db68c8",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"body check\", function () {",
+									"    pm.expect(jsonData.entity.body).to.eql('This is the body');",
+									"});",
+									"",
+									"pm.test(\"friendlyName check\", function () {",
+									"    pm.expect(jsonData.entity.friendlyName).to.eql('This is a postman test description');",
+									"});",
+									"",
+									"pm.test(\"Title check\", function () {",
+									"    pm.expect(jsonData.entity.title).to.eql('PostMan Test');",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"templateIdToUnLock\", jsonData.entity.identifier);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\":\"PostMan Test\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						},
+						"description": "Creates a new template"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Template Lock False And LockedBy Null",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "1b9c803a-b8bd-4d69-9011-14b53834791e",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Lock Check\", function () {",
+									"    pm.expect(jsonData.entity[0].locked).to.eql(false);",
+									"});",
+									"",
+									"pm.test(\"Locked By Check\", function () {",
+									"    pm.expect(jsonData.entity[0].lockedBy).to.eql(null);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates?filter={{templateIdToUnLock}}&archive=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "{{templateIdToUnLock}}"
+								},
+								{
+									"key": "archive",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Get a since template"
+					},
+					"response": []
+				},
+				{
+					"name": "Lock Template Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "c50e1a55-f68d-4b3f-b3c1-ce85a27437bd",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToPublish}}\"]\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/{{templateIdToUnLock}}/_lock",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"{{templateIdToUnLock}}",
+								"_lock"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Template Lock True And LockedBy Not Null",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "9c4dbf0a-007d-4d55-9619-3f343f922f38",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Lock Check\", function () {",
+									"    pm.expect(jsonData.entity[0].locked).to.eql(true);",
+									"});",
+									"",
+									"pm.test(\"Locked By Check\", function () {",
+									"    pm.expect(jsonData.entity[0].lockedBy).to.not.eql(null);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates?filter={{templateIdToUnLock}}&archive=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "{{templateIdToUnLock}}"
+								},
+								{
+									"key": "archive",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Get a since template"
+					},
+					"response": []
+				},
+				{
+					"name": "UnLock Template Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "1febc959-9dd7-4e2b-935a-d2fa7e1039b2",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToPublish}}\"]\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/{{templateIdToUnLock}}/_unlock",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"{{templateIdToUnLock}}",
+								"_unlock"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Template Lock False And LockedBy Null",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "dd98281a-5b44-4d65-9b55-554b62b18e80",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Lock Check\", function () {",
+									"    pm.expect(jsonData.entity[0].locked).to.eql(false);",
+									"});",
+									"",
+									"pm.test(\"Locked By Check\", function () {",
+									"    pm.expect(jsonData.entity[0].lockedBy).to.eql(null);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates?filter=c634d093-c97d-4c37-9004-1262b4578c3e",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "c634d093-c97d-4c37-9004-1262b4578c3e"
+								}
+							]
+						},
+						"description": "Get a since template"
+					},
+					"response": []
+				},
+				{
+					"name": "UnLock Template Failed To UnLock Id Not Exist",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "7b7f31e1-9fc1-45b0-a6d6-954fb8482d6c",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.test(\"Status code should be ok 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToPublish}}\"]\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/_unlock",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+								"_unlock"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
 			"name": "Create New Template",
 			"event": [
 				{
@@ -4190,128 +5103,68 @@
 				"description": "Get all templates Archive"
 			},
 			"response": []
-		},
-		{
-			"name": "Unlock Template",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "c6dec935-64e1-4791-a6b4-3a49d4866040",
-						"exec": [
-							"pm.test(\"Status code should be ok 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
-						}
-					]
-				},
-				"method": "PUT",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/templates/{{temporaryInode}}/_unlock",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"templates",
-						"{{temporaryInode}}",
-						"_unlock"
-					]
-				},
-				"description": "unlock the template"
-			},
-			"response": []
 		}
 	],
 	"variable": [
 		{
-			"id": "ed3e1e70-5efc-4926-be27-409711109dec",
+			"id": "d9b34f01-2aa0-432f-a798-4da2dc8fb402",
 			"key": "temporalInode",
 			"value": "27928cad-5c13-41a9-bcf1-ce23a6cb55c8"
 		},
 		{
-			"id": "aa1fc2f5-2fe2-41bd-bc2e-d91c79e375f0",
+			"id": "49f862a8-3f15-4c60-9044-88d4093f9f1a",
 			"key": "temporalIdentifier",
 			"value": "037debee-59cb-42b7-b0d1-1cab580c2b76"
 		},
 		{
-			"id": "f43bcba0-002d-4634-adb1-045c28caedc6",
+			"id": "436855fc-3d40-4d2a-820a-b9d5adab9074",
 			"key": "temporaryInode",
 			"value": "89644c4b-f872-4dc4-8035-57dc2f5375fd"
 		},
 		{
-			"id": "e134d58a-9725-430a-adab-10221479fa06",
+			"id": "52bf9170-ca79-43d4-b76c-1aa4248e6f8a",
 			"key": "temporaryIdentifier",
 			"value": "b6b41cff-9247-47eb-8f97-b7df0462916c"
 		},
 		{
-			"id": "eed8d17e-8292-47ad-9c65-ed93dfab2cd4",
+			"id": "6b5a26cc-beff-49b9-b11c-ddf5d9bcee7c",
 			"key": "templateIdentifier",
 			"value": "f2dbc35a-de89-4c04-a859-5c156bbdc7f8"
 		},
 		{
-			"id": "9be5d219-4ccd-40dc-8849-da38b5721ab6",
+			"id": "3eee6b87-da59-4d25-ab88-e6decae4198e",
 			"key": "templateIdToArchive",
 			"value": "25431921-43a6-4e85-be54-84c2e1e8198d"
 		},
 		{
-			"id": "1aea68ee-0910-4175-b62e-b04b06d4c3ee",
+			"id": "7885d8c4-205f-4cd5-93b1-f133a90cc341",
 			"key": "templateIdToUnArchive",
 			"value": "83a9b763-d83d-42ac-b3fb-12d8d65af712"
 		},
 		{
-			"id": "8474aa50-1a38-43f0-9ef2-d0ae34067bc0",
+			"id": "efdb7f8c-4e71-4598-9e06-646e3a2045a7",
 			"key": "templateIdToDelete",
 			"value": "797fa72b-2c60-4977-a8db-eb59ad7b54f1"
 		},
 		{
-			"id": "0b17ed7f-8d2f-4e2f-8a05-af501db0d5f6",
+			"id": "dec99443-0e19-483a-a719-78ab2fad12d5",
 			"key": "templateIdToPublish",
-			"value": "19335ee1-0848-4c45-8d48-49401f0b5c1b"
+			"value": "2c371bdb-cf23-4359-b341-db0d7508b221"
 		},
 		{
-			"id": "f5a08d85-91ee-465f-a000-2c36d281df90",
+			"id": "14688eb5-0de3-46c6-a697-5807e4811955",
 			"key": "templateIdToUnpublish",
 			"value": "71311cd3-e68a-442c-b2ec-d5fc4f52f064"
+		},
+		{
+			"id": "45dca79b-d1b8-4020-8631-eb6badc84638",
+			"key": "templateIdToLock",
+			"value": "ea5cef2b-5d93-4319-93f9-524f22a082e4"
+		},
+		{
+			"id": "19e95336-9270-4f99-9ec4-be1a60c76e9e",
+			"key": "templateIdToUnLock",
+			"value": "c696464c-a342-43fd-80d4-e12a288faab7"
 		}
 	],
 	"protocolProfileBehavior": {}
