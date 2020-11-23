@@ -122,9 +122,11 @@ public class ImportStarterUtil {
 
         classesWithIdentity.add("Permission");
         classesWithIdentity.add("UsersToDelete");
+        classesWithIdentity.add("UserPreference");
         tableNames = new HashMap<String, String>();
         tableNames.put("Permission", "permission");
         tableNames.put("UsersToDelete", "users_to_delete");
+        tableNames.put("UserPreference", "user_preferences");
 
         if (DbConnectionFactory.isPostgres() || DbConnectionFactory.isOracle()) {
             sequences = new HashMap<String, String>();
