@@ -242,13 +242,24 @@ public class DependencyManagerTest {
                 .withContentType(contentTypeForContent, "Testing")
                 .nextPersisted();
 
+        final Container container_2 = new ContainerDataGen()
+                .nextPersisted();
+
         final TemplateLayout templateLayout = new TemplateLayoutDataGen()
                 .withContainer(container, ContainerUUID.UUID_START_VALUE)
+                .withContainer(container_2, ContainerUUID.UUID_START_VALUE)
                 .next();
+
+        final Folder folderTheme = new FolderDataGen().nextPersisted();
+        final Contentlet theme = new ThemeDataGen()
+                .site(host)
+                .themesFolder(folderTheme)
+                .nextPersisted();
 
         final Template template = new TemplateDataGen()
                 .drawedBody(templateLayout)
                 .host(host)
+                .theme(theme)
                 .nextPersisted();
 
         final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
@@ -266,19 +277,26 @@ public class DependencyManagerTest {
         DependencyManager dependencyManager = new DependencyManager(DependencyManagerTest.user, config);
         dependencyManager.setDependencies();
 
-        assertEquals(2, dependencyManager.getContentTypes().size());
+        assertEquals(4, dependencyManager.getContentTypes().size());
         assertTrue(dependencyManager.getContentTypes().contains(contentType.id()));
         assertTrue(dependencyManager.getContentTypes().contains(contentlet.getContentType().id()));
+        assertTrue(dependencyManager.getContentTypes().contains(theme.getContentType().id()));
+        assertTrue(dependencyManager.getContentTypes().contains(htmlPageAsset.getContentType().id()));
 
-        assertEquals(2, dependencyManager.getContents().size());
+        assertEquals(3, dependencyManager.getContents().size());
         assertTrue(dependencyManager.getContents().contains(htmlPageAsset.getIdentifier()));
         assertTrue(dependencyManager.getContents().contains(contentlet.getIdentifier()));
+        assertTrue(dependencyManager.getContents().contains(theme.getIdentifier()));
 
         assertEquals(1, dependencyManager.getTemplates().size());
         assertTrue(dependencyManager.getTemplates().contains(template.getIdentifier()));
 
-        assertEquals(1, dependencyManager.getContainers().size());
+        assertEquals(2, dependencyManager.getContainers().size());
         assertTrue(dependencyManager.getContainers().contains(container.getIdentifier()));
+        assertTrue(dependencyManager.getContainers().contains(container_2.getIdentifier()));
+
+        assertEquals(3, dependencyManager.getFolders().size());
+        assertTrue(dependencyManager.getFolders().contains(theme.getFolder()));
     }
 
     private Contentlet createContentlet(
