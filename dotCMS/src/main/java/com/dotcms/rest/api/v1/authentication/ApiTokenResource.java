@@ -2,10 +2,14 @@ package com.dotcms.rest.api.v1.authentication;
 
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
+import com.dotcms.publisher.business.PublishAuditStatus;
+import com.dotcms.publisher.pusher.AuthCredentialPushPublishUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.RestClientBuilder;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
@@ -14,6 +18,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
@@ -31,6 +36,9 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -54,6 +62,7 @@ public class ApiTokenResource implements Serializable {
 
     private final ApiTokenAPI tokenApi;
     private final WebResource webResource;
+    private Client restClient;
 
     /**
      * Default constructor.
@@ -196,7 +205,61 @@ public class ApiTokenResource implements Serializable {
         return Response.ok(new ResponseEntityView(map("token", token,"jwt", jwt), EMPTY_MAP)).build(); // 200
     }
 
-    
+    /**
+     * Request a Token to a remote server
+     * @param request
+     * @param response
+     * @param formData - json data, expecting
+     * <pre>
+     * {
+     *    token: {
+     *      netmask:'192.168.1.0/24',
+     *      expirationDays:1000,
+     *      userId:'dotcms.org.1'
+     *      claims: {
+     *          label: 'Push Publish'
+     *      }
+     *    },
+     * 	  remote: {
+     * 	    host: localhost,
+     * 		port: 8090
+     * 	  },
+     * 	  auth: {
+     * 	    login: admin@dotcms.com,
+     * 		pasword: [password in Base64]
+     * 	  }
+     * }
+     * </pre>
+     * @return Response
+     */
+    @PUT
+    @Path("/")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response getRemoteToken(@Context final HttpServletRequest request,
+                                        @Context final HttpServletResponse response,
+                                        final RemoteAPITokenFrom formData) {
+
+        final String protocol = request.getProtocol();
+        final Client client = getRestClient();
+
+        final String remoteURL = String.format("%s:://%s:%d/v1/apitoken", protocol, formData.host(), formData.port());
+        final WebTarget webTarget = client.target(remoteURL);
+
+        return webTarget.request(MediaType.APPLICATION_JSON)
+                .header("DOTAUTH",  formData.login() + ":" + formData.password())
+                .put(Entity.entity(formData.getTokenInfo(), MediaType.APPLICATION_JSON));
+    }
+
+    private Client getRestClient() {
+        if (null == this.restClient) {
+            this.restClient = RestClientBuilder.newClient();
+        }
+        return this.restClient;
+    }
+
     /**
      * Get a JWT issued from a token
      * @param request

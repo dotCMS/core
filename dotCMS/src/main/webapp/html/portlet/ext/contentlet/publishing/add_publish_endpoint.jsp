@@ -1,4 +1,5 @@
 <%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
+<%@ include file="/html/token/init.jsp" %>
 <%@page import="com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher"%>
 <%@page import="com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher"%>
 <%@page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
@@ -6,6 +7,11 @@
 <%@page import="com.dotmarketing.cms.factories.PublicEncryptionFactory"%>
 <%@page import="com.dotcms.publisher.endpoint.bean.factory.PublishingEndPointFactory"%>
 <%@ page import="com.dotcms.publisher.pusher.PushPublisher" %>
+<%@page import="java.time.LocalDate"%>
+<%@page import="java.time.temporal.ChronoUnit"%>
+<%@page import="java.time.Instant"%>
+<%@page import="java.time.format.DateTimeFormatter"%>
+
 
 <%
 	String identifier = request.getParameter("id");
@@ -19,7 +25,7 @@
 	Environment currentEnvironment = APILocator.getEnvironmentAPI().findEnvironmentById(environmentId);
 
 	if(currentEndpoint ==null){
-	    PublishingEndPointFactory publishingEndPointFactory = new PublishingEndPointFactory();
+		PublishingEndPointFactory publishingEndPointFactory = new PublishingEndPointFactory();
 		currentEndpoint = publishingEndPointFactory.getPublishingEndPoint(PushPublisher.PROTOCOL_HTTP);
 		currentEndpoint.setEnabled(true);
 		currentEndpoint.setPort("");
@@ -53,7 +59,7 @@
 		else{
 			dijit.byId("port").setAttribute('required',false);
 		}
-		
+
 		if (form.validate()) {
 
 			dijit.byId("save").setAttribute('disabled',true);
@@ -78,7 +84,7 @@
 				},
 				error: function(error){
 					dijit.byId("save").setAttribute('disabled',false);
-					
+
 					alert(error);
 				}
 			}
@@ -106,12 +112,12 @@
 		if(sending=='false'){
 			dojo.style("addressFromSpan", "display", "none");
 			dojo.style("addressToSpan", "display", "");
-			
+
 			dojo.style("sendGroupRow", "display", "flex");
 		}
 		else{
-            dojo.style("addressFromSpan", "display", "");
-            dojo.style("addressToSpan", "display", "none");
+			dojo.style("addressFromSpan", "display", "");
+			dojo.style("addressToSpan", "display", "none");
 			dojo.style("protocolRow", "display", "none");
 			dojo.style("portSpan", "display", "none");
 			dojo.style("addressRow", "display", "");
@@ -120,28 +126,28 @@
 		}
 	}
 
-    function setAddressRow(changedType) {
+	function setAddressRow(changedType) {
 
-        if ((currentProtocol === "awss3" || currentProtocol === "static")
-            && isPlatformLicenseLevel()) {
+		if ((currentProtocol === "awss3" || currentProtocol === "static")
+				&& isPlatformLicenseLevel()) {
 
-            if (changedType) {
-                dijit.byId("address").set("value", "static.dotcms.com");
-                dijit.byId("port").set("value", "80");
+			if (changedType) {
+				dijit.byId("address").set("value", "static.dotcms.com");
+				dijit.byId("port").set("value", "80");
 
-                dojo.byId("addressRow").hide();
-            }
-        } else {
-            if (changedType) {
-                if(dijit.byId("address")){
-                    dijit.byId("address").set("value", "");
-                }
-                if(dojo.byId("addressRow")){
-                    dojo.byId("addressRow").show();
-                }
-            }
-        }
-    }
+				dojo.byId("addressRow").hide();
+			}
+		} else {
+			if (changedType) {
+				if(dijit.byId("address")){
+					dijit.byId("address").set("value", "");
+				}
+				if(dojo.byId("addressRow")){
+					dojo.byId("addressRow").show();
+				}
+			}
+		}
+	}
 
 	function setAuthPropertiesRow(changedType) {
 
@@ -153,32 +159,32 @@
 			if (dijit.byId("authKey").value.trim().length == 0 || changedType) {
 
 				dijit.byId("authKey").set("value",
-					"<%=AWSS3Publisher.DOTCMS_PUSH_AWS_S3_TOKEN%>=myToken\n" +
-					"<%=AWSS3Publisher.DOTCMS_PUSH_AWS_S3_SECRET%>=mySecret\n" +
-					"<%=AWSS3Publisher.DOTCMS_PUSH_AWS_S3_BUCKET_ID%>=dotcms-bucket-{hostname}-{languageIso}\n" +
-					"<%=AWSS3Publisher.DOTCMS_PUSH_AWS_S3_BUCKET_REGION%>=us-west-2"
+						"<%=AWSS3Publisher.DOTCMS_PUSH_AWS_S3_TOKEN%>=myToken\n" +
+						"<%=AWSS3Publisher.DOTCMS_PUSH_AWS_S3_SECRET%>=mySecret\n" +
+						"<%=AWSS3Publisher.DOTCMS_PUSH_AWS_S3_BUCKET_ID%>=dotcms-bucket-{hostname}-{languageIso}\n" +
+						"<%=AWSS3Publisher.DOTCMS_PUSH_AWS_S3_BUCKET_REGION%>=us-west-2"
 				);
 			}
 		} else if(currentProtocol === "static" && isPlatformLicenseLevel()){
-            dojo.style("authKeyHttpSpan", "display", "none");
-            dojo.style("authKeyStaticSpan", "display", "");
+			dojo.style("authKeyHttpSpan", "display", "none");
+			dojo.style("authKeyStaticSpan", "display", "");
 
-            if (dijit.byId("authKey").value.trim().length == 0 || changedType) {
+			if (dijit.byId("authKey").value.trim().length == 0 || changedType) {
 
-                dijit.byId("authKey").set("value",
-                    "<%=StaticPublisher.DOTCMS_STATIC_PUBLISH_TO%>=dotcms-static-{hostname}-{languageIso}"
-                );
-            }
-        } else {
+				dijit.byId("authKey").set("value",
+						"<%=StaticPublisher.DOTCMS_STATIC_PUBLISH_TO%>=dotcms-static-{hostname}-{languageIso}"
+				);
+			}
+		} else {
 
 			dojo.style("authKeyHttpSpan", "display", "");
 			dojo.style("authKeyStaticSpan", "display", "none");
 
-            if (changedType || !isPlatformLicenseLevel()) {
-                if(dijit.byId("authKey")){
-                    dijit.byId("authKey").set("value", "");
-                }
-            }
+			if (changedType || !isPlatformLicenseLevel()) {
+				if(dijit.byId("authKey")){
+					dijit.byId("authKey").set("value", "");
+				}
+			}
 		}
 
 		if (changedType) {
@@ -190,29 +196,109 @@
 	function onChangeProtocolTypeSelectCheck() {
 		currentProtocol = dijit.byId("protocol").value;
 
-		setAddressRow(true);		
+		setAddressRow(true);
 		setAuthPropertiesRow(true);
 	}
 
 	function isPlatformLicenseLevel() {
 		<% if(LicenseUtil.getLevel()>LicenseLevel.PRIME.level){ %>
-			return true;
+		return true;
 		<%} else { %>
-			return false;
+		return false;
 		<%} %>
+	}
+
+	function showGetToken(show){
+
+		if (show){
+			dojo.byId("authPropertiesRow").hide();
+			dojo.byId("getTokenSpan").show();
+			dojo.byId("showGetTokenSpan").hide();
+		} else {
+			dojo.byId("authPropertiesRow").show();
+			dojo.byId("getTokenSpan").hide();
+			dojo.byId("showGetTokenSpan").show();
+		}
+	}
+
+	function shouldEnabledGeToken(){
+		address = document.getElementById('address').value;
+		port = document.getElementById('port').value;
+
+		if (address && port){
+			dojo.byId("showGetTokenSpan").show();
+		} else {
+			dojo.byId("showGetTokenSpan").hide();
+		}
+	}
+
+	function setToken(token){
+		authKey = dojo.byId("authKey");
+		authKey.value = token;
+
+		showGetToken(false);
+	}
+
+	function showErrorGettingToken(e){
+		alert(e);
+	}
+
+	function getToken(){
+
+		if (dijit.byId('tokenForm').validate()) {
+			var xhrArgs = {
+				url : "/api/v1/apitoken/_remote",
+				handleAs: "json",
+				data : {
+					token: {
+						...dijit.byId('tokenForm').value,
+						...{
+							claims: {"label" : 'Push Publish'},
+							userId: currentUser.id
+						}
+					},
+					remote: {
+						host: dijit.byId('address').value,
+						port: dijit.byId('port').value
+					},
+					auth: {
+						login: dijit.byId('login').value,
+						pasword: window.btoa(dijit.byId('password').value)d
+					}
+				},
+				headers: {
+					"Content-Type": "application/json"
+				},
+				load : function(data){
+					setToken(data.entity.jwt);
+				},
+				error : function(error) {
+					console.error("Error requesting a new APIKey", error);
+
+				}
+			};
+
+			dojo.xhrPut(xhrArgs);
+
+
+			requestNewAPIToken({
+				...dijit.byId('tokenForm').value,
+				...{nameLabel: 'Push Publish'}
+			}, setToken, showErrorGettingToken, serverConfig)
+		}
 	}
 
 	dojo.ready( function(){
 
 		<% if( ! com.dotmarketing.util.UtilMethods.isSet( currentEndpoint.getProtocol() ) ) { %>
-			dojo.byId("addressRow").hide();
-			dojo.byId("authPropertiesRow").hide();
+		dojo.byId("addressRow").hide();
+		dojo.byId("authPropertiesRow").hide();
 		<% } %>
 
 		if ((currentProtocol === "awss3" || currentProtocol === "static")
-            && isPlatformLicenseLevel()) {
+				&& isPlatformLicenseLevel()) {
 
-		    dojo.byId("addressRow").hide();
+			dojo.byId("addressRow").hide();
 		}
 
 		setAddressRow(false);
@@ -224,21 +310,21 @@
 </script>
 
 
-<div style="margin:auto;">
+<div id="save_enviroment_dialog" style="margin:auto;">
 	<div dojoType="dijit.form.Form"  name="formSaveEndpoint"  id="formSaveEndpoint" onsubmit="return false;">
 		<input type="hidden" name="sending" id="sending" value="<%=isSender%>">
 		<input type="hidden" name="identifier" value="<%=UtilMethods.webifyString(String.valueOf(currentEndpoint.getId())) %>">
 		<div class="form-horizontal">
 			<%if(currentEnvironment!=null) { %>
-				<dl id="sendGroupRow">
-					<dt>
-						<%= LanguageUtil.get(pageContext, "publisher_Environment") %>:
-					</dt>
-					<dd>
-						<%=currentEnvironment.getName() %>
-						<input type="hidden" id="environmentId" name="environmentId" value="<%=currentEnvironment.getId() %>">
-					</dd>
-				</dl>
+			<dl id="sendGroupRow">
+				<dt>
+					<%= LanguageUtil.get(pageContext, "publisher_Environment") %>:
+				</dt>
+				<dd>
+					<%=currentEnvironment.getName() %>
+					<input type="hidden" id="environmentId" name="environmentId" value="<%=currentEnvironment.getId() %>">
+				</dd>
+			</dl>
 			<%} %>
 			<dl>
 				<dt>
@@ -263,15 +349,15 @@
 				<dd>
 					<select dojoType="dijit.form.Select" name="protocol" id="protocol" onchange="onChangeProtocolTypeSelectCheck();">
 						<% if( ! com.dotmarketing.util.UtilMethods.isSet( currentEndpoint.getProtocol() ) ) { %>
-							<option disabled="disabled" selected="selected" value=""><%= LanguageUtil.get(pageContext, "publisher_Endpoint_type_placeholder") %></option>
+						<option disabled="disabled" selected="selected" value=""><%= LanguageUtil.get(pageContext, "publisher_Endpoint_type_placeholder") %></option>
 						<%} %>
 						<option value="http" <%=("http".equals(currentEndpoint.getProtocol())) ? "selected=true" : "" %>><%= LanguageUtil.get(pageContext, "publisher_Endpoint_type_http") %></option>
 						<option value="https" <%=("https".equals(currentEndpoint.getProtocol())) ? "selected=true" : "" %>><%= LanguageUtil.get(pageContext, "publisher_Endpoint_type_https") %></option>
 						<%if(LicenseUtil.getLevel() >= LicenseLevel.PLATFORM.level){ %>
-							<option value="awss3" <%=("awss3".equals(currentEndpoint.getProtocol())) ? "selected=true" : "" %>><%= LanguageUtil.get(pageContext, "publisher_Endpoint_type_awss3") %></option>
-							<option value="static" <%=("static".equals(currentEndpoint.getProtocol())) ? "selected=true" : "" %>><%= LanguageUtil.get(pageContext, "publisher_Endpoint_type_static") %></option>
+						<option value="awss3" <%=("awss3".equals(currentEndpoint.getProtocol())) ? "selected=true" : "" %>><%= LanguageUtil.get(pageContext, "publisher_Endpoint_type_awss3") %></option>
+						<option value="static" <%=("static".equals(currentEndpoint.getProtocol())) ? "selected=true" : "" %>><%= LanguageUtil.get(pageContext, "publisher_Endpoint_type_static") %></option>
 						<%}else{ %>
-							<option value="" disabled=true><%= LanguageUtil.get(pageContext, "publisher_Endpoint_type_awss3_requires_platform_license") %></option>
+						<option value="" disabled=true><%= LanguageUtil.get(pageContext, "publisher_Endpoint_type_awss3_requires_platform_license") %></option>
 						<%} %>
 					</select>
 				</dd>
@@ -294,13 +380,15 @@
 							   style="width:300px"
 							   value="<%=UtilMethods.webifyString(currentEndpoint.getAddress()) %>"
 							   promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Address_Prompt_Message") %>"
+							   onKeyUp="shouldEnabledGeToken()"
 						/>
 						<span id="portSpan">
 							<label for="port"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Port") %>:</label>
 							<input type="text" dojoType="dijit.form.ValidationTextBox"
 								   name="port" id="port" style="width:60px"
 								   value="<%=UtilMethods.webifyString(currentEndpoint.getPort()) %>"
-								   promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Port_Prompt_Message") %>" regExp="^[0-9]+$" invalidMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Port_Invalid_Message") %>" />
+								   promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Port_Prompt_Message") %>" regExp="^[0-9]+$" invalidMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Port_Invalid_Message") %>"
+								   onKeyUp="shouldEnabledGeToken()"/>
 						</span>
 					</div>
 					<div id="addressHelpText" class="hint-text">e.g. 10.0.1.10 or server2.myhost.com</div>
@@ -321,6 +409,70 @@
 				</dd>
 			</dl>
 
+			<dl id="getTokenSpan" style="display:none;">
+
+				<dt></dt>
+				<dd>
+					<div dojoType="dijit.form.Form" id="tokenForm" onsubmit="return false;">
+						<table class="listingTable" >
+
+							<tr>
+								<td>
+									<h3>Request New Token</h3>
+								</td>
+							</tr>
+
+							<tr>
+								<td>
+									<label for="login">Login</label>
+								</td>
+								<td>
+									<input dojoType="dijit.form.TextBox" type="text"
+										   name="login" id="login"/>
+								</td>
+							</tr>
+
+							<tr>
+								<td>
+									<label for="password">Password</label>
+								</td>
+								<td>
+									<input dojoType="dijit.form.TextBox" type="password"
+										   name="password" id="password"/>
+								</td>
+							</tr>
+
+							<tr>
+								<td>
+									<label for="expiresDate"><%=LanguageUtil.get(pageContext, "api.token.request.expires.date")%>:</label>
+								</td>
+								<td>
+									<input dojoType="dijit.form.DateTextBox" type="text"
+										   name="expiresDate" id="expiresDate"
+										   value='<%=DateTimeFormatter.ofPattern("uuuu-MM-dd").format(LocalDate.now().plus(3, ChronoUnit.YEARS))%>'/>
+								</td>
+							</tr>
+
+							<tr>
+								<td><label for="netmask"><%=LanguageUtil.get(pageContext, "api.token.allowed.network")%>:
+								</label></td>
+
+								<td><input dojoType="dijit.form.TextBox" type="text"
+										   name="network" id="network" value="0.0.0.0/0"></td>
+							</tr>
+						</table>
+
+						<div class="buttonRow">
+							<button dojoType="dijit.form.Button" type="button"
+									class="dijitButtonFlat"
+									onClick="showGetToken(false)"><%=LanguageUtil.get(pageContext, "cancel")%></button>
+							&nbsp;
+							<button id="ok_button" dojoType="dijit.form.Button" onClick="getToken();"><%=LanguageUtil.get(pageContext, "ok")%></button>
+						</div>
+					</div>
+				</dd>
+			</dl>
+
 			<dl>
 				<dt>
 					<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Enabled") %>:
@@ -330,9 +482,19 @@
 				</dd>
 			</dl>
 		</div>
-		<div class="buttonRow-right">
-			<button dojoType="dijit.form.Button" onClick="backToEndpointsList(true)" id="closeSave" class="dijitButtonFlat"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
-			<button dojoType="dijit.form.Button" type="submit" id="save" onclick="saveEndpoint()"><%= LanguageUtil.get(pageContext, "Save") %></button>
+		<div>
+			<span id= "showGetTokenSpan" style="float: left;display:none;">
+				<button dojoType="dijit.form.Button" onClick="showGetToken(true)" id="getToken" class="dijitButtonFlat">Get Token</button>
+			</span>
+			<span style="float: right;">
+
+				<button dojoType="dijit.form.Button" onClick="backToEndpointsList(true)" id="closeSave" class="dijitButtonFlat"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
+				<button dojoType="dijit.form.Button" type="submit" id="save" onclick="saveEndpoint()"><%= LanguageUtil.get(pageContext, "Save") %></button>
+			</span>
 		</div>
 	</div>
 </div>
+
+<script>
+	shouldEnabledGeToken();
+</script>
