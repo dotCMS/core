@@ -185,6 +185,13 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 		Logger.debug(this, ()-> "Publishing the template: " + template.getIdentifier());
 
+		//Check if the Template is locked, and if is locked by a diff user that is executing the action
+		if(template.isLocked() && !this.versionableAPI.get().getLockedBy(template).get().equals(user.getUserId())){
+			Logger.error(this, "The Template: " + template.getName() + " can not be published. "
+					+ "Because it is locked");
+			throw new DotStateException("Template can not be published because is locked");
+		}
+
 		//Check Publish Permissions over Template
 		if(!this.permissionAPI.doesUserHavePermission(template, PERMISSION_PUBLISH, user)){
 			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to Publish the Template");
@@ -235,6 +242,13 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 			throws DotSecurityException, DotDataException {
 
 		Logger.debug(this, ()-> "Unpublishing the template: " + template.getIdentifier());
+
+		//Check if the Template is locked, and if is locked by a diff user that is executing the action
+		if(template.isLocked() && !this.versionableAPI.get().getLockedBy(template).get().equals(user.getUserId())){
+			Logger.error(this, "The Template: " + template.getName() + " can not be unpublished. "
+					+ "Because it is locked");
+			throw new DotStateException("Template can not be unpublished because is locked");
+		}
 
 		//Check Edit Permissions over Template
 		if(!this.permissionAPI.doesUserHavePermission(template, PERMISSION_EDIT, user)){
@@ -307,6 +321,13 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 		Logger.debug(this, ()-> "Doing archive of the template: " + template.getIdentifier());
 
+		//Check if the Template is locked, and if is locked by a diff user that is executing the action
+		if(template.isLocked() && !this.versionableAPI.get().getLockedBy(template).get().equals(user.getUserId())){
+			Logger.error(this, "The Template: " + template.getName() + " can not be archived. "
+					+ "Because it is locked");
+			throw new DotStateException("Template can not be archive because is locked");
+		}
+
 		//Check Edit Permissions over Template
 		if(!this.permissionAPI.doesUserHavePermission(template, PERMISSION_EDIT, user)){
 			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to Edit the Template");
@@ -348,6 +369,14 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	public void unarchive (final Template template, final User user)
 			throws DotDataException, DotSecurityException {
 		Logger.debug(this, ()-> "Doing unarchive of the template: " + template.getIdentifier());
+
+		//Check if the Template is locked, and if is locked by a diff user that is executing the action
+		if(template.isLocked() && !this.versionableAPI.get().getLockedBy(template).get().equals(user.getUserId())){
+			Logger.error(this, "The Template: " + template.getName() + " can not be unarchived. "
+					+ "Because it is locked");
+			throw new DotStateException("Template can not be unarchive because is locked");
+		}
+
 		//Check Edit Permissions over Template
 		if(!this.permissionAPI.doesUserHavePermission(template, PERMISSION_EDIT, user)){
 			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to Edit the Template");
@@ -374,6 +403,13 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 			throws DotDataException, DotSecurityException {
 
 		Logger.debug(this, ()-> "Doing delete of the template: " + template.getIdentifier());
+
+		//Check if the Template is locked, and if is locked by a diff user that is executing the action
+		if(template.isLocked() && !this.versionableAPI.get().getLockedBy(template).get().equals(user.getUserId())){
+			Logger.error(this, "The Template: " + template.getName() + " can not be deleted. "
+					+ "Because it is locked");
+			throw new DotStateException("Template can not be deleted because is locked");
+		}
 
 		//Check Edit Permissions over Template
 		if(!this.permissionAPI.doesUserHavePermission(template, PERMISSION_EDIT, user)){
