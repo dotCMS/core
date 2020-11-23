@@ -694,6 +694,10 @@ public class DependencyManager {
 			for (final String pageId : idsToWork) {
 				final Identifier identifier = idenAPI.find(pageId);
 
+				if (identifier == null || !UtilMethods.isSet(identifier.getId())){
+					continue;
+				}
+
 				// Host dependency
 				if (!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.SITE.getType())) {
 					final Host host = APILocator.getHostAPI().find(identifier.getHostId(), user, false);
@@ -1312,7 +1316,7 @@ public class DependencyManager {
 
 					}
 					//Process the pages we found
-					setHTMLPagesDependencies(pagesToProcess,publisherFilter);
+					setHTMLPagesDependencies(pagesToProcess, publisherFilter, true);
 				}
 			} catch (Exception e) {
 				Logger.debug(this, e.toString());
