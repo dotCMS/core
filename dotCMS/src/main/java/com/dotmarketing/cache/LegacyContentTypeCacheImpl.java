@@ -93,7 +93,7 @@ public class LegacyContentTypeCacheImpl extends ContentTypeCache {
   }
 
   /**
-   * @see getStructureByName(String)
+   * @see getStructureByType(String)
    * 
    * @param type Type of the structure
    * @return The structure from cache
@@ -172,6 +172,10 @@ public class LegacyContentTypeCacheImpl extends ContentTypeCache {
 
   }
 
+  public void clearContainerStructures() {
+
+    cache.flushGroup(containerStructureGroup);
+  }
 
 
 }
