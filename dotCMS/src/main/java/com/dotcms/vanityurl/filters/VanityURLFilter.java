@@ -79,7 +79,7 @@ public class VanityURLFilter implements Filter {
           
           if (cachedVanity.isPresent()) {
               request.setAttribute(VANITY_URL_OBJECT, cachedVanity.get());
-              final VanityUrlResult vanityUrlResult = cachedVanity.get().handle( uri, response);
+              final VanityUrlResult vanityUrlResult = cachedVanity.get().handle( uri, request, response);
               // If the handler already resolved the requested URI we stop the processing here
               if (vanityUrlResult.isResolved()) {
                 return;

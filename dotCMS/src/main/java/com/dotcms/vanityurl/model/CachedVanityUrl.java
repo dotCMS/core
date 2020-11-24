@@ -9,6 +9,7 @@ import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.Serializable;
 import java.util.regex.Matcher;
@@ -125,17 +126,21 @@ public class CachedVanityUrl implements Serializable, Comparable<CachedVanityUrl
      * @return The appropriate result based on the selected action for the incoming URL.
      */
     public VanityUrlResult handle(final String uriIn,
+                    final HttpServletRequest request,
                     final HttpServletResponse response) {
         
         final Tuple2<String,String> rewritten = processForward(uriIn);
         final String rewrite = rewritten._1;
-        final String queryString = rewritten._2;
+        String queryString = rewritten._2;
 
+        if(null == queryString && null != request){
+           queryString = request.getQueryString();
+        }
 
         // if the vanity is a redirect
         if (this.response==301 || this.response==302 ) {
             response.setStatus(this.response);
-            response.setHeader("Location", rewrite);
+            response.setHeader("Location", rewrite + (null != queryString ? "?" + queryString : "" ));
             return new VanityUrlResult(rewrite, queryString, true);
         }
         
