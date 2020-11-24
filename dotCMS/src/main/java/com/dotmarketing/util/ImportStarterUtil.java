@@ -132,10 +132,11 @@ public class ImportStarterUtil {
             sequences = new HashMap<String, String>();
             sequences.put("permission", "permission_seq");
             sequences.put("users_to_delete", "user_to_delete_seq");
+            sequences.put("user_preferences", "user_preferences_seq");
             tableIDColumns = new HashMap<String, String>();
             tableIDColumns.put("permission", "id");
             tableIDColumns.put("users_to_delete", "id");
-
+            tableIDColumns.put("user_preferences", "id");
         }
     }
 
