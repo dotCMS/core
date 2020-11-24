@@ -15,6 +15,7 @@ import com.dotcms.publisher.bundle.business.BundleAPI;
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publishing.DotBundleException;
+import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -29,9 +30,11 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships.Content
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
 import java.util.Date;
+import java.util.Map;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -83,6 +86,9 @@ public class DependencyManagerTest {
         contentletAPI = APILocator.getContentletAPI();
         contentTypeFieldAPI = APILocator.getContentTypeFieldAPI();
         relationshipAPI = APILocator.getRelationshipAPI();
+
+        createFilter();
+
     }
 
     /**
@@ -572,6 +578,14 @@ public class DependencyManagerTest {
 
         contentTypeFieldAPI.save(field, user);
         return contentType;
+    }
+
+    private static void createFilter(){
+        final Map<String,Object> filtersMap =
+                ImmutableMap.of("dependencies",true,"relationships",true,"forcePush",false);
+        final FilterDescriptor filterDescriptor =
+                new FilterDescriptor("filterKey.yml","Filter Test Title",filtersMap,true,"Reviewer,dotcms.org.2789");
+        APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor);
     }
 
 }
