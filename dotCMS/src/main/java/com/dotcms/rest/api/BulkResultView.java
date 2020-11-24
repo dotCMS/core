@@ -5,13 +5,13 @@ import java.util.List;
 public class BulkResultView {
     private final Long successCount;
     private final Long skippedCount;
-    private final List<FailedResultView> failed;
+    private final List<FailedResultView> fails;
 
 
     public BulkResultView(final Long successCount, final Long skippedCount, final List<FailedResultView> fails) {
         this.successCount = successCount;
         this.skippedCount = skippedCount;
-        this.failed = fails;
+        this.fails = fails;
     }
 
     public Long getSuccessCount() {
@@ -22,7 +22,7 @@ public class BulkResultView {
         return skippedCount;
     }
 
-    public List<FailedResultView> getFailed() {
-        return failed;
+    public List<FailedResultView> getFails() {
+        return fails;
     }
 }

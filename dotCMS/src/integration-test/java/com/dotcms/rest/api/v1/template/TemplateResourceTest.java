@@ -114,7 +114,7 @@ public class TemplateResourceTest {
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFailed().size());
+        Assert.assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -179,7 +179,7 @@ public class TemplateResourceTest {
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFailed().size());
+        Assert.assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -217,7 +217,7 @@ public class TemplateResourceTest {
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFailed().size());
+        Assert.assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -259,7 +259,7 @@ public class TemplateResourceTest {
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFailed().size());
+        Assert.assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -292,7 +292,7 @@ public class TemplateResourceTest {
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFailed().size());
+        Assert.assertEquals(0,results.getFails().size());
     }
 
     /**
@@ -349,7 +349,7 @@ public class TemplateResourceTest {
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFailed().size());
+        Assert.assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -375,7 +375,7 @@ public class TemplateResourceTest {
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFailed().size());
+        Assert.assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -404,7 +404,7 @@ public class TemplateResourceTest {
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFailed().size());
+        Assert.assertEquals(0,results.getFails().size());
         //Call Resource to UnArchive
         responseResource = resource.unarchive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Arrays.asList(template.getIdentifier(),uuid)));
@@ -413,7 +413,7 @@ public class TemplateResourceTest {
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFailed().size());
+        Assert.assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -440,7 +440,7 @@ public class TemplateResourceTest {
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFailed().size());
+        Assert.assertEquals(0,results.getFails().size());
 
         //Create the limited user
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
@@ -462,7 +462,7 @@ public class TemplateResourceTest {
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFailed().size());
+        Assert.assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -504,7 +504,7 @@ public class TemplateResourceTest {
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFailed().size());
+        Assert.assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -540,7 +540,7 @@ public class TemplateResourceTest {
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFailed().size());
+        Assert.assertEquals(0,results.getFails().size());
     }
 
     /**
@@ -566,7 +566,7 @@ public class TemplateResourceTest {
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFailed().size());
+        Assert.assertEquals(0,results.getFails().size());
 
         //Call Resource to Delete
         responseResource = resource.delete(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
@@ -576,7 +576,7 @@ public class TemplateResourceTest {
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFailed().size());
+        Assert.assertEquals(0,results.getFails().size());
     }
 
     /**
@@ -601,7 +601,7 @@ public class TemplateResourceTest {
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFailed().size());
+        Assert.assertEquals(1,results.getFails().size());
 
     }
 
@@ -631,7 +631,7 @@ public class TemplateResourceTest {
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFailed().size());
+        Assert.assertEquals(0,results.getFails().size());
 
         //Call Resource to Delete
         responseResource = resource.delete(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
@@ -641,7 +641,7 @@ public class TemplateResourceTest {
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFailed().size());
+        Assert.assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -668,7 +668,7 @@ public class TemplateResourceTest {
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFailed().size());
+        Assert.assertEquals(0,results.getFails().size());
 
         //Create the limited user
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
@@ -690,7 +690,7 @@ public class TemplateResourceTest {
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFailed().size());
+        Assert.assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -719,7 +719,7 @@ public class TemplateResourceTest {
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFailed().size());
+        Assert.assertEquals(0,results.getFails().size());
         //Call Resource to Delete
         responseResource = resource.delete(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
                 Collections.singleton(template.getIdentifier())));
@@ -728,7 +728,7 @@ public class TemplateResourceTest {
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFailed().size());
+        Assert.assertEquals(1,results.getFails().size());
 
     }
 
@@ -771,7 +771,7 @@ public class TemplateResourceTest {
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFailed().size());
+        Assert.assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -807,7 +807,7 @@ public class TemplateResourceTest {
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFailed().size());
+        Assert.assertEquals(0,results.getFails().size());
     }
 
     /**
@@ -832,7 +832,7 @@ public class TemplateResourceTest {
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFailed().size());
+        Assert.assertEquals(0,results.getFails().size());
     }
 
     /**
@@ -859,7 +859,7 @@ public class TemplateResourceTest {
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFailed().size());
+        Assert.assertEquals(0,results.getFails().size());
 
         //Call Resource again
         responseResource = resource.publish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
@@ -869,7 +869,7 @@ public class TemplateResourceTest {
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFailed().size());
+        Assert.assertEquals(0,results.getFails().size());
     }
 
     /**
@@ -896,7 +896,7 @@ public class TemplateResourceTest {
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFailed().size());
+        Assert.assertEquals(0,results.getFails().size());
 
         //Call Resource
         responseResource = resource.publish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
@@ -906,7 +906,7 @@ public class TemplateResourceTest {
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFailed().size());
+        Assert.assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -935,7 +935,7 @@ public class TemplateResourceTest {
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFailed().size());
+        Assert.assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -973,7 +973,7 @@ public class TemplateResourceTest {
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFailed().size());
+        Assert.assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -1015,7 +1015,7 @@ public class TemplateResourceTest {
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFailed().size());
+        Assert.assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -1048,7 +1048,7 @@ public class TemplateResourceTest {
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFailed().size());
+        Assert.assertEquals(0,results.getFails().size());
     }
 
     /**
@@ -1072,7 +1072,7 @@ public class TemplateResourceTest {
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFailed().size());
+        Assert.assertEquals(0,results.getFails().size());
     }
 
     /**
@@ -1097,7 +1097,7 @@ public class TemplateResourceTest {
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFailed().size());
+        Assert.assertEquals(0,results.getFails().size());
 
         //Call Resource again
         responseResource = resource.unpublish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
@@ -1107,7 +1107,7 @@ public class TemplateResourceTest {
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFailed().size());
+        Assert.assertEquals(0,results.getFails().size());
     }
 
     /**
@@ -1134,7 +1134,7 @@ public class TemplateResourceTest {
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFailed().size());
+        Assert.assertEquals(0,results.getFails().size());
 
         //Call Resource
         responseResource = resource.unpublish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
@@ -1144,7 +1144,7 @@ public class TemplateResourceTest {
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFailed().size());
+        Assert.assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -1171,7 +1171,7 @@ public class TemplateResourceTest {
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFailed().size());
+        Assert.assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -1208,7 +1208,7 @@ public class TemplateResourceTest {
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFailed().size());
+        Assert.assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -1250,7 +1250,7 @@ public class TemplateResourceTest {
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFailed().size());
+        Assert.assertEquals(1,results.getFails().size());
     }
 
     /**
@@ -1283,7 +1283,7 @@ public class TemplateResourceTest {
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFailed().size());
+        Assert.assertEquals(0,results.getFails().size());
     }
 
     /**

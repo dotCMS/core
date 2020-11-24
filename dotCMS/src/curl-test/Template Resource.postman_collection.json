@@ -108,7 +108,7 @@
 									"});",
 									"",
 									"pm.test(\"Failed To Archive Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(0);",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -261,7 +261,7 @@
 									"});",
 									"",
 									"pm.test(\"Failed To Archive Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(0);",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -414,7 +414,7 @@
 									"});",
 									"",
 									"pm.test(\"Failed To Archive Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(1);",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(1);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -578,7 +578,7 @@
 									"});",
 									"",
 									"pm.test(\"Failed To Unarchive Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(1);",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(1);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -656,7 +656,7 @@
 									"});",
 									"",
 									"pm.test(\"Failed To Unarchive Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(1);",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(1);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -734,7 +734,7 @@
 									"});",
 									"",
 									"pm.test(\"Failed To Archive Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(0);",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -887,7 +887,7 @@
 									"});",
 									"",
 									"pm.test(\"Failed To Unarchive Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(0);",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -1126,7 +1126,7 @@
 									"});",
 									"",
 									"pm.test(\"Failed To Delete Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(1);",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(1);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -1202,7 +1202,7 @@
 									"});",
 									"",
 									"pm.test(\"Failed To Archive Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(0);",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -1355,7 +1355,7 @@
 									"});",
 									"",
 									"pm.test(\"Failed To Delete Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(0);",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -1431,7 +1431,7 @@
 									"});",
 									"",
 									"pm.test(\"Failed To Delete Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(1);",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(1);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -1593,7 +1593,7 @@
 									"});",
 									"",
 									"pm.test(\"Failed To Archive Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(0);",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -1745,7 +1745,7 @@
 									"});",
 									"",
 									"pm.test(\"Failed To Publish Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(1);",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(1);",
 									"});",
 									""
 								],
@@ -1823,7 +1823,7 @@
 									"});",
 									"",
 									"pm.test(\"Failed To Unarchive Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(0);",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -2046,7 +2046,7 @@
 									"});",
 									"",
 									"pm.test(\"Failed To Publish Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(0);",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
 									"});",
 									""
 								],
@@ -2194,7 +2194,7 @@
 									"});",
 									"",
 									"pm.test(\"Failed To Publish Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(0);",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
 									"});",
 									""
 								],
@@ -2271,7 +2271,7 @@
 									"});",
 									"",
 									"pm.test(\"Failed To Publish Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(1);",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(1);",
 									"});",
 									""
 								],
@@ -2435,7 +2435,7 @@
 									"});",
 									"",
 									"pm.test(\"Failed To Archive Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(0);",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -2587,7 +2587,7 @@
 									"});",
 									"",
 									"pm.test(\"Failed To Unpublish Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(1);",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(1);",
 									"});",
 									""
 								],
@@ -2665,7 +2665,7 @@
 									"});",
 									"",
 									"pm.test(\"Failed To Unarchive Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(0);",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -2817,7 +2817,7 @@
 									"});",
 									"",
 									"pm.test(\"Failed To Publish Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(0);",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
 									"});",
 									""
 								],
@@ -2965,7 +2965,7 @@
 									"});",
 									"",
 									"pm.test(\"Failed To Unpublish Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(0);",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
 									"});",
 									""
 								],
@@ -3113,7 +3113,7 @@
 									"});",
 									"",
 									"pm.test(\"Failed To Publish Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(0);",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
 									"});",
 									""
 								],
@@ -3190,7 +3190,7 @@
 									"});",
 									"",
 									"pm.test(\"Failed To Publish Template Check\", function () {",
-									"    pm.expect(jsonData.entity.failed).to.have.lengthOf(1);",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(1);",
 									"});",
 									""
 								],
