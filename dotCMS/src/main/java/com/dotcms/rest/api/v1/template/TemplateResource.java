@@ -233,7 +233,7 @@ public class TemplateResource {
 
         if (null == template || UtilMethods.isNotSet(template.getIdentifier())) {
 
-            throw new DoesNotExistException("The live template id: " + templateId + " does not exists");
+            throw new DoesNotExistException("Live Version of the Template with Id: " + templateId + " does not exists");
         }
 
         return Response.ok(new ResponseEntityView(this.templateHelper.toTemplateView(template, user))).build();
@@ -264,7 +264,7 @@ public class TemplateResource {
 
         if (null == template || UtilMethods.isNotSet(template.getIdentifier())) {
 
-            throw new DoesNotExistException("The working template id: " + templateId + " does not exists");
+            throw new DoesNotExistException("Working Version of the Template with Id: " + templateId + " does not exists");
         }
 
         return Response.ok(new ResponseEntityView(this.templateHelper.toTemplateView(template, user))).build();
