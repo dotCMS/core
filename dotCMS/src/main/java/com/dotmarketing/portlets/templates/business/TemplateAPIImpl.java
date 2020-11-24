@@ -32,6 +32,7 @@ import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.Templat
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.design.bean.*;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -88,11 +89,13 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 			throws DotDataException, DotSecurityException {
 
 		if (!permissionAPI.doesUserHavePermission(sourceTemplate, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-			throw new DotSecurityException("You don't have permission to read the source file.");
+			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to READ the source template");
+			throw new DotSecurityException("You don't have permission to read the source template");
 		}
 
 		if (!permissionAPI.doesUserHavePermission(destination, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
-			throw new DotSecurityException("You don't have permission to write in the destination folder.");
+			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to WRITE in the destination site");
+			throw new DotSecurityException("You don't have permission to write in the destination site.");
 		}
 
 		boolean isNew = false;
@@ -136,6 +139,9 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		// Copy permissions
 		permissionAPI.copyPermissions(sourceTemplate, newTemplate);
 
+		ActivityLogger.logInfo(this.getClass(), "Copied Template", "User " +
+				user.getPrimaryKey() + " copied template" + newTemplate.getTitle(), destination.getTitle() != null ? destination.getTitle() : "default");
+
 		return newTemplate;
 	}
 
@@ -146,11 +152,13 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 		if (!permissionAPI.doesUserHavePermission(sourceTemplate, PermissionAPI.PERMISSION_READ, user,
 				respectFrontendRoles)) {
-			throw new DotSecurityException("You don't have permission to read the source file.");
+			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to READ the source template");
+			throw new DotSecurityException("You don't have permission to read the source template");
 		}
 
 		if (!permissionAPI.doesUserHavePermission(destination, PermissionAPI.PERMISSION_WRITE, user,
 				respectFrontendRoles)) {
+			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to WRITE in the destination site");
 			throw new DotSecurityException("You don't have permission to write in the destination folder.");
 		}
 

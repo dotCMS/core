@@ -636,43 +636,36 @@ public class TemplateResource {
      * Copy a template
      * @param request            {@link HttpServletRequest}
      * @param response           {@link HttpServletResponse}
-     * @param templateInode      {@link String} template inode to copy
+     * @param templateId      {@link String} template identifier to copy
      * @return Response
      * @throws DotDataException
      * @throws DotSecurityException
      */
     @PUT
-    @Path("/{templateInode}/_copy")
+    @Path("/{templateId}/_copy")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response copy(@Context final HttpServletRequest  request,
                                @Context final HttpServletResponse response,
-                               @PathParam("templateInode") final String templateInode) throws DotDataException, DotSecurityException {
+                               @PathParam("templateId") final String templateId) throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response).rejectWhenNoUser(true).init();
         final User user         = initData.getUser();
-        final Host host         = this.hostWebAPI.getCurrentHostNoThrow(request);
         final PageMode pageMode = PageMode.get(request);
 
-        Logger.debug(this, ()->"Copying the Template: " + templateInode);
+        Logger.debug(this, ()->"Copying the Template: " + templateId);
 
-        final Template template = this.findTemplateBy(templateInode, templateInode, user, pageMode);
+        final Template template = this.templateAPI.findWorkingTemplate(templateId,user,pageMode.respectAnonPerms);
 
         if (null == template || !InodeUtils.isSet(template.getInode())) {
 
-            throw new DoesNotExistException("The  template inode: " + templateInode + " does not exists");
+            throw new DoesNotExistException("Template with Id: " + templateId + " does not exists");
         }
 
-        this.templateHelper.checkPermission(user, template, PERMISSION_WRITE);
-        final Response responseRest = Response.ok(new ResponseEntityView(
+        return Response.ok(new ResponseEntityView(
                 this.templateHelper.toTemplateView(this.templateAPI.copy(template, user), user))).build();
-
-        ActivityLogger.logInfo(this.getClass(), "Copied Template", "User " +
-                user.getPrimaryKey() + " copied template" + template.getTitle(), host.getTitle() != null ? host.getTitle() : "default");
-
-        return responseRest;
     }
 
     /**

@@ -4166,6 +4166,235 @@
 			"protocolProfileBehavior": {}
 		},
 		{
+			"name": "Copy",
+			"item": [
+				{
+					"name": "Create New Template to Copy",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "77f16777-7640-4551-9bc8-33dcbf68dd84",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"body check\", function () {",
+									"    pm.expect(jsonData.entity.body).to.eql('This is the body');",
+									"});",
+									"",
+									"pm.test(\"friendlyName check\", function () {",
+									"    pm.expect(jsonData.entity.friendlyName).to.eql('This is a postman test description');",
+									"});",
+									"",
+									"pm.test(\"Title check\", function () {",
+									"    pm.expect(jsonData.entity.title).to.eql('PostMan Test');",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"templateIdToCopy\", jsonData.entity.identifier);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\":\"PostMan Test\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						},
+						"description": "Creates a new template"
+					},
+					"response": []
+				},
+				{
+					"name": "Copy Template Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "2cf813e5-c966-40c9-970c-969ebee0c694",
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Title check\", function () {",
+									"    pm.expect(pm.response.json().entity.title).to.be.eql('PostMan Test - 1');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{temporaryInode}}\"]\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/{{templateIdToCopy}}/_copy",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"{{templateIdToCopy}}",
+								"_copy"
+							]
+						},
+						"description": "Copies the template"
+					},
+					"response": []
+				},
+				{
+					"name": "Copy Template Failed To Copy Id Not Exist",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "8b76d2f8-69e3-455f-9a8f-3d51a8648fd6",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.test(\"Status code should be ok 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToPublish}}\"]\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/_copy",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+								"_copy"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
 			"name": "Create New Template",
 			"event": [
 				{
@@ -4958,79 +5187,6 @@
 			"response": []
 		},
 		{
-			"name": "Template Copy",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "2cf813e5-c966-40c9-970c-969ebee0c694",
-						"exec": [
-							"pm.test(\"Status code should be ok 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"pm.test(\"Title check\", function () {",
-							"    pm.expect(pm.response.json().entity.title).to.include('PostMan Test');",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
-						}
-					]
-				},
-				"method": "PUT",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "[\"{{temporaryInode}}\"]\n",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/templates/{{temporaryInode}}/_copy",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"templates",
-						"{{temporaryInode}}",
-						"_copy"
-					]
-				},
-				"description": "Copies the template"
-			},
-			"response": []
-		},
-		{
 			"name": "Get Templates Archive",
 			"event": [
 				{
@@ -5107,64 +5263,69 @@
 	],
 	"variable": [
 		{
-			"id": "d9b34f01-2aa0-432f-a798-4da2dc8fb402",
+			"id": "0fa41ce6-07bb-461f-b908-26fceea8d454",
 			"key": "temporalInode",
 			"value": "27928cad-5c13-41a9-bcf1-ce23a6cb55c8"
 		},
 		{
-			"id": "49f862a8-3f15-4c60-9044-88d4093f9f1a",
+			"id": "3396aa33-938e-4745-a57c-c9625ea5cd49",
 			"key": "temporalIdentifier",
 			"value": "037debee-59cb-42b7-b0d1-1cab580c2b76"
 		},
 		{
-			"id": "436855fc-3d40-4d2a-820a-b9d5adab9074",
+			"id": "280c45a6-9c97-4b5e-8a59-b101eec2ddb2",
 			"key": "temporaryInode",
 			"value": "89644c4b-f872-4dc4-8035-57dc2f5375fd"
 		},
 		{
-			"id": "52bf9170-ca79-43d4-b76c-1aa4248e6f8a",
+			"id": "f8eb5c97-f1bb-41fa-9d2e-7c4406ccdf36",
 			"key": "temporaryIdentifier",
 			"value": "b6b41cff-9247-47eb-8f97-b7df0462916c"
 		},
 		{
-			"id": "6b5a26cc-beff-49b9-b11c-ddf5d9bcee7c",
+			"id": "9d91662a-05b1-4736-86e0-731c512b60c0",
 			"key": "templateIdentifier",
 			"value": "f2dbc35a-de89-4c04-a859-5c156bbdc7f8"
 		},
 		{
-			"id": "3eee6b87-da59-4d25-ab88-e6decae4198e",
+			"id": "01a66f3a-52e4-4974-a356-2ed07a429259",
 			"key": "templateIdToArchive",
 			"value": "25431921-43a6-4e85-be54-84c2e1e8198d"
 		},
 		{
-			"id": "7885d8c4-205f-4cd5-93b1-f133a90cc341",
+			"id": "1d8b706d-17dc-4773-aa09-3e04e7d8bfba",
 			"key": "templateIdToUnArchive",
 			"value": "83a9b763-d83d-42ac-b3fb-12d8d65af712"
 		},
 		{
-			"id": "efdb7f8c-4e71-4598-9e06-646e3a2045a7",
+			"id": "4f293003-2b1a-4d44-940d-9eee975af592",
 			"key": "templateIdToDelete",
 			"value": "797fa72b-2c60-4977-a8db-eb59ad7b54f1"
 		},
 		{
-			"id": "dec99443-0e19-483a-a719-78ab2fad12d5",
+			"id": "e2452700-ecd6-4a75-ad83-bf5dab3c592d",
 			"key": "templateIdToPublish",
 			"value": "2c371bdb-cf23-4359-b341-db0d7508b221"
 		},
 		{
-			"id": "14688eb5-0de3-46c6-a697-5807e4811955",
+			"id": "4c864953-745e-461c-bfa9-ec8553f77753",
 			"key": "templateIdToUnpublish",
 			"value": "71311cd3-e68a-442c-b2ec-d5fc4f52f064"
 		},
 		{
-			"id": "45dca79b-d1b8-4020-8631-eb6badc84638",
+			"id": "34a41072-daba-4e21-a241-19f71a7cdbcb",
 			"key": "templateIdToLock",
 			"value": "ea5cef2b-5d93-4319-93f9-524f22a082e4"
 		},
 		{
-			"id": "19e95336-9270-4f99-9ec4-be1a60c76e9e",
+			"id": "b3ab196e-9368-4909-9768-04dd1f809fda",
 			"key": "templateIdToUnLock",
 			"value": "c696464c-a342-43fd-80d4-e12a288faab7"
+		},
+		{
+			"id": "1fcc8b1c-4b12-467a-8368-662490be1292",
+			"key": "templateIdToCopy",
+			"value": "f38ea254-e7d9-49e9-ac27-f86a2912597c"
 		}
 	],
 	"protocolProfileBehavior": {}

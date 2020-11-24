@@ -1413,4 +1413,65 @@ public class TemplateResourceTest {
         //Call Resource
         resource.unlock(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,uuid);
     }
+
+    /**
+     * Method to test: copy in the TemplateResource
+     * Given Scenario: Create a template on working state, and try to copy it.
+     * ExpectedResult: The endpoint should return 200 and the new template info should
+     *                 be in the response.
+     *
+     */
+    @Test
+    public void test_copyTemplate_success()
+            throws DotSecurityException, DotDataException {
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHost = new SiteDataGen().nextPersisted();
+        //Create template
+        Template template = new TemplateDataGen().title(title).next();
+        template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
+        //Call Resource
+        final Response responseResource = resource.copy(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,template.getIdentifier());
+        //Check that the response is 200, OK
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+        final TemplateView results = TemplateView.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(title + " - 1",results.getTitle());
+    }
+
+    /**
+     * Method to test: copy in the TemplateResource
+     * Given Scenario: Create a UUID that does not belong to any template and try to copy.
+     * ExpectedResult: Should throw a DoesNotExistException
+     *
+     */
+    @Test (expected = DoesNotExistException.class)
+    public void test_copyTemplate_IdDoesNotBelongToAnyTemplate_failedToCopy()
+            throws DotSecurityException, DotDataException {
+        final String uuid = UUIDGenerator.generateUuid();
+        //Call Resource
+        resource.copy(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,uuid);
+    }
+
+    /**
+     * Method to test: copy in the TemplateResource
+     * Given Scenario: Create a template on live state. Now as a Limited User
+     *                  without READ Permissions try to copy the template.
+     * ExpectedResult: Should throw a DotSecurityException
+     *
+     */
+    @Test (expected = DotSecurityException.class)
+    public void test_copyTemplate_LimitedUserWithoutReadPermissions_failedToCopy()
+            throws DotDataException, DotSecurityException {
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHost = new SiteDataGen().nextPersisted();
+        //Create template
+        final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
+        //Create the limited user
+        final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
+        final String password = "admin";
+        limitedUser.setPassword(password);
+        APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
+        //Call Resource
+        resource.copy(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,template.getIdentifier());
+    }
 }

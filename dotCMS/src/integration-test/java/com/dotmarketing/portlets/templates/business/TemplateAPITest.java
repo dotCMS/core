@@ -1,8 +1,6 @@
 package com.dotmarketing.portlets.templates.business;
 
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
-import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.util.IntegrationTestInitService;
@@ -27,7 +25,6 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
@@ -42,6 +39,10 @@ import java.util.List;
 
 import static org.junit.Assert.*;
 
+/**
+ * Note: If you dont find a test over here, check {@link com.dotcms.rest.api.v1.template.TemplateResourceTest}
+ * several tests were created over there, since the Resource calls the api.
+ */
 public class TemplateAPITest extends IntegrationTestBase {
 
     private static ContainerAPI containerAPI;
