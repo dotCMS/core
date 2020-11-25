@@ -22,6 +22,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import com.liferay.util.Base64;
@@ -1473,5 +1474,73 @@ public class TemplateResourceTest {
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
         //Call Resource
         resource.copy(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,template.getIdentifier());
+    }
+
+    /**
+     * Method to test: list in the TemplateResource
+     * Given Scenario: Create a template on hostA, and a template on hostB. Get the templates of hostA.
+     * ExpectedResult: The endpoint should return 200, and the size of the results must be 1.
+     */
+    @Test
+    public void test_listTemplate_filterByHost()
+            throws DotSecurityException, DotDataException {
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHostA = new SiteDataGen().nextPersisted();
+        final Host newHostB = new SiteDataGen().nextPersisted();
+        //Create template
+        Template templateA = new TemplateDataGen().title(title).next();
+        templateA = APILocator.getTemplateAPI().saveTemplate(templateA,newHostA,adminUser,false);
+        Template templateB = new TemplateDataGen().title(title).next();
+        templateB = APILocator.getTemplateAPI().saveTemplate(templateB,newHostB,adminUser,false);
+        //Call Resource
+        final Response responseResource = resource.list(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,"",0,40,"mod_date","DESC",newHostA.getIdentifier(),false);
+        //Check that the response is 200, OK
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+        final PaginatedArrayList paginatedArrayList = PaginatedArrayList.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(1,paginatedArrayList.size());
+    }
+
+    /**
+     * Method to test: list in the TemplateResource
+     * Given Scenario: Create 2 templates, and a limited user. Give READ Permissions to one template to
+     *                  the limited user. Get All the templates that the user can READ.
+     * ExpectedResult: The endpoint should return 200, and the size of the results must be 1.
+     */
+    @Test
+    public void test_listTemplate_limitedUserNoREADPermissionsOverOneTemplate()
+            throws DotSecurityException, DotDataException {
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHostA = new SiteDataGen().nextPersisted();
+        //Create template
+        Template templateA = new TemplateDataGen().title(title).next();
+        templateA = APILocator.getTemplateAPI().saveTemplate(templateA,newHostA,adminUser,false);
+        Template templateB = new TemplateDataGen().title(title).next();
+        templateB = APILocator.getTemplateAPI().saveTemplate(templateB,newHostA,adminUser,false);
+        //Call Resource
+        Response responseResource = resource.list(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,"",0,40,"mod_date","DESC",newHostA.getIdentifier(),false);
+        //Check that the response is 200, OK
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+        PaginatedArrayList paginatedArrayList = PaginatedArrayList.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(2,paginatedArrayList.size());
+        //Create the limited user
+        final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
+        final String password = "admin";
+        limitedUser.setPassword(password);
+        APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
+        //Give Permissions Over the Template B
+        Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                templateB.getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                PermissionAPI.PERMISSION_READ, true);
+        APILocator.getPermissionAPI().save(permissions, templateB, APILocator.systemUser(), false);
+        //Call Resource
+        responseResource = resource.list(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,"",0,40,"mod_date","DESC",newHostA.getIdentifier(),false);
+        //Check that the response is 200, OK
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+        paginatedArrayList = PaginatedArrayList.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(1,paginatedArrayList.size());
     }
 }

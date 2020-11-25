@@ -124,28 +124,21 @@ public class TemplateResource {
     }
 
     /**
-     * Return a list of {@link com.dotmarketing.portlets.templates.model.Template}, entity
-     * response syntax:.
+     * Return a list of {@link com.dotmarketing.portlets.templates.model.Template} which the user has READ permissions. Each of the templates
+     * is the current working version.
      *
-     *
-     * Url sintax:
-     * api/v1/templates?filter=filter-string&page=page-number&per_page=per-page&ordeby=order-field-name&direction=order-direction&host=host-id
-     *
+     * Url syntax:
+     * api/v1/templates?filter=filter-string&page=page-number&per_page=per-page&orderby=order-field-name&direction=order-direction&host=host-id&archive=true|false
      * where:
+     * @param filter template title or identifier must content this pattern
+     * @param page page to return
+     * @param perPage limit of items
+     * @param orderBy field to order the items. Default value is by mod_date
+     * @param direction order direction (ASC for ascending or DESC for descending). Default value is DESC
+     * @param hostId filter by site (where the template lives).
+     * @param archive if true will return the templates that are archived. Default value is false
      *
-     * <ul>
-     * <li>filter-string: just return Template who content this pattern into its title</li>
-     * <li>page: page to return</li>
-     * <li>per_page: limit of items to return</li>
-     * <li>ordeby: field to order by</li>
-     * <li>direction: asc for upward order and desc for downward order</li>
-     * <li>host: filter by host's id</li>
-     * </ul>
-     *
-     * Url example: v1/templates?filter=test&page=2&orderby=title
-     *
-     * @param httpRequest
-     * @return
+     * @return a paginated list of templates that the user has READ permissions and comply with the params provided.
      */
     @GET
     @JSONP
@@ -157,9 +150,9 @@ public class TemplateResource {
                                         @QueryParam(PaginationUtil.FILTER)   final String filter,
                                         @QueryParam(PaginationUtil.PAGE)     final int page,
                                         @DefaultValue("40") @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
-                                        @DefaultValue("title") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
-                                        @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION)  final String direction,
-                                        @QueryParam(ContainerPaginator.HOST_PARAMETER_ID)           final String hostId,
+                                        @DefaultValue("mod_date") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
+                                        @DefaultValue("DESC") @QueryParam(PaginationUtil.DIRECTION)  final String direction,
+                                        @QueryParam(TemplatePaginator.HOST_PARAMETER_ID)           final String hostId,
                                         @QueryParam(ARCHIVE_PARAM)                                  final boolean archive) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -178,40 +171,14 @@ public class TemplateResource {
     }
 
     /**
-     * Return a {@link com.dotmarketing.portlets.templates.model.Template} based on the inode
+     * Return live version {@link com.dotmarketing.portlets.templates.model.Template} based on the id
      *
-     * @return Response
-     */
-    @GET
-    @Path("/{templateInode}")
-    @JSONP
-    @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response getByInode(@Context final HttpServletRequest  httpRequest,
-                               @Context final HttpServletResponse httpResponse,
-                               @PathParam("templateInode") final String templateInode) throws DotSecurityException, DotDataException {
-
-        final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
-        final User user     = initData.getUser();
-        final PageMode mode = PageMode.get(httpRequest);
-        Logger.debug(this, ()-> "Getting the template by inode: " + templateInode);
-
-        final Template template = this.templateAPI.find(templateInode, user, mode.respectAnonPerms);
-
-        if (null == template || UtilMethods.isNotSet(template.getIdentifier())) {
-
-            throw new DoesNotExistException("The template inode: " + templateInode + " does not exists");
-        }
-
-        return Response.ok(new ResponseEntityView(this.templateHelper.toTemplateView(template, user))).build();
-    }
-
-    /**
-     * Return a live version {@link com.dotmarketing.portlets.templates.model.Template} based on the id
-     *
-     * @return Response
+     * @param httpRequest
+     * @param httpResponse
+     * @param templateId template identifier to get the live version.
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
      */
     @GET
     @Path("/{templateId}/live")
@@ -240,9 +207,14 @@ public class TemplateResource {
     }
 
     /**
-     * Return a working version {@link com.dotmarketing.portlets.templates.model.Template} based on the id
+     * Return working version {@link com.dotmarketing.portlets.templates.model.Template} based on the id
      *
-     * @return Response
+     * @param httpRequest
+     * @param httpResponse
+     * @param templateId template identifier to get the working version.
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
      */
     @GET
     @Path("/{templateId}/working")
