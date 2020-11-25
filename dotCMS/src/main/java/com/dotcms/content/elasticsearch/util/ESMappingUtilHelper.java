@@ -13,9 +13,11 @@ import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.MultiSelectField;
 import com.dotcms.contenttype.model.field.RadioField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.SelectField;
+import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.field.TimeField;
@@ -361,20 +363,30 @@ public class ESMappingUtilHelper {
                 .of(DataTypes.BOOL, "boolean", DataTypes.FLOAT, "double", DataTypes.INTEGER,
                         "long");
         String mappingForField = null;
-        if (field instanceof DateField || field instanceof DateTimeField
-                || field instanceof TimeField) {
-            mappingForField = "{\n\"type\":\"date\",\n";
-            mappingForField += "\"format\": \"yyyy-MM-dd't'HH:mm:ss||MMM d, yyyy h:mm:ss a||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis\"\n}";
-        } else if (field instanceof TextField || field instanceof TextAreaField
-                || field instanceof WysiwygField || field instanceof RadioField
-                || field instanceof SelectField) {
-            if (dataTypesMap.containsKey(field.dataType())) {
-                mappingForField = String.format("{\n\"type\":\"%s\"\n}", dataTypesMap.get(field.dataType()));
-            } else if (!matchesExclusions(fieldVariableName)){
-                mappingForField = "{\n"
-                        + "\"type\":\"text\",\n"
-                        + "\"analyzer\":\"my_analyzer\""
-                        + "\n}";
+
+        if (!matchesExclusions(fieldVariableName)) {
+            if (field instanceof DateField || field instanceof DateTimeField
+                    || field instanceof TimeField) {
+                mappingForField = "{\n\"type\":\"date\",\n";
+                mappingForField += "\"format\": \"yyyy-MM-dd't'HH:mm:ss||MMM d, yyyy h:mm:ss a||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis\"\n}";
+            } else if (field instanceof TextField || field instanceof TextAreaField
+                    || field instanceof WysiwygField || field instanceof RadioField
+                    || field instanceof SelectField || field instanceof MultiSelectField
+                    || field instanceof TagField) {
+                if (field.unique() || field instanceof TagField) {
+                    mappingForField = "{\n\"type\":\"keyword\"\n}";
+                } else {
+                    if (dataTypesMap.containsKey(field.dataType())) {
+                        mappingForField = String
+                                .format("{\n\"type\":\"%s\"\n}",
+                                        dataTypesMap.get(field.dataType()));
+                    } else {
+                        mappingForField = "{\n"
+                                + ("\"type\":\"text\",\n")
+                                + "\"analyzer\":\"my_analyzer\""
+                                + "\n}";
+                    }
+                }
             }
         }
 
