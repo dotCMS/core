@@ -1,5 +1,5 @@
 import { DotPageContent } from '@portlets/dot-edit-page/shared/models/dot-page-content.model';
-import { DotPageContainer } from '@portlets/dot-edit-page/shared/models/dot-page-container.model';
+import { DotPageContainer } from '@models/dot-page-container/dot-page-container.model';
 
 export interface DotContentletEvent<T> {
     name: string;

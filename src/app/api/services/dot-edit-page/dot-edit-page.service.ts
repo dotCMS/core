@@ -1,7 +1,7 @@
 import { pluck } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
 import { CoreWebService } from 'dotcms-js';
-import { DotPageContainer } from '@portlets/dot-edit-page/shared/models/dot-page-container.model';
+import { DotPageContainer } from '@models/dot-page-container/dot-page-container.model';
 import { Observable } from 'rxjs';
 
 @Injectable()

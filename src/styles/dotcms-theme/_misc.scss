@@ -53,3 +53,10 @@
         margin-bottom: 0;
     }
 }
+
+.p-label-input-required::after {
+    content: "*";
+    color: red;
+    margin-left: 2px;
+    vertical-align: middle;
+}

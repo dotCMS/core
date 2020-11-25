@@ -53,21 +53,21 @@
     padding: $spacing-1 $spacing-2;
     color: $brand-secondary;
 
-    &:enabled:hover, &:enabled:focus{
+    &:enabled:hover,
+    &:enabled:focus {
         color: $brand-secondary;
     }
 
-    .p-button-icon{
+    .p-button-icon {
         margin: 0 0 $spacing-1 / 2;
         font-size: $font-size-x-large;
     }
-
 }
 
 .p-button:focus {
     outline: 0 none;
     outline-offset: 0;
-    box-shadow: none;
+    box-shadow: $button-shadow-focus;
 }
 
 .p-button .p-button-icon-left {
@@ -221,12 +221,6 @@
         border-color: $brand-primary;
         background: none;
     }
-}
-
-.p-button.p-button-secondary:enabled:focus,
-.p-buttonset.p-button-secondary > .p-button:enabled:focus,
-.p-splitbutton.p-button-secondary > .p-button:enabled:focus {
-    box-shadow: none;
 }
 
 .p-button.p-button-secondary:enabled:active,

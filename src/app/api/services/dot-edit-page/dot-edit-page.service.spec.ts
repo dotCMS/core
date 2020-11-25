@@ -1,5 +1,5 @@
 import { DotEditPageService } from './dot-edit-page.service';
-import { DotPageContainer } from '../../../portlets/dot-edit-page/shared/models/dot-page-container.model';
+import { DotPageContainer } from '../../../shared/models/dot-page-container/dot-page-container.model';
 import { TestBed, getTestBed } from '@angular/core/testing';
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
 import { CoreWebService } from 'dotcms-js';

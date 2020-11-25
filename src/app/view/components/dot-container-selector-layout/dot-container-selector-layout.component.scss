@@ -1,0 +1,35 @@
+@use "variables" as *;
+@import "mixins";
+
+:host {
+    display: block;
+}
+
+.container-selector__list {
+    @include naked-list;
+    margin: 0;
+    overflow-x: hidden;
+    padding: 0;
+}
+
+.container-selector__list-item {
+    display: flex;
+    align-items: center;
+    border-top: 1px solid $gray-bg;
+    color: $black;
+    font-size: $font-size-medium;
+    overflow: hidden;
+    padding: $spacing-1 0;
+
+    dot-icon-button {
+        margin-right: $spacing-1;
+    }
+
+    &:first-child {
+        border-top: none;
+    }
+}
+
+.container-selector__list-item-text {
+    @include truncate-text;
+}

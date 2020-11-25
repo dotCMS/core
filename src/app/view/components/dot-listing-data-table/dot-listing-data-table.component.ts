@@ -84,7 +84,7 @@ export class DotListingDataTableComponent implements OnInit {
     ngOnInit(): void {
         this.globalSearch.nativeElement.focus();
         this.paginationSetUp();
-        this.dateColumns = this.columns.filter(column => column.format === this.DATE_FORMAT);
+        this.dateColumns = this.columns.filter((column) => column.format === this.DATE_FORMAT);
     }
 
     /**
@@ -145,7 +145,7 @@ export class DotListingDataTableComponent implements OnInit {
         this.paginatorService
             .get()
             .pipe(take(1))
-            .subscribe(items => {
+            .subscribe((items) => {
                 this.setItems(items);
                 this.dataTable.first = 1;
             });
@@ -161,7 +161,7 @@ export class DotListingDataTableComponent implements OnInit {
             this.paginatorService
                 .getCurrentPage()
                 .pipe(take(1))
-                .subscribe(items => this.setItems(items));
+                .subscribe((items) => this.setItems(items));
         }
     }
 
@@ -188,9 +188,9 @@ export class DotListingDataTableComponent implements OnInit {
     }
 
     private formatData(items: any[]): any[] {
-        return items.map(item => {
+        return items.map((item) => {
             this.dateColumns.forEach(
-                col =>
+                (col) =>
                     (item[col.fieldName] = this.formatDateService.getRelative(item[col.fieldName]))
             );
             return item;
@@ -224,7 +224,7 @@ export class DotListingDataTableComponent implements OnInit {
             this.paginatorService
                 .getWithOffset(offset)
                 .pipe(take(1))
-                .subscribe(items => this.setItems(items));
+                .subscribe((items) => this.setItems(items));
         }
     }
 

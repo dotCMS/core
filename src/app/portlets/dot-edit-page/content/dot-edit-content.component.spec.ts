@@ -1,3 +1,4 @@
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { of } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -18,6 +19,12 @@ import {
     StringUtils,
     UserModel
 } from 'dotcms-js';
+
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
+import { ConfirmationService } from 'primeng/api';
+import { DotCMSContentType } from 'dotcms-models';
+
 import { DotAlertConfirmService } from '@services/dot-alert-confirm/index';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
 import { DotEditPageService } from '@services/dot-edit-page/dot-edit-page.service';
@@ -29,9 +36,8 @@ import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-re
 import { DotPageStateService } from './services/dot-page-state/dot-page-state.service';
 import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { DotPageRender } from '@portlets/dot-edit-page/shared/models/dot-rendered-page.model';
+import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
 import { DotEditContentComponent } from './dot-edit-content.component';
-import { DotCMSContentType } from 'dotcms-models';
 import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot-contentlet-editor.module';
 import { DotEditPageInfoModule } from '../components/dot-edit-page-info/dot-edit-page-info.module';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
@@ -51,7 +57,7 @@ import { DotWorkflowServiceMock } from '@tests/dot-workflow-service.mock';
 import { mockDotRenderedPage, mockDotLayout } from '@tests/dot-page-render.mock';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
-import { DotPageMode, DotPageContainer, DotPageContent } from '../shared/models';
+import { DotPageContent } from '../shared/models';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { dotcmsContentletMock } from '@tests/dotcms-contentlet.mock';
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
@@ -65,10 +71,8 @@ import { dotEventSocketURLFactory, MockDotUiColorsService } from '@tests/dot-tes
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { ButtonModule } from 'primeng/button';
-import { DialogModule } from 'primeng/dialog';
-import { ConfirmationService } from 'primeng/api';
+import { DotPageContainer } from '@models/dot-page-container/dot-page-container.model';
+import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
 
 @Component({
     selector: 'dot-global-message',

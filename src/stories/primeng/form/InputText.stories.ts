@@ -2,6 +2,7 @@ import { Story, Meta } from '@storybook/angular/types-6-0';
 import { InputTextModule, InputText } from 'primeng/inputtext';
 import { moduleMetadata } from '@storybook/angular';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { PasswordModule } from 'primeng/password';
 
 export default {
     title: 'PrimeNG/Form/InputText/Default',
@@ -16,7 +17,7 @@ export default {
     },
     decorators: [
         moduleMetadata({
-            imports: [InputTextModule, BrowserAnimationsModule]
+            imports: [InputTextModule, BrowserAnimationsModule, PasswordModule]
         })
     ],
     args: {
@@ -29,6 +30,7 @@ const InputTextTemplate = `
     <p><input type="text" class="p-inputtext-sm" placeholder="Small" pInputText /> <br /></p>
     <p><input type="text" placeholder="Normal" pInputText /> <br /></p>
     <p><input type="text" class="p-inputtext-lg" placeholder="Large"  pInputText /></p>
+    <p><input pPassword type="password" placeholder="password" /></p>
   </div>
 `;
 

@@ -29,6 +29,7 @@ export class DotAppsConfigurationDetailFormComponent implements OnInit {
     @ViewChild('formContainer', { static: true }) public formContainer: ElementRef;
 
     @Input() formFields: DotAppsSecrets[];
+    @Input() appConfigured = false;
     @Output() data = new EventEmitter<{ [key: string]: string }>();
     @Output() valid = new EventEmitter<boolean>();
     myFormGroup: FormGroup;

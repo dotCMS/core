@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import {
     DotApps,
     DotAppsExportConfiguration,
+    DotAppsImportConfiguration,
     DotAppsSaveData
 } from '@models/dot-apps/dot-apps.model';
 import { CoreWebService } from 'dotcms-js';
@@ -152,6 +153,34 @@ export class DotAppsService {
             .catch((error) => {
                 return error.message;
             });
+    }
+
+    /**
+     * Import configuration(s) of a Service Integration
+     * @param {DotAppsImportConfiguration} conf
+     * @returns Promise<string>
+     * @memberof DotAppsService
+     */
+    importConfiguration(conf: DotAppsImportConfiguration): Observable<string> {
+        const formData = new FormData();
+        formData.append('json', JSON.stringify(conf.json));
+        formData.append('file', conf.file);
+        return this.coreWebService
+            .requestView<string>({
+                url: `/api/${appsUrl}/import`,
+                body: formData,
+                headers: { 'Content-Type': 'multipart/form-data' },
+                method: 'POST'
+            })
+            .pipe(
+                pluck('entity'),
+                catchError((error: HttpErrorResponse) => {
+                    return this.httpErrorManagerService.handle(error).pipe(
+                        take(1),
+                        map((err) => err.status.toString())
+                    );
+                })
+            );
     }
 
     /**

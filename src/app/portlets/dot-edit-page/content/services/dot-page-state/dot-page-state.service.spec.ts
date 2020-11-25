@@ -3,7 +3,7 @@ import { LoginService, CoreWebService, HttpCode } from 'dotcms-js';
 import { DotContentletLockerService } from '@services/dot-contentlet-locker/dot-contentlet-locker.service';
 import { DotPageStateService } from './dot-page-state.service';
 import { DotPageRenderService } from '@services/dot-page-render/dot-page-render.service';
-import { DotPageMode } from '@portlets/dot-edit-page/shared/models/dot-page-mode.enum';
+import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
 import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
 import { LoginServiceMock } from '@tests/login-service.mock';
 import { mockDotRenderedPage } from '@tests/dot-page-render.mock';

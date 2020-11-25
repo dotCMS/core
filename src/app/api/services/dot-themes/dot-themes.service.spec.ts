@@ -1,10 +1,11 @@
-import { DotThemesService } from './dot-themes.service';
-import { mockDotThemes } from '../../../test/dot-themes.mock';
-import { DotTheme } from '../../../portlets/dot-edit-page/shared/models/dot-theme.model';
 import { TestBed, getTestBed } from '@angular/core/testing';
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
 import { CoreWebService } from 'dotcms-js';
+
+import { DotThemesService } from './dot-themes.service';
+import { mockDotThemes } from '@tests/dot-themes.mock';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { DotTheme } from '@models/dot-edit-layout-designer';
 
 describe('DotThemesService', () => {
     let injector: TestBed;

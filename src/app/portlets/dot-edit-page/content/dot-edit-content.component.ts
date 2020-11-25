@@ -6,6 +6,7 @@ import { Component, OnInit, ViewChild, ElementRef, NgZone, OnDestroy } from '@an
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { SiteService } from 'dotcms-js';
+import { DotCMSContentType } from 'dotcms-models';
 
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
@@ -16,16 +17,16 @@ import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import {
     DotPageContainer,
     DotPageContainerPersonalized
-} from '../shared/models/dot-page-container.model';
+} from '@models/dot-page-container/dot-page-container.model';
 import { DotPageContent } from '../shared/models/dot-page-content.model';
 import { DotPageRenderState } from '../shared/models/dot-rendered-page-state.model';
 import { DotPageStateService } from './services/dot-page-state/dot-page-state.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { DotPageMode } from '../shared/models/dot-page-mode.enum';
-import { DotPageRender } from '../shared/models/dot-rendered-page.model';
+
+import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
+import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
-import { DotCMSContentType } from 'dotcms-models';
 import {
     PageModelChangeEvent,
     PageModelChangeEventType

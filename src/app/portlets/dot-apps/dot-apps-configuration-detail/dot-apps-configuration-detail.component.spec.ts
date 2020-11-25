@@ -1,25 +1,25 @@
 import { of, Observable } from 'rxjs';
 import * as _ from 'lodash';
-import { ComponentFixture, waitForAsync } from '@angular/core/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { ActivatedRoute } from '@angular/router';
-import { DOTTestBed } from '@tests/dot-test-bed';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotAppsService } from '@services/dot-apps/dot-apps.service';
 import { Injectable, Component, Input, Output, EventEmitter } from '@angular/core';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { MockDotRouterService } from '@tests/dot-router-service.mock';
 import { CommonModule } from '@angular/common';
-import { DotAppsConfigurationDetailFormModule } from './dot-apps-configuration-detail-form/dot-apps-configuration-detail-form.module';
 import { DotAppsConfigurationDetailResolver } from './dot-apps-configuration-detail-resolver.service';
 import { ButtonModule } from 'primeng/button';
 import { DotAppsConfigurationDetailComponent } from './dot-apps-configuration-detail.component';
 import { By } from '@angular/platform-browser';
-import { DotAppsSaveData } from '@shared/models/dot-apps/dot-apps.model';
+import { DotAppsSaveData, DotAppsSecrets } from '@shared/models/dot-apps/dot-apps.model';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
 import { DotAppsConfigurationHeaderModule } from '../dot-apps-configuration-header/dot-apps-configuration-header.module';
+import { MarkdownService } from 'ngx-markdown';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 const messages = {
     'apps.key': 'Key',
@@ -86,7 +86,7 @@ const routeDatamock = {
 };
 class ActivatedRouteMock {
     get data() {
-        return of(routeDatamock);
+        return {};
     }
 }
 
@@ -113,17 +113,29 @@ class MockDotKeyValueComponent {
     @Output() save = new EventEmitter<DotKeyValue>();
 }
 
-xdescribe('DotAppsConfigurationDetailComponent', () => {
+@Component({
+    selector: 'dot-apps-configuration-detail-form',
+    template: ''
+})
+class MockDotAppsConfigurationDetailFormComponent {
+    @Input() appConfigured: boolean;
+    @Input() formFields: DotAppsSecrets[];
+    @Output() data = new EventEmitter<{ [key: string]: string }>();
+    @Output() valid = new EventEmitter<boolean>();
+}
+
+describe('DotAppsConfigurationDetailComponent', () => {
     let component: DotAppsConfigurationDetailComponent;
     let fixture: ComponentFixture<DotAppsConfigurationDetailComponent>;
     let appsServices: DotAppsService;
+    let activatedRoute: ActivatedRoute;
     let routerService: DotRouterService;
 
     const messageServiceMock = new MockDotMessageService(messages);
 
     beforeEach(
         waitForAsync(() => {
-            DOTTestBed.configureTestingModule({
+            TestBed.configureTestingModule({
                 imports: [
                     RouterTestingModule.withRoutes([
                         {
@@ -135,9 +147,13 @@ xdescribe('DotAppsConfigurationDetailComponent', () => {
                     CommonModule,
                     DotCopyButtonModule,
                     DotAppsConfigurationHeaderModule,
-                    DotAppsConfigurationDetailFormModule
+                    DotPipesModule
                 ],
-                declarations: [DotAppsConfigurationDetailComponent, MockDotKeyValueComponent],
+                declarations: [
+                    DotAppsConfigurationDetailComponent,
+                    MockDotKeyValueComponent,
+                    MockDotAppsConfigurationDetailFormComponent
+                ],
                 providers: [
                     { provide: DotMessageService, useValue: messageServiceMock },
                     {
@@ -152,22 +168,32 @@ xdescribe('DotAppsConfigurationDetailComponent', () => {
                         provide: DotRouterService,
                         useClass: MockDotRouterService
                     },
+                    {
+                        provide: MarkdownService,
+                        useValue: {
+                            compile(text) {
+                                return text;
+                            },
+
+                            highlight() {}
+                        }
+                    },
                     DotAppsConfigurationDetailResolver
                 ]
             });
+
+            fixture = TestBed.createComponent(DotAppsConfigurationDetailComponent);
+            component = fixture.debugElement.componentInstance;
+            appsServices = TestBed.inject(DotAppsService);
+            routerService = TestBed.inject(DotRouterService);
+            activatedRoute = TestBed.inject(ActivatedRoute);
+            spyOn(appsServices, 'saveSiteConfiguration').and.callThrough();
         })
     );
 
-    beforeEach(() => {
-        fixture = DOTTestBed.createComponent(DotAppsConfigurationDetailComponent);
-        component = fixture.debugElement.componentInstance;
-        appsServices = fixture.debugElement.injector.get(DotAppsService);
-        routerService = fixture.debugElement.injector.get(DotRouterService);
-        spyOn<any>(appsServices, 'saveSiteConfiguration').and.returnValue(of({}));
-    });
-
     describe('Without dynamic params', () => {
         beforeEach(() => {
+            spyOnProperty(activatedRoute, 'data').and.returnValue(of(routeDatamock));
             fixture.detectChanges();
         });
 
@@ -177,14 +203,12 @@ xdescribe('DotAppsConfigurationDetailComponent', () => {
 
         it('should set labels and buttons with right values', () => {
             expect(
-                fixture.debugElement.queryAll(
-                    By.css('.dot-apps-configuration-detail-actions button')
-                )[0].nativeElement.innerText
+                fixture.debugElement.query(By.css('[data-testid="cancelBtn"]')).nativeElement
+                    .innerText
             ).toContain(messageServiceMock.get('Cancel'));
             expect(
-                fixture.debugElement.queryAll(
-                    By.css('.dot-apps-configuration-detail-actions button')
-                )[1].nativeElement.innerText
+                fixture.debugElement.query(By.css('[data-testid="saveBtn"]')).nativeElement
+                    .innerText
             ).toContain(messageServiceMock.get('Save'));
             expect(
                 fixture.debugElement.query(By.css('.dot-apps-configuration-detail__host-name'))
@@ -194,18 +218,22 @@ xdescribe('DotAppsConfigurationDetailComponent', () => {
         });
 
         it('should set Save button disabled to false with valid form', () => {
+            const formComponent = fixture.debugElement.query(
+                By.css('dot-apps-configuration-detail-form')
+            ).componentInstance;
+            formComponent.valid.emit(true);
+            fixture.detectChanges();
             expect(
-                fixture.debugElement.queryAll(
-                    By.css('.dot-apps-configuration-detail-actions button')
-                )[1].nativeElement.disabled
+                fixture.debugElement.query(By.css('[data-testid="saveBtn"]')).nativeElement.disabled
             ).toBe(false);
         });
 
-        it('should set form component with fields data', () => {
+        it('should set form component with fields & app configured data', () => {
             const formComponent = fixture.debugElement.query(
                 By.css('dot-apps-configuration-detail-form')
             ).componentInstance;
             expect(formComponent.formFields).toEqual(sites[0].secrets);
+            expect(formComponent.appConfigured).toEqual(sites[0].configured);
         });
 
         it('should update formData and formValid fields when dot-apps-configuration-detail-form changed', () => {
@@ -224,9 +252,7 @@ xdescribe('DotAppsConfigurationDetailComponent', () => {
         });
 
         it('should redirect to Apps page when Cancel button clicked', () => {
-            const cancelBtn = fixture.debugElement.queryAll(
-                By.css('.dot-apps-configuration-detail-actions button')
-            )[0];
+            const cancelBtn = fixture.debugElement.query(By.css('[data-testid="cancelBtn"]'));
             cancelBtn.triggerEventHandler('click', {});
             expect(routerService.goToAppsConfiguration).toHaveBeenCalledWith(component.apps.key);
         });
@@ -237,7 +263,7 @@ xdescribe('DotAppsConfigurationDetailComponent', () => {
             expect(copyBtn.label).toBe(component.apps.key);
         });
 
-        it('should save configuration when Save button clicked', () => {
+        it('should save configuration when Save button clicked', async () => {
             const transformedData = {
                 name: {
                     hidden: false,
@@ -252,11 +278,21 @@ xdescribe('DotAppsConfigurationDetailComponent', () => {
                     value: 'true'
                 }
             };
-            const saveBtn = fixture.debugElement.queryAll(
-                By.css('.dot-apps-configuration-detail-actions button')
-            )[1];
+            const emittedData = {
+                name: 'John',
+                password: '****',
+                enabled: 'true'
+            };
+            const formComponent = fixture.debugElement.query(
+                By.css('dot-apps-configuration-detail-form')
+            ).componentInstance;
+            formComponent.data.emit(emittedData);
 
+            fixture.detectChanges();
+
+            const saveBtn = fixture.debugElement.query(By.css('[data-testid="saveBtn"]'));
             saveBtn.triggerEventHandler('click', {});
+
             expect<any>(appsServices.saveSiteConfiguration).toHaveBeenCalledWith(
                 component.apps.key,
                 component.apps.sites[0].id,
@@ -281,11 +317,14 @@ xdescribe('DotAppsConfigurationDetailComponent', () => {
                     value: 'test'
                 }
             ];
-            routeDatamock.data = {
+            const mockRoute = { data: {} };
+            mockRoute.data = {
                 ...appData,
                 allowExtraParams: true,
                 sites: sitesDynamic
             };
+            spyOnProperty(activatedRoute, 'data').and.returnValue(of(mockRoute));
+
             fixture.detectChanges();
         });
 
@@ -333,9 +372,17 @@ xdescribe('DotAppsConfigurationDetailComponent', () => {
                     value: 'test'
                 }
             };
-            const saveBtn = fixture.debugElement.queryAll(
-                By.css('.dot-apps-configuration-detail-actions button')
-            )[1];
+            const emittedData = {
+                name: 'John',
+                password: '****',
+                enabled: 'true'
+            };
+            const formComponent = fixture.debugElement.query(
+                By.css('dot-apps-configuration-detail-form')
+            ).componentInstance;
+            formComponent.data.emit(emittedData);
+
+            const saveBtn = fixture.debugElement.query(By.css('[data-testid="saveBtn"]'));
 
             saveBtn.triggerEventHandler('click', {});
             expect<any>(appsServices.saveSiteConfiguration).toHaveBeenCalledWith(

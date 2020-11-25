@@ -93,7 +93,7 @@ describe('DotAppsConfigurationItemComponent', () => {
         it('should have 3 icon buttons for export, delete and edit', () => {
             const buttons = fixture.debugElement.queryAll(By.css('dot-icon-button'));
             expect(buttons.length).toBe(3);
-            expect(buttons[0].componentInstance.icon).toBe('launch');
+            expect(buttons[0].componentInstance.icon).toBe('vertical_align_bottom');
             expect(buttons[1].componentInstance.icon).toBe('delete_outline');
             expect(buttons[2].componentInstance.icon).toBe('edit');
         });

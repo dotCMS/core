@@ -7,12 +7,14 @@
                 <button
                     pButton
                     class="p-button-secondary"
+                    data-testid="cancelBtn"
                     type="button"
                     [label]="'Cancel' | dm"
                     (click)="goToApps(apps.key)"
                 ></button>
                 <button
                     pButton
+                    data-testid="saveBtn"
                     type="button"
                     (click)="onSubmit()"
                     [label]="'Save' | dm"
@@ -24,6 +26,7 @@
     <div class="dot-apps-configuration-detail__body">
         <div class="dot-apps-configuration-detail__form-content">
             <dot-apps-configuration-detail-form
+                [appConfigured]="apps.sites[0].configured"
                 [formFields]="formFields"
                 (data)="formData = $event"
                 (valid)="formValid = $event"

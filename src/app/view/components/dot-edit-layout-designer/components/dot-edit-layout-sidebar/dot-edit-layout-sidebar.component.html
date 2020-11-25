@@ -1,0 +1,11 @@
+<h6>{{ 'editpage.layout.designer.sidebar' | dm }}</h6>
+<dot-sidebar-properties
+    (change)="updateAndPropagate()"
+    [(ngModel)]="value"
+    class="dot-layout-designer__sidebar-properties"
+></dot-sidebar-properties>
+<dot-container-selector-layout
+    (change)="updateAndPropagate($event)"
+    [data]="containers"
+    [multiple]="true"
+></dot-container-selector-layout>

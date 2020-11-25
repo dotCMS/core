@@ -38,6 +38,7 @@
         "@angular/platform-browser-dynamic": "~10.2.0",
         "@angular/router": "~10.2.0",
         "@ctrl/tinycolor": "^3.1.6",
+        "@ngrx/component-store": "^10.0.1",
         "dotcms-webcomponents": "0.0.14",
         "font-awesome": "^4.7.0",
         "lodash": "^4.17.20",

@@ -105,7 +105,7 @@ export class DotContentTypesPortletComponent implements OnInit {
 
     private setFilterByContentType(contentType: string) {
         this.filterBy = _.startCase(_.toLower(contentType));
-        this.paginatorExtraParams = {type: this.filterBy};
+        this.paginatorExtraParams = { type: this.filterBy };
         this.actionHeaderOptions.primary.command = ($event) => {
             this.createContentType(null, $event);
         };

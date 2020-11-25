@@ -11,7 +11,7 @@ import { ComponentFixture, fakeAsync, tick, TestBed } from '@angular/core/testin
 import { DebugElement } from '@angular/core';
 import { DotContainerSelectorComponent } from './dot-container-selector.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { TemplateContainersCacheService } from '@portlets/dot-edit-page/template-containers-cache.service';
+import { DotTemplateContainersCacheService } from '@services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
@@ -55,7 +55,7 @@ describe('ContainerSelectorComponent', () => {
                 BrowserUtil,
                 IframeOverlayService,
                 PaginatorService,
-                TemplateContainersCacheService,
+                DotTemplateContainersCacheService,
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 ApiRoot,
                 UserModel,
@@ -99,23 +99,9 @@ describe('ContainerSelectorComponent', () => {
         ];
     });
 
-    it('should show the hots name and container name', async () => {
-        comp.data = [
-            {
-                container: containers[0],
-                uuid: '1'
-            }
-        ];
-
-        fixture.detectChanges();
-        await fixture.whenStable();
-
-        const dataItem = de.query(By.css('.container-selector__list-item-text'));
-        expect(dataItem.nativeNode.textContent).toEqual('Container 1 (demo.dotcms.com)');
-    });
-
     it('should change Page', fakeAsync(() => {
         const filter = 'filter';
+
         const page = 1;
 
         fixture.detectChanges();
@@ -155,55 +141,6 @@ describe('ContainerSelectorComponent', () => {
         expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
         expect(paginatorService.filter).toEqual(filter);
     }));
-
-    it('should add containers to containers list and emit a change event', () => {
-        comp.currentContainers = containers;
-
-        searchableDropdownComponent.change.emit(containers[0]);
-
-        expect(comp.data[0].container).toEqual(containers[0]);
-        expect(comp.data[0].uuid).not.toBeNull();
-        expect(comp.data.length).toEqual(1);
-    });
-
-    it('should remove containers after click on trash icon', () => {
-        const bodySelectorList = de.query(By.css('.container-selector__list'));
-        const bodySelectorListItems = bodySelectorList.nativeElement.children;
-
-        comp.currentContainers = containers;
-
-        searchableDropdownComponent.change.emit(containers[0]);
-
-        fixture.detectChanges();
-
-        bodySelectorListItems[0].children[0].click();
-        expect(comp.data.length).toEqual(0);
-    });
-
-    it('should not add duplicated containers to the list when multiple false', () => {
-        comp.currentContainers = containers;
-
-        searchableDropdownComponent.change.emit(containers[0]);
-        fixture.detectChanges();
-
-        expect(comp.data.length).toEqual(1);
-
-        searchableDropdownComponent.change.emit(containers[0]);
-        fixture.detectChanges();
-
-        expect(comp.data.length).toEqual(1);
-    });
-
-    it('should add duplicated containers to the list when multiple true', () => {
-        comp.currentContainers = containers;
-        comp.multiple = true;
-
-        searchableDropdownComponent.change.emit(containers[0]);
-        searchableDropdownComponent.change.emit(containers[0]);
-        fixture.detectChanges();
-
-        expect(comp.data.length).toEqual(2);
-    });
 
     it('should set container list replacing the identifier for the path, if needed', () => {
         fixture.detectChanges();

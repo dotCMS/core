@@ -7,6 +7,7 @@ import { NgModule } from '@angular/core';
 import { PaginatorService } from '@services/paginator';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { DotTemplateContainersCacheService } from '@services/dot-template-containers-cache/dot-template-containers-cache.service';
 
 @NgModule({
     declarations: [DotContainerSelectorComponent],
@@ -19,6 +20,6 @@ import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-ico
         DotPipesModule,
         DotIconButtonModule
     ],
-    providers: [PaginatorService]
+    providers: [PaginatorService, DotTemplateContainersCacheService]
 })
 export class DotContainerSelectorModule {}

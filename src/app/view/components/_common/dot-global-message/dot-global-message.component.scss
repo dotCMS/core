@@ -2,11 +2,12 @@
 @import "dotcms-theme/utils/theme-variables";
 
 :host {
-    opacity: 0;
-    transition: $basic-speed * 2;
+    align-items: center;
     border-right: solid 1px $gray-bg;
-    padding-right: $spacing-4;
     display: flex;
+    opacity: 0;
+    padding-right: $spacing-4;
+    transition: $basic-speed * 2;
 
     dot-icon,
     dot-spinner {

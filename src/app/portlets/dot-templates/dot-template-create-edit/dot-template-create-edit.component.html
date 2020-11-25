@@ -1,0 +1,34 @@
+<ng-container *ngIf="template$ | async as template">
+    <dot-portlet-base [boxed]="false" *ngIf="template.identifier">
+        <dot-portlet-toolbar [title]="template.title">
+            <ng-container id="left" *ngIf="template.title">
+                <button
+                    pButton
+                    class="p-button-text"
+                    icon="pi pi-pencil"
+                    label="Edit"
+                    (click)="editTemplateProps()"
+                ></button>
+                <dot-api-link [href]="apiLink$ | async"></dot-api-link>
+            </ng-container>
+        </dot-portlet-toolbar>
+        <p-tabView>
+            <p-tabPanel header="Design">
+                <div *ngIf="template.type === 'advanced'; else elseBlock">Advaced</div>
+                <ng-template #elseBlock>
+                    <dot-edit-layout-designer
+                        [theme]="template.theme"
+                        [layout]="template.layout"
+                        (save)="saveTemplate($event)"
+                    ></dot-edit-layout-designer>
+                </ng-template>
+            </p-tabPanel>
+            <p-tabPanel header="Permissions">
+                <ng-template pTemplate="content">Permissions</ng-template>
+            </p-tabPanel>
+            <p-tabPanel header="History">
+                <ng-template pTemplate="content">History</ng-template>
+            </p-tabPanel>
+        </p-tabView>
+    </dot-portlet-base>
+</ng-container>

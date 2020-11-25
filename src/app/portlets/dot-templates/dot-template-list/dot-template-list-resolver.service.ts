@@ -1,9 +1,11 @@
 import { Injectable } from '@angular/core';
 import { Resolve } from '@angular/router';
+
 import { Observable } from 'rxjs';
-import { DotTemplate } from '@portlets/dot-edit-page/shared/models';
 import { take } from 'rxjs/operators';
+
 import { PaginatorService } from '@services/paginator';
+import { DotTemplate } from '@models/dot-edit-layout-designer';
 
 @Injectable({
     providedIn: 'root'

@@ -1,3 +1,7 @@
 <ng-content select="dot-portlet-toolbar"></ng-content>
 
-<main><ng-content></ng-content></main>
+<dot-portlet-box *ngIf="boxed; else unboxed">
+    <ng-container *ngTemplateOutlet="unboxed"></ng-container>
+</dot-portlet-box>
+
+<ng-template #unboxed><ng-content></ng-content></ng-template>

@@ -2,15 +2,14 @@ import { ActivatedRouteSnapshot } from '@angular/router';
 import { DotContentletLockerService } from '@services/dot-contentlet-locker/dot-contentlet-locker.service';
 import { DotEditPageResolver } from './dot-edit-page-resolver.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotPageRender } from '../../models';
 import { DotPageRenderService } from '@services/dot-page-render/dot-page-render.service';
 import { DotPageRenderState } from '../../models/dot-rendered-page-state.model';
 import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { LoginService, CoreWebService, HttpCode } from 'dotcms-js';
-import { LoginServiceMock, mockUser } from './../../../../../test/login-service.mock';
+import { LoginServiceMock, mockUser } from '@tests/login-service.mock';
 import { getTestBed, TestBed } from '@angular/core/testing';
-import { mockDotRenderedPage } from '../../../../../test/dot-page-render.mock';
+import { mockDotRenderedPage } from '@tests/dot-page-render.mock';
 import { of, throwError } from 'rxjs';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
@@ -20,6 +19,7 @@ import { FormatDateService } from '@services/format-date-service';
 import { MockDotRouterService } from '@tests/dot-router-service.mock';
 import { mockResponseView } from '@tests/response-view.mock';
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
+import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
 
 const route: any = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
     'toString'

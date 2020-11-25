@@ -27,7 +27,7 @@ import { MockDotMessageService } from '../../../../../test/dot-message-service.m
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
 import { DotEditPageViewAsControllerComponent } from './dot-edit-page-view-as-controller.component';
-import { DotPageRender } from '@portlets/dot-edit-page/shared/models';
+import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
 import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
 import { DotPageStateServiceMock } from '@tests/dot-page-state.service.mock';
 import { DotPersonalizeService } from '@services/dot-personalize/dot-personalize.service';

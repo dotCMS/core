@@ -1,0 +1,39 @@
+<dot-dialog
+    class="p-fluid"
+    *ngIf="show"
+    [header]="dialogHeaderKey | dm"
+    [visible]="show"
+    [actions]="dialogActions"
+    [appendToBody]="true"
+    (hide)="closeExportDialog()"
+>
+    <form [formGroup]="form" [ngSwitch]="action" novalidate>
+        <ng-container *ngSwitchCase="'Export'">
+            <input
+                dotAutofocus
+                pPassword
+                autocomplete="new-password"
+                formControlName="password"
+                name="export-password"
+                type="password"
+                class="dot-apps-import-export-dialog__password"
+                [placeholder]="'apps.confirmation.export.password.label' | dm"
+            />
+        </ng-container>
+        <ng-container *ngSwitchCase="'Import'">
+            <input
+                dotAutofocus
+                autocomplete="new-password"
+                formControlName="password"
+                name="import-password"
+                pInputText
+                type="password"
+                [placeholder]="'apps.confirmation.import.password.label' | dm"
+            />
+            <p></p>
+            <input #importFile type="file" (change)="onFileChange($event.target.files)" />
+            <input type="hidden" name="fileHidden" formControlName="importFile"/> <!-- Validation Field -->
+        </ng-container>
+        <span>{{ errorMessage }}</span>
+    </form>
+</dot-dialog>

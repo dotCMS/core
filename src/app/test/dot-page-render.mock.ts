@@ -1,11 +1,10 @@
-import { DotTemplate } from '../portlets/dot-edit-page/shared/models/dot-template.model';
-import { DotPage } from '../portlets/dot-edit-page/shared/models/dot-page.model';
-import { DotPageRender } from '@portlets/dot-edit-page/shared/models/dot-rendered-page.model';
-import { DotLayout } from '@portlets/dot-edit-page/shared/models/dot-layout.model';
+import { DotPage } from '@shared/models/dot-page/dot-page.model';
+import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
 import { mockDotLanguage } from './dot-language.mock';
-import { DotPageMode } from '@portlets/dot-edit-page/shared/models/dot-page-mode.enum';
+import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
 import { CONTAINER_SOURCE } from '@models/container/dot-container.model';
 import { dotcmsContentTypeBasicMock } from './dot-content-types.mock';
+import { DotLayout, DotTemplate } from '@models/dot-edit-layout-designer';
 
 export const mockDotPage = (): DotPage => {
     return {
@@ -60,7 +59,8 @@ export const mockDotLayout = (): DotLayout => {
         },
         body: {
             rows: []
-        }
+        },
+        width: ''
     };
 };
 
@@ -106,7 +106,8 @@ export const mockDotTemplate = () => {
         versionType: '',
         drawed: true,
         canEdit: true,
-        theme: ''
+        theme: '',
+        layout: null
     };
 };
 

@@ -107,6 +107,16 @@ export class DotRouterService {
         this.router.navigate([`/${portlet}/edit/${id}`]);
     }
 
+    /**
+     * Redirect to edit the template id passed
+     *
+     * @param {string} id
+     * @memberof DotRouterService
+     */
+    goToEditTemplate(id: string): void {
+        this.router.navigate([`/templates/edit/${id}`]);
+    }
+
     goToURL(url: string): void {
         this.router.navigate([url]);
     }

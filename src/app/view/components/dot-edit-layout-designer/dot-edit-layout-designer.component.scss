@@ -1,0 +1,64 @@
+@use "variables" as *;
+@import "mixins";
+
+:host {
+    min-width: 750px;
+
+    dot-icon-button {
+        margin-left: $spacing-2;
+    }
+
+    ::ng-deep {
+        .p-button-vertical {
+            .p-button-label {
+                text-transform: capitalize !important;
+            }
+        }
+
+        dot-secondary-toolbar .dot-secondary-toolbar__main {
+            padding: 0 $spacing-3;
+        }
+    }
+}
+
+dot-layout-designer {
+    background-color: $white;
+    box-shadow: $md-shadow-1;
+    flex-grow: 1;
+    margin: $spacing-3 $spacing-3 0;
+    padding: $spacing-6;
+    // This canculating the space of the layout editor
+    // based on the toolbars and required margin
+    height: calc(100vh - 60px - 4rem - 2rem);
+    overflow: auto;
+}
+
+.dot-edit-layout__actions {
+    display: flex;
+    height: $dot-secondary-toolbar-height;
+    justify-content: flex-end;
+    padding: $spacing-3;
+}
+
+.dot-edit-layout__toolbar {
+    background-color: $white;
+    display: block;
+    position: relative;
+    z-index: 1;
+
+    ::ng-deep {
+        .p-toolbar {
+            border-bottom: solid 1px $gray-light;
+            padding: $spacing-3;
+        }
+    }
+}
+
+.dot-edit-layout__toolbar-action-cancel {
+    margin-right: $spacing-1;
+}
+
+.dot-edit__layout-actions-right {
+    display: flex;
+    align-items: center;
+}

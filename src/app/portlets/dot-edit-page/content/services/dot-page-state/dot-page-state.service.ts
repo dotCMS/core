@@ -7,7 +7,6 @@ import {
     DotPageRenderService,
     DotPageRenderOptions
 } from '@services/dot-page-render/dot-page-render.service';
-import { DotPageRender } from '../../../shared/models/dot-rendered-page.model';
 import { Injectable } from '@angular/core';
 import { DotContentletLockerService } from '@services/dot-contentlet-locker/dot-contentlet-locker.service';
 import { DotPersona } from '@shared/models/dot-persona/dot-persona.model';
@@ -19,6 +18,7 @@ import {
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { PageModelChangeEvent, PageModelChangeEventType } from '../dot-edit-content-html/models';
 import { HttpErrorResponse } from '@angular/common/http';
+import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
 
 @Injectable()
 export class DotPageStateService {

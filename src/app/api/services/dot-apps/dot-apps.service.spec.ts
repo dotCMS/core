@@ -1,5 +1,9 @@
 import { DotAppsService } from './dot-apps.service';
-import { DotApps, DotAppsSaveData } from '@shared/models/dot-apps/dot-apps.model';
+import {
+    DotApps,
+    DotAppsImportConfiguration,
+    DotAppsSaveData
+} from '@shared/models/dot-apps/dot-apps.model';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { CoreWebService, LoginService } from 'dotcms-js';
 import { LoginServiceMock } from '@tests/login-service.mock';
@@ -125,6 +129,33 @@ describe('DotAppsService', () => {
 
         dotAppsService.getConfiguration('test', '1').subscribe();
         expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(mockResponseView(400));
+    });
+
+    it('should import apps', () => {
+        spyOn(coreWebService, 'requestView').and.callThrough();
+        const conf: DotAppsImportConfiguration = {
+            file: null,
+            json: { password: 'test' }
+        };
+        const sentBody = new FormData();
+        sentBody.append('json', JSON.stringify(conf.json));
+        sentBody.append('file', conf.file);
+
+        dotAppsService.importConfiguration(conf).subscribe((status: string) => {
+            expect(status).toEqual('OK');
+        });
+
+        const req = httpMock.expectOne(`/api/v1/apps/import`);
+        expect(coreWebService.requestView).toHaveBeenCalledWith({
+            url: `/api/v1/apps/import`,
+            body: sentBody,
+            headers: { 'Content-Type': 'multipart/form-data' },
+            method: 'POST'
+        });
+
+        req.flush({
+            entity: 'OK'
+        });
     });
 
     it('should export apps configuration', fakeAsync(() => {

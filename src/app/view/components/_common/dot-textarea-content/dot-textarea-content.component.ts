@@ -1,4 +1,12 @@
-import { Component, Input, OnInit, forwardRef, ChangeDetectionStrategy } from '@angular/core';
+import {
+    Component,
+    Input,
+    OnInit,
+    forwardRef,
+    ChangeDetectionStrategy,
+    Output,
+    EventEmitter
+} from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { SelectItem } from 'primeng/api';
 
@@ -34,6 +42,9 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
     @Input()
     width: string;
 
+    @Output()
+    monacoInit = new EventEmitter<any>();
+
     selectOptions: SelectItem[] = [];
     selected: string;
     styles: any;
@@ -45,7 +56,11 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
         cursorBlinking: 'solid',
         overviewRulerBorder: false,
         mouseWheelZoom: false,
-        LineNumbersType: 'on'
+        LineNumbersType: 'on',
+        selectionHighlight: false,
+        roundedSelection: false,
+        selectOnLineNumbers: false,
+        columnSelection: false
     };
 
     private DEFAULT_OPTIONS: SelectItem[] = [
@@ -89,6 +104,15 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
             are multilines, which mean that "enter" should do a "next line".
         */
         $event.stopPropagation();
+    }
+    /**
+     * Initializes the Monaco Editor
+     *
+     * @param {*} editor
+     * @memberof DotTextareaContentComponent
+     */
+    onInit(editor: any): void {
+        this.monacoInit.emit(editor);
     }
 
     /**
