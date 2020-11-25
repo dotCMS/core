@@ -951,7 +951,7 @@ public class ImportUtil {
                                     .append(text).append(")");
                         } else {
                             buffy.append(" +").append(contentType.getVelocityVarName()).append(".")
-                                    .append(field.getVelocityVarName()).append(":")
+                                    .append(field.getVelocityVarName()).append("_dotraw").append(StringPool.COLON)
                                     .append(escapeLuceneSpecialCharacter(text).contains(" ") ? "\""
                                             + escapeLuceneSpecialCharacter(text) + "\""
                                             : escapeLuceneSpecialCharacter(text));

@@ -6311,9 +6311,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                     buffy.append(" +languageId:" + contentlet.getLanguageId());
 
-                    buffy.append(" +" + contentlet.getContentType().variable() + StringPool.PERIOD + field
-                            .getVelocityVarName() + StringPool.COLON);
-                    buffy.append(getFieldValue(contentlet, new LegacyFieldTransformer(field).from()));
+                    buffy.append(" +" + contentlet.getContentType().variable()).append(StringPool.PERIOD)
+                            .append(field.getVelocityVarName()).append("_dotraw").append(StringPool.COLON)
+                            .append("\"").append(getFieldValue(contentlet, new LegacyFieldTransformer(field).from()))
+                            .append("\"");
 
                     List<ContentletSearch> contentlets = new ArrayList<ContentletSearch>();
                     try {
