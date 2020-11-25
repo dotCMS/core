@@ -3,6 +3,7 @@ package com.dotcms.vanityurl.filters;
 import static com.dotmarketing.filters.Constants.CMS_FILTER_QUERY_STRING_OVERRIDE;
 import static com.dotmarketing.filters.Constants.CMS_FILTER_URI_OVERRIDE;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -47,7 +48,7 @@ public class VanityUrlRequestWrapper extends HttpServletRequestWrapper {
         // we create a new map here because it merges the 
         Map<String,String[]> tempMap = new HashMap<>(request.getParameterMap());
         if(vanityHasQueryString) {
-            List<NameValuePair> additional = URLEncodedUtils.parse(newQueryString, Charset.forName("UTF-8"));
+            List<NameValuePair> additional = URLEncodedUtils.parse(newQueryString, StandardCharsets.UTF_8);
             for(NameValuePair nvp : additional) {
                 tempMap.compute(nvp.getName(), (k, v) -> (v == null) ? new String[] {nvp.getValue()} : new String[]{nvp.getValue(),v[0]});
             }
