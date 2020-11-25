@@ -10,6 +10,7 @@ import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { ResponseView } from 'dotcms-js';
 import { DotTemplateContainersCacheService } from '@services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { DotContainerMap, DotContainer } from '@shared/models/container/dot-container.model';
+import { DotLayout } from '@models/dot-edit-layout-designer';
 
 @Component({
     selector: 'dot-edit-layout',
@@ -61,12 +62,10 @@ export class DotEditLayoutComponent implements OnInit {
     /**
      * Handle save layout event
      *
-     * @param {*} value
+     * @param {DotTemplate} value
      * @memberof DotEditLayoutComponent
      */
-    onSave(value: any): void {
-        // TODO: needs to type this
-        console.log(value);
+    onSave(value: DotLayout): void {
         this.dotGlobalMessageService.loading(
             this.dotMessageService.get('dot.common.message.saving')
         );

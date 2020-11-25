@@ -1,0 +1,9 @@
+@use "variables" as *;
+
+main {
+    margin: $spacing-3;
+}
+
+dot-container-selector {
+    margin-bottom: $spacing-2;
+}

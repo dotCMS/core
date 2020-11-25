@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 @Component({
-    selector: 'dot-dot-template-props',
+    selector: 'dot-template-props',
     templateUrl: './dot-template-props.component.html',
     styleUrls: ['./dot-template-props.component.scss']
 })
@@ -22,6 +22,8 @@ export class DotTemplatePropsComponent implements OnInit {
 
     ngOnInit(): void {
         const { template } = this.config.data;
+
+        console.log(template);
 
         this.form = this.fb.group({
             ...template,

@@ -1,0 +1,27 @@
+<p-tabView>
+    <p-tabPanel
+        data-testId="builder"
+        [header]="item.type === 'advanced' ? ('code' | dm) : ('design' | dm)"
+    >
+        <div *ngIf="item.type === 'advanced'; else elseBlock">
+            <dot-template-advanced
+                (save)="save.emit($event)"
+                (cancel)="cancel.emit()"
+            ></dot-template-advanced>
+        </div>
+        <ng-template #elseBlock>
+            <dot-edit-layout-designer
+                [theme]="item.theme"
+                [layout]="item.layout"
+                (save)="save.emit($event)"
+                (cancel)="cancel.emit()"
+            ></dot-edit-layout-designer>
+        </ng-template>
+    </p-tabPanel>
+    <p-tabPanel header="Permissions">
+        <ng-template pTemplate="content">Permissions</ng-template>
+    </p-tabPanel>
+    <p-tabPanel header="History">
+        <ng-template pTemplate="content">History</ng-template>
+    </p-tabPanel>
+</p-tabView>

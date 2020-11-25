@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { DotPortletToolbarActions } from '@shared/models/dot-portlet-toolbar.model/dot-portlet-toolbar-actions.model';
 
 @Component({
@@ -7,7 +7,7 @@ import { DotPortletToolbarActions } from '@shared/models/dot-portlet-toolbar.mod
     styleUrls: ['./dot-portlet-toolbar.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotPortletToolbarComponent implements OnInit {
+export class DotPortletToolbarComponent {
     @Input() title: string;
 
     @Input() cancelButtonLabel: string;
@@ -17,8 +17,6 @@ export class DotPortletToolbarComponent implements OnInit {
     @Input() actions: DotPortletToolbarActions;
 
     constructor() {}
-
-    ngOnInit(): void {}
 
     /**
      * Handle cancel button click

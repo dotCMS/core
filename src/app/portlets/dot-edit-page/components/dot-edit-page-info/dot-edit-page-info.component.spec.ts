@@ -65,4 +65,24 @@ describe('DotEditPageInfoComponent', () => {
             expect(button.componentInstance.tooltipText).toBe('Copy url page');
         });
     });
+
+    describe('hidden', () => {
+        beforeEach(() => {
+            component.title = 'A title';
+            component.apiLink = '';
+            component.url = '';
+
+            fixture.detectChanges();
+        });
+
+        it('should not have api link', () => {
+            const apiLink: DebugElement = de.query(By.css('dot-api-link'));
+            expect(apiLink).toBeNull();
+        });
+
+        it('should not have copy button', () => {
+            const button: DebugElement = de.query(By.css('dot-copy-button '));
+            expect(button).toBeNull();
+        });
+    });
 });

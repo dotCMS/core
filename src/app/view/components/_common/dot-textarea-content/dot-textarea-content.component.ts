@@ -45,6 +45,13 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
     @Output()
     monacoInit = new EventEmitter<any>();
 
+    @Input() set language(value: string) {
+        this.editorOptions = {
+            ...this.editorOptions,
+            language: value
+        };
+    }
+
     selectOptions: SelectItem[] = [];
     selected: string;
     styles: any;
@@ -60,7 +67,8 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
         selectionHighlight: false,
         roundedSelection: false,
         selectOnLineNumbers: false,
-        columnSelection: false
+        columnSelection: false,
+        language: 'text/plain'
     };
 
     private DEFAULT_OPTIONS: SelectItem[] = [
@@ -73,15 +81,8 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
     propagateChange = (_: any) => {};
 
     ngOnInit() {
-        this.selectOptions = this.show
-            ? this.show
-                  .map((item) => {
-                      return this.DEFAULT_OPTIONS.find((option) => option.value === item);
-                  })
-                  .filter((item) => item) // Remove undefined values in the array
-            : this.DEFAULT_OPTIONS;
-
-        this.selected = this.selectOptions[0].value;
+        this.selectOptions = this.getSelectOptions();
+        this.selected = this.selectOptions[0]?.value;
 
         this.propagateChange(this.value);
 
@@ -149,4 +150,14 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
     }
 
     registerOnTouched(): void {}
+
+    private getSelectOptions() {
+        return this.show
+            ? this.show
+                  .map((item) => {
+                      return this.DEFAULT_OPTIONS.find((option) => option.value === item);
+                  })
+                  .filter((item) => item) // Remove undefined values in the array
+            : this.DEFAULT_OPTIONS;
+    }
 }

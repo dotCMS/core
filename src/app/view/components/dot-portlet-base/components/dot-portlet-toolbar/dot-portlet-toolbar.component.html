@@ -1,18 +1,19 @@
 <p-toolbar>
-    <div class="p-toolbar-group-left">
-        <h3 *ngIf="title">{{ title }}</h3>
-        <div class="dot-portlet-toolbar__extra-left">
+    <div class="p-toolbar-group-left" data-testId="leftGroup">
+        <h3 data-testId="title" *ngIf="title">{{ title }}</h3>
+        <div class="dot-portlet-toolbar__extra-left" data-testId="leftExtra">
             <ng-content select="#left"></ng-content>
         </div>
     </div>
 
-    <div class="p-toolbar-group-right">
-        <div class="dot-portlet-toolbar__extra-right">
+    <div class="p-toolbar-group-right" data-testId="rightGroup">
+        <div class="dot-portlet-toolbar__extra-right" data-testId="rightExtra">
             <ng-content select="#right"></ng-content>
         </div>
 
-        <div class="dot-portlet-toolbar__actions">
+        <div class="dot-portlet-toolbar__actions" data-testId="actionsWrapper">
             <button
+                data-testId="actionsCancelButton"
                 *ngIf="actions?.cancel"
                 pButton
                 (click)="onCancelClick($event)"
@@ -20,27 +21,28 @@
                 class="p-button-secondary"
             ></button>
 
-            <ng-container *ngIf="actions?.primary?.length > 1; else elseBlock">
+            <ng-container *ngIf="actions?.primary?.length">
                 <button
+                    *ngIf="actions?.primary?.length === 1; else elseBlock"
+                    data-testId="actionsPrimaryButton"
                     pButton
-                    icon="pi pi-chevron-down"
-                    iconPos="right"
-                    [label]="actionsButtonLabel || ('actions' | dm)"
-                    (click)="menu.toggle($event)"
+                    [label]="actions?.primary[0]?.label || ('save' | dm)"
+                    (click)="onPrimaryClick($event)"
+                    [disabled]="actions?.primary[0]?.disabled"
                 ></button>
-                <p-menu #menu [popup]="true" [model]="actions?.primary"></p-menu>
             </ng-container>
         </div>
     </div>
 </p-toolbar>
 
 <ng-template #elseBlock>
-    <ng-container *ngIf="actions?.primary[0]">
-        <button
-            pButton
-            label="Save"
-            (click)="onPrimaryClick($event)"
-            [disabled]="actions?.primary[0]?.disabled"
-        ></button>
-    </ng-container>
+    <button
+        data-testId="actionsMenuButton"
+        pButton
+        icon="pi pi-chevron-down"
+        iconPos="right"
+        [label]="actionsButtonLabel || ('actions' | dm)"
+        (click)="menu.toggle($event)"
+    ></button>
+    <p-menu #menu [popup]="true" [model]="actions?.primary" data-testId="actionsMenu"></p-menu>
 </ng-template>

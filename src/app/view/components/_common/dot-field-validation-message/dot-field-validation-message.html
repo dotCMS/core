@@ -1,3 +1,3 @@
 <small *ngIf="field.enabled && field.dirty && !field.valid" class="p-invalid">
-    {{ message }}
+    {{ message ? message : ('required' | dm) }}
 </small>

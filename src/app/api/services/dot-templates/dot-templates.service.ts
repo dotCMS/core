@@ -15,6 +15,8 @@ import { DotTemplate } from '@shared/models/dot-edit-layout-designer';
  */
 @Injectable()
 export class DotTemplatesService {
+    url = '/api/v1/templates';
+
     constructor(
         private coreWebService: CoreWebService,
         private httpErrorManagerService: DotHttpErrorManagerService
@@ -26,8 +28,7 @@ export class DotTemplatesService {
      * @memberof DotTemplatesService
      */
     get(): Observable<DotTemplate[]> {
-        const url = '/api/v1/templates';
-        return this.request<DotTemplate[]>({ url });
+        return this.request<DotTemplate[]>({ url: this.url });
     }
 
     /**
@@ -39,7 +40,7 @@ export class DotTemplatesService {
      * @memberof DotTemplatesService
      */
     getById(id: string, version = 'working'): Observable<DotTemplate> {
-        const url = `/api/v1/templates/${id}/${version}`;
+        const url = `${this.url}/${id}/${version}`;
 
         return this.request<DotTemplate>({
             url
@@ -54,8 +55,8 @@ export class DotTemplatesService {
      * @memberof DotTemplatesService
      */
     create(values: DotTemplate): Observable<DotTemplate> {
-        const url = '/api/v1/templates';
-        return this.request<DotTemplate>({ method: 'POST', url, body: values });
+        console.log(values);
+        return this.request<DotTemplate>({ method: 'POST', url: this.url, body: values });
     }
 
     /**
@@ -64,9 +65,7 @@ export class DotTemplatesService {
      * @memberof DotTemplatesService
      */
     update(values: DotTemplate): Observable<DotTemplate> {
-        const url = '/api/v1/templates';
-
-        return this.request<DotTemplate>({ method: 'PUT', url, body: values });
+        return this.request<DotTemplate>({ method: 'PUT', url: this.url, body: values });
     }
 
     private request<T>(options: DotRequestOptionsArgs): Observable<T> {

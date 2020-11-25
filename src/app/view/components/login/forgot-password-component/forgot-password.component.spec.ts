@@ -16,6 +16,13 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { MockDotLoginPageStateService } from '@components/login/dot-login-page-resolver.service.spec';
 import { MockDotRouterService } from '@tests/dot-router-service.mock';
 
+import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
+
+const messageServiceMock = new MockDotMessageService({
+    required: 'Required'
+});
+
 describe('ForgotPasswordComponent', () => {
     let component: ForgotPasswordComponent;
     let fixture: ComponentFixture<ForgotPasswordComponent>;
@@ -37,6 +44,7 @@ describe('ForgotPasswordComponent', () => {
                 RouterTestingModule
             ],
             providers: [
+                { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: LoginService, useClass: LoginServiceMock },
                 { provide: DotLoginPageStateService, useClass: MockDotLoginPageStateService },
                 { provide: DotRouterService, useClass: MockDotRouterService }

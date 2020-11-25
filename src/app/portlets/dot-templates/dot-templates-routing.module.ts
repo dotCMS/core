@@ -2,7 +2,7 @@ import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 import { DotTemplateListComponent } from '@portlets/dot-templates/dot-template-list/dot-template-list.component';
 import { DotTemplateListResolver } from '@portlets/dot-templates/dot-template-list/dot-template-list-resolver.service';
-import { DotTemplateCreateEditResolver } from './dot-template-create-edit/dot-template-create-edit.resolver';
+import { DotTemplateCreateEditResolver } from './dot-template-create-edit/resolvers/dot-template-create-edit.resolver';
 
 const routes: Routes = [
     {

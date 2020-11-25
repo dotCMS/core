@@ -1,20 +1,34 @@
 <dot-form-dialog
+    data-testId="dialogForm"
     [saveButtonDisabled]="!(isFormValid$ | async)"
     (cancel)="onCancel()"
     (save)="onSave()"
 >
-    <form class="p-fluid" [formGroup]="form">
-        <div class="p-field">
-            <label for="title">Title</label>
-            <input id="title" pInputText formControlName="title" autofocus />
+    <form class="p-fluid" [formGroup]="form" data-testId="form">
+        <div class="p-field" data-testId="titleField">
+            <label for="title" class="p-label-input-required">{{
+                'templates.properties.form.label.title' | dm
+            }}</label>
+            <input
+                id="title"
+                pInputText
+                formControlName="title"
+                autofocus
+                data-testId="templatePropsTitleField"
+            />
+            <dot-field-validation-message
+                [field]="form.get('title')"
+            ></dot-field-validation-message>
         </div>
-        <div class="p-field">
-            <label for="description">Description</label>
+        <div class="p-field" data-testId="descriptionField">
+            <label for="description">{{
+                'templates.properties.form.label.description' | dm
+            }}</label>
             <textarea id="description" pInputTextarea formControlName="friendlyName"></textarea>
         </div>
-        <div class="p-field">
-            <label for="title">Thumbnail</label>
-            <input id="title" type="text" pInputText />
+        <div class="p-field" data-testId="thumbnailField">
+            <label for="thumbnail">{{ 'templates.properties.form.label.thumbnail' | dm }}</label>
+            <input id="thumbnail" type="text" pInputText />
         </div>
     </form>
 </dot-form-dialog>

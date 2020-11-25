@@ -4,14 +4,16 @@
 
 <div class="dot-form-dialog__actions">
     <button
+        data-testid="dotFormDialogCancel"
         pButton
-        label="Cancel"
+        [label]="'cancel' | dm"
         class="p-button-secondary"
         (click)="onSecondaryClick($event)"
     ></button>
     <button
+        data-testid="dotFormDialogSave"
         pButton
-        label="Save"
+        [label]="'save' | dm"
         [disabled]="saveButtonDisabled"
         (click)="onPrimaryClick($event)"
     ></button>

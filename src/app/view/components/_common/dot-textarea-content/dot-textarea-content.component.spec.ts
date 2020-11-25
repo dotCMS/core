@@ -6,6 +6,7 @@ import { DotTextareaContentComponent } from './dot-textarea-content.component';
 import { FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { InputTextareaModule } from 'primeng/inputtextarea';
+import { EditorComponent } from 'ngx-monaco-editor';
 
 function cleanOptionText(option) {
     return option.replace(/\r?\n|\r/g, '');
@@ -145,28 +146,6 @@ describe('DotTextareaContentComponent', () => {
         // TODO: We need to find a way to set the height to the wysiwyg
     });
 
-    it('should have default mode and options in the code editor', () => {
-        component.show = ['code'];
-        fixture.detectChanges();
-
-        // expect(component.ace._mode).toBe('text', 'set mode default');
-        // expect(component.ace._options).toEqual({}, 'set options default');
-    });
-
-    it('should set mode and options in the code editor', () => {
-        component.show = ['code'];
-        component.code = {
-            mode: 'javascript',
-            options: {
-                cursorStyle: 'ace'
-            }
-        };
-        fixture.detectChanges();
-
-        // expect(component.ace._mode).toBe('javascript', 'set mode correctly');
-        // expect(component.ace._options).toEqual({ cursorStyle: 'ace' }, 'set options correctly');
-    });
-
     it('should add new line character', () => {
         component.propagateChange = (propagateChangeValue) => {
             expect('aaaa\r\nbbbbb\r\nccccc').toEqual(propagateChangeValue);
@@ -213,5 +192,48 @@ describe('DotTextareaContentComponent', () => {
         });
 
         expect(spy).toHaveBeenCalledTimes(2);
+    });
+
+    describe('code', () => {
+        it('should have default options', () => {
+            component.show = ['code'];
+            fixture.detectChanges();
+
+            const editor: EditorComponent = de.query(By.css('ngx-monaco-editor')).componentInstance;
+            expect(editor.options).toEqual({
+                theme: 'vs-light',
+                minimap: Object({ enabled: false }),
+                cursorBlinking: 'solid',
+                overviewRulerBorder: false,
+                mouseWheelZoom: false,
+                LineNumbersType: 'on',
+                selectionHighlight: false,
+                roundedSelection: false,
+                selectOnLineNumbers: false,
+                columnSelection: false,
+                language: 'text/plain'
+            });
+        });
+
+        it('should set langiage', () => {
+            component.show = ['code'];
+            component.language = 'javascript';
+            fixture.detectChanges();
+
+            const editor: EditorComponent = de.query(By.css('ngx-monaco-editor')).componentInstance;
+            expect(editor.options).toEqual({
+                theme: 'vs-light',
+                minimap: Object({ enabled: false }),
+                cursorBlinking: 'solid',
+                overviewRulerBorder: false,
+                mouseWheelZoom: false,
+                LineNumbersType: 'on',
+                selectionHighlight: false,
+                roundedSelection: false,
+                selectOnLineNumbers: false,
+                columnSelection: false,
+                language: 'javascript'
+            });
+        });
     });
 });

@@ -29,6 +29,8 @@ export class DotFormDialogComponent implements OnInit, OnDestroy {
     @Output()
     cancel: EventEmitter<MouseEvent> = new EventEmitter(null);
 
+    constructor(private dynamicDialog: DynamicDialogRef) {}
+
     @HostListener('document:keydown.enter', ['$event'])
     onEnter($event: KeyboardEvent) {
         const nodeName = ($event.target as Element).nodeName;
@@ -37,8 +39,6 @@ export class DotFormDialogComponent implements OnInit, OnDestroy {
             this.save.emit($event);
         }
     }
-
-    constructor(private dynamicDialog: DynamicDialogRef) {}
 
     ngOnInit(): void {
         const content = document.querySelector('p-dynamicdialog .p-dialog-content');

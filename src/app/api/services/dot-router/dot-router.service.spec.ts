@@ -96,6 +96,12 @@ describe('DotRouterService', () => {
         expect(service.goToEditPage).toHaveBeenCalledWith({ url: '/about/us' });
     });
 
+    it('should go to edit page', () => {
+        service.goToEditTemplate('123');
+
+        expect(router.navigate).toHaveBeenCalledWith(['/templates/edit/123']);
+    });
+
     it('should go to edit content type page', () => {
         service.goToEditContentType('123', 'Form');
 

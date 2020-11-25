@@ -1,0 +1,17 @@
+<dot-portlet-base>
+    <dot-portlet-toolbar [actions]="actions$ | async"></dot-portlet-toolbar>
+
+    <main>
+        <form [formGroup]="form">
+            <dot-container-selector (change)="containerChange($event)"> </dot-container-selector>
+            <dot-textarea-content
+                #value
+                height="30rem"
+                formControlName="body"
+                [show]="['code']"
+                language="html"
+                (monacoInit)="initEditor($event)"
+            ></dot-textarea-content>
+        </form>
+    </main>
+</dot-portlet-base>

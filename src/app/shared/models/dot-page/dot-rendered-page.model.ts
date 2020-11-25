@@ -20,14 +20,18 @@ export module DotPageRender {
 }
 
 export class DotPageRender {
-    constructor(private params: DotPageRender.Parameters) {}
+    constructor(private _params: DotPageRender.Parameters) {}
+
+    get params(): DotPageRender.Parameters {
+        return this._params;
+    }
 
     get layout(): DotLayout {
-        return this.params.layout;
+        return this._params.layout;
     }
 
     get page(): DotPage {
-        return this.params.page;
+        return this._params.page;
     }
 
     get containers(): {
@@ -35,26 +39,26 @@ export class DotPageRender {
             container: DotContainer;
         };
     } {
-        return this.params.containers;
+        return this._params.containers;
     }
 
     get template(): DotTemplate {
-        return this.params.template;
+        return this._params.template;
     }
 
     get canCreateTemplate(): boolean {
-        return this.params.canCreateTemplate;
+        return this._params.canCreateTemplate;
     }
 
     get viewAs(): DotEditPageViewAs {
-        return this.params.viewAs;
+        return this._params.viewAs;
     }
 
     get numberContents(): number {
-        return this.params.numberContents;
+        return this._params.numberContents;
     }
 
     set numberContents(numberContents: number) {
-        this.params.numberContents = numberContents;
+        this._params.numberContents = numberContents;
     }
 }

@@ -15,6 +15,12 @@ import { ActivatedRoute } from '@angular/router';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { MockDotLoginPageStateService } from '@components/login/dot-login-page-resolver.service.spec';
 import { MockDotRouterService } from '@tests/dot-router-service.mock';
+import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
+
+const messageServiceMock = new MockDotMessageService({
+    required: 'Required'
+});
 
 describe('ResetPasswordComponent', () => {
     let component: ResetPasswordComponent;
@@ -38,6 +44,7 @@ describe('ResetPasswordComponent', () => {
                 RouterTestingModule
             ],
             providers: [
+                { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: LoginService, useClass: LoginServiceMock },
                 { provide: DotLoginPageStateService, useClass: MockDotLoginPageStateService },
                 { provide: DotRouterService, useClass: MockDotRouterService }
@@ -47,9 +54,9 @@ describe('ResetPasswordComponent', () => {
         fixture = TestBed.createComponent(ResetPasswordComponent);
         component = fixture.componentInstance;
         de = fixture.debugElement;
-        activatedRoute = de.injector.get(ActivatedRoute);
-        loginService = de.injector.get(LoginService);
-        dotRouterService = de.injector.get(DotRouterService);
+        activatedRoute = TestBed.inject(ActivatedRoute);
+        loginService = TestBed.inject(LoginService);
+        dotRouterService = TestBed.inject(DotRouterService);
         spyOn(activatedRoute.snapshot.paramMap, 'get').and.returnValue('test@test.com');
         spyOn(loginService, 'changePassword').and.callThrough();
         fixture.detectChanges();
