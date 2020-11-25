@@ -27,6 +27,7 @@ import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -178,10 +179,6 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	private void save(final Template template) throws DotDataException {
 		templateFactory.save(template);
 	}
-
-	private void save(final Template template, final String existingId) throws DotDataException {
-        templateFactory.save(template,existingId);
-    }
 
 	protected void save(final WebAsset webAsset) throws DotDataException {
 		save((Template) webAsset);
@@ -486,10 +483,10 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	}
 
 	@WrapInTransaction
-	public Template saveTemplate(final Template template, final Host destination, final User user, final boolean respectFrontendRoles)
+	public Template saveTemplate(final Template template, final Host host, final User user, final boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
 
-		boolean existingId=false, existingInode=false;
+		boolean existingId=false;
 
 		if (template.isAnonymous() && LicenseManager.getInstance().isCommunity()) {
 
@@ -497,72 +494,61 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 			throw new InvalidLicenseException();
 		}
 
+		if (!UtilMethods.isSet(template.getTitle())){
+			throw new DotDataException("Title is required on templates");
+		}
+
 	    if(UtilMethods.isSet(template.getIdentifier())) {
 		    final Identifier ident=APILocator.getIdentifierAPI().find(template.getIdentifier());
-		    existingId = ident==null || !UtilMethods.isSet(ident.getId());
+		    existingId = ident!=null || UtilMethods.isSet(ident.getId());
+		}
+
+	    //if is an existing template check EDIT permissions, if is new template you need add_children and edit permissions over the host
+	    if(existingId){
+			if (!permissionAPI.doesUserHavePermission(template, PERMISSION_EDIT, user, respectFrontendRoles)) {
+				throw new DotSecurityException("You don't have permission to edit the template.");
+			}
+		} else{
+			if (!permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles)) {
+				throw new DotSecurityException("You don't have permission to add_children at the site.");
+			}
+
+			if (!permissionAPI.doesUserHavePermissions(host.getIdentifier(),PermissionableType.TEMPLATES, PermissionAPI.PERMISSION_EDIT, user)) {
+				throw new DotSecurityException("You don't have permission to edit templates at site level.");
+			}
 		}
 
 	    if(template.isDrawed() && !UtilMethods.isSet(template.getDrawedBody())) {
 	        throw new DotStateException("Drawed template MUST have a drawed body:" + template);
-
 	    }
 
-	    if(UtilMethods.isSet(template.getInode())) {
-    	    try {
-    	        final Template existing= templateFactory.find(template.getInode());
-    	        existingInode = existing==null || !UtilMethods.isSet(existing.getInode());
-    	    }
-    	    catch(Exception ex) {
-    	        existingInode=true;
-    	    }
-	    }
+		if (template.isDrawed() && !UtilMethods.isSet(template.getTheme())){
+			throw new DotDataException("Theme is required on drawed templates");
+		}
 
-	    final Template oldTemplate = !existingId && UtilMethods.isSet(template.getIdentifier())
-				?findWorkingTemplate(template.getIdentifier(), user, respectFrontendRoles)
-						:null;
-
-
-		if ((oldTemplate != null) && InodeUtils.isSet(oldTemplate.getInode())) {
-			if (!permissionAPI.doesUserHavePermission(oldTemplate, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-				throw new DotSecurityException("You don't have permission to read the source file.");
+		if(UtilMethods.isSet(template.getTheme())) {
+			final Folder themeFolder = APILocator.getFolderAPI().find(template.getTheme(), user, respectFrontendRoles);
+			if (null != themeFolder && InodeUtils.isSet(themeFolder.getInode())) {
+				template.setThemeName(APILocator.getFolderAPI().find(template.getTheme(), user, respectFrontendRoles).getName());
+			} else {
+				Logger.error(this.getClass(),"Invalid Theme: " + template.getTheme());
+				throw new DotDataException("Invalid theme: " + template.getTheme());
 			}
 		}
 
-		if (!permissionAPI.doesUserHavePermission(destination, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles)) {
-			throw new DotSecurityException("You don't have permission to write in the destination folder.");
-		}
-
-		if (!permissionAPI.doesUserHavePermissions(PermissionableType.TEMPLATES, PermissionAPI.PERMISSION_EDIT, user)) {
-			throw new DotSecurityException("You don't have permission to edit templates.");
-		}
-
-
-		//gets identifier from the current asset
-		Identifier identifier = null;
-		if (oldTemplate != null) {
+		if (existingId) {
+			final Template oldTemplate = findWorkingTemplate(template.getIdentifier(), user, respectFrontendRoles);
 			templateFactory.deleteFromCache(oldTemplate);
-
-			identifier = identifierAPI.findFromInode(oldTemplate.getIdentifier());
-		}
-		else{
+		} else{
 			//sets the owner so it can be set at the identifier table
 			template.setOwner(user.getUserId());
-			identifier = (!existingId) ? APILocator.getIdentifierAPI().createNew(template, destination) :
-			                             APILocator.getIdentifierAPI().createNew(template, destination, template.getIdentifier());
+			final Identifier identifier = APILocator.getIdentifierAPI().createNew(template, host);
 			template.setIdentifier(identifier.getId());
 		}
 		template.setModDate(new Date());
 		template.setModUser(user.getUserId());
 
-
-
-		//it saves or updates the asset
-		if(existingInode) {
-		    // support for existing inode
-		    save(template,template.getInode());
-		}else {
-		    save(template);
-		}
+		save(template);
 		APILocator.getVersionableAPI().setWorking(template);
 
         return template;

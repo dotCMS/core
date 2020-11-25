@@ -14,8 +14,9 @@ import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.TemplatePaginator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
+
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.HostWebAPI;
@@ -242,6 +243,16 @@ public class TemplateResource {
         return Response.ok(new ResponseEntityView(this.templateHelper.toTemplateView(template, user))).build();
     }
 
+    /**
+     * Saves a new working version of a template.
+     *
+     * @param request
+     * @param response
+     * @param templateForm
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @POST
     @JSONP
     @NoCache
@@ -256,18 +267,13 @@ public class TemplateResource {
         final Host host         = this.hostWebAPI.getCurrentHostNoThrow(request);
         final PageMode pageMode = PageMode.get(request);
 
-        if(!permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, pageMode.respectAnonPerms)) {
-
-            Logger.error(this, "The user: " + user.getUserId() + " does not have permission to add a template");
-            throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
-        }
-
         return Response.ok(new ResponseEntityView(this.templateHelper.toTemplateView(
                 this.fillAndSaveTemplate(templateForm, user, host, pageMode, new Template()), user))).build();
     }
 
     /**
-     * Save an existing template
+     * Saves a new working version of an existing template. The templateForm must contain the identifier of the template.
+     *
      * @param request       {@link HttpServletRequest}
      * @param response      {@link HttpServletResponse}
      * @param templateForm  {@link TemplateForm}
@@ -288,135 +294,14 @@ public class TemplateResource {
         final User user         = initData.getUser();
         final Host host         = this.hostWebAPI.getCurrentHostNoThrow(request);
         final PageMode pageMode = PageMode.get(request);
-        final Template currentTemplate = this.findTemplateByForm(templateForm, user, pageMode);
+        final Template currentTemplate = this.templateAPI.findWorkingTemplate(templateForm.getIdentifier(),user,pageMode.respectAnonPerms);
 
         if (null == currentTemplate) {
-
-            throw new DoesNotExistException("The working template inode: " + templateForm.getInode()
-                    + " or id: " + templateForm.getIdentifier() + " does not exists");
+            throw new DoesNotExistException("Template with Id: " + templateForm.getIdentifier() + " does not exists");
         }
-
-        this.templateHelper.checkPermission(user, currentTemplate, PERMISSION_WRITE);
 
         return Response.ok(new ResponseEntityView(this.templateHelper.toTemplateView(
                 this.fillAndSaveTemplate(templateForm, user, host, pageMode, currentTemplate), user))).build();
-    }
-
-    private Template findTemplateByForm (final TemplateForm templateForm, final User user, final PageMode pageMode) throws DotDataException, DotSecurityException {
-
-        return this.findTemplateBy(templateForm.getInode(), templateForm.getIdentifier(), user, pageMode);
-    }
-
-    private Template findTemplateBy (final String templateInode, final String templateIdentifier,
-                                         final User user, final PageMode pageMode) throws DotDataException, DotSecurityException {
-
-        Template template = null;
-        try {
-            if (UtilMethods.isSet(templateInode)) {
-                template = this.templateAPI.find(templateInode, user, pageMode.respectAnonPerms);
-            }
-        } catch (Exception e) {
-
-            Logger.debug(this, e.getMessage(), e);
-            // if does not work by inode see if can by id
-        }
-
-        if ((null == template || InodeUtils.isSet(template.getInode())) && UtilMethods.isSet(templateIdentifier)) {
-
-            return pageMode.showLive?
-                    this.templateAPI.findLiveTemplate(templateIdentifier, user, pageMode.respectAnonPerms):
-                    this.templateAPI.findWorkingTemplate(templateIdentifier, user, pageMode.respectAnonPerms);
-        }
-
-        throw new DoesNotExistException("Can not find the template");
-    }
-
-
-    /**
-     * Save and publish a new template
-     * @param request        {@link HttpServletResponse}
-     * @param response       {@link HttpServletResponse}
-     * @param templateForm   {@link TemplateForm}
-     * @return Response
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    @POST
-    @Path("/_savepublish")
-    @JSONP
-    @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response saveNewAndPublish(@Context final HttpServletRequest  request,
-                                  @Context final HttpServletResponse response,
-                                  final TemplateForm templateForm)
-            throws DotDataException, DotSecurityException, WebAssetException {
-
-        final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
-        final User user         = initData.getUser();
-        final Host host         = this.hostWebAPI.getCurrentHostNoThrow(request);
-        final PageMode pageMode = PageMode.get(request);
-
-        Logger.debug(this, ()-> "Saving and Publishing new template: " + templateForm.getTitle());
-        if(!permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, pageMode.respectAnonPerms)) {
-
-            Logger.error(this, "The user: " + user.getUserId() + " does not have permission to add a template");
-            throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
-        }
-
-        return Response.ok(new ResponseEntityView(this.templateHelper.toTemplateView(
-                this.saveAndPublish(templateForm, user, host, pageMode, new Template()), user))).build();
-    }
-
-    /**
-     * Save and publish an existing template
-     * @param request       {@link HttpServletRequest}
-     * @param response      {@link HttpServletResponse}
-     * @param templateForm  {@link TemplateForm}
-     * @return Response
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    @PUT
-    @Path("/_savepublish")
-    @JSONP
-    @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response saveAndPublish(@Context final HttpServletRequest  request,
-                               @Context final HttpServletResponse response,
-                               final TemplateForm templateForm)
-            throws DotDataException, DotSecurityException, WebAssetException {
-
-        final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
-        final User user         = initData.getUser();
-        final Host host         = this.hostWebAPI.getCurrentHostNoThrow(request);
-        final PageMode pageMode = PageMode.get(request);
-        final Template currentTemplate = this.findTemplateByForm(templateForm, user, pageMode);
-
-        if (null == currentTemplate) {
-
-            throw new DoesNotExistException("The working template inode: " + templateForm.getInode()
-                    + " or id: " + templateForm.getIdentifier() + " does not exists");
-        }
-
-        this.templateHelper.checkPermission(user, currentTemplate, PERMISSION_WRITE);
-
-        return Response.ok(new ResponseEntityView(this.templateHelper.toTemplateView(
-                this.saveAndPublish(templateForm, user, host, pageMode, currentTemplate), user))).build();
-    }
-
-    @WrapInTransaction
-    private Template saveAndPublish (final TemplateForm templateForm,
-                                     final User user,
-                                     final Host host,
-                                     final PageMode pageMode,
-                                     final Template template)
-            throws DotDataException, DotSecurityException, WebAssetException {
-
-        final Template savedTemplate = this.fillAndSaveTemplate(templateForm, user, host, pageMode, template);
-        this.templateAPI.publishTemplate(savedTemplate, user, pageMode.respectAnonPerms);
-        return savedTemplate;
     }
 
     @WrapInTransaction
@@ -426,26 +311,14 @@ public class TemplateResource {
             final PageMode pageMode,
             final Template template) throws DotSecurityException, DotDataException {
 
-        if(UtilMethods.isSet(templateForm.getTheme())) {
-
-            final Folder themeFolder = this.folderAPI.find(templateForm.getTheme(), user, pageMode.respectAnonPerms);
-
-            if (null != themeFolder && InodeUtils.isSet(themeFolder.getInode())) {
-                template.setThemeName(this.folderAPI.find(templateForm.getTheme(), user, pageMode.respectAnonPerms).getName());
-            } else {
-
-                throw new BadRequestException("Invalid theme: " + templateForm.getTheme());
-            }
-            template.setTheme(templateForm.getTheme());
-        }
-
+        template.setInode("");
+        template.setTheme(templateForm.getTheme());
         template.setBody(templateForm.getBody());
         template.setCountContainers(templateForm.getCountAddContainer());
         template.setCountAddContainer(templateForm.getCountAddContainer());
         template.setSortOrder(templateForm.getSortOrder());
         template.setTitle(templateForm.getTitle());
         template.setModUser(user.getUserId());
-        template.setOwner(user.getUserId());
         template.setModDate(new Date());
         if (null != templateForm.getLayout()) {
             template.setDrawedBody(this.templateHelper.toTemplateLayout(templateForm.getLayout()));
@@ -460,8 +333,7 @@ public class TemplateResource {
         template.setSelectedimage(templateForm.getSelectedimage());
         template.setHeader(templateForm.getHeader());
 
-        if (templateForm.isDrawed()) { // todo: not sure if this needed
-
+        if (templateForm.isDrawed()) {
             final String themeHostId = APILocator.getFolderAPI().find(templateForm.getTheme(), user, pageMode.respectAnonPerms).getHostId();
             final String themePath   = themeHostId.equals(host.getInode())?
                     Template.THEMES_PATH + template.getThemeName() + "/":
@@ -470,15 +342,9 @@ public class TemplateResource {
 
             final StringBuffer endBody = DesignTemplateUtil.getBody(template.getBody(), template.getHeadCode(),
                     themePath, templateForm.isHeaderCheck(), templateForm.isFooterCheck());
-
-            // set the drawedBody for future edit
-            //template.setDrawedBody(template.getBody());
-            // set the real body
             template.setBody(endBody.toString());
         }
-
-        this.versionableAPI.setLocked(
-                this.templateAPI.saveTemplate(template, host, user, pageMode.respectAnonPerms), false, user);
+        this.templateAPI.saveTemplate(template, host, user, pageMode.respectAnonPerms);
 
         ActivityLogger.logInfo(this.getClass(), "Saved Template", "User " + user.getPrimaryKey()
                 + "Template: " + template.getTitle(), host.getTitle() != null? host.getTitle():"default");

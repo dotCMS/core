@@ -114,6 +114,8 @@ public class TemplateHelper {
             layout.setSidebar(this.toSideBar(templateLayoutView.getSidebar()));
             layout.setTitle(templateLayoutView.getTitle());
             layout.setWidth(templateLayoutView.getWidth());
+            layout.setHeader(templateLayoutView.isHeader());
+            layout.setFooter(templateLayoutView.isFooter());
         }
 
         return layout;
@@ -238,23 +240,6 @@ public class TemplateHelper {
         }
 
         return containers;
-    }
-
-    public void checkPermission(final User user, final Template currentTemplate, final int permissionType) throws DotDataException, DotSecurityException {
-
-        if (!this.permissionAPI.doesUserHavePermission(currentTemplate,  permissionType, user)) {
-
-            final Role cmsOwner      = this.roleAPI.loadCMSOwnerRole();
-            final boolean isCMSOwner = this.permissionAPI.getRoles(currentTemplate.getInode(), PermissionAPI.PERMISSION_PUBLISH, "CMS Owner", 0, -1)
-                    .stream().anyMatch(role -> role.getId().equals(cmsOwner.getId()))
-                    || this.permissionAPI.getRoles(currentTemplate.getInode(), PermissionAPI.PERMISSION_WRITE, "CMS Owner", 0, -1)
-                    .stream().anyMatch(role -> role.getId().equals(cmsOwner.getId()));
-
-            if(!isCMSOwner) {
-
-                throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
-            }
-        }
     }
 
 }

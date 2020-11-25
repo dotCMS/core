@@ -5650,98 +5650,536 @@
 				}
 			],
 			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Create New Template Theme Not Send BadRequest",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "31a12b29-0ca9-4450-8683-5ea1a0761fbb",
+						"exec": [
+							"pm.test(\"Status code should be ok 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"title\":\"PostMan Test\",\n    \"layout\":{\n        \"header\":true,\n        \"footer\":true,\n        \"body\":{\"rows\":[]},\n        \"sidebar\":null,\n        \"title\":\"\",\n        \"width\":null\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/templates",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"templates"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create New Template Theme Id Does Not Belong to Folder BadRequest",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "d54cf36d-f443-4dee-a433-62626d705684",
+						"exec": [
+							"pm.test(\"Status code should be ok 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"title\":\"PostMan Test\",\n    \"layout\":{\n        \"header\":true,\n        \"footer\":true,\n        \"body\":{\"rows\":[]},\n        \"sidebar\":null,\n        \"title\":\"\",\n        \"width\":null\n    },\n    \"theme\":\"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/templates",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"templates"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create New Template Title Not Send BadRequest",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "b6ac99ee-0175-4384-9f3b-c24a7520676c",
+						"exec": [
+							"pm.test(\"Status code should be ok 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/templates",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"templates"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create New Template Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "196de7c8-59a7-4a67-a866-2cfbbda6bc1b",
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"body check\", function () {",
+							"    pm.expect(jsonData.entity.body).to.eql('This is the body');",
+							"});",
+							"",
+							"pm.test(\"friendlyName check\", function () {",
+							"    pm.expect(jsonData.entity.friendlyName).to.eql('This is a postman test description');",
+							"});",
+							"",
+							"pm.test(\"Title check\", function () {",
+							"    pm.expect(jsonData.entity.title).to.eql('PostMan Test');",
+							"});",
+							"",
+							"pm.collectionVariables.set(\"templateIdToEdit\", jsonData.entity.identifier);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"title\":\"PostMan Test\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/templates",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"templates"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Edit Template Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "7b21f9bd-5c86-42cc-9589-25049aafa1e1",
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"body check\", function () {",
+							"    pm.expect(jsonData.entity.body).to.eql('This is the body');",
+							"});",
+							"",
+							"pm.test(\"friendlyName check\", function () {",
+							"    pm.expect(jsonData.entity.friendlyName).to.eql('This is a postman test description');",
+							"});",
+							"",
+							"pm.test(\"Title check\", function () {",
+							"    pm.expect(jsonData.entity.title).to.eql('PostMan Test Changed');",
+							"});",
+							"",
+							"pm.test(\"Identifier check\", function () {",
+							"    pm.expect(jsonData.entity.identifier).to.eql(pm.variables.get(\"templateIdToEdit\"));",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"identifier\":\"{{templateIdToEdit}}\",\n    \"title\":\"PostMan Test Changed\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/templates",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"templates"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Edit Template Id Not Exist BadRequest",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "5b5cc7db-49d7-4da3-ba0a-f693875aec4f",
+						"exec": [
+							"pm.test(\"Status code should be ok 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"identifier\":\"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\",\n    \"title\":\"PostMan Test Changed\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/templates",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"templates"
+					]
+				}
+			},
+			"response": []
 		}
 	],
 	"variable": [
 		{
-			"id": "dcf882e5-084e-4223-b558-8ec83725e9d9",
+			"id": "8986b68a-a20f-452e-b1c2-9ef0e02a587f",
 			"key": "temporalInode",
 			"value": "27928cad-5c13-41a9-bcf1-ce23a6cb55c8"
 		},
 		{
-			"id": "58dffdc1-217d-4e0b-8957-973850997fb9",
+			"id": "5bd595c3-241a-448d-91c2-d39371801742",
 			"key": "temporalIdentifier",
 			"value": "037debee-59cb-42b7-b0d1-1cab580c2b76"
 		},
 		{
-			"id": "f2e115e3-3404-4f1e-a186-3c87751ac8b2",
+			"id": "a9281c02-2223-4f50-a0f1-9267c991069d",
 			"key": "temporaryInode",
 			"value": "d3d81700-1767-4468-b788-5a93eda006b9"
 		},
 		{
-			"id": "3d0f0a4d-417a-4927-9a89-0842f21a3034",
+			"id": "71e99e69-9447-41c8-a8e5-6ff76a55bd21",
 			"key": "temporaryIdentifier",
 			"value": "6d9a5bd8-9f07-4ece-8328-a0001ba82de4"
 		},
 		{
-			"id": "2320436b-d60c-4878-a824-b4e5d13c0f96",
+			"id": "6df22211-0b25-4480-92ae-c077fe0c1497",
 			"key": "templateIdentifier",
 			"value": "f2dbc35a-de89-4c04-a859-5c156bbdc7f8"
 		},
 		{
-			"id": "a16d4ae3-45df-4cd5-b46e-0f99c384981e",
+			"id": "3f6ccbce-fa5a-4f09-8ddd-5510f0e339eb",
 			"key": "templateIdToArchive",
-			"value": "0a35d5c3-9ba9-432c-8924-a6b8800c7b1c"
+			"value": "ae7579bf-5203-4590-81eb-b552f9211c47"
 		},
 		{
-			"id": "332f4be9-b5a4-4344-b1b6-8bb096214d30",
+			"id": "e99ecc9d-bdd1-446f-b13f-be9fd1f6ef6a",
 			"key": "templateIdToUnArchive",
 			"value": "9b76a6d3-0d81-40c8-abff-2bb0dbf743df"
 		},
 		{
-			"id": "33a3ab05-60f0-4347-8c48-7f7555bf885c",
+			"id": "c404513e-8202-4cd0-93c6-c589f50a288a",
 			"key": "templateIdToDelete",
 			"value": "b79b4f0e-4e1f-444d-96d4-8b63544afb23"
 		},
 		{
-			"id": "147f399c-133e-4c7f-90de-c18290a6636c",
+			"id": "435df450-f263-4171-a0e2-054dd22fb4c0",
 			"key": "templateIdToPublish",
 			"value": "19d76ad9-b190-4f27-a40a-a5f0204fa371"
 		},
 		{
-			"id": "330964b0-baa4-4f82-9ac6-6570ce9398c2",
+			"id": "9a0734a4-e7ce-46a8-b2e2-726f0154cc95",
 			"key": "templateIdToUnpublish",
 			"value": "7fdca2b5-5cd4-487c-a540-105041213773"
 		},
 		{
-			"id": "59f5250f-4882-4170-8fd3-c28f44161027",
+			"id": "1d2f418f-8120-4bc7-bc27-98f48619c4fc",
 			"key": "templateIdToLock",
 			"value": "40654e42-5b63-479f-87c7-8003135c891a"
 		},
 		{
-			"id": "df59e222-03b3-4d8d-9817-8d0da4cf5abe",
+			"id": "7cb47c29-b22e-4ca9-84b4-1cfccfe484ce",
 			"key": "templateIdToUnLock",
 			"value": "afadb8e2-f97c-4bea-9e21-40990eba953c"
 		},
 		{
-			"id": "906fa0ab-c3bd-426b-b93e-673dd46428de",
+			"id": "4eb8891c-0981-4003-85b7-d0889f587225",
 			"key": "templateIdToCopy",
 			"value": "0b419f01-50d9-4fe6-bac5-958bfc693dbb"
 		},
 		{
-			"id": "0b5e9301-2f10-482e-85e0-19b727616162",
+			"id": "0af58e27-6855-4d30-8f5f-4e52af473745",
 			"key": "templateIdToGetLive",
 			"value": "b2cd0dda-3bbb-4830-abac-b8ed95be47e3"
 		},
 		{
-			"id": "6a9c324f-f124-40c5-b887-5b04fcfb746b",
+			"id": "5043aa3d-f8db-486d-888b-a8b28ced265b",
 			"key": "templateIdToGetWorking",
-			"value": "7ef61f81-56a6-465d-9098-baa4b8bed733"
+			"value": "dcc63d5b-c522-4c5c-82e7-0c14e240731e"
 		},
 		{
-			"id": "17e0420f-fbbc-463f-bc21-8e727f36d7ce",
+			"id": "841d5740-d1f6-49db-80ea-6aaffec3fe9f",
 			"key": "templateIdToGetTemplateA",
 			"value": "6e83cb81-34eb-4a53-abbc-cb14fd88fba8"
 		},
 		{
-			"id": "9d9c8366-f766-4b4a-b83f-faa277800a27",
+			"id": "54d06339-96fb-457e-a395-d43978cf4eae",
 			"key": "templateIdToGetTemplateB",
 			"value": "4281dce3-e143-44a8-9a06-ebc708492761"
 		},
 		{
-			"id": "b7d744c1-a8a4-450c-8a2f-4b7ab89ae201",
+			"id": "52234faa-fede-4453-8dfd-901ea496216a",
 			"key": "templateIdToGetTemplateC",
 			"value": "9e2ea2b6-59cd-4716-9ebd-4e9232e69e1d"
+		},
+		{
+			"id": "1598eff4-4f09-44e4-8517-2bf4e638388e",
+			"key": "templateIdToEdit",
+			"value": "0e1d997c-2a17-4f89-a50e-eef62d114b0a"
 		}
 	],
 	"protocolProfileBehavior": {}
