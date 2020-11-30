@@ -2,8 +2,17 @@ package com.dotcms.vanityurl.filters;
 
 import static com.dotmarketing.filters.Constants.VANITY_URL_OBJECT;
 
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.util.StringPool;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.vanityurl.business.VanityUrlAPI;
+import com.dotcms.vanityurl.model.CachedVanityUrl;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.HostWebAPI;
+import com.dotmarketing.business.web.LanguageWebAPI;
+import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.filters.CMSUrlUtil;
+import com.dotmarketing.filters.Constants;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import java.io.IOException;
 import java.util.Optional;
 import javax.servlet.Filter;
@@ -14,18 +23,6 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.vanityurl.business.VanityUrlAPI;
-import com.dotcms.vanityurl.model.CachedVanityUrl;
-import com.dotcms.vanityurl.model.VanityUrlResult;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.web.HostWebAPI;
-import com.dotmarketing.business.web.LanguageWebAPI;
-import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.filters.CMSUrlUtil;
-import com.dotmarketing.filters.Constants;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
 
 /**
  * This Filter handles the vanity url logic
@@ -79,23 +76,13 @@ public class VanityURLFilter implements Filter {
           final Host host = hostWebAPI.getCurrentHostNoThrow(request);
           final Language language = this.languageWebAPI.getLanguage(request);
           final Optional<CachedVanityUrl> cachedVanity = vanityApi.resolveVanityUrl(uri, host, language);
-          
+
           if (cachedVanity.isPresent()) {
-              request.setAttribute(VANITY_URL_OBJECT, cachedVanity.get());
-
-              String newUri = uri;
-
-              final String queryString = request.getQueryString();
-              if(null != queryString && !newUri.contains("?") ){
-                 newUri = newUri + StringPool.QUESTION + queryString;
-              }
-
-              final VanityUrlResult vanityUrlResult = cachedVanity.get().handle( newUri, response);
-              // If the handler already resolved the requested URI we stop the processing here
-              if (vanityUrlResult.isResolved()) {
-                return;
-              }
-              filterChain.doFilter(new VanityUrlRequestWrapper(request, vanityUrlResult), response);
+              final CachedVanityUrl cachedVanityUrl = cachedVanity.get();
+              request.setAttribute(VANITY_URL_OBJECT, cachedVanityUrl);
+              filterChain.doFilter(
+                      new VanityUrlRequestWrapper(request, cachedVanityUrl.handle(uri, response)),
+                      response);
               return;
           }
 

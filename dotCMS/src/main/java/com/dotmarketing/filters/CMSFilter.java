@@ -2,6 +2,7 @@ package com.dotmarketing.filters;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
+import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.vanityurl.filters.VanityUrlRequestWrapper;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.domain.Visitor;
@@ -11,9 +12,12 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.rules.business.RulesEngine;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.*;
+import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import org.apache.commons.logging.LogFactory;
 
 import javax.servlet.*;
@@ -165,6 +169,10 @@ public class CMSFilter implements Filter {
 
         if (iAm == IAm.PAGE) {
 
+            if (handleVanityURLRedirects(request, response, uri, queryString)) {
+                return;
+            }
+
             final StringWriter forward = new StringWriter().append("/servlets/VelocityServlet");
 
             if (UtilMethods.isSet(queryString)) {
@@ -190,6 +198,11 @@ public class CMSFilter implements Filter {
         
         // allow vanities to forward to a dA asset
         if(request instanceof VanityUrlRequestWrapper && !response.isCommitted() && (uri.startsWith("/dA/") || uri.startsWith("/contentAsset/")) ) {
+
+            if (handleVanityURLRedirects(request, response, uri, queryString)) {
+                return;
+            }
+
             request.getRequestDispatcher(uri).forward(request, response);
             return;
         }
@@ -197,6 +210,36 @@ public class CMSFilter implements Filter {
 
         chain.doFilter(req, res);
 
+    }
+
+    /**
+     * Product of refactoring handling 301 and 302 previously executed by CachedVanityUrl
+     * @param request
+     * @param response
+     * @param uri
+     * @param queryString
+     * @return weather or not the redirect was handled
+     */
+    private boolean handleVanityURLRedirects(final HttpServletRequest request, final HttpServletResponse response, final String uri,final String queryString) {
+        if(request instanceof VanityUrlRequestWrapper && !response.isCommitted()) {
+           final VanityUrlRequestWrapper vanityUrlRequestWrapper = (VanityUrlRequestWrapper) request;
+           final int responseCode = vanityUrlRequestWrapper.getResponseCode();
+
+           final String newUrl = uri + (queryString!=null ? StringPool.QUESTION + queryString : StringPool.BLANK);
+            if (responseCode == 301 || responseCode == 302 ) {
+                response.setStatus(responseCode);
+                response.setHeader("Location", newUrl);
+                return true;
+            }
+
+            // if the vanity is a proxy request
+            if (responseCode == 200 && UtilMethods.isSet(uri) && uri.contains("//")) {
+                Try.run(()-> new CircuitBreakerUrl(newUrl).doOut(response)).onFailure(
+                        DotRuntimeException::new);
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

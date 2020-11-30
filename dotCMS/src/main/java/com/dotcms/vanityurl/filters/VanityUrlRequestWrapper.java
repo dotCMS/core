@@ -2,7 +2,11 @@ package com.dotcms.vanityurl.filters;
 
 import static com.dotmarketing.filters.Constants.CMS_FILTER_QUERY_STRING_OVERRIDE;
 import static com.dotmarketing.filters.Constants.CMS_FILTER_URI_OVERRIDE;
-import java.nio.charset.Charset;
+
+import com.dotcms.vanityurl.model.VanityUrlResult;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableMap;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -13,9 +17,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
-import com.dotcms.vanityurl.model.VanityUrlResult;
-import com.dotmarketing.util.UtilMethods;
-import com.google.common.collect.ImmutableMap;
 
 
 /**
@@ -27,16 +28,14 @@ import com.google.common.collect.ImmutableMap;
  */
 public class VanityUrlRequestWrapper extends HttpServletRequestWrapper {
     
-    final Map<String, String[]> queryParamMap;
-    final String newQueryString;
-    final boolean vanityHasQueryString;
+    private final Map<String, String[]> queryParamMap;
+    private final String newQueryString;
+    private final int responseCode;
 
-
-    public VanityUrlRequestWrapper(HttpServletRequest request, VanityUrlResult vanityUrlResult) {
+    public VanityUrlRequestWrapper(final HttpServletRequest request, final VanityUrlResult vanityUrlResult) {
         super(request);
 
-        
-        this.vanityHasQueryString = UtilMethods.isSet(vanityUrlResult.getQueryString());
+        final boolean vanityHasQueryString = UtilMethods.isSet(vanityUrlResult.getQueryString());
         
         this.newQueryString = vanityHasQueryString && UtilMethods.isSet(request.getQueryString())
                         ? request.getQueryString() + "&" + vanityUrlResult.getQueryString()
@@ -57,11 +56,11 @@ public class VanityUrlRequestWrapper extends HttpServletRequestWrapper {
 
         this.queryParamMap = ImmutableMap.copyOf(tempMap);
 
-
+        this.responseCode = vanityUrlResult.getResponseCode();
 
         this.setAttribute(CMS_FILTER_URI_OVERRIDE, vanityUrlResult.getRewrite());
         this.setAttribute(CMS_FILTER_QUERY_STRING_OVERRIDE, this.newQueryString);
-
+        Logger.debug(VanityUrlRequestWrapper.class,()-> "combined query string: " +  newQueryString);
     }
 
     @Override
@@ -99,4 +98,11 @@ public class VanityUrlRequestWrapper extends HttpServletRequestWrapper {
        
     }
 
+    /**
+     * response code used to build the Vanity URL.
+     * @return
+     */
+    public int getResponseCode() {
+        return responseCode;
+    }
 }
