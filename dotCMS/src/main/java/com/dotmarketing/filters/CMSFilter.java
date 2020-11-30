@@ -83,7 +83,7 @@ public class CMSFilter implements Filter {
         LogFactory.getLog(this.getClass()).debug("CMS Filter URI = " + uri);
 
 
-        Host site = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+        final Host site = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
 
         /*
          * If someone is trying to go right to an asset without going through the cms, give them a
@@ -196,8 +196,8 @@ public class CMSFilter implements Filter {
             }
         }
         
-        // allow vanities to forward to a dA asset
-        if(request instanceof VanityUrlRequestWrapper && !response.isCommitted() && (uri.startsWith("/dA/") || uri.startsWith("/contentAsset/")) ) {
+        // allow vanities to forward to a dA asset or external URIs
+        if(request instanceof VanityUrlRequestWrapper && !response.isCommitted()) {
 
             if (handleVanityURLRedirects(request, response, uri, queryString)) {
                 return;
