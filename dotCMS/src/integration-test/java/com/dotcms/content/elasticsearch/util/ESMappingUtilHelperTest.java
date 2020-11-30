@@ -24,6 +24,7 @@ import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.model.field.RadioField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.SelectField;
+import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -146,47 +147,52 @@ public class ESMappingUtilHelperTest {
     public static Object[][] dataProviderAddMappingForFields() {
         return new Object[][] {
                 {  "strings_as_dates", DateField.class, DataTypes.DATE,
-                        new String[] {"originalstartdate", "recurrencestart", "recurrenceend"},  "date" },
+                        new String[] {"originalstartdate", "recurrencestart", "recurrenceend"},  "date", false },
 
                 {  "strings_as_date_times", DateTimeField.class, DataTypes.DATE,
-                        new String[] {"originalstartdate", "recurrencestart", "recurrenceend"},  "date" },
+                        new String[] {"originalstartdate", "recurrencestart", "recurrenceend"},  "date", false },
 
                 {  "dates_as_text", TextField.class, DataTypes.TEXT,
-                        new String[] {"originalstartdate", "recurrencestart", "recurrenceend"},  "text" },
+                        new String[] {"originalstartdate", "recurrencestart", "recurrenceend"},  "text", false },
 
                 {  "keywordmapping", TextField.class, DataTypes.TEXT,
                         new String[] {"categories", "tags", "conhost",
                                 "wfstep", "structurename", "contenttype", "parentpath",
-                                "path", "urlmap", "moduser", "owner"},  "text" },
+                                "path", "urlmap", "moduser", "owner"},  "text", false },
 
                 {  "geomapping", TextField.class, DataTypes.TEXT,
-                        new String[] {"mylatlong", "mylatlon"},  null },
+                        new String[] {"mylatlong", "mylatlon"},  null, false },
 
-                {  "permissions", TextField.class, DataTypes.TEXT, new String[] {"permissions"},  "text" },
+                {  "permissions", TextField.class, DataTypes.TEXT, new String[] {"permissions"},  "text", false },
 
                 {  "radio_as_boolean", RadioField.class, DataTypes.BOOL,
-                        new String[] {"MyRadioAsBoolean"},  "boolean" },
+                        new String[] {"MyRadioAsBoolean"},  "boolean", false },
 
                 {  "radio_as_float", RadioField.class, DataTypes.FLOAT,
-                        new String[] {"MyRadioAsFloat"},  "double" },
+                        new String[] {"MyRadioAsFloat"},  "double", false },
 
                 {  "radio_as_integer", RadioField.class, DataTypes.INTEGER,
-                        new String[] {"MyRadioAsInteger"},  "long" },
+                        new String[] {"MyRadioAsInteger"},  "long", false },
 
                 {  "select_as_boolean", SelectField.class, DataTypes.BOOL,
-                        new String[] {"MySelectAsBoolean"},  "boolean" },
+                        new String[] {"MySelectAsBoolean"},  "boolean", false },
 
                 {  "select_as_float", SelectField.class, DataTypes.FLOAT,
-                        new String[] {"MySelectAsFloat"},  "double" },
+                        new String[] {"MySelectAsFloat"},  "double", false },
 
                 {  "select_as_integer", SelectField.class, DataTypes.INTEGER,
-                        new String[] {"MySelectAsInteger"},  "long" },
+                        new String[] {"MySelectAsInteger"},  "long", false  },
 
                 {  "text_as_float", TextField.class, DataTypes.FLOAT,
-                        new String[] {"MyTextAsFloat"},  "double" },
+                        new String[] {"MyTextAsFloat"},  "double", false  },
 
                 {  "text_as_integer", TextField.class, DataTypes.INTEGER,
-                        new String[] {"MyTextAsInteger"},  "long" }
+                        new String[] {"MyTextAsInteger"},  "long", false  },
+
+                {  "tags", TagField.class, DataTypes.TEXT,
+                        new String[] {"MyTagField"},  "keyword", false },
+
+                {  "uniqueField", TextField.class, DataTypes.TEXT, new String[] {"MyUniqueField"},  "keyword", true },
         };
     }
 
@@ -208,7 +214,7 @@ public class ESMappingUtilHelperTest {
     @Test
     public void testAddMappingForFields(final String testCase, final Class fieldType,
             final DataTypes type,
-            final String[] fields, final String expectedResult)
+            final String[] fields, final String expectedResult, final boolean isUnique)
             throws IOException, DotIndexException, DotSecurityException, DotDataException {
 
         Logger.info(ESMappingUtilHelperTest.class,
@@ -224,7 +230,7 @@ public class ESMappingUtilHelperTest {
             for (final String field : fields) {
                 final Field newField = FieldBuilder.builder(fieldType)
                         .name(field).variable(field).dataType(type).contentTypeId(contentType.id())
-                        .indexed(true).build();
+                        .indexed(true).unique(isUnique).build();
                 fieldAPI.save(newField, user);
             }
 
