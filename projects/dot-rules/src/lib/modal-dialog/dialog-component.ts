@@ -5,7 +5,7 @@ import { KeyCode } from '../services/util/key-util';
     changeDetection: ChangeDetectionStrategy.OnPush,
     selector: 'cw-modal-dialog',
     template: `<p-dialog
-        width="900"
+        [style]="{width: '900px'}"
         [header]="headerText"
         [visible]="!hidden"
         [modal]="true"
