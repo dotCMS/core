@@ -50,7 +50,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-
+import io.vavr.API;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -638,16 +638,17 @@ public class DependencyManager {
 	 * determines which of them are actually {@link IHTMLPage} objects. After
 	 * that, the respective dependencies will be retrieved and added acordingly.
 	 */
-	private void setHTMLPagesDependencies(final PublisherFilter publisherFilter)  {
+	@VisibleForTesting
+	protected void setHTMLPagesDependencies(final PublisherFilter publisherFilter)  {
 		try {
 
 			final Set<String> idsToWork = new HashSet<>();
 			idsToWork.addAll(htmlPagesSet);
 			for (final String contId : contentsSet) {
 
-				final List<Contentlet> c = APILocator.getContentletAPI().search("+identifier:" + contId, 0, 0, "moddate", user, false);
+				final Contentlet c = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage( contId);
 
-				if (c != null && !c.isEmpty() && c.get(0).getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) {
+				if (c != null && UtilMethods.isSet(c.getInode()) && c.isHTMLPage()) {
 					idsToWork.add(contId);
 				}
 			}
@@ -655,8 +656,6 @@ public class DependencyManager {
 			//Process the pages we found
 			setHTMLPagesDependencies(idsToWork,publisherFilter);
 
-		} catch (DotSecurityException e) {
-			Logger.error(this, e.getMessage(), e);
 		} catch (DotDataException e) {
 			Logger.error(this, e.getMessage(), e);
 		}
@@ -676,7 +675,8 @@ public class DependencyManager {
 	 * 
 	 * @param idsToWork
 	 */
-	private void setHTMLPagesDependencies(final Set<String> idsToWork,final PublisherFilter publisherFilter) {
+	@VisibleForTesting
+	protected void setHTMLPagesDependencies(final Set<String> idsToWork,final PublisherFilter publisherFilter) {
 
 		try {
 
@@ -685,8 +685,17 @@ public class DependencyManager {
 			final Set<Container> containerList = new HashSet<>();
 
 			for (final String pageId : idsToWork) {
+			    
+			    if(pageId==null) {
+			        continue;
+			    }
 				final Identifier identifier = idenAPI.find(pageId);
 
+				if(identifier==null || UtilMethods.isEmpty(identifier.getId())) {
+				    Logger.warn(this.getClass(), "Unable to find page for identifier, moving on.  Id: " + identifier );
+				    continue;
+				}
+				
 				// Host dependency
 				if (!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.SITE.getType())) {
 					final Host host = APILocator.getHostAPI().find(identifier.getHostId(), user, false);
@@ -703,39 +712,11 @@ public class DependencyManager {
 				}
 
 				// looking for working version (must exists)
-				IHTMLPage workingPage = null;
+				final IHTMLPage workingPage = APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(identifier, APILocator.getLanguageAPI().getDefaultLanguage().getId(), false, user, false);
 
-				Contentlet contentlet = null;
-				try {
-					contentlet = APILocator.getContentletAPI()
-							.search("+identifier:" + pageId + " +working:true", 0, 0, "moddate",
-									user, false).get(0);
-				} catch (DotContentletStateException e) {
-					// content not found message is already displayed on console
-					Logger.debug(this,()->e.getMessage());
-				}
-				if (contentlet != null)
-					workingPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
+				final IHTMLPage livePage = workingPage.isLive() ? workingPage : APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(identifier, APILocator.getLanguageAPI().getDefaultLanguage().getId(), true, user, false);
+				
 
-				// looking for live version (might not exists)
-				IHTMLPage livePage = null;
-
-				contentlet = null;
-				try {
-					final List<Contentlet> result = APILocator.getContentletAPI()
-							.search("+identifier:" + pageId + " +live:true", 0, 0, "moddate", user,
-									false);
-					if (!result.isEmpty()) {
-						contentlet = result.get(0);
-					}
-
-				} catch (DotContentletStateException e) {
-					// content not found message is already displayed on console
-					Logger.debug(this,()->e.getMessage());
-				}
-				if (contentlet != null) {
-					livePage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
-				}
 
 				// working template working page
 				Template workingTemplateWP = null;
