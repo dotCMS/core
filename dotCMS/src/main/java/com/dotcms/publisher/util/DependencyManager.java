@@ -51,6 +51,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.API;
+import io.vavr.control.Try;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -712,9 +713,16 @@ public class DependencyManager {
 				}
 
 				// looking for working version (must exists)
-				final IHTMLPage workingPage = APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(identifier, APILocator.getLanguageAPI().getDefaultLanguage().getId(), false, user, false);
-
-				final IHTMLPage livePage = workingPage.isLive() ? workingPage : APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(identifier, APILocator.getLanguageAPI().getDefaultLanguage().getId(), true, user, false);
+				final IHTMLPage workingPage = Try.of(()->APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(identifier, APILocator.getLanguageAPI().getDefaultLanguage().getId(), false, user, false)).onFailure(e->Logger.warnAndDebug(DependencyManager.class, e)).getOrNull();
+				if(workingPage==null) {
+				    continue;
+				}
+				
+				final IHTMLPage livePage = workingPage.isLive() 
+				                ? workingPage 
+                                : Try.of(()->
+                                        APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(identifier, APILocator.getLanguageAPI().getDefaultLanguage().getId(), true, user, false))
+                                .onFailure(e->Logger.warnAndDebug(DependencyManager.class, e)).getOrNull();
 				
 
 
