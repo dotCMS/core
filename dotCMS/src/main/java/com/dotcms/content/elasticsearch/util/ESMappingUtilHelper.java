@@ -373,13 +373,14 @@ public class ESMappingUtilHelper {
                     || field instanceof WysiwygField || field instanceof RadioField
                     || field instanceof SelectField || field instanceof MultiSelectField
                     || field instanceof TagField) {
-                if (field.unique() || field instanceof TagField) {
-                    mappingForField = "{\n\"type\":\"keyword\"\n}";
+
+                if (dataTypesMap.containsKey(field.dataType())) {
+                    mappingForField = String
+                            .format("{\n\"type\":\"%s\"\n}",
+                                    dataTypesMap.get(field.dataType()));
                 } else {
-                    if (dataTypesMap.containsKey(field.dataType())) {
-                        mappingForField = String
-                                .format("{\n\"type\":\"%s\"\n}",
-                                        dataTypesMap.get(field.dataType()));
+                    if (field.unique() || field instanceof TagField) {
+                        mappingForField = "{\n\"type\":\"keyword\"\n}";
                     } else {
                         mappingForField = "{\n"
                                 + ("\"type\":\"text\",\n")

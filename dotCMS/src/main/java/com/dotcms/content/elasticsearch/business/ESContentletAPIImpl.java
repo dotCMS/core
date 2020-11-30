@@ -6302,6 +6302,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             // validate unique
             if(field.isUnique()){
+                final boolean isDataTypeNumber = field.getDataType().contains(DataTypes.INTEGER.toString())
+                        || field.getDataType().contains(DataTypes.FLOAT.toString());
                 try{
                     StringBuilder buffy = new StringBuilder(UUIDGenerator.generateUuid());
                     buffy.append(" +structureInode:" + contentlet.getStructureInode());
@@ -6312,9 +6314,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     buffy.append(" +languageId:" + contentlet.getLanguageId());
 
                     buffy.append(" +" + contentlet.getContentType().variable()).append(StringPool.PERIOD)
-                            .append(field.getVelocityVarName()).append("_dotraw").append(StringPool.COLON)
-                            .append("\"").append(getFieldValue(contentlet, new LegacyFieldTransformer(field).from()))
-                            .append("\"");
+                            .append(field.getVelocityVarName());
+
+                    if (isDataTypeNumber){
+                        buffy.append(StringPool.COLON).append("\"").append(getFieldValue(contentlet,
+                                new LegacyFieldTransformer(field).from())).append("\"");
+                    }else{
+                        buffy.append("_dotraw").append(StringPool.COLON).append("\"")
+                                .append(getFieldValue(contentlet,
+                                        new LegacyFieldTransformer(field).from()))
+                                .append("\"");
+                    }
 
                     List<ContentletSearch> contentlets = new ArrayList<ContentletSearch>();
                     try {
@@ -6333,9 +6343,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             Contentlet c = contentFactory.find(contentletSearch.getInode());
                             Map<String, Object> cMap = c.getMap();
                             Object obj = cMap.get(field.getVelocityVarName());
-
-                            boolean isDataTypeNumber = field.getDataType().contains(DataTypes.INTEGER.toString())
-                                    || field.getDataType().contains(DataTypes.FLOAT.toString());
 
                             if ( ( isDataTypeNumber && fieldValue.equals(obj) ) ||
                                     ( !isDataTypeNumber && ((String) obj).equalsIgnoreCase(((String) fieldValue)) ) )  {

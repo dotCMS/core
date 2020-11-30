@@ -1,6 +1,7 @@
 package com.dotmarketing.util;
 
 import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.repackage.com.csvreader.CsvReader;
@@ -950,11 +951,18 @@ public class ImportUtil {
                             buffy.append(" +(conhost:").append(text).append(" conFolder:")
                                     .append(text).append(")");
                         } else {
-                            buffy.append(" +").append(contentType.getVelocityVarName()).append(".")
-                                    .append(field.getVelocityVarName()).append("_dotraw").append(StringPool.COLON)
-                                    .append(escapeLuceneSpecialCharacter(text).contains(" ") ? "\""
-                                            + escapeLuceneSpecialCharacter(text) + "\""
-                                            : escapeLuceneSpecialCharacter(text));
+                            final boolean isDataTypeNumber = field.getDataType().contains(DataTypes.INTEGER.toString())
+                                    || field.getDataType().contains(DataTypes.FLOAT.toString());
+
+                            if (isDataTypeNumber){
+                                buffy.append(" +").append(contentType.getVelocityVarName()).append(".")
+                                        .append(field.getVelocityVarName()).append(StringPool.COLON).append("\"").append(text).append("\"");
+                            } else{
+                                buffy.append(" +").append(contentType.getVelocityVarName()).append(".")
+                                        .append(field.getVelocityVarName()).append("_dotraw").append(StringPool.COLON)
+                                        .append("\"").append(text).append("\"");
+                            }
+
                         }
                         conditionValues += conditionValues + value + "-";
                     }
