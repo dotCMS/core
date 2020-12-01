@@ -662,6 +662,11 @@ public class DependencyManager {
 		}
 	}
 
+	@VisibleForTesting
+	void setHTMLPagesDependencies(final Set<String> idsToWork,final PublisherFilter publisherFilter) {
+		setHTMLPagesDependencies(idsToWork, publisherFilter, false);
+	}
+
 	/**
 	 * Collects the different dependent objects that are required for pushing
 	 * {@link IHTMLPage} objects. The required dependencies of a page are:
@@ -676,9 +681,10 @@ public class DependencyManager {
 	 * 
 	 * @param idsToWork
 	 */
-	@VisibleForTesting
-	protected void setHTMLPagesDependencies(final Set<String> idsToWork,final PublisherFilter publisherFilter) {
-
+	private void setHTMLPagesDependencies(
+			final Set<String> idsToWork,
+			final PublisherFilter publisherFilter,
+			final boolean processTemplate) {
 		try {
 
 			final IdentifierAPI idenAPI = APILocator.getIdentifierAPI();
@@ -696,7 +702,7 @@ public class DependencyManager {
 				    Logger.warn(this.getClass(), "Unable to find page for identifier, moving on.  Id: " + identifier );
 				    continue;
 				}
-				
+
 				// Host dependency
 				if (!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.SITE.getType())) {
 					final Host host = APILocator.getHostAPI().find(identifier.getHostId(), user, false);
@@ -741,6 +747,10 @@ public class DependencyManager {
 						templates.addOrClean(workingPage.getTemplateId(),
 								workingTemplateWP.getModDate());
 						templatesSet.add(workingPage.getTemplateId());
+
+						if (processTemplate) {
+							setTemplateDependencies(publisherFilter, workingPage.getTemplateId());
+						}
 					}
 				}
 
@@ -847,69 +857,9 @@ public class DependencyManager {
 	private void setTemplateDependencies(final PublisherFilter publisherFilter)  {
 		try {
 			final List<Container> containerList = new ArrayList<>();
-			final FolderAPI folderAPI = APILocator.getFolderAPI();
 
 			for (final String id : templatesSet) {
-				final Template workingTemplate = APILocator.getTemplateAPI().findWorkingTemplate(id, user, false);
-				final Template liveTemplate = APILocator.getTemplateAPI().findLiveTemplate(id, user, false);
-
-				// Host dependency
-				if (!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.SITE.getType())) {
-					final Host host = APILocator.getHostAPI()
-							.find(APILocator.getTemplateAPI().getTemplateHost(workingTemplate).getIdentifier(),
-									user, false);
-					hosts.addOrClean(
-							APILocator.getTemplateAPI().getTemplateHost(workingTemplate).getIdentifier(),
-							host.getModDate());
-				}
-
-				containerList.clear();
-				// Container dependencies
-				if (!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.CONTAINER.getType())) {
-					containerList.addAll(APILocator.getTemplateAPI()
-							.getContainersInTemplate(workingTemplate, user, false));
-
-					if (liveTemplate != null && InodeUtils.isSet(liveTemplate.getInode())) {
-						containerList.addAll(APILocator.getTemplateAPI()
-								.getContainersInTemplate(liveTemplate, user, false));
-					}
-
-					for (final Container container : containerList) {
-
-						if (container instanceof FileAssetContainer) {
-							fileAssetContainersSet.add(container.getIdentifier());
-							continue;
-						}
-
-						containers.addOrClean(container.getIdentifier(), container.getModDate());
-						containersSet.add(container.getIdentifier());
-					}
-				}
-
-				//Adding theme
-				if (!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.FOLDER.getType())) {
-					if (UtilMethods.isSet(workingTemplate.getTheme())) {
-						try {
-							final Folder themeFolder = folderAPI.find(workingTemplate.getTheme(), user, false);
-							if (themeFolder != null && InodeUtils.isSet(themeFolder.getInode())) {
-								final Folder parentFolder = APILocator.getFolderAPI()
-										.findParentFolder(themeFolder, user, false);
-								if (UtilMethods.isSet(parentFolder)) {
-									folders.addOrClean(parentFolder.getInode(), parentFolder.getModDate());
-									foldersSet.add(parentFolder.getInode());
-								}
-								final List<Folder> folderList = new ArrayList<Folder>();
-								folderList.add(themeFolder);
-								setFolderListDependencies(folderList, publisherFilter);
-							}
-						} catch (DotDataException e1) {
-							Logger.error(DependencyManager.class,
-									"Error trying to add theme folder for template Id: " + id
-											+ ". Theme folder ignored because: " + e1.getMessage(),
-									e1);
-						}
-					}
-				}
+				setTemplateDependencies(publisherFilter, containerList, id);
 			}
 
 		} catch (DotSecurityException e) {
@@ -920,6 +870,83 @@ public class DependencyManager {
 			Logger.error(this, e.getMessage(),e);
 		}
 
+	}
+
+	private void setTemplateDependencies(
+			final PublisherFilter publisherFilter,
+			final String id) throws DotDataException, DotSecurityException {
+
+		setTemplateDependencies(publisherFilter, new ArrayList<>(), id);
+
+	}
+
+	private void setTemplateDependencies(
+			final PublisherFilter publisherFilter,
+			final List<Container> containerList,
+			final String id) throws DotDataException, DotSecurityException {
+
+		final FolderAPI folderAPI = APILocator.getFolderAPI();
+
+		final Template workingTemplate = APILocator.getTemplateAPI().findWorkingTemplate(id, user, false);
+		final Template liveTemplate = APILocator.getTemplateAPI().findLiveTemplate(id, user, false);
+
+		// Host dependency
+		if (!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.SITE.getType())) {
+			final Host host = APILocator.getHostAPI()
+					.find(APILocator.getTemplateAPI().getTemplateHost(workingTemplate).getIdentifier(),
+							user, false);
+			hosts.addOrClean(
+					APILocator.getTemplateAPI().getTemplateHost(workingTemplate).getIdentifier(),
+					host.getModDate());
+		}
+
+		containerList.clear();
+		// Container dependencies
+		if (!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.CONTAINER.getType())) {
+			containerList.addAll(APILocator.getTemplateAPI()
+					.getContainersInTemplate(workingTemplate, user, false));
+
+			if (liveTemplate != null && InodeUtils.isSet(liveTemplate.getInode())) {
+				containerList.addAll(APILocator.getTemplateAPI()
+						.getContainersInTemplate(liveTemplate, user, false));
+			}
+
+			for (final Container container : containerList) {
+
+				if (container instanceof FileAssetContainer) {
+					fileAssetContainersSet.add(container.getIdentifier());
+					continue;
+				}
+
+				containers.addOrClean(container.getIdentifier(), container.getModDate());
+				containersSet.add(container.getIdentifier());
+			}
+		}
+
+		//Adding theme
+		if (!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.FOLDER.getType())) {
+			if (UtilMethods.isSet(workingTemplate.getTheme())) {
+				try {
+					final Folder themeFolder = folderAPI.find(workingTemplate.getTheme(), user, false);
+					if (themeFolder != null && InodeUtils.isSet(themeFolder.getInode())) {
+						final Folder parentFolder = APILocator.getFolderAPI()
+								.findParentFolder(themeFolder, user, false);
+						if (UtilMethods.isSet(parentFolder)) {
+							folders.addOrClean(parentFolder.getInode(), parentFolder.getModDate());
+							foldersSet.add(parentFolder.getInode());
+						}
+						final List<Folder> folderList = new ArrayList<Folder>();
+						folderList.add(themeFolder);
+						setFolderListDependencies(folderList, publisherFilter);
+					}
+				} catch (DotDataException e1) {
+					Logger.error(DependencyManager.class,
+							"Error trying to add theme folder for template Id: " + id
+									+ ". Theme folder ignored because: " + e1.getMessage(),
+							e1);
+				}
+			}
+		}
 	}
 
 	/**
@@ -1152,7 +1179,7 @@ public class DependencyManager {
 
 		if (UtilMethods.isSet(detailPageId)) {
 			contentsSet.add(detailPageId);
-			setHTMLPagesDependencies(set(detailPageId), publisherFilter);
+			setHTMLPagesDependencies(set(detailPageId), publisherFilter, true);
 		}
 	}
 
@@ -1273,7 +1300,7 @@ public class DependencyManager {
 
 					}
 					//Process the pages we found
-					setHTMLPagesDependencies(pagesToProcess,publisherFilter);
+					setHTMLPagesDependencies(pagesToProcess, publisherFilter, true);
 				}
 			} catch (Exception e) {
 				Logger.debug(this, e.toString());
@@ -1449,5 +1476,10 @@ public class DependencyManager {
 	@VisibleForTesting
 	Set getContainers() {
 		return containers;
+	}
+
+	@VisibleForTesting
+	Set getFolders() {
+		return folders;
 	}
 }

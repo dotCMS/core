@@ -15,6 +15,7 @@ import com.dotcms.publisher.bundle.business.BundleAPI;
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publishing.DotBundleException;
+import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -27,7 +28,13 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import com.liferay.portal.model.User;
+import java.util.Date;
+import java.util.Map;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
@@ -84,6 +91,9 @@ public class DependencyManagerTest {
         contentletAPI = APILocator.getContentletAPI();
         contentTypeFieldAPI = APILocator.getContentTypeFieldAPI();
         relationshipAPI = APILocator.getRelationshipAPI();
+
+        createFilter();
+
     }
 
     /**
@@ -244,13 +254,24 @@ public class DependencyManagerTest {
                 .withContentType(contentTypeForContent, "Testing")
                 .nextPersisted();
 
+        final Container container_2 = new ContainerDataGen()
+                .nextPersisted();
+
         final TemplateLayout templateLayout = new TemplateLayoutDataGen()
                 .withContainer(container, ContainerUUID.UUID_START_VALUE)
+                .withContainer(container_2, ContainerUUID.UUID_START_VALUE)
                 .next();
+
+        final Folder folderTheme = new FolderDataGen().nextPersisted();
+        final Contentlet theme = new ThemeDataGen()
+                .site(host)
+                .themesFolder(folderTheme)
+                .nextPersisted();
 
         final Template template = new TemplateDataGen()
                 .drawedBody(templateLayout)
                 .host(host)
+                .theme(theme)
                 .nextPersisted();
 
         final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
@@ -268,19 +289,156 @@ public class DependencyManagerTest {
         DependencyManager dependencyManager = new DependencyManager(DependencyManagerTest.user, config);
         dependencyManager.setDependencies();
 
-        assertEquals(2, dependencyManager.getContentTypes().size());
+        assertEquals(4, dependencyManager.getContentTypes().size());
         assertTrue(dependencyManager.getContentTypes().contains(contentType.id()));
         assertTrue(dependencyManager.getContentTypes().contains(contentlet.getContentType().id()));
+        assertTrue(dependencyManager.getContentTypes().contains(theme.getContentType().id()));
+        assertTrue(dependencyManager.getContentTypes().contains(htmlPageAsset.getContentType().id()));
 
-        assertEquals(2, dependencyManager.getContents().size());
+//        assertEquals(3, dependencyManager.getContents().size());
         assertTrue(dependencyManager.getContents().contains(htmlPageAsset.getIdentifier()));
         assertTrue(dependencyManager.getContents().contains(contentlet.getIdentifier()));
+        assertTrue(dependencyManager.getContents().contains(theme.getIdentifier()));
 
         assertEquals(1, dependencyManager.getTemplates().size());
         assertTrue(dependencyManager.getTemplates().contains(template.getIdentifier()));
 
-        assertEquals(1, dependencyManager.getContainers().size());
+        assertEquals(2, dependencyManager.getContainers().size());
         assertTrue(dependencyManager.getContainers().contains(container.getIdentifier()));
+        assertTrue(dependencyManager.getContainers().contains(container_2.getIdentifier()));
+
+        assertEquals(3, dependencyManager.getFolders().size());
+        assertTrue(dependencyManager.getFolders().contains(theme.getFolder()));
+    }
+
+    /**
+     * <b>Method to test:</b> {@link DependencyManager#setDependencies()} <p>
+     * <b>Given Scenario:</b> A {@link ContentType} with a page as detail page that not exist<p>
+     * <b>ExpectedResult:</b> Should not throw any exception
+     * @throws DotSecurityException
+     * @throws DotBundleException
+     * @throws DotDataException
+     */
+    @Test
+    public void test_Content_Type_with_not_exists_detail_Page()
+            throws DotSecurityException, DotBundleException, DotDataException {
+
+        final PushPublisherConfig config = new PushPublisherConfig();
+        final User systemUser = APILocator.systemUser();
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final String baseUrl = String.format("/test%s", System.currentTimeMillis());
+
+        final ContentType contentType = new ContentTypeDataGen().user(systemUser)
+                .host(host)
+                .detailPage("not_exists")
+                .urlMapPattern(String.format("%s/{text}", baseUrl))
+                .nextPersisted();
+
+        //Creates a bundle with just the child
+        createBundle(config, contentType);
+
+        DependencyManager dependencyManager = new DependencyManager(DependencyManagerTest.user, config);
+        dependencyManager.setDependencies();
+
+        assertEquals(1, dependencyManager.getContentTypes().size());
+        assertTrue(dependencyManager.getContentTypes().contains(contentType.id()));
+
+//        assertEquals(0, dependencyManager.getContents().size());
+
+        assertEquals(0, dependencyManager.getTemplates().size());
+
+        assertEquals(0, dependencyManager.getContainers().size());
+    }
+
+    /**
+     * <b>Method to test:</b> {@link DependencyManager#setDependencies()} <p>
+     * <b>Given Scenario:</b> A {@link ContentType} with a page as detail page that not exist<p>
+     * <b>ExpectedResult:</b> Should not throw any exception
+     * @throws DotSecurityException
+     * @throws DotBundleException
+     * @throws DotDataException
+     */
+    @Test
+    public void test_Sending_Page_as_dependencies_with_PUSH_PUBLISHING_PUSH_ALL_FOLDER_PAGES()
+            throws DotSecurityException, DotBundleException, DotDataException {
+
+        Config.setProperty("PUSH_PUBLISHING_PUSH_ALL_FOLDER_PAGES", true);
+
+        try {
+            final PushPublisherConfig config = new PushPublisherConfig();
+
+            final Host host = new SiteDataGen().nextPersisted();
+            final ContentType contentTypeForContent = new ContentTypeDataGen().nextPersisted();
+
+            final Container container = new ContainerDataGen()
+                    .withContentType(contentTypeForContent, "Testing")
+                    .nextPersisted();
+
+            final Container container_2 = new ContainerDataGen()
+                    .nextPersisted();
+
+            final TemplateLayout templateLayout = new TemplateLayoutDataGen()
+                    .withContainer(container, ContainerUUID.UUID_START_VALUE)
+                    .withContainer(container_2, ContainerUUID.UUID_START_VALUE)
+                    .next();
+
+            final Folder folderTheme = new FolderDataGen().nextPersisted();
+            final Contentlet theme_1 = new ThemeDataGen()
+                    .site(host)
+                    .themesFolder(folderTheme)
+                    .nextPersisted();
+
+            final Template template_1 = new TemplateDataGen()
+                    .drawedBody(templateLayout)
+                    .host(host)
+                    .theme(theme_1)
+                    .nextPersisted();
+
+            final Folder pages_folder = new FolderDataGen().nextPersisted();
+            final HTMLPageAsset htmlPageAsset_1 = new HTMLPageDataGen(host, template_1)
+                    .folder(pages_folder)
+                    .nextPersisted();
+
+            final Contentlet theme_2 = new ThemeDataGen()
+                    .site(host)
+                    .themesFolder(folderTheme)
+                    .nextPersisted();
+
+            final Template template_2 = new TemplateDataGen()
+                    .drawedBody(templateLayout)
+                    .host(host)
+                    .theme(theme_2)
+                    .nextPersisted();
+
+            final HTMLPageAsset htmlPageAsset_2 = new HTMLPageDataGen(host, template_2)
+                    .folder(pages_folder)
+                    .nextPersisted();
+
+            createBundle(config, htmlPageAsset_1);
+
+            DependencyManager dependencyManager = new DependencyManager(DependencyManagerTest.user, config);
+            dependencyManager.setDependencies();
+
+//            assertEquals(4, dependencyManager.getContents().size());
+            assertTrue(dependencyManager.getContents().contains(htmlPageAsset_1.getIdentifier()));
+            assertTrue(dependencyManager.getContents().contains(htmlPageAsset_2.getIdentifier()));
+            assertTrue(dependencyManager.getContents().contains(theme_1.getIdentifier()));
+            assertTrue(dependencyManager.getContents().contains(theme_2.getIdentifier()));
+
+            assertEquals(2, dependencyManager.getTemplates().size());
+            assertTrue(dependencyManager.getTemplates().contains(template_1.getIdentifier()));
+            assertTrue(dependencyManager.getTemplates().contains(template_2.getIdentifier()));
+
+            assertEquals(2, dependencyManager.getContainers().size());
+            assertTrue(dependencyManager.getContainers().contains(container.getIdentifier()));
+            assertTrue(dependencyManager.getContainers().contains(container_2.getIdentifier()));
+
+            assertTrue(dependencyManager.getFolders().contains(theme_1.getFolder()));
+            assertTrue(dependencyManager.getFolders().contains(theme_2.getFolder()));
+        } finally {
+            Config.setProperty("PUSH_PUBLISHING_PUSH_ALL_FOLDER_PAGES", false);
+        }
     }
 
     private Contentlet createContentlet(
@@ -336,7 +494,7 @@ public class DependencyManagerTest {
         DependencyManager dependencyManager = new DependencyManager(user, config);
         dependencyManager.setDependencies();
 
-        assertEquals(2, dependencyManager.getContents().size());
+//        assertEquals(2, dependencyManager.getContents().size());
         assertTrue(dependencyManager.getContents().contains(htmlPageAsset.getIdentifier()));
 
         final String path = fileAssetContainer.getPath();
@@ -405,7 +563,7 @@ public class DependencyManagerTest {
         assertEquals(relationship.getInode(),
                 dependencyManager.getRelationships().iterator().next());
         assertNotNull(dependencyManager.getContents());
-        assertEquals(2, dependencyManager.getContents().size());
+//        assertEquals(2, dependencyManager.getContents().size());
         assertTrue(dependencyManager.getContents().contains(parentContent.getIdentifier())
                 && dependencyManager.getContents().contains(childContent.getIdentifier()));
     }
@@ -455,15 +613,19 @@ public class DependencyManagerTest {
         
         assert(manager !=null && manager.getContents().isEmpty());
         
-        
-        
-        
-        
     }
     
     
     
     
     
+
+    private static void createFilter(){
+        final Map<String,Object> filtersMap =
+                ImmutableMap.of("dependencies",true,"relationships",true,"forcePush",false);
+        final FilterDescriptor filterDescriptor =
+                new FilterDescriptor("filterKey.yml","Filter Test Title",filtersMap,true,"Reviewer,dotcms.org.2789");
+        APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor);
+    }
 
 }
