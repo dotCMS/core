@@ -1,17 +1,50 @@
 {
 	"info": {
-		"_postman_id": "976f568d-d839-4bb2-90c4-1f3fd37e8cd6",
+		"_postman_id": "285baf0b-8eda-47cf-adbe-eb9dd0a16433",
 		"name": "Logger Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
+		{
+			"name": "invalidateSession",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "d096d675-d506-41f4-bbf8-f279d1e179a2",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/logout",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"logout"
+					]
+				}
+			},
+			"response": []
+		},
 		{
 			"name": "Invalid User",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
-						"id": "0b7a14c9-bc0a-45c2-995b-9aae68b7dd15",
+						"id": "aae095f8-dee2-4442-9f12-b4562b2a2403",
 						"exec": [
 							"pm.test(\"Status code should be 401\", function () {",
 							"    pm.response.to.have.status(401);",
@@ -46,7 +79,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "aca7f77d-5174-42d0-bd0b-e2f4cd2b9845",
+						"id": "1ff8b1d4-6306-4122-83d5-f39a1393b2e9",
 						"exec": [
 							"pm.test(\"Status code should be 401\", function () {",
 							"    pm.response.to.have.status(401);",
@@ -91,7 +124,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "6428b0d4-3394-4066-8b88-64910c9a3313",
+						"id": "7952dcf4-cdb6-4f8e-b8da-6a557dd44423",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -142,7 +175,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "9c951823-76c1-460e-a2aa-76555e87e720",
+						"id": "48e08feb-799b-4b17-94c2-93230c91f9f8",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -203,7 +236,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "e2f91ca5-fa58-484b-ad9d-7a8022d92d37",
+						"id": "10b93f1c-350a-4e95-b244-79ddc0420c74",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -264,7 +297,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "fbf436df-4c5c-4197-aeca-fac19fa240d1",
+						"id": "1c0a1a1e-9fef-42e1-b3d1-4fd058ca827f",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -325,7 +358,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "9dd6502c-8292-4b38-b2d9-31d192d208dd",
+						"id": "e946e799-3cb4-4b41-99b9-fa33ac16a905",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function () {",
 							"    pm.response.to.have.status(200);",
