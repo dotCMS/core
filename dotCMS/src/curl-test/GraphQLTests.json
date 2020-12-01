@@ -352,88 +352,6 @@
 					"response": []
 				},
 				{
-					"name": "Publish 'demo.dotcms.com'",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "3fa9fb18-2d45-4cd6-9506-8447c733f3cc",
-								"exec": [
-									"pm.test(\"Status code is 200 \", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"postman\");",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c80-3d8843/fire?inode=0c3418eb-4c27-4d71-937d-bf231399312a",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"actions",
-								"b9d89c80-3d8843",
-								"fire"
-							],
-							"query": [
-								{
-									"key": "inode",
-									"value": "0c3418eb-4c27-4d71-937d-bf231399312a"
-								}
-							]
-						},
-						"description": "Fire any action uysing the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here. \n\n@Path(\"/actions/{actionId}/fire\")"
-					},
-					"response": []
-				},
-				{
 					"name": "RenderDestinationsCostaRicaPage",
 					"event": [
 						{
@@ -4842,87 +4760,87 @@
 	],
 	"variable": [
 		{
-			"id": "5d131b8d-ae58-4556-ba32-0b4e4d1303df",
+			"id": "39ed5fd2-eb1c-486e-a1ae-634b316c5d6b",
 			"key": "languageId",
 			"value": 1606779763018
 		},
 		{
-			"id": "eeda1324-6449-4ad3-abba-19fc3ebfcdec",
+			"id": "2ca505fe-5273-422c-aaee-44a0715e4814",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "58e042ef-bab2-4505-b5bf-92c6b6632bc3",
+			"id": "e8bab06f-13f4-47cb-94bf-c7e2c15f6e80",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType30413852"
 		},
 		{
-			"id": "968c9191-8b55-4336-a5af-f92b816b447b",
+			"id": "3665d315-988e-4e9b-a105-775235a9a3b6",
 			"key": "contentIdentifier",
 			"value": "a5bf0d80-4273-41e1-8f1f-22a3d4ac986f"
 		},
 		{
-			"id": "05c5f5ae-96c8-4dee-a5a4-66b09c21ceee",
+			"id": "503d8bd2-95e4-47a3-9233-7d72a0e6d7cc",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "1f0a5a3b-a1a4-4194-8aec-b52d345e7046",
+			"id": "322352f2-ee69-463a-bcf8-29a26874e884",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType49851579"
 		},
 		{
-			"id": "51d25680-7ad9-4a4d-a180-a99edb3a5196",
+			"id": "0cffcb45-0e84-4b55-be41-fb13e876d0ae",
 			"key": "imageContentIdentifier",
 			"value": "4cb59737-913d-4c5f-b021-dbe213a15739"
 		},
 		{
-			"id": "05ceefae-8dc3-4ae5-b832-5e88e5249a5e",
+			"id": "14804278-c3cb-4b50-8b0e-fa959d80e624",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "9211a75c-a422-4b60-952c-7a9e264c877a",
+			"id": "2dabc0cc-8ae8-452c-bb0f-2ffb4eedc6b8",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "68211f59-5114-464a-a4b0-7316cddf9f7b",
+			"id": "d8a15ee2-96ed-47dd-a271-d16cb3e0ea16",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "53e41bbf-c703-48ab-8392-8c6b29557c4a",
+			"id": "49e0cee3-6930-4a26-aae0-ac600b6fb30d",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "bc8d144b-98d4-45dd-bc22-391b3573da94",
+			"id": "73b2b716-919a-4b84-9a39-be411041d243",
 			"key": "fileContentIdentifier",
 			"value": "434f474a-4d89-4b96-ad38-aa46483be3e5"
 		},
 		{
-			"id": "d1d10412-5b61-4f41-822a-9d68b513a807",
+			"id": "4a11333e-0710-4917-be87-ff4a2544c20b",
 			"key": "childContentTypeVariable",
 			"value": "childType71358234"
 		},
 		{
-			"id": "f8d90967-e750-409d-afb0-492ebbc681aa",
+			"id": "4753e097-c491-4d9b-bb18-efa653af0dd9",
 			"key": "parentContentTypeVariable",
 			"value": "parentType83488647"
 		},
 		{
-			"id": "0ced1560-1be7-4499-93d9-a0e177121b8b",
+			"id": "237f607a-04f2-4c7d-9369-bdc5b6fb8788",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "df6b74c9-9e83-4c48-9283-583945167730",
+			"id": "ec88a8ad-849e-4e8f-8c3f-dd5da6db2f2c",
 			"key": "childContentIdentifier",
 			"value": "2d5a9f9b-c5ad-4f97-8aaa-e4277afdb52a"
 		},
 		{
-			"id": "eaf2a5eb-2e50-489b-8445-75d85bfe5fff",
+			"id": "4360d54e-e711-4ffd-a9c0-8d469cfc2f86",
 			"key": "parentContentIdentifier",
 			"value": "778f726b-fa40-49c8-8139-9e2dee93b392"
 		}
