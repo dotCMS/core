@@ -1220,7 +1220,7 @@ public class DependencyManager {
 						}
 					} catch (Exception ex) {
 						Logger.debug(this, ex.toString());
-						throw new DotStateException("Problem occured while publishing file");
+						throw new DotStateException("Problem occured while publishing file:" +ex.getMessage(), ex );
 					}
 				}
 
