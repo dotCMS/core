@@ -87,7 +87,7 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
     @Override
     public boolean generateIntegrityResults(final String endpointId) throws Exception {
         try {
-            DotConnect dc = new DotConnect();
+            final DotConnect dc = new DotConnect();
 
             // Create a temporary table and insert all the records coming from
             // the CSV file.
@@ -98,9 +98,10 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
 
             // Legacy HTML pages and contentlet pages share the same result table
             return (Long) dc.getRecordCount(getIntegrityType().getResultsTableName(), "where endpoint_id = '"+ endpointId+ "'") > 0;
-        } catch (Exception e) {
-            throw new Exception("Error running the HTML Pages Integrity Check", e);
-        }
+        } catch (final Exception e) {
+			throw new Exception(String.format("Error running the HTML Pages Integrity Check for Endpoint '%s': %s",
+					endpointId, e.getMessage()), e);
+		}
     }
 
     /**
@@ -186,14 +187,14 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
      * @throws DotDataException
      *             An error occurred when interacting with the database.
      */
-    private void checkPages(final String endpointId, IntegrityType type) throws IOException,
+    private void checkPages(final String endpointId, final IntegrityType type) throws IOException,
             SQLException, DotDataException {
-        CsvReader htmlpages = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator
+        final CsvReader htmlpages = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator
                 + endpointId + File.separator + type.getDataToCheckCSVName(), '|',
                 Charset.forName("UTF-8"));
 
         DotConnect dc = new DotConnect();
-        String tempTableName = getTempTableName(endpointId);
+        final String tempTableName = getTempTableName(endpointId);
         final String INSERT_TEMP_TABLE = "insert into " + tempTableName + " (working_inode, live_inode, identifier, full_path_lc, host_identifier, language_id) values(?,?,?,?,?,?)";
         boolean hasResultsToCheck = false;
         while (htmlpages.readRecord()) {
@@ -222,14 +223,13 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
 				dc.addParam(htmlPageHostIdentifier);
 				dc.addParam(new Long(htmlPageLanguage));
 				dc.loadResult();
-			} catch (DotDataException e) {
+			} catch (final DotDataException e) {
 				htmlpages.close();
 				final String assetId = UtilMethods.isSet(htmlPageIdentifier) ? htmlPageIdentifier
 						: "";
-				throw new DotDataException(
-						"An error occured when generating temp table for asset: "
-								+ assetId, e);
-			}
+                throw new DotDataException(String.format("An error occured when generating temp table for asset '%s':" +
+                        " %s", assetId, e.getMessage()), e);
+            }
         }
         htmlpages.close();
         if (!hasResultsToCheck) {
@@ -262,7 +262,7 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
 
         dc.setSQL(selectSQL);
 
-        List<Map<String, Object>> results = dc.loadObjectResults();
+        final List<Map<String, Object>> results = dc.loadObjectResults();
 
         // If we have conflicts, lets create a table out of them.
         if (!results.isEmpty()) {
@@ -363,8 +363,8 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
      * 
      * @param conflictingPages
      *            - The list of conflicting pages.
-     * @param languageId
-     *            - The language ID of the main conflicting page.
+     * @param conflictIdentifierInfo
+     *            -
      * @return ordered list of conflicting pages
      *             The first elements of the list MUST be those with conflicts
      *  

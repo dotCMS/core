@@ -188,8 +188,10 @@ public class SamlWebInterceptor implements WebInterceptor {
 
             Logger.error(this,  "Error [" + exception.getMessage() + "] Unable to get idpConfig for Site '" +
                     request.getServerName() + "'. Incoming URL: " + request.getRequestURL(), exception);
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            return Result.SKIP_NO_CHAIN;
+            //response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            //return Result.SKIP_NO_CHAIN;
+            // todo: do a better error handling
+            return Result.NEXT;
         } finally {
             if (null != identityProviderConfiguration) {
                 identityProviderConfiguration.destroy();

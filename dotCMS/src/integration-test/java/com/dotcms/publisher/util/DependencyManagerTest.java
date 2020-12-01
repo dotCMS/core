@@ -35,6 +35,11 @@ import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
 import java.util.Date;
 import java.util.Map;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
+import com.liferay.portal.model.User;
+import java.util.Date;
+import java.util.HashSet;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -579,6 +584,41 @@ public class DependencyManagerTest {
         contentTypeFieldAPI.save(field, user);
         return contentType;
     }
+    
+    
+    /**
+     * This Tests to make sure that
+     * @throws Exception
+     */
+    
+    @Test
+    public void test_dependency_manager_setHTMLPagesDependencies() throws Exception {
+        
+        PushPublisherConfig config = new PushPublisherConfig();
+        config.setOperation(Operation.PUBLISH);
+        
+        final Set<String> idents = new HashSet<>();
+        idents.add("nope");
+        idents.add("break");
+        idents.add(null);
+        
+        DependencyManager manager = new DependencyManager(APILocator.systemUser(), config);
+        
+        try {
+            manager.setHTMLPagesDependencies(idents, null);
+        }
+        catch(Exception e) {
+            assertTrue("Unable to set HTML Page Dependencies", false);
+        }
+        
+        assert(manager !=null && manager.getContents().isEmpty());
+        
+    }
+    
+    
+    
+    
+    
 
     private static void createFilter(){
         final Map<String,Object> filtersMap =
