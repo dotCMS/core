@@ -1,5 +1,4 @@
 <%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
-<%@ include file="/html/token/init.jsp" %>
 <%@page import="com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher"%>
 <%@page import="com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher"%>
 <%@page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
@@ -310,7 +309,7 @@
 </script>
 
 
-<div id="save_enviroment_dialog" style="margin:auto;">
+<div style="margin:auto;">
 	<div dojoType="dijit.form.Form"  name="formSaveEndpoint"  id="formSaveEndpoint" onsubmit="return false;">
 		<input type="hidden" name="sending" id="sending" value="<%=isSender%>">
 		<input type="hidden" name="identifier" value="<%=UtilMethods.webifyString(String.valueOf(currentEndpoint.getId())) %>">
