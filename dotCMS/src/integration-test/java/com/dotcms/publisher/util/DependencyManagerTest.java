@@ -29,9 +29,11 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships.Content
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
 import java.util.Date;
+import java.util.HashSet;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -257,10 +259,10 @@ public class DependencyManagerTest {
                 .themesFolder(folderTheme)
                 .nextPersisted();
 
+
         final Template template = new TemplateDataGen()
                 .drawedBody(templateLayout)
                 .host(host)
-                .theme(theme)
                 .nextPersisted();
 
         final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
@@ -288,6 +290,14 @@ public class DependencyManagerTest {
         assertTrue(dependencyManager.getContents().contains(htmlPageAsset.getIdentifier()));
         assertTrue(dependencyManager.getContents().contains(contentlet.getIdentifier()));
         assertTrue(dependencyManager.getContents().contains(theme.getIdentifier()));
+
+        assertEquals(2, dependencyManager.getContentTypes().size());
+        assertTrue(dependencyManager.getContentTypes().contains(contentType.id()));
+        assertTrue(dependencyManager.getContentTypes().contains(contentlet.getContentType().id()));
+
+        assertEquals(2, dependencyManager.getContents().size());
+        assertTrue(dependencyManager.getContents().contains(htmlPageAsset.getIdentifier()));
+        assertTrue(dependencyManager.getContents().contains(contentlet.getIdentifier()));
 
         assertEquals(1, dependencyManager.getTemplates().size());
         assertTrue(dependencyManager.getTemplates().contains(template.getIdentifier()));
@@ -425,9 +435,14 @@ public class DependencyManagerTest {
 
             assertTrue(dependencyManager.getFolders().contains(theme_1.getFolder()));
             assertTrue(dependencyManager.getFolders().contains(theme_2.getFolder()));
+
+            assertEquals(1, dependencyManager.getContainers().size());
+            assertTrue(dependencyManager.getContainers().contains(container.getIdentifier()));
         } finally {
             Config.setProperty("PUSH_PUBLISHING_PUSH_ALL_FOLDER_PAGES", false);
         }
+
+
     }
 
     private Contentlet createContentlet(
@@ -573,5 +588,40 @@ public class DependencyManagerTest {
         contentTypeFieldAPI.save(field, user);
         return contentType;
     }
+    
+    
+    /**
+     * This Tests to make sure that
+     * @throws Exception
+     */
+    
+    @Test
+    public void test_dependency_manager_setHTMLPagesDependencies() throws Exception {
+        
+        PushPublisherConfig config = new PushPublisherConfig();
+        config.setOperation(Operation.PUBLISH);
+        
+        final Set<String> idents = new HashSet<>();
+        idents.add("nope");
+        idents.add("break");
+        idents.add(null);
+        
+        DependencyManager manager = new DependencyManager(APILocator.systemUser(), config);
+        
+        try {
+            manager.setHTMLPagesDependencies(idents, null);
+        }
+        catch(Exception e) {
+            assertTrue("Unable to set HTML Page Dependencies", false);
+        }
+        
+        assert(manager !=null && manager.getContents().isEmpty());
+        
+    }
+    
+    
+    
+    
+    
 
 }
