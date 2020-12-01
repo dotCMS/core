@@ -1,7 +1,13 @@
 package com.dotcms.filters;
 
+import static com.dotmarketing.filters.FiltersTest.isCMSFilterAlreadyCalled;
+
+import com.dotmarketing.filters.CMSFilter;
 import java.io.File;
 import java.util.Collection;
+import javax.servlet.FilterChain;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.BeforeClass;
@@ -27,6 +33,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import org.mockito.Mockito;
 
 public class VanityUrlFilterTest {
 
@@ -38,6 +45,8 @@ public class VanityUrlFilterTest {
     private static Language defaultLanguage;
     private static VanityUrlCache cache;
     private static FiltersUtil filtersUtil;
+    private static FilterChain filterChain;
+    private static CMSFilter cmsFilter;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -57,6 +66,22 @@ public class VanityUrlFilterTest {
         /* Default variables */
         defaultHost =  new SiteDataGen().nextPersisted();
         defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+
+        filterChain = Mockito.mock(FilterChain.class);
+        cmsFilter = new CMSFilter();
+
+        Mockito.doAnswer(invocation -> {
+
+            if (isCMSFilterAlreadyCalled()) {
+                return null;
+            }
+
+            final ServletRequest chainedRequest = invocation.getArgumentAt(0, ServletRequest.class);
+            final ServletResponse chainedResponse = invocation.getArgumentAt(1, ServletResponse.class);
+            cmsFilter.doFilter(chainedRequest, chainedResponse, filterChain);
+            return null;
+        }).when(filterChain).doFilter(Mockito.any(HttpServletRequest.class), Mockito.any(HttpServletResponse.class));
+
     }
 
 
@@ -89,7 +114,7 @@ public class VanityUrlFilterTest {
 
         final VanityURLFilter filter = new VanityURLFilter();
         
-        filter.doFilter(request, response, null);
+        filter.doFilter(request, response, filterChain);
         
         assert(tmp.exists());
         String content = FileUtil.read(tmp);
@@ -125,7 +150,7 @@ public class VanityUrlFilterTest {
 
         final VanityURLFilter filter = new VanityURLFilter();
         
-        filter.doFilter(request, response, null);
+        filter.doFilter(request, response, filterChain);
         
         final CachedVanityUrl resolvedVanity = (CachedVanityUrl) request.getAttribute(Constants.VANITY_URL_OBJECT);
         assert(resolvedVanity!=null);
@@ -164,7 +189,7 @@ public class VanityUrlFilterTest {
         
         VanityURLFilter filter = new VanityURLFilter();
         
-        filter.doFilter(request, response, null);
+        filter.doFilter(request, response, filterChain);
 
         Collection<String> list=  response.getHeaderNames();
         assert(response.getHeader("Location").equals(forwardTo));
@@ -196,7 +221,7 @@ public class VanityUrlFilterTest {
 
         VanityURLFilter filter = new VanityURLFilter();
         
-        filter.doFilter(request, response, null);
+        filter.doFilter(request, response, filterChain);
 
         assert(response.getStatus()==302);
         
@@ -208,7 +233,7 @@ public class VanityUrlFilterTest {
         response = new MockHttpStatusResponse(new MockHttpResponse().response()).response();
 
 
-        filter.doFilter(request, response, null);
+        filter.doFilter(request, response, filterChain);
         assert(response.getStatus()==302);
         
         

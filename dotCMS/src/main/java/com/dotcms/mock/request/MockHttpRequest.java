@@ -1,10 +1,5 @@
 package com.dotcms.mock.request;
 
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
-import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import java.nio.charset.Charset;
@@ -12,7 +7,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 
 /**
@@ -60,7 +61,7 @@ public class MockHttpRequest implements MockRequest {
                 });
         }
         Mockito.when(mockReq.getHeader("Host")).thenReturn(hostname);
-        
+        Mockito.when(mockReq.getRequestDispatcher(Mockito.anyString())).thenReturn(Mockito.mock(RequestDispatcher.class));
         request = new MockHeaderRequest(new MockSessionRequest(new MockAttributeRequest(mockReq)));
     }
 

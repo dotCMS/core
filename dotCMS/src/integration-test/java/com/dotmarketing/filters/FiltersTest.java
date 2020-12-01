@@ -2,6 +2,7 @@ package com.dotmarketing.filters;
 
 import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
 import static com.dotcms.vanityurl.business.VanityUrlAPIImpl.LEGACY_CMS_HOME_PAGE;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.startsWith;
 import static org.mockito.Mockito.mock;
@@ -10,7 +11,11 @@ import static org.mockito.Mockito.when;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -37,6 +42,7 @@ import javax.servlet.http.HttpSessionContext;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -73,6 +79,7 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 
+@RunWith(DataProviderRunner.class)
 public class FiltersTest {
 
     private static ContentletAPI contentletAPI;
@@ -107,8 +114,8 @@ public class FiltersTest {
         filtersUtil = FiltersUtil.getInstance();
 
         /* Default variables */
-        site = new SiteDataGen().nextPersisted();
-        defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        site = getOrCreateSite();
+        defaultLanguageId = getDefaultLanguageId();
 
         //Create Folders
         final Folder aboutUsFolder = new FolderDataGen().site(site)
@@ -186,6 +193,20 @@ public class FiltersTest {
                 intranetIndexPage, APILocator.systemUser(), false);
     }
 
+    static Host getOrCreateSite(){
+        if(null == site){
+          site = new SiteDataGen().nextPersisted();
+        }
+        return site;
+    }
+
+    static long getDefaultLanguageId(){
+       if(0 == defaultLanguageId) {
+           defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+       }
+       return defaultLanguageId;
+    }
+
     @Test
     public void shouldWorkVanityUrl() throws Exception {
 
@@ -230,14 +251,8 @@ public class FiltersTest {
         final FilterChain chain = Mockito.mock(FilterChain.class);
 
         Mockito.doAnswer(invocation -> {
-
-            //This prevents an infinite loop
-            //CMSFilter is the last in the chain so having it must break the call chain.
-            final StackTraceElement[] traceElements = Thread.currentThread().getStackTrace();
-            for (final StackTraceElement element : traceElements) {
-                if(CMSFilter.class.getCanonicalName().equals(element.getClassName())){
-                   return null;
-                }
+            if (isCMSFilterAlreadyCalled()) {
+                return null;
             }
 
             final ServletRequest chainedRequest = invocation.getArgumentAt(0, ServletRequest.class);
@@ -270,7 +285,6 @@ public class FiltersTest {
                         + CMSFilter.CMS_INDEX_PAGE);
         request = getMockRequest(site.getHostname(), "/" + uniqueUrl + "3");
         response = new MockResponseWrapper(Mockito.mock(HttpServletResponse.class));
-      //  when(response.getOutputStream()).thenReturn(servletOutputStream);
         vanityURLFilter.doFilter(request, response, chain);
         Assert.assertEquals(301, response.getStatus());
         Assert.assertEquals("http://demo.dotcms.com/about-us/" + CMSFilter.CMS_INDEX_PAGE,
@@ -281,7 +295,6 @@ public class FiltersTest {
                         + CMSFilter.CMS_INDEX_PAGE);
         request = getMockRequest(site.getHostname(), "/" + uniqueUrl + "4");
         response = new MockResponseWrapper(Mockito.mock(HttpServletResponse.class));
-      //  when(response.getOutputStream()).thenReturn(servletOutputStream);
         vanityURLFilter.doFilter(request, response, chain);
         Assert.assertEquals(301, response.getStatus());
         Assert.assertEquals("http://demo.dotcms.com/about-us/" + CMSFilter.CMS_INDEX_PAGE,
@@ -291,16 +304,15 @@ public class FiltersTest {
                 "/forbidden should 302 Redirect to /products/" + CMSFilter.CMS_INDEX_PAGE);
         request = getMockRequest(site.getHostname(), "/forbidden");
         response = new MockResponseWrapper(Mockito.mock(HttpServletResponse.class));
-      //  when(response.getOutputStream()).thenReturn(servletOutputStream);
         vanityURLFilter.doFilter(request, response, chain);
         Assert.assertEquals(302, response.getStatus());
 
 
     }
-    
-    
-    final static String VANITY="VANITY";
-    final static String URL="URL";
+
+
+    private final static String VANITY="VANITY";
+    private final static String URL="URL";
     
     /**
      * this method tests whether url query params are being passed properly
@@ -317,15 +329,12 @@ public class FiltersTest {
         
         
         //Init APIs and test values
-        Contentlet vanityUrl1 = null;
-        Contentlet vanityUrl2 = null;
-
         // build them up
-        vanityUrl1 = filtersUtil.createVanityUrl("test link1", Host.SYSTEM_HOST, "/" + uniqueUrl + "1",
+        final Contentlet vanityUrl1 = filtersUtil.createVanityUrl("test link1", Host.SYSTEM_HOST, "/" + uniqueUrl + "1",
                 "/about-us/" + CMSFilter.CMS_INDEX_PAGE + "?param1="+ VANITY, 200, 1, defaultLanguageId);
         filtersUtil.publishVanityUrl(vanityUrl1);
 
-        vanityUrl2 = filtersUtil.createVanityUrl("test link2", site.getIdentifier(),
+        final Contentlet vanityUrl2 = filtersUtil.createVanityUrl("test link2", site.getIdentifier(),
                 "/" + uniqueUrl + "2", "/about-us/" + CMSFilter.CMS_INDEX_PAGE+ "?param1=" + VANITY, 200, 1,
                 defaultLanguageId);
         filtersUtil.publishVanityUrl(vanityUrl2);
@@ -382,14 +391,130 @@ public class FiltersTest {
 
 
     }
-    
-    
-    
-    
-    
-    
-    
-    
+
+    @DataProvider
+    public static Object[] getVanityURLTestCases()  {
+        final String uniqueUrl = UUIDGenerator.shorty();
+        final Host site = getOrCreateSite();
+        final long lang = getDefaultLanguageId();
+        return new Object[]{
+                new TestCase("fwd test ", site, "/" + uniqueUrl + "fwd",
+                        "/about-us/" + CMSFilter.CMS_INDEX_PAGE + "?param1=" + VANITY, 200, 1,
+                        lang,"/" + uniqueUrl + "fwd?param2=" + URL,
+                        ImmutableMap.of("param1", VANITY, "param2", URL)),
+
+                new TestCase("redirect test ", APILocator.systemHost(), "/" + uniqueUrl + "redirect1",
+                        "/about-us/" + CMSFilter.CMS_INDEX_PAGE + "?param1=" + VANITY, 301, 1,
+                        lang,"/" + uniqueUrl + "redirect1?param2=" + URL,
+                        ImmutableMap.of("param1", VANITY, "param2", URL)),
+
+                new TestCase("redirect test ", APILocator.systemHost(), "/" + uniqueUrl + "redirect2",
+                        "/about-us/" + CMSFilter.CMS_INDEX_PAGE + "?param1=foo", 302, 1,
+                        lang,
+                        "/" + uniqueUrl + "redirect2?param1=bar",
+                        ImmutableMap.of("param1", "foo"))
+
+        };
+    }
+
+
+    @Test
+    @UseDataProvider("getVanityURLTestCases")
+    public void Test_VanityURL_Forward_Redirect_Params(final TestCase testCase) throws Exception {
+
+        final String uniqueUrl = UUIDGenerator.shorty();
+        final Contentlet vanityUrl1 = filtersUtil.createVanityUrl(testCase.title, testCase.site.getIdentifier(), testCase.uri,
+                testCase.forwardTo, testCase.action, testCase.order, testCase.lang);
+        filtersUtil.publishVanityUrl(vanityUrl1);
+
+        final VanityURLFilter filter = new VanityURLFilter();
+
+        final HttpServletResponse response = new MockHttpStatusResponse(new MockHttpResponse().response()).response();
+        final HttpServletRequest request = new MockHttpRequest(testCase.site.getHostname(), testCase.requestURI).request();
+
+        final CMSFilter cmsFilter = new CMSFilter();
+        final ServletOutputStream servletOutputStream = mock(ServletOutputStream.class);
+        final HttpServletResponse res = Mockito.mock(HttpServletResponse.class);
+        when(res.getOutputStream()).thenReturn(servletOutputStream);
+
+        final FilterChain chain = Mockito.mock(FilterChain.class);
+
+        Mockito.doAnswer(invocation -> {
+            if (isCMSFilterAlreadyCalled()) {
+                return null;
+            }
+
+            final ServletRequest chainedRequest = invocation.getArgumentAt(0, ServletRequest.class);
+            final ServletResponse chainedResponse = invocation.getArgumentAt(1, ServletResponse.class);
+
+            cmsFilter.doFilter(chainedRequest, chainedResponse, chain);
+
+            final HttpServletResponse httpServletResponse = (HttpServletResponse) chainedResponse;
+            assertEquals(httpServletResponse.getStatus(),  testCase.action);
+            assertTrue(chainedRequest instanceof VanityUrlRequestWrapper);
+
+            testCase.expectedParams.forEach((key, value) -> assertEquals(value,chainedRequest.getParameter(key)));
+
+            return null;
+
+        }).when(chain).doFilter(Mockito.any(HttpServletRequest.class), Mockito.any(HttpServletResponse.class));
+
+        Logger.info(this.getClass(),
+                "/" + uniqueUrl + "1 should forward to /about-us/" + CMSFilter.CMS_INDEX_PAGE);
+
+        filter.doFilter(request, response, chain);
+
+    }
+
+
+    static class TestCase {
+
+        final String title;
+        final Host site;
+        final String uri;
+        final String forwardTo;
+        final int action;
+        final int order;
+        final long lang;
+
+        final String requestURI;
+        final Map<String, String> expectedParams;
+
+        TestCase(final String title, final Host site, final String uri, final String forwardTo,
+                final int action, final int order, final long lang,
+                final String requestURI,
+                final Map<String, String> expectedParams) {
+            this.title = title;
+            this.site = site;
+            this.uri = uri;
+            this.forwardTo = forwardTo;
+            this.action = action;
+            this.order = order;
+            this.lang = lang;
+            this.requestURI = requestURI;
+            this.expectedParams = expectedParams;
+        }
+
+        @Override
+        public String toString() {
+            return "TestCase{" +
+                    "title='" + title + '\'' +
+                    ", site='" + site + '\'' +
+                    ", uri='" + uri + '\'' +
+                    ", forwardTo='" + forwardTo + '\'' +
+                    ", action=" + action +
+                    ", order=" + order +
+                    ", lang=" + lang +
+                    ", requestURI='" + requestURI + '\'' +
+                    ", expectedParams=" + expectedParams +
+                    '}';
+        }
+    }
+
+
+
+
+
 
     /**
      * Creates a vanity url that will change the cmsHomePage(redirect) to about-us/index.
@@ -953,8 +1078,19 @@ public class FiltersTest {
         
     }
 
-    
-    
-    
+    /**
+     * This prevents an infinite loop
+     * CMSFilter is the last in the chain so having it must break the call chain.
+     * @return
+     */
+    public static boolean isCMSFilterAlreadyCalled() {
+        final StackTraceElement[] traceElements = Thread.currentThread().getStackTrace();
+        for (final StackTraceElement element : traceElements) {
+            if(CMSFilter.class.getCanonicalName().equals(element.getClassName())){
+                return true;
+            }
+        }
+        return false;
+    }
 
 }
