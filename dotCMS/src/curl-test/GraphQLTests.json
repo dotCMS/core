@@ -187,6 +187,95 @@
 					"response": []
 				},
 				{
+					"name": "pre_ImportBundleWithDemoHost",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "f14c9bb3-ce91-419a-9bb5-c31d161b7597",
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"demo.dotcms.com.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/demo.dotcms.com.tar.gz"
+								}
+							],
+							"options": {
+								"formdata": {}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* Imports demo.dotcms.com"
+					},
+					"response": []
+				},
+				{
 					"name": "Switch site to 'demo.dotcms.com'",
 					"event": [
 						{
@@ -259,6 +348,88 @@
 								"48190c8c-42c4-46af-8d1a-0cd5db894797"
 							]
 						}
+					},
+					"response": []
+				},
+				{
+					"name": "Publish 'demo.dotcms.com'",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "3fa9fb18-2d45-4cd6-9506-8447c733f3cc",
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"postman\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c80-3d8843/fire?inode=0c3418eb-4c27-4d71-937d-bf231399312a",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"b9d89c80-3d8843",
+								"fire"
+							],
+							"query": [
+								{
+									"key": "inode",
+									"value": "0c3418eb-4c27-4d71-937d-bf231399312a"
+								}
+							]
+						},
+						"description": "Fire any action uysing the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here. \n\n@Path(\"/actions/{actionId}/fire\")"
 					},
 					"response": []
 				},
@@ -4671,87 +4842,87 @@
 	],
 	"variable": [
 		{
-			"id": "97cd300b-0af2-4fa1-b582-9b30f59ed46c",
+			"id": "5d131b8d-ae58-4556-ba32-0b4e4d1303df",
 			"key": "languageId",
 			"value": 1606779763018
 		},
 		{
-			"id": "e6ae7ce2-fe14-40b4-bd57-70eaea35575b",
+			"id": "eeda1324-6449-4ad3-abba-19fc3ebfcdec",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "0e4199bc-3932-4877-b966-da3bd10023e4",
+			"id": "58e042ef-bab2-4505-b5bf-92c6b6632bc3",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType30413852"
 		},
 		{
-			"id": "acf8f40c-417d-48aa-ab18-31460b2b733d",
+			"id": "968c9191-8b55-4336-a5af-f92b816b447b",
 			"key": "contentIdentifier",
 			"value": "a5bf0d80-4273-41e1-8f1f-22a3d4ac986f"
 		},
 		{
-			"id": "d902e873-1202-450d-902f-c065b0e2657c",
+			"id": "05c5f5ae-96c8-4dee-a5a4-66b09c21ceee",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "892afe65-aa63-481d-91e7-ad3efe70d543",
+			"id": "1f0a5a3b-a1a4-4194-8aec-b52d345e7046",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType49851579"
 		},
 		{
-			"id": "f437b82a-16e6-49c4-bc4a-948cc16bedb3",
+			"id": "51d25680-7ad9-4a4d-a180-a99edb3a5196",
 			"key": "imageContentIdentifier",
 			"value": "4cb59737-913d-4c5f-b021-dbe213a15739"
 		},
 		{
-			"id": "4ee9b4c1-3181-4e1e-bb25-d45b1c21430d",
+			"id": "05ceefae-8dc3-4ae5-b832-5e88e5249a5e",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "4b42377e-16cb-4315-862a-d40fa4e6cd61",
+			"id": "9211a75c-a422-4b60-952c-7a9e264c877a",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "b4987466-c76b-4176-967d-f636eeaad86e",
+			"id": "68211f59-5114-464a-a4b0-7316cddf9f7b",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "baaed4f9-80e9-4c85-aaf8-7603844d6cce",
+			"id": "53e41bbf-c703-48ab-8392-8c6b29557c4a",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "4868498b-79e5-4de0-bd23-b2b45ab79e2a",
+			"id": "bc8d144b-98d4-45dd-bc22-391b3573da94",
 			"key": "fileContentIdentifier",
 			"value": "434f474a-4d89-4b96-ad38-aa46483be3e5"
 		},
 		{
-			"id": "455fe93b-1852-4c3d-98e6-51498dbe3e2f",
+			"id": "d1d10412-5b61-4f41-822a-9d68b513a807",
 			"key": "childContentTypeVariable",
 			"value": "childType71358234"
 		},
 		{
-			"id": "ad869b80-7945-443f-bb85-0490c1057a62",
+			"id": "f8d90967-e750-409d-afb0-492ebbc681aa",
 			"key": "parentContentTypeVariable",
 			"value": "parentType83488647"
 		},
 		{
-			"id": "b6569fad-b55c-42d8-b17d-531184a0fda1",
+			"id": "0ced1560-1be7-4499-93d9-a0e177121b8b",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "6ac6e390-b0b1-43c9-903d-713fb0f37271",
+			"id": "df6b74c9-9e83-4c48-9283-583945167730",
 			"key": "childContentIdentifier",
 			"value": "2d5a9f9b-c5ad-4f97-8aaa-e4277afdb52a"
 		},
 		{
-			"id": "72431cf0-8728-423f-b3e5-ab1fd7eddf49",
+			"id": "eaf2a5eb-2e50-489b-8445-75d85bfe5fff",
 			"key": "parentContentIdentifier",
 			"value": "778f726b-fa40-49c8-8139-9e2dee93b392"
 		}
