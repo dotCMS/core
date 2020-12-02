@@ -264,6 +264,16 @@ public class ESMappingUtilHelperTest {
                     assertTrue(UtilMethods.isSet(mapping.get("type")));
                     assertEquals("keyword", mapping.get("type"));
 
+                    //validate _sha256 mapping for unique fields
+                    if (isUnique){
+                        mapping = (Map<String, String>) esMappingAPI
+                                .getFieldMappingAsMap(workingIndex,
+                                        (contentType.variable() + StringPool.PERIOD + field)
+                                                .toLowerCase() + ESUtils.SHA_256).get(field.toLowerCase() + ESUtils.SHA_256);
+                        assertTrue(UtilMethods.isSet(mapping.get("type")));
+                        assertEquals("keyword", mapping.get("type"));
+                    }
+
                     //validate _text fields
                     mapping = (Map<String, String>) esMappingAPI
                             .getFieldMappingAsMap(workingIndex,

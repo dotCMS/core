@@ -13,6 +13,7 @@ import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
+import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategy;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategyResolver;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -6040,21 +6041,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
-    private static final String[] SPECIAL_CHARS = new String[] { "+", "-", "&&", "||", "!", "(", ")", "{", "}", "[",
-            "]", "^", "\"", "?", ":", "\\" };
-
-    /**
-     *
-     * @param text
-     * @return
-     */
-    private static String escape(String text) {
-        for (int i = SPECIAL_CHARS.length - 1; i >= 0; i--) {
-            text = StringUtils.replace(text, SPECIAL_CHARS[i], "\\" + SPECIAL_CHARS[i]);
-        }
-
-        return text;
-    }
 
     /**
      * This method takes the incoming contentlet and determines if the new fileName we're receiving
@@ -6313,20 +6299,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                     buffy.append(" +languageId:" + contentlet.getLanguageId());
 
-                    buffy.append(" +" + contentlet.getContentType().variable()).append(StringPool.PERIOD)
-                            .append(field.getVelocityVarName());
+                    buffy.append(" +").append(contentlet.getContentType().variable()).append(StringPool.PERIOD)
+                            .append(field.getVelocityVarName()).append(ESUtils.SHA_256)
+                            .append(StringPool.COLON)
+                            .append(ESUtils.sha256(contentlet.getContentType().variable()
+                                    + StringPool.PERIOD + field.getVelocityVarName(), fieldValue,
+                            contentlet.getLanguageId()));
 
-                    if (isDataTypeNumber){
-                        buffy.append(StringPool.COLON).append("\"").append(getFieldValue(contentlet,
-                                new LegacyFieldTransformer(field).from())).append("\"");
-                    }else{
-                        buffy.append("_dotraw").append(StringPool.COLON).append("\"")
-                                .append(getFieldValue(contentlet,
-                                        new LegacyFieldTransformer(field).from()))
-                                .append("\"");
-                    }
-
-                    List<ContentletSearch> contentlets = new ArrayList<ContentletSearch>();
+                    List<ContentletSearch> contentlets = new ArrayList<>();
                     try {
                         contentlets.addAll(searchIndex(buffy.toString() + " +working:true", -1, 0, "inode", APILocator.getUserAPI().getSystemUser(), false));
                         contentlets.addAll(searchIndex(buffy.toString() + " +live:true", -1, 0, "inode", APILocator.getUserAPI().getSystemUser(), false));

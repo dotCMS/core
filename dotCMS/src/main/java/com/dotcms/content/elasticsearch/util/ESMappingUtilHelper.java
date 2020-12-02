@@ -396,12 +396,19 @@ public class ESMappingUtilHelper {
             mappingList.add(Tuple.of(field.variable().toLowerCase(),
                     new JSONObject(mappingForField)));
 
-            //Put mapping for _dotraw fields and _text if needed
+            //Put mapping for _dotraw, _sha256 and _text fields if needed
             mappingList.add(Tuple.of(field.variable().toLowerCase() + "_dotraw",
                     new JSONObject("{\n"
                             + "\"type\":\"keyword\",\n"
                             + "\"ignore_above\": 8191"
                             + "\n}")));
+
+            mappingList.add(Tuple.of(field.variable().toLowerCase() + ESUtils.SHA_256,
+                    new JSONObject("{\n"
+                            + "\"type\":\"keyword\",\n"
+                            + "\"ignore_above\": 8191"
+                            + "\n}")));
+
             if (Config
                     .getBooleanProperty("CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS", false)) {
                 mappingList.add(Tuple.of(field.variable().toLowerCase() + ESMappingAPIImpl.TEXT,
