@@ -5,14 +5,12 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.HostFolderField;
-import com.dotcms.contenttype.model.field.ImmutableBinaryField;
 import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.RelationshipField;
@@ -172,6 +170,14 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 //Importing relationships 2.0 using identifiers
                 new RelationshipTestCase(false, false)
         };
+    }
+
+    @DataProvider
+    public static String[] testCasesUniqueTextField() {
+        return new String[]{"UniqueTitle","A+ Student",
+                "aaa-bbb-ccc","valid - field","with \" quotes",
+                "with special characters + [ ] { } * ( ) : && ! | ^ ~ ?",
+                "CASEINSENSITIVE","with chinese characters 好 心 面"};
     }
 
     @BeforeClass
@@ -626,8 +632,14 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         }
     }
 
+    /**
+     * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
+     * Test Case: Lines contain the same unique text key (testTitle) but different language
+     * Expected Results: The import process should success
+     */
+    @UseDataProvider("testCasesUniqueTextField")
     @Test
-    public void importFile_success_when_twoLinesHaveSameUniqueKeysButDifferentLanguage()
+    public void importFile_success_when_twoLinesHaveSameUniqueKeysButDifferentLanguage(final String uniqueTitle)
             throws DotSecurityException, DotDataException, IOException {
 
         CsvReader csvreader;
@@ -656,8 +668,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
         //Creating csv
         reader = createTempFile("languageCode, countryCode, testTitle, testHost" + "\r\n" +
-                "es, ES, UniqueTitle, " + defaultSite.getIdentifier() + "\r\n" +
-                "en, US, UniqueTitle, " + defaultSite.getIdentifier() + "\r\n");
+                "es, ES, " + uniqueTitle + " , " + defaultSite.getIdentifier() + "\r\n" +
+                "en, US, " + uniqueTitle + " , " + defaultSite.getIdentifier() + "\r\n");
         csvreader = new CsvReader(reader);
         csvreader.setSafetySwitch(false);
         csvHeaders = csvreader.getHeaders();
@@ -684,8 +696,9 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
      * Test Case: Lines contain the same unique text key (testTitle)
      * Expected Results: The import process should fail
      */
+    @UseDataProvider("testCasesUniqueTextField")
     @Test
-    public void importFile_fails_when_twoLinesHaveSameUniqueKeys()
+    public void importFile_fails_when_twoLinesHaveSameUniqueKeys(final String uniqueTitle)
             throws DotSecurityException, DotDataException, IOException {
 
         CsvReader csvreader;
@@ -715,8 +728,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
             //Creating csv
             reader = createTempFile("languageCode, countryCode, testTitle, testHost" + "\r\n" +
-                    "en, US, UniqueTitle, " + defaultSite.getIdentifier() + "\r\n" +
-                    "en, US, UniqueTitle, " + defaultSite.getIdentifier() + "\r\n");
+                    "en, US, " + uniqueTitle + " , " + defaultSite.getIdentifier() + "\r\n" +
+                    "en, US," + uniqueTitle + " , " + defaultSite.getIdentifier() + "\r\n");
             csvreader = new CsvReader(reader);
             csvreader.setSafetySwitch(false);
             csvHeaders = csvreader.getHeaders();
