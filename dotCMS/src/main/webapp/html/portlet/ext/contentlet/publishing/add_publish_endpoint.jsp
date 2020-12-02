@@ -10,7 +10,7 @@
 <%@page import="java.time.temporal.ChronoUnit"%>
 <%@page import="java.time.Instant"%>
 <%@page import="java.time.format.DateTimeFormatter"%>
-
+<%@page import="com.liferay.portal.util.PortalUtil"%>
 
 <%
 	String identifier = request.getParameter("id");
@@ -195,8 +195,10 @@
 	function onChangeProtocolTypeSelectCheck() {
 		currentProtocol = dijit.byId("protocol").value;
 
-		setAddressRow(true);
-		setAuthPropertiesRow(true);
+		if (dojo.getStyle("getTokenSpan", "display") === "none"){
+			setAddressRow(true);
+			setAuthPropertiesRow(true);
+		}
 	}
 
 	function isPlatformLicenseLevel() {
@@ -207,9 +209,12 @@
 		<%} %>
 	}
 
+	height = 0;
+
 	function showGetToken(show){
 
 		if (show){
+			height =  dojo.getComputedStyle(dojo.byId("main")).height;
 			dojo.byId("authPropertiesRow").hide();
 			dojo.byId("getTokenSpan").show();
 			dojo.byId("showGetTokenSpan").hide();
@@ -217,6 +222,9 @@
 			dojo.byId("authPropertiesRow").show();
 			dojo.byId("getTokenSpan").hide();
 			dojo.byId("showGetTokenSpan").show();
+			dojo.byId("main").setStyle({
+				"height": height
+			});
 		}
 	}
 
@@ -245,26 +253,39 @@
 	function getToken(){
 
 		if (dijit.byId('tokenForm').validate()) {
+
+			var nowsers = new Date();
+			var expires = dijit.byId('expiresDate').value;
+
+			var timeDiff = expires.getTime() - nowsers.getTime();
+
+			if(timeDiff<1000){
+				alert("you cannot request a key in the past");
+				return;
+			}
+
+			var data = {
+				token: {
+					expirationSeconds: Math.ceil(timeDiff / 1000 ),
+					network: dijit.byId('network').value,
+					claims: {"label" : 'Push Publish'},
+					userId: '<%=PortalUtil.getUser(request).getUserId()%>'
+				},
+				remote: {
+					host: dijit.byId('address').value,
+					port: dijit.byId('port').value,
+					protocol: currentProtocol
+				},
+				auth: {
+					login: dijit.byId('login').value,
+					password: window.btoa(dijit.byId('password').value)
+				}
+			};
+
 			var xhrArgs = {
 				url : "/api/v1/apitoken/_remote",
 				handleAs: "json",
-				data : {
-					token: {
-						...dijit.byId('tokenForm').value,
-						...{
-							claims: {"label" : 'Push Publish'},
-							userId: currentUser.id
-						}
-					},
-					remote: {
-						host: dijit.byId('address').value,
-						port: dijit.byId('port').value
-					},
-					auth: {
-						login: dijit.byId('login').value,
-						pasword: window.btoa(dijit.byId('password').value)d
-					}
-				},
+				postData : dojo.toJson(data),
 				headers: {
 					"Content-Type": "application/json"
 				},
@@ -273,17 +294,12 @@
 				},
 				error : function(error) {
 					console.error("Error requesting a new APIKey", error);
+					alert(error.message);
 
 				}
 			};
 
 			dojo.xhrPut(xhrArgs);
-
-
-			requestNewAPIToken({
-				...dijit.byId('tokenForm').value,
-				...{nameLabel: 'Push Publish'}
-			}, setToken, showErrorGettingToken, serverConfig)
 		}
 	}
 
@@ -304,12 +320,14 @@
 		setAuthPropertiesRow(false);
 
 		toggleServerType('<%=isSender%>');
+
+		shouldEnabledGeToken();
 	});
 
 </script>
 
 
-<div style="margin:auto;">
+<div id="main" style="margin:auto;display: inline-block;">
 	<div dojoType="dijit.form.Form"  name="formSaveEndpoint"  id="formSaveEndpoint" onsubmit="return false;">
 		<input type="hidden" name="sending" id="sending" value="<%=isSender%>">
 		<input type="hidden" name="identifier" value="<%=UtilMethods.webifyString(String.valueOf(currentEndpoint.getId())) %>">
@@ -481,7 +499,7 @@
 				</dd>
 			</dl>
 		</div>
-		<div>
+		<div style="width: 95%;display: inline-block;">
 			<span id= "showGetTokenSpan" style="float: left;display:none;">
 				<button dojoType="dijit.form.Button" onClick="showGetToken(true)" id="getToken" class="dijitButtonFlat">Get Token</button>
 			</span>
@@ -493,7 +511,3 @@
 		</div>
 	</div>
 </div>
-
-<script>
-	shouldEnabledGeToken();
-</script>

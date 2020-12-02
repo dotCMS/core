@@ -1,12 +1,14 @@
 package com.dotcms.rest.api.v1.authentication;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.collect.ImmutableMap;
 
 import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
+@JsonDeserialize(builder = RemoteAPITokenFrom.Builder.class)
 public class RemoteAPITokenFrom {
     private TokenInfo token;
     private RemoteHostInfo remoteHostInfo;
@@ -20,6 +22,10 @@ public class RemoteAPITokenFrom {
 
     public String host(){
         return remoteHostInfo.host;
+    }
+
+    public String protocol(){
+        return remoteHostInfo.protocol;
     }
 
     public int port(){
@@ -36,8 +42,8 @@ public class RemoteAPITokenFrom {
 
     public Map<String, Object> getTokenInfo(){
         return map(
-                "netmask", token.network,
-                "expirationDays", token.expirationSeconds,
+                "network", token.network,
+                "expirationSeconds", token.expirationSeconds,
                 "userId", token.userId,
                 "claims", token.claims
         );
@@ -48,10 +54,10 @@ public class RemoteAPITokenFrom {
         private TokenInfo token;
 
         @JsonProperty
-        private RemoteHostInfo RemoteHostInfo;
+        private RemoteHostInfo remote;
 
         @JsonProperty
-        private AuthInfo AuthInfo;
+        private AuthInfo auth;
 
         public RemoteAPITokenFrom build() {
             return new RemoteAPITokenFrom(this);
@@ -62,11 +68,11 @@ public class RemoteAPITokenFrom {
         }
 
         public RemoteAPITokenFrom.RemoteHostInfo getRemoteHostInfo() {
-            return RemoteHostInfo;
+            return remote;
         }
 
         public RemoteAPITokenFrom.AuthInfo getAuthInfo() {
-            return AuthInfo;
+            return auth;
         }
     }
 
@@ -79,6 +85,7 @@ public class RemoteAPITokenFrom {
 
     private static class RemoteHostInfo{
         public String host;
+        public String protocol;
         public int port;
     }
 

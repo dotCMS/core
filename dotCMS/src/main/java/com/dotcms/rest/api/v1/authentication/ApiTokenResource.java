@@ -23,6 +23,7 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import org.glassfish.jersey.internal.util.Base64;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -233,7 +234,7 @@ public class ApiTokenResource implements Serializable {
      * @return Response
      */
     @PUT
-    @Path("/")
+    @Path("/_remote")
     @JSONP
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
@@ -242,15 +243,16 @@ public class ApiTokenResource implements Serializable {
                                         @Context final HttpServletResponse response,
                                         final RemoteAPITokenFrom formData) {
 
-        final String protocol = request.getProtocol();
+        final String protocol = formData.protocol();
         final Client client = getRestClient();
 
-        final String remoteURL = String.format("%s:://%s:%d/v1/apitoken", protocol, formData.host(), formData.port());
+        final String remoteURL = String.format("%s://%s:%d/api/v1/apitoken", protocol, formData.host(), formData.port());
         final WebTarget webTarget = client.target(remoteURL);
+        final String password = Base64.decodeAsString(formData.password());
 
         return webTarget.request(MediaType.APPLICATION_JSON)
-                .header("DOTAUTH",  formData.login() + ":" + formData.password())
-                .put(Entity.entity(formData.getTokenInfo(), MediaType.APPLICATION_JSON));
+                .header("Authorization",  "Basic " + Base64.encodeAsString(formData.login() + ":" + password))
+                .post(Entity.entity(formData.getTokenInfo(), MediaType.APPLICATION_JSON));
     }
 
     private Client getRestClient() {
