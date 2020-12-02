@@ -810,9 +810,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
             } catch (DotSecurityException e) {
                 Logger.debug(this, "User has permissions to publish the content = " + contentlet.getIdentifier()
                         + " but not the related link = " + link.getIdentifier());
-                throw new DotStateException("Problem occured while publishing link");
+                throw new DotStateException("Problem occured while publishing link: " + e.getMessage(), e);
             } catch (Exception e) {
-                throw new DotStateException("Problem occured while publishing file");
+                throw new DotStateException("Problem occured while publishing file: " + e.getMessage(), e);
             }
         }
     } // publishRelatedLinks.
@@ -3026,7 +3026,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             reindexQueueAPI.addStructureReindexEntries(structure.getInode());
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
-            throw new DotReindexStateException("Unable to complete reindex",e);
+            throw new DotReindexStateException("Unable to complete reindex: " + e.getMessage(),e);
         }
     }
 
@@ -3043,7 +3043,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             //CacheLocator.getContentletCache().clearCache();
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
-            throw new DotReindexStateException("Unable to complete reindex",e);
+            throw new DotReindexStateException("Unable to complete reindex: " + e.getMessage(),e);
         }
 
     }
@@ -3056,7 +3056,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             //CacheLocator.getContentletCache().clearCache();
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
-            throw new DotReindexStateException("Unable to complete reindex",e);
+            throw new DotReindexStateException("Unable to complete reindex: " + e.getMessage(),e);
         }
 
     }
@@ -3108,7 +3108,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             reindexQueueAPI.refreshContentUnderHost(host);
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
-            throw new DotReindexStateException("Unable to complete reindex",e);
+            throw new DotReindexStateException("Unable to complete reindex: " + e.getMessage(),e);
         }
 
     }
@@ -3120,7 +3120,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             reindexQueueAPI.refreshContentUnderFolder(folder);
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
-            throw new DotReindexStateException("Unable to complete reindex",e);
+            throw new DotReindexStateException("Unable to complete reindex " + e.getMessage(),e);
         }
 
     }
@@ -3132,7 +3132,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             reindexQueueAPI.refreshContentUnderFolderPath(hostId, folderPath);
         } catch ( DotDataException e ) {
             Logger.error(this, e.getMessage(), e);
-            throw new DotReindexStateException("Unable to complete reindex", e);
+            throw new DotReindexStateException("Unable to complete reindex " + e.getMessage(),e);
         }
     }
 
@@ -3717,15 +3717,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
+     * Retrieves the Contentlets that are associated to a specific piece of Content through a specific Relationship
+     * field. This method is executed for Relationships that are not currently cached by dotCMS, and must be looked up
+     * from scratch.
      *
-     * @param contentlet
-     * @param relatedIds
-     * @param variableName
+     * @param contentlet   The {@link Contentlet} object whose related Contentlets will be retrieved.
+     * @param relatedIds   The data structure that will store the related Contentlets.
+     * @param variableName The Velocity Variable name of the Relationship field for the Content Type that the {@code
+     *                     contentlet} object belongs to.
      * @param pullByParent
-     * @param limit
-     * @param offset
-     * @return
-     * @throws DotDataException
+     * @param limit        Pagination parameter for the total number of results to return.
+     * @param offset       Pagination parameter for the offset.
+     *
+     * @return The list of related {@link Contentlet} objects.
+     *
+     * @throws DotDataException     An error occurred when interacting with the data source.
      * @throws DotSecurityException
      */
     @Nullable
@@ -3736,38 +3742,35 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         final User systemUser = APILocator.getUserAPI().getSystemUser();
         com.dotcms.contenttype.model.field.Field field = null;
-        List<Contentlet> relatedList;
-        List<String> uniqueIdentifiers;
         Relationship relationship;
 
         try {
             field = APILocator
                     .getContentTypeFieldAPI()
                     .byContentTypeIdAndVar(contentlet.getContentTypeId(), variableName);
-
-            relationship = relationshipAPI.getRelationshipFromField(field, systemUser);
-
-
-        }catch(NotFoundInDbException e){
-            //Search for legacy relationships
-            relationship =  relationshipAPI.byTypeValue(variableName);
+            relationship = this.relationshipAPI.getRelationshipFromField(field, systemUser);
+        } catch (final NotFoundInDbException e) {
+            // Search for legacy relationships
+            relationship = this.relationshipAPI.byTypeValue(variableName);
         }
 
-        if (relationship == null){
-            throw new DotStateException("No relationship found");
+        if (null == relationship) {
+            throw new DotStateException(String.format("Relationship field '%s' in Content Type ID '%s' was not found." +
+                    " Make sure that the relationship table points to the correct field.", variableName, contentlet
+                    .getContentTypeId()));
         }
-        relatedList = filterRelatedContent(contentlet, relationship, systemUser, false,
+        final List<Contentlet> relatedList = filterRelatedContent(contentlet, relationship, systemUser, false,
                 pullByParent, limit, offset);
 
-        //Get unique identifiers to avoid duplicates (used to save on cache and filter the final list if needed
-        uniqueIdentifiers = relatedList.stream().map(Contentlet::getIdentifier).distinct()
+        // Get unique identifiers to avoid duplicates (used to save on cache and filter the final list if needed
+        final List<String> uniqueIdentifiers = relatedList.stream().map(Contentlet::getIdentifier).distinct()
                 .collect(CollectionsUtils.toImmutableList());
 
         //Cache related content only if it is a relationship field and there is no filter
         //In case of self-relationships, we shouldn't cache any value for a particular field when pullByParent==null
         //because in this case all parents and children are returned
         if (field != null && limit == -1 && offset <= 0 &&
-                !(relationshipAPI.sameParentAndChild(relationship) && pullByParent == null)) {
+                !(this.relationshipAPI.sameParentAndChild(relationship) && pullByParent == null)) {
             if (UtilMethods.isSet(relatedList)) {
                 relatedIds.put(variableName, uniqueIdentifiers);
             } else {
@@ -5906,7 +5909,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return search(buffy.toString(), 0, -1, orderBy, user, respectFrontendRoles);
         } catch (Exception pe) {
             Logger.error(this,"Unable to search for contentlets" ,pe);
-            throw new DotContentletStateException("Unable to search for contentlets", pe);
+            throw new DotContentletStateException("Unable to search for contentlets: " + pe.getMessage(), pe);
         }
     }
 
@@ -6025,7 +6028,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 }
             }catch (IOException e) {
-                throw new DotContentletStateException("Unable to set binary file Object",e);
+                throw new DotContentletStateException("Unable to set binary file Object: " + e.getMessage(),e);
             }
         }else if(field.getFieldContentlet().startsWith("system_field")){
             if(value.getClass()==java.lang.String.class){
@@ -6085,7 +6088,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
             return !incomingFileName.equals(identifier.getAssetName());
         } catch (Exception e) {
-            throw new DotContentletStateException("Exception trying to determine if there's a new incoming file.",e);
+            throw new DotContentletStateException("Exception trying to determine if there's a new incoming file:" + e.getMessage(),e);
         }
     }
 
