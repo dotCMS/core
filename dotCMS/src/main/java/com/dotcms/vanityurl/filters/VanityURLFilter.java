@@ -115,7 +115,7 @@ public class VanityURLFilter implements Filter {
             final HttpServletResponse response, final VanityUrlResult vanityUrlResult) {
         if (!response.isCommitted()) {
             final String uri = vanityUrlResult.getRewrite();
-            final String queryString = vanityUrlResult.getQueryString();
+            final String queryString = request.getQueryString();
             final int responseCode = request.getResponseCode();
 
             final String newUrl = uri + (queryString != null ? StringPool.QUESTION + queryString
