@@ -6,11 +6,12 @@ import com.dotcms.contenttype.business.sql.ContentTypeSql;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.model.type.*;
 import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
-import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotmarketing.business.*;
@@ -37,7 +38,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
   final ContentTypeSql contentTypeSql;
   final ContentTypeCache2 cache;
 
-  
+
   public static final Set<String> reservedContentTypeVars = ImmutableSet.<String>builder()
                   .add("basetype")
                   .add("categories")
@@ -157,7 +158,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   @Override
   public List<ContentType> search(String search, String orderBy, int limit, int offset) throws DotDataException {
-    
+
     return search(search, BaseContentType.ANY, orderBy, limit, offset);
   }
 
@@ -409,17 +410,62 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
         }
 
         FieldAPI fapi = APILocator.getContentTypeFieldAPI();
-        for (Field f : fields) {
-          f = FieldBuilder.builder(f).contentTypeId(retType.id()).build();
+        for (Field field : fields) {
+          final List<FieldVariable> fieldVariables = field.fieldVariables();
+          field = FieldBuilder.builder(field).contentTypeId(retType.id()).build();
           try {
-            fapi.save(f, APILocator.systemUser());
+            field = fapi.save(field, APILocator.systemUser());
           } catch (DotSecurityException e) {
             throw new DotStateException(e);
           }
+
+          addFieldVariables(field, fieldVariables);
         }
     }
 
     return retType;
+  }
+
+  /**
+   * When field gets saved then for each provided variable try to create one.\
+   * @param field field variables belong to
+   * @param fieldVariables original field variables
+   */
+  private void addFieldVariables(final Field field, List<FieldVariable> fieldVariables) {
+      final FieldAPI fieldApi = APILocator.getContentTypeFieldAPI();
+      try {
+          final Set<String> missingFieldVariablesIds = fieldApi
+                  .loadVariables(field)
+                  .stream()
+                  .map(FieldVariable::id)
+                  .collect(Collectors.toSet());
+          if (!missingFieldVariablesIds.isEmpty()) {
+            missingFieldVariablesIds
+                    .removeAll(
+                            field.fieldVariables()
+                                    .stream()
+                                    .map(FieldVariable::id)
+                                    .collect(Collectors.toSet()));
+          }
+
+        final Map<String, FieldVariable> fieldVariablesMap = fieldVariables
+                .stream()
+                .filter(fieldVariable -> fieldVariable.id() != null)
+                .collect(Collectors.toMap(FieldVariable::id, fieldVariable -> fieldVariable));
+          for(final String id : missingFieldVariablesIds) {
+              final FieldVariable fieldVariable = fieldVariablesMap.get(id);
+              if (UtilMethods.isSet(fieldVariable)) {
+                  fieldApi.delete(fieldVariable);
+              }
+        }
+
+        for(FieldVariable fieldVariable : fieldVariables) {
+            fieldVariable = ImmutableFieldVariable.builder().from(fieldVariable).fieldId(field.id()).build();
+            fieldApi.save(fieldVariable, APILocator.systemUser());
+        }
+      } catch (DotDataException | DotSecurityException e) {
+          throw new DotStateException(e);
+      }
   }
 
   private boolean doesTypeWithVariableExist(String variable) throws DotDataException {
@@ -539,9 +585,9 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     dc.setSQL(this.contentTypeSql.DELETE_INODE_BY_INODE).addParam(type.id()).loadResult();
     return true;
   }
-  
+
   final boolean LOAD_FROM_CACHE=Config.getBooleanProperty("LOAD_CONTENTTYPE_DETAILS_FROM_CACHE", true);
-  
+
   private List<ContentType> dbSearch(String search, int baseType, String orderBy, int limit, int offset)
       throws DotDataException {
     final int bottom = (baseType == 0) ? 0 : baseType;
@@ -550,7 +596,6 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
       throw new DotDataException("limit param must be more than 0");
     limit = (limit < 0) ? 10000 : limit;
 
-    
     // our legacy code passes in raw sql conditions and so we need to detect
     // and handle those
     SearchCondition searchCondition = new SearchCondition(search);
@@ -559,7 +604,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     	orderBy = "mod_date";
     }
     DotConnect dc = new DotConnect();
-    
+
     if(LOAD_FROM_CACHE) {
         dc.setSQL( String.format( this.contentTypeSql.SELECT_INODE_ONLY_QUERY_CONDITION, SQLUtil.sanitizeCondition( searchCondition.condition ), orderBy ) );
     }else {
@@ -572,7 +617,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     dc.addParam( searchCondition.search );
     dc.addParam(bottom);
     dc.addParam(top);
-    
+
     Logger.debug(this, ()-> "QUERY " + dc.getSQL());
 
     if(LOAD_FROM_CACHE) {
@@ -671,7 +716,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   /**
    * parses legacy conditions passed in as raw sql
-   * 
+   *
    * @author root
    *
    */
@@ -754,7 +799,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
       }
     }
-    
+
   }
 
  @Override
@@ -765,7 +810,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 	 dbUpdateModDate(type);
 	 cache.remove(type);
  }
- 
+
  private void dbUpdateModDate(ContentType type) throws DotDataException{
 	 DotConnect dc = new DotConnect();
 	 dc.setSQL(this.contentTypeSql.UPDATE_TYPE_MOD_DATE_BY_INODE);

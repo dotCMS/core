@@ -79,7 +79,6 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
-import java.io.IOException;
 import java.net.ConnectException;
 import java.util.*;
 
@@ -638,6 +637,18 @@ public class FieldAPIImpl implements FieldAPI {
       localSystemEventsAPI.notify(new FieldDeletedEvent(field.variable()));
 
   }
+
+    /**
+     * Given a field load and return its variables.
+     *
+     * @param field field variables belong to
+     * @return list of variables
+     * @throws DotDataException when SQL error happens
+     */
+    @Override
+    public List<FieldVariable> loadVariables(final Field field) throws DotDataException {
+        return UtilMethods.isSet(field) ? fieldFactory.loadVariables(field) : Collections.emptyList();
+    }
 
     /**
      * Remove one-sided relationship when the field is deleted

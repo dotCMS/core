@@ -161,7 +161,7 @@ jobs:
       matrix:
         databaseType: [ postgres, mysql, oracle, mssql ]
     env:
-      DOT_CICD_CLOUD_PROVIDER: github
+      DOT_CICD_CLOUD_PROVIDER: githubContentTypeFactoryImpl
       DOT_CICD_TARGET: core
       EXPORT_REPORTS: true
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

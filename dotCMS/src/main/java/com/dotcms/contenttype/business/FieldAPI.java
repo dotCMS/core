@@ -265,4 +265,13 @@ public interface FieldAPI {
 			final Map<String, Object> fieldMap,
 			final User user
 	);
+
+	/**
+	 * Given a field load and return its variables.
+	 *
+	 * @param field field variables belong to
+	 * @return list of variables
+	 * @throws DotDataException when SQL error happens
+	 */
+	List<FieldVariable> loadVariables(Field field) throws DotDataException;
 }
