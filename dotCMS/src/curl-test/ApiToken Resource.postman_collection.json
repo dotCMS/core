@@ -83,6 +83,39 @@
 					"response": []
 				},
 				{
+					"name": "logout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "f2fce2d6-7f78-4835-a0f3-5b8624958cd8",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "createToken remote with invalid local user",
 					"event": [
 						{
@@ -568,7 +601,7 @@
 	],
 	"variable": [
 		{
-			"id": "b7744f39-66df-4a70-9dc7-4c532fde82ba",
+			"id": "3afe4c7a-39a3-4b53-a466-5e6cbf563fe1",
 			"key": "tokenid",
 			"value": "api3e436843-00a9-409e-9574-943246e1853e"
 		}
