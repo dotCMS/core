@@ -1,18 +1,228 @@
 {
 	"info": {
-		"_postman_id": "7f399f87-ca1f-463d-a316-6dda98779efe",
+		"_postman_id": "119a9b2f-5830-4776-b221-2356b7f6c080",
 		"name": "ApiToken Resource",
 		"description": "Tests for the api token",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
+			"name": "remote",
+			"item": [
+				{
+					"name": "createToken remote",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "7245c128-2edf-40f1-97bb-7e474d1747c0",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"User Id should be dotcms.org.1\", function () {",
+									"    pm.expect(jsonData.entity.token.userId).to.eql('dotcms.org.1');",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"tokenid\", jsonData.entity.token.id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth\": {\n        \"login\": \"admin@dotcms.com\", \n        \"password\": \"YWRtaW4=\"\n    },\n    \"remote\": {\n        \"host\": \"localhost\", \n        \"port\": \"8080\", \n        \"protocol\": \"http\"\n    },\n    \"token\": {\n        \"expirationSeconds\": 94575023, \n        \"network\": \"0.0.0.0/0\", \n        \"userId\": \"dotcms.org.1\",\n        \"claims\": {\n            \"label\": \"Push Publish\"            \n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apitoken/_remote",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apitoken",
+								"_remote"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "createToken remote with invalid local user",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "aa174419-e52c-4d2c-8f32-3c39eedd0b00",
+								"exec": [
+									"pm.test(\"Status code should be 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "invalid_user",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth\": {\n        \"login\": \"admin@dotcms.com\", \n        \"password\": \"YWRtaW4=\"\n    },\n    \"remote\": {\n        \"host\": \"localhost\", \n        \"port\": \"8080\", \n        \"protocol\": \"http\"\n    },\n    \"token\": {\n        \"expirationSeconds\": 94575023, \n        \"network\": \"0.0.0.0/0\", \n        \"userId\": \"dotcms.org.1\",\n        \"claims\": {\n            \"label\": \"Push Publish\"            \n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apitoken/_remote",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apitoken",
+								"_remote"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "createToken remote with invalid remote user",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "a79624d0-ecec-486b-b22e-321f85895c8c",
+								"exec": [
+									"pm.test(\"Status code should be 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth\": {\n        \"login\": \"invalid_user\", \n        \"password\": \"YWRtaW4=\"\n    },\n    \"remote\": {\n        \"host\": \"localhost\", \n        \"port\": \"8080\", \n        \"protocol\": \"http\"\n    },\n    \"token\": {\n        \"expirationSeconds\": 94575023, \n        \"network\": \"0.0.0.0/0\", \n        \"userId\": \"dotcms.org.1\",\n        \"claims\": {\n            \"label\": \"Push Publish\"            \n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apitoken/_remote",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apitoken",
+								"_remote"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
 			"name": "createToken",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
-						"id": "1d1a015a-790f-4af2-8212-a4d5cbd638a9",
+						"id": "e3936c4c-6564-42ee-a559-f98614b6f2e1",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -84,7 +294,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "ca37ddc7-58e7-4fd0-b8f6-30908b95d626",
+						"id": "fbce1137-83a6-4d0e-bf54-0ff7ed1dfc08",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function() {",
 							"    pm.response.to.have.status(200);",
@@ -141,7 +351,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "a0c30a4d-0f02-4464-8838-6ef007fc76c7",
+						"id": "d535d114-0bff-40bf-82ff-37a14a118554",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function() {",
 							"    pm.response.to.have.status(200);",
@@ -191,7 +401,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "900a23b8-98cb-45c0-973e-cb8e557a85c2",
+						"id": "eea3d323-5c3f-424d-b28b-b13d48f7da44",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function() {",
 							"    pm.response.to.have.status(200);",
@@ -241,7 +451,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "6620f3d2-6306-4eb4-bd93-62d7d327437e",
+						"id": "30b90c51-6bd6-498a-9566-dcba8f52a82d",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function() {",
 							"    pm.response.to.have.status(200);",
@@ -290,7 +500,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "513b9195-e050-4a3a-809f-8fae435a7dcc",
+						"id": "6bd73cb0-e338-4747-a63f-cc1669179e05",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function() {",
 							"    pm.response.to.have.status(200);",
@@ -326,7 +536,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "3c9c8e15-c11d-423d-9ae1-561ed8613813",
+						"id": "07b7d382-48ce-4e94-8992-b447436eb510",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function() {",
 							"    pm.response.to.have.status(200);",
@@ -358,9 +568,9 @@
 	],
 	"variable": [
 		{
-			"id": "d6169bbd-b097-49f5-b581-99e2bb5440a7",
+			"id": "b7744f39-66df-4a70-9dc7-4c532fde82ba",
 			"key": "tokenid",
-			"value": "apic48ac755-bedf-4aa0-b17a-ee8d5d909bfe"
+			"value": "api3e436843-00a9-409e-9574-943246e1853e"
 		}
 	],
 	"protocolProfileBehavior": {}
