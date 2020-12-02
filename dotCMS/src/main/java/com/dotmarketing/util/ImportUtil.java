@@ -953,11 +953,13 @@ public class ImportUtil {
                                     .append(text).append(")");
                         } else {
                             buffy.append(" +").append(contentType.getVelocityVarName()).append(StringPool.PERIOD)
-                                    .append(field.getVelocityVarName()).append(ESUtils.SHA_256)
+                                    .append(field.getVelocityVarName()).append(field.isUnique()? ESUtils.SHA_256: "_dotraw")
                                     .append(StringPool.COLON)
-                                    .append(ESUtils.sha256(contentType.getVelocityVarName()
+                                    .append(field.isUnique()? ESUtils.sha256(contentType.getVelocityVarName()
                                                     + StringPool.PERIOD + field.getVelocityVarName(), text,
-                                            language));
+                                            language): escapeLuceneSpecialCharacter(text).contains(" ") ? "\""
+                                            + escapeLuceneSpecialCharacter(text) + "\""
+                                            : escapeLuceneSpecialCharacter(text));
 
                         }
                         conditionValues += conditionValues + value + "-";
@@ -1750,6 +1752,27 @@ public class ImportUtil {
         ret.append(" ] ");
         return ret.toString();
     }
+
+    /**
+     * Escape lucene reserved characters
+     *
+     * @param text
+     * @return String
+     */
+    private static String escapeLuceneSpecialCharacter(String text){
+        text = text.replaceAll("\\[","\\\\[").replaceAll("\\]","\\\\]");
+        text = text.replaceAll("\\{","\\\\{").replaceAll("\\}","\\\\}");
+        text = text.replaceAll("\\+","\\\\+").replaceAll(":","\\\\:");
+        text = text.replaceAll("\\*","\\\\*").replaceAll("\\?","\\\\?");
+        text = text.replaceAll("\\(","\\\\(").replaceAll("\\)","\\\\)");
+        text = text.replaceAll("&&","\\\\&&").replaceAll("\\|\\|","\\\\||");
+        text = text.replaceAll("!","\\\\!").replaceAll("\\^","\\\\^");
+        text = text.replaceAll("-","\\\\-").replaceAll("~","\\\\~");
+        text = text.replaceAll("\"","\\\"");
+
+        return text;
+    }
+
 
     /**
      * 

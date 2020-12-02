@@ -729,7 +729,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             //Creating csv
             reader = createTempFile("languageCode, countryCode, testTitle, testHost" + "\r\n" +
                     "en, US, " + uniqueTitle + " , " + defaultSite.getIdentifier() + "\r\n" +
-                    "en, US," + uniqueTitle + " , " + defaultSite.getIdentifier() + "\r\n");
+                    "en, US, " + uniqueTitle + " , " + defaultSite.getIdentifier() + "\r\n");
             csvreader = new CsvReader(reader);
             csvreader.setSafetySwitch(false);
             csvHeaders = csvreader.getHeaders();
