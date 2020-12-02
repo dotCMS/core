@@ -11,7 +11,6 @@ import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.HostFolderField;
-import com.dotcms.contenttype.model.field.ImmutableBinaryField;
 import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.RelationshipField;
@@ -171,6 +170,14 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 //Importing relationships 2.0 using identifiers
                 new RelationshipTestCase(false, false)
         };
+    }
+
+    @DataProvider
+    public static String[] testCasesUniqueTextField() {
+        return new String[]{"UniqueTitle","A+ Student",
+                "aaa-bbb-ccc","valid - field","with \" quotes",
+                "with special characters + [ ] { } * ( ) : && ! | ^ ~ ?",
+                "CASEINSENSITIVE","with chinese characters 好 心 面"};
     }
 
     @BeforeClass
@@ -625,8 +632,14 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         }
     }
 
+    /**
+     * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
+     * Test Case: Lines contain the same unique text key (testTitle) but different language
+     * Expected Results: The import process should success
+     */
+    @UseDataProvider("testCasesUniqueTextField")
     @Test
-    public void importFile_success_when_twoLinesHaveSameUniqueKeysButDifferentLanguage()
+    public void importFile_success_when_twoLinesHaveSameUniqueKeysButDifferentLanguage(final String uniqueTitle)
             throws DotSecurityException, DotDataException, IOException {
 
         CsvReader csvreader;
@@ -655,8 +668,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
         //Creating csv
         reader = createTempFile("languageCode, countryCode, testTitle, testHost" + "\r\n" +
-                "es, ES, UniqueTitle, " + defaultSite.getIdentifier() + "\r\n" +
-                "en, US, UniqueTitle, " + defaultSite.getIdentifier() + "\r\n");
+                "es, ES, " + uniqueTitle + " , " + defaultSite.getIdentifier() + "\r\n" +
+                "en, US, " + uniqueTitle + " , " + defaultSite.getIdentifier() + "\r\n");
         csvreader = new CsvReader(reader);
         csvreader.setSafetySwitch(false);
         csvHeaders = csvreader.getHeaders();
@@ -678,8 +691,14 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         assertEquals("The Content Type field testTitle is unique.", results.get("warnings").get(0));
     }
 
+    /**
+     * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
+     * Test Case: Lines contain the same unique text key (testTitle)
+     * Expected Results: The import process should fail
+     */
+    @UseDataProvider("testCasesUniqueTextField")
     @Test
-    public void importFile_fails_when_twoLinesHaveSameUniqueKeys()
+    public void importFile_fails_when_twoLinesHaveSameUniqueKeys(final String uniqueTitle)
             throws DotSecurityException, DotDataException, IOException {
 
         CsvReader csvreader;
@@ -709,8 +728,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
             //Creating csv
             reader = createTempFile("languageCode, countryCode, testTitle, testHost" + "\r\n" +
-                    "en, US, UniqueTitle, " + defaultSite.getIdentifier() + "\r\n" +
-                    "en, US, UniqueTitle, " + defaultSite.getIdentifier() + "\r\n");
+                    "en, US, " + uniqueTitle + " , " + defaultSite.getIdentifier() + "\r\n" +
+                    "en, US, " + uniqueTitle + " , " + defaultSite.getIdentifier() + "\r\n");
             csvreader = new CsvReader(reader);
             csvreader.setSafetySwitch(false);
             csvHeaders = csvreader.getHeaders();
@@ -732,6 +751,208 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             assertEquals("The Content Type field testTitle is unique.", results.get("warnings").get(0));
             assertEquals("Line # 3 contains duplicate values for a unique Content Type field testTitle and will be ignored.", results.get("warnings").get(1));
 
+        } finally {
+            try {
+                contentTypeApi.delete(type);
+            }catch (Exception e) {e.printStackTrace();}
+        }
+    }
+
+    /**
+     * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
+     * Test Case: Lines contain the same unique number key (testNumber)
+     * Expected Results: The import process should fail
+     */
+    @Test
+    public void importFile_fails_when_twoLinesHaveSameUniqueNumberKeys()
+            throws DotSecurityException, DotDataException, IOException {
+
+        CsvReader csvreader;
+        com.dotcms.contenttype.model.field.Field titleField, hostField;
+        HashMap<String, List<String>> results;
+        Reader reader;
+        String[] csvHeaders;
+
+        ContentType type = new ContentTypeDataGen().host(APILocator.systemHost()).nextPersisted();
+
+        try {
+            titleField =
+                    FieldBuilder.builder(TextField.class).name("testNumber").variable("testNumber")
+                            .unique(true)
+                            .contentTypeId(type.id()).dataType(
+                            DataTypes.FLOAT).build();
+            hostField =
+                    FieldBuilder.builder(HostFolderField.class).name("testHost")
+                            .variable("testHost")
+                            .contentTypeId(type.id()).dataType(
+                            DataTypes.TEXT).build();
+            titleField = fieldAPI.save(titleField, user);
+            fieldAPI.save(hostField, user);
+
+            workflowAPI.saveSchemesForStruct(new StructureTransformer(type).asStructure(),
+                    Arrays.asList(schemeStepActionResult1.getScheme()));
+
+            //Creating csv
+            reader = createTempFile("languageCode, countryCode, testNumber, testHost" + "\r\n" +
+                    "en, US, 35, " + defaultSite.getIdentifier() + "\r\n" +
+                    "en, US, 35, " + defaultSite.getIdentifier() + "\r\n");
+            csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+            csvHeaders = csvreader.getHeaders();
+
+            int languageCodeHeaderColumn = 0;
+            int countryCodeHeaderColumn = 1;
+            //Preview=false
+            results =
+                    ImportUtil
+                            .importFile(0L, defaultSite.getInode(), type.inode(),
+                                    new String[]{titleField.id()}, true, true,
+                                    user, -1, csvHeaders, csvreader, languageCodeHeaderColumn,
+                                    countryCodeHeaderColumn, reader,
+                                    schemeStepActionResult1.getAction().getId(),getHttpRequest());
+            //Validations
+            validate(results, true, false, true);
+
+            assertTrue(results.get("warnings").size() == 2);
+            assertEquals("The Content Type field testNumber is unique.", results.get("warnings").get(0));
+            assertEquals("Line # 3 contains duplicate values for a unique Content Type field testNumber and will be ignored.", results.get("warnings").get(1));
+
+        } finally {
+            try {
+                contentTypeApi.delete(type);
+            }catch (Exception e) {e.printStackTrace();}
+        }
+    }
+
+    /**
+     * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
+     * Test Case: Lines are imported with a unique text key (testTitle). Each line contains a unique testTitle
+     * Expected Results: The import process should not fail
+     */
+    @Test
+    public void importFile_success_when_twoLinesHaveDifferentUniqueKeys()
+            throws DotSecurityException, DotDataException, IOException {
+
+        CsvReader csvreader;
+        com.dotcms.contenttype.model.field.Field titleField, hostField;
+        HashMap<String, List<String>> results;
+        Reader reader;
+        String[] csvHeaders;
+
+        ContentType type = new ContentTypeDataGen().host(APILocator.systemHost()).nextPersisted();
+
+        try {
+            titleField =
+                    FieldBuilder.builder(TextField.class).name("testTitle").variable("testTitle")
+                            .unique(true)
+                            .contentTypeId(type.id()).dataType(
+                            DataTypes.TEXT).build();
+            hostField =
+                    FieldBuilder.builder(HostFolderField.class).name("testHost")
+                            .variable("testHost")
+                            .contentTypeId(type.id()).dataType(
+                            DataTypes.TEXT).build();
+            titleField = fieldAPI.save(titleField, user);
+            fieldAPI.save(hostField, user);
+
+            workflowAPI.saveSchemesForStruct(new StructureTransformer(type).asStructure(),
+                    Arrays.asList(schemeStepActionResult1.getScheme()));
+
+            //Creating csv
+            reader = createTempFile("languageCode, countryCode, testTitle, testHost" + "\r\n" +
+                    "en, US, aaa-bbb-ccc, " + defaultSite.getIdentifier() + "\r\n" +
+                    "en, US, aaa-bbb, " + defaultSite.getIdentifier() + "\r\n" +
+                    "en, US, -bbb, " + defaultSite.getIdentifier() + "\r\n" +
+                    "en, US, -bbb +again, " + defaultSite.getIdentifier() + "\r\n" +
+                    "en, US, A+ Student, " + defaultSite.getIdentifier() + "\r\n" +
+                    "en, US, UniqueTitle, " + defaultSite.getIdentifier() + "\r\n" +
+                    "en, US, Unique, " + defaultSite.getIdentifier() + "\r\n" +
+                    "en, US, Unique Again, " + defaultSite.getIdentifier() + "\r\n");
+            csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+            csvHeaders = csvreader.getHeaders();
+
+            int languageCodeHeaderColumn = 0;
+            int countryCodeHeaderColumn = 1;
+            //Preview=false
+            results =
+                    ImportUtil
+                            .importFile(0L, defaultSite.getInode(), type.inode(),
+                                    new String[]{titleField.id()}, true, true,
+                                    user, -1, csvHeaders, csvreader, languageCodeHeaderColumn,
+                                    countryCodeHeaderColumn, reader,
+                                    schemeStepActionResult1.getAction().getId(),getHttpRequest());
+            //Validations
+            validate(results, true, false, true);
+
+            assertTrue(results.get("warnings").size() == 1);
+            assertEquals("The Content Type field testTitle is unique.", results.get("warnings").get(0));
+            assertTrue(results.get("errors").size() == 0);
+        } finally {
+            try {
+                contentTypeApi.delete(type);
+            }catch (Exception e) {e.printStackTrace();}
+        }
+    }
+
+    /**
+     * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
+     * Test Case: Lines are imported with a unique number key (testNumber). Each line contains a unique testNumber
+     * Expected Results: The import process should not fail
+     */
+    @Test
+    public void importFile_success_when_twoLinesHaveDifferentUniqueNumberKeys()
+            throws DotSecurityException, DotDataException, IOException {
+
+        CsvReader csvreader;
+        com.dotcms.contenttype.model.field.Field titleField, hostField;
+        HashMap<String, List<String>> results;
+        Reader reader;
+        String[] csvHeaders;
+
+        ContentType type = new ContentTypeDataGen().host(APILocator.systemHost()).nextPersisted();
+
+        try {
+            titleField =
+                    FieldBuilder.builder(TextField.class).name("testNumber").variable("testNumber")
+                            .unique(true)
+                            .contentTypeId(type.id()).dataType(
+                            DataTypes.INTEGER).build();
+            hostField =
+                    FieldBuilder.builder(HostFolderField.class).name("testHost")
+                            .variable("testHost")
+                            .contentTypeId(type.id()).dataType(
+                            DataTypes.TEXT).build();
+            titleField = fieldAPI.save(titleField, user);
+            fieldAPI.save(hostField, user);
+
+            workflowAPI.saveSchemesForStruct(new StructureTransformer(type).asStructure(),
+                    Arrays.asList(schemeStepActionResult1.getScheme()));
+
+            //Creating csv
+            reader = createTempFile("languageCode, countryCode, testNumber, testHost" + "\r\n" +
+                    "en, US, 12345, " + defaultSite.getIdentifier() + "\r\n" +
+                    "en, US, 12, " + defaultSite.getIdentifier() + "\r\n");
+            csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+            csvHeaders = csvreader.getHeaders();
+
+            int languageCodeHeaderColumn = 0;
+            int countryCodeHeaderColumn = 1;
+            //Preview=false
+            results =
+                    ImportUtil
+                            .importFile(0L, defaultSite.getInode(), type.inode(),
+                                    new String[]{titleField.id()}, true, true,
+                                    user, -1, csvHeaders, csvreader, languageCodeHeaderColumn,
+                                    countryCodeHeaderColumn, reader,
+                                    schemeStepActionResult1.getAction().getId(),getHttpRequest());
+            //Validations
+            validate(results, true, false, true);
+
+            assertTrue(results.get("warnings").size() == 1);
+            assertEquals("The Content Type field testNumber is unique.", results.get("warnings").get(0));
+            assertTrue(results.get("errors").size() == 0);
         } finally {
             try {
                 contentTypeApi.delete(type);
