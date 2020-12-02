@@ -18,11 +18,11 @@ import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
@@ -42,15 +42,6 @@ import java.util.Date;
 import java.util.HashSet;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
-import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.factories.MultiTreeAPI;
-import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.containers.model.FileAssetContainer;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.factories.MultiTreeAPI;
@@ -64,7 +55,6 @@ import com.dotmarketing.portlets.templates.model.Template;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 
 /**
  * @author nollymar
@@ -457,6 +447,8 @@ public class DependencyManagerTest {
     
     /**
      * <b>Method to test:</b> {@link DependencyManager#setDependencies()} <p>
+=======
+>>>>>>> parent of a91bc52850... #19558 Adding detail page when sending a COntent Type by PP (#19601)
      * <b>Given Scenario:</b> A Page using a FileContainer and the FileContainer jus has the container.vtl file<p>
      * <b>ExpectedResult:</b> Should include the container.vtl file as dependencies
      * @throws DotSecurityException
