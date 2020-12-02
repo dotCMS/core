@@ -16,6 +16,7 @@ export interface DotTemplate {
     identifier: string;
     image?: string;
     inode: string;
+    live?: boolean;
     locked?: boolean;
     modDate?: Date;
     name: string;
@@ -32,6 +33,8 @@ export interface DotTemplate {
 // Extra properties from renderHTML
 export interface DotTemplate {
     canEdit: boolean;
+    canWrite?: boolean;
+    canPublish?: boolean;
     containers?: DotContainerMap;
     layout: DotLayout;
 }

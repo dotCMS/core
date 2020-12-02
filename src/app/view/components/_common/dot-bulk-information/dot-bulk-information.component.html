@@ -1,0 +1,6 @@
+<p data-testId="successful">{{ 'Successful' | dm }}: {{ data.successCount }}</p>
+<p data-testId="fails">{{ 'Fails' | dm }}: {{ data.fails?.length }}</p>
+<div class="bulk-information__fail-item" *ngFor="let item of data.fails">
+    <h5>{{ item.description }}</h5>
+    <p>{{ item.errorMessage }}</p>
+</div>

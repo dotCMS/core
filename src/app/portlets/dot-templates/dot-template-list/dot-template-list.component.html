@@ -1,8 +1,10 @@
 <dot-listing-data-table
+    #listing
     (rowWasClicked)="editTemplate($event)"
-    [actionHeaderOptions]="actions"
+    (selectedItems)="updateSelectedTemplates($event)"
+    [actionHeaderOptions]="actionHeaderOptions"
     [columns]="tableColumns"
-    sortField="identifier"
+    sortField="modDate"
     sortOrder="DESC"
     url="v1/templates"
     [actions]="[]"
@@ -10,6 +12,26 @@
     dataKey="inode"
     [firstPageData]="firstPage"
 >
+    <div class="template-listing__header-options">
+        <div>
+            <p-checkbox
+                [label]="'Show-Archived' | dm"
+                (onChange)="handleArchivedFilter($event.checked)"
+            ></p-checkbox>
+            <button
+                type="button"
+                pButton
+                [disabled]="!this.selectedTemplates?.length"
+                class="p-button-secondary p-button-sm"
+                icon="pi pi-ellipsis-v"
+                [label]="'Actions' | dm"
+                (click)="actionsMenu.toggle($event)"
+                attr.data-testid="bulkActions"
+            ></button>
+        </div>
+        <p-menu #actionsMenu [popup]="true" [model]="templateBulkActions" appendTo="body"></p-menu>
+    </div>
+
     <ng-template #rowTemplate let-rowData="rowData">
         <td [ngStyle]="{ 'text-align': tableColumns[0].textAlign }">
             {{ rowData.name }}
@@ -24,7 +46,18 @@
             {{ rowData.modDate }}
         </td>
         <td style="width: 5%">
-            <span>Actions TBD</span>
+            <dot-action-menu-button
+                class="listing-datatable__action-button"
+                [actions]="setTemplateActions(rowData)"
+                [item]="rowData"
+            >
+            </dot-action-menu-button>
         </td>
     </ng-template>
 </dot-listing-data-table>
+
+<dot-add-to-bundle
+    *ngIf="addToBundleIdentifier"
+    [assetIdentifier]="addToBundleIdentifier"
+    (cancel)="addToBundleIdentifier = null"
+></dot-add-to-bundle>

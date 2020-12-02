@@ -15,6 +15,7 @@
     (onLazyLoad)="loadDataPaginationEvent($event)"
     (onRowSelect)="handleRowCheck()"
     (onRowUnselect)="handleRowCheck()"
+    (onHeaderCheckboxToggle)="handleRowCheck()"
     [columns]="columns"
     [lazy]="true"
     [loading]="loading"

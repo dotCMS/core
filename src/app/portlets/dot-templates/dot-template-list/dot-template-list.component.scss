@@ -1,0 +1,11 @@
+@use "variables" as *;
+
+.template-listing__header-options {
+    width: 100%;
+
+    div {
+        display: flex;
+        justify-content: space-between;
+        margin: 0 $spacing-3;
+    }
+}

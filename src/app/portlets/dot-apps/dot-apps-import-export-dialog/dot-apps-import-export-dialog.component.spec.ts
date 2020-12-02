@@ -173,7 +173,7 @@ describe('DotAppsImportExportDialogComponent', () => {
             );
             expect(dialog.componentInstance.appendToBody).toBe(true);
             expect(inputPassword.attributes['pPassword']).not.toBeUndefined();
-                expect(inputPassword.nativeElement.placeholder).toBe(
+            expect(inputPassword.nativeElement.placeholder).toBe(
                 messageServiceMock.get('apps.confirmation.export.password.label')
             );
             expect(dialog.componentInstance.actions.accept.label).toBe(
