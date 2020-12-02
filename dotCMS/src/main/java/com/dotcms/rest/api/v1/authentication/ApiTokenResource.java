@@ -12,6 +12,7 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestClientBuilder;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -242,6 +243,12 @@ public class ApiTokenResource implements Serializable {
     public final Response getRemoteToken(@Context final HttpServletRequest request,
                                         @Context final HttpServletResponse response,
                                         final RemoteAPITokenFrom formData) {
+
+        final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
+
+        if (!initDataObject.getUser().isAdmin()) {
+            throw new ForbiddenException("Should be Admin user");
+        }
 
         final String protocol = formData.protocol();
         final Client client = getRestClient();

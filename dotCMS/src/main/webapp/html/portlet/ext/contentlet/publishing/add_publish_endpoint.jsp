@@ -209,12 +209,9 @@
 		<%} %>
 	}
 
-	height = 0;
-
 	function showGetToken(show){
 
 		if (show){
-			height =  dojo.getComputedStyle(dojo.byId("main")).height;
 			dojo.byId("authPropertiesRow").hide();
 			dojo.byId("getTokenSpan").show();
 			dojo.byId("showGetTokenSpan").hide();
@@ -222,9 +219,7 @@
 			dojo.byId("authPropertiesRow").show();
 			dojo.byId("getTokenSpan").hide();
 			dojo.byId("showGetTokenSpan").show();
-			dojo.byId("main").setStyle({
-				"height": height
-			});
+
 		}
 	}
 
