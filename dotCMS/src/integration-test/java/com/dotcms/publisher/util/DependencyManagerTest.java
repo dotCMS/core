@@ -17,7 +17,6 @@ import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -33,15 +32,6 @@ import com.liferay.portal.model.User;
 import java.util.Date;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
-import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.factories.MultiTreeAPI;
-import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.containers.model.FileAssetContainer;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.factories.MultiTreeAPI;
@@ -55,7 +45,6 @@ import com.dotmarketing.portlets.templates.model.Template;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 
 /**
  * @author nollymar
@@ -220,83 +209,6 @@ public class DependencyManagerTest {
 
     /**
      * <b>Method to test:</b> {@link DependencyManager#setDependencies()} <p>
-     * <b>Given Scenario:</b> A {@link ContentType} with a page as detail page<p>
-     * <b>ExpectedResult:</b> Should include the detail page as dependencies
-     * @throws DotSecurityException
-     * @throws DotBundleException
-     * @throws DotDataException
-     */
-    @Test
-    public void test_Content_Type_with_detail_Page()
-            throws DotSecurityException, DotBundleException, DotDataException {
-
-        final PushPublisherConfig config = new PushPublisherConfig();
-        final User systemUser = APILocator.systemUser();
-        final Host host = new SiteDataGen().nextPersisted();
-
-        final String baseUrl = String.format("/test%s", System.currentTimeMillis());
-
-        final ContentType contentTypeForContent = new ContentTypeDataGen().nextPersisted();
-
-        final Container container = new ContainerDataGen()
-                .withContentType(contentTypeForContent, "Testing")
-                .nextPersisted();
-
-        final TemplateLayout templateLayout = new TemplateLayoutDataGen()
-                .withContainer(container, ContainerUUID.UUID_START_VALUE)
-                .next();
-
-        final Template template = new TemplateDataGen()
-                .drawedBody(templateLayout)
-                .host(host)
-                .nextPersisted();
-
-        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
-
-        final Contentlet contentlet = createContentlet(contentTypeForContent, container, htmlPageAsset);
-        final ContentType contentType = new ContentTypeDataGen().user(systemUser)
-                .host(host)
-                .detailPage(htmlPageAsset.getIdentifier())
-                .urlMapPattern(String.format("%s/{text}", baseUrl))
-                .nextPersisted();
-
-        //Creates a bundle with just the child
-        createBundle(config, contentType);
-
-        DependencyManager dependencyManager = new DependencyManager(DependencyManagerTest.user, config);
-        dependencyManager.setDependencies();
-
-        assertEquals(2, dependencyManager.getContentTypes().size());
-        assertTrue(dependencyManager.getContentTypes().contains(contentType.id()));
-        assertTrue(dependencyManager.getContentTypes().contains(contentlet.getContentType().id()));
-
-        assertEquals(2, dependencyManager.getContents().size());
-        assertTrue(dependencyManager.getContents().contains(htmlPageAsset.getIdentifier()));
-        assertTrue(dependencyManager.getContents().contains(contentlet.getIdentifier()));
-
-        assertEquals(1, dependencyManager.getTemplates().size());
-        assertTrue(dependencyManager.getTemplates().contains(template.getIdentifier()));
-
-        assertEquals(1, dependencyManager.getContainers().size());
-        assertTrue(dependencyManager.getContainers().contains(container.getIdentifier()));
-    }
-
-    private Contentlet createContentlet(
-            final ContentType contentType,
-            final Container container,
-            final HTMLPageAsset htmlPageAsset) {
-
-        final Contentlet contentlet = new ContentletDataGen(contentType.id()).nextPersisted();
-        new MultiTreeDataGen()
-                .setPage(htmlPageAsset)
-                .setContainer(container)
-                .setContentlet(contentlet)
-                .nextPersisted();
-        return contentlet;
-    }
-    
-    /**
-     * <b>Method to test:</b> {@link DependencyManager#setDependencies()} <p>
      * <b>Given Scenario:</b> A Page using a FileContainer and the FileContainer jus has the container.vtl file<p>
      * <b>ExpectedResult:</b> Should include the container.vtl file as dependencies
      * @throws DotSecurityException
@@ -355,23 +267,6 @@ public class DependencyManagerTest {
      */
     private void createBundle(final PushPublisherConfig config, final Contentlet contentlet)
             throws DotDataException {
-
-        createBundle(config, PusheableAsset.CONTENTLET, contentlet.getInode(), contentlet.getIdentifier());
-    }
-
-    private void createBundle(final PushPublisherConfig config, final ContentType contentType)
-            throws DotDataException {
-        createBundle(config, PusheableAsset.CONTENT_TYPE, contentType.inode(), contentType.id());
-    }
-
-    private void createBundle(
-            final PushPublisherConfig config,
-            final PusheableAsset pusheableAsset,
-            final String inode,
-            final String id)
-
-            throws DotDataException {
-
         final String bundleName = "testDependencyManagerBundle" + System.currentTimeMillis();
         Bundle bundle = new Bundle(bundleName, new Date(), null, user.getUserId());
         bundleAPI.saveBundle(bundle);
@@ -380,17 +275,17 @@ public class DependencyManagerTest {
         final PublishQueueElement publishQueueElement = new PublishQueueElement();
         publishQueueElement.setId(1);
         publishQueueElement.setOperation(Operation.PUBLISH.ordinal());
-        publishQueueElement.setAsset(inode);
+        publishQueueElement.setAsset(contentlet.getInode());
         publishQueueElement.setEnteredDate(new Date());
         publishQueueElement.setPublishDate(new Date());
         publishQueueElement.setBundleId(bundle.getId());
-        publishQueueElement.setType(pusheableAsset.getType());
+        publishQueueElement.setType(PusheableAsset.CONTENTLET.getType());
 
         config.setAssets(Lists.newArrayList(publishQueueElement));
         config.setId(bundle.getId());
         config.setOperation(Operation.PUBLISH);
         config.setDownloading(true);
-        config.setLuceneQueries(Lists.newArrayList("+identifier:" + id));
+        config.setLuceneQueries(Lists.newArrayList("+identifier:" + contentlet.getIdentifier()));
     }
 
     /**
