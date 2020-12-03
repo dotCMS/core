@@ -421,15 +421,15 @@
 				</dd>
 			</dl>
 
-			<dl id="getTokenSpan" style="display:none;">
+			<dl id="getTokenSpan" style="display:none">
 
-				<dt></dt>
-				<dd>
-					<div dojoType="dijit.form.Form" id="tokenForm" onsubmit="return false;">
+
+
+					<div dojoType="dijit.form.Form" id="tokenForm" onsubmit="return false;" style="width:70%;margin:auto;border:1px solid silver;">
 						<table class="listingTable" >
 
 							<tr>
-								<td>
+								<td colspan=2>
 									<h3>Request New Token</h3>
 								</td>
 							</tr>
@@ -482,7 +482,7 @@
 							<button id="ok_button" dojoType="dijit.form.Button" onClick="getToken();"><%=LanguageUtil.get(pageContext, "ok")%></button>
 						</div>
 					</div>
-				</dd>
+	
 			</dl>
 
 			<dl>
@@ -495,8 +495,8 @@
 			</dl>
 		</div>
 		<div style="width: 95%;display: inline-block;">
-			<span id= "showGetTokenSpan" style="float: left;display:none;">
-				<button dojoType="dijit.form.Button" onClick="showGetToken(true)" id="getToken" class="dijitButtonFlat">Get Token</button>
+			<span id= "showGetTokenSpan" style="display:none;">
+				<button dojoType="dijit.form.Button" onClick="showGetToken(true)" id="getToken" >Get Token</button>
 			</span>
 			<span style="float: right;">
 
