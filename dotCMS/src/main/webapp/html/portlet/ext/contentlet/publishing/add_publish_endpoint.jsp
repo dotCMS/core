@@ -278,7 +278,7 @@
 			};
 
 			var xhrArgs = {
-				url : "/api/v1/apitoken/_remote",
+				url : "/api/v1/apitoken/remote",
 				handleAs: "json",
 				postData : dojo.toJson(data),
 				headers: {
