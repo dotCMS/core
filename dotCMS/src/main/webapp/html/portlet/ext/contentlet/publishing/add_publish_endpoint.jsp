@@ -374,7 +374,14 @@
 					</select>
 				</dd>
 			</dl>
-
+            <dl>
+                <dt>
+                    <%= LanguageUtil.get(pageContext, "publisher_Endpoints_Enabled") %>:
+                </dt>
+                <dd>
+                    <input dojoType="dijit.form.CheckBox" type="checkbox" name="enabled" <%=(currentEndpoint.isEnabled()) ? "checked=true" : "" %> />
+                </dd>
+            </dl>
 			<dl id="addressRow">
 				<dt>
 					<span id="addressToSpan">
@@ -417,15 +424,25 @@
 					</span>
 				</dt>
 				<dd>
-					<textarea dojoType="dijit.form.SimpleTextarea" name="authKey" id="authKey" style="width:400px;height:105px;"><%=currentEndpoint.hasAuthKey() ? PublicEncryptionFactory.decryptString( currentEndpoint.getAuthKey().toString())  : "" %></textarea>
-				</dd>
+					<textarea dojoType="dijit.form.SimpleTextarea" name="authKey" id="authKey" style="width:300px;height:105px;"><%=currentEndpoint.hasAuthKey() ? PublicEncryptionFactory.decryptString( currentEndpoint.getAuthKey().toString())  : "" %></textarea>
+				    <div id= "showGetTokenSpan" style="display:none;text-align:right">
+                        <button dojoType="dijit.form.Button" onClick="showGetToken(true)" id="getToken" class="dijitButtonFlat">Get Token</button>
+                    </div>
+            </dd>
 			</dl>
 
 			<dl id="getTokenSpan" style="display:none">
 
-
-
-					<div dojoType="dijit.form.Form" id="tokenForm" onsubmit="return false;" style="width:70%;margin:auto;border:1px solid silver;">
+                <dt>
+                    <span id="authKeyHttpSpan">
+                        <label for="authKey"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Auth_key_type_http") %>:</label>
+                    </span>
+                    <span id="authKeyStaticSpan" style="display:none;">
+                        <label for="authKey"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Auth_key_type_static") %>:</label>
+                    </span>
+                </dt>
+				<dd>
+					<div dojoType="dijit.form.Form" id="tokenForm" onsubmit="return false;" style="border:1px solid silver;width:300px;">
 						<table class="listingTable" >
 
 							<tr>
@@ -479,25 +496,14 @@
 									class="dijitButtonFlat"
 									onClick="showGetToken(false)"><%=LanguageUtil.get(pageContext, "cancel")%></button>
 							&nbsp;
-							<button id="ok_button" dojoType="dijit.form.Button" onClick="getToken();"><%=LanguageUtil.get(pageContext, "ok")%></button>
+							<button id="ok_button" class="dijitButtonFlat" dojoType="dijit.form.Button" onClick="getToken();"><%=LanguageUtil.get(pageContext, "Apply")%></button>
 						</div>
 					</div>
-	
-			</dl>
-
-			<dl>
-				<dt>
-					<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Enabled") %>:
-				</dt>
-				<dd>
-					<input dojoType="dijit.form.CheckBox" type="checkbox" name="enabled" <%=(currentEndpoint.isEnabled()) ? "checked=true" : "" %> />
 				</dd>
 			</dl>
 		</div>
 		<div style="width: 95%;display: inline-block;">
-			<span id= "showGetTokenSpan" style="display:none;">
-				<button dojoType="dijit.form.Button" onClick="showGetToken(true)" id="getToken" >Get Token</button>
-			</span>
+
 			<span style="float: right;">
 
 				<button dojoType="dijit.form.Button" onClick="backToEndpointsList(true)" id="closeSave" class="dijitButtonFlat"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
