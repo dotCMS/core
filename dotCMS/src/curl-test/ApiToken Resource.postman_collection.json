@@ -68,7 +68,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/apitoken/_remote",
+							"raw": "{{serverURL}}/api/v1/apitoken/remote",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -76,7 +76,7 @@
 								"api",
 								"v1",
 								"apitoken",
-								"_remote"
+								"remote"
 							]
 						},
 						"description": "Create a new remote token"
@@ -169,7 +169,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/apitoken/_remote",
+							"raw": "{{serverURL}}/api/v1/apitoken/remote",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -177,7 +177,7 @@
 								"api",
 								"v1",
 								"apitoken",
-								"_remote"
+								"remote"
 							]
 						},
 						"description": "Try to create a new remote token with a invalid local user, it mean send a invalid_user in the auth header"
@@ -235,7 +235,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/apitoken/_remote",
+							"raw": "{{serverURL}}/api/v1/apitoken/remote",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -243,7 +243,7 @@
 								"api",
 								"v1",
 								"apitoken",
-								"_remote"
+								"remote"
 							]
 						},
 						"description": "Try to create a new remote token with a remote user, it mean send a inavlid user in the body request auth section"
@@ -605,7 +605,7 @@
 	],
 	"variable": [
 		{
-			"id": "55efccb6-85bf-4ee6-9e20-1ef4c83e938c",
+			"id": "3187086b-47fb-49ae-90f5-6bae2d2f8b66",
 			"key": "tokenid",
 			"value": "api3e436843-00a9-409e-9574-943246e1853e"
 		}
