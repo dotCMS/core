@@ -15,6 +15,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -239,6 +240,10 @@ public class ApiTokenResource implements Serializable {
     public final Response getRemoteToken(@Context final HttpServletRequest request,
                                         @Context final HttpServletResponse response,
                                         final RemoteAPITokenForm formData) {
+
+        if (!Config.getBooleanProperty("ENABLE_PROXY_TOKEN_REQUESTS", true)) {
+            throw new ForbiddenException("ENABLE_PROXY_TOKEN_REQUESTS should be tru");
+        }
 
         final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
 
