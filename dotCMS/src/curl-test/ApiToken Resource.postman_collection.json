@@ -78,7 +78,8 @@
 								"apitoken",
 								"_remote"
 							]
-						}
+						},
+						"description": "Create a new remote token"
 					},
 					"response": []
 				},
@@ -111,7 +112,8 @@
 								"v1",
 								"logout"
 							]
-						}
+						},
+						"description": "Logout before try with invalid user"
 					},
 					"response": []
 				},
@@ -177,7 +179,8 @@
 								"apitoken",
 								"_remote"
 							]
-						}
+						},
+						"description": "Try to create a new remote token with a invalid local user, it mean send a invalid_user in the auth header"
 					},
 					"response": []
 				},
@@ -242,7 +245,8 @@
 								"apitoken",
 								"_remote"
 							]
-						}
+						},
+						"description": "Try to create a new remote token with a remote user, it mean send a inavlid user in the body request auth section"
 					},
 					"response": []
 				}
@@ -601,7 +605,7 @@
 	],
 	"variable": [
 		{
-			"id": "3afe4c7a-39a3-4b53-a466-5e6cbf563fe1",
+			"id": "55efccb6-85bf-4ee6-9e20-1ef4c83e938c",
 			"key": "tokenid",
 			"value": "api3e436843-00a9-409e-9574-943246e1853e"
 		}
