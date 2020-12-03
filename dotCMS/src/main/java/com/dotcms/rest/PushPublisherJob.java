@@ -1,32 +1,21 @@
 package com.dotcms.rest;
 
-import static com.dotmarketing.quartz.job.IntegrityDataGenerationJob.getJobScheduler;
-
-import com.dotcms.integritycheckers.IntegrityUtil;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.receiver.BundlePublisher;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublisherConfig;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.portlets.personas.business.DeleteMultiTreeUsedPersonaTagJob;
 import com.dotmarketing.quartz.DotStatefulJob;
-import com.dotmarketing.quartz.job.CascadePermissionsJob;
-import com.dotmarketing.quartz.job.IntegrityDataGenerationJob;
 import com.dotmarketing.quartz.job.ResetPermissionsJob;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 import com.google.common.collect.ImmutableMap;
-import com.liferay.portal.model.User;
-import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.io.Serializable;
-import java.util.Date;
 import java.util.Map;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
-import org.quartz.SimpleTrigger;
 import org.quartz.Trigger;
 
 public class PushPublisherJob extends DotStatefulJob {

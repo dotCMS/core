@@ -2,8 +2,6 @@ package com.dotcms.rest;
 
 
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.concurrent.DotConcurrentFactory;
-
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.PublishAuditAPI;
@@ -11,13 +9,6 @@ import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.business.PublisherQueueJob;
 import com.dotcms.publisher.pusher.AuthCredentialPushPublishUtil;
-
-import com.dotmarketing.quartz.job.IntegrityDataGenerationJob;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
@@ -27,13 +18,20 @@ import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
 import java.io.File;
 import java.io.InputStream;
 import java.util.Calendar;
 import java.util.Optional;
-
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 @Path("/bundlePublisher")
 public class BundlePublisherResource {
