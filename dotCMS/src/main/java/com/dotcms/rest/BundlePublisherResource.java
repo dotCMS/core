@@ -12,6 +12,7 @@ import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.business.PublisherQueueJob;
 import com.dotcms.publisher.pusher.AuthCredentialPushPublishUtil;
 
+import com.dotmarketing.quartz.job.IntegrityDataGenerationJob;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
@@ -43,7 +44,7 @@ public class BundlePublisherResource {
 	 * Method that receives from a server a bundle with the intention of publish it.<br/>
 	 * When a Bundle file is received on this end point is required to validate if the sending server is an allowed<br/>
 	 * server on this end point and if the security tokens match. If all the validations are correct the bundle will be add it<br/>
-	 * to the {@link PublishThread Publish Thread}.
+	 * to the {@link PushPublisherJob Publish Thread}.
 	 *
 	 * @param type			  response type
 	 * @param callback 		  response callback
@@ -51,7 +52,7 @@ public class BundlePublisherResource {
 	 * @param request         {@link HttpServletRequest}
 	 * @param response        {@link HttpServletResponse}
 	 * @return Returns a {@link Response} object with a 200 status code if success or a 500 error code if anything fails on the Publish process
-	 * @see PublishThread
+	 * @see PushPublisherJob
 	 */
 	@POST
 	@Path("/publish")
@@ -129,10 +130,7 @@ public class BundlePublisherResource {
 			//Start thread
 
 			if(!status.getStatus().equals(Status.PUBLISHING_BUNDLE)) {
-
-				DotConcurrentFactory.getInstance()
-						.getSubmitter()
-						.submit(new PublishThread(fileName, null, null, status));
+				PushPublisherJob.triggerPushPublisherJob(fileName, status);
 			}
 
 			return bundle;
