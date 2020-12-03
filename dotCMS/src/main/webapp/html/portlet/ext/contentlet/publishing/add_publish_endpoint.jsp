@@ -442,7 +442,7 @@
                     </span>
                 </dt>
 				<dd>
-					<div dojoType="dijit.form.Form" id="tokenForm" onsubmit="return false;" style="border:1px solid silver;width:300px;">
+					<div dojoType="dijit.form.Form" id="tokenForm" onsubmit="return false;" style="border:1px solid silver;width:100%">
 						<table class="listingTable" >
 
 							<tr>
