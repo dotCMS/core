@@ -500,7 +500,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 	    if(UtilMethods.isSet(template.getIdentifier())) {
 		    final Identifier ident=APILocator.getIdentifierAPI().find(template.getIdentifier());
-		    existingId = ident!=null || UtilMethods.isSet(ident.getId());
+		    existingId = ident!=null && UtilMethods.isSet(ident.getId());
 		}
 
 	    //if is an existing template check EDIT permissions, if is new template you need add_children and edit permissions over the host
@@ -542,7 +542,9 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		} else{
 			//sets the owner so it can be set at the identifier table
 			template.setOwner(user.getUserId());
-			final Identifier identifier = APILocator.getIdentifierAPI().createNew(template, host);
+			final Identifier identifier = UtilMethods.isSet(template.getIdentifier()) ?
+					APILocator.getIdentifierAPI().createNew(template, host, template.getIdentifier()) :
+					APILocator.getIdentifierAPI().createNew(template, host);
 			template.setIdentifier(identifier.getId());
 		}
 		template.setModDate(new Date());

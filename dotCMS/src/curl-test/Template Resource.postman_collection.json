@@ -6026,8 +6026,8 @@
 					"script": {
 						"id": "5b5cc7db-49d7-4da3-ba0a-f693875aec4f",
 						"exec": [
-							"pm.test(\"Status code should be ok 400\", function () {",
-							"    pm.response.to.have.status(400);",
+							"pm.test(\"Status code should be ok 404\", function () {",
+							"    pm.response.to.have.status(404);",
 							"});"
 						],
 						"type": "text/javascript"
@@ -6087,97 +6087,97 @@
 	],
 	"variable": [
 		{
-			"id": "8986b68a-a20f-452e-b1c2-9ef0e02a587f",
+			"id": "25b90ee2-5487-462f-a1e9-9f2fac3755fd",
 			"key": "temporalInode",
 			"value": "27928cad-5c13-41a9-bcf1-ce23a6cb55c8"
 		},
 		{
-			"id": "5bd595c3-241a-448d-91c2-d39371801742",
+			"id": "436c3cf3-df16-4797-96cf-352a88953c51",
 			"key": "temporalIdentifier",
 			"value": "037debee-59cb-42b7-b0d1-1cab580c2b76"
 		},
 		{
-			"id": "a9281c02-2223-4f50-a0f1-9267c991069d",
+			"id": "436548ca-6f71-4739-9419-a587ef149f3d",
 			"key": "temporaryInode",
 			"value": "d3d81700-1767-4468-b788-5a93eda006b9"
 		},
 		{
-			"id": "71e99e69-9447-41c8-a8e5-6ff76a55bd21",
+			"id": "d12f0e5c-b0a4-438c-8dc2-8b7f35e18636",
 			"key": "temporaryIdentifier",
 			"value": "6d9a5bd8-9f07-4ece-8328-a0001ba82de4"
 		},
 		{
-			"id": "6df22211-0b25-4480-92ae-c077fe0c1497",
+			"id": "1526a0e2-8900-4e42-9401-805e165858b2",
 			"key": "templateIdentifier",
 			"value": "f2dbc35a-de89-4c04-a859-5c156bbdc7f8"
 		},
 		{
-			"id": "3f6ccbce-fa5a-4f09-8ddd-5510f0e339eb",
+			"id": "e8ca962f-d909-4653-9205-cf94d4e99d35",
 			"key": "templateIdToArchive",
 			"value": "ae7579bf-5203-4590-81eb-b552f9211c47"
 		},
 		{
-			"id": "e99ecc9d-bdd1-446f-b13f-be9fd1f6ef6a",
+			"id": "4f4c8b02-8c50-4eb5-829b-dd5259f44090",
 			"key": "templateIdToUnArchive",
 			"value": "9b76a6d3-0d81-40c8-abff-2bb0dbf743df"
 		},
 		{
-			"id": "c404513e-8202-4cd0-93c6-c589f50a288a",
+			"id": "14c4fc94-0a68-44ae-8244-739c1d7da8c8",
 			"key": "templateIdToDelete",
 			"value": "b79b4f0e-4e1f-444d-96d4-8b63544afb23"
 		},
 		{
-			"id": "435df450-f263-4171-a0e2-054dd22fb4c0",
+			"id": "75ccc829-a27c-432a-81aa-66be068de643",
 			"key": "templateIdToPublish",
 			"value": "19d76ad9-b190-4f27-a40a-a5f0204fa371"
 		},
 		{
-			"id": "9a0734a4-e7ce-46a8-b2e2-726f0154cc95",
+			"id": "368b019e-ddd2-4b40-b72a-8eac73bc9628",
 			"key": "templateIdToUnpublish",
 			"value": "7fdca2b5-5cd4-487c-a540-105041213773"
 		},
 		{
-			"id": "1d2f418f-8120-4bc7-bc27-98f48619c4fc",
+			"id": "f1d0dddc-b59d-494a-896a-6f9dfbe13b92",
 			"key": "templateIdToLock",
 			"value": "40654e42-5b63-479f-87c7-8003135c891a"
 		},
 		{
-			"id": "7cb47c29-b22e-4ca9-84b4-1cfccfe484ce",
+			"id": "275973f1-decd-4638-bc3a-2cca40b2bc9e",
 			"key": "templateIdToUnLock",
 			"value": "afadb8e2-f97c-4bea-9e21-40990eba953c"
 		},
 		{
-			"id": "4eb8891c-0981-4003-85b7-d0889f587225",
+			"id": "2f9ab5be-7f88-4748-948e-248e1583f7b5",
 			"key": "templateIdToCopy",
 			"value": "0b419f01-50d9-4fe6-bac5-958bfc693dbb"
 		},
 		{
-			"id": "0af58e27-6855-4d30-8f5f-4e52af473745",
+			"id": "340bcf26-f073-44c2-bad7-7c132a1464fa",
 			"key": "templateIdToGetLive",
 			"value": "b2cd0dda-3bbb-4830-abac-b8ed95be47e3"
 		},
 		{
-			"id": "5043aa3d-f8db-486d-888b-a8b28ced265b",
+			"id": "aef84099-9e0f-4202-9d14-62c21c8bb614",
 			"key": "templateIdToGetWorking",
 			"value": "dcc63d5b-c522-4c5c-82e7-0c14e240731e"
 		},
 		{
-			"id": "841d5740-d1f6-49db-80ea-6aaffec3fe9f",
+			"id": "d7672ce0-2095-474b-99b6-950705d3acb6",
 			"key": "templateIdToGetTemplateA",
 			"value": "6e83cb81-34eb-4a53-abbc-cb14fd88fba8"
 		},
 		{
-			"id": "54d06339-96fb-457e-a395-d43978cf4eae",
+			"id": "96a5540b-8627-495d-b33d-7c2165dd44b0",
 			"key": "templateIdToGetTemplateB",
 			"value": "4281dce3-e143-44a8-9a06-ebc708492761"
 		},
 		{
-			"id": "52234faa-fede-4453-8dfd-901ea496216a",
+			"id": "b5328115-a975-4719-a924-639aa0762bed",
 			"key": "templateIdToGetTemplateC",
 			"value": "9e2ea2b6-59cd-4716-9ebd-4e9232e69e1d"
 		},
 		{
-			"id": "1598eff4-4f09-44e4-8517-2bf4e638388e",
+			"id": "3223ab60-6561-4077-8a85-ccecc8324641",
 			"key": "templateIdToEdit",
 			"value": "0e1d997c-2a17-4f89-a50e-eef62d114b0a"
 		}
