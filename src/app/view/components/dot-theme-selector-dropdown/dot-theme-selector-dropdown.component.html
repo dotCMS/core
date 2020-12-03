@@ -1,0 +1,41 @@
+<ng-template let-item="item" pTemplate="listItem" #externalItemListTemplate>
+    <span
+        class="theme-selector__data-list-item"
+        [class.selected]="value && value.identifier === item.identifier"
+        (click)="onChange(item)"
+    >
+        <img
+            *ngIf="item?.themeThumbnail; else imageFallback"
+            class="dot-theme-item__image"
+            src="/dA/{{ item.themeThumbnail }}/48w/48h/thumbnail.png"
+        />
+
+        <ng-template #imageFallback>
+            <div class="dot-theme-item__image--fallback">
+                <span> {{ item.label.charAt(0) }}</span>
+            </div>
+        </ng-template>
+        <span class="dot-theme-item__meta">
+            <span class="dot-theme-item__label">{{ item.label }}</span>
+            <span class="dot-theme-item__date">
+                {{ 'Last-Updated' | dm }}: {{ item.modDate | date: 'MM/dd/yy' }}
+            </span>
+        </span>
+    </span>
+</ng-template>
+
+<dot-searchable-dropdown
+    [(ngModel)]="value"
+    (filterChange)="handleFilterChange($event)"
+    (change)="onChange($event)"
+    [placeholder]="'dot.common.select.themes' | dm"
+    [data]="themes"
+    [totalRecords]="totalRecords"
+    (pageChange)="handlePageChange($event)"
+    [rows]="paginatorService.paginationPerPage"
+    labelPropertyName="name"
+    overlayWidth="350px"
+    valuePropertyName="name"
+    [externalItemListTemplate]="externalItemListTemplate"
+>
+</dot-searchable-dropdown>

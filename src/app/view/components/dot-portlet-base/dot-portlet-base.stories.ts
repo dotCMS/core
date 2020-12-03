@@ -14,7 +14,7 @@ const MessageMocks = new MockDotMessageService({
 });
 
 export default {
-    title: 'DotCMS/Porlet',
+    title: 'DotCMS/Portlet',
     component: DotPortletBaseComponent,
     decorators: [
         moduleMetadata({

@@ -95,6 +95,9 @@ export class SearchableDropdownComponent
     @Input()
     disabled = false;
 
+    @Input()
+    externalItemListTemplate: TemplateRef<any>;
+
     @Output()
     change: EventEmitter<any> = new EventEmitter();
 
@@ -127,7 +130,17 @@ export class SearchableDropdownComponent
     options: any[];
     label: string;
     externalSelectTemplate: TemplateRef<any>;
-    externalItemListTemplate: TemplateRef<any>;
+
+    keyMap: string[] = [
+        'Shift',
+        'Alt',
+        'Control',
+        'Meta',
+        'ArrowUp',
+        'ArrowDown',
+        'ArrowLeft',
+        'ArrowRight'
+    ];
 
     constructor() {}
 
@@ -143,8 +156,10 @@ export class SearchableDropdownComponent
     ngOnInit(): void {
         fromEvent(this.searchInput.nativeElement, 'keyup')
             .pipe(debounceTime(500))
-            .subscribe((keyboardEvent: Event) => {
-                this.filterChange.emit(keyboardEvent.target['value']);
+            .subscribe((keyboardEvent: KeyboardEvent) => {
+                if (!this.isModifierKey(keyboardEvent.key)) {
+                    this.filterChange.emit(keyboardEvent.target['value']);
+                }
             });
     }
 
@@ -323,6 +338,10 @@ export class SearchableDropdownComponent
                 return item;
             });
         }
+    }
+
+    private isModifierKey(key: string): boolean {
+        return this.keyMap.includes(key);
     }
 
     private usePlaceholder(placeholderChange: SimpleChange): boolean {

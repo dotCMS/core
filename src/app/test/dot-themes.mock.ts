@@ -6,6 +6,7 @@ export const mockDotThemes: DotTheme[] = [
         title: 'Theme tittle',
         inode: '1234g',
         themeThumbnail: null,
+        identifier: 'test',
         host: {
             hostName: 'Test',
             inode: '1',
@@ -17,6 +18,7 @@ export const mockDotThemes: DotTheme[] = [
         title: 'Theme tittle',
         inode: '13r3fd234g',
         themeThumbnail: null,
+        identifier: 'test',
         host: {
             hostName: 'Test',
             inode: '2',
@@ -28,6 +30,7 @@ export const mockDotThemes: DotTheme[] = [
         title: 'Theme tittle',
         inode: '123dedw4g',
         themeThumbnail: 'test',
+        identifier: 'test',
         host: {
             hostName: 'Test',
             inode: '3',

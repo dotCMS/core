@@ -1,4 +1,5 @@
 export interface DotTheme {
+    identifier: string;
     name: string;
     title: string;
     inode: string;
