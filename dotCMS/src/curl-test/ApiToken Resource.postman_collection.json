@@ -68,7 +68,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/apitoken/_remote",
+							"raw": "{{serverURL}}/api/v1/apitoken/remote",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -76,9 +76,44 @@
 								"api",
 								"v1",
 								"apitoken",
-								"_remote"
+								"remote"
 							]
+						},
+						"description": "Create a new remote token"
+					},
+					"response": []
+				},
+				{
+					"name": "logout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "f2fce2d6-7f78-4835-a0f3-5b8624958cd8",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
 						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						},
+						"description": "Logout before try with invalid user"
 					},
 					"response": []
 				},
@@ -134,7 +169,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/apitoken/_remote",
+							"raw": "{{serverURL}}/api/v1/apitoken/remote",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -142,9 +177,10 @@
 								"api",
 								"v1",
 								"apitoken",
-								"_remote"
+								"remote"
 							]
-						}
+						},
+						"description": "Try to create a new remote token with a invalid local user, it mean send a invalid_user in the auth header"
 					},
 					"response": []
 				},
@@ -199,7 +235,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/apitoken/_remote",
+							"raw": "{{serverURL}}/api/v1/apitoken/remote",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -207,9 +243,10 @@
 								"api",
 								"v1",
 								"apitoken",
-								"_remote"
+								"remote"
 							]
-						}
+						},
+						"description": "Try to create a new remote token with a remote user, it mean send a inavlid user in the body request auth section"
 					},
 					"response": []
 				}
@@ -568,7 +605,7 @@
 	],
 	"variable": [
 		{
-			"id": "b7744f39-66df-4a70-9dc7-4c532fde82ba",
+			"id": "3187086b-47fb-49ae-90f5-6bae2d2f8b66",
 			"key": "tokenid",
 			"value": "api3e436843-00a9-409e-9574-943246e1853e"
 		}

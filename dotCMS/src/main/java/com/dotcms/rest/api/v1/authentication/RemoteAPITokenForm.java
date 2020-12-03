@@ -2,19 +2,18 @@ package com.dotcms.rest.api.v1.authentication;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.google.common.collect.ImmutableMap;
 
 import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
-@JsonDeserialize(builder = RemoteAPITokenFrom.Builder.class)
-public class RemoteAPITokenFrom {
+@JsonDeserialize(builder = RemoteAPITokenForm.Builder.class)
+public class RemoteAPITokenForm {
     private TokenInfo token;
     private RemoteHostInfo remoteHostInfo;
     private AuthInfo authInfo;
 
-    private RemoteAPITokenFrom( Builder builder) {
+    private RemoteAPITokenForm(Builder builder) {
         this.token = builder.getToken();
         this.remoteHostInfo = builder.getRemoteHostInfo();
         this.authInfo = builder.getAuthInfo();
@@ -59,19 +58,19 @@ public class RemoteAPITokenFrom {
         @JsonProperty
         private AuthInfo auth;
 
-        public RemoteAPITokenFrom build() {
-            return new RemoteAPITokenFrom(this);
+        public RemoteAPITokenForm build() {
+            return new RemoteAPITokenForm(this);
         }
 
         public TokenInfo getToken() {
             return token;
         }
 
-        public RemoteAPITokenFrom.RemoteHostInfo getRemoteHostInfo() {
+        public RemoteAPITokenForm.RemoteHostInfo getRemoteHostInfo() {
             return remote;
         }
 
-        public RemoteAPITokenFrom.AuthInfo getAuthInfo() {
+        public RemoteAPITokenForm.AuthInfo getAuthInfo() {
             return auth;
         }
     }

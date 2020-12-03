@@ -2,10 +2,7 @@ package com.dotcms.rest.api.v1.authentication;
 
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
-import com.dotcms.publisher.business.PublishAuditStatus;
-import com.dotcms.publisher.pusher.AuthCredentialPushPublishUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -19,7 +16,6 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
@@ -235,14 +231,14 @@ public class ApiTokenResource implements Serializable {
      * @return Response
      */
     @PUT
-    @Path("/_remote")
+    @Path("/remote")
     @JSONP
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response getRemoteToken(@Context final HttpServletRequest request,
                                         @Context final HttpServletResponse response,
-                                        final RemoteAPITokenFrom formData) {
+                                        final RemoteAPITokenForm formData) {
 
         final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
 
