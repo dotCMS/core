@@ -218,8 +218,8 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 								ignoreCase="true"
 								labelAttr="name"
 								searchAttr="name"
-								value="<%=InodeUtils.isSet(folder.getInode())?folder.getDefaultFileType():defaultFileAssetStructure.getInode() %>"
-							invalidMessage="<%=LanguageUtil.get(pageContext, "Invalid-option-selected")%>">
+								value="<%=InodeUtils.isSet(folder.getInode())?folder.getDefaultFileType():(parentFolder!=null?parentFolder.getDefaultFileType():defaultFileAssetStructure.getInode()) %>"
+							    invalidMessage="<%=LanguageUtil.get(pageContext, "Invalid-option-selected")%>">
 						</select>
 					</dd>
 				</dl>

@@ -37,7 +37,7 @@ public class ESUtils {
 	public static String sha256(final String fieldName, final Object fieldValue,
 			final long languageId) {
 		return Hashing.sha256().hashString(fieldName + "_"
-				+ (fieldValue == null ? "" : fieldValue.toString()) + "_"
+				+ (fieldValue == null ? "" : fieldValue.toString().toLowerCase()) + "_"
 				+ languageId, Charset.forName("UTF-8")).toString();
 	}
 
