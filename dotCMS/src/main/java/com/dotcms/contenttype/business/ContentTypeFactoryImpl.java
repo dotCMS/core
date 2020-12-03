@@ -326,10 +326,9 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
   }
 
   private ContentType dbSaveUpdate(final ContentType saveType) throws DotDataException {
-
-
-    ContentTypeBuilder builder =
-        ContentTypeBuilder.builder(saveType).modDate(DateUtils.round(new Date(), Calendar.SECOND));
+    final ContentTypeBuilder builder = ContentTypeBuilder
+            .builder(saveType)
+            .modDate(DateUtils.round(new Date(), Calendar.SECOND));
 
     boolean isNew = false;
     if (saveType.id() == null) {
@@ -358,14 +357,15 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
             if(doesTypeWithVariableExist(saveType.variable())) {
               throw new IllegalArgumentException("Invalid content type variable: " + saveType.variable());
             }
+
     		builder.variable(saveType.variable());
     	} else {
     		final String generatedVar = suggestVelocityVar(saveType.name());
 
-    		if(!generatedVar.matches(
-                  TYPES_AND_FIELDS_VALID_VARIABLE_REGEX)) {
+    		if (!generatedVar.matches(TYPES_AND_FIELDS_VALID_VARIABLE_REGEX)) {
               throw new IllegalArgumentException("Invalid content type variable: " + generatedVar);
             }
+
     		builder.variable(generatedVar);
     	}
     } else {
@@ -398,71 +398,62 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     	retType = new ImplClassContentTypeTransformer(retType).from();
     }
 
+    final List<Field> fields = new ArrayList<>(saveType.fields());
+    for (final Field requiredField : retType.requiredFields()) {
+        Optional<Field> foundField = fields
+                .stream()
+                .filter(x -> requiredField.variable().equalsIgnoreCase(x.variable()))
+                .findFirst();
+        if (!foundField.isPresent()) {
+            fields.add(requiredField);
+        }
+    }
+
+    final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
     // set up default fields
-    if (oldContentType == null) {
-    	List<Field> fields = new ArrayList<Field>(saveType.fields());
+    for (Field field : fields) {
+        final List<FieldVariable> fieldVariables = field.fieldVariables();
 
-        for (Field ff : retType.requiredFields()) {
-          Optional<Field> optional = fields.stream().filter(x -> ff.variable().equalsIgnoreCase(x.variable())).findFirst();
-          if (!optional.isPresent()) {
-            fields.add(ff);
-          }
+        if (oldContentType == null) {
+            field = FieldBuilder.builder(field).contentTypeId(retType.id()).build();
+            try {
+                field = fapi.save(field, APILocator.systemUser());
+            } catch (DotSecurityException e) {
+                throw new DotStateException(e);
+            }
         }
 
-        FieldAPI fapi = APILocator.getContentTypeFieldAPI();
-        for (Field field : fields) {
-          final List<FieldVariable> fieldVariables = field.fieldVariables();
-          field = FieldBuilder.builder(field).contentTypeId(retType.id()).build();
-          try {
-            field = fapi.save(field, APILocator.systemUser());
-          } catch (DotSecurityException e) {
-            throw new DotStateException(e);
-          }
-
-          addFieldVariables(field, fieldVariables);
-        }
+        saveFieldVariables(field, fieldVariables);
     }
 
     return retType;
   }
 
   /**
-   * When field gets saved then for each provided variable try to create one.\
+   * For each field provided variable try to create one not before resetting the whole list
+   *
    * @param field field variables belong to
    * @param fieldVariables original field variables
    */
-  private void addFieldVariables(final Field field, List<FieldVariable> fieldVariables) {
+  private void saveFieldVariables(final Field field, List<FieldVariable> fieldVariables) {
       final FieldAPI fieldApi = APILocator.getContentTypeFieldAPI();
       try {
-          final Set<String> missingFieldVariablesIds = fieldApi
-                  .loadVariables(field)
-                  .stream()
-                  .map(FieldVariable::id)
-                  .collect(Collectors.toSet());
-          if (!missingFieldVariablesIds.isEmpty()) {
-            missingFieldVariablesIds
-                    .removeAll(
-                            field.fieldVariables()
-                                    .stream()
-                                    .map(FieldVariable::id)
-                                    .collect(Collectors.toSet()));
+          // delete variables
+          for(final FieldVariable fieldVariable : fieldApi.loadVariables(field)) {
+              fieldApi.delete(fieldVariable);
           }
 
-        final Map<String, FieldVariable> fieldVariablesMap = fieldVariables
-                .stream()
-                .filter(fieldVariable -> fieldVariable.id() != null)
-                .collect(Collectors.toMap(FieldVariable::id, fieldVariable -> fieldVariable));
-          for(final String id : missingFieldVariablesIds) {
-              final FieldVariable fieldVariable = fieldVariablesMap.get(id);
-              if (UtilMethods.isSet(fieldVariable)) {
-                  fieldApi.delete(fieldVariable);
-              }
-        }
-
-        for(FieldVariable fieldVariable : fieldVariables) {
-            fieldVariable = ImmutableFieldVariable.builder().from(fieldVariable).fieldId(field.id()).build();
-            fieldApi.save(fieldVariable, APILocator.systemUser());
-        }
+          // add provided variables
+          for(final FieldVariable fieldVariable : fieldVariables) {
+              fieldApi.save(
+                      ImmutableFieldVariable
+                              .builder()
+                              .from(fieldVariable)
+                              .fieldId(field.id())
+                              .id(null)
+                              .build(),
+                      APILocator.systemUser());
+          }
       } catch (DotDataException | DotSecurityException e) {
           throw new DotStateException(e);
       }
