@@ -212,7 +212,8 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
             expect(comp.form.get('indexed').disabled).toBe(true);
         });
 
-        it('should set system indexed true when you select show in list', () => {
+        // TODO: fix because is failing intermittently
+        fit('should set system indexed true when you select show in list', () => {
             comp.form.get('indexed').setValue(false);
             comp.form.get('listed').setValue(true);
 

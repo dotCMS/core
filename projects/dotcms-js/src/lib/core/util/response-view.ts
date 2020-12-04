@@ -42,6 +42,10 @@ export class ResponseView<T = any> {
         return this.bodyJsonObject.entity;
     }
 
+    get tempFiles(): T {
+        return this.bodyJsonObject.tempFiles;
+    }
+
     get errorsMessages(): string {
         let errorMessages = '';
 

@@ -5,9 +5,11 @@ import {
     forwardRef,
     ChangeDetectionStrategy,
     Output,
-    EventEmitter
+    EventEmitter,
+    HostBinding
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 import { SelectItem } from 'primeng/api';
 
 @Component({
@@ -52,6 +54,11 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
         };
     }
 
+    @HostBinding('style')
+    get myStyle(): SafeStyle {
+        return this.sanitizer.bypassSecurityTrustStyle(this.styles);
+    }
+
     selectOptions: SelectItem[] = [];
     selected: string;
     styles: any;
@@ -76,7 +83,7 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
         { label: 'Code', value: 'code' }
     ];
 
-    constructor() {}
+    constructor(private sanitizer: DomSanitizer) {}
 
     propagateChange = (_: any) => {};
 

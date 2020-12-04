@@ -1,0 +1,18 @@
+:host,
+:host ::ng-deep .p-tabview-panels {
+    overflow: hidden;
+    flex-grow: 1;
+}
+
+:host {
+    & ::ng-deep {
+        .p-tabview {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .p-tabview-panel:not([hidden]) {
+            height: 100%;
+        }
+    }
+}

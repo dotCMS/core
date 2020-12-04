@@ -3,12 +3,12 @@
         data-testId="builder"
         [header]="item.type === 'advanced' ? ('code' | dm) : ('design' | dm)"
     >
-        <div *ngIf="item.type === 'advanced'; else elseBlock">
+        <ng-container *ngIf="item.type === 'advanced'; else elseBlock">
             <dot-template-advanced
                 (save)="save.emit($event)"
                 (cancel)="cancel.emit()"
             ></dot-template-advanced>
-        </div>
+        </ng-container>
         <ng-template #elseBlock>
             <dot-edit-layout-designer
                 [theme]="item.theme"

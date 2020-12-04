@@ -4,7 +4,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { of } from 'rxjs';
+import { BehaviorSubject, of } from 'rxjs';
 
 import { DialogService } from 'primeng/dynamicdialog';
 import { ButtonModule } from 'primeng/button';
@@ -20,6 +20,9 @@ import { DotTemplatePropsModule } from './dot-template-props/dot-template-props.
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
+import { DotCrudService } from '@services/dot-crud';
+import { DotTempFileUploadService } from '@services/dot-temp-file-upload/dot-temp-file-upload.service';
+import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 
 @Component({
     selector: 'dot-api-link',
@@ -72,18 +75,19 @@ const messageServiceMock = new MockDotMessageService({
 describe('DotTemplateCreateEditComponent', () => {
     let fixture: ComponentFixture<DotTemplateCreateEditComponent>;
     let de: DebugElement;
+    let component: DotTemplateCreateEditComponent;
     let dialogService: DialogService;
     let store: DotTemplateStore;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             declarations: [
+                DotApiLinkMockComponent,
+                DotMessagePipe,
                 DotPortletBaseMockComponent,
                 DotPortletToolbarMockComponent,
                 DotTemplateBuilderMockComponent,
-                DotTemplateCreateEditComponent,
-                DotApiLinkMockComponent,
-                DotMessagePipe
+                DotTemplateCreateEditComponent
             ],
             imports: [
                 FormsModule,
@@ -98,6 +102,48 @@ describe('DotTemplateCreateEditComponent', () => {
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
+                },
+                /*
+                    DotTempFileUploadService, DotWorkflowActionsFireService and DotCrudService:
+                    This three are from DotTemplateThumbnailFieldComponent and because
+                    I had to import DotTemplatePropsModule so I can click the real dialog that
+                    gets append to the body.
+                */
+                {
+                    provide: DotTempFileUploadService,
+                    useValue: {
+                        upload: jasmine.createSpy().and.returnValue(
+                            of([
+                                {
+                                    assetVersion: '',
+                                    name: '',
+                                    identifier: ''
+                                }
+                            ])
+                        )
+                    }
+                },
+                {
+                    provide: DotWorkflowActionsFireService,
+                    useValue: {
+                        publishContentletAndWaitForIndex: jasmine.createSpy().and.returnValue(
+                            of({
+                                identifier: ''
+                            })
+                        )
+                    }
+                },
+                {
+                    provide: DotCrudService,
+                    useValue: {
+                        getDataById: jasmine.createSpy().and.returnValue(
+                            of([
+                                {
+                                    identifier: ''
+                                }
+                            ])
+                        )
+                    }
                 }
             ]
         });
@@ -166,7 +212,8 @@ describe('DotTemplateCreateEditComponent', () => {
                             },
                             identifier: '',
                             friendlyName: '',
-                            theme: 'd7b0ebc2-37ca-4a5a-b769-e8a3ff187661'
+                            theme: 'd7b0ebc2-37ca-4a5a-b769-e8a3ff187661',
+                            selectedimage: ''
                         },
                         onSave: jasmine.any(Function),
                         onCancel: jasmine.any(Function)
@@ -216,7 +263,8 @@ describe('DotTemplateCreateEditComponent', () => {
                     },
                     identifier: '',
                     friendlyName: '',
-                    theme: 'd7b0ebc2-37ca-4a5a-b769-e8a3ff187661'
+                    theme: 'd7b0ebc2-37ca-4a5a-b769-e8a3ff187661',
+                    selectedimage: ''
                 });
             });
         });
@@ -250,7 +298,13 @@ describe('DotTemplateCreateEditComponent', () => {
                     closable: false,
                     closeOnEscape: false,
                     data: {
-                        template: { title: '', body: '', identifier: '', friendlyName: '' },
+                        template: {
+                            title: '',
+                            body: '',
+                            identifier: '',
+                            friendlyName: '',
+                            selectedimage: ''
+                        },
                         onSave: jasmine.any(Function),
                         onCancel: jasmine.any(Function)
                     }
@@ -281,7 +335,8 @@ describe('DotTemplateCreateEditComponent', () => {
                     title: 'Hello World',
                     body: '',
                     identifier: '',
-                    friendlyName: ''
+                    friendlyName: '',
+                    selectedimage: ''
                 });
             });
         });
@@ -364,7 +419,8 @@ describe('DotTemplateCreateEditComponent', () => {
                         },
                         identifier: '123',
                         friendlyName: '',
-                        theme: 'd7b0ebc2-37ca-4a5a-b769-e8a3ff187661'
+                        theme: 'd7b0ebc2-37ca-4a5a-b769-e8a3ff187661',
+                        selectedimage: ''
                     });
                 });
 
@@ -407,12 +463,81 @@ describe('DotTemplateCreateEditComponent', () => {
                                 },
                                 identifier: '123',
                                 friendlyName: '',
-                                theme: 'd7b0ebc2-37ca-4a5a-b769-e8a3ff187661'
+                                theme: 'd7b0ebc2-37ca-4a5a-b769-e8a3ff187661',
+                                selectedimage: ''
                             },
                             onSave: jasmine.any(Function)
                         }
                     });
                 });
+            });
+        });
+    });
+
+    describe('Forms', () => {
+        const subject = new BehaviorSubject<any>(null);
+
+        beforeEach(() => {
+            const storeMock = jasmine.createSpyObj(
+                'DotTemplateStore',
+                ['createTemplate', 'goToTemplateList'],
+                {
+                    vm$: subject
+                }
+            );
+
+            TestBed.overrideProvider(DotTemplateStore, { useValue: storeMock });
+            fixture = TestBed.createComponent(DotTemplateCreateEditComponent);
+            component = fixture.componentInstance;
+
+            dialogService = fixture.debugElement.injector.get(DialogService);
+            store = fixture.debugElement.injector.get(DotTemplateStore);
+            spyOn(dialogService, 'open').and.callThrough();
+
+            subject.next({
+                original: EMPTY_TEMPLATE_ADVANCED
+            });
+
+            fixture.detectChanges();
+        });
+
+        it('should have basic value', () => {
+            expect(component.form.value).toEqual({
+                title: '',
+                body: '',
+                identifier: '',
+                friendlyName: '',
+                selectedimage: ''
+            });
+        });
+
+        it('should update the form when state updates', () => {
+            expect(component.form.value).toEqual({
+                title: '',
+                body: '',
+                identifier: '',
+                friendlyName: '',
+                selectedimage: ''
+            });
+
+            subject.next({
+                original: {
+                    friendlyName: 'Not batman',
+                    identifier: '123',
+                    title: 'Hello World',
+                    body: '<h1>I am Batman</h1>',
+                    selectedimage: ''
+                }
+            });
+
+            fixture.detectChanges();
+
+            expect(component.form.value).toEqual({
+                title: 'Hello World',
+                body: '<h1>I am Batman</h1>',
+                identifier: '123',
+                friendlyName: 'Not batman',
+                selectedimage: ''
             });
         });
     });

@@ -1,6 +1,11 @@
-import { Component, Input, Output, EventEmitter, DebugElement } from '@angular/core';
+import { Component, Input, Output, EventEmitter, DebugElement, forwardRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import {
+    ControlValueAccessor,
+    FormsModule,
+    NG_VALUE_ACCESSOR,
+    ReactiveFormsModule
+} from '@angular/forms';
 import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
 
 import { DotTemplatePropsComponent } from './dot-template-props.component';
@@ -25,6 +30,26 @@ export class DotFormDialogMockComponent {
     cancel = new EventEmitter();
 }
 
+@Component({
+    selector: 'dot-template-thumbnail-field',
+    template: '',
+    providers: [
+        {
+            multi: true,
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => DotTemplateThumbnailFieldMockComponent)
+        }
+    ]
+})
+export class DotTemplateThumbnailFieldMockComponent implements ControlValueAccessor {
+    propagateChange = (_: any) => {};
+    registerOnChange(fn: any): void {
+        this.propagateChange = fn;
+    }
+    registerOnTouched(): void {}
+    writeValue(): void {}
+}
+
 const messageServiceMock = new MockDotMessageService({
     'templates.properties.form.label.title': 'Title',
     'templates.properties.form.label.description': 'Description',
@@ -40,7 +65,12 @@ describe('DotTemplatePropsComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotTemplatePropsComponent, DotMessagePipe, DotFormDialogMockComponent],
+            declarations: [
+                DotTemplatePropsComponent,
+                DotMessagePipe,
+                DotFormDialogMockComponent,
+                DotTemplateThumbnailFieldMockComponent
+            ],
             imports: [FormsModule, ReactiveFormsModule, DotFieldValidationMessageModule],
             providers: [
                 {
@@ -60,7 +90,8 @@ describe('DotTemplatePropsComponent', () => {
                             template: {
                                 title: '',
                                 friendlyName: '',
-                                theme: ''
+                                theme: '',
+                                selectedimage: ''
                             },
                             onSave: jasmine.createSpy(),
                             onCancel: jasmine.createSpy()
@@ -142,7 +173,8 @@ describe('DotTemplatePropsComponent', () => {
             expect(component.form.value).toEqual({
                 title: '',
                 friendlyName: '',
-                theme: ''
+                theme: '',
+                selectedimage: ''
             });
         });
 
@@ -157,7 +189,8 @@ describe('DotTemplatePropsComponent', () => {
             expect(component.form.value).toEqual({
                 title: 'Hello World',
                 friendlyName: '',
-                theme: ''
+                theme: '',
+                selectedimage: ''
             });
         });
     });

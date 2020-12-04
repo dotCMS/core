@@ -2,7 +2,14 @@
 @import "mixins";
 
 :host {
+    background-color: $white;
+    box-shadow: $md-shadow-1;
     display: flex;
+    flex-grow: 1;
+    margin: $spacing-3;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: $spacing-6;
 }
 
 .dot-layout-designer {

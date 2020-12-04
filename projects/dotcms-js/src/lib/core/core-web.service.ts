@@ -27,6 +27,7 @@ import {
 export interface DotCMSResponse<T> {
     contentlets?: T;
     entity?: T;
+    tempFiles?: T; // /api/v1/temp don't have entity
     errors: string[];
     i18nMessagesMap: { [key: string]: string };
     messages: string[];
@@ -203,7 +204,7 @@ export class CoreWebService {
         return new ResponseView<T>(resp);
     }
 
-    private handleResponseHttpErrors(resp: HttpErrorResponse): any {
+    private handleResponseHttpErrors(resp: HttpErrorResponse): HttpErrorResponse {
         if (resp.status === 401) {
             this.router.navigate(['/public/login']);
         }

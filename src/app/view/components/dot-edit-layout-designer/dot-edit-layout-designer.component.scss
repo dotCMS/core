@@ -21,16 +21,10 @@
     }
 }
 
-dot-layout-designer {
-    background-color: $white;
-    box-shadow: $md-shadow-1;
-    flex-grow: 1;
-    margin: $spacing-3 $spacing-3 0;
-    padding: $spacing-6;
-    // This canculating the space of the layout editor
-    // based on the toolbars and required margin
-    height: calc(100vh - 60px - 4rem - 2rem);
-    overflow: auto;
+form {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .dot-edit-layout__actions {

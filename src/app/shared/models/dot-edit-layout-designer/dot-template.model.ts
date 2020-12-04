@@ -39,4 +39,5 @@ export interface DotTemplate {
     canPublish?: boolean;
     containers?: DotContainerMap;
     layout: DotLayout;
+    selectedimage?: string;
 }

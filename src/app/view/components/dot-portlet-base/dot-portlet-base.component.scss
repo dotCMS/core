@@ -1,5 +1,11 @@
 @use "variables" as *;
 
 :host {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+dot-portlet-box {
+    flex-grow: 1;
 }

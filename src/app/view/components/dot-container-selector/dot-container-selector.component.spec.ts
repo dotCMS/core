@@ -99,6 +99,27 @@ describe('ContainerSelectorComponent', () => {
         ];
     });
 
+    it('should pass all the right attr', () => {
+        fixture.detectChanges();
+        const searchable = de.query(By.css('dot-searchable-dropdown'));
+        expect(searchable.attributes).toEqual(
+            jasmine.objectContaining({
+                'ng-reflect-data': '',
+                'ng-reflect-label-property-name': 'name,parentPermissionable.host',
+                'ng-reflect-multiple': 'true',
+                'ng-reflect-overlay-width': '300px',
+                'ng-reflect-page-link-size': '5',
+                'ng-reflect-persistent-placeholder': 'true',
+                'ng-reflect-placeholder': 'editpage.container.add.label',
+                'ng-reflect-rows': '40',
+                'ng-reflect-width': '172px',
+                overlayWidth: '300px',
+                persistentPlaceholder: 'true',
+                width: '172px'
+            })
+        );
+    });
+
     it('should change Page', fakeAsync(() => {
         const filter = 'filter';
 

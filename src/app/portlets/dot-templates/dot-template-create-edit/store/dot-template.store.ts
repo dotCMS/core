@@ -23,6 +23,7 @@ interface DotTemplateItemDesign {
     theme: string;
     title: string;
     type?: 'design';
+    selectedimage?: string;
 }
 
 interface DotTemplateItemadvanced {
@@ -32,6 +33,7 @@ interface DotTemplateItemadvanced {
     identifier: string;
     title: string;
     type?: 'advanced';
+    selectedimage?: string;
 }
 
 export type DotTemplateItem = DotTemplateItemDesign | DotTemplateItemadvanced;
@@ -39,14 +41,14 @@ export type DotTemplateItem = DotTemplateItemDesign | DotTemplateItemadvanced;
 export interface DotTemplateState {
     original: DotTemplateItem;
     working?: DotTemplateItem;
-    type?: DotTemplateType;
     apiLink: string;
 }
 
 const EMPTY_TEMPLATE = {
     identifier: '',
     title: '',
-    friendlyName: ''
+    friendlyName: '',
+    selectedimage: ''
 };
 
 export const EMPTY_TEMPLATE_DESIGN: DotTemplateItemDesign = {
@@ -77,15 +79,8 @@ export const EMPTY_TEMPLATE_ADVANCED: DotTemplateItemadvanced = {
 @Injectable()
 export class DotTemplateStore extends ComponentStore<DotTemplateState> {
     readonly vm$ = this.select(({ original, apiLink }: DotTemplateState) => {
-        let value;
-
-        if (original.type === 'design') {
-            value = { ...original };
-            delete value.containers;
-        }
-
         return {
-            original: value || original,
+            original,
             apiLink
         };
     });
@@ -102,20 +97,12 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
         }
     }));
 
-    readonly updateTemplate = this.updater<DotTemplate>(
-        (state: DotTemplateState, template: DotTemplate) => {
-            const type: DotTemplateType = template.drawed ? 'design' : 'advanced';
-
-            if (type === 'design') {
-                this.templateContainersCacheService.set(template.containers);
-            }
-
-            const item = this.getTemplateItem(template);
-
+    readonly updateTemplate = this.updater<DotTemplateItem>(
+        (state: DotTemplateState, template: DotTemplateItem) => {
             return {
                 ...state,
-                working: item,
-                original: item
+                working: template,
+                original: template
             };
         }
     );
@@ -131,7 +118,11 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
                 return this.dotTemplateService.update(template as DotTemplate);
             }),
             tap((template: DotTemplate) => {
-                this.updateTemplate(template);
+                if (template.drawed) {
+                    this.templateContainersCacheService.set(template.containers);
+                }
+
+                this.updateTemplate(this.getTemplateItem(template));
             })
         );
     });
@@ -140,12 +131,12 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
         (origin$: Observable<DotTemplateItem>) => {
             return origin$.pipe(
                 switchMap((template: DotTemplateItem) => {
-                    console.log(template);
-                    delete template.type;
-
                     if (template.type === 'design') {
                         delete template.containers;
                     }
+
+                    delete template.type;
+
                     return this.dotTemplateService.create(template as DotTemplate);
                 }),
                 tap(({ identifier }: DotTemplate) => {
@@ -176,8 +167,6 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
                     ? this.getTemplateItem(dotTemplate)
                     : this.getDefaultTemplate(isAdvanced);
 
-                console.log(template);
-
                 if (template.type === 'design') {
                     this.templateContainersCacheService.set(template.containers);
                 }
@@ -185,7 +174,6 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
                 this.setState({
                     original: template,
                     working: template,
-                    type: fixType,
                     apiLink: this.getApiLink(template?.identifier)
                 });
             });
@@ -226,7 +214,8 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
                 layout: template.layout || EMPTY_TEMPLATE_DESIGN.layout,
                 theme: template.theme,
                 containers: template.containers,
-                drawed: true
+                drawed: true,
+                selectedimage: template.selectedimage
             };
         } else {
             result = {
@@ -235,7 +224,8 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
                 title,
                 friendlyName,
                 body: template.body,
-                drawed: false
+                drawed: false,
+                selectedimage: template.selectedimage
             };
         }
 

@@ -4,7 +4,7 @@
     (cancel)="onCancel()"
     (save)="onSave()"
 >
-    <form class="p-fluid" [formGroup]="form" data-testId="form">
+    <form class="p-fluid" [formGroup]="form" data-testId="form" *ngIf="form">
         <div class="p-field" data-testId="titleField">
             <label for="title" class="p-label-input-required">{{
                 'templates.properties.form.label.title' | dm
@@ -28,7 +28,9 @@
         </div>
         <div class="p-field" data-testId="thumbnailField">
             <label for="thumbnail">{{ 'templates.properties.form.label.thumbnail' | dm }}</label>
-            <input id="thumbnail" type="text" pInputText />
+            <dot-template-thumbnail-field
+                formControlName="selectedimage"
+            ></dot-template-thumbnail-field>
         </div>
     </form>
 </dot-form-dialog>
