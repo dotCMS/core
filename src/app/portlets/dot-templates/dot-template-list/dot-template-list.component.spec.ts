@@ -34,7 +34,7 @@ import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-b
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
-import { DebugElement } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { DotActionMenuButtonComponent } from '@components/_common/dot-action-menu-button/dot-action-menu-button.component';
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotAddToBundleComponent } from '@components/_common/dot-add-to-bundle/dot-add-to-bundle.component';
@@ -44,6 +44,8 @@ import { DotActionBulkResult } from '@models/dot-action-bulk-result/dot-action-b
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { DotBulkInformationComponent } from '@components/_common/dot-bulk-information/dot-bulk-information.component';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
+import { DotContentState } from 'dotcms-models';
 
 const templatesMock: DotTemplate[] = [
     {
@@ -59,7 +61,9 @@ const templatesMock: DotTemplate[] = [
         layout: null,
         canEdit: true,
         canWrite: true,
-        canPublish: true
+        canPublish: true,
+        hasLiveVersion: true,
+        working: true
     },
     {
         anonymous: false,
@@ -75,7 +79,9 @@ const templatesMock: DotTemplate[] = [
         layout: null,
         canEdit: true,
         canWrite: true,
-        canPublish: true
+        canPublish: true,
+        hasLiveVersion: true,
+        working: true
     },
     {
         anonymous: false,
@@ -90,7 +96,9 @@ const templatesMock: DotTemplate[] = [
         layout: null,
         canEdit: true,
         canWrite: true,
-        canPublish: true
+        canPublish: true,
+        hasLiveVersion: false,
+        working: true
     },
     {
         anonymous: false,
@@ -104,7 +112,9 @@ const templatesMock: DotTemplate[] = [
         layout: null,
         canEdit: true,
         canWrite: true,
-        canPublish: true
+        canPublish: true,
+        hasLiveVersion: false,
+        working: false
     }
 ];
 
@@ -145,7 +155,11 @@ const messages = {
     'message.template_list.published': 'Templates published',
     'message.template.unpublished': 'Template unpublished',
     'message.template.undelete': 'Template unarchived',
-    Results: 'Results'
+    Results: 'Results',
+    Archived: 'Archived',
+    Published: 'Published',
+    Revision: 'Revision',
+    Draft: 'Draft'
 };
 
 const columnsMock = [
@@ -156,7 +170,8 @@ const columnsMock = [
     },
     {
         fieldName: 'status',
-        header: 'Status'
+        header: 'Status',
+        width: '8%'
     },
     {
         fieldName: 'friendlyName',
@@ -204,8 +219,12 @@ describe('DotTemplateListComponent', () => {
     let dotMessageDisplayService: DotMessageDisplayService;
     let dotPushPublishDialogService: DotPushPublishDialogService;
     let dotRouterService: DotRouterService;
-    let rowActions: DebugElement[];
+
     let comp: DotTemplateListComponent;
+    let unPublishTemplate: DotActionMenuButtonComponent;
+    let publishTemplate: DotActionMenuButtonComponent;
+    let lockedTemplate: DotActionMenuButtonComponent;
+    let archivedTemplate: DotActionMenuButtonComponent;
 
     const messageServiceMock = new MockDotMessageService(messages);
 
@@ -252,8 +271,10 @@ describe('DotTemplateListComponent', () => {
                 DotActionMenuButtonModule,
                 DotAddToBundleModule,
                 HttpClientTestingModule,
-                DynamicDialogModule
-            ]
+                DynamicDialogModule,
+                DotIconModule
+            ],
+            schemas: [CUSTOM_ELEMENTS_SCHEMA]
         }).compileComponents();
     });
 
@@ -269,7 +290,6 @@ describe('DotTemplateListComponent', () => {
         fixture.detectChanges();
         dotListingDataTable = fixture.debugElement.query(By.css('dot-listing-data-table'))
             .componentInstance;
-        rowActions = fixture.debugElement.queryAll(By.css('dot-action-menu-button'));
         spyOn(window, 'confirm').and.callFake(function () {
             return true;
         });
@@ -295,42 +315,74 @@ describe('DotTemplateListComponent', () => {
         expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/templates/new/advanced');
     });
 
-    describe('row actions', () => {
+    it('should pass data to the status elements', () => {
+        const state: DotContentState = {
+            live: true,
+            working: true,
+            deleted: false,
+            hasLiveVersion: true
+        };
+
+        const labels = {
+            archived: 'Archived',
+            published: 'Published',
+            revision: 'Revision',
+            draft: 'Draft'
+        };
+
+        lockedTemplate = fixture.debugElement.query(By.css('[data-testid="123Locked"]'))
+            .componentInstance;
+        const stateIcon = fixture.debugElement.query(By.css('dot-state-icon'));
+        const lockIcon = fixture.debugElement.query(
+            By.css('p-table dot-icon[name="lock"][size="14"]')
+        );
+
+        expect(stateIcon.attributes['size']).toEqual('14px');
+        expect(stateIcon.nativeNode.state).toEqual(state);
+        expect(stateIcon.nativeNode.labels).toEqual(labels);
+        expect(lockIcon).toBeDefined();
+    });
+
+    describe('row', () => {
         it('should set actions to publish template', () => {
-            const publishRow: DotActionMenuButtonComponent = rowActions[0].componentInstance;
+            publishTemplate = fixture.debugElement.query(By.css('[data-testid="123Published"]'))
+                .componentInstance;
             const actions = setBasicOptions();
             actions.push({ menuItem: { label: 'Unpublish', command: jasmine.any(Function) } });
             actions.push({ menuItem: { label: 'Copy', command: jasmine.any(Function) } });
 
-            expect(publishRow.actions).toEqual(actions);
-        });
-
-        it('should set actions to unPublish template', () => {
-            const unpublish: DotActionMenuButtonComponent = rowActions[2].componentInstance;
-            const actions = setBasicOptions();
-            actions.push({ menuItem: { label: 'Archive', command: jasmine.any(Function) } });
-            actions.push({ menuItem: { label: 'Copy', command: jasmine.any(Function) } });
-
-            expect(unpublish.actions).toEqual(actions);
-        });
-
-        it('should set actions to archived template', () => {
-            const archived: DotActionMenuButtonComponent = rowActions[3].componentInstance;
-            const actions = [
-                { menuItem: { label: 'Unarchive', command: jasmine.any(Function) } },
-                { menuItem: { label: 'Delete', command: jasmine.any(Function) } }
-            ];
-            expect(archived.actions).toEqual(actions);
+            expect(publishTemplate.actions).toEqual(actions);
         });
 
         it('should set actions to locked template', () => {
-            const locked: DotActionMenuButtonComponent = rowActions[1].componentInstance;
+            lockedTemplate = fixture.debugElement.query(By.css('[data-testid="123Locked"]'))
+                .componentInstance;
             const actions = setBasicOptions();
             actions.push({ menuItem: { label: 'Unpublish', command: jasmine.any(Function) } });
             actions.push({ menuItem: { label: 'Unlock', command: jasmine.any(Function) } });
             actions.push({ menuItem: { label: 'Copy', command: jasmine.any(Function) } });
 
-            expect(locked.actions).toEqual(actions);
+            expect(lockedTemplate.actions).toEqual(actions);
+        });
+
+        it('should set actions to unPublish template', () => {
+            unPublishTemplate = fixture.debugElement.query(By.css('[data-testid="123Unpublish"]'))
+                .componentInstance;
+            const actions = setBasicOptions();
+            actions.push({ menuItem: { label: 'Archive', command: jasmine.any(Function) } });
+            actions.push({ menuItem: { label: 'Copy', command: jasmine.any(Function) } });
+
+            expect(unPublishTemplate.actions).toEqual(actions);
+        });
+
+        it('should set actions to archived template', () => {
+            archivedTemplate = fixture.debugElement.query(By.css('[data-testid="123Archived"]'))
+                .componentInstance;
+            const actions = [
+                { menuItem: { label: 'Unarchive', command: jasmine.any(Function) } },
+                { menuItem: { label: 'Delete', command: jasmine.any(Function) } }
+            ];
+            expect(archivedTemplate.actions).toEqual(actions);
         });
 
         it('should hide push-publish and Add to Bundle actions', () => {
@@ -343,7 +395,8 @@ describe('DotTemplateListComponent', () => {
             );
             comp.ngOnInit();
             fixture.detectChanges();
-            const publishRow: DotActionMenuButtonComponent = rowActions[0].componentInstance;
+            publishTemplate = fixture.debugElement.query(By.css('[data-testid="123Published"]'))
+                .componentInstance;
             const actions = [
                 { menuItem: { label: 'Edit', command: jasmine.any(Function) } },
                 { menuItem: { label: 'Publish', command: jasmine.any(Function) } },
@@ -351,23 +404,22 @@ describe('DotTemplateListComponent', () => {
                 { menuItem: { label: 'Copy', command: jasmine.any(Function) } }
             ];
 
-            expect(publishRow.actions).toEqual(actions);
+            expect(publishTemplate.actions).toEqual(actions);
         });
     });
 
-    describe('actions command', () => {
-        let unPublishTemplate: DotActionMenuButtonComponent;
-        let publishTemplate: DotActionMenuButtonComponent;
-        let lockedTemplate: DotActionMenuButtonComponent;
-        let archivedTemplate: DotActionMenuButtonComponent;
-
+    describe('row actions command', () => {
         beforeEach(() => {
             spyOn(dotMessageDisplayService, 'push');
             spyOn(dotListingDataTable, 'loadCurrentPage');
-            publishTemplate = rowActions[0].componentInstance;
-            lockedTemplate = rowActions[1].componentInstance;
-            unPublishTemplate = rowActions[2].componentInstance;
-            archivedTemplate = rowActions[3].componentInstance;
+            publishTemplate = fixture.debugElement.query(By.css('[data-testid="123Published"]'))
+                .componentInstance;
+            lockedTemplate = fixture.debugElement.query(By.css('[data-testid="123Locked"]'))
+                .componentInstance;
+            unPublishTemplate = fixture.debugElement.query(By.css('[data-testid="123Unpublish"]'))
+                .componentInstance;
+            archivedTemplate = fixture.debugElement.query(By.css('[data-testid="123Archived"]'))
+                .componentInstance;
         });
 
         it('should open add to bundle dialog', () => {

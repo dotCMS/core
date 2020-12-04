@@ -28,7 +28,9 @@ const mockTemplate: DotTemplate = {
     layout: null,
     canEdit: true,
     canWrite: true,
-    canPublish: true
+    canPublish: true,
+    hasLiveVersion: true,
+    working: true
 };
 
 describe('DotTemplatesService', () => {

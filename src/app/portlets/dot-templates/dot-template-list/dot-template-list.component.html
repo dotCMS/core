@@ -37,7 +37,13 @@
             {{ rowData.name }}
         </td>
         <td [ngStyle]="{ 'text-align': tableColumns[1].textAlign }">
-            <span>Status TBD</span>
+            <dot-state-icon
+                [labels]="setStateLabels()"
+                [state]="getTemplateState(rowData)"
+                size="14px"
+            >
+            </dot-state-icon>
+            <dot-icon *ngIf="rowData.locked" name="lock" size="14"></dot-icon>
         </td>
         <td [ngStyle]="{ 'text-align': tableColumns[2].textAlign }">
             {{ rowData.friendlyName }}
@@ -47,6 +53,7 @@
         </td>
         <td style="width: 5%">
             <dot-action-menu-button
+                [attr.data-testid]="rowData.identifier"
                 class="listing-datatable__action-button"
                 [actions]="setTemplateActions(rowData)"
                 [item]="rowData"

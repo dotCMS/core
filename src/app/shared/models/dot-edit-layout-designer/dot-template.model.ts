@@ -12,6 +12,7 @@ export interface DotTemplate {
     drawed?: boolean;
     drawedBody?: string;
     friendlyName: string;
+    hasLiveVersion: boolean;
     iDate?: Date;
     identifier: string;
     image?: string;
@@ -28,6 +29,7 @@ export interface DotTemplate {
     title?: string;
     type: string;
     versionType: string;
+    working: boolean;
 }
 
 // Extra properties from renderHTML

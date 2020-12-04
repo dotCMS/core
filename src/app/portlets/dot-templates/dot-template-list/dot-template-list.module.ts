@@ -14,6 +14,7 @@ import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotBulkInformationModule } from '@components/_common/dot-bulk-information/dot-bulk-information.module';
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 
 @NgModule({
     declarations: [DotTemplateListComponent],
@@ -29,7 +30,8 @@ import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module
         DotActionMenuButtonModule,
         DotAddToBundleModule,
         DynamicDialogModule,
-        DotBulkInformationModule
+        DotBulkInformationModule,
+        DotIconModule
     ],
     providers: [DotTemplateListResolver, DotTemplatesService, DialogService]
 })

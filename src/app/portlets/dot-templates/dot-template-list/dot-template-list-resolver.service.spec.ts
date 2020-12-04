@@ -54,7 +54,9 @@ describe('DotTemplateListResolverService', () => {
                 canEdit: true,
                 layout: null,
                 canPublish: true,
-                canWrite: true
+                canWrite: true,
+                hasLiveVersion: true,
+                working: true
             }
         ];
 
