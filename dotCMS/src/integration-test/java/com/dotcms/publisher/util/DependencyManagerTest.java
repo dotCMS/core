@@ -290,11 +290,11 @@ public class DependencyManagerTest {
             assertTrue(dependencyManager.getContents().contains(theme_1.getIdentifier()));
             assertTrue(dependencyManager.getContents().contains(theme_2.getIdentifier()));
 
-            //assertEquals(2, dependencyManager.getTemplates().size());
+            assertEquals(2, dependencyManager.getTemplates().size());
             assertTrue(dependencyManager.getTemplates().contains(template_1.getIdentifier()));
             assertTrue(dependencyManager.getTemplates().contains(template_2.getIdentifier()));
 
-            //assertEquals(2, dependencyManager.getContainers().size());
+            assertEquals(2, dependencyManager.getContainers().size());
             assertTrue(dependencyManager.getContainers().contains(container.getIdentifier()));
             assertTrue(dependencyManager.getContainers().contains(container_2.getIdentifier()));
 
