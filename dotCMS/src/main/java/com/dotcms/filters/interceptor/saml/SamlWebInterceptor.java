@@ -140,7 +140,9 @@ public class SamlWebInterceptor implements WebInterceptor {
 
                 // If idpConfig is null, means this site does not need SAML processing
                 if (null != identityProviderConfiguration && identityProviderConfiguration.isEnabled()) { // SAML is configurated, so continue
-
+                    
+                    addNoCacheHeaders(request, response);
+                    
                     // check if there is any exception filter path, to avoid to canApply all the logic.
                     if (!this.checkAccessFilters(request.getRequestURI(), host, request, this.getAccessFilterArray(identityProviderConfiguration))
                             && this.checkIncludePath(request.getRequestURI(), this.getIncludePathArray(identityProviderConfiguration))) {
@@ -148,7 +150,7 @@ public class SamlWebInterceptor implements WebInterceptor {
                         if (this.samlWebUtils.isNotLogged(request)) {
 
                             final AutoLoginResult autoLoginResult = this.autoLogin(request, response,
-                                    null != session? session: this.getSession(request), identityProviderConfiguration);
+                                    null != session? session: request.getSession(), identityProviderConfiguration);
 
                             // we have to assign again the session, since the doAutoLogin might be renewed.
                             session = autoLoginResult.getSession();
@@ -201,11 +203,28 @@ public class SamlWebInterceptor implements WebInterceptor {
         return Result.NEXT;
     } // intercept.
 
-    private HttpSession getSession (final HttpServletRequest httpServletRequest) {
-
-        final HttpSession session = httpServletRequest.getSession(false);
-        return session != null? session: httpServletRequest.getSession(true);
+    
+    /**
+     * This adds no-cache if we are hitting the /dotAdmin/index.html page - a site with SAML enabled
+     * should never see the login page
+     * 
+     * @param request
+     * @param response
+     */
+    private void addNoCacheHeaders(final HttpServletRequest request, final HttpServletResponse response) {
+        // do not cache the index page page and instead force a refresh
+        if ("/dotAdmin/index.html".equals(request.getRequestURI()) 
+            || "/dotAdmin/".equals(request.getRequestURI())
+            || "/dotAdmin".equals(request.getRequestURI())
+                        
+        ) {
+            Logger.debug(this.getClass().getName(), "Adding no cache to "+ request.getRequestURI());
+            response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+            response.setHeader("Pragma", "no-cache");
+            response.setDateHeader("Expires", 0);
+        }
     }
+
 
     private void doAuthentication(final HttpServletRequest request,
                                   final HttpServletResponse response,
