@@ -10,6 +10,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -88,29 +89,35 @@ public class ThemePaginator implements Paginator<Map<String, Object>> {
 
             final List<ContentletSearch> contentletSearches;
 
-            if (limit !=-1 || offset!=0){
+            if (limit !=-1 || offset!=0) {
+
                 contentletSearches =
                         contentletAPI.searchIndex(query.toString(), limit, offset, sortBy, user, false);
-            }else{
+                result.setTotalResults(totalResults.size());
+            } else {
+
                 contentletSearches = totalResults;
+                result.add(this.themeAPI.systemTheme().getMap());
+                result.setTotalResults(totalResults.size() + 1);
             }
 
             final List<String>  inodes = contentletSearches.stream()
-                    .map(contentletSearch -> contentletSearch.getInode())
-                    .collect(Collectors.toList());
+                    .map(ContentletSearch::getInode).collect(Collectors.toList());
 
-            for (final Contentlet contentlet :contentletAPI.findContentlets(inodes)) {
+
+            for (final Contentlet contentlet : this.contentletAPI.findContentlets(inodes)) {
+
                 final Folder folder = folderAPI.find(contentlet.getFolder(), user, false);
-
-                Map<String, Object> map = new HashMap<>(folder.getMap());
+                final Map<String, Object> map = new HashMap<>(folder.getMap());
                 map.put(THEME_THUMBNAIL_KEY, themeAPI.getThemeThumbnail(folder, user));
                 result.add(map);
             }
 
-            result.setTotalResults(totalResults.size());
             result.setQuery(query.toString());
             return result;
         } catch (DotSecurityException | DotDataException e) {
+
+            Logger.error(this, e.getMessage(), e);
             throw new PaginationException(e);
         }
     }

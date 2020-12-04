@@ -13,4 +13,10 @@ public interface ThemeAPI {
     String THEME_THUMBNAIL_KEY = "themeThumbnail";
 
     String getThemeThumbnail(final Folder folder, final User user) throws DotSecurityException, DotDataException;
+
+    /**
+     * Returns the system theme
+     * @return Theme
+     */
+    Theme systemTheme();
 }
