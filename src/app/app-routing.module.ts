@@ -60,6 +60,13 @@ const PORTLETS_ANGULAR = [
             )
     },
     {
+        // canActivate: [MenuGuardService],
+        // canActivateChild: [MenuGuardService],
+        path: 'starter',
+        loadChildren: () =>
+            import('@portlets/dot-starter/dot-starter.module').then((m) => m.DotStarterModule)
+    },
+    {
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         path: 'apps',

@@ -1,0 +1,199 @@
+@use "variables" as *;
+
+$number-link-icon-size: 2.28rem;
+
+:host {
+    display: block;
+    height: 100%;
+    overflow: auto;
+
+    hr {
+        border-top: 1px solid $gray-lighter;
+    }
+
+    a {
+        text-decoration: none;
+    }
+
+    .dot-starter-title {
+        color: $black;
+        font-size: $font-size-x-large;
+        margin: $spacing-5 $spacing-3 $spacing-1;
+    }
+
+    .dot-starter-description {
+        color: $gray;
+        font-size: $font-size-large;
+        margin: 0 $spacing-3 $spacing-5 $spacing-3;
+    }
+
+    .dot-starter-top-content,
+    .dot-starter-bottom-content {
+        display: flex;
+        margin: 0 auto;
+        max-width: 77.42rem;
+        flex-grow: 1;
+    }
+
+    .dot-starter-top-main__section {
+        background-color: $white;
+        box-shadow: $md-shadow-4;
+        flex-grow: 1;
+        margin-left: $spacing-1;
+        margin-bottom: $spacing-4;
+        margin-right: $spacing-1;
+    }
+
+    .dot-starter-top-main__block {
+        align-content: space-between;
+        border-bottom: 1px solid $gray-lighter;
+        display: flex;
+        margin: 0;
+        padding: $spacing-5 0;
+        transition: background-color $basic-speed ease-in;
+
+        &:hover {
+            background-color: $bg-hover;
+        }
+    }
+
+    .dot-starter-top-main__link-number {
+        align-self: center;
+        margin: 0 $spacing-4;
+        text-align: center;
+
+        span {
+            align-items: center;
+            background-color: $brand-primary;
+            border-radius: 50%;
+            color: $white;
+            display: inline-flex;
+            font-size: $md-icon-size-normal;
+            height: $number-link-icon-size;
+            justify-content: center;
+            width: $number-link-icon-size;
+        }
+    }
+
+    .dot-starter-top-main__link-data {
+        align-self: center;
+        flex-grow: 1;
+
+        h4 {
+            color: $brand-primary;
+            font-size: $font-size-large;
+            margin: 0;
+        }
+        p {
+            color: $gray;
+            font-size: $font-size-small;
+            margin: 0;
+        }
+    }
+
+    .dot-starter-top-main__link-arrow {
+        align-self: center;
+
+        i {
+            color: $gray-light;
+            font-size: $font-size-x-large;
+            margin-right: $spacing-3;
+        }
+    }
+
+    .dot-starter-top-secondary__section {
+        margin-left: $spacing-1;
+
+        h3 {
+            font-size: $font-size-large;
+            font-weight: $font-weight-semi-bold;
+            margin: 0;
+        }
+    }
+
+    .dot-starter-top-secondary__block {
+        display: flex;
+        padding: $spacing-3 0;
+    }
+
+    .dot-starter-top-secondary__link-icon {
+        padding-top: 0;
+
+        span {
+            color: $brand-primary;
+            fill: $brand-primary;
+            display: inline-flex;
+            width: $number-link-icon-size;
+        }
+
+        svg {
+            fill: $brand-primary;
+            height: 1.71rem;
+            width: $md-icon-size-normal;
+        }
+    }
+
+    .dot-starter-top-secondary__link-data {
+        padding: 0;
+
+        h4 {
+            color: $black;
+            font-size: $font-size-large;
+            margin: 0;
+        }
+        p {
+            color: $gray;
+            font-size: $font-size-small;
+            margin: 0;
+        }
+    }
+
+    .dot-starter-bottom-content {
+        flex-wrap: wrap;
+        margin-bottom: $spacing-5;
+        padding-top: $spacing-1;
+    }
+
+    .dot-starter-bottom__block {
+        background-color: $white;
+        border-bottom: 1px solid $gray-lighter;
+        box-shadow: $md-shadow-4;
+        display: flex;
+        flex-grow: 1;
+        margin: $spacing-3 $spacing-1 0;
+        overflow: hidden;
+        padding: 2rem 0;
+        transition: background-color $basic-speed ease-in;
+
+        &:hover {
+            background-color: $bg-hover;
+        }
+    }
+
+    .dot-starter-bottom__link-icon {
+        align-self: center;
+        margin: 0 $spacing-5;
+        text-align: center;
+
+        span {
+            color: $brand-primary;
+            display: inline-flex;
+        }
+    }
+
+    .dot-starter-bottom__link-data {
+        align-self: center;
+        padding: 0;
+
+        h4 {
+            color: $black;
+            font-size: $font-size-large;
+            margin: 0;
+        }
+        p {
+            color: $gray;
+            font-size: $font-size-small;
+            margin: 0;
+        }
+    }
+}
