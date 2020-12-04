@@ -50,10 +50,31 @@ export class DotTemplateThumbnailFieldMockComponent implements ControlValueAcces
     writeValue(): void {}
 }
 
+@Component({
+    selector: 'dot-theme-selector-dropdown',
+    template: '',
+    providers: [
+        {
+            multi: true,
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => DotThemeSelectorDropdownMockComponent)
+        }
+    ]
+})
+export class DotThemeSelectorDropdownMockComponent implements ControlValueAccessor {
+    propagateChange = (_: any) => {};
+    registerOnChange(fn: any): void {
+        this.propagateChange = fn;
+    }
+    registerOnTouched(): void {}
+    writeValue(): void {}
+}
+
 const messageServiceMock = new MockDotMessageService({
     'templates.properties.form.label.title': 'Title',
     'templates.properties.form.label.description': 'Description',
-    'templates.properties.form.label.thumbnail': 'Thumbnail'
+    'templates.properties.form.label.thumbnail': 'Thumbnail',
+    'templates.properties.form.label.theme': 'Theme'
 });
 
 describe('DotTemplatePropsComponent', () => {
@@ -69,7 +90,8 @@ describe('DotTemplatePropsComponent', () => {
                 DotTemplatePropsComponent,
                 DotMessagePipe,
                 DotFormDialogMockComponent,
-                DotTemplateThumbnailFieldMockComponent
+                DotTemplateThumbnailFieldMockComponent,
+                DotThemeSelectorDropdownMockComponent
             ],
             imports: [FormsModule, ReactiveFormsModule, DotFieldValidationMessageModule],
             providers: [
@@ -137,6 +159,20 @@ describe('DotTemplatePropsComponent', () => {
                 expect(input.attributes.id).toBe('title');
 
                 expect(message).toBeDefined();
+            });
+
+            it('should setup theme', () => {
+                const field = de.query(By.css('[data-testId="themeField"]'));
+                const label = field.query(By.css('label'));
+                const selector = field.query(By.css('dot-theme-selector-dropdown'));
+
+                expect(field.classes['p-field']).toBe(true);
+
+                expect(label.attributes.for).toBe('theme');
+                expect(label.nativeElement.textContent).toBe('Theme');
+
+                expect(selector.attributes.formControlName).toBe('theme');
+                expect(selector.attributes.id).toBe('theme');
             });
 
             it('should setup description', () => {

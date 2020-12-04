@@ -64,7 +64,7 @@ export const EMPTY_TEMPLATE_DESIGN: DotTemplateItemDesign = {
         title: '',
         width: null
     },
-    theme: 'd7b0ebc2-37ca-4a5a-b769-e8a3ff187661', // TODO: use theme selector
+    theme: '',
     containers: {},
     drawed: true
 };

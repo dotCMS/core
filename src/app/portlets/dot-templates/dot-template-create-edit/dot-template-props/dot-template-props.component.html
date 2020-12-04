@@ -26,6 +26,15 @@
             }}</label>
             <textarea id="description" pInputTextarea formControlName="friendlyName"></textarea>
         </div>
+        <ng-container *ngIf="form.get('theme')">
+            <div class="p-field" data-testId="themeField">
+                <label for="theme">{{ 'templates.properties.form.label.theme' | dm }}</label>
+                <dot-theme-selector-dropdown
+                    id="theme"
+                    formControlName="theme"
+                ></dot-theme-selector-dropdown>
+            </div>
+        </ng-container>
         <div class="p-field" data-testId="thumbnailField">
             <label for="thumbnail">{{ 'templates.properties.form.label.thumbnail' | dm }}</label>
             <dot-template-thumbnail-field

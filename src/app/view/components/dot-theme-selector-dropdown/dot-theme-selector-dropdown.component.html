@@ -25,6 +25,7 @@
 </ng-template>
 
 <dot-searchable-dropdown
+    #searchableDropdown
     [(ngModel)]="value"
     (filterChange)="handleFilterChange($event)"
     (change)="onChange($event)"

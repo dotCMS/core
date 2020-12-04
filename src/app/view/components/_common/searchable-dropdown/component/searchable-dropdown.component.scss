@@ -35,7 +35,11 @@
         text-align: left;
 
         .p-fluid & {
-            width: 100%;
+            /*
+            We have to use important because in the component we have a 300px default value for
+            the element as inline styles, but when the parent have .fluid we need to enforce 100%
+            */
+            width: 100% !important;
         }
 
         &:hover,

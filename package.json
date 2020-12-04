@@ -39,7 +39,7 @@
         "@angular/router": "~11.0.2",
         "@ctrl/tinycolor": "^3.1.7",
         "@ngrx/component-store": "^10.0.1",
-        "dotcms-webcomponents": "0.0.16",
+        "dotcms-webcomponents": "0.0.17",
         "font-awesome": "^4.7.0",
         "lodash": "^4.17.20",
         "md5": "^2.3.0",

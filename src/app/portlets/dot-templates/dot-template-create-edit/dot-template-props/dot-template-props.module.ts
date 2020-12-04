@@ -10,6 +10,7 @@ import { DotFormDialogModule } from '@components/dot-form-dialog/dot-form-dialog
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotTemplateThumbnailFieldModule } from './dot-template-thumbnail-field/dot-template-thumbnail-field.module';
+import { DotThemeSelectorDropdownModule } from '@components/dot-theme-selector-dropdown/dot-theme-selector-dropdown.module';
 
 @NgModule({
     declarations: [DotTemplatePropsComponent],
@@ -22,7 +23,8 @@ import { DotTemplateThumbnailFieldModule } from './dot-template-thumbnail-field/
         InputTextareaModule,
         ReactiveFormsModule,
         DotMessagePipeModule,
-        DotTemplateThumbnailFieldModule
+        DotTemplateThumbnailFieldModule,
+        DotThemeSelectorDropdownModule
     ]
 })
 export class DotTemplatePropsModule {}

@@ -212,7 +212,7 @@ describe('DotTemplateCreateEditComponent', () => {
                             },
                             identifier: '',
                             friendlyName: '',
-                            theme: 'd7b0ebc2-37ca-4a5a-b769-e8a3ff187661',
+                            theme: '',
                             selectedimage: ''
                         },
                         onSave: jasmine.any(Function),
@@ -263,7 +263,7 @@ describe('DotTemplateCreateEditComponent', () => {
                     },
                     identifier: '',
                     friendlyName: '',
-                    theme: 'd7b0ebc2-37ca-4a5a-b769-e8a3ff187661',
+                    theme: '',
                     selectedimage: ''
                 });
             });
@@ -419,7 +419,7 @@ describe('DotTemplateCreateEditComponent', () => {
                         },
                         identifier: '123',
                         friendlyName: '',
-                        theme: 'd7b0ebc2-37ca-4a5a-b769-e8a3ff187661',
+                        theme: '',
                         selectedimage: ''
                     });
                 });
@@ -463,7 +463,7 @@ describe('DotTemplateCreateEditComponent', () => {
                                 },
                                 identifier: '123',
                                 friendlyName: '',
-                                theme: 'd7b0ebc2-37ca-4a5a-b769-e8a3ff187661',
+                                theme: '',
                                 selectedimage: ''
                             },
                             onSave: jasmine.any(Function)

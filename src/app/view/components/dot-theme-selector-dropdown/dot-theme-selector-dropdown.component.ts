@@ -1,5 +1,6 @@
-import { Component, forwardRef, OnInit } from '@angular/core';
+import { Component, forwardRef, OnInit, ViewChild } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { SearchableDropdownComponent } from '@components/_common/searchable-dropdown/component';
 import { DotTheme } from '@models/dot-edit-layout-designer';
 import { DotThemesService } from '@services/dot-themes/dot-themes.service';
 import { PaginatorService } from '@services/paginator';
@@ -26,8 +27,11 @@ export class DotThemeSelectorDropdownComponent implements OnInit, ControlValueAc
     currentSiteIdentifier: string;
     currentOffset: number;
 
+    @ViewChild('searchableDropdown', { static: true })
+    searchableDropdown: SearchableDropdownComponent;
+
     constructor(
-        private readonly paginatorService: PaginatorService,
+        public readonly paginatorService: PaginatorService,
         private readonly siteService: SiteService,
         private readonly themesService: DotThemesService
     ) {}
@@ -89,6 +93,7 @@ export class DotThemeSelectorDropdownComponent implements OnInit, ControlValueAc
     onChange(theme: DotTheme) {
         this.value = theme;
         this.propagateChange(theme.identifier);
+        this.searchableDropdown.toggleOverlayPanel();
     }
     /**
      * Handles page change for pagination purposes.
