@@ -1,5 +1,9 @@
 package com.dotcms.graphql.business;
 
+import static com.dotcms.graphql.CustomFieldType.DOT_LANGUAGE;
+import static com.dotcms.graphql.CustomFieldType.DOT_SITE;
+import static com.dotcms.graphql.CustomFieldType.DOT_USER;
+import static com.dotcms.graphql.InterfaceType.DOT_CONTENTLET;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.ARCHIVED_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.MOD_USER_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.OWNER_KEY;
@@ -136,7 +140,7 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         pageFields.put("viewAs", new TypeFetcher(GraphQLTypeReference.typeRef(DOT_PAGE_VIEW_AS)
                 , new ViewAsDataFetcher()));
         pageFields.put("render", new TypeFetcher(GraphQLString, new PageRenderDataFetcher()));
-        pageFields.put("urlContentMap",new TypeFetcher(GraphQLTypeReference.typeRef("Contentlet"),
+        pageFields.put("urlContentMap",new TypeFetcher(GraphQLTypeReference.typeRef(DOT_CONTENTLET),
                 PropertyDataFetcher.fetching(
                         (Function<Contentlet, Contentlet>) (contentlet)->
                                Try.of(()->((URLMapInfo) contentlet.get("URLMapContent"))
@@ -153,14 +157,14 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         final Map<String, TypeFetcher> templateFields = new HashMap<>();
         templateFields.put("iDate", new TypeFetcher(GraphQLString, new MapFieldPropertiesDataFetcher()));
         templateFields.put("type", new TypeFetcher(GraphQLString, new MapFieldPropertiesDataFetcher()));
-        templateFields.put("owner", new TypeFetcher(GraphQLTypeReference.typeRef("User"), new UserDataFetcher()));
+        templateFields.put("owner", new TypeFetcher(GraphQLTypeReference.typeRef(DOT_USER), new UserDataFetcher()));
         templateFields.put("inode", new TypeFetcher(GraphQLString, new MapFieldPropertiesDataFetcher()));
         templateFields.put("identifier", new TypeFetcher(GraphQLString, new MapFieldPropertiesDataFetcher()));
         templateFields.put("source", new TypeFetcher(GraphQLString, new MapFieldPropertiesDataFetcher()));
         templateFields.put("title", new TypeFetcher(GraphQLString, new MapFieldPropertiesDataFetcher()));
         templateFields.put("friendlyName", new TypeFetcher(GraphQLString, new MapFieldPropertiesDataFetcher()));
         templateFields.put("modDate", new TypeFetcher(GraphQLString, new MapFieldPropertiesDataFetcher()));
-        templateFields.put("modUser", new TypeFetcher(GraphQLTypeReference.typeRef("User"), new UserDataFetcher()));
+        templateFields.put("modUser", new TypeFetcher(GraphQLTypeReference.typeRef(DOT_USER), new UserDataFetcher()));
         templateFields.put("sortOrder", new TypeFetcher(GraphQLLong, new MapFieldPropertiesDataFetcher()));
         templateFields.put("showOnMenu", new TypeFetcher(GraphQLBoolean, new MapFieldPropertiesDataFetcher()));
         templateFields.put("image", new TypeFetcher(GraphQLString, new MapFieldPropertiesDataFetcher()));
@@ -190,7 +194,7 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         final Map<String, TypeFetcher> viewAsFields = new HashMap<>();
         viewAsFields.put("visitor", new TypeFetcher(GraphQLTypeReference.typeRef(DOT_PAGE_VISITOR),
                 new PropertyDataFetcher<ViewAsPageStatus>("visitor")));
-        viewAsFields.put("language", new TypeFetcher(GraphQLTypeReference.typeRef("Language"),
+        viewAsFields.put("language", new TypeFetcher(GraphQLTypeReference.typeRef(DOT_LANGUAGE),
                 new LanguageDataFetcher()));
         viewAsFields.put("mode", new TypeFetcher(GraphQLString,
                 PropertyDataFetcher.fetching((Function<ViewAsPageStatus, String>)
@@ -403,7 +407,7 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         containerFields.put("friendlyName", new TypeFetcher(GraphQLString,
                 PropertyDataFetcher.fetching((Function<ContainerRaw, String>)
                         (containerRaw)->containerRaw.getContainer().getFriendlyName())));
-        containerFields.put("host", new TypeFetcher(GraphQLTypeReference.typeRef("Site"),
+        containerFields.put("host", new TypeFetcher(GraphQLTypeReference.typeRef(DOT_SITE),
                 PropertyDataFetcher.fetching((Function<ContainerRaw, Host>)
                         (containerRaw)-> {
                             final Container container = containerRaw.getContainer();
@@ -451,7 +455,7 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         containerFields.put("modDate", new TypeFetcher(GraphQLString,
                 PropertyDataFetcher.fetching((Function<ContainerRaw, String>)
                         (containerRaw)->containerRaw.getContainer().getModDate().toString())));
-        containerFields.put(MOD_USER_KEY, new TypeFetcher(GraphQLTypeReference.typeRef("User"),
+        containerFields.put(MOD_USER_KEY, new TypeFetcher(GraphQLTypeReference.typeRef(DOT_USER),
                 new UserDataFetcher()));
         containerFields.put("name", new TypeFetcher(GraphQLString,
                 PropertyDataFetcher.fetching((Function<ContainerRaw, String>)
@@ -463,10 +467,10 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         containerFields.put("notes", new TypeFetcher(GraphQLString,
                 PropertyDataFetcher.fetching((Function<ContainerRaw, String>)
                         (containerRaw)->containerRaw.getContainer().getNotes())));
-        containerFields.put(OWNER_KEY, new TypeFetcher(GraphQLTypeReference.typeRef("User"),
+        containerFields.put(OWNER_KEY, new TypeFetcher(GraphQLTypeReference.typeRef(DOT_USER),
                 new UserDataFetcher()));
         containerFields.put("parentPermissionable", new TypeFetcher(
-                GraphQLTypeReference.typeRef("Site"),
+                GraphQLTypeReference.typeRef(DOT_SITE),
                 PropertyDataFetcher.fetching((Function<ContainerRaw, Host>)
                         (containerRaw)-> (Host) Try.of(()->
                                 containerRaw.getContainer().getParentPermissionable())
@@ -576,7 +580,7 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                 PropertyDataFetcher.fetching((Function<Entry<String, List<Contentlet>>, String>)
                         Entry::getKey)));
         containerContentletsFields.put("contentlets", new TypeFetcher(
-                list(GraphQLTypeReference.typeRef("Contentlet")),
+                list(GraphQLTypeReference.typeRef(DOT_CONTENTLET)),
                 PropertyDataFetcher.fetching((Function<Entry<String, List<Contentlet>>, List<Contentlet>>)
                         Entry::getValue)));
 

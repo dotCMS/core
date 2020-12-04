@@ -9,6 +9,11 @@ import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.MOD_
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.TITLE;
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.URL_MAP;
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.WORKING;
+import static com.dotcms.graphql.CustomFieldType.DOT_BINARY;
+import static com.dotcms.graphql.CustomFieldType.DOT_FOLDER;
+import static com.dotcms.graphql.CustomFieldType.DOT_LANGUAGE;
+import static com.dotcms.graphql.CustomFieldType.DOT_SITE;
+import static com.dotcms.graphql.CustomFieldType.DOT_USER;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.ARCHIVED_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.FOLDER_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.HOST_KEY;
@@ -47,7 +52,7 @@ public final class ContentFields {
         final Map<String, TypeFetcher> contentFields = new HashMap<>();
         contentFields.put(MOD_DATE, new TypeFetcher(GraphQLString));
         contentFields.put(TITLE, new TypeFetcher(GraphQLString));
-        contentFields.put(TITLE_IMAGE_KEY, new TypeFetcher(GraphQLTypeReference.typeRef("Binary"),
+        contentFields.put(TITLE_IMAGE_KEY, new TypeFetcher(GraphQLTypeReference.typeRef(DOT_BINARY),
                 new TitleImageFieldDataFetcher()));
         contentFields.put(CONTENT_TYPE, new TypeFetcher(GraphQLString));
         contentFields.put(BASE_TYPE, new TypeFetcher(GraphQLString));
@@ -55,22 +60,22 @@ public final class ContentFields {
         contentFields.put(WORKING, new TypeFetcher(GraphQLBoolean));
         contentFields.put(ARCHIVED_KEY, new TypeFetcher(GraphQLBoolean));
         contentFields.put(LOCKED_KEY, new TypeFetcher(GraphQLBoolean));
-        contentFields.put("conLanguage", new TypeFetcher(GraphQLTypeReference.typeRef("Language"),
+        contentFields.put("conLanguage", new TypeFetcher(GraphQLTypeReference.typeRef(DOT_LANGUAGE),
                 new LanguageDataFetcher()));
         contentFields.put(IDENTIFIER, new TypeFetcher(GraphQLID));
         contentFields.put(INODE, new TypeFetcher(GraphQLID));
-        contentFields.put(HOST_KEY, new TypeFetcher(GraphQLTypeReference.typeRef("Site"),
+        contentFields.put(HOST_KEY, new TypeFetcher(GraphQLTypeReference.typeRef(DOT_SITE),
                 new SiteFieldDataFetcher()));
-        contentFields.put(FOLDER_KEY, new TypeFetcher(GraphQLTypeReference.typeRef("Folder"),
+        contentFields.put(FOLDER_KEY, new TypeFetcher(GraphQLTypeReference.typeRef(DOT_FOLDER),
                 new FolderFieldDataFetcher()));
         contentFields.put(URL_MAP, new TypeFetcher(GraphQLString, PropertyDataFetcher
                 .fetching((Function<Contentlet, String>) (contentlet) ->
                         UtilMethods.isSet(contentlet.getStringProperty("urlMap"))
                                 ? contentlet.getStringProperty("urlMap")
                                 : contentlet.getStringProperty("URL_MAP_FOR_CONTENT"))));
-        contentFields.put(OWNER_KEY, new TypeFetcher(GraphQLTypeReference.typeRef("User"),
+        contentFields.put(OWNER_KEY, new TypeFetcher(GraphQLTypeReference.typeRef(DOT_USER),
                 new UserDataFetcher()));
-        contentFields.put(MOD_USER_KEY, new TypeFetcher(GraphQLTypeReference.typeRef("User"),
+        contentFields.put(MOD_USER_KEY, new TypeFetcher(GraphQLTypeReference.typeRef(DOT_USER),
                 new UserDataFetcher()));
         contentFields.put("map", new TypeFetcher(GraphQLString, new ContentMapDataFetcher(),
                 GraphQLArgument.newArgument().name("key").type(GraphQLString).build()));
