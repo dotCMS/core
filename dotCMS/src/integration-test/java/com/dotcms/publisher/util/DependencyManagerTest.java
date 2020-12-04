@@ -15,7 +15,6 @@ import com.dotcms.publisher.bundle.business.BundleAPI;
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publishing.DotBundleException;
-import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
@@ -30,11 +29,6 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships.Content
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-import com.liferay.portal.model.User;
-import java.util.Date;
-import java.util.Map;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
@@ -81,9 +75,6 @@ public class DependencyManagerTest {
         contentletAPI = APILocator.getContentletAPI();
         contentTypeFieldAPI = APILocator.getContentTypeFieldAPI();
         relationshipAPI = APILocator.getRelationshipAPI();
-
-        createFilter();
-
     }
 
     /**
@@ -222,8 +213,8 @@ public class DependencyManagerTest {
 
     /**
      * <b>Method to test:</b> {@link DependencyManager#setDependencies()} <p>
-     * <b>Given Scenario:</b> A {@link ContentType} with a page as detail page that not exist<p>
-     * <b>ExpectedResult:</b> Should not throw any exception
+     * <b>Given Scenario:</b> A {@link ContentType} with a page as detail page<p>
+     * <b>ExpectedResult:</b> Should include the detail page as dependencies
      * @throws DotSecurityException
      * @throws DotBundleException
      * @throws DotDataException
@@ -363,7 +354,7 @@ public class DependencyManagerTest {
         DependencyManager dependencyManager = new DependencyManager(user, config);
         dependencyManager.setDependencies();
 
-//        assertEquals(2, dependencyManager.getContents().size());
+        assertEquals(2, dependencyManager.getContents().size());
         assertTrue(dependencyManager.getContents().contains(htmlPageAsset.getIdentifier()));
 
         final String path = fileAssetContainer.getPath();
@@ -415,7 +406,7 @@ public class DependencyManagerTest {
         assertEquals(relationship.getInode(),
                 dependencyManager.getRelationships().iterator().next());
         assertNotNull(dependencyManager.getContents());
-//        assertEquals(2, dependencyManager.getContents().size());
+        assertEquals(2, dependencyManager.getContents().size());
         assertTrue(dependencyManager.getContents().contains(parentContent.getIdentifier())
                 && dependencyManager.getContents().contains(childContent.getIdentifier()));
     }
@@ -465,19 +456,15 @@ public class DependencyManagerTest {
         
         assert(manager !=null && manager.getContents().isEmpty());
         
+        
+        
+        
+        
     }
     
     
     
     
     
-
-    private static void createFilter(){
-        final Map<String,Object> filtersMap =
-                ImmutableMap.of("dependencies",true,"relationships",true,"forcePush",false);
-        final FilterDescriptor filterDescriptor =
-                new FilterDescriptor("filterKey.yml","Filter Test Title",filtersMap,true,"Reviewer,dotcms.org.2789");
-        APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor);
-    }
 
 }
