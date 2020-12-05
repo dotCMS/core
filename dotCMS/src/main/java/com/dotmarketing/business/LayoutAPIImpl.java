@@ -12,7 +12,8 @@ import java.util.Optional;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
-
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.exception.DotDataException;
@@ -43,6 +44,7 @@ public class LayoutAPIImpl implements LayoutAPI {
 			portletIds.add(p.getPortletId());
 		}
 		layoutFactory.setPortletsToLayout(layout, portletIds);
+		APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
 	}
 
 	/* (non-Javadoc)
@@ -110,6 +112,8 @@ public class LayoutAPIImpl implements LayoutAPI {
 	@WrapInTransaction
 	public void removeLayout(final Layout layout) throws DotDataException {
 		layoutFactory.removeLayout(layout);
+        //Send a websocket event to notificate a layout change  
+        APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
 	}
 
 	/* (non-Javadoc)
@@ -126,12 +130,14 @@ public class LayoutAPIImpl implements LayoutAPI {
 		
 		
 		layoutFactory.saveLayout(layout);
+		APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
 	}
 
 	@WrapInTransaction
 	@Override
 	public void setPortletIdsToLayout(Layout layout, List<String> portletIds) throws DotDataException {
 		layoutFactory.setPortletsToLayout(layout, portletIds);
+	    APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
 	}
 
 	@Override
