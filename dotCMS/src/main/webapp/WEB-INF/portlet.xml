@@ -507,5 +507,11 @@
         <display-name>Forms</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
     </portlet>
+    
+    <portlet>
+        <portlet-name>starter</portlet-name>
+        <display-name>Getting Started</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+    </portlet>
 
 </portlet-app>
