@@ -22,7 +22,10 @@
 
 package com.liferay.portal.model;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.portlets.user.ajax.UserAjax;
 import com.dotmarketing.util.UtilMethods;
@@ -345,7 +348,18 @@ public class User extends UserModel implements Recipient {
 
   }
 
-	
+
+  @JsonIgnore
+  public Role getUserRole() {
+
+      return Try.of(() -> {
+
+        return APILocator.getRoleAPI().loadRoleByKey(this.getUserId());
+
+      }).getOrElseThrow(e->new DotStateException("Unable to find user role for user:" + this.getUserId()));
+
+    }
+  
   public boolean hasConsoleAccess() {
     return Try.of(() -> {
       if (isAnonymousUser() || UserAPI.SYSTEM_USER_ID.equals(this.getUserId()) ) {
