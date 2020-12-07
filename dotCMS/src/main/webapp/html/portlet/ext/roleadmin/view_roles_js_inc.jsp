@@ -90,7 +90,7 @@
 		buildRolesTree ();
 		dwr.engine.setErrorHandler(function(message, error) {
 			console.log(error);
-			showDotCMSErrorMessage("A system error as occurred " + message);
+			showDotCMSErrorMessage("A system error has occurred: " + message);
 			console.log('Error ', message);
 		});
 		dojo.style('roleTabs', { display: 'none' });
