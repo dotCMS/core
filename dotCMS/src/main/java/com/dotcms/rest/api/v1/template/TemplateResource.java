@@ -300,8 +300,11 @@ public class TemplateResource {
             throw new DoesNotExistException("Template with Id: " + templateForm.getIdentifier() + " does not exists");
         }
 
+        final Template newVersionTemplate = new Template();
+        newVersionTemplate.setIdentifier(currentTemplate.getIdentifier());
+
         return Response.ok(new ResponseEntityView(this.templateHelper.toTemplateView(
-                this.fillAndSaveTemplate(templateForm, user, host, pageMode, currentTemplate), user))).build();
+                this.fillAndSaveTemplate(templateForm, user, host, pageMode, newVersionTemplate), user))).build();
     }
 
     @WrapInTransaction
