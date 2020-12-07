@@ -204,14 +204,14 @@ public class RoleAPIImpl implements RoleAPI {
 		for (final WorkflowScheme scheme : schemes) {
 			final List<WorkflowAction> actions = workflowAPI.findActions(scheme, APILocator.getUserAPI()
 					.getSystemUser(), (WorkflowAction action) -> action.getNextAssign().equals(role.getId()));
-			if (!actions.isEmpty()) {
-				foundActions = Boolean.TRUE;
-				final String conflictingActions = actions.stream().map(action -> action.getName()).collect(Collectors
-						.joining(", "));
-				schemesAndActions.append(scheme.getName()).append(" [action(s) : ").append(conflictingActions).append
-						("] ");
-			}
-		}
+            if (!actions.isEmpty()) {
+                foundActions = Boolean.TRUE;
+                final String conflictingActions = actions.stream().map(WorkflowAction::getName).collect(Collectors
+                        .joining(", "));
+                schemesAndActions.append(scheme.getName()).append(" [action(s) : ").append(conflictingActions).append
+                        ("] ");
+            }
+        }
 		if (foundActions) {
 			throw new DotDataException(String.format("Please remove all references to the '%s' Role from the following" +
 					" Workflow Scheme Actions: %s", role.getName(), schemesAndActions.toString()));
