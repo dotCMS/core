@@ -1,5 +1,7 @@
 package com.dotmarketing.business;
 
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -361,6 +363,7 @@ public class RoleAPIImpl implements RoleAPI {
 			throw new DotStateException("Cannot alter layouts on this role");
 		}
 		roleFactory.addLayoutToRole(layout, role);
+        APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
 	}
 
 	@CloseDBIfOpened
@@ -380,7 +383,9 @@ public class RoleAPIImpl implements RoleAPI {
 		if(!r.isEditLayouts()){
 			throw new DotStateException("Cannot alter layouts on this role");
 		}
+		Logger.info(this.getClass(), "removing layout " + layout.getName() + " from role " + role.getName());
 		roleFactory.removeLayoutFromRole(layout, role);
+	    APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
 	}
 
 	@CloseDBIfOpened
@@ -403,6 +408,7 @@ public class RoleAPIImpl implements RoleAPI {
 		for(Role role : roles) {
 			removeRoleFromUser(role, user);
 		}
+        APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
 	}
 
 	@WrapInTransaction
