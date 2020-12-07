@@ -103,18 +103,24 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
 
     @Override
     public Collection<? extends GraphQLType> getTypes() throws DotDataException {
-
-        // we want to generate them always - no cache
-        getContentAPITypes().forEach((graphQLType)->
-                typesMap.put(graphQLType.getName(), graphQLType));
+        fillTypesMap();
 
         return typesMap.values();
     }
 
+    private void fillTypesMap() throws DotDataException {
+        typesMap.clear();
+        // we want to generate them always - no cache
+        Set<GraphQLType> contentAPITypes = getContentAPITypes();
+
+        for (GraphQLType graphQLType : contentAPITypes) {
+            typesMap.put(graphQLType.getName(), graphQLType);
+        }
+    }
+
     Map<String, GraphQLType> getCachedTypesAsMap() throws DotDataException {
         if (!UtilMethods.isSet(typesMap)) {
-            getContentAPITypes().forEach((graphQLType)->
-                    typesMap.put(graphQLType.getName(), graphQLType));
+            fillTypesMap();
         }
         return typesMap;
     }

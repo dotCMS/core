@@ -1,5 +1,6 @@
 package com.dotcms.graphql.business;
 
+import static com.dotcms.graphql.InterfaceType.DOT_CONTENTLET;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.ARCHIVED_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.MOD_USER_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.OWNER_KEY;
@@ -11,6 +12,7 @@ import static graphql.schema.GraphQLList.list;
 
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.graphql.ContentFields;
+import com.dotcms.graphql.CustomFieldType;
 import com.dotcms.graphql.datafetcher.LanguageDataFetcher;
 import com.dotcms.graphql.datafetcher.MapFieldPropertiesDataFetcher;
 import com.dotcms.graphql.datafetcher.UserDataFetcher;
@@ -63,10 +65,30 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
 
     INSTANCE;
 
-    Map<String, GraphQLOutputType> typeMap = new HashMap<>();
+    public static final String DOT_PAGE = "DotPage";
+    public static final String DOT_PAGE_TEMPLATE = "DotPageTemplate";
+    public static final String DOT_PAGE_VIEW_AS = "DotPageViewAs";
+    public static final String DOT_PAGE_VISITOR = "DotPageVisitor";
+    public static final String DOT_PAGE_WEIGHTED_PERSONA = "DotPageWeightedPersona";
+    public static final String DOT_PAGE_TAG = "DotPageTag";
+    public static final String DOT_PAGE_USER_AGENT = "DotPageUserAgent";
+    public static final String DOT_PAGE_BROWSER_VERSION = "DotPageBrowserVersion";
+    public static final String DOT_PAGE_GEOLOCATION = "DotPageGeolocation";
+    public static final String DOT_PAGE_LAYOUT = "DotPageLayout";
+    public static final String DOT_PAGE_SIDEBAR = "DotPageSidebar";
+    public static final String DOT_PAGE_LAYOUT_ROW = "DotPageLayoutRow";
+    public static final String DOT_PAGE_LAYOUT_COLUMN = "DotPageLayoutColumn";
+    public static final String DOT_PAGE_CONTAINER_UUID = "DotPageContainerUUID";
+    public static final String DOT_PAGE_RENDERED_CONTAINER = "DotPageRenderedContainer";
+    public static final String DOT_PAGE_CONTAINER_STRUCTURE = "DotPageContainerStructure";
+    public static final String DOT_PAGE_CONTAINER_CONTENTLETS = "DotPageContainerContentlets";
+    public static final String DOT_PAGE_CONTAINER = "DotPageContainer";
+    public static final String DOT_PAGE_BODY = "DotPageBody";
+    Map<String, GraphQLOutputType> typesMap = new HashMap<>();
 
     @Override
     public Collection<? extends GraphQLType> getTypes() {
+        typesMap.clear();
 
         // Page type
         final Map<String, TypeFetcher> pageFields = new HashMap<>(ContentFields.getContentFields());
@@ -103,7 +125,7 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         pageFields.put("statusIcons", new TypeFetcher(GraphQLString));
         pageFields.put("tags", new TypeFetcher(GraphQLString));
         pageFields.put("template", new TypeFetcher(
-                GraphQLTypeReference.typeRef("Template"), new TemplateDataFetcher()));
+                GraphQLTypeReference.typeRef(DOT_PAGE_TEMPLATE), new TemplateDataFetcher()));
         pageFields.put("templateIdentifier", new TypeFetcher(GraphQLString));
         pageFields.put("type", new TypeFetcher(GraphQLString));
         pageFields.put("url", new TypeFetcher(GraphQLString));
@@ -113,34 +135,35 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         pageFields.put("wfNeverExpire", new TypeFetcher(GraphQLString));
         pageFields.put("wfPublishDate", new TypeFetcher(GraphQLString));
         pageFields.put("wfPublishTime", new TypeFetcher(GraphQLString));
-        pageFields.put("viewAs", new TypeFetcher(GraphQLTypeReference.typeRef("ViewAs")
+        pageFields.put("viewAs", new TypeFetcher(GraphQLTypeReference.typeRef(DOT_PAGE_VIEW_AS)
                 , new ViewAsDataFetcher()));
         pageFields.put("render", new TypeFetcher(GraphQLString, new PageRenderDataFetcher()));
-        pageFields.put("urlContentMap",new TypeFetcher(GraphQLTypeReference.typeRef("Contentlet"),
+        pageFields.put("urlContentMap",new TypeFetcher(GraphQLTypeReference.typeRef(DOT_CONTENTLET),
                 PropertyDataFetcher.fetching(
                         (Function<Contentlet, Contentlet>) (contentlet)->
                                Try.of(()->((URLMapInfo) contentlet.get("URLMapContent"))
                                        .getContentlet()).getOrNull())));
 
-        pageFields.put("layout", new TypeFetcher(GraphQLTypeReference.typeRef("Layout"),
+        pageFields.put("layout", new TypeFetcher(GraphQLTypeReference.typeRef(DOT_PAGE_LAYOUT),
                 new LayoutDataFetcher()));
-        pageFields.put("containers", new TypeFetcher(list(GraphQLTypeReference.typeRef("Container")),
+        pageFields.put("containers", new TypeFetcher(list(GraphQLTypeReference.typeRef(DOT_PAGE_CONTAINER)),
                 new ContainersDataFetcher()));
 
-        typeMap.put("Page", TypeUtil.createObjectType("Page", pageFields));
+        typesMap.put(DOT_PAGE, TypeUtil.createObjectType(DOT_PAGE, pageFields));
 
         // Template type
         final Map<String, TypeFetcher> templateFields = new HashMap<>();
         templateFields.put("iDate", new TypeFetcher(GraphQLString, new MapFieldPropertiesDataFetcher()));
         templateFields.put("type", new TypeFetcher(GraphQLString, new MapFieldPropertiesDataFetcher()));
-        templateFields.put("owner", new TypeFetcher(GraphQLTypeReference.typeRef("User"), new UserDataFetcher()));
+        templateFields.put("owner", new TypeFetcher(GraphQLTypeReference.typeRef(
+                CustomFieldType.USER.getTypeName()), new UserDataFetcher()));
         templateFields.put("inode", new TypeFetcher(GraphQLString, new MapFieldPropertiesDataFetcher()));
         templateFields.put("identifier", new TypeFetcher(GraphQLString, new MapFieldPropertiesDataFetcher()));
         templateFields.put("source", new TypeFetcher(GraphQLString, new MapFieldPropertiesDataFetcher()));
         templateFields.put("title", new TypeFetcher(GraphQLString, new MapFieldPropertiesDataFetcher()));
         templateFields.put("friendlyName", new TypeFetcher(GraphQLString, new MapFieldPropertiesDataFetcher()));
         templateFields.put("modDate", new TypeFetcher(GraphQLString, new MapFieldPropertiesDataFetcher()));
-        templateFields.put("modUser", new TypeFetcher(GraphQLTypeReference.typeRef("User"), new UserDataFetcher()));
+        templateFields.put("modUser", new TypeFetcher(GraphQLTypeReference.typeRef(CustomFieldType.USER.getTypeName()), new UserDataFetcher()));
         templateFields.put("sortOrder", new TypeFetcher(GraphQLLong, new MapFieldPropertiesDataFetcher()));
         templateFields.put("showOnMenu", new TypeFetcher(GraphQLBoolean, new MapFieldPropertiesDataFetcher()));
         templateFields.put("image", new TypeFetcher(GraphQLString, new MapFieldPropertiesDataFetcher()));
@@ -164,13 +187,13 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         templateFields.put("idate", new TypeFetcher(GraphQLString, new MapFieldPropertiesDataFetcher()));
         templateFields.put("canEdit", new TypeFetcher(GraphQLBoolean, new MapFieldPropertiesDataFetcher()));
 
-        typeMap.put("Template", TypeUtil.createObjectType("Template", templateFields));
+        typesMap.put(DOT_PAGE_TEMPLATE, TypeUtil.createObjectType(DOT_PAGE_TEMPLATE, templateFields));
 
         // ViewAs type
         final Map<String, TypeFetcher> viewAsFields = new HashMap<>();
-        viewAsFields.put("visitor", new TypeFetcher(GraphQLTypeReference.typeRef("Visitor"),
+        viewAsFields.put("visitor", new TypeFetcher(GraphQLTypeReference.typeRef(DOT_PAGE_VISITOR),
                 new PropertyDataFetcher<ViewAsPageStatus>("visitor")));
-        viewAsFields.put("language", new TypeFetcher(GraphQLTypeReference.typeRef("Language"),
+        viewAsFields.put("language", new TypeFetcher(GraphQLTypeReference.typeRef(CustomFieldType.LANGUAGE.getTypeName()),
                 new LanguageDataFetcher()));
         viewAsFields.put("mode", new TypeFetcher(GraphQLString,
                 PropertyDataFetcher.fetching((Function<ViewAsPageStatus, String>)
@@ -182,20 +205,20 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         }
 
 
-        typeMap.put("ViewAs", TypeUtil.createObjectType("ViewAs", viewAsFields));
+        typesMap.put(DOT_PAGE_VIEW_AS, TypeUtil.createObjectType(DOT_PAGE_VIEW_AS, viewAsFields));
 
         // Visitor type
         final Map<String, TypeFetcher> visitorFields = new HashMap<>();
-        visitorFields.put("tags", new TypeFetcher(list(GraphQLTypeReference.typeRef("Tag")),
+        visitorFields.put("tags", new TypeFetcher(list(GraphQLTypeReference.typeRef(DOT_PAGE_TAG)),
                 new PropertyDataFetcher<Visitor>("tags")));
         visitorFields.put("device", new TypeFetcher(GraphQLString,
                 new PropertyDataFetcher<String>("device")));
         visitorFields.put("isNew", new TypeFetcher(GraphQLBoolean,
                 new PropertyDataFetcher<Boolean>("newVisitor")));
-        visitorFields.put("userAgent", new TypeFetcher(GraphQLTypeReference.typeRef("UserAgent"),
+        visitorFields.put("userAgent", new TypeFetcher(GraphQLTypeReference.typeRef(DOT_PAGE_USER_AGENT),
                 new PropertyDataFetcher<String>("userAgent")));
         visitorFields.put("personas",
-                new TypeFetcher(list(GraphQLTypeReference.typeRef("WeightedPersona")),
+                new TypeFetcher(list(GraphQLTypeReference.typeRef(DOT_PAGE_WEIGHTED_PERSONA)),
                 PropertyDataFetcher.fetching((Function<Visitor, Set>)
                         (visitor)->visitor.getWeightedPersonas().entrySet())));
         if(LicenseManager.getInstance().isEnterprise()) {
@@ -203,10 +226,10 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                     .put("persona", new TypeFetcher(GraphQLTypeReference.typeRef("PersonaBaseType"),
                             new PropertyDataFetcher<Visitor>("persona")));
         }
-        visitorFields.put("geo", new TypeFetcher(GraphQLTypeReference.typeRef("Geolocation"),
+        visitorFields.put("geo", new TypeFetcher(GraphQLTypeReference.typeRef(DOT_PAGE_GEOLOCATION),
                 new PropertyDataFetcher<Visitor>("geo")));
 
-        typeMap.put("Visitor", TypeUtil.createObjectType("Visitor", visitorFields));
+        typesMap.put(DOT_PAGE_VISITOR, TypeUtil.createObjectType(DOT_PAGE_VISITOR, visitorFields));
 
         // WeightedPersona type
         final Map<String, TypeFetcher> weightedPersonaFields = new HashMap<>();
@@ -215,7 +238,7 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         weightedPersonaFields.put("count", new TypeFetcher(GraphQLLong,
                 new PropertyDataFetcher<Map<String, Float>>("value")));
 
-        typeMap.put("WeightedPersona", TypeUtil.createObjectType("WeightedPersona",
+        typesMap.put(DOT_PAGE_WEIGHTED_PERSONA, TypeUtil.createObjectType(DOT_PAGE_WEIGHTED_PERSONA,
                 weightedPersonaFields));
 
         // Tag type
@@ -225,7 +248,7 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         tagFields.put("count", new TypeFetcher(GraphQLLong,
                 new PropertyDataFetcher<AccruedTag>("count")));
 
-        typeMap.put("Tag", TypeUtil.createObjectType("Tag", tagFields));
+        typesMap.put(DOT_PAGE_TAG, TypeUtil.createObjectType(DOT_PAGE_TAG, tagFields));
 
         // UserAgent type
         final Map<String, TypeFetcher> userAgentFields = new HashMap<>();
@@ -235,10 +258,11 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                 new PropertyDataFetcher<AccruedTag>("browser")));
         userAgentFields.put("id", new TypeFetcher(GraphQLLong,
                 new PropertyDataFetcher<AccruedTag>("id")));
-        userAgentFields.put("browserVersion", new TypeFetcher(GraphQLTypeReference.typeRef("BrowserVersion"),
+        userAgentFields.put("browserVersion", new TypeFetcher(GraphQLTypeReference.typeRef(DOT_PAGE_BROWSER_VERSION),
                 new PropertyDataFetcher<AccruedTag>("browserVersion")));
 
-        typeMap.put("UserAgent", TypeUtil.createObjectType("UserAgent", userAgentFields));
+        typesMap.put(
+                DOT_PAGE_USER_AGENT, TypeUtil.createObjectType(DOT_PAGE_USER_AGENT, userAgentFields));
 
         // BrowserVersion type
         final Map<String, TypeFetcher> browserVersionFields = new HashMap<>();
@@ -249,7 +273,7 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         browserVersionFields.put("minorVersion", new TypeFetcher(GraphQLString,
                 new PropertyDataFetcher<Browser>("minorVersion")));
 
-        typeMap.put("BrowserVersion", TypeUtil.createObjectType("BrowserVersion", browserVersionFields));
+        typesMap.put(DOT_PAGE_BROWSER_VERSION, TypeUtil.createObjectType(DOT_PAGE_BROWSER_VERSION, browserVersionFields));
 
         // Geolocation type
         final Map<String, TypeFetcher> geoFields = new HashMap<>();
@@ -278,7 +302,7 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         geoFields.put("ipAddress", new TypeFetcher(GraphQLString,
                 new PropertyDataFetcher<Geolocation>("ipAddress")));
 
-        typeMap.put("Geolocation", TypeUtil.createObjectType("Geolocation",
+        typesMap.put(DOT_PAGE_GEOLOCATION, TypeUtil.createObjectType(DOT_PAGE_GEOLOCATION,
                 geoFields));
 
         // Layout type
@@ -291,12 +315,12 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                 new PropertyDataFetcher<TemplateLayout>("header")));
         layoutFields.put("footer", new TypeFetcher(GraphQLBoolean,
                 new PropertyDataFetcher<TemplateLayout>("footer")));
-        layoutFields.put("body", new TypeFetcher(GraphQLTypeReference.typeRef("Body"),
+        layoutFields.put("body", new TypeFetcher(GraphQLTypeReference.typeRef(DOT_PAGE_BODY),
                 new PropertyDataFetcher<TemplateLayout>("body")));
-        layoutFields.put("sidebar", new TypeFetcher(GraphQLTypeReference.typeRef("Sidebar"),
+        layoutFields.put("sidebar", new TypeFetcher(GraphQLTypeReference.typeRef(DOT_PAGE_SIDEBAR),
                 new PropertyDataFetcher<TemplateLayout>("sidebar")));
 
-        typeMap.put("Layout", TypeUtil.createObjectType("Layout",
+        typesMap.put(DOT_PAGE_LAYOUT, TypeUtil.createObjectType(DOT_PAGE_LAYOUT,
                 layoutFields));
 
         // Sidebar type
@@ -309,28 +333,28 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                 new PropertyDataFetcher<Sidebar>("location")));
         sidebarFields.put("preview", new TypeFetcher((GraphQLBoolean),
                 new PropertyDataFetcher<Sidebar>("preview")));
-        sidebarFields.put("containers", new TypeFetcher(list(GraphQLTypeReference.typeRef("ContainerUUID")),
+        sidebarFields.put("containers", new TypeFetcher(list(GraphQLTypeReference.typeRef(DOT_PAGE_CONTAINER_UUID)),
                 new PropertyDataFetcher<ContainerHolder>("containers")));
 
-        typeMap.put("Sidebar", TypeUtil.createObjectType("Sidebar",
+        typesMap.put(DOT_PAGE_SIDEBAR, TypeUtil.createObjectType(DOT_PAGE_SIDEBAR,
                 sidebarFields));
 
         // Body type
         final Map<String, TypeFetcher> bodyFields = new HashMap<>();
-        bodyFields.put("rows", new TypeFetcher(list(GraphQLTypeReference.typeRef("LayoutRow")),
+        bodyFields.put("rows", new TypeFetcher(list(GraphQLTypeReference.typeRef(DOT_PAGE_LAYOUT_ROW)),
                 new PropertyDataFetcher<TemplateLayout>("rows")));
 
-        typeMap.put("Body", TypeUtil.createObjectType("Body",
+        typesMap.put(DOT_PAGE_BODY, TypeUtil.createObjectType(DOT_PAGE_BODY,
                 bodyFields));
 
         // LayoutRow type
         final Map<String, TypeFetcher> rowFields = new HashMap<>();
-        rowFields.put("columns", new TypeFetcher(list(GraphQLTypeReference.typeRef("LayoutColumn")),
+        rowFields.put("columns", new TypeFetcher(list(GraphQLTypeReference.typeRef(DOT_PAGE_LAYOUT_COLUMN)),
                 new PropertyDataFetcher<TemplateLayoutRow>("columns")));
         rowFields.put("styleClass", new TypeFetcher((GraphQLString),
                 new PropertyDataFetcher<TemplateLayoutRow>("styleClass")));
 
-        typeMap.put("LayoutRow", TypeUtil.createObjectType("LayoutRow",
+        typesMap.put(DOT_PAGE_LAYOUT_ROW, TypeUtil.createObjectType(DOT_PAGE_LAYOUT_ROW,
                 rowFields));
 
         // LayoutColumn type
@@ -347,10 +371,10 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                 new PropertyDataFetcher<TemplateLayoutColumn>("styleClass")));
         columnFields.put("preview", new TypeFetcher((GraphQLBoolean),
                 new PropertyDataFetcher<TemplateLayoutColumn>("preview")));
-        columnFields.put("containers", new TypeFetcher(list(GraphQLTypeReference.typeRef("ContainerUUID")),
+        columnFields.put("containers", new TypeFetcher(list(GraphQLTypeReference.typeRef(DOT_PAGE_CONTAINER_UUID)),
                 new PropertyDataFetcher<ContainerHolder>("containers")));
 
-        typeMap.put("LayoutColumn", TypeUtil.createObjectType("LayoutColumn",
+        typesMap.put(DOT_PAGE_LAYOUT_COLUMN, TypeUtil.createObjectType(DOT_PAGE_LAYOUT_COLUMN,
                 columnFields));
 
         // ContainerUUID type
@@ -360,7 +384,7 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         containerUUIDFields.put("uuid", new TypeFetcher(GraphQLString,
                 new PropertyDataFetcher<ContainerUUID>("uuid")));
 
-        typeMap.put("ContainerUUID", TypeUtil.createObjectType("ContainerUUID",
+        typesMap.put(DOT_PAGE_CONTAINER_UUID, TypeUtil.createObjectType(DOT_PAGE_CONTAINER_UUID,
                 containerUUIDFields));
 
         // Container type
@@ -382,7 +406,7 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         containerFields.put("friendlyName", new TypeFetcher(GraphQLString,
                 PropertyDataFetcher.fetching((Function<ContainerRaw, String>)
                         (containerRaw)->containerRaw.getContainer().getFriendlyName())));
-        containerFields.put("host", new TypeFetcher(GraphQLTypeReference.typeRef("Site"),
+        containerFields.put("host", new TypeFetcher(GraphQLTypeReference.typeRef(CustomFieldType.SITE.getTypeName()),
                 PropertyDataFetcher.fetching((Function<ContainerRaw, Host>)
                         (containerRaw)-> {
                             final Container container = containerRaw.getContainer();
@@ -430,7 +454,7 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         containerFields.put("modDate", new TypeFetcher(GraphQLString,
                 PropertyDataFetcher.fetching((Function<ContainerRaw, String>)
                         (containerRaw)->containerRaw.getContainer().getModDate().toString())));
-        containerFields.put(MOD_USER_KEY, new TypeFetcher(GraphQLTypeReference.typeRef("User"),
+        containerFields.put(MOD_USER_KEY, new TypeFetcher(GraphQLTypeReference.typeRef(CustomFieldType.USER.getTypeName()),
                 new UserDataFetcher()));
         containerFields.put("name", new TypeFetcher(GraphQLString,
                 PropertyDataFetcher.fetching((Function<ContainerRaw, String>)
@@ -442,10 +466,10 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         containerFields.put("notes", new TypeFetcher(GraphQLString,
                 PropertyDataFetcher.fetching((Function<ContainerRaw, String>)
                         (containerRaw)->containerRaw.getContainer().getNotes())));
-        containerFields.put(OWNER_KEY, new TypeFetcher(GraphQLTypeReference.typeRef("User"),
+        containerFields.put(OWNER_KEY, new TypeFetcher(GraphQLTypeReference.typeRef(CustomFieldType.USER.getTypeName()),
                 new UserDataFetcher()));
         containerFields.put("parentPermissionable", new TypeFetcher(
-                GraphQLTypeReference.typeRef("Site"),
+                GraphQLTypeReference.typeRef(CustomFieldType.SITE.getTypeName()),
                 PropertyDataFetcher.fetching((Function<ContainerRaw, Host>)
                         (containerRaw)-> (Host) Try.of(()->
                                 containerRaw.getContainer().getParentPermissionable())
@@ -509,15 +533,15 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                         (containerRaw)->Try.of(()->containerRaw.getContainer().isWorking())
                                 .getOrElse(false))));
 
-        containerFields.put("rendered", new TypeFetcher(list(GraphQLTypeReference.typeRef("RenderedContainer"))
+        containerFields.put("rendered", new TypeFetcher(list(GraphQLTypeReference.typeRef(DOT_PAGE_RENDERED_CONTAINER))
                 , new RenderedContainersDataFetcher()));
 
         containerFields.put("containerStructures", new TypeFetcher(
-                list(GraphQLTypeReference.typeRef("ContainerStructure")),
+                list(GraphQLTypeReference.typeRef(DOT_PAGE_CONTAINER_STRUCTURE)),
                 PropertyDataFetcher.fetching(ContainerRaw::getContainerStructures)));
 
         containerFields.put("containerContentlets", new TypeFetcher(
-                list(GraphQLTypeReference.typeRef("ContainerContentlets")),
+                list(GraphQLTypeReference.typeRef(DOT_PAGE_CONTAINER_CONTENTLETS)),
                 PropertyDataFetcher.fetching((Function<ContainerRaw, Set<Entry<String, List<Contentlet>>>>)
                         (containerRaw)->containerRaw.getContentlets().entrySet())));
 
@@ -530,7 +554,7 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                 PropertyDataFetcher.fetching((Function<Entry<String, String>, String>)
                         Entry::getValue)));
 
-        typeMap.put("RenderedContainer", TypeUtil.createObjectType("RenderedContainer",
+        typesMap.put(DOT_PAGE_RENDERED_CONTAINER, TypeUtil.createObjectType(DOT_PAGE_RENDERED_CONTAINER,
                 renderedContainerFields));
 
         // ContainerStructure type
@@ -546,7 +570,7 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         containerStructureFields.put("code", new TypeFetcher(GraphQLString,
                 PropertyDataFetcher.fetching(ContainerStructure::getCode)));
 
-        typeMap.put("ContainerStructure", TypeUtil.createObjectType("ContainerStructure",
+        typesMap.put(DOT_PAGE_CONTAINER_STRUCTURE, TypeUtil.createObjectType(DOT_PAGE_CONTAINER_STRUCTURE,
                 containerStructureFields));
 
         // ContainerContentlets type
@@ -555,21 +579,21 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                 PropertyDataFetcher.fetching((Function<Entry<String, List<Contentlet>>, String>)
                         Entry::getKey)));
         containerContentletsFields.put("contentlets", new TypeFetcher(
-                list(GraphQLTypeReference.typeRef("Contentlet")),
+                list(GraphQLTypeReference.typeRef(DOT_CONTENTLET)),
                 PropertyDataFetcher.fetching((Function<Entry<String, List<Contentlet>>, List<Contentlet>>)
                         Entry::getValue)));
 
-        typeMap.put("ContainerContentlets", TypeUtil.createObjectType("ContainerContentlets",
+        typesMap.put(DOT_PAGE_CONTAINER_CONTENTLETS, TypeUtil.createObjectType(DOT_PAGE_CONTAINER_CONTENTLETS,
                 containerContentletsFields));
 
-        typeMap.put("Container", TypeUtil.createObjectType("Container",
+        typesMap.put(DOT_PAGE_CONTAINER, TypeUtil.createObjectType(DOT_PAGE_CONTAINER,
                 containerFields));
 
-        return typeMap.values();
+        return typesMap.values();
 
     }
 
     Map<String, GraphQLOutputType> getTypesMap() {
-        return typeMap;
+        return typesMap;
     }
 }
