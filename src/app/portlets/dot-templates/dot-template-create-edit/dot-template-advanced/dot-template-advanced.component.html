@@ -4,6 +4,7 @@
     <form [formGroup]="form">
         <dot-container-selector (change)="containerChange($event)"> </dot-container-selector>
         <dot-textarea-content
+            formControlName="body"
             #value
             height="100%"
             formControlName="body"

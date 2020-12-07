@@ -1,0 +1,57 @@
+@use "variables" as *;
+
+:host {
+    display: block;
+    max-width: 40rem;
+    text-align: right;
+}
+
+.wrapper {
+    display: block;
+    max-width: 30rem;
+    margin: 0 auto 4rem;
+    text-align: left;
+}
+
+.options {
+    display: flex;
+    justify-content: space-between;
+}
+
+p {
+    font-size: $font-size-large;
+    line-height: 1.5;
+    color: $gray-dark;
+}
+
+.item {
+    align-items: center;
+    background-color: $gray-bg;
+    border: solid 2px $gray-bg;
+    border-radius: $border-radius;
+    color: $gray-light;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    padding: 2rem;
+    transition: border-color $basic-speed ease, color $basic-speed ease;
+
+    &:hover {
+        color: $gray;
+    }
+
+    span {
+        font-size: $font-size-large;
+    }
+}
+
+input[type="radio"] {
+    appearance: none;
+    position: absolute;
+
+    &:checked + .item {
+        border-color: $brand-primary;
+        color: $brand-primary;
+        background-color: rgba($brand-secondary_rgb, 0.1);
+    }
+}

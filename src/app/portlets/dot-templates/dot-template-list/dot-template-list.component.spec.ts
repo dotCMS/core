@@ -1,6 +1,6 @@
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { DotTemplateListComponent } from './dot-template-list.component';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
@@ -46,6 +46,7 @@ import { DotBulkInformationComponent } from '@components/_common/dot-bulk-inform
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 import { DotContentState } from 'dotcms-models';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 const templatesMock: DotTemplate[] = [
     {
@@ -128,38 +129,39 @@ class ActivatedRouteMock {
 }
 
 const messages = {
-    'templates.fieldName.name': 'Name',
-    'templates.fieldName.status': 'Status',
-    'templates.fieldName.description': 'Description',
-    'templates.fieldName.lastEdit': 'Last Edit',
-    'design-template': 'Template Designer',
-    'code-template': 'Advanced Template',
-    Publish: 'Publish',
-    'Remote-Publish': 'Push Publish',
     'Add-To-Bundle': 'Add To Bundle',
-    Unpublish: 'Unpublish',
-    Archive: 'Archive',
-    Unarchive: 'Unarchive',
-    Delete: 'Delete',
-    Copy: 'Copy',
-    'message.template.copy': 'Template copied',
-    unlock: 'Unlock',
-    'message.template.unlocked': 'Template unlocked',
-    'message.template.delete': 'Template archived',
+    'Remote-Publish': 'Push Publish',
+    'code-template': 'Advanced Template',
     'contenttypes.content.push_publish': 'Push Publish',
-    edit: 'Edit',
-    publish: 'Publish',
+    'design-template': 'Template Designer',
     'message.template.confirm.delete.template':
         'Are you sure you want to delete this Template?  (This operation cannot be undone)',
+    'message.template.copy': 'Template copied',
+    'message.template.delete': 'Template archived',
     'message.template.full_delete': 'Template deleted',
-    'message.template_list.published': 'Templates published',
-    'message.template.unpublished': 'Template unpublished',
     'message.template.undelete': 'Template unarchived',
-    Results: 'Results',
+    'message.template.unlocked': 'Template unlocked',
+    'message.template.unpublished': 'Template unpublished',
+    'message.template_list.published': 'Templates published',
+    'templates.fieldName.description': 'Description',
+    'templates.fieldName.lastEdit': 'Last Edit',
+    'templates.fieldName.name': 'Name',
+    'templates.fieldName.status': 'Status',
+    'templates.select.template.title': 'Create a template',
+    Archive: 'Archive',
     Archived: 'Archived',
+    Copy: 'Copy',
+    Delete: 'Delete',
+    Draft: 'Draft',
+    Publish: 'Publish',
     Published: 'Published',
+    Results: 'Results',
     Revision: 'Revision',
-    Draft: 'Draft'
+    Unarchive: 'Unarchive',
+    Unpublish: 'Unpublish',
+    edit: 'Edit',
+    publish: 'Publish',
+    unlock: 'Unlock'
 };
 
 const columnsMock = [
@@ -219,6 +221,7 @@ describe('DotTemplateListComponent', () => {
     let dotMessageDisplayService: DotMessageDisplayService;
     let dotPushPublishDialogService: DotPushPublishDialogService;
     let dotRouterService: DotRouterService;
+    let dialogService: DialogService;
 
     let comp: DotTemplateListComponent;
     let unPublishTemplate: DotActionMenuButtonComponent;
@@ -227,6 +230,8 @@ describe('DotTemplateListComponent', () => {
     let archivedTemplate: DotActionMenuButtonComponent;
 
     const messageServiceMock = new MockDotMessageService(messages);
+
+    const dialogRefClose = new Subject();
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
@@ -237,27 +242,29 @@ describe('DotTemplateListComponent', () => {
                     provide: ActivatedRoute,
                     useClass: ActivatedRouteMock
                 },
-                LoggerService,
-                StringUtils,
-                DotTemplatesService,
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
-                DotHttpErrorManagerService,
-                DotAlertConfirmService,
-                ConfirmationService,
-                LoginService,
-                DotcmsEventsService,
-                DotEventsSocket,
+
                 { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
-                DotcmsConfigService,
-                DotMessageDisplayService,
-                DialogService,
+
                 {
                     provide: DotRouterService,
                     useValue: {
                         gotoPortlet: jasmine.createSpy(),
                         goToEditTemplate: jasmine.createSpy()
                     }
-                }
+                },
+                LoggerService,
+                StringUtils,
+                DotTemplatesService,
+                DotHttpErrorManagerService,
+                DotAlertConfirmService,
+                ConfirmationService,
+                LoginService,
+                DotcmsEventsService,
+                DotEventsSocket,
+                DotcmsConfigService,
+                DotMessageDisplayService,
+                DialogService
             ],
             imports: [
                 DotListingDataTableModule,
@@ -272,7 +279,8 @@ describe('DotTemplateListComponent', () => {
                 DotAddToBundleModule,
                 HttpClientTestingModule,
                 DynamicDialogModule,
-                DotIconModule
+                DotIconModule,
+                BrowserAnimationsModule
             ],
             schemas: [CUSTOM_ELEMENTS_SCHEMA]
         }).compileComponents();
@@ -285,6 +293,8 @@ describe('DotTemplateListComponent', () => {
         dotMessageDisplayService = TestBed.inject(DotMessageDisplayService);
         dotPushPublishDialogService = TestBed.inject(DotPushPublishDialogService);
         dotRouterService = TestBed.inject(DotRouterService);
+        dialogService = TestBed.inject(DialogService);
+
         fixture.detectChanges();
         tick(2);
         fixture.detectChanges();
@@ -292,6 +302,11 @@ describe('DotTemplateListComponent', () => {
             .componentInstance;
         spyOn(window, 'confirm').and.callFake(function () {
             return true;
+        });
+        spyOn(dotPushPublishDialogService, 'open');
+
+        spyOn<any>(dialogService, 'open').and.returnValue({
+            onClose: dialogRefClose
         });
     }));
 
@@ -307,12 +322,26 @@ describe('DotTemplateListComponent', () => {
 
     it('should set Action Header options correctly', () => {
         const model: ButtonModel[] = dotListingDataTable.actionHeaderOptions.primary.model;
-        expect(model[0].label).toEqual('Template Designer');
-        expect(model[1].label).toEqual('Advanced Template');
-        model[0].command();
-        expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/templates/new/designer');
-        model[1].command();
-        expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/templates/new/advanced');
+        expect(model).toBeUndefined();
+
+        dotListingDataTable.actionHeaderOptions.primary.command();
+        expect(dialogService.open).toHaveBeenCalledWith(jasmine.any(Function), {
+            header: 'Create a template',
+            width: '40rem',
+            closeOnEscape: false
+        });
+    });
+
+    it('should go to create template', () => {
+        dotListingDataTable.actionHeaderOptions.primary.command();
+        dialogRefClose.next('create');
+        expect(dotRouterService.gotoPortlet).toHaveBeenCalledOnceWith('/templates/new/create');
+    });
+
+    it('should not go to create template', () => {
+        dotListingDataTable.actionHeaderOptions.primary.command();
+        dialogRefClose.next('');
+        expect(dotRouterService.gotoPortlet).not.toHaveBeenCalled();
     });
 
     it('should pass data to the status elements', () => {
@@ -432,7 +461,6 @@ describe('DotTemplateListComponent', () => {
         });
 
         it('should open Push Publish dialog', () => {
-            spyOn(dotPushPublishDialogService, 'open');
             publishTemplate.actions[2].menuItem.command();
             expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
                 assetIdentifier: '123Published',
@@ -491,10 +519,8 @@ describe('DotTemplateListComponent', () => {
 
     describe('bulk', () => {
         let menu: Menu;
-        let dialogService: DialogService;
 
         beforeEach(() => {
-            dialogService = TestBed.inject(DialogService);
             comp.selectedTemplates = [templatesMock[0], templatesMock[1]];
             fixture.detectChanges();
             menu = fixture.debugElement.query(By.css('.template-listing__header-options p-menu'))
@@ -521,7 +547,6 @@ describe('DotTemplateListComponent', () => {
             spyOn(dotTemplatesService, 'archive').and.returnValue(of(mockBulkResponseSuccess));
             spyOn(dotTemplatesService, 'unArchive').and.returnValue(of(mockBulkResponseSuccess));
             spyOn(dotTemplatesService, 'delete').and.returnValue(of(mockBulkResponseSuccess));
-            spyOn(dotPushPublishDialogService, 'open');
             spyOn(dotMessageDisplayService, 'push');
             spyOn(dotListingDataTable, 'loadCurrentPage');
             menu.model[0].command();
@@ -578,7 +603,6 @@ describe('DotTemplateListComponent', () => {
             spyOn(dotTemplatesService, 'archive').and.returnValue(of(mockBulkResponseFail));
             spyOn(dotTemplatesService, 'unArchive').and.returnValue(of(mockBulkResponseFail));
             spyOn(dotTemplatesService, 'delete').and.returnValue(of(mockBulkResponseFail));
-            spyOn(dialogService, 'open');
             menu.model[0].command();
             menu.model[3].command();
             menu.model[4].command();

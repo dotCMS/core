@@ -1,0 +1,34 @@
+<div class="wrapper">
+    <div class="options">
+        <label data-testId="designer">
+            <input
+                type="radio"
+                value="designer"
+                name="template"
+                [(ngModel)]="value"
+                id="designer"
+            />
+            <div class="item">
+                <dot-icon size="100" name="web"></dot-icon>
+                <span>{{ 'templates.template.selector.label.designer' | dm }}</span>
+            </div>
+        </label>
+        <label data-testId="advanced">
+            <input
+                type="radio"
+                value="advanced"
+                name="template"
+                [(ngModel)]="value"
+                id="advanced"
+            />
+            <div class="item">
+                <dot-icon size="100" name="settings_applications"></dot-icon>
+                <span>{{ 'templates.template.selector.label.advanced' | dm }}</span>
+            </div>
+        </label>
+    </div>
+
+    <p [innerHTML]="map[value]" data-testId="description"></p>
+</div>
+
+<button pButton [label]="'next' | dm" (click)="onClick()" data-testId="button"></button>

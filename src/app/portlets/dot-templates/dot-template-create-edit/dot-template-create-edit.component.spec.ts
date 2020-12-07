@@ -23,6 +23,10 @@ import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
 import { DotCrudService } from '@services/dot-crud';
 import { DotTempFileUploadService } from '@services/dot-temp-file-upload/dot-temp-file-upload.service';
 import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
+import { PaginatorService } from '@services/paginator';
+import { mockDotThemes } from '@tests/dot-themes.mock';
+import { SiteService } from 'dotcms-js';
+import { DotThemesService } from '@services/dot-themes/dot-themes.service';
 
 @Component({
     selector: 'dot-api-link',
@@ -71,6 +75,34 @@ const messageServiceMock = new MockDotMessageService({
     'templates.properties.title': 'Template Properties',
     'templates.edit': 'Edit'
 });
+
+async function makeFormValid(fixture) {
+    // can't use debugElement because the dialogs opens outside the component
+    const title: HTMLInputElement = document.querySelector(
+        '[data-testid="templatePropsTitleField"]'
+    );
+
+    title.value = 'Hello World';
+
+    const event = new Event('input', {
+        bubbles: true,
+        cancelable: true
+    });
+
+    title.dispatchEvent(event);
+
+    const theme: HTMLInputElement = document.querySelector(
+        '[data-testid="templatePropsThemeField"] button'
+    );
+
+    theme.click();
+
+    await fixture.whenRenderingDone();
+
+    const item: HTMLElement = document.querySelector('.theme-selector__data-list-item');
+
+    item.click();
+}
 
 describe('DotTemplateCreateEditComponent', () => {
     let fixture: ComponentFixture<DotTemplateCreateEditComponent>;
@@ -143,6 +175,41 @@ describe('DotTemplateCreateEditComponent', () => {
                                 }
                             ])
                         )
+                    }
+                },
+                /*
+                    PaginatorService, SiteService and DotThemesService:
+                    This three are from DotThemeSelectorDropdownComponent and because
+                    I had to import DotTemplatePropsModule so I can click the real dialog that
+                    gets append to the body.
+                */
+                {
+                    provide: PaginatorService,
+                    useValue: {
+                        url: '',
+                        paginationPerPage: '',
+                        totalRecords: mockDotThemes.length,
+
+                        setExtraParams() {},
+                        getWithOffset() {
+                            return of([...mockDotThemes]);
+                        }
+                    }
+                },
+                {
+                    provide: SiteService,
+                    useValue: {
+                        getCurrentSite() {
+                            return of({
+                                identifier: '123'
+                            });
+                        }
+                    }
+                },
+                {
+                    provide: DotThemesService,
+                    useValue: {
+                        get: jasmine.createSpy().and.returnValue(of(mockDotThemes[1]))
                     }
                 }
             ]
@@ -231,20 +298,8 @@ describe('DotTemplateCreateEditComponent', () => {
                 expect(store.goToTemplateList).toHaveBeenCalledTimes(1);
             });
 
-            it('should save template when save dialog button is clicked', () => {
-                // can't use debugElement because the dialogs opens outside the component
-                const title: HTMLInputElement = document.querySelector(
-                    '[data-testid="templatePropsTitleField"]'
-                );
-
-                title.value = 'Hello World';
-
-                const event = new Event('input', {
-                    bubbles: true,
-                    cancelable: true
-                });
-
-                title.dispatchEvent(event);
+            it('should save template when save dialog button is clicked', async () => {
+                await makeFormValid(fixture);
 
                 const button: HTMLButtonElement = document.querySelector(
                     '[data-testid="dotFormDialogSave"]'
@@ -263,7 +318,7 @@ describe('DotTemplateCreateEditComponent', () => {
                     },
                     identifier: '',
                     friendlyName: '',
-                    theme: '',
+                    theme: 'test',
                     selectedimage: ''
                 });
             });
@@ -389,7 +444,7 @@ describe('DotTemplateCreateEditComponent', () => {
                 expect(dialogService.open).not.toHaveBeenCalled();
             });
 
-            describe('edit body', () => {
+            describe('edit layout', () => {
                 it('should save', () => {
                     const builder = de.query(By.css('dot-template-builder'));
                     builder.triggerEventHandler('save', {
@@ -468,6 +523,52 @@ describe('DotTemplateCreateEditComponent', () => {
                             },
                             onSave: jasmine.any(Function)
                         }
+                    });
+                });
+            });
+        });
+
+        describe('Advanced', () => {
+            beforeEach(() => {
+                const storeMock = jasmine.createSpyObj(
+                    'DotTemplateStore',
+                    ['saveTemplate', 'goToTemplateList'],
+                    {
+                        vm$: of({
+                            original: {
+                                ...EMPTY_TEMPLATE_ADVANCED,
+                                identifier: '123',
+                                title: 'Some template'
+                            },
+                            apiLink: '/api/link'
+                        })
+                    }
+                );
+
+                TestBed.overrideProvider(DotTemplateStore, { useValue: storeMock });
+                fixture = TestBed.createComponent(DotTemplateCreateEditComponent);
+                de = fixture.debugElement;
+
+                dialogService = fixture.debugElement.injector.get(DialogService);
+                store = fixture.debugElement.injector.get(DotTemplateStore);
+                spyOn(dialogService, 'open').and.callThrough();
+
+                fixture.detectChanges();
+            });
+
+            describe('edit layout', () => {
+                it('should save', () => {
+                    const builder = de.query(By.css('dot-template-builder'));
+                    builder.triggerEventHandler('save', {
+                        body: `<h1>##Container and stuff</h1>`
+                    });
+
+                    expect(store.saveTemplate).toHaveBeenCalledWith({
+                        title: 'Some template',
+                        body: '<h1>##Container and stuff</h1>',
+                        identifier: '123',
+                        friendlyName: '',
+                        selectedimage: ''
                     });
                 });
             });

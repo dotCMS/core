@@ -17,7 +17,7 @@ const messageServiceMock = new MockDotMessageService({
 });
 
 export default {
-    title: 'DotCMS/Forms/ThemeSelector',
+    title: 'DotCMS/ThemeSelector',
     component: DotThemeSelectorDropdownComponent,
     decorators: [
         moduleMetadata({

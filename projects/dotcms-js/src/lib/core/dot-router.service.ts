@@ -1,6 +1,12 @@
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
-
+/**
+ * Router service with common routing methods
+ *
+ * @export
+ * @class DotRouterService
+ * @deprecated Please use @services/dot-router/dot-router.service
+ */
 @Injectable()
 export class DotRouterService {
     constructor(private router: Router) {}

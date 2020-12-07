@@ -76,12 +76,14 @@ export class DotThemeSelectorDropdownComponent implements OnInit, ControlValueAc
      * @memberof DotThemeSelectorDropdownComponent
      */
     writeValue(identifier: string): void {
-        this.themesService
-            .get(identifier)
-            .pipe(take(1))
-            .subscribe((theme: DotTheme) => {
-                this.value = theme;
-            });
+        if (identifier) {
+            this.themesService
+                .get(identifier)
+                .pipe(take(1))
+                .subscribe((theme: DotTheme) => {
+                    this.value = theme;
+                });
+        }
     }
 
     /**

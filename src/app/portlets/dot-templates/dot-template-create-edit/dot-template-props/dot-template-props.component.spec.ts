@@ -220,12 +220,13 @@ describe('DotTemplatePropsComponent', () => {
 
         it('should be valid when required fields are set', () => {
             component.form.get('title').setValue('Hello World');
+            component.form.get('theme').setValue('223');
 
             expect(component.form.valid).toBe(true);
             expect(component.form.value).toEqual({
                 title: 'Hello World',
                 friendlyName: '',
-                theme: '',
+                theme: '223',
                 selectedimage: ''
             });
         });
@@ -237,6 +238,7 @@ describe('DotTemplatePropsComponent', () => {
             expect(dialog.attributes['ng-reflect-save-button-disabled']).toBe('true');
 
             component.form.get('title').setValue('Hello World');
+            component.form.get('theme').setValue('123');
             fixture.detectChanges();
             expect(dialog.attributes['ng-reflect-save-button-disabled']).toBe('false');
 

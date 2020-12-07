@@ -43,7 +43,8 @@ $box-height: 206px;
         $white $box-header-height,
         $white 100%
     );
-    border: 1px solid $gray-light;
+    border-radius: $border-radius;
+    border: 1px solid $gray-lighter;
     display: flex;
     height: $box-height;
     justify-content: space-between;
@@ -65,7 +66,16 @@ $box-height: 206px;
     height: $box-height;
     padding: 0;
     position: absolute;
-    right: -23px;
-    width: 32px;
+    right: -$spacing-8;
+    width: $spacing-8;
     z-index: 1;
+
+    &::ng-deep .dot-icon-button {
+        background-color: $gray-bg;
+
+        &:hover {
+            background-color: rgba($brand-primary_rgb, 0.2);
+            color: $brand-primary;
+        }
+    }
 }

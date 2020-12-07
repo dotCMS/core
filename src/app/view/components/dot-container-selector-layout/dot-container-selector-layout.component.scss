@@ -2,31 +2,33 @@
 @import "mixins";
 
 :host {
-    display: block;
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    width: 100%;
 }
 
 .container-selector__list {
     @include naked-list;
     margin: 0;
     overflow-x: hidden;
+    overflow-y: auto;
     padding: 0;
 }
 
 .container-selector__list-item {
     display: flex;
     align-items: center;
-    border-top: 1px solid $gray-bg;
+    border: 1px solid $gray-lighter;
     color: $black;
     font-size: $font-size-medium;
     overflow: hidden;
-    padding: $spacing-1 0;
+    padding: 0;
+    margin: $spacing-1;
+    border-radius: $border-radius;
 
     dot-icon-button {
         margin-right: $spacing-1;
-    }
-
-    &:first-child {
-        border-top: none;
     }
 }
 

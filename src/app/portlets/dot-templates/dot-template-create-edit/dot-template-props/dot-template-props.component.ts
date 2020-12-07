@@ -23,10 +23,19 @@ export class DotTemplatePropsComponent implements OnInit {
     ngOnInit(): void {
         const { template } = this.config.data;
 
-        this.form = this.fb.group({
-            ...template,
-            title: [template.title, Validators.required]
-        });
+        const formGroupAttrs =
+            template.theme !== undefined
+                ? {
+                      ...template,
+                      title: [template.title, Validators.required],
+                      theme: [template.theme, Validators.required]
+                  }
+                : {
+                      ...template,
+                      title: [template.title, Validators.required]
+                  };
+
+        this.form = this.fb.group(formGroupAttrs);
 
         this.isFormValid$ = this.form.valueChanges.pipe(
             map(() => {

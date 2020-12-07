@@ -5,7 +5,7 @@ import { Component, Input } from '@angular/core';
     template: `<dot-icon-button
         [icon]="icon"
         [pTooltip]="tooltipText"
-        tooltipPosition="bottom"
+        [tooltipPosition]="tooltipPosition"
     ></dot-icon-button>`
 })
 export class DotIconButtonTooltipComponent {
@@ -14,6 +14,9 @@ export class DotIconButtonTooltipComponent {
 
     @Input()
     tooltipText: string;
+
+    @Input()
+    tooltipPosition = 'bottom';
 
     constructor() {}
 }
