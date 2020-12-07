@@ -2,8 +2,6 @@ package com.dotcms.rest;
 
 
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.concurrent.DotConcurrentFactory;
-
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.PublishAuditAPI;
@@ -11,12 +9,6 @@ import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.business.PublisherQueueJob;
 import com.dotcms.publisher.pusher.AuthCredentialPushPublishUtil;
-
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
@@ -26,13 +18,20 @@ import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
 import java.io.File;
 import java.io.InputStream;
 import java.util.Calendar;
 import java.util.Optional;
-
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 @Path("/bundlePublisher")
 public class BundlePublisherResource {
@@ -43,7 +42,7 @@ public class BundlePublisherResource {
 	 * Method that receives from a server a bundle with the intention of publish it.<br/>
 	 * When a Bundle file is received on this end point is required to validate if the sending server is an allowed<br/>
 	 * server on this end point and if the security tokens match. If all the validations are correct the bundle will be add it<br/>
-	 * to the {@link PublishThread Publish Thread}.
+	 * to the {@link PushPublisherJob Publish Thread}.
 	 *
 	 * @param type			  response type
 	 * @param callback 		  response callback
@@ -51,7 +50,7 @@ public class BundlePublisherResource {
 	 * @param request         {@link HttpServletRequest}
 	 * @param response        {@link HttpServletResponse}
 	 * @return Returns a {@link Response} object with a 200 status code if success or a 500 error code if anything fails on the Publish process
-	 * @see PublishThread
+	 * @see PushPublisherJob
 	 */
 	@POST
 	@Path("/publish")
@@ -129,10 +128,7 @@ public class BundlePublisherResource {
 			//Start thread
 
 			if(!status.getStatus().equals(Status.PUBLISHING_BUNDLE)) {
-
-				DotConcurrentFactory.getInstance()
-						.getSubmitter()
-						.submit(new PublishThread(fileName, null, null, status));
+				PushPublisherJob.triggerPushPublisherJob(fileName, status);
 			}
 
 			return bundle;
