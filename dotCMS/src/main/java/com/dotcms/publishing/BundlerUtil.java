@@ -13,6 +13,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.DomDriver;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -45,21 +47,28 @@ public class BundlerUtil {
         return getBundleRoot(name, true);
     }
 
-	public static File getBundleRoot(String name, boolean createDir) {
-		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + name;
-		File dir = new File(bundlePath);
-		if (createDir){
-            dir.mkdirs();
+	public static File getBundleRoot(final String name, final boolean createDir) {
+		if (createDir) {
+            return createDirectory(name);
+        } else {
+            return new File(getBundlePath(name));
         }
-		return dir;
 	}
+
+    @NotNull
+    public static File createDirectory(final String name) {
+        final String bundlePath = ConfigUtils.getBundlePath()+ File.separator + name;
+        final File dir = new File(bundlePath);
+        dir.mkdirs();
+        return dir;
+    }
 
     public static File getStaticBundleRoot(String name) {
         return getStaticBundleRoot(name, true);
     }
 
     public static File getStaticBundleRoot(String name, boolean createDir) {
-        String bundlePath = ConfigUtils.getStaticPublishPath() + File.separator + name;
+        final String bundlePath = getBundlePath(name);
         File dir = new File(bundlePath);
         if (createDir) {
             dir.mkdirs();
@@ -67,7 +76,12 @@ public class BundlerUtil {
         return dir;
     }
 
-	/**
+    @NotNull
+    private static String getBundlePath(String name) {
+        return ConfigUtils.getStaticPublishPath() + File.separator + name;
+    }
+
+    /**
 	 * This method takes a config and will create the bundle directory and
 	 * write the bundle.xml file to it
 	 * @param config Config with the id of bundle

@@ -402,9 +402,8 @@ public class BundleAPIImpl implements BundleAPI {
 	 * @return
 	 */
     @CloseDBIfOpened
-    private File generateBundleDirectory(final Bundle bundle) {
+    private File generateBundleDirectory(final PushPublisherConfig pushPublisherConfig) {
 
-        final PushPublisherConfig pushPublisherConfig = new PushPublisherConfig(bundle);
         pushPublisherConfig.setPublishers(Arrays.asList(GenerateBundlePublisher.class));
         try {
             APILocator.getPublisherAPI().publish(pushPublisherConfig);
@@ -420,18 +419,21 @@ public class BundleAPIImpl implements BundleAPI {
     @CloseDBIfOpened
     @Override
     public File generateTarGzipBundleFile(final Bundle bundle) {
-        final File bundleRoot = generateBundleDirectory(bundle);
-        final File bundleFile = new File(  ConfigUtils.getBundlePath()  + File.separator + bundle.getId() + ".tar.gz" );
-        bundleFile.delete();
-        try {
-            final File tmpFile= PushUtils.tarGzipDirectory( bundleRoot );
-            tmpFile.renameTo(bundleFile);
-            return bundleFile;
-        }
-        catch(final Exception e) {
-			Logger.error(this,e.getMessage(),e);
-            throw new DotRuntimeException(e);
-        }
+		final long start = System.currentTimeMillis();
+
+		final PushPublisherConfig pushPublisherConfig = new PushPublisherConfig(bundle);
+
+		final File bundleDirectory = BundlerUtil.createDirectory(pushPublisherConfig.getName());
+
+		final BundleTarGzipCreator bundleTarGzipCreator = BundleTarGzipCreator.start(bundleDirectory.toPath());
+		generateBundleDirectory(pushPublisherConfig);
+
+		bundleTarGzipCreator.close();
+
+		final long end = System.currentTimeMillis();
+
+		Logger.info(this.getClass(), "last: " + (end - start));
+		return bundleTarGzipCreator.get();
     }
 	
 	

@@ -62,35 +62,32 @@ public class PushUtils {
 	 * @return
 	 * @throws IOException
 	 */
-    public static File tarGzipDirectory(final File directory) throws IOException {
+    public static File createTarGzipFile(final File directory) throws IOException {
         if (directory == null || !directory.exists() || !directory.isDirectory()) {
             throw new DotRuntimeException("Unable to compress directory:" + directory);
         }
         final String tempFileId = directory.getName() + UUIDGenerator.shorty();
-        final File tempFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() +File.separator + tempFileId + ".tar.gz");
-        final List<File> files = FileUtil.listFilesRecursively(directory);
-
-        Logger.info(PushUtils.class, "Compressing " + files.size() + " to " + tempFile.getAbsoluteFile());
-        // Create the output stream for the output file
-
-        // try-with-resources handles close of streams
-        try (final OutputStream fileOutputStream = Files.newOutputStream(tempFile.toPath());
-                        // Wrap the output file stream in streams that will tar and gzip everything
-                        final TarArchiveOutputStream tarArchiveOutputStream = new TarArchiveOutputStream(
-                                        new GZIPOutputStream(new BufferedOutputStream(fileOutputStream)))) {
-
-			tarArchiveOutputStream.setBigNumberMode(TarArchiveOutputStream.BIGNUMBER_STAR);
-            // TAR originally didn't support long file names, so enable the support for it
-			tarArchiveOutputStream.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
-
-            // Get to putting all the files in the compressed output file
-            for (final File file : files) {
-                addFilesToCompression(tarArchiveOutputStream, file, ".", directory.getAbsolutePath());
-            }
-        }
-
-        return tempFile;
+        return new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() +File.separator + tempFileId + ".tar.gz");
     }
+
+    public static TarArchiveOutputStream createTarArchiveOutputStream(final File file) throws IOException {
+
+		//Logger.info(PushUtils.class, "Compressing " + files.size() + " to " + file.getAbsoluteFile());
+		// Create the output stream for the output file
+
+		// try-with-resources handles close of streams
+		final OutputStream fileOutputStream = Files.newOutputStream(file.toPath());
+		// Wrap the output file stream in streams that will tar and gzip everything
+		final TarArchiveOutputStream tarArchiveOutputStream = new TarArchiveOutputStream(
+				new GZIPOutputStream(new BufferedOutputStream(fileOutputStream)));
+
+		tarArchiveOutputStream.setBigNumberMode(TarArchiveOutputStream.BIGNUMBER_STAR);
+		// TAR originally didn't support long file names, so enable the support for it
+		tarArchiveOutputStream.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
+
+		return tarArchiveOutputStream;
+	}
+
 
 	/**
 	 * Does the work of compression and going recursive for nested directories
@@ -102,7 +99,7 @@ public class PushUtils {
 	        * @param dir The directory that should serve as the parent directory in the archivew
 	 * @throws IOException
 	 */
-	private static void addFilesToCompression(TarArchiveOutputStream taos, File file, String dir, String bundleRoot)
+	public static void addFilesToCompression(TarArchiveOutputStream taos, File file, String dir, String bundleRoot)
 		throws IOException
 	{
 	    if(!file.getAbsolutePath().contains(bundleRoot)) {
