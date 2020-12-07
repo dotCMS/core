@@ -19,8 +19,4 @@ public interface GraphQLTypesProvider {
      */
     Collection<? extends GraphQLType> getTypes() throws DotDataException;
 
-    /**
-     * Flushes any
-     */
-//    void invalidateTypes();
 }

@@ -31,35 +31,27 @@ import java.util.HashMap;
 import java.util.Map;
 
 public enum CustomFieldType {
-    BINARY,
-    CATEGORY,
-    SITE,
-    FOLDER,
-    SITE_OR_FOLDER,
-    KEY_VALUE,
-    LANGUAGE,
-    USER,
-    FILEASSET;
+    BINARY("DotBinary"),
+    CATEGORY("DotCategory"),
+    SITE("DotSite"),
+    FOLDER("DotFolder"),
+    SITE_OR_FOLDER("DotSiteOrFolder"),
+    KEY_VALUE("DotKeyValue"),
+    LANGUAGE("DotLanguage"),
+    USER("DotUser"),
+    FILEASSET("DotFileasset");
+
+    CustomFieldType(String typeName) {
+        this.typeName = typeName;
+    }
+
+    final String typeName;
+
+    public String getTypeName() {
+        return typeName;
+    }
 
     private static Map<String, GraphQLObjectType> customFieldTypes = new HashMap<>();
-
-    public static final String DOT_BINARY = "DotBinary";
-
-    public static final String DOT_CATEGORY = "DotCategory";
-
-    public static final String DOT_FOLDER = "DotFolder";
-
-    public static final String DOT_SITE_OR_FOLDER = "DotSiteOrFolder";
-
-    public static final String DOT_KEY_VALUE = "DotKeyValue";
-
-    public static final String DOT_LANGUAGE = "DotLanguage";
-
-    public static final String DOT_USER = "DotUser";
-
-    public static final String DOT_FILEASSET = "DotFileasset";
-
-    public static final String DOT_SITE = "DotSite";
 
     static {
         final Map<String, GraphQLOutputType> binaryTypeFields = new HashMap<>();
@@ -69,7 +61,7 @@ public enum CustomFieldType {
         binaryTypeFields.put("size", GraphQLLong);
         binaryTypeFields.put("mime", GraphQLString);
         binaryTypeFields.put("isImage", GraphQLBoolean);
-        customFieldTypes.put("BINARY", TypeUtil.createObjectType(DOT_BINARY, binaryTypeFields,
+        customFieldTypes.put("BINARY", TypeUtil.createObjectType(BINARY.getTypeName(), binaryTypeFields,
             new MapFieldPropertiesDataFetcher()));
 
         final Map<String, GraphQLOutputType> categoryTypeFields = new HashMap<>();
@@ -79,7 +71,7 @@ public enum CustomFieldType {
         categoryTypeFields.put("key", GraphQLString);
         categoryTypeFields.put("keywords", GraphQLString);
         categoryTypeFields.put("velocityVar", GraphQLString);
-        customFieldTypes.put("CATEGORY", TypeUtil.createObjectType(DOT_CATEGORY, categoryTypeFields,
+        customFieldTypes.put("CATEGORY", TypeUtil.createObjectType(CATEGORY.getTypeName(), categoryTypeFields,
             new MapFieldPropertiesDataFetcher()));
 
         final Map<String, GraphQLOutputType> folderTypeFields = new HashMap<>();
@@ -90,7 +82,7 @@ public enum CustomFieldType {
         folderTypeFields.put("folderPath", GraphQLString);
         folderTypeFields.put("folderTitle", GraphQLString);
         folderTypeFields.put("folderDefaultFileType", GraphQLString);
-        customFieldTypes.put("FOLDER", TypeUtil.createObjectType(DOT_FOLDER, folderTypeFields,
+        customFieldTypes.put("FOLDER", TypeUtil.createObjectType(FOLDER.getTypeName(), folderTypeFields,
             new MapFieldPropertiesDataFetcher()));
 
         final Map<String, GraphQLOutputType> siteOrFolderTypeFields = new HashMap<>();
@@ -107,13 +99,13 @@ public enum CustomFieldType {
         siteOrFolderTypeFields.put("hostName", GraphQLString);
         siteOrFolderTypeFields.put("hostAliases", GraphQLString);
         siteOrFolderTypeFields.put("hostTagStorage", GraphQLString);
-        customFieldTypes.put("SITE_OR_FOLDER", TypeUtil.createObjectType(DOT_SITE_OR_FOLDER, siteOrFolderTypeFields,
+        customFieldTypes.put("SITE_OR_FOLDER", TypeUtil.createObjectType(SITE_OR_FOLDER.getTypeName(), siteOrFolderTypeFields,
             new MapFieldPropertiesDataFetcher()));
 
         final Map<String, GraphQLOutputType> keyValueTypeFields = new HashMap<>();
         keyValueTypeFields.put("key", GraphQLString);
         keyValueTypeFields.put("value", GraphQLString);
-        customFieldTypes.put("KEY_VALUE", TypeUtil.createObjectType(DOT_KEY_VALUE, keyValueTypeFields, null));
+        customFieldTypes.put("KEY_VALUE", TypeUtil.createObjectType(KEY_VALUE.getTypeName(), keyValueTypeFields, null));
 
         final Map<String, GraphQLOutputType> languageTypeFields = new HashMap<>();
         languageTypeFields.put("id", GraphQLLong);
@@ -121,14 +113,14 @@ public enum CustomFieldType {
         languageTypeFields.put("countryCode", GraphQLString);
         languageTypeFields.put("language", GraphQLString);
         languageTypeFields.put("country", GraphQLString);
-        customFieldTypes.put("LANGUAGE", TypeUtil.createObjectType(DOT_LANGUAGE, languageTypeFields, null));
+        customFieldTypes.put("LANGUAGE", TypeUtil.createObjectType(LANGUAGE.getTypeName(), languageTypeFields, null));
 
         final Map<String, GraphQLOutputType> userTypeFields = new HashMap<>();
         userTypeFields.put("userId", GraphQLID);
         userTypeFields.put("firstName", GraphQLString);
         userTypeFields.put("lastName", GraphQLString);
         userTypeFields.put("email", GraphQLString);
-        customFieldTypes.put("USER", TypeUtil.createObjectType(DOT_USER, userTypeFields, null));
+        customFieldTypes.put("USER", TypeUtil.createObjectType(USER.getTypeName(), userTypeFields, null));
 
         final Map<String, TypeFetcher> fileAssetTypeFields = new HashMap<>();
         fileAssetTypeFields.put(FILEASSET_FILE_NAME_FIELD_VAR, new TypeFetcher(GraphQLString, new FieldDataFetcher()));
@@ -139,7 +131,7 @@ public enum CustomFieldType {
                 new TypeFetcher(list(CustomFieldType.KEY_VALUE.getType()), new KeyValueFieldDataFetcher()));
         fileAssetTypeFields.put(FILEASSET_SHOW_ON_MENU_FIELD_VAR, new TypeFetcher(list(GraphQLString), new MultiValueFieldDataFetcher()));
         fileAssetTypeFields.put(FILEASSET_SORT_ORDER_FIELD_VAR, new TypeFetcher(GraphQLInt, new FieldDataFetcher()));
-        customFieldTypes.put("FILEASSET", TypeUtil.createObjectType(DOT_FILEASSET, fileAssetTypeFields));
+        customFieldTypes.put("FILEASSET", TypeUtil.createObjectType(FILEASSET.getTypeName(), fileAssetTypeFields));
 
         final Map<String, TypeFetcher> siteTypeFields = new HashMap<>(ContentFields.getContentFields());
         siteTypeFields.remove(HOST_KEY); // remove myself
@@ -158,7 +150,7 @@ public enum CustomFieldType {
         siteTypeFields.put("keywords", new TypeFetcher(GraphQLString));
         siteTypeFields.put("description", new TypeFetcher(GraphQLString));
         siteTypeFields.put("embeddedDashboard", new TypeFetcher(GraphQLString));
-        customFieldTypes.put("SITE", TypeUtil.createObjectType(DOT_SITE, siteTypeFields));
+        customFieldTypes.put("SITE", TypeUtil.createObjectType(SITE.getTypeName(), siteTypeFields));
     }
 
     public GraphQLObjectType getType() {
