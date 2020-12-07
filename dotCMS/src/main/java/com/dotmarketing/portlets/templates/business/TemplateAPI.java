@@ -217,10 +217,10 @@ public interface TemplateAPI {
 			throws DotDataException, DotSecurityException;
 
 	/**
-	 * Deletes the template by inode
+	 * Deletes the template version by inode
 	 * @param inode String
 	 */
-	void deleteByInode(String inode);
+	void deleteVersionByInode(String inode);
 
 	/**
 	 * Delete the specified template

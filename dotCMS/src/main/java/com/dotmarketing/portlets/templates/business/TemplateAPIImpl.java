@@ -476,7 +476,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 	@Override
 	@WrapInTransaction
-	public void deleteByInode(final String inode) {
+	public void deleteVersionByInode(final String inode) {
 
 		Logger.debug(this, ()-> "Deleting template inode: " + inode);
 		Try.run(()->FactoryLocator.getTemplateFactory().deleteTemplateByInode(inode)).onFailure(e -> new RuntimeException(e));
@@ -787,7 +787,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 			throws DotDataException, DotSecurityException {
 		final List<Template> templateAllVersions = templateFactory.findAllVersions(identifier,bringOldVersions);
 		if(!templateAllVersions.isEmpty() && !permissionAPI.doesUserHavePermission(templateAllVersions.get(0), PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
-			throw new DotSecurityException("User cannot read Contentlet So Unable to View Versions");
+			throw new DotSecurityException("User does not have READ permissions over the Template, so unable to view Versions");
 		}
 		return templateAllVersions;
 	}
