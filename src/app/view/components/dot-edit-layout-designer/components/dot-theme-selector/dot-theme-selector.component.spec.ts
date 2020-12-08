@@ -1,4 +1,4 @@
-import { of as observableOf } from 'rxjs';
+import { of } from 'rxjs';
 import { ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
 import { DotThemeSelectorComponent } from './dot-theme-selector.component';
 import { DebugElement } from '@angular/core';
@@ -64,9 +64,40 @@ describe('DotThemeSelectorComponent', () => {
         paginatorService = de.injector.get(PaginatorService);
     });
 
+    afterEach(() => {
+        component.visible = false;
+        fixture.detectChanges();
+    });
+
     describe('Dialog', () => {
         beforeEach(() => {
             fixture.detectChanges();
+        });
+
+        describe('header', () => {
+            it('should have site-selector', () => {
+                const siteSelector = de.query(
+                    By.css('[data-testId="header"] [data-testId="siteSelector"]')
+                );
+                expect(siteSelector).not.toBeNull();
+            });
+
+            it('should have dot-icon', () => {
+                const icon = de.query(
+                    By.css(
+                        '[data-testId="header"] .dot-theme-search-box [data-testId="searchIcon"]'
+                    )
+                );
+                expect(icon.attributes.name).toBe('search');
+            });
+
+            it('should have input', () => {
+                const input = de.query(
+                    By.css('[data-testId="header"]  [data-testId="searchInput"]')
+                );
+                expect(input.attributes.pInputText).toBeDefined();
+                expect(input.attributes.placeholder).toBe('Search');
+            });
         });
 
         it('should be visible on init', () => {
@@ -100,19 +131,19 @@ describe('DotThemeSelectorComponent', () => {
         });
 
         it('should set the current theme variable based on the Input value', () => {
-            const value = Object.assign({}, mockDotThemes[0]);
+            const value = { ...mockDotThemes[0] };
             component.value = value;
             fixture.detectChanges();
             expect(component.current).toBe(value);
         });
 
         it('should call pagination service with offset of 0 ', () => {
-            spyOn(component, 'paginate').and.callThrough();
-            spyOn(paginatorService, 'getWithOffset');
+            spyOn(component.cd, 'detectChanges').and.callThrough();
+            spyOn(paginatorService, 'getWithOffset').and.returnValue(of([...mockDotThemes]));
             fixture.detectChanges();
 
-            expect(component.paginate).toHaveBeenCalledTimes(1);
             expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
+            expect(component.cd.detectChanges).toHaveBeenCalledTimes(1);
         });
 
         it('should disable the apply button', () => {
@@ -121,7 +152,7 @@ describe('DotThemeSelectorComponent', () => {
         });
 
         it('should show theme image when available', () => {
-            spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(mockDotThemes));
+            spyOn(paginatorService, 'getWithOffset').and.returnValue(of(mockDotThemes));
             component.siteChange(mockSites[0]);
             fixture.detectChanges();
             const themeImage: DebugElement = fixture.debugElement.query(
@@ -134,7 +165,7 @@ describe('DotThemeSelectorComponent', () => {
 
     describe('User interaction', () => {
         beforeEach(() => {
-            spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(mockDotThemes));
+            spyOn(paginatorService, 'getWithOffset').and.returnValue(of(mockDotThemes));
         });
 
         it('should set pagination, call endpoint and clear search field on site change ', () => {

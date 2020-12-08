@@ -5,11 +5,13 @@ import {
     EventEmitter,
     Input,
     ViewChild,
-    ElementRef
+    ElementRef,
+    ChangeDetectorRef,
+    OnDestroy
 } from '@angular/core';
 
-import { fromEvent as observableFromEvent, Observable } from 'rxjs';
-import { debounceTime } from 'rxjs/operators';
+import { fromEvent as observableFromEvent, Subject } from 'rxjs';
+import { debounceTime, take, takeUntil } from 'rxjs/operators';
 
 import { Site, SiteService } from 'dotcms-js';
 import { DataView } from 'primeng/dataview';
@@ -31,8 +33,8 @@ import { DotTheme } from '@models/dot-edit-layout-designer';
     templateUrl: './dot-theme-selector.component.html',
     styleUrls: ['./dot-theme-selector.component.scss']
 })
-export class DotThemeSelectorComponent implements OnInit {
-    themes: Observable<DotTheme[]>;
+export class DotThemeSelectorComponent implements OnInit, OnDestroy {
+    themes: DotTheme[] = [];
 
     @Input()
     value: DotTheme;
@@ -53,10 +55,13 @@ export class DotThemeSelectorComponent implements OnInit {
     visible = true;
     dialogActions: DotDialogActions;
 
+    private destroy$: Subject<boolean> = new Subject<boolean>();
+
     constructor(
         private dotMessageService: DotMessageService,
         public paginatorService: PaginatorService,
-        private siteService: SiteService
+        private siteService: SiteService,
+        public cd: ChangeDetectorRef
     ) {}
 
     ngOnInit() {
@@ -78,10 +83,15 @@ export class DotThemeSelectorComponent implements OnInit {
         this.current = this.value;
 
         observableFromEvent(this.searchInput.nativeElement, 'keyup')
-            .pipe(debounceTime(500))
+            .pipe(debounceTime(500), takeUntil(this.destroy$))
             .subscribe((keyboardEvent: Event) => {
                 this.filterThemes(keyboardEvent.target['value']);
             });
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next(true);
+        this.destroy$.complete();
     }
 
     /**
@@ -91,7 +101,13 @@ export class DotThemeSelectorComponent implements OnInit {
      * @memberof DotThemeSelectorComponent
      */
     paginate($event: LazyLoadEvent): void {
-        this.themes = this.paginatorService.getWithOffset($event.first);
+        this.paginatorService
+            .getWithOffset($event.first)
+            .pipe(take(1))
+            .subscribe((themes: DotTheme[]) => {
+                this.themes = themes;
+                this.cd.detectChanges();
+            });
         this.dataView.first = $event.first;
     }
 

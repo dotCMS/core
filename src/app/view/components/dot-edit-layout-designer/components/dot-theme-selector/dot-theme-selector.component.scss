@@ -51,14 +51,17 @@ $theme-item-dimension: 240px;
     }
 }
 
+.dot-theme__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
 .dot-theme-container {
     margin-top: $spacing-1;
 }
 
 .dot-theme-search-box {
-    display: inline-block;
-    width: 200px;
-    margin-left: $spacing-4;
     position: relative;
 
     input {
@@ -69,7 +72,7 @@ $theme-item-dimension: 240px;
         position: absolute;
         top: 50%;
         transform: translateY(-50%);
-        right: 0px;
+        right: $spacing-1;
     }
 }
 

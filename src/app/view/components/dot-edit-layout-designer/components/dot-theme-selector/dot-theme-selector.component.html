@@ -7,25 +7,33 @@
     "
     [header]="'editpage.layout.theme.header' | dm"
 >
-    <dot-site-selector
-        #siteSelector
-        (change)="siteChange($event)"
-        [archive]="false"
-    ></dot-site-selector>
-    <div class="dot-theme-search-box">
-        <dot-icon class="searchable-dropdown__search-icon" name="search"></dot-icon>
-        <input
-            #searchInput
-            pInputText
-            placeholder="{{ 'editpage.layout.theme.search' | dm }}"
-            type="text"
-            class="searchable-dropdown__search-field"
-        />
+    <div class="dot-theme__header" data-testId="header">
+        <dot-site-selector
+            data-testId="siteSelector"
+            #siteSelector
+            (change)="siteChange($event)"
+            [archive]="false"
+        ></dot-site-selector>
+        <div class="dot-theme-search-box">
+            <dot-icon
+                class="searchable-dropdown__search-icon"
+                name="search"
+                data-testId="searchIcon"
+            ></dot-icon>
+            <input
+                data-testId="searchInput"
+                #searchInput
+                pInputText
+                placeholder="{{ 'editpage.layout.theme.search' | dm }}"
+                type="text"
+                class="searchable-dropdown__search-field"
+            />
+        </div>
     </div>
     <div class="dot-theme-container">
         <p-dataView
             #dataView
-            [value]="themes | async"
+            [value]="themes"
             [paginator]="paginatorService.totalRecords > paginatorService.paginationPerPage"
             [rows]="paginatorService?.paginationPerPage"
             [totalRecords]="paginatorService?.totalRecords"
