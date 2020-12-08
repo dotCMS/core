@@ -3,8 +3,10 @@ package com.dotmarketing.portlets.templates.business;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_EDIT;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.rendering.velocity.services.TemplateLoader;
@@ -12,6 +14,7 @@ import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotmarketing.beans.*;
 import com.dotmarketing.business.*;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotDataValidationException;
@@ -24,14 +27,17 @@ import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
+import com.dotmarketing.portlets.containers.business.ContainerAPIImpl;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.design.bean.*;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -39,8 +45,13 @@ import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import io.vavr.control.Try;
+
+import javax.servlet.http.HttpServletRequest;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 
@@ -636,11 +647,78 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		}
 	}
 
+
 	public Template findWorkingTemplate(final String id, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+		if (FileAssetTemplateUtil.getInstance().isFolderAssetTemplateId(id)) {
+
+			return this.findTemplateByPath(id, user, respectFrontendRoles, false);
+		}
+
+		final Identifier identifier = this.identifierAPI.find(id);
+		if (null != identifier && UtilMethods.isSet(identifier.getPath()) &&
+				FileAssetTemplateUtil.getInstance().isFolderAssetTemplateId(identifier.getPath())) {
+
+			return this.findTemplateByPath(identifier.getPath(), user, respectFrontendRoles, false);
+		}
+
 		final VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(id);
 		return (!UtilMethods.isSet(info)) ? null : find(info.getWorkingInode(), user, respectFrontendRoles);
 
 	}
+
+	private Template findTemplateByPath (final String path, final User user, final boolean respectFrontendRoles, final boolean showLive) throws DotDataException, DotSecurityException {
+
+		final FileAssetTemplateUtil fileAssetTemplateUtil =
+								FileAssetTemplateUtil.getInstance();
+		final Set<Host> hostSet = new LinkedHashSet<>();
+		String relativePath 	= path;
+
+		if (fileAssetTemplateUtil.isFullPath(path)) {
+
+			final String hostName     = fileAssetTemplateUtil.getHostName(path);
+			final Host host           = this.hostAPI.findByName(hostName, user, respectFrontendRoles);
+
+			if (null != host) {
+
+				relativePath = fileAssetTemplateUtil.getPathFromFullPath(hostName, path);
+				hostSet.add(host);
+			}
+		}
+
+		try {
+
+			final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+			if (request != null) {
+				final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHost(request, user);
+				if (null != currentHost) {
+					hostSet.add(currentHost);
+				}
+			}
+		} catch (DotSecurityException e) {
+
+		}
+
+		hostSet.add(APILocator.getHostAPI().findDefaultHost(user, respectFrontendRoles));
+
+		for (final Host host : hostSet) {
+			try {
+
+				final Folder folder     = APILocator.getFolderAPI().findFolderByPath(relativePath, host, user, respectFrontendRoles);
+				final Template template = this.templateFactory.getTemplateByFolder(host, folder, user, showLive);
+
+				if (template != null) {
+					return  template;
+				}
+			} catch (NotFoundInDbException | DotSecurityException e) {
+				continue;
+			}
+		}
+
+		throw new NotFoundInDbException(String.format("File Template %s not found", relativePath));
+	}
+
+
 
 	@CloseDBIfOpened
 	public List<Template> findTemplates(final User user, final boolean includeArchived,
@@ -664,6 +742,19 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	}
 
 	public Template findLiveTemplate(final String id, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+		if (FileAssetTemplateUtil.getInstance().isFolderAssetTemplateId(id)) {
+
+			return this.findTemplateByPath(id, user, respectFrontendRoles, true);
+		}
+
+		final Identifier identifier = this.identifierAPI.find(id);
+		if (null != identifier && UtilMethods.isSet(identifier.getPath()) &&
+				FileAssetTemplateUtil.getInstance().isFolderAssetTemplateId(identifier.getPath())) {
+
+			return this.findTemplateByPath(identifier.getPath(), user, respectFrontendRoles, true);
+		}
+
 		VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(id);
 		return (!UtilMethods.isSet(info)) ? null : find(info.getLiveInode(), user, respectFrontendRoles);
 	}

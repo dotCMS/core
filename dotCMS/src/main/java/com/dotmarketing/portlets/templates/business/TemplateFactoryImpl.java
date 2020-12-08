@@ -1,7 +1,10 @@
 package com.dotmarketing.portlets.templates.business;
 
+import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.rendering.velocity.services.TemplateLoader;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -14,11 +17,16 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.design.bean.*;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.*;
 import com.google.common.io.LineReader;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import org.apache.commons.beanutils.BeanUtils;
 
 import java.io.IOException;
@@ -27,6 +35,9 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static com.dotcms.util.FunctionUtils.ifOrElse;
+import static com.dotmarketing.util.StringUtils.builder;
 
 public class TemplateFactoryImpl implements TemplateFactory {
 	private static TemplateCache templateCache = CacheLocator.getTemplateCache();
@@ -52,6 +63,87 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 			if(template != null && template.getInode() != null) {
 				templateCache.add(inode, template);
+			}
+		}
+
+		return template;
+	}
+
+	/*
+	 * Determine if the template is a file based.
+	 */
+	private boolean isValidTemplatePath(final Folder folder) {
+		return null != folder && UtilMethods.isSet(folder.getPath()) && folder.getPath().contains(Constants.TEMPLATE_FOLDER_PATH);
+	}
+
+	/**
+	 * If a folder under application/templates/ has a vtl with the name: template.vtl, means it is a template file based.
+	 * @param host    {@link Host}
+	 * @param folder  folder
+	 * @return boolean
+	 */
+	private Identifier getTemplate(final Host host, final Folder folder) {
+		try {
+
+			final Identifier identifier = APILocator.getIdentifierAPI().find(host, builder(folder.getPath(),
+					Constants.TEMPLATE_META_INFO_FILE_NAME).toString());
+			return identifier!=null  && UtilMethods.isSet(identifier.getId()) ? identifier : null;
+		} catch (Exception  e) {
+			Logger.warnAndDebug(this.getClass(),e);
+			return null;
+		}
+	}
+
+	/*
+	 * Finds the template on the file system, base on a folder
+	 * showLive in true means get just template published.
+	 */
+	private List<FileAsset> findTemplateAssets(final Folder folder, final User user, final boolean showLive) throws DotDataException, DotSecurityException {
+		return APILocator.getFileAssetAPI().findFileAssetsByFolder(folder, null, showLive, user, false);
+	}
+
+	@Override
+	public Template getTemplateByFolder(final Host host, final Folder folder, final User user, final boolean showLive) throws DotDataException, DotSecurityException {
+
+		if (!this.isValidTemplatePath(folder)) {
+
+			throw new NotFoundInDbException("On getting the template by folder, the folder: " + (folder != null ? folder.getPath() : "Unknown" ) +
+					" is not valid, it must be under: " + Constants.TEMPLATE_FOLDER_PATH + " and must have a child file asset called: " +
+					Constants.TEMPLATE_META_INFO_FILE_NAME);
+		}
+
+		final Identifier identifier = getTemplate(host, folder);
+		if(identifier==null) {
+
+			throw new NotFoundInDbException("no template found under: " + folder.getPath() );
+		}
+
+		final Optional<ContentletVersionInfo> contentletVersionInfo = APILocator.getVersionableAPI().
+				getContentletVersionInfo(identifier.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId());
+
+		if(!contentletVersionInfo.isPresent()) {
+			throw new DotDataException("Can't find ContentletVersionInfo. Identifier:"
+					+ identifier.getId() + ". Lang:"
+					+ APILocator.getLanguageAPI().getDefaultLanguage().getId());
+		}
+
+		final String inode = showLive && UtilMethods.isSet(contentletVersionInfo.get().getLiveInode()) ?
+				contentletVersionInfo.get().getLiveInode() : contentletVersionInfo.get().getWorkingInode();
+		Template template = templateCache.get(inode);
+
+		if(template==null || !InodeUtils.isSet(template.getInode())) {
+
+			synchronized (identifier) {
+
+				if(template==null || !InodeUtils.isSet(template.getInode())) {
+
+					template = FileAssetTemplateUtil.getInstance().fromAssets (host, folder,
+							this.findTemplateAssets(folder, user, showLive), showLive);
+					if(template != null && InodeUtils.isSet(template.getInode())) {
+
+						templateCache.add(inode, template);
+					}
+				}
 			}
 		}
 
@@ -183,8 +275,8 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			int offset, int limit, String orderBy) throws DotSecurityException,
 			DotDataException {
 
-		PaginatedArrayList<Template> assets = new PaginatedArrayList<Template>();
-		List<Permissionable> toReturn = new ArrayList<Permissionable>();
+		final PaginatedArrayList<Template> assets = new PaginatedArrayList<>();
+		final List<Permissionable> toReturn       = new ArrayList<>();
 		int internalLimit = 500;
 		int internalOffset = 0;
 		boolean done = false;
@@ -256,20 +348,28 @@ public class TemplateFactoryImpl implements TemplateFactory {
 				dc.addParam(filter);
 			}
 
-			while(!done) {
-				dc.setStartRow(internalOffset);
-				dc.setMaxRows(internalLimit);
+			// adding the template from the site browser
+			toReturn.addAll(this.findFolderAssetTemplate(user, hostId, orderBy,
+					includeArchived, params != null? params.values(): Collections.emptyList()));
 
-				resultList = TransformerLocator.createTemplateTransformer(dc.loadObjectResults()).asList();
+			if(countLimit > 0 && toReturn.size() < countLimit + offset) {
 
-				PermissionAPI permAPI = APILocator.getPermissionAPI();
-				toReturn.addAll(permAPI.filterCollection(resultList, PermissionAPI.PERMISSION_READ, false, user));
-				if(countLimit > 0 && toReturn.size() >= countLimit + offset)
-					done = true;
-				else if(resultList.size() < internalLimit)
-					done = true;
+				while (!done) {
+					dc.setStartRow(internalOffset);
+					dc.setMaxRows(internalLimit);
 
-				internalOffset += internalLimit;
+					resultList = TransformerLocator.createTemplateTransformer(dc.loadObjectResults()).asList();
+
+					toReturn.addAll(APILocator.getPermissionAPI().filterCollection(
+							resultList, PermissionAPI.PERMISSION_READ, false, user));
+					if (countLimit > 0 && toReturn.size() >= countLimit + offset) {
+						done = true;
+					} else if (resultList.size() < internalLimit) {
+						done = true;
+					}
+
+					internalOffset += internalLimit;
+				}
 			}
 
 			if(offset > toReturn.size()) {
@@ -306,11 +406,173 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		}
 
 		return assets;
-
-
 	}
 
+	private List<Contentlet> filterContainersAssetsByLanguage(final List<Contentlet> contentTemplates, final long defaultLanguageId) {
 
+		final List<Contentlet> uniqueContentTemplates   				 = new ArrayList<>();
+		final Map<String, List<Contentlet>> contentletsGroupByIdentifier = CollectionsUtils.groupByKey(contentTemplates, Contentlet::getIdentifier);
+
+		for (final Map.Entry<String, List<Contentlet>> entry : contentletsGroupByIdentifier.entrySet()) {
+
+			if (entry.getValue().size() <= 1) {
+
+				uniqueContentTemplates.addAll(entry.getValue());
+			} else {
+
+				ifOrElse(entry.getValue().stream()
+								.filter(contentlet -> contentlet.getLanguageId() == defaultLanguageId).findFirst(), // if present the one with the default lang take it
+						uniqueContentTemplates::add,
+						()->uniqueContentTemplates.add(entry.getValue().get(0))); // otherwise take any one, such as the first one
+			}
+		}
+
+		return uniqueContentTemplates;
+	}
+
+	/**
+	 * Finds the container.vtl on a specific host
+	 * returns even working versions but not archived
+	 * the search is based on the ES Index.
+	 * If exists multiple language version, will consider only the versions based on the default language, so if only exists a container.vtl with a non-default language it will be skipped.
+	 *
+	 * @param host {@link Host}
+	 * @param user {@link User}
+	 * @param includeArchived {@link Boolean} if wants to include archive containers
+	 * @return List of Folder
+	 */
+	private List<Folder> findTemplatesAssetsByHost(final Host host, final User user, final boolean includeArchived) {
+
+		List<Contentlet>           templates = null;
+		final List<Folder>         folders   = new ArrayList<>();
+
+		try {
+
+			final StringBuilder queryBuilder = builder("+structureType:", BaseContentType.FILEASSET.getType(),
+					" +path:", Constants.TEMPLATE_FOLDER_PATH, "/*",
+					" +path:*/template.vtl",
+					" +working:true",
+					includeArchived? StringPool.BLANK : " +deleted:false");
+
+			if (null != host) {
+
+				queryBuilder.append(" +conhost:" + host.getIdentifier());
+			}
+
+			final String query = queryBuilder.toString();
+
+			templates =
+					this.filterContainersAssetsByLanguage (APILocator.getPermissionAPI().filterCollection(
+							APILocator.getContentletAPI().search(query,-1, 0, null , user, false),
+							PermissionAPI.PERMISSION_READ, false, user),
+							APILocator.getLanguageAPI().getDefaultLanguage().getId());
+
+
+
+			for(final Contentlet container : templates) {
+
+				folders.add(APILocator.getFolderAPI().find(container.getFolder(), user, false));
+			}
+		} catch (Exception e) {
+
+			Logger.error(this.getClass(), e.getMessage(), e);
+			throw new DotRuntimeException(e.getMessage(), e);
+		}
+
+		return folders;
+	}
+
+	/**
+	 * Gets the folder templates based on the host and sub folders.
+	 * @param host {@link Host}
+	 * @param user {@link User}
+	 * @param subFolders {@link List}
+	 * @param includeHostOnPath {@link Boolean} true if you want to  include the host on the template path
+	 * @return List of Templates
+	 * @throws DotDataException
+	 */
+	private List<Template> getFolderTemplates(final Host host, final User user,
+											   final List<Folder> subFolders, final boolean includeHostOnPath) throws DotDataException {
+
+		final List<Template> templates = new ArrayList<>();
+		for (final Folder subFolder : subFolders) {
+
+			try {
+
+				final User      userFinal = null != user? user: APILocator.systemUser();
+				final Template template = this.getTemplateByFolder(null != host? host:APILocator.getHostAPI().find(subFolder.getHostId(), user, includeHostOnPath),
+						subFolder, userFinal, false);
+				templates.add(template);
+			} catch (DotSecurityException e) {
+
+				Logger.debug(this, () -> "Does not have permission to read the folder container: " + subFolder.getPath());
+			} catch (NotFoundInDbException e) {
+
+				Logger.debug(this, () -> "The folder: " + subFolder.getPath() + ", is not a container");
+			}
+		}
+
+		return templates;
+	}
+
+	/**
+	 * Finds all file base template for an user. Also order by orderByParam values (title asc, title desc, modDate asc, modDate desc)
+	 * @param user {@link User} to check the permissions
+	 * @param hostId {@link String} host id to find the containers
+	 * @param orderByParam {@link String} order by parameter
+	 * @param includeArchived {@link Boolean} if wants to include archive containers
+	 **/
+	private Collection<? extends Permissionable> findFolderAssetTemplate(final User user, final String hostId,
+																		 final String orderByParam, final boolean includeArchived,
+																		 final Collection<Object> filterByNameCollection) {
+
+		try {
+
+			final Host host     		   = APILocator.getHostAPI().find(hostId, user, false);
+			final List<Folder> subFolders  = this.findTemplatesAssetsByHost(host, user, includeArchived);
+			List<Template> templates       = this.getFolderTemplates(host, user, subFolders, false);
+
+			if (UtilMethods.isSet(filterByNameCollection)) {
+
+				templates = templates.stream().filter(container -> {
+
+					for (final Object name : filterByNameCollection) {
+
+						if (container.getName().toLowerCase().contains(name.toString())) {
+							return true;
+						}
+					}
+					return false;
+				}).collect(Collectors.toList());
+			}
+
+			if (UtilMethods.isSet(orderByParam)) {
+				switch (orderByParam.toLowerCase()) {
+					case "title asc":
+						templates.sort(Comparator.comparing(Template::getTitle));
+						break;
+
+					case "title desc":
+						templates.sort(Comparator.comparing(Template::getTitle).reversed());
+						break;
+
+					case "moddate asc":
+						templates.sort(Comparator.comparing(Template::getModDate));
+						break;
+
+					case "moddate desc":
+						templates.sort(Comparator.comparing(Template::getModDate).reversed());
+						break;
+				}
+			}
+
+			return templates;
+		} catch (Exception e) {
+
+			Logger.error(this, e.getMessage(), e);
+			return Collections.emptyList();
+		}
+	}
 
 	@Override
 	public List<Container> getContainersInTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {

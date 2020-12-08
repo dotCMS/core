@@ -214,14 +214,14 @@ public class TemplateResource {
      * @return Response
      */
     @GET
-    @Path("/{templateId}/live")
+    @Path("/live")
     @JSONP
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response getLiveById(@Context final HttpServletRequest  httpRequest,
                                @Context final HttpServletResponse httpResponse,
-                               @PathParam("templateId") final String templateId) throws DotSecurityException, DotDataException {
+                               @QueryParam("templateId") final String templateId) throws DotSecurityException, DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
@@ -245,14 +245,14 @@ public class TemplateResource {
      * @return Response
      */
     @GET
-    @Path("/{templateId}/working")
+    @Path("/working")
     @JSONP
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response getWorkingById(@Context final HttpServletRequest  httpRequest,
                                          @Context final HttpServletResponse httpResponse,
-                                         @PathParam("templateId") final String templateId) throws DotSecurityException, DotDataException {
+                                         @QueryParam("templateId") final String templateId) throws DotSecurityException, DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();

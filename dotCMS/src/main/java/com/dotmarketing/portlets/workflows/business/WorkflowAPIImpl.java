@@ -1503,6 +1503,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				PermissionAPI.PERMISSION_USE, RESPECT_FRONTEND_ROLES, user);
 	} // findActions.
 
+	public List<WorkflowAction> findActions(final WorkflowScheme scheme, final User user, final Predicate<WorkflowAction> actionFilter)
+			throws DotDataException,
+			DotSecurityException {
+
+		final  List<WorkflowAction> unfilteredActions = this.findActions(scheme, user);
+		return unfilteredActions.stream().filter(actionFilter).collect(Collectors.toList());
+	} // findActions.
+
 	@Override
     @CloseDBIfOpened
     public List<WorkflowAction> findActions(final List<WorkflowStep> steps, final User user) throws DotDataException,

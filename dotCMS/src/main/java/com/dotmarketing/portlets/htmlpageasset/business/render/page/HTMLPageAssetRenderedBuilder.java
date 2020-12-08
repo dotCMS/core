@@ -1,8 +1,10 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 
+import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageUtil;
 import io.vavr.control.Try;
@@ -210,8 +212,12 @@ public class HTMLPageAssetRenderedBuilder {
             final User systemUser = APILocator.getUserAPI().getSystemUser();
 
             return mode.showLive ?
+                    APILocator.getTemplateAPI().findLiveTemplate(htmlPageAsset.getTemplateId(), systemUser, mode.respectAnonPerms):
+                    APILocator.getTemplateAPI().findWorkingTemplate(htmlPageAsset.getTemplateId(), systemUser, mode.respectAnonPerms);
+
+            /*return mode.showLive ?
                     (Template) this.versionableAPI.findLiveVersion(htmlPageAsset.getTemplateId(), systemUser, mode.respectAnonPerms) :
-                    (Template) this.versionableAPI.findWorkingVersion(htmlPageAsset.getTemplateId(), systemUser, mode.respectAnonPerms);
+                    (Template) this.versionableAPI.findWorkingVersion(htmlPageAsset.getTemplateId(), systemUser, mode.respectAnonPerms);*/
         } catch (DotSecurityException e) {
             return null;
         }

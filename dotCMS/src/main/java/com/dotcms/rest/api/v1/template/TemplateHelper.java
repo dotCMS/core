@@ -10,11 +10,13 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.ContainerView;
+import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtil;
 import com.dotmarketing.portlets.templates.design.bean.Body;
 import com.dotmarketing.portlets.templates.design.bean.Sidebar;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutColumn;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
+import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -64,7 +66,8 @@ public class TemplateHelper {
                 .name(template.getName())
                 .friendlyName(template.getFriendlyName())
                 .title(template.getTitle())
-                .identifier(template.getIdentifier())
+                .identifier(FileAssetTemplateUtil.getInstance().isFileAssetTemplate(template)?
+                        FileAssetTemplateUtil.getInstance().getFullPath(FileAssetTemplate.class.cast(template)):template.getIdentifier())
                 .image(template.getImage())
                 .selectedimage(template.getSelectedimage())
                 .inode(template.getInode())
@@ -83,7 +86,7 @@ public class TemplateHelper {
                 .deleted(Try.of(()->template.isDeleted()).getOrElse(false))
                 .live(Try.of(()->template.isLive()).getOrElse(false))
                 .locked(Try.of(()->template.isLocked()).getOrElse(false))
-                .lockedBy(Try.of(()->APILocator.getVersionableAPI().getLockedBy(template).orElse(null)).get())
+                .lockedBy(Try.of(()->APILocator.getVersionableAPI().getLockedBy(template).orElse(null)).getOrNull())
                 .working(Try.of(()->template.isWorking()).getOrElse(false))
 
                 .canRead(Try.of(()-> APILocator.getPermissionAPI().doesUserHavePermission(template, PermissionAPI.PERMISSION_READ, user)).getOrElse(false))

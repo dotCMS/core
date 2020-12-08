@@ -1,11 +1,13 @@
 package com.dotmarketing.portlets.templates.business;
 
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
@@ -44,6 +46,19 @@ public interface TemplateFactory {
 	List<Template> findTemplates(User user, boolean includeArchived, Map<String,Object> params, String hostId, String inode, String identifier, String parent, int offset, int limit, String orderBy) throws DotSecurityException, DotDataException;
 	
 	Template find(String inode) throws DotStateException, DotDataException;
+
+	/**
+	 * Get a template based on a folder (non-db)
+	 * A Folder could be consider as a template if:
+	 * 1) is inside the /application/templates
+	 * 2) has a file asset called template.vtl
+	 * @param host {@link Host}
+	 * @param folder {@link Folder}
+	 * @param user   {@link User}
+	 * @param showLive {@link Boolean}
+	 * @return Template
+	 */
+	Template getTemplateByFolder(final Host host, final Folder folder, final User user, final boolean showLive) throws DotDataException, DotSecurityException;
 	
 	List<Container> getContainersInTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 

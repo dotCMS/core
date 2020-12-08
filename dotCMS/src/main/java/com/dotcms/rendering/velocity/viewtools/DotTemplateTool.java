@@ -1,6 +1,7 @@
 package com.dotcms.rendering.velocity.viewtools;
 
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.Theme;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -241,6 +242,18 @@ public class DotTemplateTool implements ViewTool {
     public static Map<String, Object> theme ( final String themeFolderInode, final String hostId )
             throws DotDataException, DotSecurityException {
 
+        if (Theme.SYSTEM_THEME.equalsIgnoreCase(themeFolderInode)) {
+
+            final Map<String, Object> themeMap = new HashMap<>();
+            final Theme systemTheme = APILocator.getThemeAPI().systemTheme();
+
+            themeMap.put( "path", systemTheme.getPath() );
+            themeMap.put( "templatePath", systemTheme.getPath() );
+            themeMap.put( "htmlHead", false );
+            themeMap.put( "title", systemTheme.getName());
+
+            return themeMap;
+        }
         //Get the theme folder
         Folder themeFolder = APILocator.getFolderAPI().find( themeFolderInode, APILocator.getUserAPI().getSystemUser(), false );
         return setThemeData( themeFolder, hostId );
