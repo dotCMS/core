@@ -55,7 +55,6 @@ import com.dotcms.rest.api.v1.temp.TempFileResource;
 import com.dotcms.rest.api.v1.template.TemplateResource;
 import com.dotcms.rest.api.v1.theme.ThemeResource;
 import com.dotcms.rest.api.v1.user.UserResource;
-import com.dotcms.rest.api.v1.versionable.VersionableResource;
 import com.dotcms.rest.api.v1.vtl.VTLResource;
 import com.dotcms.rest.personas.PersonasResourcePortlet;
 import com.dotcms.rest.servlet.ReloadableServletContainer;
@@ -163,7 +162,6 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 			.add(LoggerResource.class)
 			.add(TemplateResource.class)
 			.add(MaintenanceResource.class)
-			.add(VersionableResource.class)
 			.add(PublishQueueResource.class)
 			.build();
 
