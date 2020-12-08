@@ -18,13 +18,17 @@ import { CommonModule } from '@angular/common';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 const messageServiceMock = new MockDotMessageService({
-    Successful: 'Successful',
-    Fails: 'Fails'
+    'message.template.archived': 'archived',
+    'message.template.failed': 'failed',
+    'message.template.success': 'has been successfully',
+    'message.template.singular': 'template',
+    'message.template.plural': 'templates'
 });
 
 const mockBulkResponseFail: DotActionBulkResult = {
     skippedCount: 0,
     successCount: 1,
+    action: 'archived',
     fails: [
         {
             errorMessage: 'error 1',
@@ -93,8 +97,8 @@ describe('DotBulkInformationComponent', () => {
         const success: HTMLElement = document.querySelector('[data-testId="successful"]');
         const fail: HTMLElement = document.querySelector('[data-testId="fails"]');
 
-        expect(success.innerText).toEqual('Successful: 1');
-        expect(fail.innerText).toEqual('Fails: 2');
+        expect(success.innerText).toEqual('1 template has been successfully archived');
+        expect(fail.innerText).toEqual('2 failed');
     });
 
     it('should list error messages', () => {

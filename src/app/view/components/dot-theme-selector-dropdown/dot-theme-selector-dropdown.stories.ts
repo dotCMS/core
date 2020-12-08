@@ -214,7 +214,6 @@ const ThemeSelectorTemplate = `
 `;
 
 export const Basic = (props) => {
-    console.log(props);
     return {
         template: ThemeSelectorTemplate,
         props

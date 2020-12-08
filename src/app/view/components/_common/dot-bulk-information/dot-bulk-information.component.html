@@ -1,6 +1,21 @@
-<p data-testId="successful">{{ 'Successful' | dm }}: {{ data.successCount }}</p>
-<p data-testId="fails">{{ 'Fails' | dm }}: {{ data.fails?.length }}</p>
-<div class="bulk-information__fail-item" *ngFor="let item of data.fails">
-    <h5>{{ item.description }}</h5>
-    <p>{{ item.errorMessage }}</p>
+<p data-testId="successful" class="bulk-information__success-message">
+    {{ data.successCount }}
+    {{
+        data.successCount > 1
+            ? ('message.template.plural' | dm)
+            : ('message.template.singular' | dm)
+    }}
+    {{ 'message.template.success' | dm }}
+    {{ 'message.template.archived' | dm }}
+</p>
+
+<div class="bulk-information__fail-container">
+    <p class="bulk-information__fail-message">
+        <span class="material-icons">error_outline</span>
+        <span data-testId="fails">{{ data.fails?.length }} {{ 'failed' | dm }}</span>
+    </p>
+    <div class="bulk-information__fail-item" *ngFor="let item of data.fails">
+        <h5>{{ item.description }}</h5>
+        <p>{{ item.errorMessage }}</p>
+    </div>
 </div>

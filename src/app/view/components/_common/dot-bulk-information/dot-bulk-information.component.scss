@@ -1,7 +1,47 @@
-h5 {
-    margin: 0;
+@use "variables" as *;
+
+.bulk-information__success-message {
+    color: $gray;
+    font-size: $font-size-large;
+    text-align: center;
+    padding-top: $spacing-3;
+    padding-bottom: $spacing-5;
 }
 
-p {
-    margin-top: 0;
+.bulk-information__fail-container {
+    display: flex;
+    flex-direction: column;
+
+    > .bulk-information__fail-item + * {
+        margin-top: $spacing-3;
+    }
+}
+
+.bulk-information__fail-message {
+    background: hsl(7, 68%, 96%);
+    color: $red;
+    padding: 0.2rem $spacing-3; // 0.2rem hard coded as $spacing-1 is a bit too much
+    border-radius: 1.8rem;
+    display: inline-block;
+    text-align: center;
+    align-self: center;
+
+    > span {
+        vertical-align: middle;
+        margin: 0 0.25rem;
+    }
+}
+
+.bulk-information__fail-item {
+    h5,
+    p {
+        margin: $spacing-0;
+        padding: $spacing-0;
+    }
+    h5 {
+        padding-bottom: $spacing-1;
+        font-size: $font-size-large;
+    }
+    padding: $spacing-3;
+    box-shadow: $md-shadow-1;
 }
