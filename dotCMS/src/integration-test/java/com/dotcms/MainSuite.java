@@ -17,6 +17,7 @@ import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleAPITest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
+import com.dotcms.publisher.util.DependencyManagerTest;
 import com.dotcms.publishing.PublisherFilterImplTest;
 import com.dotcms.publishing.PushPublishFiltersInitializerTest;
 import com.dotcms.publishing.job.SiteSearchJobImplTest;
@@ -67,6 +68,7 @@ import com.dotmarketing.startup.runonce.Task05395RemoveEndpointIdForeignKeyInInt
 import com.dotmarketing.startup.runalways.Task00050LoadAppsSecretsTest;
 import com.dotmarketing.startup.runonce.Task201013AddNewColumnsToIdentifierTableTest;
 import com.dotmarketing.startup.runonce.Task201014UpdateColumnsValuesInIdentifierTableTest;
+import com.dotmarketing.startup.runonce.Task201102UpdateColumnSitelicTableTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
@@ -360,7 +362,9 @@ import org.junit.runners.Suite.SuiteClasses;
         StartupTasksExecutorTest.class,
         Task201013AddNewColumnsToIdentifierTableTest.class,
         Task201014UpdateColumnsValuesInIdentifierTableTest.class,
-        AppsInterpolationTest.class
+        AppsInterpolationTest.class,
+        Task201102UpdateColumnSitelicTableTest.class,
+        DependencyManagerTest.class
 })
 public class MainSuite {
 

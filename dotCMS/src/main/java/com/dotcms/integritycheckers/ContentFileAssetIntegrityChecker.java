@@ -64,10 +64,11 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
                     Structure.STRUCTURE_TYPE_FILEASSET);
 
             // Get data from results table
-            DotConnect dc = new DotConnect();
+            final DotConnect dc = new DotConnect();
 			return (Long) dc.getRecordCount(getIntegrityType().getResultsTableName(), "where endpoint_id = '"+ endpointId+ "'") > 0;
-        } catch (Exception e) {
-            throw new Exception("Error running the File Assets Integrity Check", e);
+        } catch (final Exception e) {
+            throw new Exception(String.format("Error running the File Assets Integrity Check for Endpoint '%s': %s",
+                    endpointId, e.getMessage()), e);
         }
     }
 
@@ -473,7 +474,7 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
             moveInodeFolder(existingContentlet, remoteInode);
         }
 
-        Contentlet newContentlet = new Contentlet();
+        final Contentlet newContentlet = new Contentlet();
         newContentlet.setStructureInode(existingContentlet.getStructureInode());
         APILocator.getContentletAPI().copyProperties(newContentlet, existingContentlet.getMap());
         newContentlet.setIdentifier(newContentletIdentifier);
@@ -484,9 +485,9 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
             try {
                 newContentlet.setBinary(FileAssetAPI.BINARY_FIELD, APILocator.getFileAssetAPI()
                         .fromContentlet(newContentlet).getFileAsset());
-            } catch (IOException e) {
-                throw new DotContentletStateException("Error getting file from the new location.",
-                        e);
+            } catch (final IOException e) {
+                throw new DotContentletStateException(String.format("Error getting file from the new location with ID" +
+                        " '%s': %s", newContentletIdentifier, e.getMessage()), e);
             }
         }
 
@@ -502,22 +503,25 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
      * @param contentletAssetFile
      * @return file object that contains information at the inode
      */
-    private File getInodeFolder(Contentlet contentletAssetFile) {
+    private File getInodeFolder(final Contentlet contentletAssetFile) {
         File inodeFolder = null;
-
+        final String errorMsg = "An error occurred when retrieving the folder Inode for Contentlet with Id '%s': %s";
         try {
-            File fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentletAssetFile)
+            final File fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentletAssetFile)
                     .getFileAsset();
-
+            if (null == fileAsset || !fileAsset.exists()) {
+                Logger.error(this, String.format(errorMsg, contentletAssetFile.getIdentifier(), "Binary file does not" +
+                        " exist"));
+                return inodeFolder;
+            }
             // We are going to copy the inode folder and copy it to the new
             // location. Example:
             // assets/6/6/660be9f9-2503-4e55-b3b4-57220782e717/fileAsset/binaryFile.jpg
-            File fileAssetFolder = fileAsset.getParentFile();
+            final File fileAssetFolder = fileAsset.getParentFile();
             inodeFolder = fileAssetFolder.getParentFile();
-        } catch (DotStateException e) {
-            Logger.error(this, "Problem retrieving inode folder.", e);
+        } catch (final DotStateException e) {
+            Logger.error(this, String.format(errorMsg, contentletAssetFile.getIdentifier(), e.getMessage()), e);
         }
-
         return inodeFolder;
     }
 

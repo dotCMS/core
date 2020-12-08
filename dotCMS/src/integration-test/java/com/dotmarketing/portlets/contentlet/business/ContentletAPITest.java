@@ -4979,11 +4979,17 @@ public class ContentletAPITest extends ContentletBaseTest {
     }
 
     @DataProvider
-    public static Object[] testCasesUniqueTextField() throws Exception{
+    public static Object[] testCasesUniqueTextField() {
         return new Object[]{
                 new testCaseUniqueTextField("diffLang"),//test for same value diff lang
-                new testCaseUniqueTextField("\"A+\" Student"),//test for special chars
-                new testCaseUniqueTextField("CASEINSENSITIVE")//test for case insensitive
+                new testCaseUniqueTextField("A+ Student"),
+                new testCaseUniqueTextField("\"A+” student"),
+                new testCaseUniqueTextField("aaa-bbb-ccc"),
+                new testCaseUniqueTextField("valid - field"),
+                new testCaseUniqueTextField("with \" quotes"),
+                new testCaseUniqueTextField("with special characters + [ ] { } * ( ) : && ! | ^ ~ ?"),
+                new testCaseUniqueTextField("CASEINSENSITIVE"),
+                new testCaseUniqueTextField("with chinese characters 好 心 面")
         };
     }
 

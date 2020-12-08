@@ -1,6 +1,6 @@
 buildscript {
     repositories {
-        maven { url "http://repo.dotcms.com/artifactory/libs-release" }
+        maven { url "https://repo.dotcms.com/artifactory/libs-release" }
         jcenter()
     }
     dependencies {
@@ -40,8 +40,8 @@ apply plugin: 'war'
 
 // In this section you declare where to find the dependencies of your project.
 repositories {
-    maven { url "http://repo.dotcms.com/artifactory/libs-release" }
-    maven { url "http://repo.dotcms.com/artifactory/libs-snapshot-local" }
+    maven { url "https://repo.dotcms.com/artifactory/libs-release" }
+    maven { url "https://repo.dotcms.com/artifactory/libs-snapshot-local" }
 }
 
 dependencies {
