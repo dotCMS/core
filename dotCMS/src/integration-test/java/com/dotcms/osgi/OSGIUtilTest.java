@@ -55,7 +55,7 @@ public class OSGIUtilTest {
      */
     private static void initializeOSGIFramework() {
         try {
-            OSGIUtil.getInstance().initializeFramework(Config.CONTEXT);
+            OSGIUtil.getInstance().initializeFramework();
         } catch (Exception ex) {
             throw new RuntimeException("Unable to initialize OSGI Framework", ex);
         }
@@ -113,7 +113,7 @@ public class OSGIUtilTest {
             restartOSGi();
 
             //Validate we are using the property we just set
-            String deployBasePath = OSGIUtil.getInstance().getBaseDirectory(Config.CONTEXT);
+            String deployBasePath = OSGIUtil.getInstance().getBaseDirectory();
             Assert.assertNotNull(deployBasePath);
             assertEquals(deployBasePath, customFelixBasePath);
 
@@ -122,7 +122,7 @@ public class OSGIUtilTest {
             restartOSGi();
 
             //Validate we are using the property we just set
-            deployBasePath = OSGIUtil.getInstance().getBaseDirectory(Config.CONTEXT);
+            deployBasePath = OSGIUtil.getInstance().getBaseDirectory();
             assertEquals(felixDirectory, deployBasePath);
         } finally {
             //Clean up
