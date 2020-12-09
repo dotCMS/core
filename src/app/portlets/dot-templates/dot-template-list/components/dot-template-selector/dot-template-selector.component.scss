@@ -8,8 +8,8 @@
 
 .wrapper {
     display: block;
-    max-width: 30rem;
-    margin: 0 auto 4rem;
+    max-width: 24rem;
+    margin: 1rem auto 3rem;
     text-align: left;
 }
 
@@ -19,7 +19,6 @@
 }
 
 p {
-    font-size: $font-size-large;
     line-height: 1.5;
     color: $gray-dark;
 }
@@ -33,7 +32,7 @@ p {
     cursor: pointer;
     display: flex;
     flex-direction: column;
-    padding: 2rem;
+    padding: $spacing-5 $spacing-6;
     transition: border-color $basic-speed ease, color $basic-speed ease;
 
     &:hover {

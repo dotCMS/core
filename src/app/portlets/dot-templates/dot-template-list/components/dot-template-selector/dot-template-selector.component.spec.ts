@@ -83,7 +83,7 @@ describe('DotTemplateSelectorComponent', () => {
         it('should have icon', () => {
             const icon = design.query(By.css('dot-icon'));
 
-            expect(icon.attributes.size).toEqual('100');
+            expect(icon.attributes.size).toEqual('60');
             expect(icon.attributes.name).toEqual('web');
         });
 
@@ -117,7 +117,7 @@ describe('DotTemplateSelectorComponent', () => {
         it('should have icon', () => {
             const icon = advanced.query(By.css('dot-icon'));
 
-            expect(icon.attributes.size).toEqual('100');
+            expect(icon.attributes.size).toEqual('60');
             expect(icon.attributes.name).toEqual('settings_applications');
         });
 

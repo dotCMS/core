@@ -328,7 +328,7 @@ describe('DotTemplateListComponent', () => {
         dotListingDataTable.actionHeaderOptions.primary.command();
         expect(dialogService.open).toHaveBeenCalledWith(jasmine.any(Function), {
             header: 'Create a template',
-            width: '40rem',
+            width: '37rem',
             closeOnEscape: false
         });
     });

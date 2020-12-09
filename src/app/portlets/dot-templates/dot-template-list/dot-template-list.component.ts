@@ -189,7 +189,7 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
                 command: () => {
                     const ref = this.dialogService.open(DotTemplateSelectorComponent, {
                         header: this.dotMessageService.get('templates.select.template.title'),
-                        width: '40rem',
+                        width: '37rem',
                         closeOnEscape: false
                     });
 
