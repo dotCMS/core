@@ -45,7 +45,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import org.junit.Assert;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
@@ -65,8 +65,8 @@ public class HTMLDiffUtilTest extends IntegrationTestBase {
 
     private static final String NOTHING_CHANGED = "Nothing Changed";
 
-    @BeforeClass
-    public static void prepare() throws Exception {
+    @Before
+    public void prepare() throws Exception {
 
         IntegrationTestInitService.getInstance().init();
         LicenseTestUtil.getLicense();
@@ -110,6 +110,8 @@ public class HTMLDiffUtilTest extends IntegrationTestBase {
         final Set<String> seekers = ImmutableSet.of("Skywarp", "Starscream", "Thundercracker");
 
         final Set<String> coneheads = ImmutableSet.of("Thrust", "Ramjet", "Dirge");
+
+        site = new SiteDataGen().nextPersisted();
 
         final Contentlet contentlet = new ContentletDataGen(contentGenericId)
                 .languageId(defaultLang.getId())
