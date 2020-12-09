@@ -10,6 +10,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPIPostHookAbstractImp;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 
@@ -52,11 +53,10 @@ public class HTMLPageHook extends ContentletAPIPostHookAbstractImp {
             if(template==null) {
                 return;
             }
-            if (!APILocator.getVersionableAPI().isLive(template)) {
-                APILocator.getVersionableAPI().setLive(template);
+
+            if (!APILocator.getTemplateAPI().isLive(template)) {
+                APILocator.getTemplateAPI().setLive(template);
             }
-
-
         } catch (DotDataException e) {
             throw new DotStateException(
                     "unable to publish page layout with the page: " + page.getIdentifier() + " " + page.getTitle() + ": " + e, e);

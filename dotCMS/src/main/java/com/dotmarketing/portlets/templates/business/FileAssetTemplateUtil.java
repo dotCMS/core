@@ -62,9 +62,9 @@ public class FileAssetTemplateUtil {
 
     private static String [] DEFAULT_META_DATA_NAMES_ARRAY = new String[] { TITLE, THEME, IMAGE, COUNT_CONTAINER, COUNT_ADD_CONTAINER };
 
-    static final String LAYOUT             = "layout.vtl";
+    static final String LAYOUT             = "layout.json";
     static final String BODY               = "body.vtl";
-    static final String TEMPLATE_META_INFO = "template.vtl"; // todo: change this to properties.vtl
+    static final String TEMPLATE_META_INFO = "properties.vtl"; // todo: change this to properties.vtl
 
     private static class SingletonHolder {
         private static final FileAssetTemplateUtil INSTANCE = new FileAssetTemplateUtil();
@@ -192,7 +192,7 @@ public class FileAssetTemplateUtil {
         }
 
         final String relativePath = this.getPathFromFullPath (hostname, fullPath);
-        final String templateUri = (relativePath.endsWith(FORWARD_SLASH)? relativePath:relativePath+FORWARD_SLASH)+"template.vtl";
+        final String templateUri = (relativePath.endsWith(FORWARD_SLASH)? relativePath:relativePath+FORWARD_SLASH)+ Constants.TEMPLATE_META_INFO_FILE_NAME;
 
         final Identifier identifier = APILocator.getIdentifierAPI().find(host, templateUri);
         return identifier.getId();
@@ -234,7 +234,7 @@ public class FileAssetTemplateUtil {
      * Based on a host, folder and collection of asset, creates a fs template by convention.
      * @param host {@link Host} the host of the Template
      * @param templateFolder {@link Folder} this folder represents the Template
-     * @param assets {@link List} of {@link FileAsset} has all meta info such as template.vtl, body.vtl, layout.vtl.
+     * @param assets {@link List} of {@link FileAsset} has all meta info such as properties.vtl, body.vtl, layout.vtl.
      * @param showLive {@link Boolean} true if only want published assets
      * @return Template
      * @throws DotDataException

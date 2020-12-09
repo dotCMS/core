@@ -29,6 +29,7 @@ import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.business.ContainerAPIImpl;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -36,6 +37,7 @@ import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.design.bean.*;
+import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.InodeUtils;
@@ -376,8 +378,24 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		templateFactory.save(template);
 	}
 
+	@Override
 	public boolean isArchived(final Template template) throws DotDataException {
 		return APILocator.getVersionableAPI().isDeleted(template);
+	}
+
+	@Override
+	public boolean isLive(final Template template) throws DotDataException, DotStateException,DotSecurityException {
+
+		return template instanceof FileAssetTemplate ?
+				FileAssetTemplate.class.cast(template).isLive():
+				this.versionableAPI.get().isLive(template);
+	}
+
+	@Override
+	public void setLive(final Template template) throws DotDataException, DotStateException,DotSecurityException {
+
+		this.versionableAPI.get().setLive(template instanceof FileAssetTemplate?
+				FileAssetTemplate.class.cast(template).toContentlet(): template);
 	}
 
 	@WrapInTransaction

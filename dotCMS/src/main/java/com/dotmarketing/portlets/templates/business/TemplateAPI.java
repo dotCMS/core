@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.templates.business;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.Versionable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
@@ -362,4 +363,24 @@ public interface TemplateAPI {
 	 */
 	boolean isArchived(final Template template) throws DotDataException;
 
+	/**
+	 * Tells if the template is live
+	 *
+	 * @param template {@link Template}
+	 * @return true if it is live. false if not
+	 * @throws DotDataException
+	 * @throws DotStateException
+	 * @throws DotSecurityException
+	 */
+    boolean isLive(Template template) throws DotDataException, DotStateException,DotSecurityException;
+
+	/**
+	 * Set this template as the live version for its identifier
+	 *
+	 * @param template Template to be set as the live version
+	 * @throws DotDataException
+	 * @throws DotStateException
+	 * @throws DotSecurityException
+	 */
+	void setLive(Template template) throws DotDataException, DotStateException,DotSecurityException;
 }

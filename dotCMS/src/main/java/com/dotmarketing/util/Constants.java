@@ -154,7 +154,7 @@ public final class Constants {
 	/**
 	 * This is the name of the meta info for a file based template.
 	 */
-	public static final String TEMPLATE_META_INFO_FILE_NAME   = "template.vtl";
+	public static final String TEMPLATE_META_INFO_FILE_NAME   = "properties.vtl";
 
 
 	/**

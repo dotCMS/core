@@ -449,8 +449,8 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		try {
 
 			final StringBuilder queryBuilder = builder("+structureType:", BaseContentType.FILEASSET.getType(),
-					" +path:", Constants.TEMPLATE_FOLDER_PATH, "/*",
-					" +path:*/template.vtl",
+					" +path:",    Constants.TEMPLATE_FOLDER_PATH, "/*",
+					" +path:*/" + Constants.TEMPLATE_META_INFO_FILE_NAME,
 					" +working:true",
 					includeArchived? StringPool.BLANK : " +deleted:false");
 

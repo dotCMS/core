@@ -38,6 +38,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
+import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
@@ -317,14 +318,10 @@ public class PageResourceHelper implements Serializable {
     private Template getTemplate(final IHTMLPage page, final User user, final PageForm form)
             throws DotDataException, DotSecurityException {
 
-        final Template oldTemplate = this.templateAPI.findWorkingTemplate(page.getTemplateId(), user, false);
-        final Template saveTemplate;
-
-        if (UtilMethods.isSet(oldTemplate) && (!form.isAnonymousLayout() || oldTemplate.isAnonymous())) {
-            saveTemplate = oldTemplate;
-        } else {
-            saveTemplate = new Template();
-        }
+        final Template oldTemplate  = this.templateAPI.findWorkingTemplate(page.getTemplateId(), user, false);
+        final Template saveTemplate = UtilMethods.isSet(oldTemplate) && !(oldTemplate instanceof FileAssetTemplate)
+                && (!form.isAnonymousLayout() || oldTemplate.isAnonymous())?
+                oldTemplate:new Template();
 
         saveTemplate.setTitle(form.getTitle());
         saveTemplate.setTheme((form.getThemeId()==null) ? oldTemplate.getTheme() : form.getThemeId());

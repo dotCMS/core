@@ -115,7 +115,7 @@ public class FileAssetTemplate extends Template {
         return APILocator.getVersionableAPI().hasLiveVersion(toContentlet());
     }
 
-    private Versionable toContentlet() {
+    public Versionable toContentlet() {
 
         contentlet.setIdentifier(this.identifier);
         contentlet.setInode(this.inode);

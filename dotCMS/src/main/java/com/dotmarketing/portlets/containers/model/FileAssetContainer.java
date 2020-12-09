@@ -132,7 +132,8 @@ public class FileAssetContainer extends Container {
         this.path = path;
     }
 
-    private Versionable toContentlet() {
+    @JsonIgnore
+    public Versionable toContentlet() {
 
         contentlet.setIdentifier(this.identifier);
         contentlet.setInode(this.inode);

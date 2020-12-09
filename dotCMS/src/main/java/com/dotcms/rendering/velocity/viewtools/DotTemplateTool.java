@@ -244,7 +244,7 @@ public class DotTemplateTool implements ViewTool {
 
         if (Theme.SYSTEM_THEME.equalsIgnoreCase(themeFolderInode)) {
 
-            final Map<String, Object> themeMap = new HashMap<>();
+            final Map<String, Object> themeMap = new HashMap<>(); // todo: cache this
             final Theme systemTheme = APILocator.getThemeAPI().systemTheme();
 
             themeMap.put( "path", systemTheme.getPath() );
