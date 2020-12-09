@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.*;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
@@ -68,23 +69,26 @@ public class BundleTarGzipCreator {
                             PushUtils.createTarArchiveOutputStream(tarGzipFile)) {
 
                     for (;;) {
-                        List<WatchEvent<?>> watchEvents = null;
+                        WatchKey curentKey = null;
 
                        try {
                            Logger.info(BundleTarGzipMonitor.class, "Waiting for new files");
 
-                           //if (BundleTarGzipCreator.this.close) {
-                           //    Logger.info(BundleTarGzipMonitor.class, "... and it is close");
-                           //    watchEvents = key.pollEvents();
-                           //    Logger.info(BundleTarGzipMonitor.class, "... and it is close");
-                           //    if (watchEvents.isEmpty()) {
-                           //        this.watcher.close();
-                           //        break;
-                           //    }
-                           //} else {
-                               watcher.take();
-                               watchEvents = key.pollEvents();
-                           //}
+                           if (BundleTarGzipCreator.this.close) {
+                               Logger.info(BundleTarGzipMonitor.class, "... and it is close");
+
+                               curentKey = watcher.poll(1, TimeUnit.SECONDS);
+
+                               Logger.info(BundleTarGzipMonitor.class, curentKey == null ?
+                                       "...and not have nothing else to process" : "... and have more");
+
+                               if (curentKey == null) {
+                                   this.watcher.close();
+                                   break;
+                               }
+                           } else {
+                               curentKey = watcher.take();
+                           }
                        } catch(ClosedWatchServiceException e){
                            Logger.info(BundleTarGzipMonitor.class, "ClosedWatchServiceException...");
                            if (!close) {
@@ -96,7 +100,7 @@ public class BundleTarGzipCreator {
                             return;
                        }
 
-                        for (final WatchEvent<?> event: watchEvents) {
+                        for (final WatchEvent<?> event: curentKey.pollEvents()) {
                             final WatchEvent<Path> ev = (WatchEvent<Path>)event;
                             Logger.info(BundleTarGzipCreator.class, "Event " + event.kind());
                             if (event.kind() == ENTRY_CREATE || event.kind() == ENTRY_MODIFY) {
@@ -105,6 +109,10 @@ public class BundleTarGzipCreator {
                                 final Path filePath = bundleRootDirectory.resolve(filename);
                                 PushUtils.addFilesToCompression(tarArchiveOutputStream, filePath.toFile(), ".",
                                         bundleRootDirectory.toFile().getAbsolutePath());
+
+                                if (filePath.toFile().isDirectory()) {
+                                    filePath.register(watcher, ENTRY_CREATE, ENTRY_MODIFY);
+                                }
                             }
                         }
 

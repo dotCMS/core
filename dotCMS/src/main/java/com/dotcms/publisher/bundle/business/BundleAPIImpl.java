@@ -428,8 +428,14 @@ public class BundleAPIImpl implements BundleAPI {
 		final BundleTarGzipCreator bundleTarGzipCreator = BundleTarGzipCreator.start(bundleDirectory.toPath());
 		generateBundleDirectory(pushPublisherConfig);
 
+		try {
+			Thread.sleep(10000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
 		bundleTarGzipCreator.close();
-		//bundleTarGzipCreator.join();
+		bundleTarGzipCreator.join();
 
 		final long end = System.currentTimeMillis();
 
