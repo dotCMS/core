@@ -352,11 +352,7 @@ public class User extends UserModel implements Recipient {
   @JsonIgnore
   public Role getUserRole() {
 
-      return Try.of(() -> {
-
-        return APILocator.getRoleAPI().loadRoleByKey(this.getUserId());
-
-      }).getOrElseThrow(e->new DotStateException("Unable to find user role for user:" + this.getUserId()));
+      return Try.of(() -> APILocator.getRoleAPI().loadRoleByKey(this.getUserId())).getOrElseThrow(e->new DotStateException("Unable to find user role for user:" + this.getUserId()));
 
     }
   
