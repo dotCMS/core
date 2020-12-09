@@ -19,7 +19,11 @@
         </ng-template>
     </p-tabPanel>
     <p-tabPanel header="Permissions">
-        <ng-template pTemplate="content">Permissions</ng-template>
+        <ng-template pTemplate="content">
+            <dot-portlet-box>
+                <dot-iframe data-testId="permissionsIframe" [src]="permissionsUrl"></dot-iframe>
+            </dot-portlet-box>
+        </ng-template>
     </p-tabPanel>
     <p-tabPanel header="History">
         <ng-template pTemplate="content">History</ng-template>

@@ -5,6 +5,8 @@ import { DotEditLayoutDesignerModule } from '@components/dot-edit-layout-designe
 import { TabViewModule } from 'primeng/tabview';
 import { DotTemplateAdvancedModule } from '../dot-template-advanced/dot-template-advanced.module';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { IFrameModule } from '@components/_common/iframe';
+import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
 
 @NgModule({
     imports: [
@@ -12,7 +14,9 @@ import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module
         DotEditLayoutDesignerModule,
         DotMessagePipeModule,
         DotTemplateAdvancedModule,
-        TabViewModule
+        TabViewModule,
+        IFrameModule,
+        DotPortletBoxModule
     ],
     declarations: [DotTemplateBuilderComponent],
     exports: [DotTemplateBuilderComponent]

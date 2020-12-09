@@ -598,7 +598,7 @@ describe('DotTemplateListComponent', () => {
             expect(bulkActionsBtn.disabled).toEqual(true);
         });
 
-        fit('error exceptions', () => {
+        it('error exceptions', () => {
             spyOn(dotTemplatesService, 'publish').and.returnValue(of(mockBulkResponseFail));
             spyOn(dotTemplatesService, 'unPublish').and.returnValue(of(mockBulkResponseFail));
             spyOn(dotTemplatesService, 'archive').and.returnValue(of(mockBulkResponseFail));

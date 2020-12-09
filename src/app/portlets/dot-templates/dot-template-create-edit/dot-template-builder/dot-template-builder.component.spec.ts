@@ -1,6 +1,14 @@
-import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
+import {
+    AfterContentInit,
+    Component,
+    ContentChild,
+    DebugElement,
+    EventEmitter,
+    Input,
+    Output,
+    TemplateRef
+} from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { TabViewModule } from 'primeng/tabview';
 
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
@@ -8,6 +16,7 @@ import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotTemplateBuilderComponent } from './dot-template-builder.component';
 import { By } from '@angular/platform-browser';
 import { EMPTY_TEMPLATE_ADVANCED, EMPTY_TEMPLATE_DESIGN } from '../store/dot-template.store';
+import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
 
 @Component({
     selector: 'dot-edit-layout-designer',
@@ -31,7 +40,41 @@ class DotEditLayoutDesignerMockComponent {
     selector: 'dot-template-advanced',
     template: ``
 })
-class DotTemplateAdvancedMockComponent {}
+class DotTemplateAdvancedMockComponent {
+    @Input()
+    url;
+}
+
+@Component({
+    selector: 'dot-iframe',
+    template: ''
+})
+export class IframeMockComponent {
+    @Input() src: string;
+}
+
+@Component({
+    selector: 'p-tabView',
+    template: '<ng-content></ng-content>'
+})
+export class TabViewMockComponent {}
+
+@Component({
+    selector: 'p-tabPanel',
+    template:
+        '<ng-content></ng-content><ng-container *ngTemplateOutlet="contentTemplate"></ng-container>'
+})
+export class TabPanelMockComponent implements AfterContentInit {
+    @Input() header: string;
+    @ContentChild(TemplateRef) container;
+    contentTemplate;
+
+    ngAfterContentInit() {
+        if (this.container.elementRef.nativeElement.textContent === 'container') {
+            this.contentTemplate = this.container;
+        }
+    }
+}
 
 describe('DotTemplateBuilderComponent', () => {
     let component: DotTemplateBuilderComponent;
@@ -43,9 +86,12 @@ describe('DotTemplateBuilderComponent', () => {
             declarations: [
                 DotTemplateBuilderComponent,
                 DotEditLayoutDesignerMockComponent,
-                DotTemplateAdvancedMockComponent
+                DotTemplateAdvancedMockComponent,
+                IframeMockComponent,
+                TabViewMockComponent,
+                TabPanelMockComponent
             ],
-            imports: [TabViewModule, DotMessagePipeModule],
+            imports: [DotMessagePipeModule, DotPortletBoxModule],
             providers: [
                 {
                     provide: DotMessageService,
@@ -136,6 +182,23 @@ describe('DotTemplateBuilderComponent', () => {
 
             expect(component.save.emit).toHaveBeenCalledWith(EMPTY_TEMPLATE_ADVANCED);
             expect(component.cancel.emit).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('permissions', () => {
+        beforeEach(() => {
+            component.item = {
+                ...EMPTY_TEMPLATE_ADVANCED,
+                identifier: '123'
+            };
+            fixture.detectChanges();
+        });
+
+        it('should set iframe url', () => {
+            const permissions = de.query(By.css('[data-testId="permissionsIframe"]'));
+            expect(permissions.componentInstance.src).toBe(
+                '/html/templates/permissions.jsp?templateId=123&popup=true'
+            );
         });
     });
 });
