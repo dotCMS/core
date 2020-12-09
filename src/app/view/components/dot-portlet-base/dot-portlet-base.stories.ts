@@ -1,10 +1,15 @@
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+
 import { moduleMetadata } from '@storybook/angular';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
+import { TabViewModule } from 'primeng/tabview';
+
+import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { MockDotMessageService } from '@tests/dot-message-service.mock';
+
 import { DotPortletBaseComponent } from './dot-portlet-base.component';
 import { DotPortletBaseModule } from './dot-portlet-base.module';
 
@@ -29,7 +34,8 @@ export default {
                 ButtonModule,
                 CheckboxModule,
                 DotPortletBaseModule,
-                DotApiLinkModule
+                DotApiLinkModule,
+                TabViewModule
             ]
         }),
         (storyFunc) => {
@@ -52,15 +58,17 @@ export default {
     }
 };
 
-const portletContent = `
+const portletContent = (text = `Hello, I'm the portlet content`) => {
+    return `
     <div style="width: 100%; height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-        <h2>Hello, I'm the portlet content</h2>
+        <h2>${text}</h2>
     </div>`;
+};
 
 const NoActionsTemplate = `
 <dot-portlet-base>
     <dot-portlet-toolbar [title]="title"></dot-portlet-toolbar>
-    ${portletContent}
+    ${portletContent()}
 </dot-portlet-base>
 `;
 export const NoActions = () => ({
@@ -80,7 +88,7 @@ NoActions.parameters = {
 const BasicActionsTemplate = `
 <dot-portlet-base>
     <dot-portlet-toolbar [title]="title" [actions]="portletActions"></dot-portlet-toolbar>
-    ${portletContent}
+    ${portletContent()}
 </dot-portlet-base>
 `;
 export const BasicActions = () => ({
@@ -113,7 +121,7 @@ BasicActions.parameters = {
 const MultipleActionsTemplate = `
 <dot-portlet-base>
     <dot-portlet-toolbar [title]="title" [actions]="portletActions"></dot-portlet-toolbar>
-    ${portletContent}
+    ${portletContent()}
 </dot-portlet-base>
 `;
 export const MultipleActions = () => ({
@@ -167,7 +175,7 @@ const ExtraActionsTemplate = `
         <p-checkbox label="Whatever"></p-checkbox>
     </ng-container>
     </dot-portlet-toolbar>
-    ${portletContent}
+    ${portletContent()}
 </dot-portlet-base>
 `;
 export const ExtraActions = () => ({
@@ -193,6 +201,43 @@ ExtraActions.parameters = {
     docs: {
         source: {
             code: ExtraActionsTemplate
+        }
+    }
+};
+
+const WithTabsTemplate = `
+<dot-portlet-base [boxed]="false">
+    <dot-portlet-toolbar [title]="title"></dot-portlet-toolbar>
+    <p-tabView>
+        <p-tabPanel header="Tab 1"> ${portletContent('Content for Tab 1')} </p-tabPanel>
+        <p-tabPanel header="Tab 2"> ${portletContent('Content for Tab 2')} </p-tabPanel>
+        <p-tabPanel header="Tab 3"> ${portletContent('Content for Tab 3')} </p-tabPanel>
+    </p-tabView>
+</dot-portlet-base>
+`;
+export const WithTabs = () => ({
+    props: {
+        title: 'Tabbed Portlet',
+        portletActions: {
+            primary: [
+                {
+                    label: 'Action',
+                    command: (e) => {
+                        console.log(e);
+                    }
+                }
+            ],
+            cancel: () => {
+                console.log('cancel');
+            }
+        }
+    },
+    template: WithTabsTemplate
+});
+WithTabs.parameters = {
+    docs: {
+        source: {
+            code: WithTabsTemplate
         }
     }
 };
