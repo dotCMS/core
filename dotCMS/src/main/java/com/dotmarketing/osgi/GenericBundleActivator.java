@@ -9,7 +9,32 @@ import static com.dotmarketing.osgi.ActivatorUtil.moveResources;
 import static com.dotmarketing.osgi.ActivatorUtil.moveVelocityResources;
 import static com.dotmarketing.osgi.ActivatorUtil.unfreeze;
 import static com.dotmarketing.osgi.ActivatorUtil.unregisterAll;
-
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import org.apache.felix.framework.OSGIUtil;
+import org.apache.felix.http.proxy.DispatcherTracker;
+import org.apache.velocity.tools.view.PrimitiveToolboxManager;
+import org.apache.velocity.tools.view.ToolInfo;
+import org.apache.velocity.tools.view.servlet.ServletToolboxManager;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleActivator;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
+import org.quartz.SchedulerException;
+import org.tuckey.web.filters.urlrewrite.NormalRule;
+import org.tuckey.web.filters.urlrewrite.Rule;
 import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
@@ -33,6 +58,7 @@ import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.ScheduledTask;
+import com.dotmarketing.servlets.InitServlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
@@ -40,36 +66,10 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.ejb.PortletManagerUtil;
 import com.liferay.portal.model.Portlet;
 import com.liferay.util.Http;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.agent.ByteBuddyAgent;
 import net.bytebuddy.dynamic.ClassFileLocator;
 import net.bytebuddy.dynamic.loading.ClassReloadingStrategy;
-import org.apache.felix.framework.OSGIUtil;
-import org.apache.felix.http.proxy.DispatcherTracker;
-import org.apache.velocity.tools.view.PrimitiveToolboxManager;
-import org.apache.velocity.tools.view.ToolInfo;
-import org.apache.velocity.tools.view.servlet.ServletToolboxManager;
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleActivator;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
-import org.quartz.SchedulerException;
-import org.tuckey.web.filters.urlrewrite.NormalRule;
-import org.tuckey.web.filters.urlrewrite.Rule;
 
 /**
  * Created by Jonathan Gamba
@@ -83,31 +83,42 @@ public abstract class GenericBundleActivator implements BundleActivator {
     private static final String INIT_PARAM_VIEW_TEMPLATE = "view-template";
 
     private BundleContext context;
-    private ClassReloadingStrategy classReloadingStrategy;
+
 
     private PrimitiveToolboxManager toolboxManager;
     private CacheOSGIService cacheOSGIService;
     private ConditionletOSGIService conditionletOSGIService;
     private RuleActionletOSGIService actionletOSGIService;
-    private Collection<ToolInfo> viewTools;
-    private Collection<WorkFlowActionlet> actionlets;
-    private Collection<Conditionlet> conditionlets;
-    private Collection<RuleActionlet> ruleActionlets;
-    private Collection<Class<CacheProvider>> cacheProviders;
-    private Map<String, String> jobs;
-    private Collection<ActionConfig> actions;
-    private Collection<Portlet> portlets;
-    private Collection<Rule> rules;
-    private Collection<String> preHooks;
-    private Collection<String> postHooks;
-    private Collection<String> overriddenClasses;
+    final private Collection<ToolInfo> viewTools = new ArrayList<>();;
+    final private Collection<WorkFlowActionlet> actionlets = new ArrayList<>();
+    final private Collection<Conditionlet> conditionlets = new ArrayList<>();
+    final private Collection<RuleActionlet> ruleActionlets = new ArrayList<>();
+    final private Collection<Class<CacheProvider>> cacheProviders = new ArrayList<>();
+    final private Map<String, String> jobs = new HashMap<>();
+    final private Collection<ActionConfig> actions = new ArrayList<>();
+    final private Collection<Portlet> portlets = new ArrayList<>();
+    final private Collection<Rule> rules = new ArrayList<>();
+    final private Collection<String> preHooks = new ArrayList<>();;
+    final private Collection<String> postHooks = new ArrayList<>();
+    final private Collection<String> overriddenClasses = new HashSet<>();
 
-    private ClassLoader getFelixClassLoader () {
+    protected ClassLoader getBundleClassloader () {
         return this.getClass().getClassLoader();
     }
 
-    private ClassLoader getContextClassLoader () {
-        return Thread.currentThread().getContextClassLoader();
+    protected ClassLoader getWebAppClassloader () {
+        return InitServlet.class.getClassLoader();
+    }
+    
+    protected ClassReloadingStrategy getClassReloadingStrategy () {
+        try {
+            return ClassReloadingStrategy.fromInstalledAgent();
+        } catch (Exception e) {
+            //Even if there is not a java agent set we should continue with the plugin processing
+            Logger.warnAndDebug(this.getClass(),
+                    "Error reading ClassReloadingStrategy from agent [javaagent not set?].  Classpath overrides might not work: " + e.getMessage(), e);
+        }
+        return null;
     }
 
     /**
@@ -119,13 +130,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
         this.context = context;
 
-        try {
-            this.classReloadingStrategy = ClassReloadingStrategy.fromInstalledAgent();
-        } catch (Exception e) {
-            //Even if there is not a java agent set we should continue with the plugin processing
-            Logger.warnAndDebug(this.getClass(),
-                    "Error reading ClassReloadingStrategy from agent [javaagent not set?].  Classpath overrides might not work: " + e.getMessage(), e);
-        }
 
         //Override the classes found in the Override-Classes attribute
         overrideClasses(context);
@@ -161,7 +165,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
             if ( forceOverride.length > 0 ) {
                 for ( String classToOverride : forceOverride ) {
                     //Injecting this bundle context code inside the dotCMS context
-                    addClassTodotCMSClassLoader( classToOverride );
+                    overrideClass( classToOverride );
                 }
             }
 
@@ -327,36 +331,58 @@ public abstract class GenericBundleActivator implements BundleActivator {
         }
     }
 
-    /**
-     * Will inject this bundle context code inside the dotCMS context
-     *
-     * @param className a reference class inside this bundle jar
-     * @throws Exception
-     */
-    protected void addClassTodotCMSClassLoader ( String className ) throws Exception {
+    
+    
+    protected void overrideClass(String className) throws Exception {
 
-        if (null == this.classReloadingStrategy) {
+        if (null == getClassReloadingStrategy()) {
             Logger.error(this, "bytebuddy ClassReloadingStrategy not set [java agent not set?]");
             return;
         }
 
         className = className.trim();
 
-        if (null == this.overriddenClasses) {
-            this.overriddenClasses = new HashSet<>();
+        // Search for the class we want to inject using the felix plugin class loader
+        Class clazz = Class.forName(className.trim(), false, getBundleClassloader());
+
+        overrideClass(clazz);
+    }
+    
+    
+    
+    
+    
+    /**
+     * Will inject this bundle context code inside the dotCMS context
+     *
+     * @param className a reference class inside this bundle jar
+     * @throws Exception
+     */
+    protected void overrideClass ( Class  clazz) throws Exception {
+
+        if (null == getClassReloadingStrategy()) {
+            Logger.error(this, "bytebuddy ClassReloadingStrategy not set [java agent not set?]");
+            return;
         }
 
-        //Search for the class we want to inject using the felix plugin class loader
-        Class clazz = Class.forName( className.trim(), false, getFelixClassLoader() );
 
+        if(!clazz.getClassLoader().equals(getBundleClassloader())) {
+            Logger.error(this, "Class:" + clazz.getName() + " not loaded from bundle classloader, cannot override/inject into dotCMS");
+            
+        }
+
+        Logger.info(this.getClass().getName(), "Injecting: " + clazz.getName() + " into classloader: " + getWebAppClassloader());
+        Logger.debug(this.getClass().getName(),"bundle classloader :" +getBundleClassloader() );
+        Logger.debug(this.getClass().getName(),"context classloader:" +getWebAppClassloader() );
+        
         ByteBuddyAgent.install();
         new ByteBuddy()
-                .rebase(clazz, ClassFileLocator.ForClassLoader.of(getFelixClassLoader()))
-                .name(className.trim())
+                .rebase(clazz, ClassFileLocator.ForClassLoader.of(getBundleClassloader()))
+                .name(clazz.getName())
                 .make()
-                .load(getContextClassLoader(), this.classReloadingStrategy);
+                .load(getWebAppClassloader(), this.getClassReloadingStrategy());
 
-        this.overriddenClasses.add(className);
+        this.overriddenClasses.add(clazz.getName());
     }
 
     //*******************************************************************
@@ -374,7 +400,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
     @SuppressWarnings ("unchecked")
     protected Collection<Portlet> registerPortlets ( BundleContext context, String[] xmls ) throws Exception {
 
-        this.portlets=(this.portlets==null) ? new ArrayList<>() : portlets;
+
         for(String xml :xmls) {
           try(InputStream input = new ByteArrayInputStream(Http.URLtoString(context.getBundle().getResource(xml)).getBytes("UTF-8"))){
             portlets.addAll(PortletManagerUtil.addPortlets(new InputStream[]{input})); 
@@ -462,14 +488,10 @@ public abstract class GenericBundleActivator implements BundleActivator {
      */
     protected void registerActionMapping ( ActionMapping actionMapping ) throws Exception {
 
-        if ( actions == null ) {
-            actions = new ArrayList<>();
-        }
-
         String actionClassType = actionMapping.getType();
 
         //Injects the action classes inside the dotCMS context
-        addClassTodotCMSClassLoader( actionClassType );
+        overrideClass( actionClassType );
 
         ModuleConfig moduleConfig = getModuleConfig();
         //We need to unfreeze this module in order to add new action mappings
@@ -494,12 +516,8 @@ public abstract class GenericBundleActivator implements BundleActivator {
         String jobName = scheduledTask.getJobName();
         String jobGroup = scheduledTask.getJobGroup();
 
-        if ( jobs == null ) {
-            jobs = new HashMap<>();
-        }
-
         //Injects the job classes inside the dotCMS context
-        addClassTodotCMSClassLoader( scheduledTask.getJavaClassName() );
+        overrideClass( scheduledTask.getJavaClassName() );
 
         /*
         Schedules the given job in the quartz system, and depending on the sequentialScheduled
@@ -522,10 +540,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
         //Get a reference of our url rewrite filter
         DotUrlRewriteFilter urlRewriteFilter = DotUrlRewriteFilter.getUrlRewriteFilter();
         if ( urlRewriteFilter != null ) {
-
-            if ( rules == null ) {
-                rules = new ArrayList<>();
-            }
 
             //Adding the Rule to the filter
             urlRewriteFilter.addRule( rule );
@@ -591,9 +605,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
             return;
         }
 
-        if ( actionlets == null ) {
-            actionlets = new ArrayList<>();
-        }
 
         OSGIUtil.getInstance().workflowOsgiService = (WorkflowAPIOsgiService) context.getService( serviceRefSelected );
         OSGIUtil.getInstance().workflowOsgiService.addActionlet( actionlet.getClass() );
@@ -617,9 +628,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
             return;
         }
 
-        if(ruleActionlets == null) {
-            ruleActionlets = new ArrayList<>();
-        }
 
         this.actionletOSGIService = (RuleActionletOSGIService)context.getService(serviceRefSelected);
         this.actionletOSGIService.addRuleActionlet(actionlet.getClass());
@@ -642,9 +650,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
             return;
         }
 
-        if ( conditionlets == null ) {
-            conditionlets = new ArrayList<>();
-        }
 
         this.conditionletOSGIService = (ConditionletOSGIService) context.getService( serviceRefSelected );
         this.conditionletOSGIService.addConditionlet(conditionlet.getClass());
@@ -734,10 +739,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
             return;
         }
 
-        if ( cacheProviders == null ) {
-            cacheProviders = new ArrayList<>();
-        }
-
         this.cacheOSGIService = (CacheOSGIService) context.getService(serviceRefSelected);
         this.cacheOSGIService.addCacheProvider(cacheRegion, provider);
         cacheProviders.add(provider);
@@ -760,10 +761,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
             return;
         }
 
-        if ( viewTools == null ) {
-            viewTools = new ArrayList<>();
-        }
-
         this.toolboxManager = (PrimitiveToolboxManager) context.getService( serviceRefSelected );
         this.toolboxManager.addTool( info );
         viewTools.add( info );
@@ -783,10 +780,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
         //First we need to be sure we are not adding the same hook more than once
         interceptor.delPreHookByClassName( preHook.getClass().getName() );
 
-        if ( preHooks == null ) {
-            preHooks = new ArrayList<>();
-        }
-
         interceptor.addPreHook( preHook );
         preHooks.add( preHook.getClass().getName() );
     }
@@ -803,9 +796,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
         //First we need to be sure we are not adding the same hook more than once
         interceptor.delPostHookByClassName( postHook.getClass().getName() );
 
-        if ( postHooks == null ) {
-            postHooks = new ArrayList<>();
-        }
 
         interceptor.addPostHook( postHook );
         postHooks.add( postHook.getClass().getName() );
@@ -846,7 +836,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
         if (null != this.overriddenClasses && !this.overriddenClasses.isEmpty()) {
 
-            if (null == this.classReloadingStrategy) {
+            if (null == this.getClassReloadingStrategy()) {
                 Logger.error(this,
                         "bytebuddy ClassReloadingStrategy not set [java agent not set?]");
                 return;
@@ -854,8 +844,8 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
             for (String overridenClass : this.overriddenClasses) {
                 try {
-                    this.classReloadingStrategy
-                            .reset(ClassFileLocator.ForClassLoader.of(getContextClassLoader()),
+                    this.getClassReloadingStrategy()
+                            .reset(ClassFileLocator.ForClassLoader.of(getWebAppClassloader()),
                                     Class.forName(overridenClass));
                 } catch (Exception e) {
                     Logger.debug(this.getClass(),
