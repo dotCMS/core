@@ -1,3 +1,5 @@
+@use "variables" as *;
+
 :host,
 :host ::ng-deep .p-tabview-panels {
     overflow: hidden;
@@ -19,4 +21,5 @@
 
 dot-portlet-box {
     height: 100%;
+    padding: $spacing-3;
 }

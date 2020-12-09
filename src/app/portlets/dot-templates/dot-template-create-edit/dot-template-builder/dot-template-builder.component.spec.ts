@@ -185,7 +185,7 @@ describe('DotTemplateBuilderComponent', () => {
         });
     });
 
-    describe('permissions', () => {
+    describe('permissions and history', () => {
         beforeEach(() => {
             component.item = {
                 ...EMPTY_TEMPLATE_ADVANCED,
@@ -194,10 +194,17 @@ describe('DotTemplateBuilderComponent', () => {
             fixture.detectChanges();
         });
 
-        it('should set iframe url', () => {
+        it('should set iframe permissions url', () => {
             const permissions = de.query(By.css('[data-testId="permissionsIframe"]'));
             expect(permissions.componentInstance.src).toBe(
                 '/html/templates/permissions.jsp?templateId=123&popup=true'
+            );
+        });
+
+        it('should set iframe history url', () => {
+            const permissions = de.query(By.css('[data-testId="historyIframe"]'));
+            expect(permissions.componentInstance.src).toBe(
+                '/html/templates/push_history.jsp?templateId=123&popup=true'
             );
         });
     });

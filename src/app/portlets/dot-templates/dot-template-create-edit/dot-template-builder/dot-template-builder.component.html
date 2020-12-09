@@ -26,6 +26,10 @@
         </ng-template>
     </p-tabPanel>
     <p-tabPanel header="History">
-        <ng-template pTemplate="content">History</ng-template>
+        <ng-template pTemplate="content">
+            <dot-portlet-box>
+                <dot-iframe data-testId="historyIframe" [src]="historyUrl"></dot-iframe>
+            </dot-portlet-box>
+        </ng-template>
     </p-tabPanel>
 </p-tabView>
