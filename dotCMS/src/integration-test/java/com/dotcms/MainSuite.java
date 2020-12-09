@@ -363,6 +363,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task201013AddNewColumnsToIdentifierTableTest.class,
         Task201014UpdateColumnsValuesInIdentifierTableTest.class,
         AppsInterpolationTest.class,
+        com.dotcms.rest.api.v1.template.TemplateResourceTest.class,
         Task201102UpdateColumnSitelicTableTest.class,
         DependencyManagerTest.class
 })
