@@ -429,6 +429,7 @@ public class BundleAPIImpl implements BundleAPI {
 		generateBundleDirectory(pushPublisherConfig);
 
 		bundleTarGzipCreator.close();
+		//bundleTarGzipCreator.join();
 
 		final long end = System.currentTimeMillis();
 

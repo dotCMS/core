@@ -8,13 +8,16 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.*;
+import java.util.List;
 
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
 public class BundleTarGzipCreator {
     private BundleTarGzipMonitor bundleTarGzipMonitor;
 
     private Path bundleRootDirectory;
+    private boolean close = false;
 
     private BundleTarGzipCreator(final Path bundleRootDirectory){
         this.bundleRootDirectory = bundleRootDirectory;
@@ -31,7 +34,7 @@ public class BundleTarGzipCreator {
     }
 
     public void close() {
-        bundleTarGzipMonitor.close();
+        close = true;
     }
 
     public void join() {
@@ -58,26 +61,47 @@ public class BundleTarGzipCreator {
                 watcher = FileSystems.getDefault().newWatchService();
 
                 final Path bundleRootDirectory = BundleTarGzipCreator.this.bundleRootDirectory;
-                final WatchKey key = bundleRootDirectory.register(watcher, ENTRY_CREATE);
+                WatchKey key = bundleRootDirectory.register(watcher, ENTRY_CREATE, ENTRY_MODIFY);
                 tarGzipFile = PushUtils.createTarGzipFile(bundleRootDirectory.toFile());
 
                 try(final TarArchiveOutputStream tarArchiveOutputStream =
                             PushUtils.createTarArchiveOutputStream(tarGzipFile)) {
 
                     for (;;) {
+                        List<WatchEvent<?>> watchEvents = null;
+
                        try {
-                            watcher.take();
-                        } catch (InterruptedException e) {
+                           Logger.info(BundleTarGzipMonitor.class, "Waiting for new files");
+
+                           //if (BundleTarGzipCreator.this.close) {
+                           //    Logger.info(BundleTarGzipMonitor.class, "... and it is close");
+                           //    watchEvents = key.pollEvents();
+                           //    Logger.info(BundleTarGzipMonitor.class, "... and it is close");
+                           //    if (watchEvents.isEmpty()) {
+                           //        this.watcher.close();
+                           //        break;
+                           //    }
+                           //} else {
+                               watcher.take();
+                               watchEvents = key.pollEvents();
+                           //}
+                       } catch(ClosedWatchServiceException e){
+                           Logger.info(BundleTarGzipMonitor.class, "ClosedWatchServiceException...");
+                           if (!close) {
+                               Logger.info(BundleTarGzipMonitor.class, "... and it is close");
+                               Logger.error(BundleTarGzipMonitor.class, e);
+                           }
+                       } catch (InterruptedException e) {
                             Logger.error(BundleTarGzipMonitor.class, e);
                             return;
-                        }
+                       }
 
-                        for (WatchEvent<?> event: key.pollEvents()) {
+                        for (final WatchEvent<?> event: watchEvents) {
                             final WatchEvent<Path> ev = (WatchEvent<Path>)event;
-
-                            if (event.kind() == ENTRY_CREATE) {
+                            Logger.info(BundleTarGzipCreator.class, "Event " + event.kind());
+                            if (event.kind() == ENTRY_CREATE || event.kind() == ENTRY_MODIFY) {
                                 final Path filename = ev.context();
-
+                                Logger.info(BundleTarGzipCreator.class, "filename " + ev.context());
                                 final Path filePath = bundleRootDirectory.resolve(filename);
                                 PushUtils.addFilesToCompression(tarArchiveOutputStream, filePath.toFile(), ".",
                                         bundleRootDirectory.toFile().getAbsolutePath());
@@ -86,7 +110,15 @@ public class BundleTarGzipCreator {
 
                         boolean valid = key.reset();
                         if (!valid) {
+                            Logger.info(BundleTarGzipMonitor.class, "is it close " + BundleTarGzipCreator.this.close);
                             Logger.info(BundleTarGzipCreator.class, "TERMINO");
+
+                            try {
+                                this.watcher.close();
+                            } catch(ClosedWatchServiceException e) {
+                                Logger.warn(BundleTarGzipMonitor.class, e.getMessage(), e);
+                            }
+
                             break;
                         }
                     }
