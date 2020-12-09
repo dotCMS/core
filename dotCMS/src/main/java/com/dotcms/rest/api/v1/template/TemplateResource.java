@@ -201,7 +201,7 @@ public class TemplateResource {
 
         if (null == template || UtilMethods.isNotSet(template.getIdentifier())) {
 
-            throw new DoesNotExistException("Live Version of the Template with Id: " + templateId + " does not exists");
+            throw new DoesNotExistException("Live Version of the Template with Id: " + templateId + " does not exist");
         }
 
         return Response.ok(new ResponseEntityView(this.templateHelper.toTemplateView(template, user))).build();
@@ -237,7 +237,7 @@ public class TemplateResource {
 
         if (null == template || UtilMethods.isNotSet(template.getIdentifier())) {
 
-            throw new DoesNotExistException("Working Version of the Template with Id: " + templateId + " does not exists");
+            throw new DoesNotExistException("Working Version of the Template with Id: " + templateId + " does not exist");
         }
 
         return Response.ok(new ResponseEntityView(this.templateHelper.toTemplateView(template, user))).build();
@@ -297,7 +297,7 @@ public class TemplateResource {
         final Template currentTemplate = this.templateAPI.findWorkingTemplate(templateForm.getIdentifier(),user,pageMode.respectAnonPerms);
 
         if (null == currentTemplate) {
-            throw new DoesNotExistException("Template with Id: " + templateForm.getIdentifier() + " does not exists");
+            throw new DoesNotExistException("Template with Id: " + templateForm.getIdentifier() + " does not exist");
         }
 
         final Template newVersionTemplate = new Template();
@@ -400,8 +400,8 @@ public class TemplateResource {
                             user.getPrimaryKey() + " published template: " + template.getIdentifier());
                     publishedTemplatesCount++;
                 } else {
-                    Logger.error(this, "Template with Id: " + templateId + " does not exists");
-                    failedToPublish.add(new FailedResultView(templateId,"Template Does Not Exists"));
+                    Logger.error(this, "Template with Id: " + templateId + " does not exist");
+                    failedToPublish.add(new FailedResultView(templateId,"Template Does not exist"));
                 }
             } catch(Exception e) {
                 Logger.debug(this, e.getMessage(), e);
@@ -459,8 +459,8 @@ public class TemplateResource {
                             user.getPrimaryKey() + " unpublished template: " + template.getIdentifier());
                     unpublishedTemplatesCount++;
                 } else {
-                    Logger.error(this, "Template with Id: " + templateId + " does not exists");
-                    failedToUnpublish.add(new FailedResultView(templateId,"Template Does Not Exists"));
+                    Logger.error(this, "Template with Id: " + templateId + " does not exist");
+                    failedToUnpublish.add(new FailedResultView(templateId,"Template Does not exist"));
                 }
             } catch(Exception e) {
                 Logger.debug(this, e.getMessage(), e);
@@ -502,7 +502,7 @@ public class TemplateResource {
 
         if (null == template || !InodeUtils.isSet(template.getInode())) {
 
-            throw new DoesNotExistException("Template with Id: " + templateId + " does not exists");
+            throw new DoesNotExistException("Template with Id: " + templateId + " does not exist");
         }
 
         return Response.ok(new ResponseEntityView(
@@ -535,7 +535,7 @@ public class TemplateResource {
         final Template template = this.templateAPI.findWorkingTemplate(templateId,user,pageMode.respectAnonPerms);
 
         if (null == template || !InodeUtils.isSet(template.getInode())) {
-            throw new DoesNotExistException("Template with Id: " + templateId + " does not exists");
+            throw new DoesNotExistException("Template with Id: " + templateId + " does not exist");
         }
 
         this.templateAPI.lock(template, user);
@@ -572,7 +572,7 @@ public class TemplateResource {
         final Template template = this.templateAPI.findWorkingTemplate(templateId,user,pageMode.respectAnonPerms);
 
         if (null == template || !InodeUtils.isSet(template.getInode())) {
-            throw new DoesNotExistException("Template with Id: " + templateId + " does not exists");
+            throw new DoesNotExistException("Template with Id: " + templateId + " does not exist");
         }
 
         this.templateAPI.unlock(template, user);
@@ -626,8 +626,8 @@ public class TemplateResource {
                             user.getPrimaryKey() + " archived template: " + template.getIdentifier());
                     archivedTemplatesCount++;
                 } else {
-                    Logger.error(this, "Template with Id: " + templateId + " does not exists");
-                    failedToArchive.add(new FailedResultView(templateId,"Template Does Not Exists"));
+                    Logger.error(this, "Template with Id: " + templateId + " does not exist");
+                    failedToArchive.add(new FailedResultView(templateId,"Template Does not exist"));
                 }
             } catch(Exception e) {
                 Logger.debug(this,e.getMessage(),e);
@@ -685,8 +685,8 @@ public class TemplateResource {
                             user.getPrimaryKey() + " unarchived template: " + template.getIdentifier());
                     unarchivedTemplatesCount++;
                 } else {
-                    Logger.error(this, "Template with Id: " + templateId + " does not exists");
-                    failedToUnarchive.add(new FailedResultView(templateId,"Template Does Not Exists"));
+                    Logger.error(this, "Template with Id: " + templateId + " does not exist");
+                    failedToUnarchive.add(new FailedResultView(templateId,"Template Does not exist"));
                 }
             } catch(Exception e) {
                 Logger.debug(this, e.getMessage(), e);
@@ -742,8 +742,8 @@ public class TemplateResource {
                             user.getPrimaryKey() + " deleted template: " + template.getIdentifier());
                     deletedTemplatesCount++;
                 } else {
-                    Logger.error(this, "Template with Id: " + templateId + " does not exists");
-                    failedToDelete.add(new FailedResultView(templateId,"Template Does Not Exists"));
+                    Logger.error(this, "Template with Id: " + templateId + " does not exist");
+                    failedToDelete.add(new FailedResultView(templateId,"Template Does not exist"));
                 }
             } catch(Exception e){
                 Logger.debug(this,e.getMessage(),e);
