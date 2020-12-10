@@ -82,7 +82,7 @@ export class PushPublishService {
     ): string {
         // TODO: find a way to deal with moment(undefined), since will be deprecated eventually
         let result = '';
-        result += `assetIdentifier=${assetIdentifier}`;
+        result += `assetIdentifier=${encodeURIComponent(assetIdentifier)}`;
         result += `&remotePublishDate=${moment(publishDate).format('YYYY-MM-DD')}`;
         result += `&remotePublishTime=${moment(publishDate).format('HH-mm')}`;
         result += `&remotePublishExpireDate=${moment(expireDate).format('YYYY-MM-DD')}`;

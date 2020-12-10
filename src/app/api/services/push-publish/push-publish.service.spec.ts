@@ -78,8 +78,10 @@ describe('PushPublishService', () => {
     });
 
     it('should do a post request and push publish an asset', () => {
+        const assetIdentifier = '1234567890 +0';
+        const assetIdentifierEncoded = encodeURIComponent(assetIdentifier);
         pushPublishService
-            .pushPublishContent('1234567890', mockFormValue, false)
+            .pushPublishContent(assetIdentifier, mockFormValue, false)
             .subscribe((items: any) => {
                 expect(items).toEqual(mockResponse);
             });
@@ -92,7 +94,7 @@ describe('PushPublishService', () => {
         ).toBeGreaterThan(-1);
         expect(req.request.method).toBe('POST');
         expect(req.request.body).toBe(
-            'assetIdentifier=1234567890&remotePublishDate=2020-07-08&remotePublishTime=10-10&remotePublishExpireDate=2020-07-15&remotePublishExpireTime=22-10&iWantTo=publish&whoToSend=env1&bundleName=&bundleSelect=&filterKey=hol'
+            `assetIdentifier=${assetIdentifierEncoded}&remotePublishDate=2020-07-08&remotePublishTime=10-10&remotePublishExpireDate=2020-07-15&remotePublishExpireTime=22-10&iWantTo=publish&whoToSend=env1&bundleName=&bundleSelect=&filterKey=hol`
         );
         req.flush(mockResponse);
     });
