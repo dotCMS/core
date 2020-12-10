@@ -3,7 +3,6 @@ import { Routes, RouterModule } from '@angular/router';
 import { DotTemplateListComponent } from '@portlets/dot-templates/dot-template-list/dot-template-list.component';
 import { DotTemplateListResolver } from '@portlets/dot-templates/dot-template-list/dot-template-list-resolver.service';
 import { DotTemplateCreateEditResolver } from './dot-template-create-edit/resolvers/dot-template-create-edit.resolver';
-import { DotTemplateGuard } from './guards/dot-template.guard';
 
 const routes: Routes = [
     {
@@ -14,12 +13,11 @@ const routes: Routes = [
         }
     },
     {
-        path: 'new/:type',
+        path: 'new',
         loadChildren: () =>
             import(
-                '@portlets/dot-templates/dot-template-create-edit/dot-template-create-edit.module.ts'
-            ).then((m) => m.DotTemplateCreateEditModule),
-        canLoad: [DotTemplateGuard]
+                '@portlets/dot-templates/dot-template-create-edit/dot-template-new/dot-template-new.module.ts'
+            ).then((m) => m.DotTemplateNewModule)
     },
     {
         path: 'edit/:id',

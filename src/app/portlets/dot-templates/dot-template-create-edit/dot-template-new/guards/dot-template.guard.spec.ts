@@ -26,17 +26,17 @@ describe('DotTemplateGuard', () => {
 
     it('should return true when path is /advanced', () => {
         const segment = new UrlSegment('advanced', null);
-        expect(guard.canLoad(null, [null, segment])).toBe(true);
+        expect(guard.canLoad(null, [segment])).toBe(true);
     });
 
     it('should return true when path is /designer', () => {
         const segment = new UrlSegment('designer', null);
-        expect(guard.canLoad(null, [null, segment])).toBe(true);
+        expect(guard.canLoad(null, [segment])).toBe(true);
     });
 
     it('should return false and redirect with invalid path', () => {
         const segment = new UrlSegment('xxxx', null);
-        expect(guard.canLoad(null, [null, segment])).toBe(false);
+        expect(guard.canLoad(null, [segment])).toBe(false);
         expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('templates');
     });
 });

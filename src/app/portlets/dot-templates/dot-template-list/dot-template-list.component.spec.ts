@@ -147,7 +147,6 @@ const messages = {
     'templates.fieldName.lastEdit': 'Last Edit',
     'templates.fieldName.name': 'Name',
     'templates.fieldName.status': 'Status',
-    'templates.select.template.title': 'Create a template',
     Archive: 'Archive',
     Archived: 'Archived',
     Copy: 'Copy',
@@ -326,23 +325,7 @@ describe('DotTemplateListComponent', () => {
         expect(model).toBeUndefined();
 
         dotListingDataTable.actionHeaderOptions.primary.command();
-        expect(dialogService.open).toHaveBeenCalledWith(jasmine.any(Function), {
-            header: 'Create a template',
-            width: '37rem',
-            closeOnEscape: false
-        });
-    });
-
-    it('should go to create template', () => {
-        dotListingDataTable.actionHeaderOptions.primary.command();
-        dialogRefClose.next('create');
-        expect(dotRouterService.gotoPortlet).toHaveBeenCalledOnceWith('/templates/new/create');
-    });
-
-    it('should not go to create template', () => {
-        dotListingDataTable.actionHeaderOptions.primary.command();
-        dialogRefClose.next('');
-        expect(dotRouterService.gotoPortlet).not.toHaveBeenCalled();
+        expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/templates/new');
     });
 
     it('should pass data to the status elements', () => {

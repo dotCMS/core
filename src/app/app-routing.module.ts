@@ -16,8 +16,8 @@ import { DotIframePortletLegacyResolver } from '@components/_common/iframe/servi
 
 const PORTLETS_ANGULAR = [
     {
-        // canActivate: [MenuGuardService],
-        // canActivateChild: [MenuGuardService],
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
         path: 'templates',
         loadChildren: () =>
             import('@portlets/dot-templates/dot-templates.module').then((m) => m.DotTemplatesModule)
@@ -82,13 +82,6 @@ const PORTLETS_ANGULAR = [
         path: 'edit-page',
         loadChildren: () =>
             import('@portlets/dot-edit-page/dot-edit-page.module').then((m) => m.DotEditPageModule)
-    },
-    {
-        path: 'templates',
-        loadChildren: () =>
-            import('@portlets/dot-templates/dot-templates.module.ts').then(
-                (m) => m.DotTemplatesModule
-            )
     },
     {
         canActivate: [MenuGuardService],

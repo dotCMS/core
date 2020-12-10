@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { filter, pluck, take } from 'rxjs/operators';
+import { pluck, take } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { DotTemplate } from '@models/dot-edit-layout-designer';
 import { DataTableColumn } from '@models/data-table';
@@ -21,7 +21,6 @@ import {
     DotBulkFailItem
 } from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
 import { DotContentState } from 'dotcms-models';
-import { DotTemplateSelectorComponent } from './components/dot-template-selector/dot-template-selector.component';
 
 @Component({
     selector: 'dot-template-list',
@@ -187,20 +186,7 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
         this.actionHeaderOptions = {
             primary: {
                 command: () => {
-                    const ref = this.dialogService.open(DotTemplateSelectorComponent, {
-                        header: this.dotMessageService.get('templates.select.template.title'),
-                        width: '37rem',
-                        closeOnEscape: false
-                    });
-
-                    ref.onClose
-                        .pipe(
-                            take(1),
-                            filter((value: string) => !!value)
-                        )
-                        .subscribe((value: string) => {
-                            this.dotRouterService.gotoPortlet(`/templates/new/${value}`);
-                        });
+                    this.dotRouterService.gotoPortlet(`/templates/new`);
                 }
             }
         };

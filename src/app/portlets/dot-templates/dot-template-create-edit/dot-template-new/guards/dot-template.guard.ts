@@ -7,7 +7,7 @@ export class DotTemplateGuard implements CanLoad {
     constructor(private dotRouterService: DotRouterService) {}
 
     canLoad(_route: Route, segments: UrlSegment[]): boolean {
-        const { path } = segments[1];
+        const [{ path }] = segments;
 
         const isValidTemplatePath = path === 'designer' || path === 'advanced';
 
