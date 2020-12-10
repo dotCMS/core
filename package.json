@@ -21,7 +21,7 @@
         "docs:json": "compodoc -p ./tsconfig.json -e json -d .",
         "storybook": "npm run docs:json && start-storybook -p 6006",
         "build-storybook": "npm run docs:json && build-storybook",
-        "deploy-docs": "storybook-to-ghpages && npm run publish:docs"
+        "deploy-docs": "storybook-to-ghpages --ci && npm run publish:docs"
     },
     "repository": {
         "type": "git",
