@@ -38,7 +38,7 @@ public class ConditionletOSGIFTest {
         final ServletConfig servletConfig = mock(ServletConfig.class);
         OSGIProxyServlet.servletConfig = servletConfig;
 
-        OSGIUtil.getInstance().initializeFramework(Config.CONTEXT);
+        OSGIUtil.getInstance().initializeFramework();
     }
 
     @AfterClass

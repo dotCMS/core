@@ -15,6 +15,7 @@ import com.dotcms.util.pagination.PaginationException;
 import com.dotcms.util.pagination.ThemePaginator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Theme;
 import com.dotmarketing.business.ThemeAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -160,16 +161,25 @@ public class ThemeResource {
         final InitDataObject initData = this.webResource.init(null, request, response, true, null);
         final User user = initData.getUser();
 
-        final Folder folder = folderAPI.find(themeId, user, false);
+        final Map<String, Object> map = new HashMap<>();
 
-        if (folder == null) {
-            return Response.status(Status.NOT_FOUND).build();
+        if (Theme.SYSTEM_THEME.equalsIgnoreCase(themeId)) {
+
+            final Theme systemTheme = APILocator.getThemeAPI().systemTheme();
+            map.putAll(systemTheme.getMap());
+            map.put(THEME_THUMBNAIL_KEY, systemTheme.getThemeThumbnail());
         } else {
-            final Map<String, Object> map = new HashMap<>();
+
+            final Folder folder = folderAPI.find(themeId, user, false);
+
+            if (folder == null) {
+                return Response.status(Status.NOT_FOUND).build();
+            }
+
             map.putAll(folder.getMap());
             map.put(THEME_THUMBNAIL_KEY, themeAPI.getThemeThumbnail(folder, user));
-
-            return Response.ok(new ResponseEntityView(map)).build();
         }
+
+        return Response.ok(new ResponseEntityView(map)).build();
     }
 }

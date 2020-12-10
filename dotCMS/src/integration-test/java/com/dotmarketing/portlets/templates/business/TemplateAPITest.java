@@ -1,18 +1,22 @@
 package com.dotmarketing.portlets.templates.business;
 
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
-import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -27,7 +31,6 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
@@ -42,6 +45,10 @@ import java.util.List;
 
 import static org.junit.Assert.*;
 
+/**
+ * Note: If you dont find a test over here, check {@link com.dotcms.rest.api.v1.template.TemplateResourceTest}
+ * several tests were created over there, since the Resource calls the api.
+ */
 public class TemplateAPITest extends IntegrationTestBase {
 
     private static ContainerAPI containerAPI;
@@ -194,54 +201,62 @@ public class TemplateAPITest extends IntegrationTestBase {
         assertEquals(0, containerUUIDS.size());
     }
 
+    /**
+     * Method to test: saveTemplate
+     * Given Scenario: Create a template and save it
+     * ExpectedResult: Template should be save successfully
+     *
+     */
     @Test
-    public void saveTemplate() throws Exception {
-        final Host host= hostAPI.findDefaultHost(user, false);
-        String body="<html><body> I'm mostly empty </body></html>";
-        String title="empty test template "+UUIDGenerator.generateUuid();
+    public void test_saveTemplate_newTemplate() throws Exception {
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHostA = new SiteDataGen().nextPersisted();
+        final String body="<html><body> I'm mostly empty </body></html>";
 
         Template template=new Template();
         template.setTitle(title);
         template.setBody(body);
-        template= templateAPI.saveTemplate(template, host, user, false);
+        template = templateAPI.saveTemplate(template, newHostA, user, false);
         assertTrue(UtilMethods.isSet(template.getInode()));
         assertTrue(UtilMethods.isSet(template.getIdentifier()));
         assertEquals(template.getBody(), body);
         assertEquals(template.getTitle(), title);
+    }
 
-        // now testing with existing inode and identifier
-        String inode=UUIDGenerator.generateUuid();
-        String identifier=UUIDGenerator.generateUuid();
-        template=new Template();
+    /**
+     * Method to test: saveTemplate
+     * Given Scenario: Create a template and save it, update the body and save it again.
+     * ExpectedResult: Template should be save successfully
+     *
+     */
+    @Test
+    public void test_saveTemplate_editExistingTemplate() throws Exception {
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHostA = new SiteDataGen().nextPersisted();
+        final String body="<html><body> I'm mostly empty </body></html>";
+
+        Template template=new Template();
         template.setTitle(title);
         template.setBody(body);
-        template.setInode(inode);
-        template.setIdentifier(identifier);
-        template= templateAPI.saveTemplate(template, host, user, false);
+        template = templateAPI.saveTemplate(template, newHostA, user, false);
         assertTrue(UtilMethods.isSet(template.getInode()));
         assertTrue(UtilMethods.isSet(template.getIdentifier()));
+        final String templateInode = template.getInode();
+        final String templateIdentifier = template.getIdentifier();
         assertEquals(template.getBody(), body);
         assertEquals(template.getTitle(), title);
-        assertEquals(template.getInode(),inode);
-        assertEquals(template.getIdentifier(),identifier);
 
-        template= templateAPI.findWorkingTemplate(identifier, user, false);
-        assertTrue(template!=null);
-        assertEquals(template.getInode(),inode);
-        assertEquals(template.getIdentifier(),identifier);
-
-        // now update with existing inode
-        template.setBody("updated body!");
-        String newInode=UUIDGenerator.generateUuid();
-        template.setInode(newInode);
-        template= templateAPI.saveTemplate(template, host, user, false);
-
-        // same identifier now new inode
-        template= templateAPI.findWorkingTemplate(identifier, user, false);
-        assertTrue(template!=null);
-        assertEquals(template.getInode(),newInode);
-        assertEquals(template.getIdentifier(),identifier);
-        assertEquals(template.getBody(),"updated body!"); // make sure it took our changes
+        final String updatedBody = "updated body!";
+        template = templateAPI.findWorkingTemplate(template.getIdentifier(), user, false);
+        template.setBody(updatedBody);
+        template.setInode("");
+        template = templateAPI.saveTemplate(template, newHostA, user, false);
+        assertTrue(UtilMethods.isSet(template.getInode()));
+        assertTrue(UtilMethods.isSet(template.getIdentifier()));
+        assertEquals(templateIdentifier, template.getIdentifier());
+        assertNotEquals(templateInode, template.getInode());
+        assertEquals(updatedBody,template.getBody());
+        assertEquals(title,template.getTitle());
     }
 
     /**
@@ -638,7 +653,7 @@ public class TemplateAPITest extends IntegrationTestBase {
             template = templateAPI.saveTemplate(template, host, user, false);
 
             layout = new Template();
-            //No title, this is a layout
+            layout.setTitle(Template.ANONYMOUS_PREFIX + System.currentTimeMillis());
             layout.setBody("<html><body> Empty Layout </body></html>");
             layout = templateAPI.saveTemplate(layout, host, user, false);
 
@@ -797,4 +812,56 @@ public class TemplateAPITest extends IntegrationTestBase {
         assertFalse(identifier.getCreateDate().toString().isEmpty());
     }
 
+    /**
+     * Method to test: {@link TemplateAPI#saveTemplate(Template, Host, User, boolean)}
+     * Given Scenario: Tries to save a new template using a limited user that does not have the required permissions
+     * ExpectedResult: template is not saved and a DotSecurityException is thrown.
+     */
+    @Test(expected = DotSecurityException.class)
+    public void test_saveTemplate_limitedUser_noEnoughPermissions_fail() throws Exception{
+        //Create the limited user
+        final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
+        APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
+
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHostA = new SiteDataGen().nextPersisted();
+        //Create template
+        Template templateA = new TemplateDataGen().title(title).next();
+        templateA = APILocator.getTemplateAPI().saveTemplate(templateA,newHostA,limitedUser,false);
+    }
+
+    /**
+     * Method to test: {@link TemplateAPI#saveTemplate(Template, Host, User, boolean)}
+     * Given Scenario: Tries to save a new template using a limited user that have the required permissions
+     * ExpectedResult: template is saved.
+     */
+    @Test
+    public void test_saveTemplate_limitedUser_success() throws Exception{
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHostA = new SiteDataGen().nextPersisted();
+
+        //Create the limited user
+        final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
+        APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
+
+        //Give Permissions Over the Host Can Add children
+        Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                newHostA.getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, true);
+        APILocator.getPermissionAPI().save(permissions, newHostA, user, false);
+        //Give Permissions Over the Host READ/EDIT Templates
+        permissions = new Permission(PermissionableType.TEMPLATES.getCanonicalName(),
+                newHostA.getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true);
+        APILocator.getPermissionAPI().save(permissions, newHostA, user, false);
+
+        //Create template
+        Template templateA = new TemplateDataGen().title(title).next();
+        templateA = APILocator.getTemplateAPI().saveTemplate(templateA,newHostA,limitedUser,false);
+
+        assertEquals(1,templateAPI.findTemplatesAssignedTo(newHostA).size());
+        assertEquals(title,templateAPI.findTemplatesAssignedTo(newHostA).get(0).getTitle());
+    }
 }

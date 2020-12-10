@@ -40,6 +40,7 @@ import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -228,7 +229,11 @@ public class PageResourceHelper implements Serializable {
             final Template template = getTemplate(page, systemUser, pageForm);
             final boolean hasPermission = template.isAnonymous() ?
                     permissionAPI.doesUserHavePermission(page, PermissionLevel.EDIT.getType(), user) :
-                    permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user);
+                    !InodeUtils.isSet(template.getPermissionId())?
+                            permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, false) &&
+                            permissionAPI.doesUserHavePermissions(host.getIdentifier(), PermissionAPI.PermissionableType.TEMPLATES, PermissionAPI.PERMISSION_EDIT, user):
+
+                            permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user);
 
             if (!hasPermission) {
                 throw new DotSecurityException("The user doesn't have permission to EDIT");

@@ -1,8 +1,5 @@
 package com.dotmarketing.portlets.templates.business;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_EDIT;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -11,9 +8,23 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.rendering.velocity.services.TemplateLoader;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
-import com.dotmarketing.beans.*;
-import com.dotmarketing.business.*;
-import com.dotmarketing.business.PermissionAPI.PermissionableType;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.Inode;
+import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.beans.Tree;
+import com.dotmarketing.beans.VersionInfo;
+import com.dotmarketing.beans.WebAsset;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.BaseWebAssetAPI;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Theme;
+import com.dotmarketing.business.ThemeAPI;
+import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
@@ -27,19 +38,21 @@ import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
-import com.dotmarketing.portlets.containers.business.ContainerAPIImpl;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.templates.design.bean.*;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
+import com.dotmarketing.portlets.templates.design.bean.Sidebar;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutColumn;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
 import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.Constants;
+import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -47,14 +60,22 @@ import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
-import io.vavr.Tuple;
-import io.vavr.Tuple2;
 import io.vavr.control.Try;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.*;
-import java.util.function.Supplier;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_EDIT;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 
 
 
@@ -101,11 +122,13 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 			throws DotDataException, DotSecurityException {
 
 		if (!permissionAPI.doesUserHavePermission(sourceTemplate, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-			throw new DotSecurityException("You don't have permission to read the source file.");
+			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to READ the source template");
+			throw new DotSecurityException("You don't have permission to read the source template");
 		}
 
 		if (!permissionAPI.doesUserHavePermission(destination, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
-			throw new DotSecurityException("You don't have permission to write in the destination folder.");
+			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to WRITE in the destination site");
+			throw new DotSecurityException("You don't have permission to write in the destination site.");
 		}
 
 		boolean isNew = false;
@@ -149,6 +172,9 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		// Copy permissions
 		permissionAPI.copyPermissions(sourceTemplate, newTemplate);
 
+		ActivityLogger.logInfo(this.getClass(), "Copied Template", "User " +
+				user.getPrimaryKey() + " copied template" + newTemplate.getTitle(), destination.getTitle() != null ? destination.getTitle() : "default");
+
 		return newTemplate;
 	}
 
@@ -159,11 +185,13 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 		if (!permissionAPI.doesUserHavePermission(sourceTemplate, PermissionAPI.PERMISSION_READ, user,
 				respectFrontendRoles)) {
-			throw new DotSecurityException("You don't have permission to read the source file.");
+			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to READ the source template");
+			throw new DotSecurityException("You don't have permission to read the source template");
 		}
 
 		if (!permissionAPI.doesUserHavePermission(destination, PermissionAPI.PERMISSION_WRITE, user,
 				respectFrontendRoles)) {
+			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to WRITE in the destination site");
 			throw new DotSecurityException("You don't have permission to write in the destination folder.");
 		}
 
@@ -184,10 +212,6 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		templateFactory.save(template);
 	}
 
-	private void save(final Template template, final String existingId) throws DotDataException {
-        templateFactory.save(template,existingId);
-    }
-
 	protected void save(final WebAsset webAsset) throws DotDataException {
 		save((Template) webAsset);
 	}
@@ -197,6 +221,13 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 			throws DotDataException, DotSecurityException, WebAssetException {
 
 		Logger.debug(this, ()-> "Publishing the template: " + template.getIdentifier());
+
+		//Check if the Template is locked, and if is locked by a diff user that is executing the action
+		if(template.isLocked() && !this.versionableAPI.get().getLockedBy(template).get().equals(user.getUserId())){
+			Logger.error(this, "The Template: " + template.getName() + " can not be published. "
+					+ "Because it is locked");
+			throw new DotStateException("Template can not be published because is locked");
+		}
 
 		//Check Publish Permissions over Template
 		if(!this.permissionAPI.doesUserHavePermission(template, PERMISSION_PUBLISH, user)){
@@ -248,6 +279,13 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 			throws DotSecurityException, DotDataException {
 
 		Logger.debug(this, ()-> "Unpublishing the template: " + template.getIdentifier());
+
+		//Check if the Template is locked, and if is locked by a diff user that is executing the action
+		if(template.isLocked() && !this.versionableAPI.get().getLockedBy(template).get().equals(user.getUserId())){
+			Logger.error(this, "The Template: " + template.getName() + " can not be unpublished. "
+					+ "Because it is locked");
+			throw new DotStateException("Template can not be unpublished because is locked");
+		}
 
 		//Check Edit Permissions over Template
 		if(!this.permissionAPI.doesUserHavePermission(template, PERMISSION_EDIT, user)){
@@ -320,6 +358,13 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 		Logger.debug(this, ()-> "Doing archive of the template: " + template.getIdentifier());
 
+		//Check if the Template is locked, and if is locked by a diff user that is executing the action
+		if(template.isLocked() && !this.versionableAPI.get().getLockedBy(template).get().equals(user.getUserId())){
+			Logger.error(this, "The Template: " + template.getName() + " can not be archived. "
+					+ "Because it is locked");
+			throw new DotStateException("Template can not be archive because is locked");
+		}
+
 		//Check Edit Permissions over Template
 		if(!this.permissionAPI.doesUserHavePermission(template, PERMISSION_EDIT, user)){
 			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to Edit the Template");
@@ -356,11 +401,18 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		templateFactory.save(templateWorkingVersion);
 	}
 
-
 	@WrapInTransaction
 	public void unarchive (final Template template, final User user)
 			throws DotDataException, DotSecurityException {
 		Logger.debug(this, ()-> "Doing unarchive of the template: " + template.getIdentifier());
+
+		//Check if the Template is locked, and if is locked by a diff user that is executing the action
+		if(template.isLocked() && !this.versionableAPI.get().getLockedBy(template).get().equals(user.getUserId())){
+			Logger.error(this, "The Template: " + template.getName() + " can not be unarchived. "
+					+ "Because it is locked");
+			throw new DotStateException("Template can not be unarchive because is locked");
+		}
+
 		//Check Edit Permissions over Template
 		if(!this.permissionAPI.doesUserHavePermission(template, PERMISSION_EDIT, user)){
 			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to Edit the Template");
@@ -392,10 +444,10 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	}
 
 	@Override
-	public void setLive(final Template template) throws DotDataException, DotStateException,DotSecurityException {
+	public void setLive(final Template template) throws DotDataException, DotStateException,DotSecurityException{
 
 		this.versionableAPI.get().setLive(template instanceof FileAssetTemplate?
-				FileAssetTemplate.class.cast(template).toContentlet(): template);
+		FileAssetTemplate.class.cast(template).toContentlet():template);
 	}
 
 	@WrapInTransaction
@@ -403,6 +455,13 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 			throws DotDataException, DotSecurityException {
 
 		Logger.debug(this, ()-> "Doing delete of the template: " + template.getIdentifier());
+
+		//Check if the Template is locked, and if is locked by a diff user that is executing the action
+		if(template.isLocked() && !this.versionableAPI.get().getLockedBy(template).get().equals(user.getUserId())){
+			Logger.error(this, "The Template: " + template.getName() + " can not be deleted. "
+					+ "Because it is locked");
+			throw new DotStateException("Template can not be deleted because is locked");
+		}
 
 		//Check Edit Permissions over Template
 		if(!this.permissionAPI.doesUserHavePermission(template, PERMISSION_EDIT, user)){
@@ -464,17 +523,16 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 	@Override
 	@WrapInTransaction
-	public void deleteByInode(final String inode) {
-
+	public void deleteVersionByInode(final String inode) {
 		Logger.debug(this, ()-> "Deleting template inode: " + inode);
 		Try.run(()->FactoryLocator.getTemplateFactory().deleteTemplateByInode(inode)).onFailure(e -> new RuntimeException(e));
 	}
 
 	@WrapInTransaction
-	public Template saveTemplate(final Template template, final Host destination, final User user, final boolean respectFrontendRoles)
+	public Template saveTemplate(final Template template, final Host host, final User user, final boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
 
-		boolean existingId=false, existingInode=false;
+		boolean existingId=false;
 
 		if (template.isAnonymous() && LicenseManager.getInstance().isCommunity()) {
 
@@ -482,72 +540,71 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 			throw new InvalidLicenseException();
 		}
 
+		if (!UtilMethods.isSet(template.getTitle())){
+			throw new DotDataException("Title is required on templates");
+		}
+
 	    if(UtilMethods.isSet(template.getIdentifier())) {
 		    final Identifier ident=APILocator.getIdentifierAPI().find(template.getIdentifier());
-		    existingId = ident==null || !UtilMethods.isSet(ident.getId());
+		    existingId = ident!=null && UtilMethods.isSet(ident.getId());
+		}
+
+	    //if is an existing template check EDIT permissions, if is new template you need add_children and edit permissions over the host
+	    if(existingId){
+			if (!permissionAPI.doesUserHavePermission(template, PERMISSION_EDIT, user, respectFrontendRoles)) {
+				throw new DotSecurityException("You don't have permission to edit the template.");
+			}
+		} else{
+			if (!permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles)) {
+				throw new DotSecurityException("You don't have permission to add_children at the site.");
+			}
+
+			if (!permissionAPI.doesUserHavePermissions(host.getIdentifier(), PermissionAPI.PermissionableType.TEMPLATES, PermissionAPI.PERMISSION_EDIT, user)) {
+				throw new DotSecurityException("You don't have permission to edit templates at site level.");
+			}
 		}
 
 	    if(template.isDrawed() && !UtilMethods.isSet(template.getDrawedBody())) {
 	        throw new DotStateException("Drawed template MUST have a drawed body:" + template);
-
 	    }
 
-	    if(UtilMethods.isSet(template.getInode())) {
-    	    try {
-    	        final Template existing= templateFactory.find(template.getInode());
-    	        existingInode = existing==null || !UtilMethods.isSet(existing.getInode());
-    	    }
-    	    catch(Exception ex) {
-    	        existingInode=true;
-    	    }
-	    }
+		if (template.isDrawed() && !UtilMethods.isSet(template.getTheme())){
+			throw new DotDataException("Theme is required on drawed templates");
+		}
 
-	    final Template oldTemplate = !existingId && UtilMethods.isSet(template.getIdentifier())
-				?findWorkingTemplate(template.getIdentifier(), user, respectFrontendRoles)
-						:null;
+		if(UtilMethods.isSet(template.getTheme())) {
 
+			if (Theme.SYSTEM_THEME.equalsIgnoreCase(template.getTheme())) {
 
-		if ((oldTemplate != null) && InodeUtils.isSet(oldTemplate.getInode())) {
-			if (!permissionAPI.doesUserHavePermission(oldTemplate, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-				throw new DotSecurityException("You don't have permission to read the source file.");
+				final Theme systemTheme = APILocator.getThemeAPI().systemTheme();
+				template.setThemeName(systemTheme.getName());
+			} else {
+
+				final Folder themeFolder = APILocator.getFolderAPI().find(template.getTheme(), user, respectFrontendRoles);
+				if (null != themeFolder && InodeUtils.isSet(themeFolder.getInode())) {
+					template.setThemeName(APILocator.getFolderAPI().find(template.getTheme(), user, respectFrontendRoles).getName());
+				} else {
+					Logger.error(this.getClass(), "Invalid Theme: " + template.getTheme());
+					throw new DotDataException("Invalid theme: " + template.getTheme());
+				}
 			}
 		}
 
-		if (!permissionAPI.doesUserHavePermission(destination, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles)) {
-			throw new DotSecurityException("You don't have permission to write in the destination folder.");
-		}
-
-		if (!permissionAPI.doesUserHavePermissions(PermissionableType.TEMPLATES, PermissionAPI.PERMISSION_EDIT, user)) {
-			throw new DotSecurityException("You don't have permission to edit templates.");
-		}
-
-
-		//gets identifier from the current asset
-		Identifier identifier = null;
-		if (oldTemplate != null) {
+		if (existingId) {
+			final Template oldTemplate = findWorkingTemplate(template.getIdentifier(), user, respectFrontendRoles);
 			templateFactory.deleteFromCache(oldTemplate);
-
-			identifier = identifierAPI.findFromInode(oldTemplate.getIdentifier());
-		}
-		else{
+		} else{
 			//sets the owner so it can be set at the identifier table
 			template.setOwner(user.getUserId());
-			identifier = (!existingId) ? APILocator.getIdentifierAPI().createNew(template, destination) :
-			                             APILocator.getIdentifierAPI().createNew(template, destination, template.getIdentifier());
+			final Identifier identifier = UtilMethods.isSet(template.getIdentifier()) ?
+					APILocator.getIdentifierAPI().createNew(template, host, template.getIdentifier()) :
+					APILocator.getIdentifierAPI().createNew(template, host);
 			template.setIdentifier(identifier.getId());
 		}
 		template.setModDate(new Date());
 		template.setModUser(user.getUserId());
 
-
-
-		//it saves or updates the asset
-		if(existingInode) {
-		    // support for existing inode
-		    save(template,template.getInode());
-		}else {
-		    save(template);
-		}
+		save(template);
 		APILocator.getVersionableAPI().setWorking(template);
 
         return template;
@@ -864,7 +921,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 			throws DotDataException, DotSecurityException {
 		final List<Template> templateAllVersions = templateFactory.findAllVersions(identifier,bringOldVersions);
 		if(!templateAllVersions.isEmpty() && !permissionAPI.doesUserHavePermission(templateAllVersions.get(0), PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
-			throw new DotSecurityException("User cannot read Contentlet So Unable to View Versions");
+			throw new DotSecurityException("User does not have READ permissions over the Template, so unable to view Versions");
 		}
 		return templateAllVersions;
 	}

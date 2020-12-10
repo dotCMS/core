@@ -3,10 +3,6 @@ package com.dotcms.rest.api.v1.template;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.ContainerView;
@@ -20,7 +16,6 @@ import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
@@ -38,22 +33,18 @@ import java.util.stream.Collectors;
 public class TemplateHelper {
 
     private final PermissionAPI  permissionAPI;
-    private final RoleAPI roleAPI;
     private final ContainerAPI containerAPI;
 
     public TemplateHelper() {
         this(APILocator.getPermissionAPI(),
-                APILocator.getRoleAPI(),
                 APILocator.getContainerAPI());
     }
 
     @VisibleForTesting
     public TemplateHelper(final PermissionAPI  permissionAPI,
-                          final RoleAPI        roleAPI,
                           final ContainerAPI containerAPI) {
 
         this.permissionAPI  = permissionAPI;
-        this.roleAPI        = roleAPI;
         this.containerAPI   = containerAPI;
     }
 
@@ -89,9 +80,9 @@ public class TemplateHelper {
                 .lockedBy(Try.of(()->APILocator.getVersionableAPI().getLockedBy(template).orElse(null)).getOrNull())
                 .working(Try.of(()->template.isWorking()).getOrElse(false))
 
-                .canRead(Try.of(()-> APILocator.getPermissionAPI().doesUserHavePermission(template, PermissionAPI.PERMISSION_READ, user)).getOrElse(false))
-                .canWrite(Try.of(()->APILocator.getPermissionAPI().doesUserHavePermission(template, PermissionAPI.PERMISSION_EDIT, user)).getOrElse(false))
-                .canPublish(Try.of(()->APILocator.getPermissionAPI().doesUserHavePermission(template, PermissionAPI.PERMISSION_PUBLISH, user)).getOrElse(false))
+                .canRead(Try.of(()->   this.permissionAPI.doesUserHavePermission(template, PermissionAPI.PERMISSION_READ, user)).getOrElse(false))
+                .canWrite(Try.of(()->  this.permissionAPI.doesUserHavePermission(template, PermissionAPI.PERMISSION_EDIT, user)).getOrElse(false))
+                .canPublish(Try.of(()->this.permissionAPI.doesUserHavePermission(template, PermissionAPI.PERMISSION_PUBLISH, user)).getOrElse(false))
 
                 .categoryId(template.getCategoryId())
                 .countAddContainer(template.getCountAddContainer())
@@ -117,6 +108,8 @@ public class TemplateHelper {
             layout.setSidebar(this.toSideBar(templateLayoutView.getSidebar()));
             layout.setTitle(templateLayoutView.getTitle());
             layout.setWidth(templateLayoutView.getWidth());
+            layout.setHeader(templateLayoutView.isHeader());
+            layout.setFooter(templateLayoutView.isFooter());
         }
 
         return layout;
@@ -211,7 +204,6 @@ public class TemplateHelper {
                 templateLayoutColumn.getLeftOffset(), templateLayoutColumn.getStyleClass()):
                 null;
     }
-
     private Set<ContainerView> findContainerInLayout (final TemplateLayout templateLayout) {
 
         final Set<ContainerView> containers = new HashSet<>();
@@ -243,21 +235,5 @@ public class TemplateHelper {
         return containers;
     }
 
-    public void checkPermission(final User user, final Template currentTemplate, final int permissionType) throws DotDataException, DotSecurityException {
-
-        if (!this.permissionAPI.doesUserHavePermission(currentTemplate,  permissionType, user)) {
-
-            final Role cmsOwner      = this.roleAPI.loadCMSOwnerRole();
-            final boolean isCMSOwner = this.permissionAPI.getRoles(currentTemplate.getInode(), PermissionAPI.PERMISSION_PUBLISH, "CMS Owner", 0, -1)
-                    .stream().anyMatch(role -> role.getId().equals(cmsOwner.getId()))
-                    || this.permissionAPI.getRoles(currentTemplate.getInode(), PermissionAPI.PERMISSION_WRITE, "CMS Owner", 0, -1)
-                    .stream().anyMatch(role -> role.getId().equals(cmsOwner.getId()));
-
-            if(!isCMSOwner) {
-
-                throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
-            }
-        }
-    }
 
 }

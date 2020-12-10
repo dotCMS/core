@@ -245,9 +245,11 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	}
 
 	public void deleteFromCache(final Template template) throws DotDataException {
-		templateCache.remove(template.getInode());
-		new TemplateLoader().invalidate(template);
-		CacheLocator.getIdentifierCache().removeFromCacheByVersionable(template);
+		if(null!=template && UtilMethods.isSet(template.getInode())) {
+			templateCache.remove(template.getInode());
+			new TemplateLoader().invalidate(template);
+			CacheLocator.getIdentifierCache().removeFromCacheByVersionable(template);
+		}
 	}
 
 	@SuppressWarnings("unchecked")

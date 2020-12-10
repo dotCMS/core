@@ -204,7 +204,7 @@ public class VersionableHelper {
 
                 this.checkPermission(user, template, PERMISSION_WRITE);
                 this.permissionAPI.removePermissions(template);
-                this.templateAPI.deleteByInode(inode);
+                this.templateAPI.deleteVersionByInode(inode);
             } else {
 
                 throw new DoesNotExistException("The template, inode: " + inode + " does not exists");

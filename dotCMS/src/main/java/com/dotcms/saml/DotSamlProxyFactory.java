@@ -135,7 +135,7 @@ public class DotSamlProxyFactory implements EventSubscriber<AppSecretSavedEvent>
                         if (!OSGIUtil.getInstance().isInitialized()) {
                             Logger.warn(this.getClass(),
                                     "OSGI Framework not initialized, trying to initialize...");
-                            OSGIUtil.getInstance().initializeFramework(Config.CONTEXT);
+                            OSGIUtil.getInstance().initializeFramework();
                         }
                     } catch (Exception e) {
 

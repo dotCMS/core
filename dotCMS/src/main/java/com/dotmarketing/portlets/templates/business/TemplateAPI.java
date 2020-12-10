@@ -3,7 +3,6 @@ package com.dotmarketing.portlets.templates.business;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.Versionable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
@@ -218,10 +217,10 @@ public interface TemplateAPI {
 			throws DotDataException, DotSecurityException;
 
 	/**
-	 * Deletes the template by inode
+	 * Deletes the template version by inode
 	 * @param inode String
 	 */
-	void deleteByInode(String inode);
+	void deleteVersionByInode(String inode);
 
 	/**
 	 * Delete the specified template
