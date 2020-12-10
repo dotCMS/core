@@ -2,7 +2,8 @@
     <dot-language-selector
         [pTooltip]="pageState.viewAs.language.language"
         tooltipPosition="bottom"
-        appendTo="target"
+        tooltipStyleClass="dot-language-selector__dialog"
+        appendTo="body"
         (selected)="changeLanguageHandler($event)"
         [value]="pageState.viewAs.language"
     ></dot-language-selector>
@@ -11,7 +12,8 @@
         <dot-device-selector
             [pTooltip]="pageState.viewAs.device?.name || ('editpage.viewas.default.device' | dm)"
             tooltipPosition="bottom"
-            appendTo="target"
+            tooltipStyleClass="dot-device-selector__dialog"
+            appendTo="body"
             (selected)="changeDeviceHandler($event)"
             [value]="pageState.viewAs.device"
         ></dot-device-selector>

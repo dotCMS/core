@@ -232,7 +232,7 @@ describe('DotEditPageViewAsControllerComponent', () => {
         it('should have Device selector with tooltip', () => {
             const deviceSelectorDe = de.query(By.css('dot-device-selector'));
             expect(deviceSelector).not.toBeNull();
-            expect(deviceSelectorDe.attributes.appendTo).toBe('target');
+            expect(deviceSelectorDe.attributes.appendTo).toBe('body');
             expect(deviceSelectorDe.attributes['ng-reflect-text']).toBe('Default Device');
             expect(deviceSelectorDe.attributes['ng-reflect-tooltip-position']).toBe('bottom');
         });
@@ -252,7 +252,7 @@ describe('DotEditPageViewAsControllerComponent', () => {
         it('should have Language selector', () => {
             const languageSelectorDe = de.query(By.css('dot-language-selector'));
             expect(languageSelector).not.toBeNull();
-            expect(languageSelectorDe.attributes.appendTo).toBe('target');
+            expect(languageSelectorDe.attributes.appendTo).toBe('body');
             expect(languageSelectorDe.attributes['ng-reflect-tooltip-position']).toBe('bottom');
         });
 

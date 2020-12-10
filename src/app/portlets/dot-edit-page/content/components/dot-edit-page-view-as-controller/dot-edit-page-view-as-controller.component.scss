@@ -1,5 +1,19 @@
 @use "variables" as *;
 
+::ng-deep {
+    .dot-language-selector__dialog,
+    .dot-device-selector__dialog {
+        display: none !important;
+    }
+
+    @media only screen and (max-width: $screen-device-container-max) {
+        .dot-language-selector__dialog,
+        .dot-device-selector__dialog {
+            display: inline-block !important;
+        }
+    }
+}
+
 :host {
     display: flex;
 
@@ -11,23 +25,11 @@
         }
     }
 
-    dot-language-selector,
-    dot-device-selector,
-    dot-persona-selector {
-        ::ng-deep .p-tooltip {
-            display: none !important;
-        }
-    }
-
     @media only screen and (max-width: $screen-device-container-max) {
         dot-language-selector,
         dot-device-selector,
         dot-persona-selector {
             margin-left: $spacing-3;
-
-            ::ng-deep .p-tooltip {
-                display: inline-block !important;
-            }
         }
     }
 

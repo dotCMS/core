@@ -35,8 +35,12 @@
             p-dropdown .p-dropdown {
                 width: 10px !important;
 
-                label {
+                .p-dropdown-label {
                     display: none;
+                }
+
+                .p-dropdown-trigger {
+                    width: auto;
                 }
             }
             label {
