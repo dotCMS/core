@@ -111,8 +111,6 @@ public class HTMLDiffUtilTest extends IntegrationTestBase {
 
         final Set<String> coneheads = ImmutableSet.of("Thrust", "Ramjet", "Dirge");
 
-        site = new SiteDataGen().nextPersisted();
-
         final Contentlet contentlet = new ContentletDataGen(contentGenericId)
                 .languageId(defaultLang.getId())
                 .folder(folder)
@@ -121,8 +119,8 @@ public class HTMLDiffUtilTest extends IntegrationTestBase {
                 .setProperty("body", String.join(",", seekers))
                 .nextPersisted();
 
-        contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        contentlet.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        contentlet.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
         contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(contentlet, systemUser, false);
 
@@ -130,6 +128,9 @@ public class HTMLDiffUtilTest extends IntegrationTestBase {
                 .pageURL(pageName)
                 .friendlyName(pageName)
                 .title(pageName).nextPersisted();
+
+        pageLive.setIndexPolicy(IndexPolicy.FORCE);
+        pageLive.setIndexPolicyDependencies(IndexPolicy.FORCE);
 
         final MultiTree multiTreeV1 = new MultiTree(pageLive.getIdentifier(),
                 container.getIdentifier(), contentlet.getIdentifier(),
@@ -142,9 +143,9 @@ public class HTMLDiffUtilTest extends IntegrationTestBase {
         final Contentlet checkedOut = contentletAPI
                 .checkout(contentlet.getInode(), systemUser, false);
         checkedOut.setProperty("body", String.join(",", coneheads));
-        checkedOut.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        checkedOut.setIndexPolicy(IndexPolicy.FORCE);
         contentletAPI.checkin(checkedOut, systemUser, false);
-        workingPage.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        workingPage.setIndexPolicy(IndexPolicy.FORCE);
         contentletAPI.checkin(workingPage, systemUser, false);
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
