@@ -330,7 +330,7 @@ public interface VersionableAPI {
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	boolean isDeleted(Versionable ver) throws DotDataException, DotStateException,DotSecurityException;
+	boolean isDeleted(Versionable ver) throws DotDataException, DotStateException;
 	
 	/**
 	 * Allows to delete (when true) of undelete (when false) a versionable 
