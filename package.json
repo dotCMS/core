@@ -11,6 +11,7 @@
         "publish:dev": "rm -rf dist;npm run build:prod;cp package.json ./dist/package.json;npm run createpackagejson;cd dist;npm publish",
         "publish:doc:docms": "typedoc projects/dotcms/src/lib/ --options projects/dotcms/typedoc.json; gh-pages --dist ./dist-docs/dotcms --dest ./docs/dotcms",
         "publish:doc:docms-models": "typedoc projects/dotcms-models/src/ --options projects/dotcms-models/typedoc.json; gh-pages --dist ./dist-docs/dotcms-models --dest ./docs/dotcms-models",
+        "publish:docs": "npm run publish:doc:docms && npm run publish:doc:docms-models",
         "build:dev": "ng build --configuration=development",
         "build:prod": "ng build --configuration=production --prod dotcms-ui",
         "build:libs": "ng build dotcms-js; ng build dot-rules; ng build dot-layout-grid",
@@ -20,7 +21,7 @@
         "docs:json": "compodoc -p ./tsconfig.json -e json -d .",
         "storybook": "npm run docs:json && start-storybook -p 6006",
         "build-storybook": "npm run docs:json && build-storybook",
-        "deploy-storybook": "storybook-to-ghpages"
+        "deploy-docs": "storybook-to-ghpages && npm run publish:docs"
     },
     "repository": {
         "type": "git",
