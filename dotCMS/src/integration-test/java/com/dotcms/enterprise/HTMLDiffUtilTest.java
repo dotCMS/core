@@ -200,7 +200,7 @@ public class HTMLDiffUtilTest extends IntegrationTestBase {
 
     /**
      *Given scenario: We have a page created out of a layout and a container. The Container holds a List of items.
-     * Expected Result:  We create a working copy od the page but this one isn't modified. So whn compared
+     * Expected Result:  We create a working copy of the page but this one isn't modified. So whn compared
      * @throws Exception
      */
     @Test
