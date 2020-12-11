@@ -22,6 +22,3 @@ jobs:
               run: |
                   npm set //registry.npmjs.org/:_authToken ${{ secrets.NPM_TOKEN }}
                   npm run publish:dev
-            - name: Publish to Storybook
-              run: |
-                  npm run deploy-docs
