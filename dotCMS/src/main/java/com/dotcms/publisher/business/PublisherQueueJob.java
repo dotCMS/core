@@ -383,7 +383,8 @@ public class PublisherQueueJob implements StatefulJob {
 		Logger.info(this, String.format("For bundle '%s':", auditedBundleId));
 		Logger.info(this, String.format("-> Status             : %s [%d]", bundleStatus.toString(), bundleStatus.getCode()));
 		if (!bundleStatus.equals(PublishAuditStatus.Status.PUBLISHING_BUNDLE) && !bundleStatus.equals
-				(PublishAuditStatus.Status.WAITING_FOR_PUBLISHING) && !bundleStatus.equals(Status.SUCCESS)) {
+                (PublishAuditStatus.Status.WAITING_FOR_PUBLISHING) && !bundleStatus
+                .equals(Status.SUCCESS) && !bundleStatus.equals(Status.SUCCESS_WITH_WARNINGS)) {
 			final int totalAttemptsFromHistory = localHistory.getNumTries();
 			Logger.info(this, String.format("-> Re-publish attempts: %d out of %d", totalAttemptsFromHistory,
 					MAX_NUM_TRIES));
@@ -476,7 +477,8 @@ public class PublisherQueueJob implements StatefulJob {
 			boolean isGroupFailed = false;
 			boolean isGroupSaved = false;
 			for (final EndpointDetail detail : group.values() ) {
-				if ( detail.getStatus() == Status.SUCCESS.getCode() ) {
+                if (detail.getStatus() == Status.SUCCESS.getCode()
+                        || detail.getStatus() == Status.SUCCESS_WITH_WARNINGS.getCode()) {
 					isGroupOk = true;
 				} else if ( detail.getStatus() == Status.PUBLISHING_BUNDLE
 						.getCode() ) {
