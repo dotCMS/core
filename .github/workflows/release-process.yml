@@ -1,0 +1,51 @@
+name: release-process-automation
+on:
+  push: #release:
+#    types: [created]
+jobs:
+  release-process:
+    name: Release Process Automation
+    runs-on: ubuntu-latest
+    env:
+      DOT_CICD_CLOUD_PROVIDER: github
+      DOT_CICD_TARGET: dotcms-release
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_USER: dotcmsbuild
+      GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
+      PULL_REQUEST: ${{ github.event.number }}
+    steps:
+      - name: Checkout core
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - name: GITHUB CONTEXT
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+      - name: Get the latest commit on PR
+        id: get-latest-commit
+        uses: ActionsRML/get-PR-latest-commit@v1
+        if: github.event_name == 'pull_request'
+      - name: Set Common Vars
+        run: |
+          BRANCH=$(basename "${{ github.ref }}")
+          echo "branch=${BRANCH}" >> $GITHUB_ENV
+          echo "coreBranch=${BRANCH}" >> $GITHUB_ENV
+      - name: Prepare dot-cicd
+        run: |
+          chmod +x .cicd/discover.sh && .cicd/discover.sh
+      - name: Check Provider
+        run: |
+          dotcicd/library/checkProvider.sh github
+      - name: Generate/Deploy DotCMS EE
+        uses: dotcms/generate-ee-jar@main
+        with:
+          repo-username: ${{ secrets.EE_REPO_USERNAME }}
+          repo-password: ${{ secrets.EE_REPO_PASSWORD }}
+          build-id: ${{ env.branch }}
+          core-build-id: ${{ env.coreBranch }}
+          rsa-key: ${{ secrets.EE_RSA_KEY }}
+      - name: Build distro files
+        run: |
+          dotcicd/library/pipeline.sh buildDistro
+
