@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.authentication;
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -26,15 +27,7 @@ import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
@@ -42,6 +35,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.Serializable;
+import java.net.UnknownHostException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -166,17 +160,25 @@ public class ApiTokenResource implements Serializable {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response issueApiToken(@Context final HttpServletRequest request,
-                                   @Context final HttpServletResponse response,
-                                   final ApiTokenForm formData) {
+    public final Response issueApiToken(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            final ApiTokenForm formData) throws DotDataException, DotSecurityException {
         
         final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
         final User requestingUser = initDataObject.getUser();
-        final User forUser = Try.of(()->APILocator.getUserAPI().loadUserById(formData.userId,requestingUser, false )).getOrNull();
-        
-        if(forUser == null) {
+        final User forUser = formData.userId != null ? getUserById(formData, requestingUser) : requestingUser;
 
+        if (requestingUser != forUser && !requestingUser.isAdmin()) {
+            throw new DotDataException("Just Admin user can request a Token for another user");
+        }
+
+        if(forUser == null) {
             return ExceptionMapperUtil.createResponse(new DotStateException("No user found"), Response.Status.NOT_FOUND);
+        }
+
+        if (!forUser.isAdmin() && formData.shouldBeAdmin) {
+            throw new DotSecurityException("User should be Admin");
         }
 
         final String netmaskStr = formData.network!=null && !"0.0.0.0/0".equals(formData.network)? formData.network:null;
@@ -202,6 +204,13 @@ public class ApiTokenResource implements Serializable {
         token = this.tokenApi.persistApiToken(token, requestingUser);
         final String jwt = this.tokenApi.getJWT(token, requestingUser);
         return Response.ok(new ResponseEntityView(map("token", token,"jwt", jwt), EMPTY_MAP)).build(); // 200
+    }
+
+    private User getUserById(ApiTokenForm formData, User requestingUser) {
+        final User forUser = Try.of(()->
+                    APILocator.getUserAPI().loadUserById(formData.userId, requestingUser, false ))
+                .getOrNull();
+        return forUser;
     }
 
     /**
@@ -237,18 +246,20 @@ public class ApiTokenResource implements Serializable {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response getRemoteToken(@Context final HttpServletRequest request,
-                                        @Context final HttpServletResponse response,
+    public final Response getRemoteToken(@Context final HttpServletRequest httpRequest,
                                         final RemoteAPITokenForm formData) {
 
         if (!Config.getBooleanProperty("ENABLE_PROXY_TOKEN_REQUESTS", true)) {
-            throw new ForbiddenException("ENABLE_PROXY_TOKEN_REQUESTS should be tru");
+            final String message = "ENABLE_PROXY_TOKEN_REQUESTS is disabled, remote token is not allow";
+            SecurityLogger.logInfo(ApiTokenResource.class, message);
+            throw new ForbiddenException("ENABLE_PROXY_TOKEN_REQUESTS should be true");
         }
 
-        final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
+        final InitDataObject initDataObject = this.webResource.init(null, true, httpRequest, true, null);
 
         if (!initDataObject.getUser().isAdmin()) {
-            throw new ForbiddenException("Should be Admin user");
+            SecurityLogger.logInfo(ApiTokenResource.class, "Should be Admin user to request a remote token");
+            throw new ForbiddenException("Should be Admin user to request a remote token");
         }
 
         final String protocol = formData.protocol();
@@ -258,9 +269,26 @@ public class ApiTokenResource implements Serializable {
         final WebTarget webTarget = client.target(remoteURL);
         final String password = Base64.decodeAsString(formData.password());
 
-        return webTarget.request(MediaType.APPLICATION_JSON)
-                .header("Authorization",  "Basic " + Base64.encodeAsString(formData.login() + ":" + password))
-                .post(Entity.entity(formData.getTokenInfo(), MediaType.APPLICATION_JSON));
+        try {
+            final Response response = webTarget.request(MediaType.APPLICATION_JSON)
+                    .header("Authorization", "Basic " + Base64.encodeAsString(formData.login() + ":" + password))
+                    .post(Entity.entity(formData.getTokenInfo(), MediaType.APPLICATION_JSON));
+
+            if (response.getStatus() != HttpStatus.SC_OK) {
+                final String message = String.format("Status code : %s, message: %s",
+                        response.getStatus(), response.getEntity().toString());
+
+                SecurityLogger.logInfo(ApiTokenResource.class, message);
+            }
+
+            return response;
+        } catch (ProcessingException e){
+            if (e.getCause().getClass() == UnknownHostException.class) {
+                return Response.status(Response.Status.NOT_FOUND).build();
+            } else {
+                throw e;
+            }
+        }
     }
 
     private Client getRestClient() {
