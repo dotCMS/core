@@ -1,0 +1,30 @@
+{
+    "/api": {
+        "target": "http://localhost:8080",
+        "secure": false
+    },
+    "/c/portal": {
+        "target": "http://localhost:8080",
+        "secure": false
+    },
+    "/html": {
+        "target": "http://localhost:8080",
+        "secure": false
+    },
+    "/dwr": {
+        "target": "http://localhost:8080",
+        "secure": false
+    },
+    "/dotcms-webcomponents": {
+        "target": "http://localhost:8080",
+        "secure": false
+    },
+    "/DotAjaxDirector": {
+        "target": "http://localhost:8080",
+        "secure": false
+    },
+    "/contentAsset": {
+        "target": "http://localhost:8080",
+        "secure": false
+    }
+}
