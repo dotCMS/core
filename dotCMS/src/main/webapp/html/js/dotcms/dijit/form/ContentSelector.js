@@ -94,6 +94,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
     useRelateContentOnSelect: false,
 
 	postCreate: function () {
+        this.containerStructures = this._decodeQuoteChars(this.containerStructures);
         var structuresParam = this.containerStructures.toString();
         this.containerStructures = structuresParam.length ? JSON.parse(structuresParam) : [];
 
@@ -131,7 +132,11 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	hide: function () {
 		this._clearSearch();
 		!isNg && this.dialog.hide();
-	},
+    },
+    
+    _decodeQuoteChars: function (structures) {
+        return structures.map(chunk => chunk.replace(/%27/g, "'").replace(/%22/g, '&quot;'))
+    },
 
 	_structureDetailsCallback: function (structure) {
 
