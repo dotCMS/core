@@ -215,7 +215,7 @@
 			dojo.byId("authPropertiesRow").hide();
 			dojo.byId("getTokenSpan").show();
 			dojo.byId("showGetTokenSpan").hide();
-			console.log(dojo.byId('save'));
+
 			dojo.byId('buttons').hide();
 		} else {
 			dojo.byId("authPropertiesRow").show();
