@@ -42,6 +42,8 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.core.CountRequest;
+import org.elasticsearch.client.core.CountResponse;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -1430,7 +1432,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	protected long indexCount(final String query) {
 	    final String qq = LuceneQueryDateTimeFormatter
                 .findAndReplaceQueryDates(translateQuery(query, null).getQuery());
-
+/*
 	    // we check the query to figure out wich indexes to hit
         String indexToHit;
         IndiciesInfo info;
@@ -1450,14 +1452,19 @@ public class ESContentFactoryImpl extends ContentletFactory {
         SearchRequest searchRequest = getCountSearchRequest(qq);
         searchRequest.indices(indexToHit);
 
-        final SearchHits hits = cachedIndexSearch(searchRequest);
+       final SearchHits hits = cachedIndexSearch(searchRequest);
        return hits.getTotalHits().value;
-	}
+  */
 
+        final CountRequest countRequest = getCountRequest(qq);
+        return cachedIndexCount(countRequest);
+    }
+
+    //TODO: This method was no longer using the time-out. We should probably remove it.
     @Override
     protected long indexCount(final String query,
                         final long timeoutMillis) {
-
+/*
         final String queryStringQuery =
                 LuceneQueryDateTimeFormatter.findAndReplaceQueryDates(translateQuery(query, null).getQuery());
 
@@ -1478,8 +1485,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         final SearchHits hits = cachedIndexSearch(searchRequest);
         return hits.getTotalHits().value;
+  */
+       return indexCount(query);
     }
 
+   //Todo: This method is used only on a Test case. Should we get rid of it???
     @Override
     protected void indexCount(final String query,
                               final long timeoutMillis,
@@ -1488,7 +1498,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         final String queryStringQuery =
                 LuceneQueryDateTimeFormatter.findAndReplaceQueryDates(translateQuery(query, null).getQuery());
-
+/*
         // we check the query to figure out wich indexes to hit
         IndiciesInfo info;
 
@@ -1496,7 +1506,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
             info=APILocator.getIndiciesAPI().loadIndicies();
         } catch(DotDataException ee) {
-            Logger.fatal(this, "Can't get indicies information",ee);
+            Logger.fatal(this, "Can't get indices information",ee);
             if (null != indexCountFailure) {
 
                 indexCountFailure.accept(ee);
@@ -1525,7 +1535,60 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 }
             }
         });
+*/
+        try {
+            final CountRequest countRequest = getCountRequest(queryStringQuery);
+
+            RestHighLevelClientProvider.getInstance().getClient().countAsync(countRequest,
+                    RequestOptions.DEFAULT, new ActionListener<CountResponse>() {
+                        @Override
+                        public void onResponse(CountResponse countResponse) {
+                            indexCountSuccess.accept(countResponse.getCount());
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+                            if (null != indexCountFailure) {
+                                indexCountFailure.accept(e);
+                            }
+                        }
+                    });
+        }catch (Exception ee){
+            Logger.fatal(this, "Can't get indices information",ee);
+            if (null != indexCountFailure) {
+                indexCountFailure.accept(ee);
+            }
+        }
+
     }
+
+    @NotNull
+    private CountRequest getCountRequest(final String queryString) {
+        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
+        sourceBuilder.query(QueryBuilders.queryStringQuery(queryString));
+        final CountRequest countRequest = new CountRequest(inferIndexToHit(queryString));
+        countRequest.source(sourceBuilder);
+        return countRequest;
+    }
+
+   private String inferIndexToHit(final String query)  {
+       // we check the query to figure out which indexes to hit
+
+       final IndiciesInfo info;
+       try {
+           info = APILocator.getIndiciesAPI().loadIndicies();
+       } catch (DotDataException e) {
+           throw new DotRuntimeException(e);
+       }
+
+       final String indexToHit;
+       if(query.contains("+live:true") && !query.contains("+deleted:true")) {
+           indexToHit = info.getLive();
+       } else {
+           indexToHit = info.getWorking();
+       }
+       return indexToHit;
+   }
 
     @NotNull
     private SearchRequest getCountSearchRequest(final String queryString) {
@@ -1598,8 +1661,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
         return useQueryCache;
     }
-    
 
+    /**
+     * if enabled SearchRequests are executed and then cached
+     * @param searchRequest
+     * @return
+     */
     SearchHits cachedIndexSearch(final SearchRequest searchRequest) {
         
         final Optional<SearchHits> optionalHits = shouldQueryCache() ? queryCache.get(searchRequest) : Optional.empty();
@@ -1631,7 +1698,40 @@ public class ESContentFactoryImpl extends ContentletFactory {
         
         
     }
-    
+
+    /**
+     * if enabled CountRequest are executed and then cached
+     * @param countRequest
+     * @return
+     */
+    Long cachedIndexCount(final CountRequest countRequest) {
+
+        final Optional<Long> optionalCount = shouldQueryCache() ? queryCache.get(countRequest) : Optional.empty();
+        if(optionalCount.isPresent()) {
+            return optionalCount.get();
+        }
+        try {
+            final CountResponse response = RestHighLevelClientProvider.getInstance().getClient().count(countRequest, RequestOptions.DEFAULT);
+            final long count = response.getCount();
+            if(shouldQueryCache()) {
+                queryCache.put(countRequest, count);
+            }
+            return count;
+        } catch (final ElasticsearchStatusException | IndexNotFoundException | SearchPhaseExecutionException e) {
+            final String exceptionMsg = (null != e.getCause() ? e.getCause().getMessage() : e.getMessage());
+            Logger.warn(this.getClass(), "----------------------------------------------");
+            Logger.warn(this.getClass(), String.format("Elasticsearch error in index '%s'", (countRequest.indices()!=null) ? String.join(",", countRequest.indices()): "unknown"));
+            Logger.warn(this.getClass(), String.format("ES Query: %s", String.valueOf(countRequest.source()) ));
+            Logger.warn(this.getClass(), String.format("Class %s: %s", e.getClass().getName(), exceptionMsg));
+            Logger.warn(this.getClass(), "----------------------------------------------");
+            return -1L;
+        } catch (final Exception e) {
+            final String errorMsg = String.format("An error occurred when executing the Lucene Query [ %s ] : %s",
+                    countRequest.source().toString(), e.getMessage());
+            Logger.warnAndDebug(ESContentFactoryImpl.class, errorMsg, e);
+            throw new DotRuntimeException(errorMsg, e);
+        }
+    }
 
     
     
@@ -1641,8 +1741,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
         final String formattedQuery = LuceneQueryDateTimeFormatter
                 .findAndReplaceQueryDates(translateQuery(query, sortBy).getQuery());
 
-        // we check the query to figure out wich indexes to hit
-        String indexToHit;
+        // we check the query to figure out which indexes to hit
+        final String indexToHit;
+        try {
+            indexToHit = inferIndexToHit(query);
+        } catch (Exception e) {
+            Logger.fatal(this, "Can't get indices information.", e);
+            return null;
+        }
+/*
         IndiciesInfo info;
         try {
             info=APILocator.getIndiciesAPI().loadIndicies();
@@ -1656,9 +1763,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
         } else {
             indexToHit = info.getWorking();
         }
-
+*/
         final SearchRequest searchRequest = new SearchRequest();
-        SearchResponse response;
         final SearchSourceBuilder searchSourceBuilder = createSearchSourceBuilder(formattedQuery, sortBy);
         searchSourceBuilder.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
         searchRequest.indices(indexToHit);
@@ -1697,7 +1803,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }else{
             searchSourceBuilder.sort("moddate", SortOrder.DESC);
         }
-
         searchRequest.source(searchSourceBuilder);
         return cachedIndexSearch(searchRequest);
 
@@ -1709,8 +1814,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
         final String formattedQuery = LuceneQueryDateTimeFormatter
                 .findAndReplaceQueryDates(translateQuery(query, sortBy).getQuery());
 
-        // we check the query to figure out wich indexes to hit
-        String indexToHit;
+        // we check the query to figure out which indexes to hit
+        final String indexToHit;
+        try {
+            indexToHit = inferIndexToHit(query);
+        } catch (Exception e) {
+            Logger.fatal(this, "Can't get indices information.", e);
+            return null;
+        }
+/*
         IndiciesInfo info;
         try {
             info=APILocator.getIndiciesAPI().loadIndicies();
@@ -1724,7 +1836,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         } else {
             indexToHit = info.getWorking();
         }
-
+*/
         final SearchRequest searchRequest = new SearchRequest();
         final SearchSourceBuilder searchSourceBuilder = createSearchSourceBuilder(formattedQuery, sortBy);
         searchSourceBuilder.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));

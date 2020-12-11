@@ -1,7 +1,9 @@
 package com.dotcms.content.elasticsearch;
 
 import java.util.Optional;
+import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.search.SearchHits;
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.CacheLocator;
@@ -36,7 +38,7 @@ public class ESQueryCache implements Cachable {
     }
 
 
-    final static String[] groups = new String[] {"esquerycache"};
+    final static String[] groups = new String[] {"esQueryCache","esQueryCountCache"};
 
     @Override
     public String getPrimaryGroup() {
@@ -52,32 +54,37 @@ public class ESQueryCache implements Cachable {
 
     @Override
     public void clearCache() {
-        cache.flushGroup(groups[0]);
-
+       for(final String group:groups){
+           cache.flushGroup(group);
+       }
     }
 
     /**
-     * This provides the hash String for the given SearchRequest.
+     * This provides the hash String for the given SearchRequest/CountRequest
      * Taking a look at the SearchRequest.hashCode(), it seems like 
-     * it will suit our purpose
+     * it will suit our purpose.
+     * However CountRequest has a poor hashCode we need to take into account at least the query per-se
      * 
-     * @param queryString
+     * @param actionRequest
      * @return
      */
     @VisibleForTesting
-    final String hash(final SearchRequest searchRequest) {
+    final String hash(final ActionRequest actionRequest) {
 
-
-        // return
-        // Hashing.murmur3_128().newHasher().putBytes(searchRequest.toString().getBytes()).hash().toString();
-
-        return String.valueOf(searchRequest.hashCode());
+        if (actionRequest instanceof CountRequest) {
+            final CountRequest countRequest = (CountRequest) actionRequest;
+            return String.valueOf(countRequest.hashCode() * countRequest.source().hashCode() * 31);
+        } else {
+            // return
+            // Hashing.murmur3_128().newHasher().putBytes(actionRequest.toString().getBytes()).hash().toString();
+            return String.valueOf(actionRequest.hashCode());
+        }
     }
 
 
 
     /**
-     * taks a SearchRequest and returns and Optional<SearchHits> for it
+     * takes a SearchRequest and returns and Optional<SearchHits> for it
      * 
      * @param searchRequest
      * @return
@@ -99,4 +106,27 @@ public class ESQueryCache implements Cachable {
         final String hash = hash(searchRequest);
         cache.put(hash, hits, groups[0]);
     }
+
+
+    /**
+     * Takes a CountRequest and returns and Optional<Long> for it
+     * @param countRequest
+     * @return
+     */
+    public Optional<Long> get(final CountRequest countRequest) {
+        final String hash = hash(countRequest);
+        return Optional.ofNullable((Long) cache.getNoThrow(hash, groups[1]));
+    }
+
+    /**
+     * Puts Long Count into the cache using the SearCountRequest as the key
+     * @param countRequest
+     * @param count
+     */
+    public void put(final CountRequest countRequest, final Long count) {
+        final String hash = hash(countRequest);
+        cache.put(hash, count, groups[1]);
+    }
+
+
 }
