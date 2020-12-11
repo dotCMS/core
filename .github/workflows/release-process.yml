@@ -1,0 +1,62 @@
+name: release-process-automation
+on:
+  release:
+    types:
+      - published
+jobs:
+  release-process:
+    name: Release Process Automation
+    runs-on: ubuntu-18.04
+    env:
+      DOT_CICD_BRANCH: 18562-automate-release-process
+      DOT_CICD_CLOUD_PROVIDER: github
+      DOT_CICD_TARGET: core
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_USER: dotcmsbuild
+      GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
+      PULL_REQUEST: ${{ github.event.number }}
+      REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
+      REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      SSH_RSA_KEY: ${{ secrets.EE_RSA_KEY }}
+      TEST_RUN: false
+      DEBUG: false
+    steps:
+      - name: GITHUB CONTEXT
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "${GITHUB_CONTEXT}"
+        if: env.DEBUG == 'true'
+      - name: Get commit message
+        id: get-commit-message
+        uses: dotcms/get-commit-message@master
+        with:
+          accessToken: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set Common Vars
+        run: |
+          BRANCH=$(basename "${{ github.ref }}")
+
+          if [[ ${BRANCH} =~ ^release-.* ]]; then
+            IS_RELEASE='true'
+          else
+            IS_RELEASE='false'
+          fi
+
+          echo "BRANCH=${BRANCH}" >> $GITHUB_ENV
+          echo "EE_BRANCH=${BRANCH}" >> $GITHUB_ENV
+          echo "BASE_FOLDER=$(pwd)" >> $GITHUB_ENV
+          echo "IS_RELEASE=${IS_RELEASE}" >> $GITHUB_ENV
+      - name: Prepare dot-cicd
+        run: |
+          sh -c "$(curl -fsSL https://raw.githubusercontent.com/dotCMS/dot-cicd/${DOT_CICD_BRANCH}/seed/install-dot-cicd.sh)"
+      - name: Build DotCMS Release Docker Image
+        run: |
+          dotcicd/library/pipeline.sh buildRelease
+#        if: env.TEST_RUN == 'true'
+      - name: Run DotCMS Release Docker Image
+        run: |
+          dotcicd/library/pipeline.sh runRelease
+      - name: Publish Docker Multiarch Image
+        run: |
+          dotcicd/library/pipeline.sh publishDockerImage ${{ env.GITHUB_USER }} ${{ secrets.USER_TOKEN }} ${{ env.BRANCH }} ${{ env.IS_RELEASE }} ${{ secrets.DOCKER_USERNAME }} ${{ secrets.DOCKER_TOKEN }}
