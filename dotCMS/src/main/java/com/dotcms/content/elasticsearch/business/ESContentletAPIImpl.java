@@ -992,14 +992,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 catch(Exception e){
                     Logger.error(this,e.getMessage(),e);
                 }
-
-                if(searchHits.getTotalHits().value == MAX_LIMIT && searchHits.getTotalHits().relation == Relation.GREATER_THAN_OR_EQUAL_TO){
-                    //The total isn't accurate. It is telling us there is more. So Let's do a countRequest.
-                    final long count = contentFactory.indexCount(buffy.toString());
-                    if(count >= 0){
-                        list.setTotalResults(count);
-                    }
-                }
             }
             return list;
         } else {

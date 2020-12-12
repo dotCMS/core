@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.lucene.search.TotalHits;
 import org.apache.lucene.search.TotalHits.Relation;
 import org.elasticsearch.ElasticsearchException;
@@ -1663,6 +1664,30 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
     /**
+     * The track_total_hits parameter allows you to control how the total number of hits should be tracked.
+     * The default is set to 10K. This means that requests will count the total hit accurately up to 10,000 hits.
+     * If the param is absent from the properties it still default to 10K. The param can also be set to a true|false
+     * if set to true it'll track as many items as there are. if set to false no tracking will be performed at all.
+     * So it's better if it isn't set to false ever.
+     * @param searchSourceBuilder
+     */
+    private void setTrackHits(final SearchSourceBuilder searchSourceBuilder){
+        final String trackTotalHitsRaw = Config.getStringProperty("ES_TRACK_TOTAL_HITS");
+        if(UtilMethods.isSet(trackTotalHitsRaw)){
+             final Integer trackTotalHitsInt = Try.of(()->Integer.parseInt(trackTotalHitsRaw)).getOrNull();
+             if(null != trackTotalHitsInt){
+                searchSourceBuilder.trackTotalHitsUpTo(trackTotalHitsInt);
+                return;
+             }
+
+             final Boolean trackTotalHitsBool = BooleanUtils.toBoolean(trackTotalHitsRaw);
+             if(null != trackTotalHitsBool){
+                 searchSourceBuilder.trackTotalHits(trackTotalHitsBool);
+             }
+        }
+    }
+
+    /**
      * if enabled SearchRequests are executed and then cached
      * @param searchRequest
      * @return
@@ -1749,23 +1774,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
             Logger.fatal(this, "Can't get indices information.", e);
             return null;
         }
-/*
-        IndiciesInfo info;
-        try {
-            info=APILocator.getIndiciesAPI().loadIndicies();
-        }
-        catch(DotDataException ee) {
-            Logger.fatal(this, "Can't get indicies information",ee);
-            return null;
-        }
-        if(query.contains("+live:true") && !query.contains("+deleted:true")) {
-            indexToHit = info.getLive();
-        } else {
-            indexToHit = info.getWorking();
-        }
-*/
+
         final SearchRequest searchRequest = new SearchRequest();
         final SearchSourceBuilder searchSourceBuilder = createSearchSourceBuilder(formattedQuery, sortBy);
+        setTrackHits(searchSourceBuilder);
+
         searchSourceBuilder.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
         searchRequest.indices(indexToHit);
 
@@ -1822,21 +1835,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             Logger.fatal(this, "Can't get indices information.", e);
             return null;
         }
-/*
-        IndiciesInfo info;
-        try {
-            info=APILocator.getIndiciesAPI().loadIndicies();
-        }
-        catch(DotDataException ee) {
-            Logger.fatal(this, "Can't get indicies information",ee);
-            return null;
-        }
-        if(query.contains("+live:true") && !query.contains("+deleted:true")) {
-            indexToHit = info.getLive();
-        } else {
-            indexToHit = info.getWorking();
-        }
-*/
+
         final SearchRequest searchRequest = new SearchRequest();
         final SearchSourceBuilder searchSourceBuilder = createSearchSourceBuilder(formattedQuery, sortBy);
         searchSourceBuilder.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
