@@ -215,10 +215,13 @@
 			dojo.byId("authPropertiesRow").hide();
 			dojo.byId("getTokenSpan").show();
 			dojo.byId("showGetTokenSpan").hide();
+
+			dojo.byId('buttons').hide();
 		} else {
 			dojo.byId("authPropertiesRow").show();
 			dojo.byId("getTokenSpan").hide();
 			dojo.byId("showGetTokenSpan").show();
+			dojo.byId('buttons').show();
 
 		}
 	}
@@ -263,8 +266,7 @@
 				token: {
 					expirationSeconds: Math.ceil(timeDiff / 1000 ),
 					network: dijit.byId('network').value,
-					claims: {"label" : 'Push Publish'},
-					userId: '<%=PortalUtil.getUser(request).getUserId()%>'
+					claims: {"label" : 'Push Publish'}
 				},
 				remote: {
 					host: dijit.byId('address').value,
@@ -374,14 +376,14 @@
 					</select>
 				</dd>
 			</dl>
-            <dl>
-                <dt>
-                    <%= LanguageUtil.get(pageContext, "publisher_Endpoints_Enabled") %>:
-                </dt>
-                <dd>
-                    <input dojoType="dijit.form.CheckBox" type="checkbox" name="enabled" <%=(currentEndpoint.isEnabled()) ? "checked=true" : "" %> />
-                </dd>
-            </dl>
+			<dl>
+				<dt>
+					<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Enabled") %>:
+				</dt>
+				<dd>
+					<input dojoType="dijit.form.CheckBox" type="checkbox" name="enabled" <%=(currentEndpoint.isEnabled()) ? "checked=true" : "" %> />
+				</dd>
+			</dl>
 			<dl id="addressRow">
 				<dt>
 					<span id="addressToSpan">
@@ -425,22 +427,22 @@
 				</dt>
 				<dd>
 					<textarea dojoType="dijit.form.SimpleTextarea" name="authKey" id="authKey" style="width:300px;height:105px;"><%=currentEndpoint.hasAuthKey() ? PublicEncryptionFactory.decryptString( currentEndpoint.getAuthKey().toString())  : "" %></textarea>
-				    <div id= "showGetTokenSpan" style="display:none;text-align:right">
-                        <button dojoType="dijit.form.Button" onClick="showGetToken(true)" id="getToken" class="dijitButtonFlat">Get Token</button>
-                    </div>
-            </dd>
+					<div id= "showGetTokenSpan" style="display:none;text-align:right">
+						<button dojoType="dijit.form.Button" onClick="showGetToken(true)" id="getToken" class="dijitButtonFlat">Get Token</button>
+					</div>
+				</dd>
 			</dl>
 
 			<dl id="getTokenSpan" style="display:none">
 
-                <dt>
+				<dt>
                     <span id="authKeyHttpSpan">
                         <label for="authKey"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Auth_key_type_http") %>:</label>
                     </span>
-                    <span id="authKeyStaticSpan" style="display:none;">
+					<span id="authKeyStaticSpan" style="display:none;">
                         <label for="authKey"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Auth_key_type_static") %>:</label>
                     </span>
-                </dt>
+				</dt>
 				<dd>
 					<div dojoType="dijit.form.Form" id="tokenForm" onsubmit="return false;" style="border:1px solid silver;width:100%">
 						<table class="listingTable" >
@@ -491,7 +493,7 @@
 							</tr>
 						</table>
 
-						<div class="buttonRow">
+						<div class="buttonRow" id="tokenButton">
 							<button dojoType="dijit.form.Button" type="button"
 									class="dijitButtonFlat"
 									onClick="showGetToken(false)"><%=LanguageUtil.get(pageContext, "cancel")%></button>
@@ -502,7 +504,7 @@
 				</dd>
 			</dl>
 		</div>
-		<div style="width: 95%;display: inline-block;">
+		<div style="width: 95%;display: inline-block;" id="buttons">
 
 			<span style="float: right;">
 
