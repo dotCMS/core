@@ -52,7 +52,7 @@ public class ToolGroupResource implements Serializable {
      * This method removes a toolgroup to the current user, using the id as key to find the toolgroup.
      * If the layoutId is gettingStarted it will remove the gettingStartedLayout to the user.
      */
-    @DELETE
+    @PUT
     @Path("/{layoutId}/_removefromcurrentuser")
     @JSONP
     @NoCache
