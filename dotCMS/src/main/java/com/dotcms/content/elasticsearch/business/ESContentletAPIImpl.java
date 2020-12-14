@@ -163,8 +163,6 @@ import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 import io.vavr.control.Try;
 import org.apache.commons.lang.StringUtils;
-import org.apache.lucene.search.TotalHits;
-import org.apache.lucene.search.TotalHits.Relation;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;

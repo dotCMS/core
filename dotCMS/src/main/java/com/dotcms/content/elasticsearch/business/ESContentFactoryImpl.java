@@ -1433,30 +1433,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	protected long indexCount(final String query) {
 	    final String qq = LuceneQueryDateTimeFormatter
                 .findAndReplaceQueryDates(translateQuery(query, null).getQuery());
-/*
-	    // we check the query to figure out wich indexes to hit
-        String indexToHit;
-        IndiciesInfo info;
-        try {
-            info = APILocator.getIndiciesAPI().loadIndicies();
-        }
-        catch(DotDataException ee) {
-            Logger.fatal(this, "Can't get indicies information",ee);
-            return 0;
-        }
-        if(query.contains("+live:true") && !query.contains("+deleted:true")) {
-            indexToHit = info.getLive();
-        } else {
-            indexToHit = info.getWorking();
-        }
-
-        SearchRequest searchRequest = getCountSearchRequest(qq);
-        searchRequest.indices(indexToHit);
-
-       final SearchHits hits = cachedIndexSearch(searchRequest);
-       return hits.getTotalHits().value;
-  */
-
         final CountRequest countRequest = getCountRequest(qq);
         return cachedIndexCount(countRequest);
     }
@@ -1465,28 +1441,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
     @Override
     protected long indexCount(final String query,
                         final long timeoutMillis) {
-/*
-        final String queryStringQuery =
-                LuceneQueryDateTimeFormatter.findAndReplaceQueryDates(translateQuery(query, null).getQuery());
-
-        // we check the query to figure out which indexes to hit
-        IndiciesInfo info;
-
-        try {
-
-            info = this.indiciesAPI.loadIndicies();
-        } catch(DotDataException ee) {
-            Logger.fatal(this, "Can't get indicies information",ee);
-            return 0;
-        }
-
-        SearchRequest searchRequest = getCountSearchRequest(queryStringQuery);
-        searchRequest.indices(query.contains("+live:true") && !query.contains("+deleted:true")?
-                info.getLive(): info.getWorking());
-
-        final SearchHits hits = cachedIndexSearch(searchRequest);
-        return hits.getTotalHits().value;
-  */
        return indexCount(query);
     }
 
@@ -1499,44 +1453,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         final String queryStringQuery =
                 LuceneQueryDateTimeFormatter.findAndReplaceQueryDates(translateQuery(query, null).getQuery());
-/*
-        // we check the query to figure out wich indexes to hit
-        IndiciesInfo info;
 
-        try {
-
-            info=APILocator.getIndiciesAPI().loadIndicies();
-        } catch(DotDataException ee) {
-            Logger.fatal(this, "Can't get indices information",ee);
-            if (null != indexCountFailure) {
-
-                indexCountFailure.accept(ee);
-            }
-            return;
-        }
-
-        SearchRequest searchRequest = getCountSearchRequest(queryStringQuery);
-        searchRequest.indices(query.contains("+live:true") && !query.contains("+deleted:true")?
-                info.getLive(): info.getWorking());
-
-        RestHighLevelClientProvider.getInstance().getClient().searchAsync(searchRequest, RequestOptions.DEFAULT,
-                        new ActionListener<SearchResponse>() {
-            @Override
-            public void onResponse(SearchResponse searchResponse) {
-
-                indexCountSuccess.accept(searchResponse.getHits().getTotalHits().value);
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-
-                if (null != indexCountFailure) {
-
-                    indexCountFailure.accept(e);
-                }
-            }
-        });
-*/
         try {
             final CountRequest countRequest = getCountRequest(queryStringQuery);
 
@@ -1590,17 +1507,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
        }
        return indexToHit;
    }
-
-    @NotNull
-    private SearchRequest getCountSearchRequest(final String queryString) {
-        SearchRequest searchRequest = new SearchRequest();
-        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-        searchSourceBuilder.query(QueryBuilders.queryStringQuery(queryString));
-        searchSourceBuilder.size(0);
-        searchSourceBuilder.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-        searchRequest.source(searchSourceBuilder);
-        return searchRequest;
-    }
 
     /**
      * It will call createRequest with null as sortBy parameter
