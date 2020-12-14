@@ -7787,14 +7787,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private boolean isInodeIndexedWithQuery(final String luceneQuery,
                                             final int milliSecondsToWait) {
 
-        final long indexTimeOut    = Config.getLongProperty("TIMEOUT_INDEX_COUNT", 1000);
         final long millistoWait    = Config.getLongProperty("IS_NODE_INDEXED_INDEX_MILLIS_WAIT", 100);
         final int limit            = - 1 != milliSecondsToWait?milliSecondsToWait: 300;
         boolean   found            = false;
         int       counter          = 0;
         int       fibonacciIndex   = 0;
 
-        if (this.contentFactory.indexCount(luceneQuery, indexTimeOut) > 0) {
+        if (this.contentFactory.indexCount(luceneQuery) > 0) {
 
             if (ConfigUtils.isDevMode()) {
                 Logger.info(this, ()-> "******>>>>>> Index count found in the fist hit for the query: " + luceneQuery);
@@ -7809,7 +7808,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 try {
 
-                    found = this.contentFactory.indexCount(luceneQuery, indexTimeOut) > 0;
+                    found = this.contentFactory.indexCount(luceneQuery) > 0;
                 } catch (Exception e) {
                     Logger.error(this.getClass(), e.getMessage(), e);
                     return false;

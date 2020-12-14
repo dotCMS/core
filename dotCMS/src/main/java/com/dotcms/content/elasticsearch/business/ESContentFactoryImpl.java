@@ -127,6 +127,7 @@ import io.vavr.control.Try;
  */
 public class ESContentFactoryImpl extends ContentletFactory {
     private static final String[] ES_FIELDS = {"inode", "identifier"};
+    public static final String ES_TRACK_TOTAL_HITS = "ES_TRACK_TOTAL_HITS";
     private final ContentletCache contentletCache;
 	private final LanguageAPI languageAPI;
 	private final IndiciesAPI indiciesAPI;
@@ -1437,49 +1438,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
         return cachedIndexCount(countRequest);
     }
 
-    //TODO: This method was no longer using the time-out. We should probably remove it.
-    @Override
-    protected long indexCount(final String query,
-                        final long timeoutMillis) {
-       return indexCount(query);
-    }
-
-   //Todo: This method is used only on a Test case. Should we get rid of it???
-    @Override
-    protected void indexCount(final String query,
-                              final long timeoutMillis,
-                              final Consumer<Long> indexCountSuccess,
-                              final Consumer<Exception> indexCountFailure) {
-
-        final String queryStringQuery =
-                LuceneQueryDateTimeFormatter.findAndReplaceQueryDates(translateQuery(query, null).getQuery());
-
-        try {
-            final CountRequest countRequest = getCountRequest(queryStringQuery);
-
-            RestHighLevelClientProvider.getInstance().getClient().countAsync(countRequest,
-                    RequestOptions.DEFAULT, new ActionListener<CountResponse>() {
-                        @Override
-                        public void onResponse(CountResponse countResponse) {
-                            indexCountSuccess.accept(countResponse.getCount());
-                        }
-
-                        @Override
-                        public void onFailure(Exception e) {
-                            if (null != indexCountFailure) {
-                                indexCountFailure.accept(e);
-                            }
-                        }
-                    });
-        }catch (Exception ee){
-            Logger.fatal(this, "Can't get indices information",ee);
-            if (null != indexCountFailure) {
-                indexCountFailure.accept(ee);
-            }
-        }
-
-    }
-
     @NotNull
     private CountRequest getCountRequest(final String queryString) {
         SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
@@ -1577,8 +1535,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
      * So it's better if it isn't set to false ever.
      * @param searchSourceBuilder
      */
-    private void setTrackHits(final SearchSourceBuilder searchSourceBuilder){
-        final String trackTotalHitsRaw = Config.getStringProperty("ES_TRACK_TOTAL_HITS");
+     @VisibleForTesting
+     void setTrackHits(final SearchSourceBuilder searchSourceBuilder){
+        final String trackTotalHitsRaw = Config.getStringProperty(ES_TRACK_TOTAL_HITS);
         if(UtilMethods.isSet(trackTotalHitsRaw)){
              final Integer trackTotalHitsInt = Try.of(()->Integer.parseInt(trackTotalHitsRaw)).getOrNull();
              if(null != trackTotalHitsInt){

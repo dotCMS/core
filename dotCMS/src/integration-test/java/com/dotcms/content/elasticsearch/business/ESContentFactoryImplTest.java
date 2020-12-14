@@ -1,5 +1,7 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.ES_TRACK_TOTAL_HITS;
+import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -9,8 +11,13 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.TranslatedQuery;
+import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.util.Config;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -24,8 +31,17 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.elasticsearch.action.admin.indices.settings.get.GetSettingsRequest;
+import org.elasticsearch.action.admin.indices.settings.get.GetSettingsResponse;
+import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
+import org.elasticsearch.action.support.master.AcknowledgedResponse;
+import org.elasticsearch.client.IndicesClient;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.internal.SearchContext;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -114,42 +130,6 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
                 new TestCase("hh:mm a"),
                 new TestCase("HH:mm")
         };
-    }
-
-    @Test
-    public void test_indexCount_not_found_async() throws Exception {
-
-        instance.indexCount("+inode:xxx", 1000,
-                (Long count)-> {
-
-                    assertEquals(Long.valueOf(0), count);
-                },
-                (e)-> {
-                    fail(e.getMessage());
-                });
-    }
-
-    @Test
-    public void test_indexCount_found_async() throws Exception {
-
-        final Optional<Contentlet> optionalContentlet = APILocator.getContentletAPI().findAllContent(0, 40)
-                .stream().filter(Objects::nonNull).collect(Collectors.toList()).stream().findFirst();
-
-        if (optionalContentlet.isPresent()) {
-
-            final Contentlet contentlet = optionalContentlet.get();
-            contentlet.setIndexPolicy(IndexPolicy.FORCE);
-            APILocator.getContentletIndexAPI().addContentToIndex(optionalContentlet.get());
-
-            instance.indexCount("+inode:"+optionalContentlet.get().getInode(), 1000,
-                    (Long count) -> {
-
-                        assertEquals(Long.valueOf(1), count);
-                    },
-                    (e) -> {
-                        fail(e.getMessage());
-                    });
-        }
     }
 
     @Test
@@ -884,4 +864,97 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         assertNotNull(result);
         assertEquals(banner2.getIdentifier(), result.getIdentifier());
     }
+
+    /**
+     * Test the different values we might have for the property ES_TRACK_TOTAL_HITS and how they affect the search options
+     * Given scenario: We set different values into the Config and verify the expected value adopted by the SearchBuilder
+     * Expected Result: if the property is to false the feature is disabled.
+     * if we set it to true then the tracking is done accurately automatically
+     * if the property gets excluded we default to the default limit of 10K
+     */
+    @Test
+    public void Test_Setting_Track_Hits() {
+       final String savedValue = Config.getStringProperty(ES_TRACK_TOTAL_HITS);
+       try {
+           final SearchSourceBuilder searchSourceBuilder = SearchSourceBuilder.searchSource();
+           Config.setProperty(ES_TRACK_TOTAL_HITS, "true");
+           instance.setTrackHits(searchSourceBuilder);
+           assertEquals((long)searchSourceBuilder.trackTotalHitsUpTo(),
+                   SearchContext.TRACK_TOTAL_HITS_ACCURATE);
+
+           final int limit = 100000;
+
+           Config.setProperty(ES_TRACK_TOTAL_HITS, Integer.toString(limit));
+           instance.setTrackHits(searchSourceBuilder);
+           assertEquals((long)searchSourceBuilder.trackTotalHitsUpTo(),limit);
+
+           Config.setProperty(ES_TRACK_TOTAL_HITS, "false");
+           instance.setTrackHits(searchSourceBuilder);
+           assertEquals((long)searchSourceBuilder.trackTotalHitsUpTo(),SearchContext.TRACK_TOTAL_HITS_DISABLED);
+
+           Config.setProperty(ES_TRACK_TOTAL_HITS, null);
+           instance.setTrackHits(searchSourceBuilder);
+           assertEquals((long)searchSourceBuilder.trackTotalHitsUpTo(),SearchContext.DEFAULT_TRACK_TOTAL_HITS_UP_TO);
+
+       }finally {
+           Config.setProperty(ES_TRACK_TOTAL_HITS, savedValue);
+       }
+    }
+
+    /***
+     * Here we're testing how the property ES_TRACK_TOTAL_HITS affects the count retrieved by the search.
+     * When we vary the limit allowed the count through the property ES_TRACK_TOTAL_HITS using an integer the limit is set to a number
+     * Given Scenario: We create a number of contentlets. Then we set a limit via  ES_TRACK_TOTAL_HITS
+     * Expected Result: We verify that the number of items returned by the query matches the total, but the total count respects the tracking_total_hits flag.
+     */
+    @Test
+    public void Test_TrackHits_SearchCount(){
+
+        final ESQueryCache esQueryCache = CacheLocator.getESQueryCache();
+        final int newContentTypeItems = 60; // We're adding 60 items of our CT
+        final int trackHitsLimit = 30; //But we're setting up a track count limit
+
+        final String contentTypeName = "TContentType" + System.currentTimeMillis();
+        final ContentType type = new ContentTypeDataGen().velocityVarName(contentTypeName)
+                .name(contentTypeName)
+                .nextPersisted();
+
+        for (int i = 0; i < newContentTypeItems; i++) {
+            new ContentletDataGen(type.inode()).nextPersisted();
+        }
+
+        final String queryString = String
+                .format("+contenttype:%s +languageid:1 +deleted:false +working:true",
+                        contentTypeName);
+
+        //There are 60 items but ES can only retrieve a max of 40.
+        SearchHits searchHits = instance
+                .indexSearch(queryString, MAX_LIMIT, 0, null);
+        assertEquals(searchHits.getHits().length, newContentTypeItems);
+        assertEquals(searchHits.getTotalHits().value, newContentTypeItems);
+
+        final String savedValue = Config.getStringProperty(ES_TRACK_TOTAL_HITS);
+        try {
+
+            final int max = trackHitsLimit + 5;
+            for(int i = trackHitsLimit; i <= max; i++) {
+                Config.setProperty(ES_TRACK_TOTAL_HITS, Integer.toString(i));
+                //We're always removing cache otherwise we would get the same number of pre-cached items
+                esQueryCache.clearCache();
+                searchHits = instance.indexSearch(queryString, MAX_LIMIT, 0, null);
+                assertEquals(searchHits.getHits().length, newContentTypeItems);
+                assertEquals(searchHits.getTotalHits().value, i);
+            }
+
+            Config.setProperty(ES_TRACK_TOTAL_HITS, "true");
+            esQueryCache.clearCache();
+            searchHits = instance.indexSearch(queryString, MAX_LIMIT, 0, null);
+            assertEquals(searchHits.getHits().length, newContentTypeItems);
+            assertEquals(searchHits.getTotalHits().value, newContentTypeItems);
+
+        } finally {
+            Config.setProperty(ES_TRACK_TOTAL_HITS, savedValue);
+        }
+    }
+
 }
