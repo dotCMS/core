@@ -190,6 +190,38 @@ public class LayoutAPITest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link LayoutAPI#addLayoutForUser(Layout, User)}
+     * Given Scenario: Add the getting started layout successfully to an user. Then try to add it again,
+     *                  no error should be thrown but the layout should not be re-added.
+     * ExpectedResult: Layout successfully added to the user.
+     *
+     */
+    @Test
+    public void test_addLayoutForUser_reAddSameLayout_Success() throws DotDataException {
+        //Create an user
+        final User newUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
+        //Check layouts for user, should be empty
+        List<Layout> listOfLayouts = layoutAPI.loadLayoutsForUser(newUser);
+        assertTrue(listOfLayouts.isEmpty());
+        //Add the Getting Started Layout to User
+        final Layout gettingStartedLayout = layoutAPI.findGettingStartedLayout();
+        layoutAPI.addLayoutForUser(gettingStartedLayout,newUser);
+        //Check that the layout was added to the user
+        listOfLayouts = layoutAPI.loadLayoutsForUser(newUser);
+        assertFalse(listOfLayouts.isEmpty());
+        assertEquals(1,listOfLayouts.size());
+        assertEquals("Getting Started",listOfLayouts.stream().findFirst().get().getName());
+        assertEquals("whatshot",listOfLayouts.stream().findFirst().get().getDescription());
+
+        //Re-Add the layout to User
+        layoutAPI.addLayoutForUser(gettingStartedLayout,newUser);
+        //Check that the layouts size is still the same
+        listOfLayouts = layoutAPI.loadLayoutsForUser(newUser);
+        assertFalse(listOfLayouts.isEmpty());
+        assertEquals(1,listOfLayouts.size());
+    }
+
+    /**
+     * Method to test: {@link LayoutAPI#addLayoutForUser(Layout, User)}
      * Given Scenario: Tries to add a NULL layout to an user.
      * ExpectedResult: DotDataException
      *

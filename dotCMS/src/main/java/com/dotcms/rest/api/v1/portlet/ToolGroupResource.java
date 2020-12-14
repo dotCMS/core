@@ -6,7 +6,6 @@ import com.dotmarketing.exception.DotDataException;
 import java.io.Serializable;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -20,20 +19,17 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.Layout;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 /**
- * This Resource allows you to manage layouts
+ * This Resource allows you to manage toolgroups
  */
-@Path("/v1/layout")
+@Path("/v1/toolgroups")
 @SuppressWarnings("serial")
-public class LayoutResource implements Serializable {
+public class ToolGroupResource implements Serializable {
 
     private final WebResource webResource;
 
@@ -41,27 +37,27 @@ public class LayoutResource implements Serializable {
     /**
      * Default class constructor.
      */
-    public LayoutResource() {
+    public ToolGroupResource() {
         this(new WebResource(new ApiProvider()));
     }
 
     @VisibleForTesting
-    public LayoutResource(WebResource webResource) {
+    public ToolGroupResource(WebResource webResource) {
         this.webResource = webResource;
 
     }
 
 
     /**
-     * This method adds a layout to the current user, using the id as key to find the layout.
-     * If the layoutId is gettingStarted it will add the gettingStartedLayout to the user.
+     * This method removes a toolgroup to the current user, using the id as key to find the toolgroup.
+     * If the layoutId is gettingStarted it will remove the gettingStartedLayout to the user.
      */
     @DELETE
-    @Path("/{layoutId}")
+    @Path("/{layoutId}/_removefromcurrentuser")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response deleteLayoutFromUser(@Context final HttpServletRequest request,
+    public final Response deleteToolGroupFromUser(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("layoutId") final String layoutId) throws DotDataException {
 
@@ -74,28 +70,28 @@ public class LayoutResource implements Serializable {
 
         Layout layoutToRemove = null;
         if(layoutId.equalsIgnoreCase("gettingstarted")){
-            layoutToRemove = APILocator.getLayoutAPI().findGettingStartedLayout();//test layoutid getting started
+            layoutToRemove = APILocator.getLayoutAPI().findGettingStartedLayout();
         }else{
-            layoutToRemove = APILocator.getLayoutAPI().findLayout(layoutId);//Test layout id no exist //test id exist
+            layoutToRemove = APILocator.getLayoutAPI().findLayout(layoutId);
         }
 
         APILocator.getRoleAPI().removeLayoutFromRole(layoutToRemove, user.getUserRole());
         return Response.ok(new ResponseEntityView(map("message", layoutId + " removed from " + user.getUserId())))
-                .build();//test success
+                .build();//test success //test re-delete same layout //Test layout id no exist
 
     }
 
 
     /**
-     * This method adds a layout to the current user, using the id as key to find the layout.
+     * This method adds a toolgroup to the current user, using the id as key to find the toolgroup.
      * If the layoutId is gettingStarted it will add the gettingStartedLayout to the user.
      */
     @PUT
-    @Path("/{layoutId}")
+    @Path("/{layoutId}/_addtocurrentuser")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response addLayoutForUser(@Context final HttpServletRequest request,
+    public final Response addToolGroupToUser(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("layoutId") final String layoutId) throws DotDataException {
 
@@ -108,14 +104,14 @@ public class LayoutResource implements Serializable {
 
         Layout layoutToAdd = null;
         if(layoutId.equalsIgnoreCase("gettingstarted")){
-            layoutToAdd = APILocator.getLayoutAPI().findGettingStartedLayout();//test layoutid getting started
+            layoutToAdd = APILocator.getLayoutAPI().findGettingStartedLayout();
         }else{
-            layoutToAdd = APILocator.getLayoutAPI().findLayout(layoutId);//Test layout id no exist //test id exist
+            layoutToAdd = APILocator.getLayoutAPI().findLayout(layoutId);
         }
 
         APILocator.getLayoutAPI().addLayoutForUser(layoutToAdd, user);
             return Response.ok(new ResponseEntityView(map("message", layoutId + " added to " + user.getUserId())))
-                            .build();//test success
+                            .build();//test success //test re-add same layout //Test layout id no exist
     }
 
 

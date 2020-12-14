@@ -230,12 +230,16 @@ public class LayoutAPIImpl implements LayoutAPI {
 	@WrapInTransaction
 	public void addLayoutForUser(final Layout layout, final User user) throws DotDataException {
 		if(user==null || UtilMethods.isNotSet(user.getUserId())){
-			Logger.error(this.getClass(),"User is not set");
-			throw new DotDataException("User is not set");
+			Logger.error(this.getClass(),"User is null");
+			throw new DotDataException("User is null");
 		}
 		if(layout==null || UtilMethods.isNotSet(layout.getId())){
-			Logger.error(this.getClass(),"Layout is not set");
-			throw new DotDataException("Layout is not set");
+			Logger.error(this.getClass(),"ToolGroup is null");
+			throw new DotDataException("ToolGroup is null");
+		}
+		if(UtilMethods.isSet(findLayoutByRole(layout,user.getUserRole()).get().getLayoutId())){
+			Logger.info(this.getClass(),"ToolGroup is already set");
+			return;
 		}
 
 		APILocator.getRoleAPI().addLayoutToRole(layout, user.getUserRole());
