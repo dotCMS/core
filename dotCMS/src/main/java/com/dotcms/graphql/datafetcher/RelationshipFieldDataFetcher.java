@@ -19,6 +19,7 @@ import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import java.util.Collections;
 import java.util.List;
+import org.apache.commons.lang3.StringUtils;
 
 public class RelationshipFieldDataFetcher implements DataFetcher<Object> {
     @Override
@@ -56,11 +57,7 @@ public class RelationshipFieldDataFetcher implements DataFetcher<Object> {
 
             Object objectToReturn = records.doesAllowOnlyOne() ? null : Collections.emptyList();
 
-//            List<Contentlet> relatedContent = contentlet.getRelated(fieldVar, user,
-//                    true, isChildField, contentlet.getLanguageId(), contentlet.isLive());
-
-            final String query = environment.getArgument("query")!=null
-                    ? environment.getArgument("query") : "";
+            final String query = StringUtils.defaultString(environment.getArgument("query"), "");
 
             final int limit = environment.getArgument("limit")!=null
                     ? environment.getArgument("limit") : -1;
@@ -68,8 +65,7 @@ public class RelationshipFieldDataFetcher implements DataFetcher<Object> {
             final int offset = environment.getArgument("offset")!=null
                     ? environment.getArgument("offset") : 0;
 
-            final String sort = environment.getArgument("sort")!=null
-                    ? environment.getArgument("sort") : "";
+            final String sort = StringUtils.defaultString(environment.getArgument("sort"), "");
 
             final boolean pullParents = APILocator.getRelationshipAPI().isParentField(relationship, field);
 
