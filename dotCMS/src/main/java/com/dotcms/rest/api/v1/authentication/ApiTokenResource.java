@@ -148,10 +148,13 @@ public class ApiTokenResource implements Serializable {
     }
 
     /**
-     * Issue a new APIToken
+     * Issue a new APIToken.
+     * If the shouldBeAdmin is true then response with a 403 if the user for whom the token is not admin
+     * If the userId parameter is null then the token is generated to the requesting user
+     *
      * @param request
      * @param response
-     * @param formData - json data, expecting {netmask:'192.168.1.0/24', expirationDays:1000, userId:'dotcms.org.1'}
+     * @param formData - json data, expecting {netmask:'192.168.1.0/24', expirationDays:1000, userId:'dotcms.org.1', shouldBeAdmin: 'true'}
      * @return Response
      */
     @POST
