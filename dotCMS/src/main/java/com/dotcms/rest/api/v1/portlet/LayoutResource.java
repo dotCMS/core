@@ -1,8 +1,11 @@
 package com.dotcms.rest.api.v1.portlet;
 
 import static com.dotcms.util.CollectionsUtils.map;
+
+import com.dotmarketing.exception.DotDataException;
 import java.io.Serializable;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.PUT;
@@ -49,72 +52,70 @@ public class LayoutResource implements Serializable {
     }
 
 
+    /**
+     * This method adds a layout to the current user, using the id as key to find the layout.
+     * If the layoutId is gettingStarted it will add the gettingStartedLayout to the user.
+     */
     @DELETE
-    @Path("/gettingStarted")
+    @Path("/{layoutId}")
     @JSONP
     @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response deleteGettingStarted(@Context final HttpServletRequest request) {
+    public final Response deleteLayoutFromUser(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("layoutId") final String layoutId) throws DotDataException {
 
-        final User user = new WebResource.InitBuilder(webResource).requiredBackendUser(true)
-                        .requestAndResponse(request, null).rejectWhenNoUser(true).init().getUser();
+        final User user = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init()
+                .getUser();
 
-        try {
-            final Role role = user.getUserRole();
-            final Layout layout = APILocator.getLayoutAPI().findGettingStartedLayout();
-
-            if (role == null || layout == null) {
-                return ResponseUtil.INSTANCE.getErrorResponse(request, Response.Status.UNAUTHORIZED, user.getLocale(),
-                                user.getUserId(), "unable to find user role or layout");
-            }
-
-            APILocator.getRoleAPI().removeLayoutFromRole(layout, role);
-
-            return Response.ok(new ResponseEntityView(map("message", layout.getId() + " removed from " + user.getUserId())))
-                            .build();
-        } catch (Exception e) {
-            return ResponseUtil.mapExceptionResponse(e);
+        Layout layoutToRemove = null;
+        if(layoutId.equalsIgnoreCase("gettingstarted")){
+            layoutToRemove = APILocator.getLayoutAPI().findGettingStartedLayout();//test layoutid getting started
+        }else{
+            layoutToRemove = APILocator.getLayoutAPI().findLayout(layoutId);//Test layout id no exist //test id exist
         }
+
+        APILocator.getRoleAPI().removeLayoutFromRole(layoutToRemove, user.getUserRole());
+        return Response.ok(new ResponseEntityView(map("message", layoutId + " removed from " + user.getUserId())))
+                .build();//test success
 
     }
 
 
     /**
-     * This method adds the gettingStarted layout to the current user
-     * 
-     * @param request
-     * @param layoutId
-     * @return
+     * This method adds a layout to the current user, using the id as key to find the layout.
+     * If the layoutId is gettingStarted it will add the gettingStartedLayout to the user.
      */
     @PUT
-    @Path("/gettingStarted")
+    @Path("/{layoutId}")
     @JSONP
     @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response addLayoutForUser(@Context final HttpServletRequest request,
-                    @PathParam("layoutId") final String layoutId) {
-        final User user = new WebResource.InitBuilder(webResource).requiredBackendUser(true)
-                        .requestAndResponse(request, null).rejectWhenNoUser(true).init().getUser();
+            @Context final HttpServletResponse response,
+            @PathParam("layoutId") final String layoutId) throws DotDataException {
 
-        try {
-            final Role role = user.getUserRole();
-            final Layout layout = APILocator.getLayoutAPI().findGettingStartedLayout();
+        final User user = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init()
+                .getUser();
 
-            if (role == null || layout == null || UtilMethods.isEmpty(role.getId()) || UtilMethods.isEmpty(layout.getId())) {
-                return ResponseUtil.INSTANCE.getErrorResponse(request, Response.Status.UNAUTHORIZED, user.getLocale(),
-                                user.getUserId(), "unable to find user role or layout");
-            }
-
-
-            APILocator.getLayoutAPI().addLayoutForUser(layout, user);
-            return Response.ok(new ResponseEntityView(map("message", layoutId + " added to " + user.getUserId())))
-                            .build();
-        } catch (Exception e) {
-            return ResponseUtil.mapExceptionResponse(e);
+        Layout layoutToAdd = null;
+        if(layoutId.equalsIgnoreCase("gettingstarted")){
+            layoutToAdd = APILocator.getLayoutAPI().findGettingStartedLayout();//test layoutid getting started
+        }else{
+            layoutToAdd = APILocator.getLayoutAPI().findLayout(layoutId);//Test layout id no exist //test id exist
         }
 
+        APILocator.getLayoutAPI().addLayoutForUser(layoutToAdd, user);
+            return Response.ok(new ResponseEntityView(map("message", layoutId + " added to " + user.getUserId())))
+                            .build();//test success
     }
 
 
