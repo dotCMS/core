@@ -234,8 +234,8 @@ public class LayoutAPIImpl implements LayoutAPI {
 			throw new DotDataException("User is null");
 		}
 		if(layout==null || UtilMethods.isNotSet(layout.getId())){
-			Logger.error(this.getClass(),"ToolGroup is null");
-			throw new DotDataException("ToolGroup is null");
+			Logger.error(this.getClass(),"ToolGroup is not valid");
+			throw new DotDataException("ToolGroup is not valid");
 		}
 		if(UtilMethods.isSet(findLayoutByRole(layout,user.getUserRole()).get().getLayoutId())){
 			Logger.info(this.getClass(),"ToolGroup is already set");

@@ -77,7 +77,7 @@ public class ToolGroupResource implements Serializable {
 
         APILocator.getRoleAPI().removeLayoutFromRole(layoutToRemove, user.getUserRole());
         return Response.ok(new ResponseEntityView(map("message", layoutId + " removed from " + user.getUserId())))
-                .build();//test success //test re-delete same layout //Test layout id no exist
+                .build();
 
     }
 
@@ -111,7 +111,7 @@ public class ToolGroupResource implements Serializable {
 
         APILocator.getLayoutAPI().addLayoutForUser(layoutToAdd, user);
             return Response.ok(new ResponseEntityView(map("message", layoutId + " added to " + user.getUserId())))
-                            .build();//test success //test re-add same layout //Test layout id no exist
+                            .build();
     }
 
 
