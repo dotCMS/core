@@ -3,9 +3,14 @@ package com.dotcms.rest.api.v1.portlet;
 import static com.dotcms.util.CollectionsUtils.map;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.javax.portlet.WindowState;
+import com.dotcms.util.ContentTypeUtil;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -205,11 +210,7 @@ public class PortletResource implements Serializable {
         }
 
     }
-  
-  
-  
-  
-  
+
     @GET
     @JSONP
     @Path("/{portletId}/_doesuserhaveaccess")
@@ -225,5 +226,43 @@ public class PortletResource implements Serializable {
                 .init();
         return Response.ok(new ResponseEntityView(map("response", APILocator.getLayoutAPI()
                 .doesUserHaveAccessToPortlet(portletId, initData.getUser())))).build();
+    }
+
+    /**
+     * This endpoint is to get the actionURL to fire the create content modal. The content that
+     * will be created is the one pass in the contentTypeVariable param.
+     *
+     * @param request
+     * @param httpResponse
+     * @param contentTypeVariable - content type variable name
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @GET
+    @JSONP
+    @Path("/_actionurl/{contentTypeVariable}")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response getCreateContentURL(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse httpResponse,
+            @PathParam("contentTypeVariable") String contentTypeVariable)
+            throws DotDataException, DotSecurityException {
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, null)
+                .rejectWhenNoUser(true)
+                .init();
+        final User user = initData.getUser();
+        final String contentTypeId = APILocator.getContentTypeAPI(user).find(contentTypeVariable).id();
+        final String strutsAction = "calendarEvent".equals(contentTypeVariable) ?
+                "/ext/calendar/edit_event" :
+                "/ext/contentlet/edit_contentlet";
+
+        return Response.ok(
+                new ResponseEntityView((
+                        ContentTypeUtil.getInstance().getActionUrl(request,contentTypeId,user,strutsAction))))
+                .build();
     }
 }
