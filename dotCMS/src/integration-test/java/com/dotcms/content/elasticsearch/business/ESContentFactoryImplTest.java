@@ -932,6 +932,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
                 .indexSearch(queryString, MAX_LIMIT, 0, null);
         assertEquals(searchHits.getHits().length, newContentTypeItems);
         assertEquals(searchHits.getTotalHits().value, newContentTypeItems);
+        assertEquals(newContentTypeItems, instance.indexCount(queryString));
 
         final String savedValue = Config.getStringProperty(ES_TRACK_TOTAL_HITS);
         try {
@@ -944,6 +945,9 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
                 searchHits = instance.indexSearch(queryString, MAX_LIMIT, 0, null);
                 assertEquals(searchHits.getHits().length, newContentTypeItems);
                 assertEquals(searchHits.getTotalHits().value, i);
+                //Regardless of the track_hits count flag. index count should always get you the accurate number.
+                // as it works independently from that flag.
+                assertEquals(newContentTypeItems, instance.indexCount(queryString));
             }
 
             Config.setProperty(ES_TRACK_TOTAL_HITS, "true");
