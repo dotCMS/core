@@ -2452,6 +2452,40 @@
                         div.style.display = "none";
         }
 
+        function queryContentJSONPost(url, queryRaw, sortBy) {
+            queryRaw = queryRaw.replace(/%27/g, "'").replace(/%22/g, '&quot;');
+            var query = `{
+    		    "query" : "${queryRaw}" },
+	    	    "sort" : { "moddate":"${sortBy}" },
+	    	    "size": 20,
+	    	    "from": 0
+            }`;
+            
+            var xhrArgs = {
+             url: url,
+             postData: query,
+             headers: {
+                 "Accept" : "application/json",
+                 "Content-Type" : "application/json"
+              },
+             handleAs : "json",
+             load: function(data) {
+                var myWindow = window.open("", "_blank");
+                data = JSON.stringify(data).replace(/[<>&\n]/g, function(x) {
+                    return {
+                        '<': '&lt;',
+                        '>': '&gt;',
+                        '&': '&amp;',
+                        '\n': '<br />',
+                    }[x];
+                });
+                myWindow.document.write(data);
+             }
+         }
+         dojo.xhrPost(xhrArgs);
+
+        }
+
         function fillQuery (counters) {
                         <%
                         String restBaseUrl="http://"+
@@ -2464,7 +2498,10 @@
                            ((request.getLocalPort()!=80) ? ":"+request.getLocalPort() : "")+
                            "/api/content/_search";
                         %>
+                        
+
                         queryRaw = counters["luceneQueryRaw"];
+                        var encodedQueryRaw = queryRaw.replace(/'/g, "%27").replace(/"/g, "%22");
                         var queryfield=document.getElementById("luceneQuery");
                         queryfield.value=queryRaw;
                         var queryFrontend = counters["luceneQueryFrontend"];
@@ -2484,33 +2521,45 @@
                         div.innerHTML = "<div class='contentViewDialog' style=\"white-space: pre;\">" +
 
                             "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "frontend-query") %></div>"+
-                            "<div class='contentViewQuery'>#foreach($con in $dotcontent.pull(\"" + queryFrontend + "\",10,\"" + sortBy + "\"))<br/>...<br/>#end</div>";
+                            "<div class='contentViewQuery'><code>#foreach($con in $dotcontent.pull(\"" + queryFrontend + "\",10,\"" + sortBy + "\"))<br/>...<br/>#end</code></div>";
 
                         if (relatedQueryByChild == null){
                             div.innerHTML += "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "The-actual-query-") %></div>"+
-                                "<div class='contentViewQuery'>"+queryRaw+"</div>";
+                                "<div class='contentViewQuery'><code>"+queryRaw+"</code></div>";
                         } else{
                             test_api_xml_link +=  "/related/" + relatedQueryByChild;
                             test_api_json_link += "/related/" + relatedQueryByChild;
                             apicall_urlencode += "/related/" + relatedQueryByChild;
                         }
 
-                        div.innerHTML += "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "rest-api-call-urlencoded") %></div>"+
-                            "<div class='contentViewQuery'>"+apicall_urlencode+"</div>"+
-                            
+                        div.innerHTML +=
+                            "<style>" +
+                                ".dot-api-link {" +
+                                    "align-items: center; border-radius: 2px; border: solid 1px var(--color-sec); color: var(--color-sec); " +
+                                    "display: inline-flex; line-height: 1em; padding: 0.25rem 6px 0.25rem 0.5rem; text-decoration: none; " +
+                                    "text-transform: uppercase; transition: background-color 150ms ease, color 150ms ease; cursor: pointer;" +
+                                "}" +
+                                ".dot-api-link:hover {" +
+                                    "background-color: var(--color-sec);" +
+                                    "color: white;" +
+                                "}" +
+                            "</style>" +
                             "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "rest-api-call-post") %></div>"+
-                            "<div class='contentViewQuery'>" + "curl -XPOST '<%= restBasePostUrl %>' \\<br/>" +
-                            "--header 'Content-Type: application/json' \\<br/>" +
-                            "--data-raw '{<br/>" +
+                            "<div class='contentViewQuery'><code>" + "curl -XPOST '<%= restBasePostUrl %>' \\<br/>" +
+                            "-H 'Content-Type: application/json' \\<br/>" +
+                            "-d '{<br/>" +
                             "<span style='margin-left: 20px'>\"query\": \"" + queryRaw + "\",</span><br/>" +
                             "<span style='margin-left: 20px'>\"sort\": \"" + sortBy + "\",</span><br/>" +
                             "<span style='margin-left: 20px'>\"limit\": 20,</span><br/>" +
                             "<span style='margin-left: 20px'>\"offset\": 0</span><br/>" +
-                            "}'</div>" +
+                            "}'</code></div>" +
+
+                            "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "rest-api-call-urlencoded") %></div>"+
+                            "<div class='contentViewQuery'><code>"+apicall_urlencode+"</code></div>"+
 
                             "<div class='contentViewQuery' style='padding:20px;padding-top:10px;color:#333;'>REST API: " +
-
-	                            "<a href='" + test_api_json_link +"' target='_blank'><%= LanguageUtil.get(pageContext, "json") %></a>"+
+	                            "<span class='dot-api-link' " +
+                                "onClick=\"queryContentJSONPost('<%= restBasePostUrl %>', '" + encodedQueryRaw + "', '" + sortBy + "')\">API</span></a>"+
 
                             "</div>"+
 
