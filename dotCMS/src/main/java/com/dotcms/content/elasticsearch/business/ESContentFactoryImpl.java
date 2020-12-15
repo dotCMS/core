@@ -1549,6 +1549,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
              if(null != trackTotalHitsBool){
                  searchSourceBuilder.trackTotalHits(trackTotalHitsBool);
              }
+        } else {
+            searchSourceBuilder.trackTotalHitsUpTo(MAX_LIMIT);
         }
     }
 
