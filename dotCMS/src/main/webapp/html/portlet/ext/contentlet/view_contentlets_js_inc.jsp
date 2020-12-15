@@ -2458,6 +2458,11 @@
                            APILocator.getHostAPI().find((String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID), user, false).getHostname()+
                            ((request.getLocalPort()!=80) ? ":"+request.getLocalPort() : "")+
                            "/api/content/render/false";
+                        
+                        String restBasePostUrl="http://"+
+                           APILocator.getHostAPI().find((String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID), user, false).getHostname()+
+                           ((request.getLocalPort()!=80) ? ":"+request.getLocalPort() : "")+
+                           "/api/content/_search";
                         %>
                         queryRaw = counters["luceneQueryRaw"];
                         var queryfield=document.getElementById("luceneQuery");
@@ -2492,10 +2497,19 @@
 
                         div.innerHTML += "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "rest-api-call-urlencoded") %></div>"+
                             "<div class='contentViewQuery'>"+apicall_urlencode+"</div>"+
+                            
+                            "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "rest-api-call-post") %></div>"+
+                            "<div class='contentViewQuery'>" + "curl -XPOST '<%= restBasePostUrl %>' \\<br/>" +
+                            "--header 'Content-Type: application/json' \\<br/>" +
+                            "--data-raw '{<br/>" +
+                            "<span style='margin-left: 20px'>\"query\": \"" + queryRaw + "\",</span><br/>" +
+                            "<span style='margin-left: 20px'>\"sort\": \"" + sortBy + "\",</span><br/>" +
+                            "<span style='margin-left: 20px'>\"limit\": 20,</span><br/>" +
+                            "<span style='margin-left: 20px'>\"offset\": 0</span><br/>" +
+                            "}'</div>" +
+
                             "<div class='contentViewQuery' style='padding:20px;padding-top:10px;color:#333;'>REST API: " +
 
-	                            "<a href='" + test_api_xml_link +"' target='_blank'><%= LanguageUtil.get(pageContext, "xml") %></a>"+
-	                            "&nbsp;|&nbsp;"+
 	                            "<a href='" + test_api_json_link +"' target='_blank'><%= LanguageUtil.get(pageContext, "json") %></a>"+
 
                             "</div>"+
