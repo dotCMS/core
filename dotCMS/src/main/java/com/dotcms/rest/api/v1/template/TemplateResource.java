@@ -7,25 +7,21 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.BulkResultView;
 import com.dotcms.rest.api.FailedResultView;
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.ContainerPaginator;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.TemplatePaginator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PermissionAPI.PermissionableType;
-import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.Theme;
+import com.dotmarketing.business.ThemeAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -37,7 +33,6 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -66,10 +61,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 /**
  * CRUD of Templates
@@ -303,26 +294,15 @@ public class TemplateResource {
                                          final PageMode pageMode,
                                          final Template template) throws DotSecurityException, DotDataException {
 
+        Theme theme = null;
+        final ThemeAPI themeAPI = APILocator.getThemeAPI();
         if(UtilMethods.isSet(templateForm.getTheme())) {
 
-            if (Theme.SYSTEM_THEME.equalsIgnoreCase(template.getTheme())) {
-
-                final Theme systemTheme = APILocator.getThemeAPI().systemTheme();
-                template.setThemeName(systemTheme.getName());
-            } else {
-
-                final Folder themeFolder = this.folderAPI.find(templateForm.getTheme(), user, pageMode.respectAnonPerms);
-
-                if (null != themeFolder && InodeUtils.isSet(themeFolder.getInode())) {
-                    template.setThemeName(this.folderAPI.find(templateForm.getTheme(), user, pageMode.respectAnonPerms).getName());
-                } else {
-
-                    throw new BadRequestException("Invalid theme: " + templateForm.getTheme());
-                }
-            }
-
+            theme = themeAPI.findThemeById(template.getTheme(), user, pageMode.respectAnonPerms);
+            template.setThemeName(theme.getName());
             template.setTheme(templateForm.getTheme());
         }
+
         template.setInode(StringPool.BLANK);
         template.setBody(templateForm.getBody());
         template.setCountContainers(templateForm.getCountAddContainer());
@@ -344,17 +324,13 @@ public class TemplateResource {
         template.setSelectedimage(templateForm.getSelectedimage());
         template.setHeader(templateForm.getHeader());
 
-        if (templateForm.isDrawed()) { // todo: check theme system case
-            final String themeHostId = APILocator.getFolderAPI().find(templateForm.getTheme(), user, pageMode.respectAnonPerms).getHostId();
-            final String themePath   = themeHostId.equals(host.getInode())?
-                    Template.THEMES_PATH + template.getThemeName() + "/":
-                    "//" + APILocator.getHostAPI().find(themeHostId, user, pageMode.respectAnonPerms).getHostname()
-                            + Template.THEMES_PATH + template.getThemeName() + "/";
+        if (templateForm.isDrawed()) {
 
-            final StringBuffer endBody = DesignTemplateUtil.getBody(template.getBody(), template.getHeadCode(),
-                    themePath, templateForm.isHeaderCheck(), templateForm.isFooterCheck());
-            template.setBody(endBody.toString());
+            template.setBody(DesignTemplateUtil.getBody(template.getBody(), template.getHeadCode(),
+                    themeAPI.getThemePath(theme, user, template.getThemeName(), host, pageMode.respectAnonPerms),
+                    templateForm.isHeaderCheck(), templateForm.isFooterCheck()).toString());
         }
+
         this.templateAPI.saveTemplate(template, host, user, pageMode.respectAnonPerms);
 
         ActivityLogger.logInfo(this.getClass(), "Saved Template", "User " + user.getPrimaryKey()

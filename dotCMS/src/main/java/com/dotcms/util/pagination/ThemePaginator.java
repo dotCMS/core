@@ -2,27 +2,14 @@ package com.dotcms.util.pagination;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Theme;
 import com.dotmarketing.business.ThemeAPI;
-import com.dotmarketing.common.model.ContentletSearch;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
-
-import com.liferay.util.StringPool;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-
-import static com.dotmarketing.business.ThemeAPI.THEME_THUMBNAIL_KEY;
 
 /**
  * Handle theme pagination
@@ -64,61 +51,12 @@ public class ThemePaginator implements Paginator<Map<String, Object>> {
         final String hostId       = params != null ? (String) params.get(HOST_ID_PARAMETER_NAME) : null;
         final String searchParams = params != null ? (String) params.get(SEARCH_PARAMETER) : null;
         final String searchById   = params != null ? (String) params.get(ID_PARAMETER) : null;
-        final StringBuilder query = new StringBuilder();
 
-        query.append(BASE_LUCENE_QUERY);
+        this.themeAPI.findThemes(searchById, user, -1, 0, hostId, direction, searchParams, false)
+                .stream().map(Theme::getMap).forEach(result::add);
 
-        if (UtilMethods.isSet(searchById)){
-            query.append("+conFolder").append(StringPool.COLON).append(searchById);
-        }
-
-        if(UtilMethods.isSet(hostId)) {
-            query.append("+conhost").append(StringPool.COLON).append(hostId);
-        }
-
-        if (UtilMethods.isSet(searchParams)){
-            query.append(" +catchall:*").append(searchParams).append("*");
-        }
-
-        final String sortBy = String.format("parentPath %s", direction.toString().toLowerCase());
-
-        try {
-
-            final List<ContentletSearch> totalResults =
-                    contentletAPI.searchIndex(query.toString(), -1, 0, sortBy, user, false);
-
-            final List<ContentletSearch> contentletSearches;
-
-            if (limit !=-1 || offset!=0) {
-
-                contentletSearches =
-                        contentletAPI.searchIndex(query.toString(), limit, offset, sortBy, user, false);
-                result.setTotalResults(totalResults.size());
-            } else {
-
-                contentletSearches = totalResults;
-                result.add(this.themeAPI.systemTheme().getMap());
-                result.setTotalResults(totalResults.size() + 1);
-            }
-
-            final List<String>  inodes = contentletSearches.stream()
-                    .map(ContentletSearch::getInode).collect(Collectors.toList());
-
-
-            for (final Contentlet contentlet : this.contentletAPI.findContentlets(inodes)) {
-
-                final Folder folder = folderAPI.find(contentlet.getFolder(), user, false);
-                final Map<String, Object> map = new HashMap<>(folder.getMap());
-                map.put(THEME_THUMBNAIL_KEY, themeAPI.getThemeThumbnail(folder, user));
-                result.add(map);
-            }
-
-            result.setQuery(query.toString());
-            return result;
-        } catch (DotSecurityException | DotDataException e) {
-
-            Logger.error(this, e.getMessage(), e);
-            throw new PaginationException(e);
-        }
+        return result;
     }
+
+
 }

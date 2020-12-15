@@ -137,7 +137,7 @@ public class DotTemplateTool implements ViewTool {
 
     private static DrawedBody getDrawedBody(String themeInodeOrId, User user) throws DotDataException, DotSecurityException {
         final Template template = FactoryLocator.getTemplateFactory().find(themeInodeOrId);//If null themeInodeOrId is a Id
-        final String identifier = template!=null ? template.getIdentifier() : themeInodeOrId;
+        final String identifier = template!=null ? template.getIdentifier() : themeInodeOrId; // todo: not sure about this one.
         final Template workingTemplate = APILocator.getTemplateAPI().findWorkingTemplate(identifier, user, false);
 
         if (!workingTemplate.isDrawed()){
@@ -239,24 +239,29 @@ public class DotTemplateTool implements ViewTool {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    public static Map<String, Object> theme ( final String themeFolderInode, final String hostId )
+    public static Map<String, Object> theme (final String themeFolderInode, final String hostId)
             throws DotDataException, DotSecurityException {
 
-        if (Theme.SYSTEM_THEME.equalsIgnoreCase(themeFolderInode)) {
+        final Theme theme = APILocator.getThemeAPI().findThemeById(themeFolderInode, APILocator.systemUser(), false);
+        if (theme.isSystemTheme()) {
 
-            final Map<String, Object> themeMap = new HashMap<>(); // todo: cache this
-            final Theme systemTheme = APILocator.getThemeAPI().systemTheme();
+            final String key = "themeMap" + theme.getIdentifier();
+            Map<String, Object> themeMap = cache.getIfPresent(key);
+            if (null == themeMap) {
 
-            themeMap.put( "path", systemTheme.getPath() );
-            themeMap.put( "templatePath", systemTheme.getPath() );
-            themeMap.put( "htmlHead", false );
-            themeMap.put( "title", systemTheme.getName());
+                themeMap = new HashMap<>();
+                themeMap.put("path", theme.getPath());
+                themeMap.put("templatePath", theme.getPath() + Template.THEME_TEMPLATE);
+                themeMap.put("htmlHead", false);
+                themeMap.put("title", theme.getName());
+                cache.put(key, themeMap);
+            }
 
             return themeMap;
         }
+
         //Get the theme folder
-        Folder themeFolder = APILocator.getFolderAPI().find( themeFolderInode, APILocator.getUserAPI().getSystemUser(), false );
-        return setThemeData( themeFolder, hostId );
+        return setThemeData( theme, hostId );
     }
 
     /**
@@ -273,39 +278,30 @@ public class DotTemplateTool implements ViewTool {
 
     	
     	
-    	if(themeFolderPath ==null ){
+    	if(themeFolderPath ==null ) {
+
     		return null;
     	}
-    	
-    	
+
     	// get theme host
-    	if(themeFolderPath.startsWith("//")){
+    	if(themeFolderPath.startsWith("//")) {
+
     		String[] uriArray = themeFolderPath.split("/");
     		String hostName = uriArray[2];
-    		
-    		hostId = APILocator.getHostAPI().resolveHostName(hostName, APILocator.getUserAPI().getSystemUser(), true).getIdentifier();
-    		
+    		hostId = APILocator.getHostAPI().resolveHostName(hostName, APILocator.systemUser(), true).getIdentifier();
     		java.io.StringWriter sw = new java.io.StringWriter();
     		
     		for(int i= 3;i< uriArray.length;i++){
     			sw.append("/");
     			sw.append(uriArray[i]);
-    			
     		}
+
     		themeFolderPath = sw.toString();
-    		
     	}
-    	
-    	
-    	
-        //Get the theme folder
+
+    	//Get the theme folder
         Folder themeFolder = APILocator.getFolderAPI().findFolderByPath( themeFolderPath, hostId, APILocator.getUserAPI().getSystemUser(), false );
-        
-        
-        
-        
-        
-        
+
         return setThemeData( themeFolder, hostId );
     }
 

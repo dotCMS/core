@@ -922,7 +922,7 @@ public class DependencyManager {
 
 		//Adding theme
 		if (!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.FOLDER.getType())) {
-			if (UtilMethods.isSet(workingTemplate.getTheme())) {
+			if (UtilMethods.isSet(workingTemplate.getTheme())) { // todo: something to do here?
 				try {
 					final Folder themeFolder = folderAPI.find(workingTemplate.getTheme(), user, false);
 					if (themeFolder != null && InodeUtils.isSet(themeFolder.getInode())) {

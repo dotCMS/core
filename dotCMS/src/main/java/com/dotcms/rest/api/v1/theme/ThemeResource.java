@@ -1,8 +1,5 @@
 package com.dotcms.rest.api.v1.theme;
 
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotmarketing.business.ThemeAPI.THEME_THUMBNAIL_KEY;
-
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -21,13 +18,12 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
-import java.util.HashMap;
-import java.util.Map;
+import org.glassfish.jersey.server.JSONP;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DefaultValue;
@@ -40,7 +36,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.glassfish.jersey.server.JSONP;
+import java.util.Map;
+
+import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * Provides different methods to access information about Themes in dotCMS.
@@ -49,10 +47,10 @@ import org.glassfish.jersey.server.JSONP;
 public class ThemeResource {
 
     private final PaginationUtil paginationUtil;
-    private final WebResource webResource;
-    private final HostAPI hostAPI;
-    private final FolderAPI folderAPI;
-    private final ThemeAPI themeAPI;
+    private final WebResource    webResource;
+    private final HostAPI        hostAPI;
+    private final FolderAPI      folderAPI;
+    private final ThemeAPI       themeAPI;
 
     public ThemeResource() {
          this(
@@ -90,7 +88,7 @@ public class ThemeResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findThemes(@Context final HttpServletRequest request,
-                                     final @Context HttpServletResponse response,
+                                     @Context final HttpServletResponse response,
                                      @QueryParam("hostId") final String hostId,
                                      @QueryParam(PaginationUtil.PAGE) final int page,
                                      @QueryParam(PaginationUtil.PER_PAGE) @DefaultValue("-1") final int perPage,
@@ -99,17 +97,16 @@ public class ThemeResource {
             throws Throwable {
 
         Logger.debug(this,
-                "Getting the themes for the hostId: " + hostId);
+                ()-> "Getting the themes for the hostId: " + hostId);
 
         final InitDataObject initData = this.webResource.init(null, request, response, true, null);
         final User user = initData.getUser();
         Host host = null;
 
-
-        if (UtilMethods.isSet(hostId)){
+        if (UtilMethods.isSet(hostId)) {
             //Validate hostId is valid
             host = hostAPI.find(hostId, user, false);
-        }else{
+        } else {
             return ExceptionMapperUtil
                     .createResponse(map("message", "Host ID is required"), "Host ID is required",
                             Status.BAD_REQUEST);
@@ -156,30 +153,11 @@ public class ThemeResource {
             final @Context HttpServletResponse response,
             @PathParam("id") final String themeId) throws DotDataException, DotSecurityException {
 
-        Logger.debug(this, "Getting the theme by identifier: " + themeId);
+        Logger.debug(this, ()->"Getting the theme by identifier: " + themeId);
 
         final InitDataObject initData = this.webResource.init(null, request, response, true, null);
-        final User user = initData.getUser();
-
-        final Map<String, Object> map = new HashMap<>();
-
-        if (Theme.SYSTEM_THEME.equalsIgnoreCase(themeId)) {
-
-            final Theme systemTheme = APILocator.getThemeAPI().systemTheme();
-            map.putAll(systemTheme.getMap());
-            map.put(THEME_THUMBNAIL_KEY, systemTheme.getThemeThumbnail());
-        } else {
-
-            final Folder folder = folderAPI.find(themeId, user, false);
-
-            if (folder == null) {
-                return Response.status(Status.NOT_FOUND).build();
-            }
-
-            map.putAll(folder.getMap());
-            map.put(THEME_THUMBNAIL_KEY, themeAPI.getThemeThumbnail(folder, user));
-        }
-
-        return Response.ok(new ResponseEntityView(map)).build();
+        final User user   = initData.getUser();
+        final Theme theme = APILocator.getThemeAPI().findThemeById(themeId, user, false);
+        return Response.ok(new ResponseEntityView(theme.getMap())).build();
     }
 }
