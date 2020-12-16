@@ -15,6 +15,16 @@ $number-link-icon-size: 2.28rem;
         text-decoration: none;
     }
 
+    .dot-starter-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+
+        p-checkbox {
+            margin-top: $spacing-5;
+        }
+    }
+
     .dot-starter-title {
         color: $black;
         font-size: $font-size-x-large;

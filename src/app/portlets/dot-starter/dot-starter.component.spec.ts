@@ -10,10 +10,14 @@ import { DotStarterResolver } from './dot-starter-resolver.service';
 import { By } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotToolGroupService } from '@services/dot-tool-group/dot-tool-group.service';
+import { Checkbox, CheckboxModule } from 'primeng/checkbox';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 const messages = {
     'starter.title': 'Welcome!',
     'starter.description': 'You are logged in as <em>{0}</em>.',
+    'starter.dont.show': `Don't show this again`,
     'starter.main.link.data.model.title': 'Create data model',
     'starter.main.link.data.model.description': 'Lorem, ipsum dolor sit amet...',
     'starter.main.link.add.content.title': 'Add content',
@@ -61,11 +65,12 @@ describe('DotStarterComponent', () => {
     let fixture: ComponentFixture<DotStarterComponent>;
     let de: DebugElement;
     const messageServiceMock = new MockDotMessageService(messages);
+    let dotToolGroupService: DotToolGroupService;
 
     beforeEach(
         waitForAsync(() => {
             TestBed.configureTestingModule({
-                imports: [DotMessagePipeModule],
+                imports: [DotMessagePipeModule, CheckboxModule, HttpClientTestingModule],
                 declarations: [DotStarterComponent],
                 providers: [
                     { provide: DotMessageService, useValue: messageServiceMock },
@@ -74,7 +79,8 @@ describe('DotStarterComponent', () => {
                         useClass: ActivatedRouteMock
                     },
                     { provide: CoreWebService, useClass: CoreWebServiceMock },
-                    DotStarterResolver
+                    DotStarterResolver,
+                    DotToolGroupService
                 ]
             });
 
@@ -83,6 +89,7 @@ describe('DotStarterComponent', () => {
 
             fixture.detectChanges();
             de = fixture.debugElement;
+            dotToolGroupService = TestBed.inject(DotToolGroupService);
         })
     );
 
@@ -231,5 +238,19 @@ describe('DotStarterComponent', () => {
             de.query(By.css('[data-testid="starter.footer.link.feedback"] p')).nativeElement
                 .innerText
         ).toContain(messageServiceMock.get('starter.footer.link.feedback.description'));
+    });
+
+    it('should call the endpoint to hide/show the portlet', () => {
+        const checkBox: Checkbox = de.query(By.css('p-checkbox')).componentInstance;
+        const boxEl = fixture.nativeElement.querySelector('.p-checkbox-box');
+
+        spyOn(dotToolGroupService, 'show').and.returnValue(of({ message: 'test' }));
+        spyOn(dotToolGroupService, 'hide').and.returnValue(of({ message: 'test' }));
+
+        expect(checkBox.label).toEqual(messageServiceMock.get('starter.dont.show'));
+        boxEl.click();
+        expect(dotToolGroupService.hide).toHaveBeenCalledWith('gettingstarted');
+        boxEl.click();
+        expect(dotToolGroupService.show).toHaveBeenCalledWith('gettingstarted');
     });
 });

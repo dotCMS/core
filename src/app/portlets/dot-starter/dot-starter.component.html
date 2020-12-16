@@ -1,7 +1,16 @@
 <div class="p-grid p-nogutter dot-starter-top-content">
-    <div class="p-col-12">
-        <h2 class="dot-starter-title">{{ 'starter.title' | dm }}</h2>
-        <p class="dot-starter-description" [innerHTML]="'starter.description' | dm: [username]"></p>
+    <div class="p-col-12 dot-starter-header">
+        <div>
+            <h2 class="dot-starter-title">{{ 'starter.title' | dm }}</h2>
+            <p
+                class="dot-starter-description"
+                [innerHTML]="'starter.description' | dm: [username]"
+            ></p>
+        </div>
+        <p-checkbox
+            [label]="'starter.dont.show' | dm"
+            (onChange)="handleVisibility($event.checked)"
+        ></p-checkbox>
     </div>
     <div class="p-col-12">
         <div class="p-grid p-nogutter">
