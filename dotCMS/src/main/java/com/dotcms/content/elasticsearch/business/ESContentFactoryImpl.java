@@ -126,8 +126,10 @@ import io.vavr.control.Try;
  *
  */
 public class ESContentFactoryImpl extends ContentletFactory {
+
     private static final String[] ES_FIELDS = {"inode", "identifier"};
     public static final int ES_TRACK_TOTAL_HITS_DEFAULT = 10000000;
+    public static final String ES_TRACK_TOTAL_HITS = "ES_TRACK_TOTAL_HITS";
     private final ContentletCache contentletCache;
 	private final LanguageAPI languageAPI;
 	private final IndiciesAPI indiciesAPI;
@@ -1537,12 +1539,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
      */
      @VisibleForTesting
      void setTrackHits(final SearchSourceBuilder searchSourceBuilder){
-        final boolean trackTotalHitsBool = Config.getBooleanProperty("ES_TRACK_TOTAL_HITS", false);
-        if(trackTotalHitsBool){
-            searchSourceBuilder.trackTotalHits(true);
-            return;
-        }
-        final int trackTotalHits = Config.getIntProperty("ES_TRACK_TOTAL_HITS", ES_TRACK_TOTAL_HITS_DEFAULT);
+        final int trackTotalHits = Config.getIntProperty(ES_TRACK_TOTAL_HITS, ES_TRACK_TOTAL_HITS_DEFAULT);
         searchSourceBuilder.trackTotalHitsUpTo(trackTotalHits);
     }
 

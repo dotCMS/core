@@ -1,6 +1,7 @@
 package com.dotcms.content.elasticsearch.business;
 
 import static com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.ES_TRACK_TOTAL_HITS;
+import static com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.ES_TRACK_TOTAL_HITS_DEFAULT;
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -9,45 +10,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.TranslatedQuery;
-import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
-import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotmarketing.common.model.ContentletSearch;
-import com.dotmarketing.util.Config;
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import org.elasticsearch.action.admin.indices.settings.get.GetSettingsRequest;
-import org.elasticsearch.action.admin.indices.settings.get.GetSettingsResponse;
-import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
-import org.elasticsearch.client.IndicesClient;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.search.internal.SearchContext;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
@@ -72,6 +40,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageDataGen;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
@@ -79,6 +48,25 @@ import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.internal.SearchContext;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 @RunWith(DataProviderRunner.class)
 public class ESContentFactoryImplTest extends IntegrationTestBase {
@@ -877,24 +865,16 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
        final String savedValue = Config.getStringProperty(ES_TRACK_TOTAL_HITS);
        try {
            final SearchSourceBuilder searchSourceBuilder = SearchSourceBuilder.searchSource();
-           Config.setProperty(ES_TRACK_TOTAL_HITS, "true");
-           instance.setTrackHits(searchSourceBuilder);
-           assertEquals((long)searchSourceBuilder.trackTotalHitsUpTo(),
-                   SearchContext.TRACK_TOTAL_HITS_ACCURATE);
 
-           final int limit = 100000;
+           final int limit = (int)Math.random();
 
            Config.setProperty(ES_TRACK_TOTAL_HITS, Integer.toString(limit));
            instance.setTrackHits(searchSourceBuilder);
            assertEquals((long)searchSourceBuilder.trackTotalHitsUpTo(),limit);
 
-           Config.setProperty(ES_TRACK_TOTAL_HITS, "false");
-           instance.setTrackHits(searchSourceBuilder);
-           assertEquals((long)searchSourceBuilder.trackTotalHitsUpTo(),SearchContext.TRACK_TOTAL_HITS_DISABLED);
-
            Config.setProperty(ES_TRACK_TOTAL_HITS, null);
            instance.setTrackHits(searchSourceBuilder);
-           assertEquals((long)searchSourceBuilder.trackTotalHitsUpTo(),SearchContext.DEFAULT_TRACK_TOTAL_HITS_UP_TO);
+           assertEquals((long)searchSourceBuilder.trackTotalHitsUpTo(),ES_TRACK_TOTAL_HITS_DEFAULT);
 
        }finally {
            Config.setProperty(ES_TRACK_TOTAL_HITS, savedValue);
@@ -949,12 +929,6 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
                 // as it works independently from that flag.
                 assertEquals(newContentTypeItems, instance.indexCount(queryString));
             }
-
-            Config.setProperty(ES_TRACK_TOTAL_HITS, "true");
-            esQueryCache.clearCache();
-            searchHits = instance.indexSearch(queryString, MAX_LIMIT, 0, null);
-            assertEquals(searchHits.getHits().length, newContentTypeItems);
-            assertEquals(searchHits.getTotalHits().value, newContentTypeItems);
 
         } finally {
             Config.setProperty(ES_TRACK_TOTAL_HITS, savedValue);
