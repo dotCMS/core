@@ -127,7 +127,7 @@ import io.vavr.control.Try;
  */
 public class ESContentFactoryImpl extends ContentletFactory {
     private static final String[] ES_FIELDS = {"inode", "identifier"};
-    public static final String ES_TRACK_TOTAL_HITS = "ES_TRACK_TOTAL_HITS";
+    public static final int ES_TRACK_TOTAL_HITS_DEFAULT = 10000000;
     private final ContentletCache contentletCache;
 	private final LanguageAPI languageAPI;
 	private final IndiciesAPI indiciesAPI;
@@ -1530,28 +1530,20 @@ public class ESContentFactoryImpl extends ContentletFactory {
     /**
      * The track_total_hits parameter allows you to control how the total number of hits should be tracked.
      * The default is set to 10K. This means that requests will count the total hit accurately up to 10,000 hits.
-     * If the param is absent from the properties it still default to 10K. The param can also be set to a true|false
+     * If the param is absent from the properties it still default to 10000000. The param can also be set to a true|false
      * if set to true it'll track as many items as there are. if set to false no tracking will be performed at all.
      * So it's better if it isn't set to false ever.
      * @param searchSourceBuilder
      */
      @VisibleForTesting
      void setTrackHits(final SearchSourceBuilder searchSourceBuilder){
-        final String trackTotalHitsRaw = Config.getStringProperty(ES_TRACK_TOTAL_HITS);
-        if(UtilMethods.isSet(trackTotalHitsRaw)){
-             final Integer trackTotalHitsInt = Try.of(()->Integer.parseInt(trackTotalHitsRaw)).getOrNull();
-             if(null != trackTotalHitsInt){
-                searchSourceBuilder.trackTotalHitsUpTo(trackTotalHitsInt);
-                return;
-             }
-
-             final Boolean trackTotalHitsBool = BooleanUtils.toBoolean(trackTotalHitsRaw);
-             if(null != trackTotalHitsBool){
-                 searchSourceBuilder.trackTotalHits(trackTotalHitsBool);
-             }
-        } else {
-            searchSourceBuilder.trackTotalHitsUpTo(MAX_LIMIT);
+        final boolean trackTotalHitsBool = Config.getBooleanProperty("ES_TRACK_TOTAL_HITS", false);
+        if(trackTotalHitsBool){
+            searchSourceBuilder.trackTotalHits(true);
+            return;
         }
+        final int trackTotalHits = Config.getIntProperty("ES_TRACK_TOTAL_HITS", ES_TRACK_TOTAL_HITS_DEFAULT);
+        searchSourceBuilder.trackTotalHitsUpTo(trackTotalHits);
     }
 
     /**

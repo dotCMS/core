@@ -38,7 +38,7 @@ public class ESQueryCache implements Cachable {
     }
 
 
-    final static String[] groups = new String[] {"esQueryCache","esQueryCountCache"};
+    final static String[] groups = new String[] {"esquerycache","esquerycountcache"};
 
     @Override
     public String getPrimaryGroup() {
