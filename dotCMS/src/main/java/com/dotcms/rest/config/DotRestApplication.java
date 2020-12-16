@@ -33,6 +33,7 @@ import com.dotcms.rest.api.v1.page.NavResource;
 import com.dotcms.rest.api.v1.page.PageResource;
 import com.dotcms.rest.api.v1.personalization.PersonalizationResource;
 import com.dotcms.rest.api.v1.personas.PersonaResource;
+import com.dotcms.rest.api.v1.portlet.ToolGroupResource;
 import com.dotcms.rest.api.v1.portlet.PortletResource;
 import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResource;
 import com.dotcms.rest.api.v1.relationships.RelationshipsResource;
@@ -163,6 +164,7 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 			.add(TemplateResource.class)
 			.add(MaintenanceResource.class)
 			.add(PublishQueueResource.class)
+			.add(ToolGroupResource.class)
 			.build();
 
 

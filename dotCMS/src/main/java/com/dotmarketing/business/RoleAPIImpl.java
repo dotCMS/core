@@ -416,9 +416,15 @@ public class RoleAPIImpl implements RoleAPI {
 		if(!r.isEditLayouts()){
 			throw new DotStateException("Cannot alter layouts on this role");
 		}
+		if(layout==null || UtilMethods.isNotSet(layout.getId())){
+			Logger.error(this.getClass(),"ToolGroup is not valid");
+			throw new DotDataException("ToolGroup is not valid");
+		}
 		Logger.info(this.getClass(), "removing layout " + layout.getName() + " from role " + role.getName());
 		roleFactory.removeLayoutFromRole(layout, role);
+
 	    APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
+
 	}
 
 	@CloseDBIfOpened
@@ -432,6 +438,7 @@ public class RoleAPIImpl implements RoleAPI {
 	public void removeRoleFromUser(final Role role, final User user) throws DotDataException, DotStateException {
 		final Role roleFromDb = loadRoleById(role.getId());
 		roleFactory.removeRoleFromUser(roleFromDb, user);
+	    APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
 	}
 
 	@Override
