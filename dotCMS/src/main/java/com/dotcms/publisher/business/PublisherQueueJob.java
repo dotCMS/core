@@ -7,7 +7,6 @@ import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.publishing.PublishDateUpdater;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher;
@@ -355,12 +354,23 @@ public class PublisherQueueJob implements StatefulJob {
 		} else if (groupPushStats.getCountGroupOk() > 0 && groupPushStats.getCountGroupOk() == endpointTrackingMap.size()) {
 			// If bundle was installed in all groups
 			PushPublishLogger.log(this.getClass(), "Status Update: Success");
-			bundleStatus = Status.SUCCESS;
+            bundleStatus =
+                    (groupPushStats.getCountGroupWithWarnings() > 0) ? Status.SUCCESS_WITH_WARNINGS
+                            : Status.SUCCESS;
 			pubAuditAPI.updatePublishAuditStatus(auditedBundleId, bundleStatus, localHistory);
 			pubAPI.deleteElementsFromPublishQueueTable(auditedBundleId);
 
 			//Update Notification Info
-			notificationMessage = isBundleNameGenerated ? "bundle.title.success.notification" : "bundle.named.success.notification";
+            if (groupPushStats.getCountGroupWithWarnings() > 0) {
+                notificationMessage =
+                        isBundleNameGenerated ? "bundle.title.success_with_warnings.notification"
+                                : "bundle.named.success_with_warnings.notification";
+            } else {
+                notificationMessage =
+                        isBundleNameGenerated ? "bundle.title.success.notification"
+                                : "bundle.named.success.notification";
+            }
+
 			notificationMessageArgument = isBundleNameGenerated ? generateBundleTitle(localHistory.getAssets()) : bundle.getName();
 			message.setMessage(LanguageUtil.get(
 					notificationMessage,
@@ -473,6 +483,7 @@ public class PublisherQueueJob implements StatefulJob {
 
 		for (final Map<String, EndpointDetail> group : endpointTrackingMap.values()) {
 			boolean isGroupOk = false;
+			boolean isGroupWithWarnings = false;
 			boolean isGroupPublishing = false;
 			boolean isGroupFailed = false;
 			boolean isGroupSaved = false;
@@ -480,6 +491,10 @@ public class PublisherQueueJob implements StatefulJob {
                 if (detail.getStatus() == Status.SUCCESS.getCode()
                         || detail.getStatus() == Status.SUCCESS_WITH_WARNINGS.getCode()) {
 					isGroupOk = true;
+
+					if (detail.getStatus() == Status.SUCCESS_WITH_WARNINGS.getCode()){
+                        isGroupWithWarnings = true;
+                    }
 				} else if ( detail.getStatus() == Status.PUBLISHING_BUNDLE
 						.getCode() ) {
 					isGroupPublishing = true;
@@ -494,6 +509,9 @@ public class PublisherQueueJob implements StatefulJob {
 			if ( isGroupOk ) {
 				groupPushStats.increaseCountGroupOk();
 			}
+            if ( isGroupWithWarnings ) {
+                groupPushStats.increaseCountGroupWithWarnings();
+            }
 			if ( isGroupPublishing ) {
 				groupPushStats.increaseCountGroupPublishing();
 			}
@@ -628,10 +646,15 @@ public class PublisherQueueJob implements StatefulJob {
 		private int countGroupPublishing = 0;
 		private int countGroupFailed = 0;
 		private int countGroupSaved = 0;
+		private int countGroupWithWarnings = 0;
 
 		public void increaseCountGroupOk() {
 			countGroupOk++;
 		}
+
+        public void increaseCountGroupWithWarnings() {
+            countGroupWithWarnings++;
+        }
 
 		public void increaseCountGroupPublishing() {
 			countGroupPublishing++;
@@ -648,6 +671,10 @@ public class PublisherQueueJob implements StatefulJob {
 		public int getCountGroupOk() {
 			return countGroupOk;
 		}
+
+        public int getCountGroupWithWarnings() {
+            return countGroupWithWarnings;
+        }
 
 		public int getCountGroupPublishing() {
 			return countGroupPublishing;
