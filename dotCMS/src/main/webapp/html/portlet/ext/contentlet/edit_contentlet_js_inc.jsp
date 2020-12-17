@@ -742,9 +742,6 @@
             dojo.empty(myDiv);
         }
         var hideRulePushOptions = false
-        <%if(contentlet.getStructure().isHTMLPageAsset()){%>
-        hideRulePushOptions=true;
-        <%}%>
         myCp = new dojox.layout.ContentPane({
             id : "contentletRulezDivCp",
             style: "height:100%",
