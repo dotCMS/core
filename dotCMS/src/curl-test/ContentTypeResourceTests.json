@@ -75,7 +75,7 @@
 						"id": "0f6f243f-b52e-4278-87c5-defc040fc99d",
 						"exec": [
 							"var jsonData = pm.response.json();",
-							"var contentType = jsonData.entity[0]",
+							"var contentType = jsonData.entity[0];",
 							"pm.collectionVariables.set(\"contentTypeVariable\", contentType.variable);",
 							"pm.collectionVariables.set(\"contentTypeId\", contentType.id);",
 							"pm.test(\"Status code should be 200\", function() {",
@@ -109,7 +109,8 @@
 							"    pm.expect(tinyMcePropsVar.key).to.eql(\"tinymceprops\");",
 							"    pm.expect(tinyMcePropsVar.value).to.eql(\"{toolbar:\\\"true\\\",menu:\\\"false\\\", theme:\\\"advanced\\\"}\");",
 							"});",
-							"pm.collectionVariables.set(\"contentType.workflow\", contentType.workflows[0].id);"
+							"pm.collectionVariables.set(\"contentType.workflow\", contentType.workflows[0].id);",
+							""
 						],
 						"type": "text/javascript"
 					}
@@ -157,7 +158,8 @@
 						"v1",
 						"contenttype"
 					]
-				}
+				},
+				"description": "Given a content type payload containing field variables.\nWhen sending a POST.\nExpect that code is 200.\nExpect content type is created with the provided fields.\nExpect that WYSIWYG field is created with provided field variables."
 			},
 			"response": []
 		},
@@ -245,59 +247,60 @@
 						"id",
 						"{{contentTypeId}}"
 					]
-				}
+				},
+				"description": "Given a content type payload containing field variables.\nWhen sending a PUT.\nExpect that code is 200.\nExpect content type is updated with the provided fields.\nExpect that WYSIWYG field is updated with provided field variables."
 			},
 			"response": []
 		}
 	],
 	"variable": [
 		{
-			"id": "5dc7dfe3-311b-4064-bcd9-1a0c5c56ab51",
+			"id": "1053f32f-50b4-46cc-89ed-f77d4f73b204",
 			"key": "contentTypeVariable",
 			"value": ""
 		},
 		{
-			"id": "d59357b8-8704-4458-a0e6-208b4617a304",
+			"id": "f4f2cc70-03cf-4b8f-9caf-cbdf261bc373",
 			"key": "contentTypeId",
 			"value": ""
 		},
 		{
-			"id": "ddaaa28f-6a6a-42bd-88b5-05fd07353988",
+			"id": "b5d57071-38bd-43ec-8ba8-d02cea71418b",
 			"key": "contentType.columnDivider",
 			"value": ""
 		},
 		{
-			"id": "341c11e4-4f00-436d-b571-1ef64fcee171",
+			"id": "746e534b-3f00-4317-b158-b7c479adb0ce",
 			"key": "contentType.divider",
 			"value": ""
 		},
 		{
-			"id": "7008a66a-ba74-44d0-bb03-8aa21842e947",
+			"id": "d9e03317-301b-4b88-ab80-f0cac9f0670a",
 			"key": "contentType.field1",
 			"value": ""
 		},
 		{
-			"id": "8ae975b8-5fca-4746-b43e-791b2583c86a",
+			"id": "8b1fe68b-beca-415c-8dfa-7c76428b712f",
 			"key": "contentType.field2",
 			"value": ""
 		},
 		{
-			"id": "c2d824b0-8001-413e-a1be-856543604537",
+			"id": "475b7625-4dee-4232-a6fb-24f945b6c654",
 			"key": "contentType.field3",
 			"value": ""
 		},
 		{
-			"id": "9e43ed22-ea18-498b-bcd5-e797f9a9bfa1",
+			"id": "15b2dbe9-d3ea-456e-a19c-6bb7b7e3eac9",
 			"key": "contentType.field4",
 			"value": ""
 		},
 		{
-			"id": "a1866f1e-625d-48b8-a8ad-7f956afd0e6e",
+			"id": "eea618b4-b1a1-404c-b59a-f7656be60f63",
 			"key": "contentType.host",
 			"value": ""
 		},
 		{
-			"id": "a617cad5-95ba-498e-ac13-052af5e2d83c",
+			"id": "d4e34a94-1740-4669-84fa-4b173671ddf3",
 			"key": "contentType.workflow",
 			"value": ""
 		}

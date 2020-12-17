@@ -50,6 +50,7 @@ import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.rendering.velocity.services.ContentTypeLoader;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJob;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
@@ -101,8 +102,7 @@ public class FieldAPIImpl implements FieldAPI {
   private final RelationshipAPI relationshipAPI;
   private final LocalSystemEventsAPI localSystemEventsAPI;
   private final LanguageVariableAPI languageVariableAPI;
-
-  private final FieldFactory fieldFactory = new FieldFactoryImpl();
+  private final FieldFactory fieldFactory;
 
   public FieldAPIImpl() {
       this(APILocator.getPermissionAPI(),
@@ -110,7 +110,8 @@ public class FieldAPIImpl implements FieldAPI {
           APILocator.getUserAPI(),
           APILocator.getRelationshipAPI(),
           APILocator.getLocalSystemEventsAPI(),
-          APILocator.getLanguageVariableAPI());
+          APILocator.getLanguageVariableAPI(),
+          FactoryLocator.getFieldFactory());
   }
 
   @VisibleForTesting
@@ -119,13 +120,15 @@ public class FieldAPIImpl implements FieldAPI {
                       final UserAPI userAPI,
                       final RelationshipAPI relationshipAPI,
                       final LocalSystemEventsAPI localSystemEventsAPI,
-                      final LanguageVariableAPI languageVariableAPI) {
+                      final LanguageVariableAPI languageVariableAPI,
+                      final FieldFactory fieldFactory) {
       this.permissionAPI   = perAPI;
       this.contentletAPI   = conAPI;
       this.userAPI         = userAPI;
       this.relationshipAPI = relationshipAPI;
       this.localSystemEventsAPI = localSystemEventsAPI;
       this.languageVariableAPI = languageVariableAPI;
+      this.fieldFactory = fieldFactory;
   }
 
   @WrapInTransaction

@@ -419,6 +419,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
             try {
                 field = fapi.save(field, APILocator.systemUser());
             } catch (DotSecurityException e) {
+                Logger.error(this, String.format("Could not save field %s", field.id()), e);
                 throw new DotStateException(e);
             }
         }
