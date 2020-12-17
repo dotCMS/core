@@ -3,6 +3,7 @@
  */
 package com.dotmarketing.business;
 
+import com.dotmarketing.util.Logger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -16,13 +17,15 @@ import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotmarketing.db.DotRunnableFlusherThread;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.base.Splitter;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
-
+import io.vavr.API;
 import io.vavr.control.Try;
 
 /**
@@ -32,7 +35,7 @@ import io.vavr.control.Try;
 public class LayoutAPIImpl implements LayoutAPI {
 
 	private final LayoutFactory layoutFactory = FactoryLocator.getLayoutFactory();
-	
+
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.business.LayoutAPI#addPortletsToLayout(com.dotmarketing.business.Layout, java.util.List)
 	 */
@@ -43,6 +46,7 @@ public class LayoutAPIImpl implements LayoutAPI {
 		for(Portlet p : portlets) {
 			portletIds.add(p.getPortletId());
 		}
+		
 		layoutFactory.setPortletsToLayout(layout, portletIds);
 		APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
 	}
@@ -55,8 +59,8 @@ public class LayoutAPIImpl implements LayoutAPI {
 	public Layout loadLayout(final String layoutId) throws DotDataException {
 		return layoutFactory.loadLayout(layoutId);
 	}
-	
-	
+
+
   @Override
   @CloseDBIfOpened
   public Optional<Layout> resolveLayout(final HttpServletRequest request) {
@@ -197,5 +201,55 @@ public class LayoutAPIImpl implements LayoutAPI {
 	public Layout findLayoutByName(String name) throws DotDataException {
 		return layoutFactory.findLayoutByName(name);
 	}
+	
+
+	@CloseDBIfOpened
+	@Override
+    public Layout findGettingStartedLayout() {
+	    final Layout layout = Try.of(() -> findLayout(GETTING_STARTED_LAYOUT_ID)).getOrElseThrow(e->new DotRuntimeException(e));
+	    return layout.getPortletIds().isEmpty()  ? this.createGettingStartedLayout() : layout ;
+    }
+	
+    @WrapInTransaction
+    private synchronized Layout createGettingStartedLayout() {
+        final Layout gettingStarted = new Layout();
+        gettingStarted.setId(LayoutAPI.GETTING_STARTED_LAYOUT_ID);
+        gettingStarted.setName("Getting Started");
+        gettingStarted.setDescription("whatshot");
+        gettingStarted.setPortletIds(Collections.singletonList("starter"));
+        gettingStarted.setTabOrder(-320000);
+        Try.run(() -> {
+            layoutFactory.saveLayout(gettingStarted);
+            layoutFactory.setPortletsToLayout(gettingStarted, Collections.singletonList("starter"));
+        }).onFailure(e -> new DotRuntimeException(e));
+
+        return gettingStarted;
+    }
+	
+    @Override
+	@WrapInTransaction
+	public void addLayoutForUser(final Layout layout, final User user) throws DotDataException {
+		if(user==null || UtilMethods.isNotSet(user.getUserId())){
+			Logger.error(this.getClass(),"User is null");
+			throw new DotDataException("User is null");
+		}
+		if(layout==null || UtilMethods.isNotSet(layout.getId())){
+			Logger.error(this.getClass(),"ToolGroup is not valid");
+			throw new DotDataException("ToolGroup is not valid");
+		}
+		if(UtilMethods.isSet(findLayoutByRole(layout,user.getUserRole()).get().getLayoutId())){
+			Logger.info(this.getClass(),"ToolGroup is already set");
+			return;
+		}
+
+		APILocator.getRoleAPI().addLayoutToRole(layout, user.getUserRole());
+	    APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
+	}
+	
+	
+	
+	
+	
+	
 	
 }
