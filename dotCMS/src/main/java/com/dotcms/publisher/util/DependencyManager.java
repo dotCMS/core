@@ -823,7 +823,7 @@ public class DependencyManager {
 							if (contentIdentifier == null) {
 								continue;
 							}
-							
+
 							final Identifier id = APILocator.getIdentifierAPI().find(contentIdentifier);
 							final List<Contentlet> contentList = APILocator.getContentletAPI().findAllVersions(id, false, user, false);
 
