@@ -14,10 +14,12 @@ public class PersonalizedContentlet implements Serializable{
 
     private final String contentletId;
     private final String personalization;
+    private final int treeOrder;
 
-    public PersonalizedContentlet(final String contentletId, final String personalization) {
+    public PersonalizedContentlet(final String contentletId, final String personalization, final int treeOrder) {
         this.contentletId    = contentletId;
         this.personalization = personalization;
+        this.treeOrder = treeOrder;
     }
 
     public String getContentletId() {
@@ -40,5 +42,9 @@ public class PersonalizedContentlet implements Serializable{
     @Override
     public int hashCode() {
         return Objects.hash(contentletId, personalization);
+    }
+
+    public Object getTreeOrder() {
+        return treeOrder;
     }
 }
