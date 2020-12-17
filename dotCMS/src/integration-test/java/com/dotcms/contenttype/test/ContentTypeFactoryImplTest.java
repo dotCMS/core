@@ -196,6 +196,10 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 		assertThat("contenttypes are added", count == count2 - runs);
 	}
 
+	/**
+	 * Given Scenario: A content type is generated and created containing field variables in its fields
+	 * ExpectedResult: When iterating the fields at least one should have variables.
+	 */
 	@Test
 	public void testAddingContentType_withFieldVariables() throws Exception {
 		long time = System.currentTimeMillis();
