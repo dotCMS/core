@@ -1,6 +1,6 @@
 name: Core
 on:
-  pull_request:
+#  pull_request:
   push:
     branches:
       - master
@@ -152,7 +152,7 @@ jobs:
           databaseType: postgres
           PROVIDER_DB_USERNAME: postgres
           PROVIDER_DB_PASSWORD: postgres
-        if: (success() || failure()) && env.jobRun == 'true'
+        if: success() && env.jobRun == 'true'
   run-integration-tests-job:
     name: Integration Tests
     runs-on: ubuntu-latest
@@ -273,7 +273,7 @@ jobs:
           dotcicd/library/pipeline.sh runIntegration
         env:
           databaseType: ${{ matrix.databaseType }}
-        if: (success() || failure()) && env.jobRun == 'true'
+        if: success() && env.jobRun == 'true'
   slack-notification:
     name: Notification
     runs-on: ubuntu-latest

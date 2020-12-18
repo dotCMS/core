@@ -22,21 +22,21 @@ jobs:
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
-      - name: Get the latest commit on PR
-        id: get-latest-commit
-        uses: ActionsRML/get-PR-latest-commit@v1
-        if: github.event_name == 'pull_request'
+      - name: Get commit message
+        id: get-commit-message
+        uses: dotcms/get-commit-message@master
+        with:
+          accessToken: ${{ secrets.GITHUB_TOKEN }}
       - name: Set Common Vars
         run: |
           BRANCH=$(basename "${{ github.ref }}")
           echo "branch=${BRANCH}" >> $GITHUB_ENV
-          echo "coreBranch=${BRANCH}" >> $GITHUB_ENV
+
+          eval $(cat dotCMS/gradle.properties | grep dotcmsReleaseVersion)
+          echo "DOTCMS_VERSION=${dotcmsReleaseVersion}" >> $GITHUB_ENV
       - name: Prepare dot-cicd
         run: |
           chmod +x .cicd/discover.sh && .cicd/discover.sh
-      - name: Check Provider
-        run: |
-          dotcicd/library/checkProvider.sh github
       - name: Generate/Deploy DotCMS EE
         uses: dotcms/generate-ee-jar@main
         with:
@@ -48,6 +48,12 @@ jobs:
       - name: Build distro files
         run: |
           dotcicd/library/pipeline.sh buildDistro
-      - name: Build distro files
+      - name: Generate Javadoc
         run: |
           dotcicd/library/pipeline.sh generateJavadoc
+      - name: Push distro file
+        run: |
+          dotcicd/library/pipeline.sh pushToStaticDotCMS all true
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
