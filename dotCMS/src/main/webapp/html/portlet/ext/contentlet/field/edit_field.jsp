@@ -823,7 +823,7 @@
     <%
         }
     %>
-    <input type="hidden" name="<%=fieldName%>" id="<%=field.getVelocityVarName()%>"
+    <input type="hidden" name="<%=fieldName%>" id="<%=field.getVelocityVarName()%>Checkbox"
            value="<%=value%>">
 
     <script type="text/javascript">
@@ -834,7 +834,7 @@
             checkedInputs.forEach(function(checkedInput) {
                 valuesList.push(checkedInput.value);
             });
-            $("<%=field.getVelocityVarName()%>").value = valuesList.join(",");
+            $("<%=field.getVelocityVarName()%>Checkbox").value = valuesList.join(",");
         }
 
         update<%=field.getVelocityVarName()%>Checkbox();
