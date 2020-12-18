@@ -23,7 +23,8 @@ describe('DotTemplateNewComponent', () => {
                 {
                     provide: DotRouterService,
                     useValue: {
-                        gotoPortlet: jasmine.createSpy()
+                        gotoPortlet: jasmine.createSpy(),
+                        goToURL: jasmine.createSpy()
                     }
                 },
                 {
@@ -60,5 +61,10 @@ describe('DotTemplateNewComponent', () => {
     it('should go to create design template', () => {
         dialogRefClose.next('design');
         expect(dotRouterService.gotoPortlet).toHaveBeenCalledOnceWith('/templates/new/design');
+    });
+
+    it('should go to listing if close the dialog', () => {
+        dialogRefClose.next(undefined);
+        expect(dotRouterService.goToURL).toHaveBeenCalledOnceWith('/templates');
     });
 });

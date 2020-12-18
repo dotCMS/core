@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { filter, take } from 'rxjs/operators';
+import { take } from 'rxjs/operators';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -26,13 +26,10 @@ export class DotTemplateNewComponent implements OnInit {
             closeOnEscape: false
         });
 
-        ref.onClose
-            .pipe(
-                take(1),
-                filter((value: string) => !!value)
-            )
-            .subscribe((value: string) => {
-                this.dotRouterService.gotoPortlet(`/templates/new/${value}`);
-            });
+        ref.onClose.pipe(take(1)).subscribe((value: string) => {
+            value
+                ? this.dotRouterService.gotoPortlet(`/templates/new/${value}`)
+                : this.dotRouterService.goToURL(`/templates`);
+        });
     }
 }
