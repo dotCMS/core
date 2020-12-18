@@ -5,6 +5,8 @@ import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATI
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotConcurrentFactory.SubmitterConfigBuilder;
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
@@ -54,12 +56,17 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.Lazy;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import jersey.repackaged.com.google.common.collect.Lists;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -1674,6 +1681,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
      	return loadPermissions(permissionable);
   }
 
+  
+  private Lazy<DotSubmitter> submitter = Lazy.of(()-> DotConcurrentFactory.getInstance().getSubmitter("permissionreferences", new SubmitterConfigBuilder().maxPoolSize(10).queueCapacity(10000).build()));
+  
+  
   @CloseDBIfOpened
   @SuppressWarnings("unchecked")
   private List<Permission> loadPermissions(final Permissionable permissionable) throws DotDataException {
@@ -1694,26 +1705,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
      * permission_reference table We lock to lookup, check if cache has been loaded while we have been
      * waiting, and if so, use it, otherwise we query the permission_reference table
      */
+    permissionList = _loadPermissionsFromDb(permissionable,permissionKey);
 
-    permissionList = Try.of(() -> lockManager.tryLock(LOCK_PREFIX + permissionKey, () -> {
-      List<Permission> bitPermissionsList = permissionCache.getPermissionsFromCache(permissionKey);
-      if (bitPermissionsList != null) {
-        return bitPermissionsList;
-      }
-      HibernateUtil persistenceService = new HibernateUtil(Permission.class);
-      persistenceService.setSQLQuery(LOAD_PERMISSION_SQL);
-      persistenceService.setParam(permissionable.getPermissionId());
-      persistenceService.setParam(permissionable.getPermissionId());
-      bitPermissionsList = (List<Permission>) persistenceService.list();
-
-      bitPermissionsList.forEach(p -> p.setBitPermission(true));
-      // adding to cache if found
-      
-      permissionCache.addToPermissionCache(permissionKey, bitPermissionsList);
-      
-      return bitPermissionsList;
-
-    })).getOrElseThrow(e -> new DotDataException(e));
 
     // if we've found permissions, return'em
     if (!permissionList.isEmpty()) {
@@ -1726,41 +1719,76 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
      * cache or entries in the permission_reference table, we need to find our "parent permissionable"
      * and store that in the permission_reference table for a faster lookup in Step 2.
      */
-
     final String type = resolvePermissionType(permissionable);
-
-    Permissionable parentPermissionable = permissionable.getParentPermissionable();
-
-    while (parentPermissionable != null) {
-      permissionList = getInheritablePermissions(parentPermissionable, type);
-      if (!permissionList.isEmpty() || Host.SYSTEM_HOST.equals(parentPermissionable.getPermissionId())) {
-        break;
-      }
-      parentPermissionable = parentPermissionable.getParentPermissionable();
-    }
-
-    final Permissionable finalNewReference = (parentPermissionable == null) ? APILocator.systemHost() : parentPermissionable;
-
+    final Tuple2<Permissionable,List<Permission>> parentPerms =_loadParentPermissions(permissionable,permissionKey);
+    final Permissionable finalNewReference = parentPerms._1;
+    permissionList = parentPerms._2;
+    permissionCache.addToPermissionCache(permissionKey, permissionList);
     /*
      * Step 4. Upsert into the permission_reference table 
      * We have found our "parent permissionable", now
      * we have to lock again in order to UPSERT our parent permissionable in the permission_reference
      * table
      */
-
-    Try.run(() -> lockManager.tryLock(LOCK_PREFIX + permissionKey, () -> {
-      deleteInsertPermission(permissionable, type, finalNewReference);
-    })).onFailure(e -> {
-      throw new DotRuntimeException(e);
-    });
+    
+    if(Config.getBooleanProperty("PERMISSION_REFERENCES_UPDATE_ASYNC", true)) {
+        submitter.get().submit( () -> {
+            deleteInsertPermission(permissionable, type, finalNewReference);
+        });
+    }
+    else {
+        deleteInsertPermission(permissionable, type, finalNewReference);
+    }
+    
   	Logger.debug(this.getClass(), () -> "permission inherited: " + Try
 			  .of(() -> type.substring(type.lastIndexOf(".") + 1)).getOrElse(type)
 			  + " : " + permissionKey + " -> " + finalNewReference);
-	permissionCache.addToPermissionCache(permissionKey, permissionList);
+	
     return permissionList;
 
   }
 
+  private List<Permission> _loadPermissionsFromDb(final Permissionable permissionable, final String permissionKey) throws DotDataException {
+      return Try.of(() -> lockManager.tryLock(LOCK_PREFIX + permissionKey, () -> {
+          List<Permission> bitPermissionsList = permissionCache.getPermissionsFromCache(permissionKey);
+          if (bitPermissionsList != null) {
+            return bitPermissionsList;
+          }
+          HibernateUtil persistenceService = new HibernateUtil(Permission.class);
+          persistenceService.setSQLQuery(LOAD_PERMISSION_SQL);
+          persistenceService.setParam(permissionable.getPermissionId());
+          persistenceService.setParam(permissionable.getPermissionId());
+          bitPermissionsList = (List<Permission>) persistenceService.list();
+    
+          // adding to cache if found
+          if (!bitPermissionsList.isEmpty()) {
+              bitPermissionsList.forEach(p -> p.setBitPermission(true));
+              permissionCache.addToPermissionCache(permissionKey, bitPermissionsList);
+          }
+          return bitPermissionsList;
+      })).getOrElseThrow(e -> new DotDataException(e));
+  }
+  
+  private Tuple2<Permissionable,List<Permission>> _loadParentPermissions(final Permissionable permissionable, final String permissionKey) throws DotDataException {
+
+      List<Permission> permissionList = Lists.newArrayList();
+      final String type = resolvePermissionType(permissionable);
+
+      Permissionable parentPermissionable = permissionable.getParentPermissionable();
+
+      while (parentPermissionable != null) {
+        permissionList = getInheritablePermissions(parentPermissionable, type);
+        if (!permissionList.isEmpty() || Host.SYSTEM_HOST.equals(parentPermissionable.getPermissionId())) {
+           break;
+        }
+        parentPermissionable = parentPermissionable.getParentPermissionable();
+      }
+
+      final Permissionable finalNewReference = (parentPermissionable == null) ? APILocator.systemHost() : parentPermissionable;
+      return Tuple.of(finalNewReference,permissionList);
+
+  }
+  
   private String resolvePermissionType(final Permissionable permissionable) {
     // Need to determine who this asset should inherit from
     String type = permissionable.getPermissionType();
@@ -1820,17 +1848,27 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	protected static final String PERMISSION_TYPE = "permission_type";
 	protected static final String ID = "id";
 
-  @WrapInTransaction
+    @WrapInTransaction
 	private void deleteInsertPermission(Permissionable permissionable, String type,
-            Permissionable newReference) throws DotDataException {
+            Permissionable newReference)  {
 
         final String permissionId = permissionable.getPermissionId();
 
         try{
-            Logger.debug(this.getClass(), "PERMDEBUG: " + Thread.currentThread().getName() + " - " + permissionId
+            Logger.debug(this.getClass(), ()-> "PERMDEBUG: " + Thread.currentThread().getName() + " - " + permissionId
                     + " - started");
 
             DotConnect dc1 = new DotConnect();
+            
+            // trying an upsert first
+            if(Config.getBooleanProperty("PERMISSION_REFERENCES_UPSERT_ONLY", true)) {
+                
+                Logger.debug(this.getClass(), ()-> "UPSERTING permission_reference = assetId:" + permissionId + " type:" + type + " reference:" + newReference.getPermissionId());
+                
+                upsertPermission(dc1, permissionId, newReference, type);
+                return;
+            }
+            
             dc1.setSQL("SELECT inode FROM inode WHERE inode = ?");
             dc1.addParam(permissionId);
             List<Map<String, Object>> inodeList = dc1.loadObjectResults();
@@ -1844,6 +1882,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 				upsertPermission(dc1, permissionId, newReference, type);
             }
+            
+            
 
         } catch(Exception exception){
             if(permissionable != null && newReference != null){
@@ -1855,7 +1895,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
             }
             Logger.debug(this.getClass(), "Failed to insert Permission Ref. : " + exception.toString(), exception);
 
-            throw new DotDataException(exception.getMessage(), exception);
+            throw new DotRuntimeException(exception.getMessage(), exception);
         } finally {
             Logger.debug(this.getClass(), "PERMDEBUG: " + Thread.currentThread().getName() + " - " + permissionId
                     + " - ended");
