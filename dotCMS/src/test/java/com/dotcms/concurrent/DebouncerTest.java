@@ -39,13 +39,18 @@ public class DebouncerTest {
         
         
         debouncer.debounce("testingKey", ()->{Logger.info("DebouncerTest","running debouncer test" );}, 1, TimeUnit.SECONDS);
-        Thread.sleep(300);
-        debouncer.debounce("testingKey", ()->{Logger.info("DebouncerTest","running debouncer test" );}, 1, TimeUnit.SECONDS);
-        Thread.sleep(2000);
+        Thread.sleep(100);
+        debouncer.debounce("testingKey", ()->{Logger.info("DebouncerTest","running debouncer test" );}, 5, TimeUnit.SECONDS);
         
+        Thread.sleep(3000);
+        assertTrue("assert that we have not run yet", debouncer.runCount==0);
+        
+        Thread.sleep(4000);
+        assertTrue("assert that we have only run once", debouncer.runCount==1);
         
         debouncer.debounce("testingKey", ()->{Logger.info("DebouncerTest","running debouncer test" );}, 1, TimeUnit.SECONDS);
-        Thread.sleep(300);
+        Thread.sleep(100);
+       
         debouncer.debounce("testingKey", ()->{Logger.info("DebouncerTest","running debouncer test" );}, 1, TimeUnit.SECONDS);
         Thread.sleep(2000);
 

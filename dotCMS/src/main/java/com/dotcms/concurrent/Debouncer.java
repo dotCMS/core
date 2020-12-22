@@ -45,7 +45,7 @@ public class Debouncer {
                         ++runCount;
                         Logger.info(Debouncer.class, () -> "Debouncer has run : " + runCount + " times");
                     }
-                    Logger.info(Debouncer.class, () -> "Debouncer Runnning : " + key + " after " + delay + " " + unit);
+                    Logger.info(Debouncer.class, () -> "Debouncing : " + key + " after " + delay + " " + unit);
 
                     runnable.run();
                 } finally {
