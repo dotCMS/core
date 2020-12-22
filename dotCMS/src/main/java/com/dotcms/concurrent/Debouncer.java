@@ -12,7 +12,7 @@ import com.google.common.annotations.VisibleForTesting;
  * Usage:
  * 
  * final Debouncer debouncer = new Debouncer(); 
- * debouncer.debounce("myRunnableKey", new Runnable() {()->{runnable..} , 300, TimeUnit.MILLISECONDS);
+ * debouncer.debounce("myRunnableKey",()->{runnable..} , 1000, TimeUnit.MILLISECONDS);
  */
 public class Debouncer {
 
