@@ -46,6 +46,11 @@ public class BundlerStatus {
 	public void addCount() {
 		count = count + 1;
 	}
+
+	public void addCountThreadSafe() {
+		addCount();
+	}
+
 	/**
 	 * @param count
 	 *            the count to set
