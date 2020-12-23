@@ -9,10 +9,20 @@ import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 
 /**
+ * This class implements a debouncer, which is intended to prevent multiple calls to a single method
+ * within a set peroid of time. Debouncing ensures that a method doesn’t get called too frequently,
+ * but does get called when needed. This is important when trying to prevent run away calls to a
+ * particularly expensiveMethod() - for example, calls to flush and rebuild cache, that happen in
+ * response to user input or system actions. It allows us to call expensiveMethod() in code 1, 10 or 100
+ * times, as many times as needed with confidence that finally, expensiveMethod() will only be called
+ * once, after the final call to expensiveMethod() has been made.
+ * 
+ * 
  * Usage:
  * 
  * final Debouncer debouncer = new Debouncer(); 
- * debouncer.debounce("myRunnableKey",()->{runnable..} , 1000, TimeUnit.MILLISECONDS);
+ * debouncer.debounce("myRunnableKey",()->{runnable..}, 1000, TimeUnit.MILLISECONDS);
+ * 
  */
 public class Debouncer {
 
