@@ -22,7 +22,7 @@ public class CategoryFieldDataFetcher implements DataFetcher<List<Map<String, Ob
             final String var = environment.getField().getName();
 
             final CategoryToMapTransformer transformer = new CategoryToMapTransformer(contentlet, user);
-            return transformer.asMap().get("var") == null ? null : (List<Map<String, Object>>) ((Map) transformer.asMap().get(var)).get("categories");
+            return transformer.asMap().get(var) == null ? null : (List<Map<String, Object>>) ((Map) transformer.asMap().get(var)).get("categories");
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
             throw e;
