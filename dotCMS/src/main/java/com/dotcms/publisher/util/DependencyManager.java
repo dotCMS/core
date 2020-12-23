@@ -1359,7 +1359,7 @@ public class DependencyManager {
 			}
 
 			if (!this.alreadyProcess(assetKey, assetTypes)) {
-				Logger.info(DependencyProcessor.class, () -> String.format("%s: Putting %s in %s",
+				Logger.debug(DependencyProcessor.class, () -> String.format("%s: Putting %s in %s",
 						Thread.currentThread().getName(), assetKey, assetTypes));
 
 				queue.add(new DependencyProcessorItem(assetKey, assetTypes));
@@ -1391,7 +1391,7 @@ public class DependencyManager {
 				final DependencyThread thread = new DependencyThread();
 				threads.add(thread);
 
-				Logger.info(DependencyProcessor.class, () -> String.format("Starting %s", thread.getName()));
+				Logger.debug(DependencyProcessor.class, () -> String.format("Starting %s", thread.getName()));
 				thread.start();
 			}
 
@@ -1399,16 +1399,16 @@ public class DependencyManager {
 		}
 
 		public void join(){
-			Logger.info(DependencyProcessor.class, () -> String.format("%s: Wait until all finish",
+			Logger.debug(DependencyProcessor.class, () -> String.format("%s: Wait until all finish",
 					Thread.currentThread().getName()));
 
 			while(!isFinish()) {
-				Logger.info(DependencyProcessor.class, () -> String.format("%s: it is not finish yet",
+				Logger.debug(DependencyProcessor.class, () -> String.format("%s: it is not finish yet",
 						Thread.currentThread().getName()));
 				waitForDependencies();
 			}
 
-			Logger.info(DependencyProcessor.class, () -> String.format("%s: it is finish",
+			Logger.debug(DependencyProcessor.class, () -> String.format("%s: it is finish",
 					Thread.currentThread().getName()));
 			this.stop();
 		}
@@ -1460,29 +1460,27 @@ public class DependencyManager {
 				while (true) {
 					try {
 						DependencyProcessorItem dependencyProcessorItem = queue.poll();
-						final AssetTypes assetTypes = dependencyProcessorItem.assetTypes;
 
 						if (dependencyProcessorItem == null) {
 							waitingForSomethingToProcess = true;
-							Logger.info(DependencyProcessor.class, () -> String.format("%s : Notifying to main thread",
+							Logger.debug(DependencyProcessor.class, () -> String.format("%s : Notifying to main thread",
 									Thread.currentThread().getName()));
 
 							notifyMainThread();
 
-							Logger.info(DependencyProcessor.class,
+							Logger.debug(DependencyProcessor.class,
 									() -> String.format("%s : Waiting for something to process", Thread.currentThread().getName()));
 							dependencyProcessorItem = queue.take();
 							waitingForSomethingToProcess = false;
 						}
 
-						Logger.info(DependencyProcessor.class, () ->
+						final AssetTypes assetTypes = dependencyProcessorItem.assetTypes;
+						Logger.debug(DependencyProcessor.class, () ->
 								String.format("%s : We have something to process - %s",
 										Thread.currentThread().getName(), assetTypes));
 
 						consumerDependencies.get(assetTypes).accept(dependencyProcessorItem.assetKey);
 					} catch (InterruptedException e) {
-						Logger.info(DependencyProcessor.class,
-								Thread.currentThread().getName() + " InterruptedException");
 						if (!finish) {
 							Logger.error(DependencyProcessor.class, e.getMessage());
 						}
