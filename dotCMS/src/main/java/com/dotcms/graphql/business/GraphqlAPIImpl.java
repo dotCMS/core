@@ -88,22 +88,23 @@ public class GraphqlAPIImpl implements GraphqlAPI {
     }
 
     final Debouncer debouncer = new Debouncer();
-    
+    final Runnable removeSchema = ()->{schemaCache.removeSchema();};
 
     /**
      * Nullifies the schema so it is regenerated next time it is fetched
-     * This method is debounced for 30 seconds to prevent overloading when
+     * This method is debounced for 5 seconds to prevent overloading when
      * content types are saved.
      */
     @Override
     public void invalidateSchema() {
+        final int delay = Config.getIntProperty("GRAPHQL_SCHEMA_DEBOUNCE_DELAY_MILLIS", 5000);
+        
+        if(delay<=0) {
+            removeSchema.run();
+            return;
+        }
 
-        debouncer.debounce("invalidateGraphSchema", new Runnable() {
-            @Override
-            public void run() {
-                schemaCache.removeSchema();
-            }
-        }, Config.getIntProperty("GRAPHQL_SCHEMA_DEBOUNCE_DELAY", 30), TimeUnit.SECONDS);;
+        debouncer.debounce("invalidateGraphSchema", removeSchema , delay, TimeUnit.MILLISECONDS);;
 
 
     }
