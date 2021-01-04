@@ -1,9 +1,11 @@
 package com.dotmarketing.business;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.google.common.collect.ImmutableList;
 
 public class Layout implements Serializable{
 	
@@ -42,10 +44,10 @@ public class Layout implements Serializable{
 		this.description = description;
 	}
 	public List<String> getPortletIds() {
-		return portletIds;
+		return portletIds==null ? Collections.emptyList() : portletIds;
 	}
 	public void setPortletIds(List<String> portletIds) {
-		this.portletIds = portletIds;
+		this.portletIds = portletIds==null ? Collections.emptyList() : portletIds;
 	}
 
 	public Map<String, Object> toMap() {
