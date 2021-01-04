@@ -2,7 +2,9 @@ package com.dotmarketing.business;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -17,6 +19,7 @@ import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.util.CollectionsUtils;
@@ -26,6 +29,7 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.business.ajax.RoleAjax;
 import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -1163,6 +1167,139 @@ public class PermissionAPITest extends IntegrationTestBase {
             nrole = APILocator.getRoleAPI().save(nrole);
         }
         return nrole;
+    }
+
+    /**
+     * Given scenario: We create a hierarchy site/folder/page. Then we add page permission to the folder and verify the hierarchy picks the new changes
+     * Expected Results:  The hierarchy should always be consistent in terms of permissions
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void Test_Inherited_Permissions() throws DotSecurityException, DotDataException {
+
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final User systemUser = APILocator.systemUser();
+        final Host site = new SiteDataGen().nextPersisted();
+
+        assertNotNull(permissionAPI.getInheritablePermissions(site.getParentPermissionable()));
+
+        assertTrue(permissionAPI.isInheritingPermissions(site));
+        final PermissionCache permissionCache = CacheLocator.getPermissionCache();
+
+        final Folder folder = new FolderDataGen()
+                .name("about")
+                .title("about")
+                .site(site)
+                .showOnMenu(true)
+                .nextPersisted();
+
+        assertTrue(permissionAPI.isInheritingPermissions(folder));
+
+        //After calling get permission we should expect the permissions to be in cache.
+        permissionAPI.getPermissions(folder, true);
+
+        assertNotNull(permissionCache.getPermissionsFromCache(folder.getPermissionId()));
+
+        final Contentlet page = new HTMLPageDataGen(folder, template)
+                .friendlyName("index")
+                .pageURL("index")
+                .title("index")
+                .nextPersisted();
+
+        assertTrue(permissionAPI.isInheritingPermissions(page));
+        final List<Permission> pagePermissionsInheritedFromSite = permissionAPI.getPermissions(page, true);
+        final List<Permission> inheritedPermissionsFromCache = permissionCache
+                .getPermissionsFromCache(page.getPermissionId());
+
+        assertEquals(pagePermissionsInheritedFromSite, inheritedPermissionsFromCache);
+
+        HTMLPageDataGen.publish(page);
+
+        final Role role = new RoleDataGen()
+                .name(String.format("role-%d", System.currentTimeMillis())).nextPersisted();
+        //Assign permissions to the folder to simulate inherited permission on the page
+        permissionAPI.save(
+                new Permission(PermissionableType.HTMLPAGES.getCanonicalName(), folder.getPermissionId(),
+                        role.getId(),
+                        PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT),
+                folder, systemUser, false);
+
+        assertTrue(permissionAPI.isInheritingPermissions(page));
+
+
+        final List<Permission> pagePermissionsInheritedFromFolder = permissionAPI.getPermissions(page, true);
+        //Here we verify the permissions are not the same since the page now inherits'em from the folder.
+        assertNotEquals(pagePermissionsInheritedFromSite, pagePermissionsInheritedFromFolder);
+
+        HTMLPageDataGen.unpublish(page);
+
+        final List<Permission> pagePermissionsAfterUnpublish = permissionAPI.getPermissions(page, true);
+
+        assertEquals(pagePermissionsAfterUnpublish, pagePermissionsInheritedFromFolder);
+
+        permissionAPI.resetPermissionReferences(folder);
+
+         //Resilience test
+        final List<Permission> pagePermissionsAfterClearReference = permissionAPI.getPermissions(page, true);
+        assertEquals(pagePermissionsAfterClearReference, pagePermissionsInheritedFromFolder);
+
+        permissionAPI.removePermissions(folder);
+
+        final List<Permission> pagePermissionsRestoredInheritance = permissionAPI.getPermissions(page, true);
+        assertEquals(pagePermissionsRestoredInheritance, pagePermissionsInheritedFromSite);
+
+    }
+
+    /**
+     * Given scenario: We remove permissions from the db to simulate a scenario
+     * Expected Results:  Calling getPermissionsFromCache should give me null instead of an empty list
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void Test_Remove_All_Permissions_Then_Verify_Cache_Is_Null() throws DotSecurityException, DotDataException {
+        final PermissionCache permissionCache = CacheLocator.getPermissionCache();
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final User systemUser = APILocator.systemUser();
+        final Host site = new SiteDataGen().nextPersisted();
+
+        assertNotNull(permissionAPI.getInheritablePermissions(site.getParentPermissionable()));
+
+        assertTrue(permissionAPI.isInheritingPermissions(site));
+
+        final Folder folder = new FolderDataGen()
+                .name("about")
+                .title("about")
+                .site(site)
+                .showOnMenu(true)
+                .nextPersisted();
+
+        assertTrue(permissionAPI.isInheritingPermissions(folder));
+
+        final Role role = new RoleDataGen()
+                .name(String.format("role-%d", System.currentTimeMillis())).nextPersisted();
+        //Assign permissions to the folder to simulate inherited permission on the page
+        permissionAPI.save(
+                new Permission(PermissionableType.HTMLPAGES.getCanonicalName(), folder.getPermissionId(),
+                        role.getId(),
+                        PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT),
+                folder, systemUser, false);
+
+        //After calling get permission we should expect the permissions to be in cache.
+        permissionAPI.getPermissions(folder, true);
+
+        final DotConnect dotConnect = new DotConnect();
+
+        dotConnect.setSQL("delete from permission where inode_id = ? ");
+        dotConnect.addParam(folder.getPermissionId());
+        dotConnect.loadResult();
+
+        permissionAPI.resetPermissionReferences(folder);
+
+        //Ww're testing here we're getting null here. instead of an empty list
+        assertNull(permissionCache.getPermissionsFromCache(folder.getPermissionId()));
+
     }
 
 }
