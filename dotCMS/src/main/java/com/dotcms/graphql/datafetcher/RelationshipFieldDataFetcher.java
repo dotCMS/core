@@ -71,10 +71,8 @@ public class RelationshipFieldDataFetcher implements DataFetcher<Object> {
 
             List<Contentlet> relatedContent = ContentUtils
                     .pullRelatedField(relationship, contentlet.getIdentifier(),
-                            ContentUtils.addDefaultsToQuery(query, !contentlet.isLive(),
-                                    ((DotGraphQLContext) environment.getContext())
-                                            .getHttpServletRequest()), limit, offset, sort, user, null, pullParents,
-                            nonCachedContentlet.getLanguageId(), true);
+                            query, limit, offset, sort, user, null, pullParents,
+                            nonCachedContentlet.getLanguageId(), nonCachedContentlet.isLive());
             
             if (UtilMethods.isSet(relatedContent)) {
                 final DotContentletTransformer transformer = new DotTransformerBuilder()
