@@ -160,9 +160,8 @@ public class SQLResultsViewTool implements ViewTool {
             }
             if (dataSource.equals(DEFAULT_DATASOURCE)) {
                 return dc.loadResults();
-            } else {
-                return dc.getResults(dataSource);
             }
+            return dc.getResults(dataSource);
         } catch (final Exception e) {
             return reportError(CollectionsUtils.map(DOT_CONNECT_SQL_ERROR, "An error occurred when executing the SQL " +
                     "query: " + e.getMessage()));
