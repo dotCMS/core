@@ -763,8 +763,8 @@
         }
     %>
     </select>
-    <input type="hidden" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>MultiSelect" value="<%= value %>"/>
-    <script type="text/javascript">
+    <input type="hidden" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>MultiSelectHF" value="<%= value %>"/>
+        <script type="text/javascript">
         function update<%=field.getVelocityVarName()%>MultiSelect() {
             var valuesList = "";
             var multiselect = $('<%=field.getVelocityVarName()%>MultiSelect');
@@ -776,7 +776,7 @@
                     valuesList += multiselect.options[i].value;
                 }
             }
-            $('<%=field.getVelocityVarName()%>MultiSelect').value = valuesList;
+            $('<%=field.getVelocityVarName()%>MultiSelectHF').value = valuesList;
         }
 
         update<%=field.getVelocityVarName()%>MultiSelect();
