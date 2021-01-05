@@ -331,4 +331,14 @@ public class SQLUtil {
 		return false;
 	}
 
+	/**
+	 * Returns an immutable list of common evil SQL keywords that must not be included in SQL queries sent by custom
+	 * code.
+	 *
+	 * @return The list of evil SQL keywords.
+	 */
+	public static Set<String> getEvilSqlConditionWords() {
+		return EVIL_SQL_CONDITION_WORDS;
+	}
+
 } // E:O:F:SQLUtil.
