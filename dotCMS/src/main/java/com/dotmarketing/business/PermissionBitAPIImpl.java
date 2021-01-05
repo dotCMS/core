@@ -1521,10 +1521,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
         if (parent.isParentPermissionable()) {
 
-            String type = permissionable.getPermissionType();
-            immutablePermissionList.addAll(permissionFactory.getInheritablePermissions(parent, type));
-            immutablePermissionList.addAll(permissionFactory.getPermissions(parent, true));
-            List<Permission> permissionList = immutablePermissionList.build();
+        	String type = permissionable.getPermissionType();
 
             Host host = APILocator.getHostAPI()
                     .find(permissionable.getPermissionId(), APILocator.getUserAPI().getSystemUser(),
@@ -1532,6 +1529,10 @@ public class PermissionBitAPIImpl implements PermissionAPI {
             if (host != null) {
                 type = Host.class.getCanonicalName();
             }
+
+			immutablePermissionList.addAll(permissionFactory.getInheritablePermissions(parent, type));
+			immutablePermissionList.addAll(permissionFactory.getPermissions(parent, true));
+			List<Permission> permissionList = immutablePermissionList.build();
 
             final Set<String> classesToIgnoreFolder = Sets
                     .newHashSet(Template.class.getCanonicalName(),
