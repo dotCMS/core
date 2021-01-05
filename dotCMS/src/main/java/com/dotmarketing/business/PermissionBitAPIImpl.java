@@ -1522,7 +1522,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
         if (parent.isParentPermissionable()) {
 
             String type = permissionable.getPermissionType();
-            immutablePermissionList.addAll(permissionFactory.getInheritablePermissions(parent));
+            immutablePermissionList.addAll(permissionFactory.getInheritablePermissions(parent, type));
             immutablePermissionList.addAll(permissionFactory.getPermissions(parent, true));
             List<Permission> permissionList = immutablePermissionList.build();
 
