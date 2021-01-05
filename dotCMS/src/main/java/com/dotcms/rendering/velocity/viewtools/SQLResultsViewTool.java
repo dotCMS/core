@@ -113,6 +113,12 @@ public class SQLResultsViewTool implements ViewTool {
      */
     private ArrayList<HashMap<String, String>> getResults(final String dataSource, final String sql, final
     ArrayList<Object> parameterList, int startRow, int maxRow) {
+        if (dataSource.equals(DEFAULT_DATASOURCE) && !Config.getBooleanProperty
+                ("ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB", false)) {
+            return reportError(CollectionsUtils.map(DOT_CONNECT_SQL_ERROR, "SQLResultsViewTool failed to execute " +
+                    "query on default connection pool because ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB is set to false" +
+                    "."), "ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB is set to false.");
+        }
         if (!UtilMethods.isSet(sql)) {
             // SQL Query is not Set. So, return an empty list
             return new ArrayList<>();
@@ -153,11 +159,6 @@ public class SQLResultsViewTool implements ViewTool {
                 }
             }
             if (dataSource.equals(DEFAULT_DATASOURCE)) {
-                if (!Config.getBooleanProperty("ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB", false)) {
-                    return reportError(CollectionsUtils.map(DOT_CONNECT_SQL_ERROR, "SQLResultsViewTool failed to " +
-                            "execute query on default connection pool because ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB " +
-                            "is set to false."), "ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB is set to false.");
-                }
                 return dc.loadResults();
             } else {
                 return dc.getResults(dataSource);
