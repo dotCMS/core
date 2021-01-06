@@ -16,6 +16,7 @@ import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 import { DotTemplateSelectorModule } from './components/dot-template-selector/dot-template-selector.module';
+import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-empty-state.module';
 
 @NgModule({
     declarations: [DotTemplateListComponent],
@@ -33,7 +34,8 @@ import { DotTemplateSelectorModule } from './components/dot-template-selector/do
         DynamicDialogModule,
         DotBulkInformationModule,
         DotIconModule,
-        DotTemplateSelectorModule
+        DotTemplateSelectorModule,
+        DotEmptyStateModule
     ],
     providers: [DotTemplateListResolver, DotTemplatesService, DialogService]
 })

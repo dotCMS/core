@@ -157,6 +157,10 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
         };
     }
 
+    handleButtonClick(): void {
+        this.dotRouterService.gotoPortlet(`/templates/new`);
+    }
+
     private setTemplateColumns(): DataTableColumn[] {
         return [
             {

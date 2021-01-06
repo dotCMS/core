@@ -63,8 +63,6 @@ describe('DotTextareaContentComponent', () => {
             By.css('.textarea-content__select-field .p-selectbutton')
         );
 
-        console.log();
-
         expect(selectFieldWrapper.componentInstance.options).toEqual([
             { label: 'Plain', value: 'plain' },
             { label: 'Code', value: 'code' }

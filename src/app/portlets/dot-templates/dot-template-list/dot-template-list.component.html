@@ -32,6 +32,17 @@
         <p-menu #actionsMenu [popup]="true" [model]="templateBulkActions" appendTo="body"></p-menu>
     </div>
 
+    <dot-empty-state
+        [rows]="10"
+        [colsTextWidth]="[60, 50, 60, 80]"
+        icon="web"
+        [title]="'message.template.empty.title' | dm"
+        [content]="'message.template.empty.content' | dm"
+        [buttonLabel]="'message.template.empty.button.label' | dm"
+        (buttonClick)="handleButtonClick()"
+    >
+    </dot-empty-state>
+
     <ng-template #rowTemplate let-rowData="rowData">
         <td [ngStyle]="{ 'text-align': tableColumns[0].textAlign }">
             {{ rowData.name }}

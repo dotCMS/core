@@ -356,6 +356,23 @@ describe('DotTemplateListComponent', () => {
         expect(lockIcon).toBeDefined();
     });
 
+    // TODO: Fix this test when DotTemplateList is refactored
+    xit('should set dot-empty-state if the templates array is empty', () => {
+        const activatedRoute = TestBed.inject(ActivatedRoute);
+        spyOnProperty(activatedRoute, 'data', 'get').and.returnValue(
+            of({
+                dotTemplateListResolverData: [[], false, false]
+            })
+        );
+        comp.ngOnInit();
+        fixture.detectChanges();
+
+        activatedRoute.data.subscribe(console.log); // { dotTemplateListResolverData: [ [], false, false ] }
+
+        const emptyState = fixture.debugElement.query(By.css('dot-empty-state'));
+        console.log(emptyState); // null
+    });
+
     describe('row', () => {
         it('should set actions to publish template', () => {
             publishTemplate = fixture.debugElement.query(By.css('[data-testid="123Published"]'))

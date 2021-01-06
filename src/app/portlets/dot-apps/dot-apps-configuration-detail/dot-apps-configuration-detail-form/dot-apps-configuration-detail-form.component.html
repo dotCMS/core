@@ -20,7 +20,12 @@
 
 <form #form="ngForm" [formGroup]="myFormGroup" class="p-fluid" novalidate>
     <div #formContainer class="dot-apps-configuration-detail__form">
-        <div class="p-field" *ngFor="let field of formFields" [attr.data-testid]="field.name" [ngSwitch]="field.type">
+        <div
+            class="p-field"
+            *ngFor="let field of formFields"
+            [attr.data-testid]="field.name"
+            [ngSwitch]="field.type"
+        >
             <ng-container *ngSwitchCase="'BUTTON'">
                 <ng-container
                     *ngTemplateOutlet="labelField; context: { field: field }"
