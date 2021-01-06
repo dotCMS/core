@@ -550,9 +550,6 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
       throw new DotDataException("limit param must be more than 0");
     limit = (limit < 0) ? 10000 : limit;
 
-    search = LicenseManager.getInstance().isCommunity() 
-                    ? search + " and structuretype <> " + BaseContentType.FORM.getType() + " and structuretype <> " + BaseContentType.PERSONA.getType() 
-                    : search;
     
     // our legacy code passes in raw sql conditions and so we need to detect
     // and handle those
@@ -682,18 +679,24 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     final String search;
     final String condition;
 
+
+    final String appendCondition = LicenseManager.getInstance().isCommunity() 
+                    ? " and structuretype <> " + BaseContentType.FORM.getType() + " and structuretype <> " + BaseContentType.PERSONA.getType() 
+                    : "";
+    
+    
     SearchCondition(final String searchOrCondition) {
       if (!UtilMethods.isSet(searchOrCondition) || searchOrCondition.equals("%")) {
-        this.condition = "";
+        this.condition = appendCondition;
         this.search = "%";
       } else if (searchOrCondition.contains("<") || searchOrCondition.contains("=") || searchOrCondition.contains("<")
           || searchOrCondition.contains(" like ") || searchOrCondition.contains(" is ")) {
         this.search = "%";
         this.condition =
-            (searchOrCondition.toLowerCase().trim().startsWith("and")) ? searchOrCondition : "and " + searchOrCondition;
+            (searchOrCondition.toLowerCase().trim().startsWith("and")) ? searchOrCondition : "and " + searchOrCondition + appendCondition;
 
       } else {
-        this.condition = "";
+        this.condition = appendCondition;
         this.search = "%" + searchOrCondition + "%";
 
       }
