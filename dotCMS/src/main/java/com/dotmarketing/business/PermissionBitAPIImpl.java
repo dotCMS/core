@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import com.dotcms.util.CollectionsUtils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -1465,7 +1466,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
     public void permissionIndividually(Permissionable parent, Permissionable permissionable,
             User user) throws DotDataException, DotSecurityException {
 
-        List<Permission> newSetOfPermissions = getNewPermissions(parent, permissionable, user);
+        final List<Permission> newSetOfPermissions = getNewPermissions(parent, permissionable, true, user);
 
         if (!newSetOfPermissions.isEmpty()) {
             // NOTE: Method "assignPermissions" is deprecated in favor of "savePermission",
@@ -1503,13 +1504,22 @@ public class PermissionBitAPIImpl implements PermissionAPI {
         }
     }
 
+	/**
+	 * Retrieves all the parent permissions in order to be applied to the permissionable.
+	 */
+	private List<Permission> getNewPermissions(final Permissionable parent, final Permissionable permissionable,
+			final User user) throws DotDataException, DotSecurityException {
+			return getNewPermissions(parent, permissionable, false, user);
+	}
+
     /**
      * Retrieves all the parent permissions in order to be applied to the permissionable.
      */
-    private List<Permission> getNewPermissions(Permissionable parent, Permissionable permissionable,
-            User user) throws DotDataException, DotSecurityException {
+    private List<Permission> getNewPermissions(final Permissionable parent, final Permissionable permissionable,
+            final boolean filterInheritedPermsByType,
+            final User user) throws DotDataException, DotSecurityException {
 
-        ImmutableList.Builder<Permission> immutablePermissionList = new Builder<>();
+        final ImmutableList.Builder<Permission> permissionsListBuilder = new Builder<>();
         List<Permission> newSetOfPermissions = new ArrayList<>();
 
         if (!doesUserHavePermission(permissionable, PermissionAPI.PERMISSION_EDIT_PERMISSIONS,
@@ -1530,9 +1540,16 @@ public class PermissionBitAPIImpl implements PermissionAPI {
                 type = Host.class.getCanonicalName();
             }
 
-			immutablePermissionList.addAll(permissionFactory.getInheritablePermissions(parent, type));
-			immutablePermissionList.addAll(permissionFactory.getPermissions(parent, true));
-			List<Permission> permissionList = immutablePermissionList.build();
+            if(filterInheritedPermsByType) {
+				permissionsListBuilder
+						.addAll(permissionFactory.getInheritablePermissions(parent, type));
+			}  else {
+				permissionsListBuilder
+						.addAll(permissionFactory.getInheritablePermissions(parent));
+			}
+
+			permissionsListBuilder.addAll(permissionFactory.getPermissions(parent, true));
+			List<Permission> permissionList = permissionsListBuilder.build();
 
             final Set<String> classesToIgnoreFolder = Sets
                     .newHashSet(Template.class.getCanonicalName(),
@@ -1604,7 +1621,20 @@ public class PermissionBitAPIImpl implements PermissionAPI {
         return newSetOfPermissions;
     }
 
-    @CloseDBIfOpened
+	private String resolvePermissionType(Permissionable permissionable)
+			throws DotDataException, DotSecurityException {
+		String type = permissionable.getPermissionType();
+
+		Host host = APILocator.getHostAPI()
+				.find(permissionable.getPermissionId(), APILocator.getUserAPI().getSystemUser(),
+						false);
+		if (host != null) {
+			type = Host.class.getCanonicalName();
+		}
+		return type;
+	}
+
+	@CloseDBIfOpened
     @Override
     public Permissionable findParentPermissionable(final Permissionable permissionable) throws DotDataException, DotSecurityException {
 		Permissionable parentPermissionable=permissionable.getParentPermissionable();
