@@ -1465,7 +1465,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
     public void permissionIndividually(Permissionable parent, Permissionable permissionable,
             User user) throws DotDataException, DotSecurityException {
 
-        List<Permission> newSetOfPermissions = getNewPermissions(parent, permissionable, user);
+        final List<Permission> newSetOfPermissions = getNewPermissions(parent, permissionable, user, false);
 
         if (!newSetOfPermissions.isEmpty()) {
             // NOTE: Method "assignPermissions" is deprecated in favor of "savePermission",
@@ -1503,11 +1503,19 @@ public class PermissionBitAPIImpl implements PermissionAPI {
         }
     }
 
+	/**
+	 * Retrieves all the parent permissions in order to be applied to the permissionable.
+	 */
+	private List<Permission> getNewPermissions(final Permissionable parent, final Permissionable permissionable,
+			final User user) throws DotDataException, DotSecurityException {
+			return getNewPermissions(parent, permissionable, user, true);
+	}
+
     /**
      * Retrieves all the parent permissions in order to be applied to the permissionable.
      */
-    private List<Permission> getNewPermissions(Permissionable parent, Permissionable permissionable,
-            User user) throws DotDataException, DotSecurityException {
+    private List<Permission> getNewPermissions(final Permissionable parent, final Permissionable permissionable,
+            final User user, final boolean includeNonInheritablePerms) throws DotDataException, DotSecurityException {
 
         ImmutableList.Builder<Permission> immutablePermissionList = new Builder<>();
         List<Permission> newSetOfPermissions = new ArrayList<>();
@@ -1521,7 +1529,12 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
         if (parent.isParentPermissionable()) {
 
-        	String type = permissionable.getPermissionType();
+            String type = permissionable.getPermissionType();
+            immutablePermissionList.addAll(permissionFactory.getInheritablePermissions(parent));
+            if(includeNonInheritablePerms) {
+				immutablePermissionList.addAll(permissionFactory.getPermissions(parent, true));
+			}
+            List<Permission> permissionList = immutablePermissionList.build();
 
             Host host = APILocator.getHostAPI()
                     .find(permissionable.getPermissionId(), APILocator.getUserAPI().getSystemUser(),
@@ -1529,10 +1542,6 @@ public class PermissionBitAPIImpl implements PermissionAPI {
             if (host != null) {
                 type = Host.class.getCanonicalName();
             }
-
-			immutablePermissionList.addAll(permissionFactory.getInheritablePermissions(parent, type));
-			immutablePermissionList.addAll(permissionFactory.getPermissions(parent, true));
-			List<Permission> permissionList = immutablePermissionList.build();
 
             final Set<String> classesToIgnoreFolder = Sets
                     .newHashSet(Template.class.getCanonicalName(),
