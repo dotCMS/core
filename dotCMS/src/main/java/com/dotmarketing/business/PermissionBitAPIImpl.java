@@ -1,6 +1,5 @@
 package com.dotmarketing.business;
 
-import com.dotcms.util.CollectionsUtils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -1504,17 +1503,30 @@ public class PermissionBitAPIImpl implements PermissionAPI {
         }
     }
 
-	/**
+    /**
 	 * Retrieves all the parent permissions in order to be applied to the permissionable.
+ 	 * @param parent permissionable's parent
+	 * @param permissionable the permissionble resource
+	 * @param user  logged-in user
+	 * @return the list of new perms
+	 * @throws DotDataException
+	 * @throws DotSecurityException
 	 */
 	private List<Permission> getNewPermissions(final Permissionable parent, final Permissionable permissionable,
 			final User user) throws DotDataException, DotSecurityException {
 			return getNewPermissions(parent, permissionable, false, user);
 	}
 
-    /**
-     * Retrieves all the parent permissions in order to be applied to the permissionable.
-     */
+	/**
+	 * Retrieves all the parent permissions in order to be applied to the permissionable.
+	 * @param parent
+	 * @param permissionable the permissionble resource
+	 * @param filterInheritedPermsByType if true the permission type is used to filter inheritable perms
+	 * @param user logged-in user
+	 * @return the list of new perms
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
     private List<Permission> getNewPermissions(final Permissionable parent, final Permissionable permissionable,
             final boolean filterInheritedPermsByType,
             final User user) throws DotDataException, DotSecurityException {
@@ -1621,20 +1633,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
         return newSetOfPermissions;
     }
 
-	private String resolvePermissionType(Permissionable permissionable)
-			throws DotDataException, DotSecurityException {
-		String type = permissionable.getPermissionType();
-
-		Host host = APILocator.getHostAPI()
-				.find(permissionable.getPermissionId(), APILocator.getUserAPI().getSystemUser(),
-						false);
-		if (host != null) {
-			type = Host.class.getCanonicalName();
-		}
-		return type;
-	}
-
-	@CloseDBIfOpened
+    @CloseDBIfOpened
     @Override
     public Permissionable findParentPermissionable(final Permissionable permissionable) throws DotDataException, DotSecurityException {
 		Permissionable parentPermissionable=permissionable.getParentPermissionable();
