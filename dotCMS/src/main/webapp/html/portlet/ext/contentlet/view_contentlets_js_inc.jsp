@@ -642,7 +642,7 @@
 
                         var result = [
                             "<div class=\"tagsWrapper\" id=\"" + fieldId + "Wrapper" + "\">",
-                            "<input type=\"hidden\" value=\"" + value + "\" id=\"" + searchFieldId + "\" onchange=\"setTimeout(doSearch, 500); resizeAdvancedSearch();\" />",
+                            "<input type=\"hidden\" value=\"" + value + "\" id=\"" + searchFieldId + "\" onchange=\"setTimeout(doSearch, 500);\" />",
                             "<input type=\"hidden\" style=\"border: solid 1px red\" id=\"" + fieldId + "Content" + "\" value=\"" + value + "\"  />",
                             "<input type=\"text\" dojoType=\"dijit.form.TextBox\" id=\"" + fieldId + "\" name=\"" + selectedStruct+"."+ fieldContentlet + "Field\" />",
                             "<span class='hint-text'><%= LanguageUtil.get(pageContext, "Type-your-tag-You-can-enter-multiple-comma-separated-tags") %></span>",
@@ -809,48 +809,49 @@
 			addNewContentlet(structureInode);
 		}
 
-        function dispatchCreateContentletEvent(url) {
+        function dispatchCreateContentletEvent(variableName) {
             var customEvent = document.createEvent("CustomEvent");
             customEvent.initCustomEvent("ng-event", false, false,  {
                 name: "create-contentlet",
-                data: {
-                    url: url
-                }
+                data: variableName
             });
             document.dispatchEvent(customEvent);
             dijit.byId("selectStructureDiv").hide();
         }
 
 
-        function addNewContentlet(structureInode){
-			if(structureInode == undefined || structureInode==""){
-        		structureInode = dijit.byId('structure_inode').value;
+        function addNewContentlet(variableName){
+			if(variableName == undefined || variableName==""){
+        		variableName = dijit.byId('selectedVariableName').value;
         	}
-			if(structureInode == undefined || structureInode=="" || structureInode == "catchall"){
+			if(variableName == undefined || variableName=="" || variableName == "catchall"){
 				dijit.byId("selectStructureDiv").show();
 				return;
 			}
-          else if(structureInode == '<%=calendarEventSt.getInode() %>'){
-                var href = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
-                href += "<portlet:param name='struts_action' value='/ext/calendar/edit_event' />";
-                href += "<portlet:param name='cmd' value='new' />";
-                href += "<portlet:param name='referer' value='<%=java.net.URLDecoder.decode(referer, "UTF-8")%>' />";
-                href += "<portlet:param name='inode' value='' />";
-                href += "</portlet:actionURL>";
-                href += "&selectedStructure=" + structureInode ;
-                href += "&lang=" + getSelectedLanguageId();
-                dispatchCreateContentletEvent(href);
-          }else{
-                var href = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
-                href += "<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";
-                href += "<portlet:param name='cmd' value='new' />";
-                href += "<portlet:param name='referer' value='<%=java.net.URLDecoder.decode(referer, "UTF-8")%>' />";
-                href += "<portlet:param name='inode' value='' />";
-                href += "</portlet:actionURL>";
-                href += "&selectedStructure=" + structureInode ;
-                href += "&lang=" + getSelectedLanguageId();
-                dispatchCreateContentletEvent(href)
-          }
+        //   else if(structureInode == '<%=calendarEventSt.getInode() %>'){
+        //         var href = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
+        //         href += "<portlet:param name='struts_action' value='/ext/calendar/edit_event' />";
+        //         href += "<portlet:param name='cmd' value='new' />";
+        //         href += "<portlet:param name='referer' value='<%=java.net.URLDecoder.decode(referer, "UTF-8")%>' />";
+        //         href += "<portlet:param name='inode' value='' />";
+        //         href += "</portlet:actionURL>";
+        //         href += "&selectedStructure=" + structureInode ;
+        //         href += "&lang=" + getSelectedLanguageId();
+        //         dispatchCreateContentletEvent(href);
+        //   }else{
+        //         var href = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
+        //         href += "<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";
+        //         href += "<portlet:param name='cmd' value='new' />";
+        //         href += "<portlet:param name='referer' value='<%=java.net.URLDecoder.decode(referer, "UTF-8")%>' />";
+        //         href += "<portlet:param name='inode' value='' />";
+        //         href += "</portlet:actionURL>";
+        //         href += "&selectedStructure=" + structureInode ;
+        //         href += "&lang=" + getSelectedLanguageId();
+        //         dispatchCreateContentletEvent(href)
+        //   }
+            else {
+                dispatchCreateContentletEvent(variableName);
+            }
         }
 
         function donwloadToExcel(){

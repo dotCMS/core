@@ -1870,13 +1870,11 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
             "</div>";
     }
 
-    function createContentlet(url) {
+    function createContentlet(variableName) {
         var customEvent = document.createEvent("CustomEvent");
         customEvent.initCustomEvent("ng-event", false, false,  {
             name: "create-contentlet",
-            data: {
-                url: url
-            }
+            data: variableName
         });
         document.dispatchEvent(customEvent);
         var dialog = dijit.byId("addPageAssetDialog") || dijit.byId("addFileAssetDialog");
@@ -1891,9 +1889,8 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         if(!selected){
             showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Please-select-a-valid-htmlpage-asset-type")) %>');
         }
-
-        var loc='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="new" /></portlet:actionURL>&selectedStructure=' + selected +'&folder='+folderInode+'&referer=' + escape(refererVar);
-        createContentlet(loc);
+        // var loc='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="new" /></portlet:actionURL>&selectedStructure=' + selected +'&folder='+folderInode+'&referer=' + escape(refererVar);
+        createContentlet(selected.item.velocityVarName);
     }
 
 
@@ -1908,7 +1905,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         if(!isMultiple){
             var loc='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="new" /></portlet:actionURL>&selectedStructure=' + selected +'&folder='+folderInode+'&referer=' + escape(refererVar);
 
-            createContentlet(loc);
+            createContentlet(selected.item.velocityVarName);
         } else {
             addMultipleFile(folderInode, selected, escape(refererVar));
         }

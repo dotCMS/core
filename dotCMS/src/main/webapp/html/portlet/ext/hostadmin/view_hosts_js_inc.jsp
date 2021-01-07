@@ -76,13 +76,11 @@
         document.dispatchEvent(customEvent);
     }
 
-    function createContentlet(url) {
+    function createContentlet(variableName) {
         var customEvent = document.createEvent("CustomEvent");
         customEvent.initCustomEvent("ng-event", false, false,  {
             name: "create-contentlet",
-            data: {
-                url: url
-            }
+            data: variableName
         });
         document.dispatchEvent(customEvent);
 
@@ -312,7 +310,7 @@
 
 			if(dijit.byId('startBlankHostRadio').attr('value')) {
 				url += "&referer=" + escape(this.viewHostsReferer);
-				createContentlet(url);
+				createContentlet('host');
 			} else {
 
 				var copyHostOptions = escape(dojo.replace(this.copyHostOptions,
@@ -328,7 +326,7 @@
 						copyTagStorage: document.getElementById('copyTagStorage').value
 					}));				
 				url += "&_copyOptions=" + copyHostOptions + "&referer=" + escape(this.viewHostsReferer);
-				createContentlet(url);
+				createContentlet('host');
 			}
         },
         hostChanged: function(){

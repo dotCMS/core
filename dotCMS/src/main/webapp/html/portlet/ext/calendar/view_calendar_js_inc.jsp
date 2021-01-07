@@ -729,13 +729,11 @@
 		refreshCalendarView();
 	}
 
-    function createContentlet(url) {
+    function createContentlet(variableName) {
         var customEvent = document.createEvent("CustomEvent");
         customEvent.initCustomEvent("ng-event", false, false,  {
             name: "create-contentlet",
-            data: {
-                url: url
-            }
+            data: variableName
         });
         document.dispatchEvent(customEvent);
     }
@@ -750,7 +748,7 @@
 					<portlet:param name="referer" value="<%= referer %>" />
 					<portlet:param name="inode" value="" />
 				</portlet:actionURL>&date1=' + startDate + '&date2=' + endDate;
-		createContentlet(addURL);
+		createContentlet('calendarEvent');
 	}
 
 	function transformTimeZone(date,offset)

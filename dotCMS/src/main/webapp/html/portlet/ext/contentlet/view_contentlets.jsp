@@ -224,7 +224,8 @@
             {
                 name: "catchall",
                 label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All" )) %>",
-                textLabel: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All" )) %>"
+                textLabel: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All" )) %>",
+                variableName: ""
             },
             <%}%>
 
@@ -268,7 +269,9 @@
                 {
                     name: "<%=contentType.getInode()%>",
                     label: "<%=labelAndIcon %>",
-                    textLabel: "<%=contentTypeName %>"
+                    textLabel: "<%=contentTypeName %>",
+                    variableName: "<%=contentType.getVelocityVarName() %>"
+
                 }
             <%started = true;%>
             <%}%>
@@ -481,7 +484,7 @@
                 labelType: "html",
 
                 onChange: function(){
-
+                    dijit.byId('selectedVariableName').set('value', this.item.variableName);
                     fsSchemes.set('value', 'catchall');
                     fsSteps.set('value', 'catchall');
                     reloadSchemeStoreFromStructureInode(fsSchemes);
@@ -632,7 +635,7 @@
                 <div id="advancedSearch">
                     <dl class="vertical">
                         <dt><label><%=LanguageUtil.get(pageContext, "Type") %>:</label></dt>
-                        <dd><span id="structSelectBox"></span></dd>
+                        <dd><span id="structSelectBox"></span><input type="hidden" value="" id="selectedVariableName" dojoType="dijit.form.TextBox" /></dd>
                         <div class="clear"></div>
 
                         <dt><label><%= LanguageUtil.get(pageContext, "Search") %>:</label></dt>
@@ -861,7 +864,7 @@
                 <% stType = struc.getStructureType(); %>
                 <div class="sTypeHeader" id="sType<%=strTypeNames[stType] %>"><%=strTypeNames[stType] %></div>
                 <%} %>
-                <div class="sTypeItem" id="sType<%=struc.getInode() %>"><a href="javascript:addNewContentlet('<%=struc.getInode() %>');"><%=struc.getName() %></a></div>
+                <div class="sTypeItem" id="sType<%=struc.getInode() %>"><a href="javascript:addNewContentlet('<%=struc.getVelocityVarName() %>');"><%=struc.getName() %></a></div>
                 <%if(i++ == maxPerCol){ %>
                 <%i=0; %>
             </td>
