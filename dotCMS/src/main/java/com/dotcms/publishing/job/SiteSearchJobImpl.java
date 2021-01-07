@@ -14,6 +14,7 @@ import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.PublisherAPI;
+import com.dotcms.publishing.output.DirectoryPublisherOutput;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
@@ -146,7 +147,9 @@ public class SiteSearchJobImpl {
             final PreparedJobContext preparedJobContext = prepareJob(jobContext);
             synchronized (preparedJobContext.lockKey()) {
                 for (final SiteSearchConfig config : preparedJobContext.getConfigs()) {
-                    publisherAPI.publish(config, status);
+                    final DirectoryPublisherOutput directoryPublisherOutput = new DirectoryPublisherOutput(config);
+                    publisherAPI.publish(config, status, directoryPublisherOutput);
+                    directoryPublisherOutput.close();
                 }
 
                 try {

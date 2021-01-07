@@ -7,6 +7,7 @@ import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
+import com.dotcms.publishing.output.TarGzipPublisherOutput;
 import com.dotcms.util.DotPreconditions;
 
 import com.dotmarketing.util.*;
@@ -402,34 +403,19 @@ public class BundleAPIImpl implements BundleAPI {
 	 * @return
 	 */
     @CloseDBIfOpened
-    private File generateBundleDirectory(final Bundle bundle) {
+    public File generateTarGzipBundleFile(final Bundle bundle) {
 
         final PushPublisherConfig pushPublisherConfig = new PushPublisherConfig(bundle);
         pushPublisherConfig.setPublishers(Arrays.asList(GenerateBundlePublisher.class));
+
         try {
-            APILocator.getPublisherAPI().publish(pushPublisherConfig);
+			final TarGzipPublisherOutput tarGzipPublisherOutput = new TarGzipPublisherOutput(pushPublisherConfig);
+            APILocator.getPublisherAPI().publish(pushPublisherConfig, tarGzipPublisherOutput);
+			tarGzipPublisherOutput.close();
+            return tarGzipPublisherOutput.getFile();
         }
         catch(final Exception e) {
         	Logger.error(this,e.getMessage(),e);
-            throw new DotRuntimeException(e);
-        }
-        return BundlerUtil.getBundleRoot( pushPublisherConfig );
-
-    }
-
-    @CloseDBIfOpened
-    @Override
-    public File generateTarGzipBundleFile(final Bundle bundle) {
-        final File bundleRoot = generateBundleDirectory(bundle);
-        final File bundleFile = new File(  ConfigUtils.getBundlePath()  + File.separator + bundle.getId() + ".tar.gz" );
-        bundleFile.delete();
-        try {
-            final File tmpFile= PushUtils.tarGzipDirectory( bundleRoot );
-            tmpFile.renameTo(bundleFile);
-            return bundleFile;
-        }
-        catch(final Exception e) {
-			Logger.error(this,e.getMessage(),e);
             throw new DotRuntimeException(e);
         }
     }

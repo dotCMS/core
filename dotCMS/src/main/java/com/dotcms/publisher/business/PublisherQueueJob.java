@@ -25,6 +25,8 @@ import com.dotcms.publishing.IPublisher;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
+import com.dotcms.publishing.output.PublisherOutput;
+import com.dotcms.publishing.output.TarGzipPublisherOutput;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.com.google.common.collect.Sets;
 import com.dotcms.rest.RestClientBuilder;
@@ -100,7 +102,7 @@ public class PublisherQueueJob implements StatefulJob {
 	/**
 	 * Reads from the publishing queue table and depending of the publish date
 	 * will send a bundle to publish (see
-	 * {@link com.dotcms.publishing.PublisherAPI#publish(PublisherConfig)}).
+	 * {@link com.dotcms.publishing.PublisherAPI#publish(PublisherConfig, PublisherOutput)}).
 	 *
 	 * @param jobExecutionContext
 	 *            - Context Containing the current job context information (the
@@ -183,7 +185,9 @@ public class PublisherQueueJob implements StatefulJob {
 						PushPublishLogger.log(this.getClass(), "Pre-publish work complete.");
 
 						try {
-							APILocator.getPublisherAPI().publish(pconf);
+							final TarGzipPublisherOutput tarGzipPublisherOutput = new TarGzipPublisherOutput(pconf);
+							APILocator.getPublisherAPI().publish(pconf, tarGzipPublisherOutput);
+							tarGzipPublisherOutput.close();
 						} catch (final DotPublishingException e) {
 							/*
 							If we are getting errors creating the bundle we should stop trying to publish it, this is not just a connection error,
