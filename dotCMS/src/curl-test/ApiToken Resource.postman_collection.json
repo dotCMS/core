@@ -547,8 +547,8 @@
 							"script": {
 								"id": "842610cd-fa51-4d9e-92b2-c84c64ba1821",
 								"exec": [
-									"pm.test(\"Status code should be 401\", function () {",
-									"    pm.response.to.have.status(401);",
+									"pm.test(\"Status code should be 400\", function () {",
+									"    pm.response.to.have.status(400);",
 									"});",
 									""
 								],
@@ -1077,19 +1077,19 @@
 	],
 	"variable": [
 		{
-			"id": "f2508f4e-5adc-4867-adbb-93f64f58b7b1",
+			"id": "644ff987-b617-434b-a7d6-2b1cdb400c05",
 			"key": "tokenid",
-			"value": "api5e0f3dcc-5a74-4069-b7fc-9a1b048dafd6"
+			"value": "api3fbf172c-2187-4388-9555-45f46eeeaf8c"
 		},
 		{
-			"id": "27672bdb-84f5-4e42-98d0-664e6d4d94c7",
+			"id": "ccfd3ee5-ec2e-40aa-b15e-02692d72d463",
 			"key": "remoteTokenHost",
 			"value": "localhost"
 		},
 		{
-			"id": "b346d0cc-15ae-49d3-8e7c-2859d482e8f6",
+			"id": "701fdc4b-01c7-473d-8fc5-f0faf33f1d4d",
 			"key": "remoteTokenPort",
-			"value": "8090"
+			"value": "8080"
 		}
 	],
 	"protocolProfileBehavior": {}
