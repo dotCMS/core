@@ -281,7 +281,7 @@ public class ApiTokenResource implements Serializable {
                     .post(Entity.entity(formData.getTokenInfo(), MediaType.APPLICATION_JSON));
 
             if (response.getStatus() != HttpStatus.SC_OK) {
-                final String message = String.format("Status code : %s, message: %s", response.getStatus());
+                final String message = String.format("Status code : %s", response.getStatus());
 
                 if (response.getStatus() == HttpStatus.SC_UNAUTHORIZED || response.getStatus() == HttpStatus.SC_FORBIDDEN ) {
                     SecurityLogger.logInfo(ApiTokenResource.class, message);
