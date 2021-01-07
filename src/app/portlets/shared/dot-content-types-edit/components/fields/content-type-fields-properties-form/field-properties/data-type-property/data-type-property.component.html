@@ -5,7 +5,7 @@
         <div *ngFor="let radio of radioInputs" class="p-field-radiobutton">
             <p-radioButton
                 [label]="radio.text | dm"
-                name="dataType"
+                [name]="property.name"
                 [value]="radio.value"
                 [formControlName]="property.name"
             >

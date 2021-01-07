@@ -10,10 +10,10 @@
     dataKey="id"
 >
     <ng-template let-workflow pTemplate="item">
-        <span class="workflow__label" [class.workflow__archive-label]="workflow.value.archived">{{
-            workflow.label
+        <span class="workflow__label" [class.workflow__archive-label]="workflow.archived">{{
+            workflow.name
         }}</span>
-        <span *ngIf="workflow.value.archived" class="workflow__archive-message"
+        <span *ngIf="workflow.archived" class="workflow__archive-message"
             >({{ 'dot.common.archived' | dm }})</span
         >
     </ng-template>

@@ -98,9 +98,7 @@ describe('DotCardinalitySelectorComponent', () => {
         const dropdown = de.query(By.css('p-dropdown'));
 
         expect(comp.options).toEqual(cardinalities);
-        expect(dropdown.componentInstance.options.map((option) => option.value)).toEqual(
-            cardinalities
-        );
+        expect(dropdown.componentInstance.options.map((option) => option)).toEqual(cardinalities);
     });
 
     it('should trigger a change event p-dropdown', (done) => {
