@@ -64,7 +64,7 @@ public class FileAssetTemplateUtil {
 
     static final String LAYOUT             = "layout.json";
     static final String BODY               = "body.vtl";
-    static final String TEMPLATE_META_INFO = "properties.vtl"; // todo: change this to properties.vtl
+    static final String TEMPLATE_META_INFO = "properties.vtl";
 
     private static class SingletonHolder {
         private static final FileAssetTemplateUtil INSTANCE = new FileAssetTemplateUtil();

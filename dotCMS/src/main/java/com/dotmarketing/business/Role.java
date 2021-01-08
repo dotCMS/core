@@ -1,12 +1,12 @@
 package com.dotmarketing.business;
 
+import com.dotmarketing.util.RegEX;
+import com.dotmarketing.util.UtilMethods;
+
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import com.dotmarketing.util.RegEX;
-import com.dotmarketing.util.UtilMethods;
 
 public class Role implements Serializable,Comparable<Role> {
 
