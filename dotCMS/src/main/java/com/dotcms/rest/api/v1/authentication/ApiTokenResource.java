@@ -16,10 +16,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.SecurityLogger;
-import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import org.glassfish.jersey.internal.util.Base64;
@@ -35,6 +32,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.Serializable;
+import java.net.NoRouteToHostException;
 import java.net.UnknownHostException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -270,7 +268,12 @@ public class ApiTokenResource implements Serializable {
 
         final String remoteURL = String.format("%s://%s:%d/api/v1/apitoken", protocol, formData.host(), formData.port());
         final WebTarget webTarget = client.target(remoteURL);
-        final String password = Base64.decodeAsString(formData.password());
+
+        String password = "";
+
+        if (UtilMethods.isSet(formData.password())) {
+            password = Base64.decodeAsString(formData.password());
+        }
 
         try {
             final Response response = webTarget.request(MediaType.APPLICATION_JSON)
@@ -278,15 +281,19 @@ public class ApiTokenResource implements Serializable {
                     .post(Entity.entity(formData.getTokenInfo(), MediaType.APPLICATION_JSON));
 
             if (response.getStatus() != HttpStatus.SC_OK) {
-                final String message = String.format("Status code : %s, message: %s",
-                        response.getStatus(), response.getEntity().toString());
+                final String message = String.format("Status code : %s", response.getStatus());
 
-                SecurityLogger.logInfo(ApiTokenResource.class, message);
+                if (response.getStatus() == HttpStatus.SC_UNAUTHORIZED || response.getStatus() == HttpStatus.SC_FORBIDDEN ) {
+                    SecurityLogger.logInfo(ApiTokenResource.class, message);
+                } else {
+                    Logger.error(ApiTokenResource.class, message);
+                }
             }
 
             return response;
         } catch (ProcessingException e){
-            if (e.getCause().getClass() == UnknownHostException.class) {
+            if (e.getCause().getClass() == UnknownHostException.class || e.getCause().getClass() == NoRouteToHostException.class) {
+                Logger.error(ApiTokenResource.class, String.format("Invalid server URL: %s", remoteURL));
                 return Response.status(Response.Status.NOT_FOUND).build();
             } else {
                 throw e;
