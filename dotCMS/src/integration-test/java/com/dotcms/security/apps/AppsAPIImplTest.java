@@ -1408,6 +1408,14 @@ public class AppsAPIImplTest {
         assertNotNull(formNotAllNull.toString());
     }
 
+    /**
+     * Method to test {@link AppsAPI#appKeysByHost()}}
+     * Given scenario: Here we deactivate both indices and then call the method in question that was causing an NPE
+     * Expected results: We should get back all the sites even when there are no active indices
+     * @throws DotDataException
+     * @throws IOException
+     * @throws DotSecurityException
+     */
     @Test
     public void Test_AppKeyByHost_On_Index_Deactivation()
             throws DotDataException, IOException, DotSecurityException {
