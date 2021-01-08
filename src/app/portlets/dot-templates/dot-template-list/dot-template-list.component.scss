@@ -1,5 +1,18 @@
 @use "variables" as *;
 
+:host {
+    background: $gray-bg;
+    box-shadow: $md-shadow-4;
+    display: flex;
+    height: 100%;
+    overflow: auto;
+    padding: $spacing-4 $spacing-4 0;
+
+    &::ng-deep listing-data-table tr {
+        cursor: pointer;
+    }
+}
+
 .template-listing__header-options {
     width: 100%;
 

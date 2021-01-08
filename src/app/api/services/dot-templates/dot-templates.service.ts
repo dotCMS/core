@@ -136,17 +136,6 @@ export class DotTemplatesService {
         return this.request<any>({ method: 'PUT', url });
     }
 
-    /**
-     * Unlock a template
-     * @param {string} identifier
-     * @returns Observable<string>
-     * @memberof DotTemplatesService
-     */
-    unlock(identifier: string): Observable<string> {
-        const url = `${TEMPLATE_API_URL}${identifier}/_unlock`;
-        return this.request<any>({ method: 'PUT', url });
-    }
-
     private request<T>(options: DotRequestOptionsArgs): Observable<T> {
         const response$ = this.coreWebService.requestView<T>(options);
         return response$.pipe(

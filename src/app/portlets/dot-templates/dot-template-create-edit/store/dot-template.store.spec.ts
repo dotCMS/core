@@ -27,7 +27,7 @@ function getTemplate({ identifier, name, body }) {
         headCode: null,
         header: null,
         identifier: identifier,
-        image: null,
+        image: '',
         inode: '715ac8f7-10af-4a9c-90a1-56f27039be55',
         layout: null,
         live: false,
@@ -38,7 +38,6 @@ function getTemplate({ identifier, name, body }) {
         name: name,
         new: false,
         owner: 'dotcms.org.1',
-        selectedimage: '',
         showOnMenu: true,
         sortOrder: 0,
         theme: null,
@@ -143,7 +142,7 @@ describe('DotTemplateStore', () => {
                         },
                         theme: '',
                         drawed: true,
-                        selectedimage: ''
+                        image: ''
                     },
                     apiLink: ''
                 });
@@ -214,7 +213,7 @@ describe('DotTemplateStore', () => {
                         type: 'advanced',
                         drawed: false,
                         body: '',
-                        selectedimage: ''
+                        image: ''
                     },
                     apiLink: '/api/v1/templates/2d87af36-a935-4689-b427-dea75e9d84cf/working'
                 });
@@ -281,7 +280,7 @@ describe('DotTemplateStore', () => {
                             type: 'advanced',
                             drawed: false,
                             body: '<h3>Hola Mundo</h3>',
-                            selectedimage: ''
+                            image: ''
                         },
                         original: {
                             identifier: '2d87af36-a935-4689-b427-dea75e9d84cf',
@@ -290,7 +289,7 @@ describe('DotTemplateStore', () => {
                             type: 'advanced',
                             drawed: false,
                             body: '',
-                            selectedimage: ''
+                            image: ''
                         },
                         apiLink: '/api/v1/templates/2d87af36-a935-4689-b427-dea75e9d84cf/working'
                     });
@@ -314,6 +313,8 @@ describe('DotTemplateStore', () => {
                     title: 'string'
                 });
 
+                expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('templates');
+
                 service.state$.subscribe((res) => {
                     expect(res).toEqual({
                         working: {
@@ -323,7 +324,7 @@ describe('DotTemplateStore', () => {
                             friendlyName: '',
                             drawed: false,
                             body: '<h4>Hi you</h1>',
-                            selectedimage: ''
+                            image: ''
                         },
                         original: {
                             type: 'advanced',
@@ -332,7 +333,7 @@ describe('DotTemplateStore', () => {
                             friendlyName: '',
                             drawed: false,
                             body: '<h4>Hi you</h1>',
-                            selectedimage: ''
+                            image: ''
                         },
                         apiLink: '/api/v1/templates/2d87af36-a935-4689-b427-dea75e9d84cf/working'
                     });

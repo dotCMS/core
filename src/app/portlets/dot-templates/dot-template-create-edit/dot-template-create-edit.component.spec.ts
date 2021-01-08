@@ -280,7 +280,7 @@ describe('DotTemplateCreateEditComponent', () => {
                             identifier: '',
                             friendlyName: '',
                             theme: '',
-                            selectedimage: ''
+                            image: ''
                         },
                         onSave: jasmine.any(Function),
                         onCancel: jasmine.any(Function)
@@ -319,7 +319,7 @@ describe('DotTemplateCreateEditComponent', () => {
                     identifier: '',
                     friendlyName: '',
                     theme: 'test',
-                    selectedimage: ''
+                    image: ''
                 });
             });
         });
@@ -358,7 +358,7 @@ describe('DotTemplateCreateEditComponent', () => {
                             body: '',
                             identifier: '',
                             friendlyName: '',
-                            selectedimage: ''
+                            image: ''
                         },
                         onSave: jasmine.any(Function),
                         onCancel: jasmine.any(Function)
@@ -391,7 +391,7 @@ describe('DotTemplateCreateEditComponent', () => {
                     body: '',
                     identifier: '',
                     friendlyName: '',
-                    selectedimage: ''
+                    image: ''
                 });
             });
         });
@@ -475,7 +475,7 @@ describe('DotTemplateCreateEditComponent', () => {
                         identifier: '123',
                         friendlyName: '',
                         theme: '',
-                        selectedimage: ''
+                        image: ''
                     });
                 });
 
@@ -519,7 +519,7 @@ describe('DotTemplateCreateEditComponent', () => {
                                 identifier: '123',
                                 friendlyName: '',
                                 theme: '',
-                                selectedimage: ''
+                                image: ''
                             },
                             onSave: jasmine.any(Function)
                         }
@@ -568,7 +568,7 @@ describe('DotTemplateCreateEditComponent', () => {
                         body: '<h1>##Container and stuff</h1>',
                         identifier: '123',
                         friendlyName: '',
-                        selectedimage: ''
+                        image: ''
                     });
                 });
             });
@@ -608,7 +608,7 @@ describe('DotTemplateCreateEditComponent', () => {
                 body: '',
                 identifier: '',
                 friendlyName: '',
-                selectedimage: ''
+                image: ''
             });
         });
 
@@ -618,7 +618,7 @@ describe('DotTemplateCreateEditComponent', () => {
                 body: '',
                 identifier: '',
                 friendlyName: '',
-                selectedimage: ''
+                image: ''
             });
 
             subject.next({
@@ -627,7 +627,7 @@ describe('DotTemplateCreateEditComponent', () => {
                     identifier: '123',
                     title: 'Hello World',
                     body: '<h1>I am Batman</h1>',
-                    selectedimage: ''
+                    image: ''
                 }
             });
 
@@ -638,7 +638,7 @@ describe('DotTemplateCreateEditComponent', () => {
                 body: '<h1>I am Batman</h1>',
                 identifier: '123',
                 friendlyName: 'Not batman',
-                selectedimage: ''
+                image: ''
             });
         });
     });

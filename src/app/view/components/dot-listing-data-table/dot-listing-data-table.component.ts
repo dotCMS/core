@@ -11,7 +11,7 @@ import {
     QueryList,
     ContentChild
 } from '@angular/core';
-import { LazyLoadEvent, PrimeTemplate } from 'primeng/api';
+import { LazyLoadEvent, MenuItem, PrimeTemplate } from 'primeng/api';
 import { Table } from 'primeng/table';
 import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
 import { DataTableColumn } from '@models/data-table/data-table-column';
@@ -52,9 +52,9 @@ export class DotListingDataTableComponent implements OnInit {
     @Input() dataKey = '';
     @Input() checkbox = false;
     @Input() firstPageData: any[];
-
     @Output() rowWasClicked: EventEmitter<any> = new EventEmitter();
     @Output() selectedItems: EventEmitter<any> = new EventEmitter();
+    @Output() onContextMenuSelect: EventEmitter<any> = new EventEmitter();
 
     @ViewChild('gf', { static: true })
     globalSearch: ElementRef;
@@ -72,6 +72,9 @@ export class DotListingDataTableComponent implements OnInit {
     filter;
     dateColumns: DataTableColumn[];
     loading = true;
+    contextMenuItems: MenuItem[];
+    maxLinksPage: number;
+    totalRecords: number;
 
     constructor(
         public loggerService: LoggerService,
@@ -94,6 +97,16 @@ export class DotListingDataTableComponent implements OnInit {
      */
     handleRowCheck(): void {
         this.selectedItems.emit(this.selected);
+    }
+
+    /**
+     * Clear selection and notify change.
+     *
+     * @memberof DotListingDataTableComponent
+     */
+    clearSelection(): void {
+        this.selected = [];
+        this.handleRowCheck();
     }
 
     /**
@@ -199,9 +212,12 @@ export class DotListingDataTableComponent implements OnInit {
 
     private setItems(items: any[]): void {
         setTimeout(() => {
-            // avoid ExpressionChangedAfterItHasBeenCheckedError on p-table
+            // avoid ExpressionChangedAfterItHasBeenCheckedError on p-table on tests.
+            // TODO: Double check if versions after prime-ng 11.0.0 solve the need to add this hack.
             this.items = this.dateColumns ? this.formatData(items) : items;
             this.loading = false;
+            this.maxLinksPage = this.paginatorService.maxLinksPage;
+            this.totalRecords = this.paginatorService.totalRecords;
         }, 0);
     }
 
@@ -217,15 +233,10 @@ export class DotListingDataTableComponent implements OnInit {
     }
 
     private getPage(offset: number): void {
-        if (offset === 0 && this.firstPageData) {
-            this.setItems(this.firstPageData);
-            this.firstPageData = null;
-        } else {
-            this.paginatorService
-                .getWithOffset(offset)
-                .pipe(take(1))
-                .subscribe((items) => this.setItems(items));
-        }
+        this.paginatorService
+            .getWithOffset(offset)
+            .pipe(take(1))
+            .subscribe((items) => this.setItems(items));
     }
 
     private paginationSetUp(): void {

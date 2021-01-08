@@ -21,6 +21,7 @@ import {
     DotBulkFailItem
 } from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
 import { DotContentState } from 'dotcms-models';
+import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 
 @Component({
     selector: 'dot-template-list',
@@ -31,7 +32,6 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
     @ViewChild('listing', { static: false })
     listing: DotListingDataTableComponent;
     tableColumns: DataTableColumn[];
-    firstPage: DotTemplate[];
     templateBulkActions: MenuItem[];
     actionHeaderOptions: ActionHeaderOptions;
     addToBundleIdentifier: string;
@@ -48,21 +48,19 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
         private dotMessageDisplayService: DotMessageDisplayService,
         private dotPushPublishDialogService: DotPushPublishDialogService,
         private dotRouterService: DotRouterService,
-        public dialogService: DialogService
+        public dialogService: DialogService,
+        private dotAlertConfirmService: DotAlertConfirmService
     ) {}
 
     ngOnInit(): void {
         this.route.data
             .pipe(pluck('dotTemplateListResolverData'), take(1))
-            .subscribe(
-                ([templates, isEnterPrise, hasEnvironments]: [DotTemplate[], boolean, boolean]) => {
-                    this.firstPage = templates;
-                    this.isEnterPrise = isEnterPrise;
-                    this.hasEnvironments = hasEnvironments;
-                    this.tableColumns = this.setTemplateColumns();
-                    this.templateBulkActions = this.setTemplateBulkActions();
-                }
-            );
+            .subscribe(([isEnterPrise, hasEnvironments]: [boolean, boolean]) => {
+                this.isEnterPrise = isEnterPrise;
+                this.hasEnvironments = hasEnvironments;
+                this.tableColumns = this.setTemplateColumns();
+                this.templateBulkActions = this.setTemplateBulkActions();
+            });
         this.setAddOptions();
     }
 
@@ -123,14 +121,21 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
                     ...this.setUnPublishAndArchiveTemplateOptions(template)
                 ];
             }
-            options = [
-                ...options,
-                ...this.setUnlockTemplateOptions(template),
-                ...this.setCopyTemplateOptions(template)
-            ];
+            options = [...options, ...this.setCopyTemplateOptions(template)];
         }
 
         return options;
+    }
+
+    /**
+     * set the content menu items of the listing to be shown, base on the template status.
+     * @param {DotTemplate} template
+     * @memberof DotTemplateListComponent
+     */
+    setContextMenu(template: DotTemplate): void {
+        this.listing.contextMenuItems = this.setTemplateActions(template).map(
+            ({ menuItem }: DotActionMenuItem) => menuItem
+        );
     }
 
     /**
@@ -259,29 +264,6 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
                                           );
                                           this.listing.loadCurrentPage();
                                       }
-                                  });
-                          }
-                      }
-                  }
-              ]
-            : [];
-    }
-
-    private setUnlockTemplateOptions(template: DotTemplate): DotActionMenuItem[] {
-        return template.locked && template.canWrite
-            ? [
-                  {
-                      menuItem: {
-                          label: this.dotMessageService.get('unlock'),
-                          command: () => {
-                              this.dotTemplatesService
-                                  .unlock(template.identifier)
-                                  .pipe(take(1))
-                                  .subscribe(() => {
-                                      this.showToastNotification(
-                                          this.dotMessageService.get('message.template.unlocked')
-                                      );
-                                      this.listing.loadCurrentPage();
                                   });
                           }
                       }
@@ -427,14 +409,19 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
     }
 
     private deleteTemplate(identifiers: string[]): void {
-        if (confirm(this.dotMessageService.get('message.template.confirm.delete.template'))) {
-            this.dotTemplatesService
-                .delete(identifiers)
-                .pipe(take(1))
-                .subscribe((response: DotActionBulkResult) => {
-                    this.notifyResult(response, 'message.template.full_delete');
-                });
-        }
+        this.dotAlertConfirmService.confirm({
+            accept: () => {
+                this.dotTemplatesService
+                    .delete(identifiers)
+                    .pipe(take(1))
+                    .subscribe((response: DotActionBulkResult) => {
+                        this.notifyResult(response, 'message.template.full_delete');
+                    });
+            },
+            reject: () => {},
+            header: this.dotMessageService.get('Delete-Template'),
+            message: this.dotMessageService.get('message.template.confirm.delete.template')
+        });
     }
 
     private publishTemplate(identifiers: string[]): void {
@@ -483,6 +470,7 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
         } else {
             this.showToastNotification(this.dotMessageService.get(messageKey));
         }
+        this.listing.clearSelection();
         this.listing.loadCurrentPage();
     }
 

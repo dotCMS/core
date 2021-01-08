@@ -12,7 +12,6 @@ import { DotListingDataTableComponent } from './dot-listing-data-table.component
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
-import { PaginatorService } from '@services/paginator';
 import { ActionHeaderComponent } from './action-header/action-header.component';
 import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
 import { DotMenuModule } from '../_common/dot-menu/dot-menu.module';
@@ -59,7 +58,7 @@ class EmptyMockComponent {}
 })
 class TestHostComponent {
     @Input() columns: DataTableColumn[];
-    @Input() url: string;
+    @Input() url: '/api/data';
     @Input() actionHeaderOptions: ActionHeaderOptions;
     @Input() buttonActions: ButtonAction[] = [];
     @Input() sortOrder: string;
@@ -81,20 +80,6 @@ class TestHostComponent {
     }
 }
 
-class TestPaginatorService {
-    filter: string;
-    url: string;
-    sortOrder: string;
-    sortField: string;
-    paginationPerPage: string;
-
-    getWithOffset(_offset: number) {
-        return of([]);
-    }
-
-    get() {}
-}
-
 describe('DotListingDataTableComponent', () => {
     let comp: DotListingDataTableComponent;
     let hostFixture: ComponentFixture<TestHostComponent>;
@@ -102,7 +87,7 @@ describe('DotListingDataTableComponent', () => {
     let de: DebugElement;
     let el: HTMLElement;
     let items;
-    let paginatorService: PaginatorService;
+    let coreWebService: CoreWebService;
 
     beforeEach(() => {
         const messageServiceMock = new MockDotMessageService({
@@ -136,7 +121,6 @@ describe('DotListingDataTableComponent', () => {
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: PaginatorService, useClass: TestPaginatorService },
                 LoggerService,
                 FormatDateService,
                 DotAlertConfirmService,
@@ -162,8 +146,7 @@ describe('DotListingDataTableComponent', () => {
                 }
             }
         ];
-        hostComponent.url = '/test/';
-
+        coreWebService = TestBed.inject(CoreWebService);
         comp = hostFixture.debugElement.query(By.css('dot-listing-data-table')).componentInstance;
         de = hostFixture.debugElement.query(By.css('p-table'));
         el = de.nativeElement;
@@ -219,10 +202,6 @@ describe('DotListingDataTableComponent', () => {
                 variable: 'Banner'
             }
         ];
-        paginatorService = comp.paginatorService;
-        paginatorService.paginationPerPage = 4;
-        paginatorService.maxLinksPage = 2;
-        paginatorService.totalRecords = items.length;
     });
 
     it('should set active element the global search on load', () => {
@@ -234,7 +213,7 @@ describe('DotListingDataTableComponent', () => {
     });
 
     it('renderer basic datatable component', fakeAsync(() => {
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(of(items));
+        setRequestSpy(items);
         hostComponent.multipleSelection = true;
 
         hostFixture.detectChanges();
@@ -275,16 +254,8 @@ describe('DotListingDataTableComponent', () => {
             }
         });
 
-        expect(hostComponent.url).toEqual(paginatorService.url);
+        expect(hostComponent.url).toEqual(comp.paginatorService.url);
     }));
-
-    it('should not call paginatorService when firstPageData comes', () => {
-        spyOn(paginatorService, 'getWithOffset');
-        hostComponent.firstPageData = items;
-
-        hostFixture.detectChanges();
-        expect(paginatorService.getWithOffset).not.toHaveBeenCalled();
-    });
 
     it('renderer with format date column', fakeAsync(() => {
         const dotStringFormatPipe = new DotStringFormatPipe();
@@ -292,7 +263,7 @@ describe('DotListingDataTableComponent', () => {
             item.field3 = 1496178801000;
             return item;
         });
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(of(itemsWithFormat));
+        setRequestSpy(itemsWithFormat);
         hostComponent.columns[2].format = 'date';
         hostComponent.multipleSelection = true;
 
@@ -330,11 +301,11 @@ describe('DotListingDataTableComponent', () => {
             }
         });
 
-        expect(hostComponent.url).toEqual(paginatorService.url);
+        expect(hostComponent.url).toEqual(comp.paginatorService.url);
     }));
 
     it('should renderer table without checkbox', fakeAsync(() => {
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(of(items));
+        setRequestSpy(items);
         hostFixture.detectChanges();
         tick(1);
         hostFixture.detectChanges();
@@ -356,7 +327,7 @@ describe('DotListingDataTableComponent', () => {
             }
         ];
         hostComponent.actions = fakeActions;
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(of(items));
+        setRequestSpy(items);
         hostFixture.detectChanges();
         tick(1);
         hostFixture.detectChanges();
@@ -374,7 +345,7 @@ describe('DotListingDataTableComponent', () => {
                 }
             }
         ];
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(of(items));
+        setRequestSpy(items);
 
         hostComponent.actions = fakeActions;
 
@@ -392,7 +363,7 @@ describe('DotListingDataTableComponent', () => {
 
     it('should show the loading indicator while the data is received', fakeAsync(() => {
         expect(comp.loading).toEqual(true);
-        spyOn(paginatorService, 'getCurrentPage').and.returnValue(of(items));
+        setRequestSpy(items);
         hostFixture.detectChanges();
         tick(1);
         hostFixture.detectChanges();
@@ -402,7 +373,7 @@ describe('DotListingDataTableComponent', () => {
     }));
 
     it('should load first page of resutls and set pagination to 1', fakeAsync(() => {
-        spyOn(paginatorService, 'get').and.returnValue(of(items));
+        setRequestSpy(items);
         hostFixture.detectChanges();
         tick(1);
         hostFixture.detectChanges();
@@ -415,7 +386,7 @@ describe('DotListingDataTableComponent', () => {
 
     it('should focus first row on arrowDown in Global Search Input', fakeAsync(() => {
         spyOn(comp, 'focusFirstRow').and.callThrough();
-        spyOn(paginatorService, 'get').and.returnValue(of(items));
+        setRequestSpy(items);
         comp.loadFirstPage();
         hostFixture.detectChanges();
         tick(1);
@@ -427,7 +398,7 @@ describe('DotListingDataTableComponent', () => {
     }));
 
     it('should set the pagination size in the Table', () => {
-        spyOn(paginatorService, 'get').and.returnValue(of(items));
+        setRequestSpy(items);
         hostComponent.paginationPerPage = 5;
         comp.loadFirstPage();
         hostFixture.detectChanges();
@@ -436,7 +407,7 @@ describe('DotListingDataTableComponent', () => {
     });
 
     it('should set pagination extra parameters', () => {
-        spyOn(paginatorService, 'get').and.returnValue(of(items));
+        setRequestSpy(items);
         hostComponent.paginatorExtraParams = { type: 'FORM', name: 'DotCMS' };
         hostFixture.detectChanges();
 
@@ -445,7 +416,7 @@ describe('DotListingDataTableComponent', () => {
     });
 
     it('should emit when a row is clicked or enter', fakeAsync(() => {
-        spyOn(paginatorService, 'get').and.returnValue(of(items));
+        setRequestSpy(items);
         spyOn(comp.rowWasClicked, 'emit');
         comp.loadFirstPage();
         hostFixture.detectChanges();
@@ -462,7 +433,7 @@ describe('DotListingDataTableComponent', () => {
         let bodyCheckboxes: DebugElement[];
 
         beforeEach(fakeAsync(() => {
-            spyOn(paginatorService, 'getWithOffset').and.returnValue(of(items));
+            setRequestSpy(items);
             hostComponent.checkbox = true;
 
             hostFixture.detectChanges();
@@ -479,11 +450,20 @@ describe('DotListingDataTableComponent', () => {
     });
 
     it('renders the dot empty state component if items array is empty', fakeAsync(() => {
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(of([]));
+        setRequestSpy([]);
         hostFixture.detectChanges();
         tick(1);
         hostFixture.detectChanges();
         const empty = de.query(By.css('dot-empty-state'));
         expect(empty.nativeElement.innerText).toBe('Im empty');
     }));
+
+    function setRequestSpy(response: any): void {
+        spyOn<any>(coreWebService, 'requestView').and.returnValue(
+            of({
+                entity: response,
+                header: (type) => (type === 'Link' ? 'test;test=test' : '10')
+            })
+        );
+    }
 });

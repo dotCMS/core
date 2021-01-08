@@ -129,7 +129,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
                 identifier: template.identifier,
                 friendlyName: template.friendlyName,
                 theme: template.theme,
-                selectedimage: template.selectedimage
+                image: template.image
             });
         }
 
@@ -138,7 +138,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
             body: template.body,
             identifier: template.identifier,
             friendlyName: template.friendlyName,
-            selectedimage: template.selectedimage
+            image: template.image
         });
     }
 
@@ -150,7 +150,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
                 identifier: template.identifier,
                 friendlyName: template.friendlyName,
                 theme: template.theme,
-                selectedimage: template.selectedimage
+                image: template.image
             };
         }
 
@@ -159,7 +159,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
             body: template.body,
             identifier: template.identifier,
             friendlyName: template.friendlyName,
-            selectedimage: template.selectedimage
+            image: template.image
         };
     }
 }

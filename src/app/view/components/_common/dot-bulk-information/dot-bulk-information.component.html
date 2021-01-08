@@ -1,12 +1,5 @@
 <p data-testId="successful" class="bulk-information__success-message">
-    {{ data.successCount }}
-    {{
-        data.successCount > 1
-            ? ('message.template.plural' | dm)
-            : ('message.template.singular' | dm)
-    }}
-    {{ 'message.template.success' | dm }}
-    {{ 'message.template.archived' | dm }}
+    {{ data.action }}: {{ data.successCount }}
 </p>
 
 <div class="bulk-information__fail-container">

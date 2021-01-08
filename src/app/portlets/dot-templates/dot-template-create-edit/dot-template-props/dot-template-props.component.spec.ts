@@ -113,7 +113,7 @@ describe('DotTemplatePropsComponent', () => {
                                 title: '',
                                 friendlyName: '',
                                 theme: '',
-                                selectedimage: ''
+                                image: ''
                             },
                             onSave: jasmine.createSpy(),
                             onCancel: jasmine.createSpy()
@@ -210,7 +210,7 @@ describe('DotTemplatePropsComponent', () => {
                 title: '',
                 friendlyName: '',
                 theme: '',
-                selectedimage: ''
+                image: ''
             });
         });
 
@@ -227,7 +227,7 @@ describe('DotTemplatePropsComponent', () => {
                 title: 'Hello World',
                 friendlyName: '',
                 theme: '223',
-                selectedimage: ''
+                image: ''
             });
         });
     });

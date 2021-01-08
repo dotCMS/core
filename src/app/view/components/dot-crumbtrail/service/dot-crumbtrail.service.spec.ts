@@ -330,4 +330,39 @@ describe('DotCrumbtrailService', () => {
             }
         ]);
     });
+
+    it('Should set Templates breadcrumb', () => {
+        mockActivatedRoute.root = {
+            firstChild: {
+                data: new BehaviorSubject({}),
+                firstChild: {
+                    data: new BehaviorSubject({}),
+                    firstChild: {
+                        firstChild: {
+                            firstChild: null,
+                            data: new BehaviorSubject({})
+                        },
+                        data: new BehaviorSubject({
+                            template: {
+                                title: 'Template-01'
+                            }
+                        })
+                    }
+                }
+            }
+        };
+
+        dotNavigationServiceMock.navigationEnd.next({
+            url: 'templates/edit/7173cb7a-5d08-4c75-82b3-a7788848c263',
+            urlAfterRedirects: 'templates/edit/7173cb7a-5d08-4c75-82b3-a7788848c263',
+            id: 1
+        });
+
+        expect(secondCrumb).toEqual([
+            {
+                label: 'Template-01',
+                url: ''
+            }
+        ]);
+    });
 });

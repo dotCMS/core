@@ -203,11 +203,4 @@ describe('DotTemplatesService', () => {
         expect(req.request.method).toBe('PUT');
         req.flush(mockTemplate);
     });
-    it('should unlock a template', () => {
-        service.unlock('testId01').subscribe();
-        const req = httpMock.expectOne(`${TEMPLATE_API_URL}testId01/_unlock`);
-
-        expect(req.request.method).toBe('PUT');
-        req.flush(mockTemplate);
-    });
 });

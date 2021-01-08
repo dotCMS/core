@@ -28,7 +28,7 @@ const messageServiceMock = new MockDotMessageService({
 const mockBulkResponseFail: DotActionBulkResult = {
     skippedCount: 0,
     successCount: 1,
-    action: 'archived',
+    action: 'Template archived',
     fails: [
         {
             errorMessage: 'error 1',
@@ -97,7 +97,7 @@ describe('DotBulkInformationComponent', () => {
         const success: HTMLElement = document.querySelector('[data-testId="successful"]');
         const fail: HTMLElement = document.querySelector('[data-testId="fails"]');
 
-        expect(success.innerText).toEqual('1 template has been successfully archived');
+        expect(success.innerText).toEqual('Template archived: 1');
         expect(fail.innerText).toEqual('2 failed');
     });
 

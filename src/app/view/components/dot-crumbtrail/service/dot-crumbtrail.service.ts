@@ -16,7 +16,8 @@ export class DotCrumbtrailService {
     private portletsTitlePathFinder = {
         'content-types-angular': 'contentType.name',
         'edit-page': 'content.page.title',
-        apps: 'data.name'
+        apps: 'data.name',
+        templates: 'template.title'
     };
 
     constructor(

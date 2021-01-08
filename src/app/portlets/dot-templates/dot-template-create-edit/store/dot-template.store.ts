@@ -23,7 +23,7 @@ interface DotTemplateItemDesign {
     theme: string;
     title: string;
     type?: 'design';
-    selectedimage?: string;
+    image?: string;
 }
 
 interface DotTemplateItemadvanced {
@@ -33,7 +33,7 @@ interface DotTemplateItemadvanced {
     identifier: string;
     title: string;
     type?: 'advanced';
-    selectedimage?: string;
+    image?: string;
 }
 
 export type DotTemplateItem = DotTemplateItemDesign | DotTemplateItemadvanced;
@@ -48,7 +48,7 @@ const EMPTY_TEMPLATE = {
     identifier: '',
     title: '',
     friendlyName: '',
-    selectedimage: ''
+    image: ''
 };
 
 export const EMPTY_TEMPLATE_DESIGN: DotTemplateItemDesign = {
@@ -123,6 +123,7 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
                 }
 
                 this.updateTemplate(this.getTemplateItem(template));
+                this.goToTemplateList();
             })
         );
     });
@@ -215,7 +216,7 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
                 theme: template.theme,
                 containers: template.containers,
                 drawed: true,
-                selectedimage: template.selectedimage
+                image: template.image
             };
         } else {
             result = {
@@ -225,7 +226,7 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
                 friendlyName,
                 body: template.body,
                 drawed: false,
-                selectedimage: template.selectedimage
+                image: template.image
             };
         }
 

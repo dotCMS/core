@@ -12,19 +12,21 @@
 </dot-action-header>
 <p-table
     #dataTable
+    [contextMenu]="cm"
     (onLazyLoad)="loadDataPaginationEvent($event)"
     (onRowSelect)="handleRowCheck()"
     (onRowUnselect)="handleRowCheck()"
     (onHeaderCheckboxToggle)="handleRowCheck()"
+    (onContextMenuSelect)="onContextMenuSelect.emit($event.data)"
     [columns]="columns"
     [lazy]="true"
     [loading]="loading"
     loadingIcon="fa fa-circle-o-notch fa-spin"
-    [pageLinks]="paginatorService.maxLinksPage"
+    [pageLinks]="maxLinksPage"
     [paginator]="true"
     [rows]="paginationPerPage"
     [sortOrder]="sortOrder && sortOrder.toLowerCase() === 'desc' ? -1 : 1"
-    [totalRecords]="paginatorService.totalRecords"
+    [totalRecords]="totalRecords"
     [value]="items"
     [(selection)]="selected"
     [dataKey]="dataKey"
@@ -47,6 +49,7 @@
             (click)="handleRowClick(rowData)"
             (keyup.enter)="handleRowClick(rowData)"
             [pSelectableRow]="rowData"
+            [pContextMenuRow]="rowData"
         >
             <td *ngIf="checkbox">
                 <p-tableCheckbox
@@ -64,6 +67,7 @@
         <ng-content select="dot-empty-state"></ng-content>
     </ng-template>
 </p-table>
+<p-contextMenu #cm [model]="contextMenuItems" appendTo="body"></p-contextMenu>
 <ng-template pTemplate="header" let-columns="columns" #defaultHeaderTemplate>
     <th
         *ngFor="let col of columns"

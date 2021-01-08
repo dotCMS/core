@@ -2,6 +2,7 @@
     #listing
     (rowWasClicked)="editTemplate($event)"
     (selectedItems)="updateSelectedTemplates($event)"
+    (onContextMenuSelect)="setContextMenu($event)"
     [actionHeaderOptions]="actionHeaderOptions"
     [columns]="tableColumns"
     sortField="modDate"
@@ -10,7 +11,6 @@
     [actions]="[]"
     [checkbox]="true"
     dataKey="inode"
-    [firstPageData]="firstPage"
 >
     <div class="template-listing__header-options">
         <div>
