@@ -956,7 +956,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 isAdmin = true;
             }
         }
-        StringBuffer buffy = new StringBuffer(luceneQuery);
+        final StringBuffer buffy = new StringBuffer(luceneQuery);
 
         // Permissions in the query
         if (!isAdmin)
@@ -971,26 +971,25 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         if(limit<=MAX_LIMIT) {
-            SearchHits lc = contentFactory.indexSearch(buffy.toString(), limit, offset, sortBy);
-            PaginatedArrayList <ContentletSearch> list=new PaginatedArrayList<>();
-            list.setTotalResults(lc.getTotalHits().value);
+            final SearchHits searchHits = contentFactory.indexSearch(buffy.toString(), limit, offset, sortBy);
+            final PaginatedArrayList <ContentletSearch> list=new PaginatedArrayList<>();
+            list.setTotalResults(searchHits.getTotalHits().value);
 
-            for (SearchHit sh : lc.getHits()) {
+            for (final SearchHit searchHit : searchHits.getHits()) {
                 try{
-                    Map<String, Object> sourceMap = sh.getSourceAsMap();
-                    ContentletSearch conwrapper= new ContentletSearch();
-                    conwrapper.setId(sh.getId());
-                    conwrapper.setIndex(sh.getIndex());
-                    conwrapper.setIdentifier(sourceMap.get("identifier").toString());
-                    conwrapper.setInode(sourceMap.get("inode").toString());
-                    conwrapper.setScore(sh.getScore());
+                    final Map<String, Object> sourceMap = searchHit.getSourceAsMap();
+                    final ContentletSearch conWrapper = new ContentletSearch();
+                    conWrapper.setId(searchHit.getId());
+                    conWrapper.setIndex(searchHit.getIndex());
+                    conWrapper.setIdentifier(sourceMap.get("identifier").toString());
+                    conWrapper.setInode(sourceMap.get("inode").toString());
+                    conWrapper.setScore(searchHit.getScore());
 
-                    list.add(conwrapper);
+                    list.add(conWrapper);
                 }
                 catch(Exception e){
                     Logger.error(this,e.getMessage(),e);
                 }
-
             }
             return list;
         } else {
@@ -7788,14 +7787,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private boolean isInodeIndexedWithQuery(final String luceneQuery,
                                             final int milliSecondsToWait) {
 
-        final long indexTimeOut    = Config.getLongProperty("TIMEOUT_INDEX_COUNT", 1000);
         final long millistoWait    = Config.getLongProperty("IS_NODE_INDEXED_INDEX_MILLIS_WAIT", 100);
         final int limit            = - 1 != milliSecondsToWait?milliSecondsToWait: 300;
         boolean   found            = false;
         int       counter          = 0;
         int       fibonacciIndex   = 0;
 
-        if (this.contentFactory.indexCount(luceneQuery, indexTimeOut) > 0) {
+        if (this.contentFactory.indexCount(luceneQuery) > 0) {
 
             if (ConfigUtils.isDevMode()) {
                 Logger.info(this, ()-> "******>>>>>> Index count found in the fist hit for the query: " + luceneQuery);
@@ -7810,7 +7808,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 try {
 
-                    found = this.contentFactory.indexCount(luceneQuery, indexTimeOut) > 0;
+                    found = this.contentFactory.indexCount(luceneQuery) > 0;
                 } catch (Exception e) {
                     Logger.error(this.getClass(), e.getMessage(), e);
                     return false;

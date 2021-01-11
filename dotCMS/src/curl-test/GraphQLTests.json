@@ -4860,7 +4860,7 @@
 									"pm.test(\"Filtered relationship fetched\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    ",
-									"    pm.expect(jsonData.data.MovieCollection[0].studio.name).to.eql(\"Walt Disney Pictures\");",
+									"    pm.expect(jsonData.data.MovieCollection[3].studio[0].name).to.eql(\"Walt Disney Pictures\");",
 									"",
 									"});"
 								],
@@ -4874,7 +4874,7 @@
 						"body": {
 							"mode": "graphql",
 							"graphql": {
-								"query": "{\n  MovieCollection {\n    title\n    studio(query: \"+studio.name:\\\"Walt Disney Pictures\\\"\") {\n      name\n    }\n  }\n}\n",
+								"query": "{\n  MovieCollection {\n    title\n    studio(query: \"+studio.name:\\\"Walt Disney Pictures\\\"\", sortBy: \"+studio.name\") {\n      name\n    }\n  }\n}\n",
 								"variables": ""
 							}
 						},
@@ -4898,89 +4898,89 @@
 	],
 	"variable": [
 		{
-			"id": "18669c4a-6b23-4ce3-a08a-8536909128c7",
+			"id": "cb92fbba-0d90-4023-bbed-b74155adfbfb",
 			"key": "languageId",
-			"value": 1606779763018
+			"value": 1609799506077
 		},
 		{
-			"id": "8063ec1b-8d5a-4e62-b0ee-5c1c17c97859",
+			"id": "a668ddcc-8662-476c-8c5d-2d0009fae98e",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "d72ace58-ecb4-45e8-80c8-987e1f2b6ea2",
+			"id": "800f0429-489f-4710-81bb-7ad453b0d019",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType30413852"
 		},
 		{
-			"id": "03f7e5bb-051a-40b8-ab55-6077720ab833",
+			"id": "217ce344-7f65-4a53-97bf-110ab15b4ea3",
 			"key": "contentIdentifier",
 			"value": "a5bf0d80-4273-41e1-8f1f-22a3d4ac986f"
 		},
 		{
-			"id": "5eb25991-c737-403e-afca-e4afc1545c8b",
+			"id": "0eef0163-4189-4c6d-bc3a-93718d582a3d",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "40aa4082-bc44-46b4-8804-84fca76b54d8",
+			"id": "2ad7f13e-8097-4779-b08a-1f0aeb552a0c",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType49851579"
 		},
 		{
-			"id": "37309743-e5c6-4185-b9c7-dd90f6e9c51a",
+			"id": "f823d857-2195-48cb-aeec-aa8ebe8983e1",
 			"key": "imageContentIdentifier",
 			"value": "4cb59737-913d-4c5f-b021-dbe213a15739"
 		},
 		{
-			"id": "26c7f249-ac37-4e6f-862b-1ea423f3330a",
+			"id": "2c9494ef-431c-4ab7-9c10-dddfc28a6447",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "62888629-2516-4c88-8ef1-b276495c1999",
+			"id": "4f8711e5-fe38-441d-8b50-59b72ce0bb21",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "4458efce-f555-44ff-9646-e31249f44810",
+			"id": "c305aa7b-ef00-40fe-9287-402ccbc38f9f",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "3cccab6c-1d47-4def-8526-79a2f3c13d07",
+			"id": "177edf4f-eb1c-460a-acc3-c6f849f6549d",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "887ba7ab-6d0b-4b1d-ab79-8cdfb9e76140",
+			"id": "15c1d80e-3d24-4195-b083-8d473f9d5d8e",
 			"key": "fileContentIdentifier",
 			"value": "434f474a-4d89-4b96-ad38-aa46483be3e5"
 		},
 		{
-			"id": "a0f300f0-789b-4be5-a613-9406e817a41e",
+			"id": "a9324349-e3b5-4d4b-aee1-8717bcecd397",
 			"key": "childContentTypeVariable",
-			"value": "childType71358234"
+			"value": "childType40723544"
 		},
 		{
-			"id": "5353dac8-62cf-4045-9dc3-f145eb90664c",
+			"id": "a5d1a05c-f6cd-48b1-8f0a-c591c84bc902",
 			"key": "parentContentTypeVariable",
-			"value": "parentType83488647"
+			"value": "parentType84267241"
 		},
 		{
-			"id": "c1ef4304-5bd5-4933-b668-872aac242ffc",
+			"id": "c06cde78-4441-44d9-befb-e0c85e30b81f",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "f83f32e3-b392-4ffd-89c4-0aa296e7b5f4",
+			"id": "5c3942ed-ec44-4572-91b7-b4c6f352545d",
 			"key": "childContentIdentifier",
-			"value": "2d5a9f9b-c5ad-4f97-8aaa-e4277afdb52a"
+			"value": "69953bca-0384-487c-8288-5118f455c127"
 		},
 		{
-			"id": "534cdde9-71be-46a5-b62b-9559abdf3bae",
+			"id": "d0d81c78-7251-410f-ae89-5b625d36eb7f",
 			"key": "parentContentIdentifier",
-			"value": "778f726b-fa40-49c8-8139-9e2dee93b392"
+			"value": "5f487236-01fb-4ff1-a25e-8eecc99b2312"
 		}
 	],
 	"protocolProfileBehavior": {}
