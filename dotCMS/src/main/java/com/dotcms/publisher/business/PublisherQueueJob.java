@@ -7,7 +7,6 @@ import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.publishing.PublishDateUpdater;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher;
@@ -25,8 +24,8 @@ import com.dotcms.publishing.IPublisher;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
-import com.dotcms.publishing.output.PublisherOutput;
-import com.dotcms.publishing.output.TarGzipPublisherOutput;
+import com.dotcms.publishing.output.BundlerOutput;
+import com.dotcms.publishing.output.TarGzipBundlerOutput;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.com.google.common.collect.Sets;
 import com.dotcms.rest.RestClientBuilder;
@@ -102,7 +101,7 @@ public class PublisherQueueJob implements StatefulJob {
 	/**
 	 * Reads from the publishing queue table and depending of the publish date
 	 * will send a bundle to publish (see
-	 * {@link com.dotcms.publishing.PublisherAPI#publish(PublisherConfig, PublisherOutput)}).
+	 * {@link com.dotcms.publishing.PublisherAPI#publish(PublisherConfig, BundlerOutput)}).
 	 *
 	 * @param jobExecutionContext
 	 *            - Context Containing the current job context information (the
@@ -185,7 +184,7 @@ public class PublisherQueueJob implements StatefulJob {
 						PushPublishLogger.log(this.getClass(), "Pre-publish work complete.");
 
 						try {
-							final TarGzipPublisherOutput tarGzipPublisherOutput = new TarGzipPublisherOutput(pconf);
+							final TarGzipBundlerOutput tarGzipPublisherOutput = new TarGzipBundlerOutput(pconf);
 							APILocator.getPublisherAPI().publish(pconf, tarGzipPublisherOutput);
 							tarGzipPublisherOutput.close();
 						} catch (final DotPublishingException e) {

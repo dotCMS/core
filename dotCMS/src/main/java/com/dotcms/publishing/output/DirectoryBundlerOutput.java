@@ -7,13 +7,12 @@ import org.jetbrains.annotations.NotNull;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.Writer;
 import java.nio.file.Files;
 
-public class DirectoryPublisherOutput extends PublisherOutput{
+public class DirectoryBundlerOutput extends BundlerOutput {
     private File directoryRootPath;
 
-    public DirectoryPublisherOutput(final PublisherConfig publisherConfig) {
+    public DirectoryBundlerOutput(final PublisherConfig publisherConfig) {
         super(publisherConfig);
         directoryRootPath = BundlerUtil.getBundleRoot( publisherConfig );
     }

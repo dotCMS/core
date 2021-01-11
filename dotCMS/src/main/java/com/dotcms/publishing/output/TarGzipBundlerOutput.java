@@ -2,25 +2,20 @@ package com.dotcms.publishing.output;
 
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.Logger;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
-import org.apache.commons.io.output.WriterOutputStream;
-import org.jetbrains.annotations.NotNull;
 
 import javax.ws.rs.NotSupportedException;
 import java.io.*;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.zip.GZIPOutputStream;
 
-public class TarGzipPublisherOutput extends PublisherOutput{
+public class TarGzipBundlerOutput extends BundlerOutput {
     private File tarGzipFile;
     private TarArchiveOutputStream tarArchiveOutputStream;
 
-    public TarGzipPublisherOutput(final PublisherConfig publisherConfig) throws IOException {
+    public TarGzipBundlerOutput(final PublisherConfig publisherConfig) throws IOException {
         super(publisherConfig);
 
         final String fileName = String.format(

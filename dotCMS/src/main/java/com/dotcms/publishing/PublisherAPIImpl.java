@@ -1,6 +1,5 @@
 package com.dotcms.publishing;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -10,7 +9,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
-import com.dotcms.publishing.output.PublisherOutput;
+import com.dotcms.publishing.output.BundlerOutput;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.pushpublish.PushPublishEndEvent;
 import com.dotcms.system.event.local.type.pushpublish.PushPublishStartEvent;
@@ -34,14 +33,14 @@ public class PublisherAPIImpl implements PublisherAPI {
 
 
     @Override
-    final public PublishStatus publish ( PublisherConfig config , PublisherOutput output) throws DotPublishingException {
+    final public PublishStatus publish ( PublisherConfig config , BundlerOutput output) throws DotPublishingException {
 
         return publish( config, new PublishStatus(), output );
     }
 
     @CloseDBIfOpened
     @Override
-    final public PublishStatus publish ( PublisherConfig config, PublishStatus status, PublisherOutput output) throws DotPublishingException {
+    final public PublishStatus publish ( PublisherConfig config, PublishStatus status, BundlerOutput output) throws DotPublishingException {
 
         PushPublishLogger.log( this.getClass(), "Started Publishing Task", config.getId() );
 

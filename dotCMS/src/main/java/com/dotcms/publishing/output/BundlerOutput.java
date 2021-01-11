@@ -12,11 +12,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
-public abstract class PublisherOutput implements Closeable {
+public abstract class BundlerOutput implements Closeable {
     private List<File> files;
     protected PublisherConfig publisherConfig;
 
-    public PublisherOutput(final PublisherConfig publisherConfig){
+    public BundlerOutput(final PublisherConfig publisherConfig){
         this.publisherConfig = publisherConfig;
         files = new ArrayList<>();
     }
