@@ -27,20 +27,20 @@ jobs:
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
-      - name: Get commit message
-        id: get-commit-message
-        uses: dotcms/get-commit-message@master
-        with:
-          accessToken: ${{ secrets.GITHUB_TOKEN }}
+      - name: Get the latest commit on PR
+        id: get-latest-commit
+        uses: ActionsRML/get-PR-latest-commit@v1
+        if: github.event_name == 'pull_request'
       - name: Set Common Vars
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             CURRENT_BRANCH="${{ github.head_ref }}"
+            COMMIT_MESSG="${{ steps.get-latest-commit.outputs.latest_commit_message }}"
           else
             CURRENT_BRANCH=$(basename "${{ github.ref }}")
+            COMMIT_MESSG=$(git log --format=%s -n 1 ${{ github.event.after }})
           fi
 
-          COMMIT_MESSG="${{ steps.get-commit-message.outputs.commit_message }}"
           echo "COMMIT_MESSG: ${COMMIT_MESSG}"
           echo "CURRENT_BRANCH=${CURRENT_BRANCH}" >> $GITHUB_ENV
 
@@ -91,11 +91,10 @@ jobs:
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
-      - name: Get commit message
-        id: get-commit-message
-        uses: dotcms/get-commit-message@master
-        with:
-          accessToken: ${{ secrets.GITHUB_TOKEN }}
+      - name: Get the latest commit on PR
+        id: get-latest-commit
+        uses: ActionsRML/get-PR-latest-commit@v1
+        if: github.event_name == 'pull_request'
       - name: Set Common Vars
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
@@ -106,11 +105,12 @@ jobs:
 
           if [[ ${IS_PR} == true ]]; then
             CURRENT_BRANCH="${{ github.head_ref }}"
+            COMMIT_MESSG="${{ steps.get-latest-commit.outputs.latest_commit_message }}"
           else
             CURRENT_BRANCH=$(basename "${{ github.ref }}")
+            COMMIT_MESSG=$(git log --format=%s -n 1 ${{ github.event.after }})
           fi
 
-          COMMIT_MESSG="${{ steps.get-commit-message.outputs.commit_message }}"
           echo "COMMIT_MESSG: ${COMMIT_MESSG}"
           echo "CURRENT_BRANCH=${CURRENT_BRANCH}" >> $GITHUB_ENV
           echo "COMMIT_MESSG=${COMMIT_MESSG}" >> $GITHUB_ENV
@@ -178,11 +178,10 @@ jobs:
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
-      - name: Get commit message
-        id: get-commit-message
-        uses: dotcms/get-commit-message@master
-        with:
-          accessToken: ${{ secrets.GITHUB_TOKEN }}
+      - name: Get the latest commit on PR
+        id: get-latest-commit
+        uses: ActionsRML/get-PR-latest-commit@v1
+        if: github.event_name == 'pull_request'
       - name: Set Common Vars
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
@@ -193,11 +192,12 @@ jobs:
 
           if [[ ${IS_PR} == true ]]; then
             CURRENT_BRANCH="${{ github.head_ref }}"
+            COMMIT_MESSG="${{ steps.get-latest-commit.outputs.latest_commit_message }}"
           else
             CURRENT_BRANCH=$(basename "${{ github.ref }}")
+            COMMIT_MESSG=$(git log --format=%s -n 1 ${{ github.event.after }})
           fi
 
-          COMMIT_MESSG="${{ steps.get-commit-message.outputs.commit_message }}"
           echo "COMMIT_MESSG: ${COMMIT_MESSG}"
           echo "CURRENT_BRANCH=${CURRENT_BRANCH}" >> $GITHUB_ENV
           echo "COMMIT_MESSG=${COMMIT_MESSG}" >> $GITHUB_ENV
@@ -303,3 +303,4 @@ jobs:
         with:
           github-user: ${{ github.actor }}
           branch: ${{ env.CURRENT_BRANCH }}
+
