@@ -157,7 +157,10 @@ describe('DotEditLayoutComponent', () => {
             expect(dotGlobalMessageService.success).toHaveBeenCalledWith('Saved');
             expect(dotGlobalMessageService.error).not.toHaveBeenCalled();
 
-            expect(dotPageLayoutService.save).toHaveBeenCalledWith('123', fakeLayout);
+            expect(dotPageLayoutService.save).toHaveBeenCalledWith('123', {
+                ...fakeLayout,
+                title: null
+            });
             expect(dotTemplateContainersCacheService.set).toHaveBeenCalledWith({
                 '0': {
                     type: 'containers',

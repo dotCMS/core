@@ -71,7 +71,11 @@ export class DotEditLayoutComponent implements OnInit {
         );
 
         this.dotPageLayoutService
-            .save(this.pageState.page.identifier, value)
+            .save(this.pageState.page.identifier, {
+                ...value,
+                // To save a layout and no a template the title should be null
+                title: null
+            })
             .pipe(take(1))
             .subscribe(
                 (updatedPage: DotPageRender) => {
