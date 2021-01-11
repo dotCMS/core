@@ -3,7 +3,7 @@ package com.dotcms.publishing;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchConfig;
 import com.dotcms.enterprise.publishing.timemachine.TimeMachineConfig;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
-import com.dotcms.publishing.output.PublisherOutput;
+import com.dotcms.publishing.output.BundlerOutput;
 import com.dotmarketing.util.Constants;
 
 import java.io.FileFilter;
@@ -35,7 +35,7 @@ public interface IBundler {
 	 * @param status     Object to keep track of the generation process inside this Bundler
 	 * @throws DotBundleException If there is an exception while this Bundles is generating the Bundle content
      */
-    void generate (PublisherOutput output, BundlerStatus status ) throws DotBundleException;
+    void generate (BundlerOutput output, BundlerStatus status ) throws DotBundleException;
 
     FileFilter getFileFilter ();
 
