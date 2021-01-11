@@ -1,35 +1,4795 @@
 {
 	"info": {
-		"_postman_id": "ca04fce0-52b8-4d12-9ab0-35b4a78c794a",
+		"_postman_id": "f1b68892-74c5-40dc-9e3d-fd8fa901b988",
 		"name": "Template Resource",
 		"description": "Make the test for the template resource crud",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "Create New Template",
+			"name": "Archive",
+			"item": [
+				{
+					"name": "Create New Template to Archive",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "3a86aef6-a1d4-4204-ba4d-03d728e91a1b",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"body check\", function () {",
+									"    pm.expect(jsonData.entity.body).to.eql('This is the body');",
+									"});",
+									"",
+									"pm.test(\"friendlyName check\", function () {",
+									"    pm.expect(jsonData.entity.friendlyName).to.eql('This is a postman test description');",
+									"});",
+									"",
+									"pm.test(\"Title check\", function () {",
+									"    pm.expect(jsonData.entity.title).to.eql('PostMan Test');",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"templateIdToArchive\", jsonData.entity.identifier);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\":\"PostMan Test\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						},
+						"description": "Creates a new template and sets the id as a variable for further use."
+					},
+					"response": []
+				},
+				{
+					"name": "Archive Template Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "59917dbc-72d9-47ff-a5d0-eb7c623ac3ac",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Archive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(1);",
+									"});",
+									"",
+									"pm.test(\"Failed To Archive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToArchive}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_archive",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_archive"
+							]
+						},
+						"description": "Archive one template successfully"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Template Archived True",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "7af0b0e3-760a-496f-87f7-ef392c874d24",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Deleted Check\", function () {",
+									"    pm.expect(jsonData.entity[0].deleted).to.eql(true);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates?filter={{templateIdToArchive}}&archive=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "{{templateIdToArchive}}"
+								},
+								{
+									"key": "archive",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Gets a template using the id as a filter and since the template is archived we need to pass the archive flag.\nChecks that the deleted property is set to true."
+					},
+					"response": []
+				},
+				{
+					"name": "Re-Archive Template Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "d89903b8-aafe-42db-8e62-cff300c5bdbc",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Archive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(1);",
+									"});",
+									"",
+									"pm.test(\"Failed To Archive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToArchive}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_archive",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_archive"
+							]
+						},
+						"description": "Archive one template successfully"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Template Archived True",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "cc2f8100-324c-4fd6-89ce-87c0fbfd556d",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Deleted Check\", function () {",
+									"    pm.expect(jsonData.entity[0].deleted).to.eql(true);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates?filter={{templateIdToArchive}}&archive=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "{{templateIdToArchive}}"
+								},
+								{
+									"key": "archive",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Gets a template using the id as a filter and since the template is archived we need to pass the archive flag. \nChecks that the deleted property is set to true."
+					},
+					"response": []
+				},
+				{
+					"name": "Archive Template Failed To Archive Id Not Exist",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "b4d5aa7a-2c8b-46e4-9dcb-123103224e8f",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Archive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Failed To Archive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(1);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_archive",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_archive"
+							]
+						},
+						"description": "Tries to Archive one template but the id does not exist, so it must fail. Since this action is exec as bulk that is why does not throw 404"
+					},
+					"response": []
+				}
+			],
+			"description": "Tests for the archive action",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "91b86b72-3240-4e85-b79b-8032fd50ea8f",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "a4a443cf-3920-4154-8cf7-9146ec36ebd9",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Unarchive",
+			"item": [
+				{
+					"name": "Create New Template to Unarchive",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "92c70e5d-c4c7-44c2-bbc6-e2b28159f60d",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"body check\", function () {",
+									"    pm.expect(jsonData.entity.body).to.eql('This is the body');",
+									"});",
+									"",
+									"pm.test(\"friendlyName check\", function () {",
+									"    pm.expect(jsonData.entity.friendlyName).to.eql('This is a postman test description');",
+									"});",
+									"",
+									"pm.test(\"Title check\", function () {",
+									"    pm.expect(jsonData.entity.title).to.eql('PostMan Test');",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"templateIdToUnArchive\", jsonData.entity.identifier);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\":\"PostMan Test\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						},
+						"description": "Creates a new template and sets the id as a variable for further use."
+					},
+					"response": []
+				},
+				{
+					"name": "UnArchive Template Failed to Unarchive Template is not Archived",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "56949fa6-4d38-4e1b-b68b-a541eab80984",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Unarchive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Failed To Unarchive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(1);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToUnArchive}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_unarchive",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_unarchive"
+							]
+						},
+						"description": "Unarchive one template but since the template is not archived it can not be unarchived."
+					},
+					"response": []
+				},
+				{
+					"name": "UnArchive Template Failed to Unarchive Id Not Exist",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "3a09c095-278e-42a1-a14b-e3daa5fe7577",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Unarchive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Failed To Unarchive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(1);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_unarchive",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_unarchive"
+							]
+						},
+						"description": "Tries to unarchive a template but since the id does not belong to any template, it fails."
+					},
+					"response": []
+				},
+				{
+					"name": "Archive Template Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "d282d7e7-9fe6-4bfd-b059-1115017f16a4",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Archive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(1);",
+									"});",
+									"",
+									"pm.test(\"Failed To Archive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToUnArchive}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_archive",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_archive"
+							]
+						},
+						"description": "Archive one template successfully"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Template Archived True",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "4a4e0bb4-3bfc-4a05-b479-95776fb1fb61",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Deleted Check\", function () {",
+									"    pm.expect(jsonData.entity[0].deleted).to.eql(true);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates?filter={{templateIdToUnArchive}}&archive=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "{{templateIdToUnArchive}}"
+								},
+								{
+									"key": "archive",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Gets a template using the id as a filter and since the template is archived we need to pass the archive flag. Checks that the deleted property is set to true."
+					},
+					"response": []
+				},
+				{
+					"name": "UnArchive Template Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "31d86165-618b-41cd-932a-dd3da666e542",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Unarchive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(1);",
+									"});",
+									"",
+									"pm.test(\"Failed To Unarchive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToUnArchive}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_unarchive",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_unarchive"
+							]
+						},
+						"description": "Unarchive one template successfully"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Template Archived False",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "63becd7d-29e6-4f80-b399-2001e628dd66",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Deleted Check\", function () {",
+									"    pm.expect(jsonData.entity[0].deleted).to.eql(false);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates?filter={{templateIdToUnArchive}}&archive=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "{{templateIdToUnArchive}}"
+								},
+								{
+									"key": "archive",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Gets a template using the id as a filter and since the template could archived we need to pass the archive flag. Checks that the deleted property is set to false."
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Delete",
+			"item": [
+				{
+					"name": "Create New Template to Delete",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "17144e51-5109-46ea-84d8-8b22339c8eba",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"body check\", function () {",
+									"    pm.expect(jsonData.entity.body).to.eql('This is the body');",
+									"});",
+									"",
+									"pm.test(\"friendlyName check\", function () {",
+									"    pm.expect(jsonData.entity.friendlyName).to.eql('This is a postman test description');",
+									"});",
+									"",
+									"pm.test(\"Title check\", function () {",
+									"    pm.expect(jsonData.entity.title).to.eql('PostMan Test');",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"templateIdToDelete\", jsonData.entity.identifier);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\":\"PostMan Test\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						},
+						"description": "Creates a new template and sets the id as a variable for further use."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Template Failed To Delete Template is not Archived",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "1a984a77-d9ea-4b04-bb3e-a0f2821490a2",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Delete Template Check\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Failed To Delete Template Check\", function () {",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(1);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToDelete}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						},
+						"description": "Tries to delete a template that is not archived, so it fails."
+					},
+					"response": []
+				},
+				{
+					"name": "Archive Template Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "0d110719-badf-4346-b590-f3ba0ce061f9",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Archive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(1);",
+									"});",
+									"",
+									"pm.test(\"Failed To Archive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToDelete}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_archive",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_archive"
+							]
+						},
+						"description": "Archive one template successfully"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Template Archived True",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "5a0221cd-3bef-4364-8da4-cb337de87989",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Deleted Check\", function () {",
+									"    pm.expect(jsonData.entity[0].deleted).to.eql(true);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates?filter={{templateIdToDelete}}&archive=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "{{templateIdToDelete}}"
+								},
+								{
+									"key": "archive",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Gets a template using the id as a filter and since the template is archived we need to pass the archive flag. Checks that the deleted property is set to true."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Template Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "6c26d33d-11ea-4943-9721-a9706f97dae4",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Delete Template Check\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(1);",
+									"});",
+									"",
+									"pm.test(\"Failed To Delete Template Check\", function () {",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToDelete}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						},
+						"description": "Delete a template successfully"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Template Failed To Delete Template Id Not Exist",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "92f8d316-1f6f-4ede-81a2-ad29807ea0b2",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Delete Template Check\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Failed To Delete Template Check\", function () {",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(1);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToDelete}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						},
+						"description": "Tries to delete a template but the id passed does not belong to any template so it fails."
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Publish",
+			"item": [
+				{
+					"name": "Create New Template to Publish",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "63f8e2ac-4859-46e0-9808-4086c6f32ab6",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"body check\", function () {",
+									"    pm.expect(jsonData.entity.body).to.eql('This is the body');",
+									"});",
+									"",
+									"pm.test(\"friendlyName check\", function () {",
+									"    pm.expect(jsonData.entity.friendlyName).to.eql('This is a postman test description');",
+									"});",
+									"",
+									"pm.test(\"Title check\", function () {",
+									"    pm.expect(jsonData.entity.title).to.eql('PostMan Test');",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"templateIdToPublish\", jsonData.entity.identifier);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\":\"PostMan Test\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						},
+						"description": "Creates a new template and sets the id as a variable for further use."
+					},
+					"response": []
+				},
+				{
+					"name": "Archive Template Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "8b450ad1-d554-4377-9b00-ef5c76eb149b",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Archive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(1);",
+									"});",
+									"",
+									"pm.test(\"Failed To Archive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToPublish}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_archive",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_archive"
+							]
+						},
+						"description": "Archive one template successfully"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Template Archived True",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "60336e54-6c8a-463f-88ce-eaa296bdbe08",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Deleted Check\", function () {",
+									"    pm.expect(jsonData.entity[0].deleted).to.eql(true);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates?filter={{templateIdToPublish}}&archive=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "{{templateIdToPublish}}"
+								},
+								{
+									"key": "archive",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Gets a template using the id as a filter and since the template is archived we need to pass the archive flag. Checks that the deleted property is set to true."
+					},
+					"response": []
+				},
+				{
+					"name": "Publish Template Failed To Publish Template is Archived",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "8edd8d93-eddb-45ca-b795-add040b553b6",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Publish Template Check\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Failed To Publish Template Check\", function () {",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(1);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToPublish}}\"]\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_publish",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_publish"
+							]
+						},
+						"description": "Tries to publish a template that is archived, it must be working or live to be published. So it fails"
+					},
+					"response": []
+				},
+				{
+					"name": "UnArchive Template Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "e98d7aec-e5c5-4404-8e00-91f65f230257",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Unarchive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(1);",
+									"});",
+									"",
+									"pm.test(\"Failed To Unarchive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToPublish}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_unarchive",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_unarchive"
+							]
+						},
+						"description": "Unarchive one template successfully"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Template Archived False",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "b7470688-4934-42b8-bf16-3736c6ec1908",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Deleted Check\", function () {",
+									"    pm.expect(jsonData.entity[0].deleted).to.eql(false);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates?filter={{templateIdToPublish}}&archive=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "{{templateIdToPublish}}"
+								},
+								{
+									"key": "archive",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Gets a template using the id as a filter and since the template is archived we need to pass the archive flag. Checks that the deleted property is set to false."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Template hasLiveVersion False",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "443e3fd3-1116-4dec-9115-546debd7d2b4",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Has Live Version Check\", function () {",
+									"    pm.expect(jsonData.entity[0].hasLiveVersion).to.eql(false);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates?filter={{templateIdToPublish}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "{{templateIdToPublish}}"
+								}
+							]
+						},
+						"description": "Gets a template using the id as a filter. Check that does not have live version."
+					},
+					"response": []
+				},
+				{
+					"name": "Publish Template Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "e900944d-ea50-489c-8341-8e47907f39cc",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Publish Template Check\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(1);",
+									"});",
+									"",
+									"pm.test(\"Failed To Publish Template Check\", function () {",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToPublish}}\"]\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_publish",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_publish"
+							]
+						},
+						"description": "Publish a template successfully"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Template hasLiveVersion True",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "2c4232fb-ac35-4226-abca-93b6a69e261b",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Has Live Version Check\", function () {",
+									"    pm.expect(jsonData.entity[0].hasLiveVersion).to.eql(true);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates?filter={{templateIdToPublish}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "{{templateIdToPublish}}"
+								}
+							]
+						},
+						"description": "Gets a template using the id as a filter. Checks that the template has a live version."
+					},
+					"response": []
+				},
+				{
+					"name": "Re-Publish Template Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "04380157-0628-40dd-a48a-17f275268329",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Publish Template Check\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(1);",
+									"});",
+									"",
+									"pm.test(\"Failed To Publish Template Check\", function () {",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToPublish}}\"]\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_publish",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_publish"
+							]
+						},
+						"description": "Publish a template successfully"
+					},
+					"response": []
+				},
+				{
+					"name": "Publish Template Failed To Publish Id Not Exist",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "6e53d459-9501-400c-a5e9-1de37f39c2ad",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Publish Template Check\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Failed To Publish Template Check\", function () {",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(1);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\"]\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_publish",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_publish"
+							]
+						},
+						"description": "Tries to publish a template but the id passed does not belong to any template so it fails."
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Unpublish",
+			"item": [
+				{
+					"name": "Create New Template to Unpublish",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "75ab70a6-bb88-4348-9751-24805b7fbde4",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"body check\", function () {",
+									"    pm.expect(jsonData.entity.body).to.eql('This is the body');",
+									"});",
+									"",
+									"pm.test(\"friendlyName check\", function () {",
+									"    pm.expect(jsonData.entity.friendlyName).to.eql('This is a postman test description');",
+									"});",
+									"",
+									"pm.test(\"Title check\", function () {",
+									"    pm.expect(jsonData.entity.title).to.eql('PostMan Test');",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"templateIdToUnpublish\", jsonData.entity.identifier);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\":\"PostMan Test\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						},
+						"description": "Creates a new template"
+					},
+					"response": []
+				},
+				{
+					"name": "Archive Template Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "b0fef0b9-e3f6-4160-b3d0-f811292b9f67",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Archive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(1);",
+									"});",
+									"",
+									"pm.test(\"Failed To Archive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToUnpublish}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_archive",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_archive"
+							]
+						},
+						"description": "Archive one template successfully"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Template Archived True",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "941e90bf-af7d-4158-b844-f2a95f67582a",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Deleted Check\", function () {",
+									"    pm.expect(jsonData.entity[0].deleted).to.eql(true);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates?filter={{templateIdToUnpublish}}&archive=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "{{templateIdToUnpublish}}"
+								},
+								{
+									"key": "archive",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Gets a template using the id as a filter and since the template is archived we need to pass the archive flag. Checks that the deleted property is set to true."
+					},
+					"response": []
+				},
+				{
+					"name": "Unpublish Template Failed To Unpublish is Archived",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "d07bceed-38d1-41b9-8e0a-36a2acf1293d",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Unpublish Template Check\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Failed To Unpublish Template Check\", function () {",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(1);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToUnpublish}}\"]\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_unpublish",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_unpublish"
+							]
+						},
+						"description": "Tries to unpublish a template that is archived. So it fails"
+					},
+					"response": []
+				},
+				{
+					"name": "UnArchive Template Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "5ff0e410-7c13-4ef0-90aa-9971393c10bd",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Unarchive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(1);",
+									"});",
+									"",
+									"pm.test(\"Failed To Unarchive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToUnpublish}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_unarchive",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_unarchive"
+							]
+						},
+						"description": "Archive one template successfully"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Template Archived False",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "761c4111-9daf-498f-b6f6-1e1cae3242d2",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Deleted Check\", function () {",
+									"    pm.expect(jsonData.entity[0].deleted).to.eql(false);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates?filter={{templateIdToUnpublish}}&archive=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "{{templateIdToUnpublish}}"
+								},
+								{
+									"key": "archive",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Gets a template using the id as a filter and since the template could archived we need to pass the archive flag. Checks that the deleted property is set to false."
+					},
+					"response": []
+				},
+				{
+					"name": "Publish Template Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "3d325faa-6e18-4c76-a1a8-925a6180e3ce",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Publish Template Check\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(1);",
+									"});",
+									"",
+									"pm.test(\"Failed To Publish Template Check\", function () {",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToUnpublish}}\"]\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_publish",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_publish"
+							]
+						},
+						"description": "Publish a template successfully"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Template hasLiveVersion True",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "016fe2c8-2129-4085-890f-7e45e8df72ac",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Has Live Version Check\", function () {",
+									"    pm.expect(jsonData.entity[0].hasLiveVersion).to.eql(true);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates?filter={{templateIdToUnpublish}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "{{templateIdToUnpublish}}"
+								}
+							]
+						},
+						"description": "Gets a template using the id as a filter. Check that does have live version."
+					},
+					"response": []
+				},
+				{
+					"name": "Unpublish Template Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "e3f29feb-b699-4173-aed3-f5edfa986a9a",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Unpublish Template Check\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(1);",
+									"});",
+									"",
+									"pm.test(\"Failed To Unpublish Template Check\", function () {",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToUnpublish}}\"]\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_unpublish",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_unpublish"
+							]
+						},
+						"description": "Unpublish a template successfully"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Template hasLiveVersion False",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "9e45ff72-478d-4b75-b679-3973cded61c7",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Has Live Version Check\", function () {",
+									"    pm.expect(jsonData.entity[0].hasLiveVersion).to.eql(false);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates?filter={{templateIdToUnpublish}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "{{templateIdToUnpublish}}"
+								}
+							]
+						},
+						"description": "Gets a template using the id as a filter. Check that does not have live version."
+					},
+					"response": []
+				},
+				{
+					"name": "Re-Unpublish Template Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "8d0019d8-6969-4b75-8988-a4defaf6b6b2",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Publish Template Check\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(1);",
+									"});",
+									"",
+									"pm.test(\"Failed To Publish Template Check\", function () {",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToUnpublish}}\"]\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_unpublish",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_unpublish"
+							]
+						},
+						"description": "Unpublish a template successfully."
+					},
+					"response": []
+				},
+				{
+					"name": "Unpublish Template Failed To Unpublish Id Not Exist",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "c75672a0-29ab-4f0c-a599-8fc6efef7bd1",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Publish Template Check\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Failed To Publish Template Check\", function () {",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(1);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\"]\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_unpublish",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_unpublish"
+							]
+						},
+						"description": "Tries to unpublish a template but the id passed does not belong to any template so it fails."
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Copy",
+			"item": [
+				{
+					"name": "Create New Template to Copy",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "fa4705d5-8a73-4586-bf63-053693cb2530",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"body check\", function () {",
+									"    pm.expect(jsonData.entity.body).to.eql('This is the body');",
+									"});",
+									"",
+									"pm.test(\"friendlyName check\", function () {",
+									"    pm.expect(jsonData.entity.friendlyName).to.eql('This is a postman test description');",
+									"});",
+									"",
+									"pm.test(\"Title check\", function () {",
+									"    pm.expect(jsonData.entity.title).to.eql('PostMan Test');",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"templateIdToCopy\", jsonData.entity.identifier);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\":\"PostMan Test\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						},
+						"description": "Creates a new template and sets the id as a variable for further use."
+					},
+					"response": []
+				},
+				{
+					"name": "Copy Template Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "da762716-3098-4bb0-ab87-8f607f93b8f1",
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Title check\", function () {",
+									"    pm.expect(pm.response.json().entity.title).to.be.eql('PostMan Test - 1');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{temporaryInode}}\"]\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/{{templateIdToCopy}}/_copy",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"{{templateIdToCopy}}",
+								"_copy"
+							]
+						},
+						"description": "Copies the template"
+					},
+					"response": []
+				},
+				{
+					"name": "Copy Template Failed To Copy Id Not Exist",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "931eede0-fc93-45aa-9a90-4f48947b86fe",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.test(\"Status code should be ok 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToPublish}}\"]\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/_copy",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+								"_copy"
+							]
+						},
+						"description": "Tries to copy a template which id does not belong to any template. So it fails"
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Get Live",
+			"item": [
+				{
+					"name": "Create New Template to Get Live",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "216e9b6d-6db0-4d6d-b0bc-92bee1fc2156",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"body check\", function () {",
+									"    pm.expect(jsonData.entity.body).to.eql('This is the body');",
+									"});",
+									"",
+									"pm.test(\"friendlyName check\", function () {",
+									"    pm.expect(jsonData.entity.friendlyName).to.eql('This is a postman test description');",
+									"});",
+									"",
+									"pm.test(\"Title check\", function () {",
+									"    pm.expect(jsonData.entity.title).to.eql('PostMan Test');",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"templateIdToGetLive\", jsonData.entity.identifier);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\":\"PostMan Test\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						},
+						"description": "Creates a new template"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Template Live Version NotFound Live Version",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "7cced54e-6f5c-4732-9783-e17e79a168f7",
+								"exec": [
+									"pm.test(\"Status code should be ok 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/{{templateIdToGetLive}}/live",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"{{templateIdToGetLive}}",
+								"live"
+							]
+						},
+						"description": "Tries to get the live version of a template using the id as parameter. Since there is no live version it throws a 404"
+					},
+					"response": []
+				},
+				{
+					"name": "Publish Template Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "1bf31d0a-b867-4eeb-babd-b343ea46c786",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Publish Template Check\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(1);",
+									"});",
+									"",
+									"pm.test(\"Failed To Publish Template Check\", function () {",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToGetLive}}\"]\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_publish",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_publish"
+							]
+						},
+						"description": "Publish a template successfully"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Template Live Version Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "82bad203-619c-4945-b561-867d68dfbcfc",
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/{{templateIdToGetLive}}/live",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"{{templateIdToGetLive}}",
+								"live"
+							]
+						},
+						"description": "Get the live version of a template using the id as parameter."
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Get Working",
+			"item": [
+				{
+					"name": "Create New Template to Get Working",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "da4ce46d-4f5e-4a31-9b47-808077bbf18f",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"body check\", function () {",
+									"    pm.expect(jsonData.entity.body).to.eql('This is the body');",
+									"});",
+									"",
+									"pm.test(\"friendlyName check\", function () {",
+									"    pm.expect(jsonData.entity.friendlyName).to.eql('This is a postman test description');",
+									"});",
+									"",
+									"pm.test(\"Title check\", function () {",
+									"    pm.expect(jsonData.entity.title).to.eql('PostMan Test');",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"templateIdToGetWorking\", jsonData.entity.identifier);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\":\"PostMan Test\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						},
+						"description": "Creates a new template"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Template Working Version Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "f61435a1-dafb-4f3d-a8b2-3b20316ae776",
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/{{templateIdToGetWorking}}/working",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"{{templateIdToGetWorking}}",
+								"working"
+							]
+						},
+						"description": "Get the working version of a template successfully."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Template Working Version Id Not Exist",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "44758ac8-3670-47f9-aa31-f5673dd71213",
+								"exec": [
+									"pm.test(\"Status code should be ok 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/working",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+								"working"
+							]
+						},
+						"description": "Tries to get the working version of a template using the id as parameter. Since the id does not belong to any template throws a 404"
+					},
+					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "4d125c4b-4e64-4391-840a-1282ae74a21e",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "1eaf8a39-a2d0-4d08-be9b-4ac49fa248f8",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Get Templates",
+			"item": [
+				{
+					"name": "Create New Template to Get TemplateA",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "923d7b95-ea92-46fe-906c-65a5f17baa62",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"body check\", function () {",
+									"    pm.expect(jsonData.entity.body).to.eql('This is the body');",
+									"});",
+									"",
+									"pm.test(\"friendlyName check\", function () {",
+									"    pm.expect(jsonData.entity.friendlyName).to.eql('This is a postman test description');",
+									"});",
+									"",
+									"pm.test(\"Title check\", function () {",
+									"    pm.expect(jsonData.entity.title).to.eql('GETTEMPLATE PostMan Test A');",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"templateIdToGetTemplateA\", jsonData.entity.identifier);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\":\"GETTEMPLATE PostMan Test A\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						},
+						"description": "Creates a new template"
+					},
+					"response": []
+				},
+				{
+					"name": "Create New Template to Get TemplateB",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "82c73527-b216-493c-a165-5caeb8752dbd",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"body check\", function () {",
+									"    pm.expect(jsonData.entity.body).to.eql('This is the body');",
+									"});",
+									"",
+									"pm.test(\"friendlyName check\", function () {",
+									"    pm.expect(jsonData.entity.friendlyName).to.eql('This is a postman test description');",
+									"});",
+									"",
+									"pm.test(\"Title check\", function () {",
+									"    pm.expect(jsonData.entity.title).to.eql('GETTEMPLATE PostMan Test B');",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"templateIdToGetTemplateB\", jsonData.entity.identifier);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\":\"GETTEMPLATE PostMan Test B\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						},
+						"description": "Creates a new template"
+					},
+					"response": []
+				},
+				{
+					"name": "Create New Template to Get TemplateC",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "fd11c877-ec85-4772-a900-2877e7f67725",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"body check\", function () {",
+									"    pm.expect(jsonData.entity.body).to.eql('This is the body');",
+									"});",
+									"",
+									"pm.test(\"friendlyName check\", function () {",
+									"    pm.expect(jsonData.entity.friendlyName).to.eql('This is a postman test description');",
+									"});",
+									"",
+									"pm.test(\"Title check\", function () {",
+									"    pm.expect(jsonData.entity.title).to.eql('GETTEMPLATE PostMan Test C');",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"templateIdToGetTemplateC\", jsonData.entity.identifier);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\":\"GETTEMPLATE PostMan Test C\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						},
+						"description": "Creates a new template"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Templates All Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "25409395-5802-4884-8670-2757acfe0810",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Size must be greaterThan 2 templates, since 3 templates were created but could \", function () {",
+									"    pm.expect(jsonData.entity.length).to.be.above(2);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						},
+						"description": "Get all templates"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Templates Filter By Identifier Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "8693d8e1-0e04-473d-b638-8ed723a8a0a5",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"body check\", function () {",
+									"    pm.expect(jsonData.entity[0].body).to.eql('This is the body');",
+									"});",
+									"",
+									"pm.test(\"friendlyName check\", function () {",
+									"    pm.expect(jsonData.entity[0].friendlyName).to.eql('This is a postman test description');",
+									"});",
+									"",
+									"pm.test(\"Title check\", function () {",
+									"    pm.expect(jsonData.entity[0].title).to.include('GETTEMPLATE PostMan Test A');",
+									"});",
+									"",
+									"pm.test(\"Size must be 1\", function () {",
+									"    pm.expect(jsonData.entity.length).to.be.eql(1);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates?filter={{templateIdToGetTemplateA}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "{{templateIdToGetTemplateA}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Templates Filter By String Pattern does not comply with any template",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "741b65ed-5b77-4f72-aaeb-7f9646bfa42e",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Size must be 0\", function () {",
+									"    pm.expect(jsonData.entity.length).to.be.eql(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates?filter=asdfghjkl",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "asdfghjkl"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Templates PER_PAGE=1 Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "f9410638-2709-4811-ace4-2e374bb6b061",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Size must be 1\", function () {",
+									"    pm.expect(jsonData.entity.length).to.be.eql(1);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates?per_page=1",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "1"
+								}
+							]
+						},
+						"description": "Get all templates"
+					},
+					"response": []
+				},
+				{
+					"name": "Archive Template Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "0a8a159e-da66-49ad-87b9-41182745d626",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Archive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.eql(1);",
+									"});",
+									"",
+									"pm.test(\"Failed To Archive Template Check\", function () {",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateIdToGetTemplateC}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_archive",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_archive"
+							]
+						},
+						"description": "Archive one template successfully"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Templates Filter By Title",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "4dcc93ba-f48d-4f2a-ab7e-1c0fe4b54248",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Size must be 2, since 3 templates were created with GETTEMPLATE title but one was archived\", function () {",
+									"    pm.expect(jsonData.entity.length).to.be.eql(2);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates?filter=gettemplate",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "gettemplate"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Templates Filter By Title and Archive=True",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "20ee0492-9449-4057-acf2-e61180ac01a4",
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Size must be 3\", function () {",
+									"    pm.expect(jsonData.entity.length).to.be.eql(3);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates?filter=gettemplate&archive=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "gettemplate"
+								},
+								{
+									"key": "archive",
+									"value": "true"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Create New Template Theme Not Send BadRequest",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
-						"id": "e4345c2e-2b27-4316-a1ed-3089b9a93470",
+						"id": "3531c83b-b238-493a-bb24-5bc9c1835683",
 						"exec": [
-							"var jsonData = pm.response.json();",
-							"",
-							"pm.test(\"body check\", function () {",
-							"    pm.expect(jsonData.entity.body).to.eql('This is the body');",
+							"pm.test(\"Status code should be ok 400\", function () {",
+							"    pm.response.to.have.status(400);",
 							"});",
-							"",
-							"pm.test(\"friendlyName check\", function () {",
-							"    pm.expect(jsonData.entity.friendlyName).to.eql('This is a postman test description');",
-							"});",
-							"",
-							"pm.test(\"Title check\", function () {",
-							"    pm.expect(jsonData.entity.title).to.eql('PostMan Test');",
-							"});",
-							"",
-							"pm.collectionVariables.set(\"temporaryInode\", jsonData.entity.inode);",
-							"pm.collectionVariables.set(\"templateIdentifier\", jsonData.entity.identifier);",
 							""
 						],
 						"type": "text/javascript"
@@ -65,7 +4825,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"title\":\"PostMan Test\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n\n}",
+					"raw": "{\n    \"title\":\"PostMan Test\",\n    \"layout\":{\n        \"header\":true,\n        \"footer\":true,\n        \"body\":{\"rows\":[]},\n        \"sidebar\":null,\n        \"title\":\"\",\n        \"width\":null\n    }\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -82,25 +4842,21 @@
 						"v1",
 						"templates"
 					]
-				},
-				"description": "Creates a new template"
+				}
 			},
 			"response": []
 		},
 		{
-			"name": "Can not Delete",
+			"name": "Create New Template Theme Id Does Not Belong to Folder BadRequest",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
-						"id": "ae1bab8d-cd9f-4f2b-a6e9-bebc660c4573",
+						"id": "484f0b84-f573-4152-97b1-38792c44699e",
 						"exec": [
-							"pm.test(\"Status code should be 400\", function () {",
+							"pm.test(\"Status code should be ok 400\", function () {",
 							"    pm.response.to.have.status(400);",
 							"});",
-							"",
-							"",
-							"",
 							""
 						],
 						"type": "text/javascript"
@@ -132,32 +4888,192 @@
 						}
 					]
 				},
-				"method": "DELETE",
+				"method": "POST",
 				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"title\":\"PostMan Test\",\n    \"layout\":{\n        \"header\":true,\n        \"footer\":true,\n        \"body\":{\"rows\":[]},\n        \"sidebar\":null,\n        \"title\":\"\",\n        \"width\":null\n    },\n    \"theme\":\"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/templates/{{temporaryInode}}",
+					"raw": "{{serverURL}}/api/v1/templates",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"api",
 						"v1",
-						"templates",
-						"{{temporaryInode}}"
+						"templates"
 					]
-				},
-				"description": "Can not delete, non-archive template"
+				}
 			},
 			"response": []
 		},
 		{
-			"name": "Edit Template",
+			"name": "Create New Template Title Not Send BadRequest",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
-						"id": "b7c9e706-9c76-4974-9d6f-da0841d5cf49",
+						"id": "2ec39778-ff8b-4fc9-80be-aaec24417edb",
 						"exec": [
+							"pm.test(\"Status code should be ok 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/templates",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"templates"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create New Template Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "09c7308c-5ba6-4a5e-98bd-a9f835e63a51",
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"body check\", function () {",
+							"    pm.expect(jsonData.entity.body).to.eql('This is the body');",
+							"});",
+							"",
+							"pm.test(\"friendlyName check\", function () {",
+							"    pm.expect(jsonData.entity.friendlyName).to.eql('This is a postman test description');",
+							"});",
+							"",
+							"pm.test(\"Title check\", function () {",
+							"    pm.expect(jsonData.entity.title).to.eql('PostMan Test');",
+							"});",
+							"",
+							"pm.collectionVariables.set(\"templateIdToEdit\", jsonData.entity.identifier);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"title\":\"PostMan Test\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/templates",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"templates"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Edit Template Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "daad6598-6a15-4e17-bc14-ddfc9ff8a575",
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
 							"var jsonData = pm.response.json();",
 							"",
 							"pm.test(\"body check\", function () {",
@@ -172,8 +5088,9 @@
 							"    pm.expect(jsonData.entity.title).to.eql('PostMan Test Changed');",
 							"});",
 							"",
-							"pm.collectionVariables.set(\"temporaryInode\", jsonData.entity.inode);",
-							""
+							"pm.test(\"Identifier check\", function () {",
+							"    pm.expect(jsonData.entity.identifier).to.eql(pm.variables.get(\"templateIdToEdit\"));",
+							"});"
 						],
 						"type": "text/javascript"
 					}
@@ -208,7 +5125,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"inode\":\"{{temporaryInode}}\",\n    \"title\":\"PostMan Test Changed\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n\n}",
+					"raw": "{\n    \"identifier\":\"{{templateIdToEdit}}\",\n    \"title\":\"PostMan Test Changed\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -225,26 +5142,21 @@
 						"v1",
 						"templates"
 					]
-				},
-				"description": "Edit template"
+				}
 			},
 			"response": []
 		},
 		{
-			"name": "Get Templates",
+			"name": "Edit Template Id Not Exist BadRequest",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
-						"id": "5a78d98d-b8e7-470a-9a92-2747a27a4db7",
+						"id": "0c1e228c-4bb8-459a-935b-c32f6dcd15c3",
 						"exec": [
-							"pm.test(\"Status code should be 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"",
-							"",
-							""
+							"pm.test(\"Status code should be ok 404\", function () {",
+							"    pm.response.to.have.status(404);",
+							"});"
 						],
 						"type": "text/javascript"
 					}
@@ -275,8 +5187,17 @@
 						}
 					]
 				},
-				"method": "GET",
+				"method": "PUT",
 				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"identifier\":\"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\",\n    \"title\":\"PostMan Test Changed\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
 				"url": {
 					"raw": "{{serverURL}}/api/v1/templates",
 					"host": [
@@ -287,1325 +5208,106 @@
 						"v1",
 						"templates"
 					]
-				},
-				"description": "Get all templates"
-			},
-			"response": []
-		},
-		{
-			"name": "Get Templates Filter By Title",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "5a78d98d-b8e7-470a-9a92-2747a27a4db7",
-						"exec": [
-							"pm.test(\"Status code should be 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"var jsonData = pm.response.json().entity[0];",
-							"",
-							"pm.test(\"body check\", function () {",
-							"    pm.expect(jsonData.body).to.eql('This is the body');",
-							"});",
-							"",
-							"pm.test(\"friendlyName check\", function () {",
-							"    pm.expect(jsonData.friendlyName).to.eql('This is a postman test description');",
-							"});",
-							"",
-							"pm.test(\"Title check\", function () {",
-							"    pm.expect(jsonData.title).to.include('PostMan Test');",
-							"});"
-						],
-						"type": "text/javascript"
-					}
 				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/templates?filter=postman",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"templates"
-					],
-					"query": [
-						{
-							"key": "filter",
-							"value": "postman"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Get Templates Filter By Inode",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "5a78d98d-b8e7-470a-9a92-2747a27a4db7",
-						"exec": [
-							"pm.test(\"Status code should be 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"var jsonData = pm.response.json().entity[0];",
-							"",
-							"pm.test(\"body check\", function () {",
-							"    pm.expect(jsonData.body).to.eql('This is the body');",
-							"});",
-							"",
-							"pm.test(\"friendlyName check\", function () {",
-							"    pm.expect(jsonData.friendlyName).to.eql('This is a postman test description');",
-							"});",
-							"",
-							"pm.test(\"Title check\", function () {",
-							"    pm.expect(jsonData.title).to.include('PostMan Test');",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/templates?filter={{temporaryInode}}",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"templates"
-					],
-					"query": [
-						{
-							"key": "filter",
-							"value": "{{temporaryInode}}"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Get Templates Filter By Identifier",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "5a78d98d-b8e7-470a-9a92-2747a27a4db7",
-						"exec": [
-							"pm.test(\"Status code should be 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"var jsonData = pm.response.json().entity[0];",
-							"",
-							"pm.test(\"body check\", function () {",
-							"    pm.expect(jsonData.body).to.eql('This is the body');",
-							"});",
-							"",
-							"pm.test(\"friendlyName check\", function () {",
-							"    pm.expect(jsonData.friendlyName).to.eql('This is a postman test description');",
-							"});",
-							"",
-							"pm.test(\"Title check\", function () {",
-							"    pm.expect(jsonData.title).to.include('PostMan Test');",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/templates?filter={{templateIdentifier}}",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"templates"
-					],
-					"query": [
-						{
-							"key": "filter",
-							"value": "{{templateIdentifier}}"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Get Template",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "18562ad0-b55b-4052-a371-5f83076124d3",
-						"exec": [
-							"pm.test(\"Status code should be 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"var jsonData = pm.response.json();",
-							"",
-							"pm.test(\"body check\", function () {",
-							"    pm.expect(jsonData.entity.body).to.eql('This is the body');",
-							"});",
-							"",
-							"pm.test(\"friendlyName check\", function () {",
-							"    pm.expect(jsonData.entity.friendlyName).to.eql('This is a postman test description');",
-							"});",
-							"",
-							"pm.test(\"Is not live\", function () {",
-							"    pm.expect(jsonData.entity.live).to.eql(false);",
-							"});",
-							"",
-							"pm.collectionVariables.set(\"temporaryIdentifier\", jsonData.entity.identifier);",
-							"",
-							"",
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/templates/{{temporaryInode}}",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"templates",
-						"{{temporaryInode}}"
-					]
-				},
-				"description": "Get a since template"
-			},
-			"response": []
-		},
-		{
-			"name": "Get Template Working",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "de1fb7e9-bd2a-4e52-8431-790c0a68125c",
-						"exec": [
-							"pm.test(\"Status code should be 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"",
-							"",
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/templates/{{temporaryIdentifier}}/working",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"templates",
-						"{{temporaryIdentifier}}",
-						"working"
-					]
-				},
-				"description": "Get a single template"
-			},
-			"response": []
-		},
-		{
-			"name": "Get Template Live 404",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "62c28595-2472-4eb7-b306-fe773cbd2c64",
-						"exec": [
-							"pm.test(\"Status code should not exists yet 404\", function () {",
-							"    pm.response.to.have.status(404);",
-							"});",
-							"",
-							"",
-							"",
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/templates/{{temporaryIdentifier}}/live",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"templates",
-						"{{temporaryIdentifier}}",
-						"live"
-					]
-				},
-				"description": "The template was created but not published yet, so 404 will retrieve"
-			},
-			"response": []
-		},
-		{
-			"name": "Publish Template",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "84c724c5-4f72-417f-b245-5ff3b1adbda6",
-						"exec": [
-							"var jsonData = pm.response.json();",
-							"pm.test(\"Status code should be ok 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"pm.test(\"publishedInodes\", function () {",
-							"    pm.expect(jsonData.entity.failedInodes.length).to.eql(0);",
-							"});",
-							"",
-							"",
-							"pm.test(\"publishedInodes\", function () {",
-							"    pm.expect(jsonData.entity.publishedInodes.length).to.eql(1);",
-							"});",
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
-						}
-					]
-				},
-				"method": "PUT",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "[\"{{temporaryInode}}\"]\n",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/templates/_publish",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"templates",
-						"_publish"
-					]
-				},
-				"description": "Publish the template"
-			},
-			"response": []
-		},
-		{
-			"name": "Get Template Live 200",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "e87ef6d6-2e83-421f-90e1-3139a69e08d7",
-						"exec": [
-							"pm.test(\"Status code should be ok 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"var jsonData = pm.response.json();",
-							"",
-							"pm.test(\"body check\", function () {",
-							"    pm.expect(jsonData.entity.live).to.eql(true);",
-							"});",
-							"",
-							"pm.collectionVariables.set(\"temporaryInode\", jsonData.entity.inode);"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/templates/{{temporaryIdentifier}}/live",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"templates",
-						"{{temporaryIdentifier}}",
-						"live"
-					]
-				},
-				"description": "Get published template"
-			},
-			"response": []
-		},
-		{
-			"name": "UNPublish Template",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "beb76665-29c1-4409-a6e9-bfebd8976ff0",
-						"exec": [
-							"var jsonData = pm.response.json();",
-							"",
-							"pm.test(\"Status code should be ok 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"pm.test(\"publishedInodes\", function () {",
-							"    pm.expect(jsonData.entity.failedInodes.length).to.eql(0);",
-							"});",
-							"",
-							"",
-							"pm.test(\"publishedInodes\", function () {",
-							"    pm.expect(jsonData.entity.unpublishedInodes.length).to.eql(1);",
-							"});",
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
-						}
-					]
-				},
-				"method": "PUT",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "[\"{{temporaryInode}}\"]\n",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/templates/_unpublish",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"templates",
-						"_unpublish"
-					]
-				},
-				"description": "UNPublish the template"
-			},
-			"response": []
-		},
-		{
-			"name": "Get Template Live 404 #2",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "55fd70d6-6ff8-43f7-a17f-ece72d752ce6",
-						"exec": [
-							"pm.test(\"Status code should not exists yet 404\", function () {",
-							"    pm.response.to.have.status(404);",
-							"});",
-							"",
-							"",
-							"",
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/templates/{{temporaryIdentifier}}/live",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"templates",
-						"{{temporaryIdentifier}}",
-						"live"
-					]
-				},
-				"description": "The template was created but not published yet, so 404 will retrieve"
-			},
-			"response": []
-		},
-		{
-			"name": "Template Copy",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "0b8ac8a7-1063-47af-8713-b6c03706c926",
-						"exec": [
-							"pm.test(\"Status code should be ok 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"pm.test(\"Title check\", function () {",
-							"    pm.expect(pm.response.json().entity.title).to.include('PostMan Test');",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
-						}
-					]
-				},
-				"method": "PUT",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "[\"{{temporaryInode}}\"]\n",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/templates/{{temporaryInode}}/_copy",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"templates",
-						"{{temporaryInode}}",
-						"_copy"
-					]
-				},
-				"description": "Copies the template"
-			},
-			"response": []
-		},
-		{
-			"name": "Archive Template",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "e1c588fd-a786-4906-b40e-f94241459804",
-						"exec": [
-							"pm.test(\"Status code should be ok 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
-						}
-					]
-				},
-				"method": "PUT",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/templates/{{temporaryInode}}/_archive",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"templates",
-						"{{temporaryInode}}",
-						"_archive"
-					]
-				},
-				"description": "Archive the template"
-			},
-			"response": []
-		},
-		{
-			"name": "Get Templates Archive",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "ee71adf7-902c-4aef-8cec-2409093479be",
-						"exec": [
-							"pm.test(\"Status code should be 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"var jsonData = pm.response.json().entity[0];",
-							"console.log(jsonData.deleted)",
-							"pm.test(\"body check\", function () {",
-							"    pm.expect(jsonData.deleted).to.eql(true);",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/templates?archive=true&filter={{temporaryInode}}",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"templates"
-					],
-					"query": [
-						{
-							"key": "archive",
-							"value": "true"
-						},
-						{
-							"key": "filter",
-							"value": "{{temporaryInode}}"
-						}
-					]
-				},
-				"description": "Get all templates Archive"
-			},
-			"response": []
-		},
-		{
-			"name": "Unlock Template",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "d5f673b4-558b-400a-889d-6955a7f76255",
-						"exec": [
-							"pm.test(\"Status code should be ok 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
-						}
-					]
-				},
-				"method": "PUT",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/templates/{{temporaryInode}}/_unlock",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"templates",
-						"{{temporaryInode}}",
-						"_unlock"
-					]
-				},
-				"description": "unlock the template"
-			},
-			"response": []
-		},
-		{
-			"name": "Unarchive Template",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "e8bd0fd8-ffc6-4953-85b0-d4675d67a21e",
-						"exec": [
-							"pm.test(\"Status code should be ok 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
-						}
-					]
-				},
-				"method": "PUT",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/templates/{{temporaryInode}}/_unarchive",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"templates",
-						"{{temporaryInode}}",
-						"_unarchive"
-					]
-				},
-				"description": "unarchive the template"
-			},
-			"response": []
-		},
-		{
-			"name": "Archive Template #2",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "7d59cbaa-2619-4502-9c6d-905679cb870f",
-						"exec": [
-							"pm.test(\"Status code should be ok 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
-						}
-					]
-				},
-				"method": "PUT",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/templates/{{temporaryInode}}/_archive",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"templates",
-						"{{temporaryInode}}",
-						"_archive"
-					]
-				},
-				"description": "archive the template 2"
-			},
-			"response": []
-		},
-		{
-			"name": "Delete Template",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "cd8da826-55f6-4820-a2f8-968fa40bcaba",
-						"exec": [
-							"pm.test(\"Status code should be ok 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
-						}
-					]
-				},
-				"method": "DELETE",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/templates/{{temporaryInode}}",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"templates",
-						"{{temporaryInode}}"
-					]
-				},
-				"description": "deletes the template"
-			},
-			"response": []
-		},
-		{
-			"name": "Get Template Working Copy",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "d99e6692-f1f4-40ea-88ff-0bb4381df9ce",
-						"exec": [
-							"pm.test(\"Status code should be 404 since was deleted\", function () {",
-							"    pm.response.to.have.status(404);",
-							"});",
-							"",
-							"",
-							"",
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/templates/{{temporaryIdentifier}}/working",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"templates",
-						"{{temporaryIdentifier}}",
-						"working"
-					]
-				},
-				"description": "Get a single template"
 			},
 			"response": []
 		}
 	],
 	"variable": [
 		{
-			"id": "7e26a79b-8e46-4580-96ef-b018b149302b",
+			"id": "25b90ee2-5487-462f-a1e9-9f2fac3755fd",
 			"key": "temporalInode",
 			"value": "27928cad-5c13-41a9-bcf1-ce23a6cb55c8"
 		},
 		{
-			"id": "5c68fa54-28b7-4509-b8a1-96c83bbe766c",
+			"id": "436c3cf3-df16-4797-96cf-352a88953c51",
 			"key": "temporalIdentifier",
 			"value": "037debee-59cb-42b7-b0d1-1cab580c2b76"
 		},
 		{
-			"id": "cfc58119-012f-4e8c-a853-5aa7237c0647",
+			"id": "436548ca-6f71-4739-9419-a587ef149f3d",
 			"key": "temporaryInode",
-			"value": "3e233eda-31e4-4cd4-9741-adffad0697ce"
+			"value": "d3d81700-1767-4468-b788-5a93eda006b9"
 		},
 		{
-			"id": "7e284f9d-ec06-46bc-acdf-2a673061c405",
+			"id": "d12f0e5c-b0a4-438c-8dc2-8b7f35e18636",
 			"key": "temporaryIdentifier",
-			"value": "b6b41cff-9247-47eb-8f97-b7df0462916c"
+			"value": "6d9a5bd8-9f07-4ece-8328-a0001ba82de4"
 		},
 		{
-			"id": "a6705514-61f7-4973-9ebb-fa842b128472",
+			"id": "1526a0e2-8900-4e42-9401-805e165858b2",
 			"key": "templateIdentifier",
-			"value": "b6b41cff-9247-47eb-8f97-b7df0462916c"
+			"value": "f2dbc35a-de89-4c04-a859-5c156bbdc7f8"
+		},
+		{
+			"id": "e8ca962f-d909-4653-9205-cf94d4e99d35",
+			"key": "templateIdToArchive",
+			"value": "ae7579bf-5203-4590-81eb-b552f9211c47"
+		},
+		{
+			"id": "4f4c8b02-8c50-4eb5-829b-dd5259f44090",
+			"key": "templateIdToUnArchive",
+			"value": "9b76a6d3-0d81-40c8-abff-2bb0dbf743df"
+		},
+		{
+			"id": "14c4fc94-0a68-44ae-8244-739c1d7da8c8",
+			"key": "templateIdToDelete",
+			"value": "b79b4f0e-4e1f-444d-96d4-8b63544afb23"
+		},
+		{
+			"id": "75ccc829-a27c-432a-81aa-66be068de643",
+			"key": "templateIdToPublish",
+			"value": "19d76ad9-b190-4f27-a40a-a5f0204fa371"
+		},
+		{
+			"id": "368b019e-ddd2-4b40-b72a-8eac73bc9628",
+			"key": "templateIdToUnpublish",
+			"value": "7fdca2b5-5cd4-487c-a540-105041213773"
+		},
+		{
+			"id": "f1d0dddc-b59d-494a-896a-6f9dfbe13b92",
+			"key": "templateIdToLock",
+			"value": "40654e42-5b63-479f-87c7-8003135c891a"
+		},
+		{
+			"id": "275973f1-decd-4638-bc3a-2cca40b2bc9e",
+			"key": "templateIdToUnLock",
+			"value": "afadb8e2-f97c-4bea-9e21-40990eba953c"
+		},
+		{
+			"id": "2f9ab5be-7f88-4748-948e-248e1583f7b5",
+			"key": "templateIdToCopy",
+			"value": "0b419f01-50d9-4fe6-bac5-958bfc693dbb"
+		},
+		{
+			"id": "340bcf26-f073-44c2-bad7-7c132a1464fa",
+			"key": "templateIdToGetLive",
+			"value": "b2cd0dda-3bbb-4830-abac-b8ed95be47e3"
+		},
+		{
+			"id": "aef84099-9e0f-4202-9d14-62c21c8bb614",
+			"key": "templateIdToGetWorking",
+			"value": "dcc63d5b-c522-4c5c-82e7-0c14e240731e"
+		},
+		{
+			"id": "d7672ce0-2095-474b-99b6-950705d3acb6",
+			"key": "templateIdToGetTemplateA",
+			"value": "6e83cb81-34eb-4a53-abbc-cb14fd88fba8"
+		},
+		{
+			"id": "96a5540b-8627-495d-b33d-7c2165dd44b0",
+			"key": "templateIdToGetTemplateB",
+			"value": "4281dce3-e143-44a8-9a06-ebc708492761"
+		},
+		{
+			"id": "b5328115-a975-4719-a924-639aa0762bed",
+			"key": "templateIdToGetTemplateC",
+			"value": "9e2ea2b6-59cd-4716-9ebd-4e9232e69e1d"
+		},
+		{
+			"id": "3223ab60-6561-4077-8a85-ccecc8324641",
+			"key": "templateIdToEdit",
+			"value": "0e1d997c-2a17-4f89-a50e-eef62d114b0a"
 		}
 	],
 	"protocolProfileBehavior": {}

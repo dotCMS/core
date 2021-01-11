@@ -17,6 +17,7 @@ import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleAPITest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
+import com.dotcms.publisher.util.DependencyManagerTest;
 import com.dotcms.publishing.PublisherFilterImplTest;
 import com.dotcms.publishing.PushPublishFiltersInitializerTest;
 import com.dotcms.publishing.job.SiteSearchJobImplTest;
@@ -362,7 +363,10 @@ import org.junit.runners.Suite.SuiteClasses;
         Task201013AddNewColumnsToIdentifierTableTest.class,
         Task201014UpdateColumnsValuesInIdentifierTableTest.class,
         AppsInterpolationTest.class,
-        Task201102UpdateColumnSitelicTableTest.class
+        com.dotcms.rest.api.v1.template.TemplateResourceTest.class,
+        Task201102UpdateColumnSitelicTableTest.class,
+        DependencyManagerTest.class,
+        com.dotcms.rest.api.v1.versionable.VersionableResourceTest.class
 })
 public class MainSuite {
 

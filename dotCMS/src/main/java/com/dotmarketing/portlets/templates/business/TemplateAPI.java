@@ -5,6 +5,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
@@ -157,40 +158,34 @@ public interface TemplateAPI {
 	 * @param template {@link Template} to publish (valid template)
 	 * @param user     {@link User} user to check the permissions
 	 * @param respectFrontendRoles {@link Boolean}
-	 * @return boolean true if publish
 	 */
-	boolean publishTemplate(Template template, User user, boolean respectFrontendRoles);
+	void publishTemplate(Template template, User user, boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException, WebAssetException;
 
 	/**
 	 * Unpublish a template if has the appropiate permissions
 	 * @param template {@link Template} to unpublish (valid template)
 	 * @param user     {@link User} user to check the permissions
 	 * @param respectFrontendRoles {@link Boolean}
-	 * @return boolean true if publish
 	 */
-	boolean unpublishTemplate(Template template, User user, boolean respectFrontendRoles);
-
-	/**
-	 * Unlock the template
-	 * @param template {@link Template}
-	 * @param user     {@link User}
-	 */
-	void unlock (Template template, User user);
+	void unpublishTemplate(Template template, User user, boolean respectFrontendRoles)
+			throws DotSecurityException, DotDataException;
 
 	/**
 	 * Archive the template, it should be unpublish, but if it is not, then will be unpublish and consequently archive.
 	 * @param template {@link Template}
 	 * @param user     {@link User}
 	 * @param respectFrontendRoles
-	 * @return boolean true if success
 	 */
-	boolean archive (Template template, User user, boolean respectFrontendRoles);
+	void archive (Template template, User user, boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException;
 
 	/**
 	 * If the template is archive will unarchive it
 	 * @param template {@link Template}
+	 * @param user     {@link User}
 	 */
-	void unarchive (Template template);
+	void unarchive (Template template, User user) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Delete the specified template.
@@ -201,11 +196,17 @@ public interface TemplateAPI {
 	 * @param template {@link Template}
 	 * @param user     {@link User}
 	 * @param respectFrontendRoles {@link Boolean}
-	 * @return boolean
 	 * @throws DotSecurityException
 	 * @throws Exception
 	 */
-	boolean deleteTemplate(Template template, User user, boolean respectFrontendRoles);
+	void deleteTemplate(Template template, User user, boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException;
+
+	/**
+	 * Deletes the template version by inode
+	 * @param inode String
+	 */
+	void deleteVersionByInode(String inode);
 
 	/**
 	 * Delete the specified template
@@ -338,5 +339,13 @@ public interface TemplateAPI {
 	 * @throws DotDataException
 	 */
 	List<Template> findTemplatesByContainerInode(final String containerInode) throws DotDataException;
-	
+
+	/**
+	 * Check if a template is archived.
+	 * @param template
+	 * @return true if template is archived, false if not.
+	 * @throws DotDataException
+	 */
+	boolean isArchived(final Template template) throws DotDataException;
+
 }

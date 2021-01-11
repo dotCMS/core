@@ -58,7 +58,7 @@ public class TikaUtils {
             if (!osgiInitialized) {
                 Logger.warn(this.getClass(),
                         "OSGI Framework not initialized, trying to initialize...");
-                OSGIUtil.getInstance().initializeFramework(Config.CONTEXT);
+                OSGIUtil.getInstance().initializeFramework();
                 osgiInitialized = true;
             }
         } catch (Exception e) {

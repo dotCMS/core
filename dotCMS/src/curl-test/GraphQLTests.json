@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "8ebdc33c-110c-4f94-adf0-6d4844cc5ee1",
+		"_postman_id": "0d698dd7-5810-4b6e-bdb0-3057489f6005",
 		"name": "GraphQL",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -14,7 +14,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d7ce458d-7749-4ce1-9655-c3d9c0ae5cf0",
+								"id": "f3049e48-4629-4e62-9bbb-5639323ebf07",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -103,7 +103,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "314ca4fc-bb50-4e0f-9677-05899558558b",
+								"id": "91fd578b-2ecf-40f2-95f7-8972e32193b5",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -187,12 +187,177 @@
 					"response": []
 				},
 				{
+					"name": "pre_ImportBundleWithDemoHost",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "f14c9bb3-ce91-419a-9bb5-c31d161b7597",
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"demo.dotcms.com.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/demo.dotcms.com.tar.gz"
+								}
+							],
+							"options": {
+								"formdata": {}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* Imports demo.dotcms.com"
+					},
+					"response": []
+				},
+				{
+					"name": "Switch site to 'demo.dotcms.com'",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "63a08958-807f-4be1-8cf2-9cfc34f42c97",
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    var jsonData = pm.response.json();",
+									"",
+									"    pm.expect(jsonData.entity.hostSwitched).equal(true);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site/switch/48190c8c-42c4-46af-8d1a-0cd5db894797",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site",
+								"switch",
+								"48190c8c-42c4-46af-8d1a-0cd5db894797"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "RenderDestinationsCostaRicaPage",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "267edb03-3cc8-492e-a452-df2b90115cb3",
+								"id": "fa570426-6079-4d88-b3f0-90c104338f8d",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 200\", function () {",
@@ -332,7 +497,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "74c6a123-8fe9-4477-ae63-877b1183abb7",
+								"id": "f0a5e9c3-6715-48b8-bfff-7d85a0b44e45",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 200\", function () {",
@@ -460,7 +625,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "660cfe4e-65d2-4c3b-b08f-33d249785c41",
+								"id": "57e4466f-94da-473b-8997-f07936f70c0a",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 200\", function () {",
@@ -567,7 +732,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "bd54b3e0-c765-4780-a7a8-4060d8789ba0",
+								"id": "564047ac-1a71-4e81-8702-7ee8fef2b749",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 200\", function () {",
@@ -675,7 +840,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "9d090461-f727-4f42-b182-729576504571",
+								"id": "877cae57-b491-41a4-b0b4-b2cffc93fcda",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -840,7 +1005,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "bde8aed5-7a1b-46b6-b091-a5f74a4a43be",
+								"id": "efffdef7-9f31-46d0-ab95-c2a9ed247c1c",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -925,7 +1090,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f389f7b1-13d3-4629-8a2f-0cf8d5e7dc2a",
+								"id": "ee6d650a-d7cc-4368-bf3c-7c6da9f66211",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1007,7 +1172,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "1b2c3c10-fd58-425c-81c1-eb70471b42cd",
+								"id": "70f7e410-b60f-41f5-87ad-e4ae04db7495",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1095,7 +1260,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "3946c1d0-2052-473e-9a2c-07661f8f1606",
+								"id": "a1b96e98-a19a-48e7-9602-31e0ecb72b23",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -1185,7 +1350,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "104ea22a-a663-4ef4-9308-a724b82242b7",
+								"id": "470f5a85-698c-4b12-a652-873222cd9c93",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1274,7 +1439,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f8a0d0cc-61ee-426d-9351-69fe76628b7a",
+								"id": "07ad265c-463b-4b93-aeaf-b99511b42113",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -1400,7 +1565,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "6a1e31db-9d14-4334-b68d-ed3fc9c921a0",
+								"id": "94fd90a3-1d7c-48ea-afb2-0ff3229925e7",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -1522,7 +1687,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "4bc167b7-fc5f-4022-b3d4-4753fc350d7c",
+								"id": "12311c3e-71d2-4e39-9991-d1726d6191cc",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -1637,7 +1802,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "81e885fb-9c24-4249-b80a-d3fab80927b7",
+								"id": "818aa592-aa77-49a6-8e8e-184af85339df",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -1735,7 +1900,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d2b9fac1-95f0-48cf-a257-1a20155a1fb6",
+								"id": "98b7c9bd-8f9b-44a2-95ca-66aa116e710e",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1824,7 +1989,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d38eb470-9084-4546-9048-740c9c9fac7c",
+								"id": "dc95e454-8a94-4556-9a0c-3d11d5303693",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -1969,7 +2134,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "63944a3e-4ff3-472b-b58b-c7ad0008b659",
+								"id": "e4be4de5-fd8c-4342-9ac9-14bf8ba517cd",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2057,7 +2222,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f8e9a9c0-b8f4-407a-aa02-5cd2f280e6fc",
+								"id": "2140e026-f588-4a27-ab23-1a1d1ae0890f",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -2139,7 +2304,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "6ec045de-e014-4084-a5b3-78cd87b3f513",
+								"id": "cdc972e0-ad4e-4805-b368-b0ef49e83362",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -2227,7 +2392,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "9f53bc11-d480-4feb-a011-4e10b9cffd0e",
+								"id": "fe28366f-df27-4d96-bdb9-45e65b599fa4",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2316,7 +2481,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "80116f04-0625-4544-a952-180cd5e78c3a",
+								"id": "5d32dec8-364e-47d8-bcfc-514b31daebe7",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2405,7 +2570,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "c12b9f4d-6f4c-4068-b38e-1ad8d2b64710",
+								"id": "1e9e2b9d-ca3c-4b0f-ba3f-a6be3989468f",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2494,7 +2659,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "6b19625f-015c-40ef-8c6e-ae65895ba6aa",
+								"id": "80ea3967-f211-47f4-99fc-313165188cff",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2583,7 +2748,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d28d0656-61ee-41fe-b14a-95e0909c23b6",
+								"id": "c4058e0a-d076-4320-b005-6ca89e1bf468",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2672,7 +2837,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "51028aad-acb6-4543-96a4-dc95881bb850",
+								"id": "7504aec3-bc09-4c79-a744-58bfaeb42a18",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2761,7 +2926,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "b1526eba-52b6-47f5-9b9b-c54a9d03245d",
+								"id": "2240143d-4b94-4715-bc0d-ef9e8dbe97e6",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2850,7 +3015,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "6fff3e00-260e-4748-992c-e351ae010266",
+								"id": "06605530-2566-4cb5-8764-156f27b19cc4",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2912,7 +3077,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "31904990-e291-44ae-9ade-478858cc2979",
+								"id": "66dc491c-a562-458c-9bc3-2af4cfd4d8da",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2966,7 +3131,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "e1cd8656-c620-48c2-8f18-4872da53526d",
+								"id": "de0bf637-1812-4dd0-836d-d4af2efb4997",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -3036,7 +3201,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "5bfea9fd-07c6-4449-8991-56451e38eb0a",
+								"id": "855db62d-ddb0-468b-81a5-4fb282aa5174",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -3085,7 +3250,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d47a71d5-c7dd-4cfd-a83c-45566f580cb5",
+								"id": "a43b5a88-8859-4bc2-8b27-4ef313be3030",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -3134,7 +3299,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "a47cc911-35c1-403e-a4bf-f0a539ab8cc2",
+								"id": "cf7d1123-4fd0-450b-aa58-b050a486e884",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -3187,7 +3352,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "435a011a-3dfe-4848-94fa-c303673badc5",
+								"id": "07ee703c-8e03-4c17-ac15-e13a3e7052d4",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -3241,7 +3406,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "b0d7f45a-38fa-4230-9b5b-e370cad0a87a",
+								"id": "ab4d1bc7-87f0-4c05-97f3-3eddb71480c4",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"languageId\", jsonData.entity.id);"
@@ -3304,7 +3469,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "11cff9ca-b5d7-44d0-a36d-f4a1d9613a4c",
+								"id": "814ec828-4faa-4725-90f2-d6ad88f20f91",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);"
@@ -3362,7 +3527,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d93b684a-c5a6-4794-8c5d-9d3faa57ea2d",
+								"id": "ece223eb-a1c3-4235-b016-84eb3d31b7f9",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);"
@@ -3421,7 +3586,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f0ccfb65-eed7-4957-b0cf-509296b1cfbb",
+								"id": "65af5a3d-e614-40c1-a4c9-306f47d8c81d",
 								"exec": [
 									"pm.test(\"Content in new Language should be retrieved\", function () {",
 									"    var jsonData = pm.response.json();",
@@ -3471,7 +3636,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "88c92ddb-bd41-4abb-bd39-314c0c2d95dd",
+								"id": "54e0c2c4-bf7a-4fae-92fc-6372d36fe974",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"imageContentTypeVariable\", jsonData.entity[0].variable);"
@@ -3529,7 +3694,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f2d75aa1-040b-4f5e-8e76-2858ce83563d",
+								"id": "d7becc6b-11f4-4137-9709-426098af301d",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -3592,7 +3757,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "59ef896e-c8d5-494d-aff9-973197df63ca",
+								"id": "91056632-8f2a-4db8-98b5-73db60a27a58",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"imageContentIdentifier\", jsonData.entity.identifier);"
@@ -3603,7 +3768,7 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "141f88b9-e401-4a7c-a477-96b173f13642",
+								"id": "15152ce2-3e95-40be-b2f4-8acd189be75f",
 								"exec": [
 									""
 								],
@@ -3666,7 +3831,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "974446be-0beb-4bed-af7a-db9195f0bc86",
+								"id": "fa9825c1-7e94-4e9f-8c4a-ef1cfefeb582",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"fileContentIdentifier\", jsonData.entity.identifier);"
@@ -3730,7 +3895,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "8c9e38ef-0ed8-4b2b-a354-dfd2e823c32f",
+								"id": "4ff6d567-21c7-4d15-a35e-1b9c46d8ec1e",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);"
@@ -3783,7 +3948,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "2e6ec58b-9957-48c6-a96c-a7eb2efb7a04",
+								"id": "a52f1190-6aa4-4a29-a9a0-553d89bb6a16",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"var imageFieldVariable = pm.collectionVariables.get(\"imageFieldVariable\");",
@@ -3899,7 +4064,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "46e91aba-8d25-44d1-86c3-dbc8287ce600",
+								"id": "01444b11-d5fa-4ad2-949c-bbf9f50de674",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"languageId\", jsonData.entity.id);"
@@ -3962,7 +4127,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "33d07a12-5450-4f75-9b79-74cfdce51d40",
+								"id": "37b5ae06-218b-4d79-8d80-b8c701a55582",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"childContentTypeVariable\", jsonData.entity[0].variable);"
@@ -4020,7 +4185,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "efb2bbf5-73e3-4a3d-8a6f-a89df40bd3bd",
+								"id": "78aff940-d884-48d8-8a8e-c917ac263872",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"parentContentTypeVariable\", jsonData.entity[0].variable);",
@@ -4079,7 +4244,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "55b8d053-9d63-4c0c-813c-4f26ec31f2a1",
+								"id": "8238f7d0-4808-46bf-b1db-0c219f1baa23",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"childContentIdentifier\", jsonData.entity.identifier);"
@@ -4138,7 +4303,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ab0baa96-788c-46ca-9974-a89af8227466",
+								"id": "1a6216d5-9cbb-41af-b270-787b901f09b2",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"parentContentIdentifier\", jsonData.entity.identifier);"
@@ -4197,7 +4362,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "9141c398-72ef-4683-b385-0159820a21a5",
+								"id": "13bed146-c650-409a-b997-dea970da4e3c",
 								"exec": [
 									"pm.test(\"Content parent and child content returned in requested language\", function () {",
 									"    var jsonData = pm.response.json();",
@@ -4253,7 +4418,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "3fbe595a-e5f3-4320-aa86-f2a23496ba64",
+								"id": "c4f47cdb-1241-4f2c-b9c4-aa9d3c14cd53",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -4316,7 +4481,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ba29446d-4c81-4e34-b7e5-a013783f8ed1",
+								"id": "f0712d98-3a0f-41e5-b508-e00e6028e41d",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -4362,7 +4527,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "2faf096d-b38b-4e9b-b109-b5b5cc7b4966",
+								"id": "fb4503b0-b418-433f-92a2-904b0576a515",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -4451,7 +4616,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "940848d6-42bb-43d6-9f8b-23dcce7c5225",
+								"id": "4041b521-e9dc-4c67-958e-58154786a8b0",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -4540,7 +4705,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "165bb850-5f6d-4f51-9e31-144d10b4bf09",
+								"id": "e0bb0e43-ca1c-4f85-9821-87f12cf554d3",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -4591,93 +4756,231 @@
 				}
 			],
 			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Related content with condition / query",
+			"item": [
+				{
+					"name": "pre_ImportBundleWithContext",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "c3178cc7-b516-4564-821e-251e5ed96dcf",
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"movies-studios-ratings-bundle.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/movies-studios-ratings-bundle.tar.gz"
+								}
+							],
+							"options": {
+								"formdata": {}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* HTMLPage /blog/index\n* HTMLPage /blog/destinations/costa-rica\n* Contentlet [Blog] Ecotourism in Costa Rica\n* Blog Detail Page /blog/blog-detail"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Related Content with condition",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "c9628bc0-b7d2-4121-86aa-a7fc165e0265",
+								"exec": [
+									"pm.test(\"Filtered relationship fetched\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    ",
+									"    pm.expect(jsonData.data.MovieCollection[3].studio[0].name).to.eql(\"Walt Disney Pictures\");",
+									"",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  MovieCollection {\n    title\n    studio(query: \"+studio.name:\\\"Walt Disney Pictures\\\"\", sortBy: \"+studio.name\") {\n      name\n    }\n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
 		}
 	],
 	"variable": [
 		{
-			"id": "7f15aae6-2ee9-4f6c-a7b7-0816305eba7c",
+			"id": "cb92fbba-0d90-4023-bbed-b74155adfbfb",
 			"key": "languageId",
-			"value": 1592433023079
+			"value": 1609799506077
 		},
 		{
-			"id": "a5b41212-f59b-4be4-a70b-cf62175aebdc",
+			"id": "a668ddcc-8662-476c-8c5d-2d0009fae98e",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "17c2d44e-630b-4c4f-9f36-6a36adc50a71",
+			"id": "800f0429-489f-4710-81bb-7ad453b0d019",
 			"key": "contentTypeVariable",
-			"value": "MyCustomType53380831"
+			"value": "MyCustomType30413852"
 		},
 		{
-			"id": "ebdf0309-d3fa-4020-b4c5-367f4902d465",
+			"id": "217ce344-7f65-4a53-97bf-110ab15b4ea3",
 			"key": "contentIdentifier",
-			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
+			"value": "a5bf0d80-4273-41e1-8f1f-22a3d4ac986f"
 		},
 		{
-			"id": "eaa7fcfc-711f-4b34-b0f9-978e2e934682",
+			"id": "0eef0163-4189-4c6d-bc3a-93718d582a3d",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "e7b75eb9-7f82-4ddd-80f0-8d9711ddb7cf",
+			"id": "2ad7f13e-8097-4779-b08a-1f0aeb552a0c",
 			"key": "imageContentTypeVariable",
-			"value": "MyImageType22920449"
+			"value": "MyImageType49851579"
 		},
 		{
-			"id": "903ae6ba-1190-4d73-94c2-d262a7ebd703",
+			"id": "f823d857-2195-48cb-aeec-aa8ebe8983e1",
 			"key": "imageContentIdentifier",
-			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
+			"value": "4cb59737-913d-4c5f-b021-dbe213a15739"
 		},
 		{
-			"id": "983bf56c-5197-49d7-ad68-506cce674c4e",
+			"id": "2c9494ef-431c-4ab7-9c10-dddfc28a6447",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "49c4e94c-cc0d-49fe-8696-9a598d015fc8",
+			"id": "4f8711e5-fe38-441d-8b50-59b72ce0bb21",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "cdea5ef9-ec74-40b5-9dea-bdb227ac3421",
+			"id": "c305aa7b-ef00-40fe-9287-402ccbc38f9f",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "3795f8c6-46fd-461a-86c8-84e89c87186c",
+			"id": "177edf4f-eb1c-460a-acc3-c6f849f6549d",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "c7dceafc-fba4-49ff-a30b-f390d7a3b81a",
+			"id": "15c1d80e-3d24-4195-b083-8d473f9d5d8e",
 			"key": "fileContentIdentifier",
-			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
+			"value": "434f474a-4d89-4b96-ad38-aa46483be3e5"
 		},
 		{
-			"id": "a354eacc-3dfc-49c2-b896-04ffab029246",
+			"id": "a9324349-e3b5-4d4b-aee1-8717bcecd397",
 			"key": "childContentTypeVariable",
-			"value": "childType23553509"
+			"value": "childType40723544"
 		},
 		{
-			"id": "5fb04a1f-2447-45cf-9197-39a8826e313b",
+			"id": "a5d1a05c-f6cd-48b1-8f0a-c591c84bc902",
 			"key": "parentContentTypeVariable",
-			"value": "parentType65070125"
+			"value": "parentType84267241"
 		},
 		{
-			"id": "e5147053-b11e-4061-aed3-8c4430010a5e",
+			"id": "c06cde78-4441-44d9-befb-e0c85e30b81f",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "9889b710-0103-47ef-a882-0280a5d55c2c",
+			"id": "5c3942ed-ec44-4572-91b7-b4c6f352545d",
 			"key": "childContentIdentifier",
-			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
+			"value": "69953bca-0384-487c-8288-5118f455c127"
 		},
 		{
-			"id": "1bda3836-b4e2-45ee-91d1-b02e46c1aee2",
+			"id": "d0d81c78-7251-410f-ae89-5b625d36eb7f",
 			"key": "parentContentIdentifier",
-			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
+			"value": "5f487236-01fb-4ff1-a25e-8eecc99b2312"
 		}
 	],
 	"protocolProfileBehavior": {}

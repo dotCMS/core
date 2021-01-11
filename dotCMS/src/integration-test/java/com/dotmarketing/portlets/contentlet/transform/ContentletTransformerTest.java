@@ -29,6 +29,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestDataUtils.TestFile;
 import com.dotcms.repackage.com.google.common.io.Files;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.MapToContentletPopulator;
@@ -48,12 +49,16 @@ import com.dotmarketing.portlets.contentlet.transform.strategy.DefaultTransformS
 import com.dotmarketing.portlets.contentlet.transform.strategy.FileAssetViewStrategy;
 import com.dotmarketing.portlets.contentlet.transform.strategy.StrategyResolverImpl;
 import com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions;
+import com.dotcms.api.APIProvider;
+import com.dotcms.api.APIProvider.Builder;
+import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.workflows.actionlet.copy.AssertionStrategy;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
@@ -81,6 +86,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
 @RunWith(DataProviderRunner.class)
 public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
@@ -310,6 +316,36 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         assertEquals(newContentlet.get(constantVar1), map.get(constantVar1));  
         assertEquals(newContentlet.get(constantVar2), map.get(constantVar2));  
         
+    }
+
+    /**
+     * Given scenario: We create a dotAsset then we transform it and then we call getContentPrintableMap which internally does call the transformers again.
+     * Meaning we're pushing the contentlet twice into the transformers pipeline.
+     * Expected results: We should still get all the file related properties with the expected values.
+     * @throws Exception
+     */
+    @Test
+    public void Test_DotAsset_FileAsset_Pushed_Back_into_Transformer() throws Exception {
+        final User systemUser = APILocator.systemUser();
+        when(Config.CONTEXT.getMimeType(Mockito.endsWith(".jpg"))).thenReturn("image/jpeg");
+        when(Config.CONTEXT.getMimeType(Mockito.endsWith(".jpeg"))).thenReturn("image/jpeg");
+        final Contentlet dotAssetLikeContentlet = TestDataUtils.getDotAssetLikeContentlet();
+        final Contentlet transformedDotAsset = new DotTransformerBuilder().defaultOptions().content(dotAssetLikeContentlet).build().hydrate().get(0);
+        final Map<String, Object> map1 = ContentletUtil.getContentPrintableMap(
+                systemUser, transformedDotAsset, true);
+        Assert.assertTrue(map1.get("asset") instanceof String);
+        Assert.assertNotEquals(map1.get("title"),"unknown");
+        Assert.assertTrue((long)map1.get("size") > 0);
+        Assert.assertNotEquals(map1.get("mimeType"),"unknown");
+
+        final Contentlet fileAssetLikeContentlet = TestDataUtils.getFileAssetContent(true, langId, TestFile.GIF);
+        final Contentlet transformedFileAsset = new DotTransformerBuilder().defaultOptions().content(fileAssetLikeContentlet).build().hydrate().get(0);
+        final Map<String, Object> map2 = ContentletUtil.getContentPrintableMap(systemUser, transformedFileAsset, true);
+        Assert.assertTrue(map2.get("fileAsset") instanceof String);
+        Assert.assertNotEquals(map2.get("title"),"unknown");
+        Assert.assertNotEquals(map2.get("mimeType"),"unknown");
+        Assert.assertTrue((long)map2.get("size") > 0);
+
     }
 
 
