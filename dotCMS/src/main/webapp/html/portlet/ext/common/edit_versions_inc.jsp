@@ -9,7 +9,7 @@
 
 
 <%
-
+	boolean hideBringBack = (boolean)request.getAttribute("hideBringBack");
 	Contentlet cver = null;
 	boolean isContentlet = false;
  	Versionable v = (Versionable)request.getAttribute(com.dotmarketing.util.WebKeys.VERSIONS_INODE_EDIT);
@@ -111,9 +111,11 @@
 			<% if (!working) {  %>
 				<% if(canEdit) {  %>
 					<% if (!live) { %>
-						<a  href="javascript: deleteVersion('<%= vinode%>');"><%= LanguageUtil.get(pageContext, "Delete") %></a> -
+						<a  href="javascript: deleteVersion('<%= vinode%>');"><%= LanguageUtil.get(pageContext, "Delete") %></a>
 					<% } %>
-					<a  href="javascript: selectVersion('<%= vinode %>');"><%= LanguageUtil.get(pageContext, "Bring-Back") %></a>
+					<% if(!hideBringBack) { %>
+						 - <a  href="javascript: selectVersion('<%= vinode %>');"><%= LanguageUtil.get(pageContext, "Bring-Back") %></a>
+					<%}%>
 				<% } %>
 			<% } else { %>
 				<%= LanguageUtil.get(pageContext, "Working-Version") %>
