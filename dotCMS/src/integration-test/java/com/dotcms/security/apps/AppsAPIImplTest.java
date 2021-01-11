@@ -10,6 +10,9 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
+import com.dotcms.content.elasticsearch.business.IndiciesAPI;
+import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.datagen.AppDescriptorDataGen;
 import com.dotcms.datagen.LayoutDataGen;
 import com.dotcms.datagen.PortletDataGen;
@@ -1405,4 +1408,45 @@ public class AppsAPIImplTest {
         assertNotNull(formNotAllNull.toString());
     }
 
+    /**
+     * Method to test {@link AppsAPI#appKeysByHost()}}
+     * Given scenario: Here we deactivate both indices and then call the method in question that was causing an NPE
+     * Expected results: We should get back all the sites even when there are no active indices
+     * @throws DotDataException
+     * @throws IOException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Test_AppKeyByHost_On_Index_Deactivation()
+            throws DotDataException, IOException, DotSecurityException {
+        final ContentletIndexAPI contentletIndexAPI = APILocator.getContentletIndexAPI();
+        final IndiciesAPI indiciesAPI = APILocator.getIndiciesAPI();
+        final IndiciesInfo indiciesInfo = indiciesAPI.loadIndicies();
+        try {
+
+            AppSecrets.Builder builder = new AppSecrets.Builder();
+            final String appKey = "anyAppKey";
+            final AppSecrets bean = builder.withKey(appKey)
+                    .withHiddenSecret("mySecret1", "lol")
+                    .withHiddenSecret("mySecret2", "lol")
+                    .withSecret("boolSecret1", true)
+                    .withSecret("boolSecret2", false)
+                    .build();
+
+            final Host host = new SiteDataGen().nextPersisted();
+
+            contentletIndexAPI.deactivateIndex(indiciesInfo.getWorking());
+            contentletIndexAPI.deactivateIndex(indiciesInfo.getLive());
+
+            final AppsAPI api = APILocator.getAppsAPI();
+            api.saveSecrets(bean,host,APILocator.systemUser());
+            final Map<String, Set<String>> keysByHost = api.appKeysByHost();
+
+            assertTrue(keysByHost.get(host.getIdentifier()).contains(appKey.toLowerCase()));
+
+        } finally {
+            contentletIndexAPI.activateIndex(indiciesInfo.getWorking());
+            contentletIndexAPI.activateIndex(indiciesInfo.getLive());
+        }
+    }
 }

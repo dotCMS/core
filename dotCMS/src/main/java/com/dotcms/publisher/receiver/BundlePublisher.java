@@ -25,6 +25,7 @@ import com.dotcms.publisher.business.EndpointDetail;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
+import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.receiver.handler.IHandler;
@@ -59,6 +60,7 @@ import java.util.Map;
 import java.util.zip.GZIPInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.tools.tar.TarBuffer;
 
@@ -132,6 +134,7 @@ public class BundlePublisher extends Publisher {
             throw new RuntimeException( "need an enterprise license to run this" );
         }
 
+        boolean hasWarnings = false;
         String bundleName = config.getId();
         String bundleID = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
         String bundlePath =
@@ -200,6 +203,16 @@ public class BundlePublisher extends Publisher {
             // Execute the handlers
             for (IHandler handler : handlers) {
                 handler.handle(folderOut);
+
+                if (!handler.getWarnings().isEmpty()){
+                    detail.setStatus(Status.SUCCESS_WITH_WARNINGS.getCode());
+                    if (!hasWarnings) {
+                        detail.setInfo(StringUtils.join(handler.getWarnings(), "\n"));
+                    } else {
+                        detail.setInfo(detail.getInfo() + "\n" + StringUtils.join(handler.getWarnings(), "\n"));
+                    }
+                    hasWarnings = true;
+                }
             }
             HibernateUtil.commitTransaction();
         } catch (Exception e) {
@@ -233,13 +246,17 @@ public class BundlePublisher extends Publisher {
 
         try {
             //Update audit
-            detail.setStatus(PublishAuditStatus.Status.SUCCESS.getCode());
-            detail.setInfo("Everything ok");
+            if (!hasWarnings) {
+                detail.setStatus(PublishAuditStatus.Status.SUCCESS.getCode());
+                detail.setInfo("Everything ok");
+            }
             String endPointId = (String) currentStatusHistory.getEndpointsMap().keySet().toArray()[0];
             currentStatusHistory.addOrUpdateEndpoint(endPointId, endPointId, detail);
             currentStatusHistory.setPublishEnd(new Date());
             currentStatusHistory.setAssets(assetsDetails);
-            auditAPI.updatePublishAuditStatus(bundleID, PublishAuditStatus.Status.SUCCESS, currentStatusHistory);
+            auditAPI.updatePublishAuditStatus(bundleID,
+                    hasWarnings ? Status.SUCCESS_WITH_WARNINGS : PublishAuditStatus.Status.SUCCESS,
+                    currentStatusHistory);
             config.setPublishAuditStatus(auditAPI.getPublishAuditStatus(bundleID));
         } catch (Exception e) {
             Logger.error(BundlePublisher.class, "Unable to update audit table for bundle with ID '" + bundleName + "': " + e.getMessage(), e);

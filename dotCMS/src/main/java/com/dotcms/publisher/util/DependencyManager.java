@@ -1354,7 +1354,13 @@ public class DependencyManager {
 			Set<Contentlet> allContents = new HashSet<Contentlet>(); // we will put here those already added and the ones from lucene queries
 
 			for(String id : cons){
+                if (id == null) {
+                    continue;
+                }
                 final Identifier ident = APILocator.getIdentifierAPI().find(id);
+                if (ident == null || UtilMethods.isEmpty(ident.getId())) {
+                    continue;
+                }
                 final List<Contentlet> contentList = APILocator.getContentletAPI().findAllVersions(ident, false, user, false);
 				allContents.addAll(contentList);
 			}

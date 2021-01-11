@@ -33,7 +33,9 @@ public class PublishAuditStatus implements Serializable {
 		BUNDLE_SAVED_SUCCESSFULLY(14),
 
 		INVALID_TOKEN(15),
-		LICENSE_REQUIRED(16);
+		LICENSE_REQUIRED(16),
+
+        SUCCESS_WITH_WARNINGS(17);
 
 		private int code;
 		private Status(int code) {
