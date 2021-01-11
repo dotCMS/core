@@ -98,7 +98,11 @@ public class LayoutFactoryImpl extends LayoutFactory {
 	@Override
 	protected void saveLayout(Layout layout) throws DotDataException {
 		lc.remove(layout);
-		if(UtilMethods.isSet(layout.getId())){
+		if(UtilMethods.isEmpty(layout.getId())) {
+		    layout.setId(UUID.randomUUID().toString());
+		}
+		boolean exists = new DotConnect().setSQL("select count(*) as test from cms_layout where id = ?").addParam(layout.getId()).getInt("test")>0;
+		if(exists){
 			final String UPDATE_LAYOUT_SQL = "UPDATE cms_layout SET layout_name = ?, description = ?, tab_order = ? WHERE id = ?";
 			new DotConnect().setSQL(UPDATE_LAYOUT_SQL)
 					.addParam(layout.getName())
@@ -108,7 +112,6 @@ public class LayoutFactoryImpl extends LayoutFactory {
 					.loadResult();
 		}else{
 			final String INSERT_LAYOUT_SQL = "INSERT INTO cms_layout(id,layout_name,description,tab_order) values(?,?,?,?)";
-			layout.setId(UUID.randomUUID().toString());
 			new DotConnect().setSQL(INSERT_LAYOUT_SQL)
 					.addParam(layout.getId())
 					.addParam(layout.getName())

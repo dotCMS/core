@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.function.Predicate;
 
 /**
  * Interface to interact with Workflows; can manage, find and import/export workflows, in addition handles the association to content type, fire workflow over the content type, etc.
@@ -563,6 +564,22 @@ public interface WorkflowAPI {
 	 */
 	public List<WorkflowAction> findActions(List<WorkflowStep> steps, User user, Permissionable permissionable) throws DotDataException,
 			DotSecurityException;
+
+	/**
+	 * Returns a list of Workflow Actions under a specific Workflow Scheme that match a given filter in the form of a
+	 * {@link Predicate}. This allows for a more flexible way of filtering required values.
+	 *
+	 * @param scheme       The {@link WorkflowScheme} whose actions will be filtered.
+	 * @param user         The {@link User} performing this action.
+	 * @param actionFilter The Predicate used to filter the Actions based on specific criteria.
+	 *
+	 * @return The list of Workflow Actions that match the given criteria.
+	 *
+	 * @throws DotDataException     An error occurred when interacting with the data source.
+	 * @throws DotSecurityException A user permission problem has occurred.
+	 */
+	List<WorkflowAction> findActions(final WorkflowScheme scheme, final User user, final Predicate<WorkflowAction>
+			actionFilter) throws DotDataException, DotSecurityException;
 
 	/**
 	 * This method associate a list of Workflow Schemes to a Structure

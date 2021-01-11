@@ -405,27 +405,6 @@ public abstract class ContentletFactory {
     
     protected abstract long indexCount(String query);
 
-	/**
-	 * This indexCount will use the thirdparty mechanism to async known when the query is returning something.
-	 * @param query          {@link String} query to test if get results
-	 * @param timeoutMillis  {@link Long}   time in millis to timeout
-	 */
-	protected abstract long indexCount(final String query,
-							  final long timeoutMillis);
-
-	/**
-	 * This indexCount will use the thirdparty mechanism to async known when the query is returning something.
-	 * this one use an async response, the indexCountSuccess will be called if the count is success, otherwise if the indexCountFailure is not null will be invoked.
-	 * @param query
-	 * @param timeoutMillis
-	 * @param indexCountSuccess
-	 * @param indexCountFailure
-	 */
-	protected abstract void indexCount(final String query,
-					final long timeoutMillis,
-					final Consumer<Long> indexCountSuccess,
-					final Consumer<Exception> indexCountFailure);
-    
     /**
      * Gets the top viewed contents identifier and numberOfViews for a particular structure for a specified date interval
      * 

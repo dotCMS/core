@@ -11,7 +11,7 @@ public class SamlConfigurationServiceTest {
     @BeforeClass
     public static void prepare() throws Exception {
         if (!OSGIUtil.getInstance().isInitialized()) {
-            OSGIUtil.getInstance().initializeFramework(Config.CONTEXT);
+            OSGIUtil.getInstance().initializeFramework();
         }
 
         //Setting web app environment

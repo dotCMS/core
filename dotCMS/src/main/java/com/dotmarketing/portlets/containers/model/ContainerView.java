@@ -1,9 +1,6 @@
 package com.dotmarketing.portlets.containers.model;
 
-import com.dotmarketing.beans.Host;
-
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
-
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 
@@ -27,7 +24,6 @@ public class ContainerView {
     public String getPath(){
         if (FileAssetContainerUtil.getInstance().isFileAssetContainer(container)) {
             final FileAssetContainer fileAssetContainer = (FileAssetContainer) container;
-
             return FileAssetContainerUtil.getInstance().getFullPath(fileAssetContainer);
         } else {
             return null;

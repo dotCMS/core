@@ -809,7 +809,7 @@ public class BundleResource {
                         .getInstance().updateAuditTable(endpointId, endpointId, bundleFolder);
 
                 final PublisherConfig config = !previousStatus.getStatus().equals(Status.PUBLISHING_BUNDLE)?
-                        new PublishThread(bundleName, null, endpointId, previousStatus).processBundle(): null;
+                        new PushPublisherJob().processBundle(bundleName, previousStatus): null;
 
                 final String finalStatus = config != null ?
                         config.getPublishAuditStatus().getStatus().name():
@@ -872,8 +872,8 @@ public class BundleResource {
                             .getSubmitter(BUNDLE_THREAD_POOL_SUBMITTER_NAME);
                     dotSubmitter.execute(() -> {
 
-                        final PublisherConfig config = new PublishThread(bundleName, null, endpointId, previousStatus)
-                                .processBundle();
+                        final PublisherConfig config = new PushPublisherJob()
+                                .processBundle(bundleName, previousStatus);
 
                         final String finalStatus =
                                 config != null ? config.getPublishAuditStatus().getStatus().name()

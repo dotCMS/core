@@ -812,12 +812,19 @@ public class PermissionAPITest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Creates a host, a role and a map of permissions over the templateLayouts.
+     * Creates a new template and check that the parentPermissionable of it is the host,
+     * so it inherits the permissions of it.
+     *
+     */
     @Test
-    public void issue1112() throws Exception {
+    public void test_templateLayout_parentPermissionableIsHost() throws Exception {
 
         Host hh = new Host();
         hh.setHostname("issue1112.demo.dotcms.com");
         hh=APILocator.getHostAPI().save(hh, sysuser, false);
+        final Folder folderTheme = new FolderDataGen().site(hh).title("themeFolder"+System.currentTimeMillis()).nextPersisted();
 
         Role nrole=getRole("TestingRole10");
 
@@ -846,7 +853,8 @@ public class PermissionAPITest extends IntegrationTestBase {
             t.setDrawedBody("\"<div id=\"doc3-template\" name=\"globalContainer\"><div id=\"hd-template\"><div class=\"addContainerSpan\"><a href=\"javascript: showAddContainerDialog('hd-template');\" title=\"Add Container\"><span class=\"plusBlueIcon\"></span>Add Container</a></div><h1>Header</h1></div><div id=\"bd-template\"><div id=\"yui-main-template\"><div class=\"yui-b-template\" id=\"splitBody0\"><div class=\"addContainerSpan\"><a href=\"javascript: showAddContainerDialog('splitBody0');\" title=\"Add Container\"><span class=\"plusBlueIcon\"></span>Add Container</a></div><h1>Body</h1></div></div></div><div id=\"ft-template\"><div class=\"addContainerSpan\"><a href=\"javascript: showAddContainerDialog('ft-template');\" title=\"Add Container\"><span class=\"plusBlueIcon\"></span>Add Container</a></div><h1>Footer</h1></div></div>\"");
             t.setiDate(new Date());
             t.setTitle("testTemplate");
-            t.setType("template");
+            t.setTheme(folderTheme.getIdentifier());
+
 
             APILocator.getTemplateAPI().saveTemplate(t,hh, sysuser, false);
 

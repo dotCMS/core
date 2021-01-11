@@ -1,6 +1,15 @@
-package com.dotcms.util.pagination;
+package com.dotcms.rest.api.v1.template;
+
+import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.ContainerView;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 public class TemplateView {
 
@@ -14,6 +23,7 @@ public class TemplateView {
     private final boolean deleted;
     private final boolean live;
     private final boolean locked;
+    private final String lockedBy;
     private final boolean working;
     private final boolean isNew;
     private final boolean hasLiveVersion;
@@ -36,6 +46,8 @@ public class TemplateView {
     private final boolean canRead;
     private final boolean canWrite;
     private final boolean canPublish;
+    private final TemplateLayoutView layout;
+    private final Set<ContainerView> containers;
 
     private TemplateView(final Builder builder) {
 
@@ -49,6 +61,7 @@ public class TemplateView {
         this.deleted = builder.deleted;
         this.live = builder.live;
         this.locked = builder.locked;
+        this.lockedBy = builder.lockedBy;
         this.working = builder.working;
         this.isNew = builder.isNew;
         this.hasLiveVersion = builder.hasLiveVersion;
@@ -71,6 +84,29 @@ public class TemplateView {
         this.canRead = builder.canRead;
         this.canWrite = builder.canWrite;
         this.canPublish = builder.canPublish;
+        this.layout = builder.layout;
+        this.containers = builder.containers;
+    }
+
+    public Map<String, ContainerView> getContainers() {
+
+        final Map<String, ContainerView> containerMap = new HashMap<>();
+
+        containers.stream().forEach(containerView -> {
+
+            final Container container = containerView.getContainer();
+            final String containerId  = container instanceof FileAssetContainer?
+                    FileAssetContainerUtil.getInstance().getFullPath((FileAssetContainer) container):
+                    container.getIdentifier();
+
+            containerMap.put(containerId, containerView);
+        });
+
+        return containerMap;
+    }
+
+    public TemplateLayoutView getLayout() {
+        return layout;
     }
 
     public String getIdentifier() {
@@ -112,6 +148,8 @@ public class TemplateView {
     public boolean isLocked() {
         return locked;
     }
+
+    public String getLockedBy(){ return lockedBy;}
 
     public boolean isWorking() {
         return working;
@@ -213,6 +251,7 @@ public class TemplateView {
         private  boolean deleted;
         private  boolean live;
         private  boolean locked;
+        private String lockedBy;
         private  boolean working;
         private  boolean isNew;
         private  boolean hasLiveVersion;
@@ -235,6 +274,20 @@ public class TemplateView {
         private  boolean canRead;
         private  boolean canWrite;
         private  boolean canPublish;
+        private  TemplateLayoutView layout;
+        private  Set<ContainerView> containers;
+
+        public Builder containers (final Set<ContainerView> containers) {
+
+            this.containers = containers;
+            return this;
+        }
+
+        public Builder layout (final TemplateLayoutView layout) {
+
+            this.layout = layout;
+            return this;
+        }
 
         public Builder identifier (final String identifier) {
 
@@ -285,6 +338,11 @@ public class TemplateView {
 
         public Builder  locked (final boolean locked) {
             this.locked = locked;
+            return this;
+        }
+
+        public Builder lockedBy(final String lockedBy){
+            this.lockedBy = lockedBy;
             return this;
         }
 

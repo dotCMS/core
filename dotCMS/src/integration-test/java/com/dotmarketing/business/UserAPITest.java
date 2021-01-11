@@ -1095,4 +1095,34 @@ public class UserAPITest extends IntegrationTestBase {
 
 	}
 
+	/**
+	 * Method to test: {@link User#getUserRole()}
+	 * Given Scenario: When creating a new user an UserRole must be created, get that UserRole.
+	 * ExpectedResult: UserRole created for the new user.
+	 *
+	 */
+	@Test
+	public void test_getUserRole_success() throws Exception{
+  		final User newUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
+
+  		final Role userRole = newUser.getUserRole();
+
+  		assertNotNull(userRole);
+		assertEquals(newUser.getUserId(),userRole.getRoleKey());
+	}
+
+	/**
+	 * Method to test: {@link User#getUserRole()}
+	 * Given Scenario: Try to get the UserRole of an user that does not exist.
+	 * ExpectedResult: UserRole must be null
+	 *
+	 */
+	@Test
+	public void test_getUserRole_null() throws Exception{
+		final User newUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).next();
+
+		final Role userRole = newUser.getUserRole();
+
+		assertNull(userRole);
+	}
 }

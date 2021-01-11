@@ -156,7 +156,9 @@ public class ContentTool implements ViewTool {
 	    try {
     	    PaginatedArrayList<ContentMap> ret = new PaginatedArrayList<ContentMap>();
 
-    	    PaginatedArrayList<Contentlet> cons = ContentUtils.pull(addDefaultsToQuery(query), offset, limit, sort, user, tmDate);
+    	    PaginatedArrayList<Contentlet> cons = ContentUtils.pull(
+    	    		ContentUtils.addDefaultsToQuery(query, EDIT_OR_PREVIEW_MODE, req),
+					offset, limit, sort, user, tmDate);
     	    for(Contentlet cc : cons) {
     	    	ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
     	    }
@@ -225,7 +227,9 @@ public class ContentTool implements ViewTool {
 	public PaginatedContentList<ContentMap> pullPerPage(String query, int currentPage, int contentsPerPage, String sort){
 		PaginatedContentList<ContentMap> ret = new PaginatedContentList<ContentMap>();
 		try {
-    	    PaginatedArrayList<Contentlet> cons = ContentUtils.pullPerPage(addDefaultsToQuery(query), currentPage, contentsPerPage, sort, user, tmDate);
+    	    PaginatedArrayList<Contentlet> cons = ContentUtils.pullPerPage(
+    	    		ContentUtils.addDefaultsToQuery(query, EDIT_OR_PREVIEW_MODE, req), currentPage, contentsPerPage, sort,
+					user, tmDate);
     	    for(Contentlet cc : cons) {
     	    	ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
     	    }
@@ -280,7 +284,7 @@ public class ContentTool implements ViewTool {
 	 */
 	public List<ContentletSearch> query(String query, int limit, String sort){
 	    try {
-	        return ContentUtils.query(addDefaultsToQuery(query), limit, user, sort);
+	        return ContentUtils.query(ContentUtils.addDefaultsToQuery(query, EDIT_OR_PREVIEW_MODE, req), limit, user, sort);
 	    }
 	    catch(Throwable ex) {
             if(Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
@@ -383,7 +387,7 @@ public class ContentTool implements ViewTool {
 
             final List<Contentlet> cons = ContentUtils
                     .pullRelated(relationshipName, contentletIdentifier,
-                            condition == null ? condition : addDefaultsToQuery(condition),
+                            condition == null ? condition : ContentUtils.addDefaultsToQuery(condition, EDIT_OR_PREVIEW_MODE, req),
                             pullParents,
                             limit, sort, user, tmDate, language.getId(),
                             EDIT_OR_PREVIEW_MODE ? null : true);
@@ -444,7 +448,7 @@ public class ContentTool implements ViewTool {
             final boolean pullParents = APILocator.getRelationshipAPI().isParentField(relationship, field);
             List<Contentlet> cons = ContentUtils
                     .pullRelatedField(relationship, contentletIdentifier,
-                            addDefaultsToQuery(condition), limit, offset, sort, user, tmDate, pullParents,
+							ContentUtils.addDefaultsToQuery(condition, EDIT_OR_PREVIEW_MODE, req), limit, offset, sort, user, tmDate, pullParents,
                             language.getId(), EDIT_OR_PREVIEW_MODE ? null : true);
 
             for (Contentlet cc : cons) {
@@ -542,34 +546,6 @@ public class ContentTool implements ViewTool {
 		return pullPersonalized(query, limit, 0, null);
 	}
 	
-	private String addDefaultsToQuery(String query){
-		String q = "";
-
-		if(query != null)
-			q = query;
-		else
-			query = q;
-
-		if(!query.contains("languageId")){
-			q += " +languageId:" + WebAPILocator.getLanguageWebAPI().getLanguage(req).getId();
-		}
-
-	  	if(!(query.contains("live:") || query.contains("working:") )){
-			if(EDIT_OR_PREVIEW_MODE && !TimeMachineUtil.isRunning()){
-				q +=" +working:true ";
-			}else{
-				q +=" +live:true ";
-			}
-
-	  	}
-
-
-	  	if(!UtilMethods.contains(query,"deleted:")){
-			q+=" +deleted:false ";
-		}
-	  	return q;
-	}
-
     private String addPersonalizationToQuery(String query) {
         Optional<Visitor> opt = APILocator.getVisitorAPI().getVisitor(this.req);
         if (!opt.isPresent() || query == null) {

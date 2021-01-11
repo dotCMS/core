@@ -26,7 +26,7 @@ public class IdentityProviderConfigurationFactoryTest {
         IntegrationTestInitService.getInstance().init();
 
         if (!OSGIUtil.getInstance().isInitialized()) {
-            OSGIUtil.getInstance().initializeFramework(Config.CONTEXT);
+            OSGIUtil.getInstance().initializeFramework();
         }
     }
 
