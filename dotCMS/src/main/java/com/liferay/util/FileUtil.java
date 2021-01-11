@@ -239,6 +239,9 @@ public class FileUtil {
 		try (final ReadableByteChannel inputChannel = Channels.newChannel(Files.newInputStream(source.toPath()));
 			 final WritableByteChannel outputChannel = Channels.newChannel(destination)){
 			FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
+		} catch(IOException e) {
+			Logger.error(FileUtil.class, e);
+			throw e;
 		}
 	}
 

@@ -19,7 +19,6 @@ import java.util.zip.GZIPOutputStream;
 public class TarGzipPublisherOutput extends PublisherOutput{
     private File tarGzipFile;
     private TarArchiveOutputStream tarArchiveOutputStream;
-    private TarGzipPublisherOutputStream lastWriter;
 
     public TarGzipPublisherOutput(final PublisherConfig publisherConfig) throws IOException {
         super(publisherConfig);
@@ -40,13 +39,7 @@ public class TarGzipPublisherOutput extends PublisherOutput{
 
     @Override
     protected OutputStream innerAddFile(final File file) {
-
-        if (lastWriter != null && !lastWriter.isClosed()) {
-            throw new IllegalStateException(String.format("Should closed before writer first: %s -> %b",
-                    lastWriter.file.getPath(), lastWriter.isClosed()));
-        }
-
-        return lastWriter = new TarGzipPublisherOutputStream(file);
+        return new TarGzipPublisherOutputStream(file);
     }
 
     @Override

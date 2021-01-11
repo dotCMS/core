@@ -25,11 +25,16 @@ public abstract class PublisherOutput implements Closeable {
 
     public abstract File getFile();
 
-    public final OutputStream addFile(final File file) throws IOException {
+    public final synchronized OutputStream addFile(final File file) throws IOException {
         DotPreconditions.checkArgument(file != null);
-        Logger.info(this, String.format("Add File path %s", file != null ? file.getPath() : "file is null"));
-        files.add(file);
-        return innerAddFile(file);
+
+        try {
+            files.add(file);
+            return innerAddFile(file);
+        } catch(IOException e) {
+            Logger.error(this.getClass(), e);
+            throw e;
+        }
     }
 
 
@@ -44,14 +49,8 @@ public abstract class PublisherOutput implements Closeable {
     public boolean exists(final File searchedFile) {
         return files
                 .stream()
-                .map(file -> {
-                    Logger.info(this, String.format("File path %s", file != null ? file.getPath() : "file is null"));
-                    return file.getPath();
-                })
-                .anyMatch(path -> {
-                    Logger.info(this, String.format("searchedFile path %s", searchedFile != null ? searchedFile.getPath() : "searchedFile is null"));
-                    return searchedFile.getPath().equals(path);
-                });
+                .map(file -> file.getPath())
+                .anyMatch(path -> searchedFile.getPath().equals(path));
     }
 
     public abstract void delete(final File f);
