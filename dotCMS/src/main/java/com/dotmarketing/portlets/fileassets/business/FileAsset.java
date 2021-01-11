@@ -11,7 +11,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.util.ImageUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
@@ -30,7 +29,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Optional;
 
-public class FileAsset extends Contentlet implements IFileAsset, Loadable {
+public class FileAsset extends Contentlet implements IFileAsset {
 
     private File file;
 
@@ -50,9 +49,6 @@ public class FileAsset extends Contentlet implements IFileAsset, Loadable {
 		super(contentlet);
 		final File file = contentlet.getFileAsset();
 		setBinary(FileAssetAPI.BINARY_FIELD, file);
-		this.fileDimension = contentlet.fileDimension;
-		this.underlyingFileName = contentlet.underlyingFileName;
-		this.fileSizeInternal = contentlet.fileSizeInternal;
 	}
 
 	/**
@@ -100,26 +96,11 @@ public class FileAsset extends Contentlet implements IFileAsset, Loadable {
 		} else {
 			return getFolder();
 		}
-
 	}
-
-	private long fileSizeInternal = 0;
 
 	public long getFileSize() {
-	    //TODO: WE only need the Metadata Map to extract the MD
-		this.fileSizeInternal =	Try.of(() -> Integer.parseInt(getMetaDataMap().get("length").toString())).getOrElse(0);
-		if(this.fileSizeInternal == 0) {
-		   //TODO: Remove any code hooked up with the file. It it not necessary
-		   this.fileSizeInternal = computeFileSize(getFileAsset());
-		}
-		return this.fileSizeInternal > 0 ? this.fileSizeInternal : 0;
+		return 	Try.of(() -> Integer.parseInt(getMetaDataMap().get("length").toString())).getOrElse(0);
 	}
-
-    private long computeFileSize(final File fileAsset){
-	   return (fileSizeInternal = fileAsset == null ? 0 : fileAsset.length());
-    }
-
-	private Dimension fileDimension = null;
 
 	public int getHeight() {
 		final Dimension fileDimension = lazyComputeDimensions.get();
@@ -131,61 +112,23 @@ public class FileAsset extends Contentlet implements IFileAsset, Loadable {
 		return fileDimension == null ? 0 : fileDimension.width;
 	}
 
-	private Dimension computeFileDimension(final File file) {
-        //TODO: WE only need the Metadata Map to extract the MD no need to interact with the File Asset
-		final int height = Try.of(() -> Integer.parseInt(getMetaDataMap().get("height").toString())).getOrElse(0);
-		final int width = Try.of(() -> Integer.parseInt(getMetaDataMap().get("width").toString())).getOrElse(0);
-
-        if(height > 0 && width > 0){
-           //TODO: Remove this dimension thing
-           //Refactor so we only use the metadata map
-           fileDimension = new Dimension(width, height);
-           Logger.debug(FileAsset.class,"Dimensions already computed and extracted from metadata.");
-        }
-
-		if (fileDimension == null) {
-			try {
-    			return (fileDimension = ImageUtil.getInstance().getDimension(file));
-			} catch (Throwable e) {
-				Logger.debug(this,
-						"Error computing dimensions for file asset with id: " + getIdentifier(), e);
-			}
-		}
-		return fileDimension;
-	}
-
     //Lazy Suppliers are memoized. Meaning that this truly guarantees the computation takes place once.
-    private Lazy<Dimension> lazyComputeDimensions = Lazy.of(() -> computeFileDimension(getFileAsset()));
+	private Lazy<Dimension> lazyComputeDimensions = Lazy.of(() -> Try.of(() -> {
+			final Map<String, Serializable> metaDataMap = getMetaDataMap();
+			final int height = Integer.parseInt(metaDataMap.get("height").toString());
+			final int width = Integer.parseInt(metaDataMap.get("width").toString());
+			return new Dimension(width, height);
+		}
+	).getOrElse(new Dimension(0, 0)));
 
   /**
-   * This access the physical file on disk
-   * 
+   * This gives you access to the physical file on disk.
    * @return
    */
-  private  String underlyingFileName = null;
-
   public String getUnderlyingFileName() {
-	 if (underlyingFileName != null) {
-		return underlyingFileName;
-	 }
-	 this.underlyingFileName = computeUnderlyingFileName(getFileAsset());
-	 return this.underlyingFileName;
+	  return Try.of(() -> getMetaDataMap().get("title").toString())
+			  .getOrNull();
   }
-
-	/**
-	 *
-	 * @return
-	 */
-	private String computeUnderlyingFileName(final File fileAsset) {
-		//TODO: WE only need the Metadata Map to extract the MD no need to interact with the File Asset
-		this.underlyingFileName = Try.of(() -> getMetaDataMap().get("title").toString())
-				.getOrNull();
-		if (null != this.underlyingFileName) {
-			return this.underlyingFileName;
-		}
-		//Remove  any interaction with  fileAsset
-		return (this.underlyingFileName = fileAsset != null ? fileAsset.getName() : null);
-	}
 
 	/***
 	 * This access the logical file name stored on the table Identifier
@@ -383,29 +326,6 @@ public class FileAsset extends Contentlet implements IFileAsset, Loadable {
 	@Override
 	public String toString() {
 		return this.getFileName();
-	}
-
-	@Override
-	public boolean isLoaded() {
-		return null != fileDimension && null != underlyingFileName && fileSizeInternal > 0;
-	}
-
-	@Override
-	public void load() {
-		if (!isLoaded()) {
-			final File file = getFileAsset();
-			if (null != file) {
-				if (null == fileDimension) {
-					computeFileDimension(file);
-				}
-				if (null == underlyingFileName) {
-					computeUnderlyingFileName(file);
-				}
-				if (0 == fileSizeInternal) {
-					computeFileSize(file);
-				}
-			}
-		}
 	}
 
 }
