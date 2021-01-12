@@ -93,9 +93,9 @@ public class BundlerUtil {
 	public static void writeBundleXML(final PublisherConfig config, final BundlerOutput output){
 		getBundleRoot(config);
 
-		final File bundleXmlFile = new File(File.separator + "bundle.xml");
+		final String bundleXmlFilePath = File.separator + "bundle.xml";
 
-		try (final OutputStream outputStream = output.addFile(bundleXmlFile)) {
+		try (final OutputStream outputStream = output.addFile(bundleXmlFilePath)) {
             objectToXML(config, outputStream);
         } catch ( IOException e ) {
             Logger.error( BundlerUtil.class, e.getMessage(), e );
@@ -109,8 +109,6 @@ public class BundlerUtil {
      * @return The Bundle configuration read from the mail Bundle xml file
      */
     public static PublisherConfig readBundleXml(PublisherConfig config){
-		getBundleRoot(config);
-
 		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getName();
 
 		File xml = new File(bundlePath + File.separator + "bundle.xml");

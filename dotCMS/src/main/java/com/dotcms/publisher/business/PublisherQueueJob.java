@@ -25,6 +25,7 @@ import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
 import com.dotcms.publishing.output.BundlerOutput;
+import com.dotcms.publishing.output.DirectoryBundlerOutput;
 import com.dotcms.publishing.output.TarGzipBundlerOutput;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.com.google.common.collect.Sets;
@@ -183,10 +184,8 @@ public class PublisherQueueJob implements StatefulJob {
 						pconf = setUpConfigForPublisher(pconf);
 						PushPublishLogger.log(this.getClass(), "Pre-publish work complete.");
 
-						try {
-							final TarGzipBundlerOutput tarGzipPublisherOutput = new TarGzipBundlerOutput(pconf);
-							APILocator.getPublisherAPI().publish(pconf, tarGzipPublisherOutput);
-							tarGzipPublisherOutput.close();
+						try (final DirectoryBundlerOutput bundlerOutput = new DirectoryBundlerOutput(pconf)){
+							APILocator.getPublisherAPI().publish(pconf, bundlerOutput);
 						} catch (final DotPublishingException e) {
 							/*
 							If we are getting errors creating the bundle we should stop trying to publish it, this is not just a connection error,
