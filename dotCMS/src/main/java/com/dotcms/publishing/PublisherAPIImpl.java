@@ -9,7 +9,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
-import com.dotcms.publishing.output.BundlerOutput;
+import com.dotcms.publishing.output.BundleOutput;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.pushpublish.PushPublishEndEvent;
 import com.dotcms.system.event.local.type.pushpublish.PushPublishStartEvent;
@@ -33,14 +33,14 @@ public class PublisherAPIImpl implements PublisherAPI {
 
 
     @Override
-    final public PublishStatus publish ( PublisherConfig config , BundlerOutput output) throws DotPublishingException {
+    final public PublishStatus publish ( PublisherConfig config , BundleOutput output) throws DotPublishingException {
 
         return publish( config, new PublishStatus(), output );
     }
 
     @CloseDBIfOpened
     @Override
-    final public PublishStatus publish ( PublisherConfig config, PublishStatus status, BundlerOutput output) throws DotPublishingException {
+    final public PublishStatus publish ( PublisherConfig config, PublishStatus status, BundleOutput output) throws DotPublishingException {
 
         PushPublishLogger.log( this.getClass(), "Started Publishing Task", config.getId() );
 

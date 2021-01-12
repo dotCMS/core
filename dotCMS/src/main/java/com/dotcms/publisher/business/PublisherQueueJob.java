@@ -24,9 +24,8 @@ import com.dotcms.publishing.IPublisher;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
-import com.dotcms.publishing.output.BundlerOutput;
-import com.dotcms.publishing.output.DirectoryBundlerOutput;
-import com.dotcms.publishing.output.TarGzipBundlerOutput;
+import com.dotcms.publishing.output.BundleOutput;
+import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.com.google.common.collect.Sets;
 import com.dotcms.rest.RestClientBuilder;
@@ -102,7 +101,7 @@ public class PublisherQueueJob implements StatefulJob {
 	/**
 	 * Reads from the publishing queue table and depending of the publish date
 	 * will send a bundle to publish (see
-	 * {@link com.dotcms.publishing.PublisherAPI#publish(PublisherConfig, BundlerOutput)}).
+	 * {@link com.dotcms.publishing.PublisherAPI#publish(PublisherConfig, BundleOutput)}).
 	 *
 	 * @param jobExecutionContext
 	 *            - Context Containing the current job context information (the
@@ -184,7 +183,7 @@ public class PublisherQueueJob implements StatefulJob {
 						pconf = setUpConfigForPublisher(pconf);
 						PushPublishLogger.log(this.getClass(), "Pre-publish work complete.");
 
-						try (final DirectoryBundlerOutput bundlerOutput = new DirectoryBundlerOutput(pconf)){
+						try (final DirectoryBundleOutput bundlerOutput = new DirectoryBundleOutput(pconf)){
 							APILocator.getPublisherAPI().publish(pconf, bundlerOutput);
 						} catch (final DotPublishingException e) {
 							/*

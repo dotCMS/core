@@ -12,12 +12,12 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.Collection;
 
-public class DirectoryBundlerOutput extends BundlerOutput {
+public class DirectoryBundleOutput extends BundleOutput {
     private String lastFilePath;
     private File lastFile;
     private File directoryRootPath;
 
-    public DirectoryBundlerOutput(final PublisherConfig publisherConfig) {
+    public DirectoryBundleOutput(final PublisherConfig publisherConfig) {
         super(publisherConfig);
         directoryRootPath = BundlerUtil.getBundleRoot( publisherConfig );
     }
