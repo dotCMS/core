@@ -6,7 +6,7 @@ import com.dotmarketing.image.filter.PDFImageFilter;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporter;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporterException;
 import com.dotmarketing.util.Logger;
-
+import com.dotmarketing.util.UtilMethods;
 import java.io.File;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -39,15 +39,16 @@ public class ImageFilterExporter implements BinaryContentExporter {
 
         try {
 
-            Map<String,Class> filters = new ImageFilterApiImpl().resolveFilters(parameters);
+            final Map<String,Class> filters = new ImageFilterApiImpl().resolveFilters(parameters);
             
-            // run pdf filter first (if a pdf)
-            if(!filters.isEmpty() && file.getName().endsWith(".pdf") && !filters.values().contains(PDFImageFilter.class)) {
-                file = new PDFImageFilter().runFilter(file, parameters);
-            }
             
             parameters.put("filter", filters.keySet().toArray(new String[filters.size()]));
             parameters.put("filters", filters.keySet().toArray(new String[filters.size()]));
+            
+            // run pdf filter first (if a pdf)
+            if(!filters.isEmpty() && "pdf".equals(UtilMethods.getFileExtension(file.getName())) && !filters.values().contains(PDFImageFilter.class)) {
+                file = new PDFImageFilter().runFilter(file, parameters);
+            }
             
             for (final Entry<String, Class> filter : filters.entrySet()) {
                 try {
