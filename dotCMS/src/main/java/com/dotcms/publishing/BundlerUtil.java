@@ -91,8 +91,6 @@ public class BundlerUtil {
      * @param output
      */
 	public static void writeBundleXML(final PublisherConfig config, final BundleOutput output){
-		getBundleRoot(config);
-
 		final String bundleXmlFilePath = File.separator + "bundle.xml";
 
 		try (final OutputStream outputStream = output.addFile(bundleXmlFilePath)) {
