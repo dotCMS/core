@@ -12,10 +12,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
-public abstract class BundlerOutput implements Closeable {
+public abstract class BundleOutput implements Closeable {
     protected PublisherConfig publisherConfig;
 
-    public BundlerOutput(final PublisherConfig publisherConfig){
+    public BundleOutput(final PublisherConfig publisherConfig){
         this.publisherConfig = publisherConfig;
     }
 

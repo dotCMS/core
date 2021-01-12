@@ -2,7 +2,7 @@ package com.dotcms.publishing;
 
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.publisher.business.DotPublisherException;
-import com.dotcms.publishing.output.BundlerOutput;
+import com.dotcms.publishing.output.BundleOutput;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -90,7 +90,7 @@ public class BundlerUtil {
      * @param config
      * @param output
      */
-	public static void writeBundleXML(final PublisherConfig config, final BundlerOutput output){
+	public static void writeBundleXML(final PublisherConfig config, final BundleOutput output){
 		getBundleRoot(config);
 
 		final String bundleXmlFilePath = File.separator + "bundle.xml";
