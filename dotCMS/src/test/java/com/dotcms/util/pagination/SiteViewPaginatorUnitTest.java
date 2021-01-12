@@ -4,7 +4,6 @@ import static java.util.Collections.emptyMap;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -16,7 +15,6 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UUIDUtil;
@@ -47,7 +45,6 @@ public class SiteViewPaginatorUnitTest {
         final User user = mockAdminUser();
         final List<String> allSites = mockAllSitesIdentifiers(max);
         final Set<String> sitesWithIntegrations = mockSitesWithIntegrations(allSites, 10);
-        //System.out.println("Sites with integrations: ");
         sitesWithIntegrations.forEach(System.out::println);
         final HostAPI hostAPI = mock(HostAPI.class);
         final long time = System.currentTimeMillis();
@@ -97,9 +94,7 @@ public class SiteViewPaginatorUnitTest {
         final HostAPI hostAPI = mock(HostAPI.class);
         final List<String> allSitesSortedIdentifiers = new LinkedList<>();
         final long time = System.currentTimeMillis();
-        //final Map<String,String> debugInfo = new TreeMap<>();
         int i = 0;
-        //System.out.println("Site names: ");
         final List<Host> hosts = new ArrayList<>();
         for(final String identifier:allSites){
             final Host host;
