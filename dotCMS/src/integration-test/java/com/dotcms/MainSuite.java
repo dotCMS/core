@@ -365,7 +365,8 @@ import org.junit.runners.Suite.SuiteClasses;
         AppsInterpolationTest.class,
         com.dotcms.rest.api.v1.template.TemplateResourceTest.class,
         Task201102UpdateColumnSitelicTableTest.class,
-        DependencyManagerTest.class
+        DependencyManagerTest.class,
+        com.dotcms.rest.api.v1.versionable.VersionableResourceTest.class
 })
 public class MainSuite {
 

@@ -6,7 +6,7 @@ import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLList.list;
 import static graphql.schema.GraphQLNonNull.nonNull;
 import static graphql.schema.GraphQLObjectType.newObject;
-
+import com.dotcms.concurrent.Debouncer;
 import com.dotcms.graphql.InterfaceType;
 import com.dotcms.graphql.datafetcher.ContentletDataFetcher;
 import com.dotcms.util.LogTime;
@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 public class GraphqlAPIImpl implements GraphqlAPI {
 
@@ -71,22 +72,43 @@ public class GraphqlAPIImpl implements GraphqlAPI {
     public GraphQLSchema getSchema() throws DotDataException {
         Optional<GraphQLSchema> schema = schemaCache.getSchema();
 
-        if(!schema.isPresent()) {
+        if(schema.isPresent()) {
+            return schema.get();
+        }
+        synchronized (this) {
+            schema = schemaCache.getSchema();
+            if(schema.isPresent()) {
+                return schema.get();
+            }
             final GraphQLSchema generatedSchema = generateSchema();
             schemaCache.putSchema(generatedSchema);
             return generatedSchema;
-        } else {
-            return schema.get();
         }
+
     }
+
+    final Debouncer debouncer = new Debouncer();
+    final Runnable removeSchema = ()->{schemaCache.removeSchema();};
 
     /**
      * Nullifies the schema so it is regenerated next time it is fetched
+     * This method is debounced for 5 seconds to prevent overloading when
+     * content types are saved.
      */
     @Override
     public void invalidateSchema() {
-        schemaCache.removeSchema();
+        final int delay = Config.getIntProperty("GRAPHQL_SCHEMA_DEBOUNCE_DELAY_MILLIS", 5000);
+        
+        if(delay<=0) {
+            removeSchema.run();
+            return;
+        }
+
+        debouncer.debounce("invalidateGraphSchema", removeSchema , delay, TimeUnit.MILLISECONDS);;
+
+
     }
+
 
     @Override
     public void printSchema() {

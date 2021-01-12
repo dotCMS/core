@@ -1070,8 +1070,17 @@ public class DependencyManager {
 	private void processContentDependency(final String contentId)
 			throws  DotBundleException {
 
+		if (contentId == null) {
+			return;
+		}
+
 		try {
 			final Identifier ident = APILocator.getIdentifierAPI().find(contentId);
+
+			if (ident == null || UtilMethods.isEmpty(ident.getId())) {
+				return;
+			}
+
 			final List<Contentlet> contentList =
 					APILocator.getContentletAPI().findAllVersions(ident, false, user, false);
 
@@ -1213,7 +1222,7 @@ public class DependencyManager {
 			for (final String lang : languages) {
 				final String keyValueQuery = "+contentType:" + LanguageVariableAPI.LANGUAGEVARIABLE + " +languageId:" + lang;
 				final List<Contentlet> listKeyValueLang = APILocator.getContentletAPI()
-						.search(keyValueQuery,0, -1, StringPool.BLANK, user, false);// search for language variables
+						.search(keyValueQuery, 0, -1, StringPool.BLANK, user, false);// search for language variables
 				// if there is any language variable and we accept to push content type, add the content type
 				if (!listKeyValueLang.isEmpty() && !publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.CONTENT_TYPE.getType())) {
 					final Structure structure = CacheLocator.getContentTypeCache()
@@ -1221,9 +1230,9 @@ public class DependencyManager {
 					contentTypes.addOrClean(structure.getIdentifier(), structure.getModDate());
 					dependencyProcessor.put(structure.getIdentifier(), AssetTypes.CONTENT_TYPE);
 				}
-				if(!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.CONTENTLET.getType())) {
+				if (!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.CONTENTLET.getType())) {
 					for (final Contentlet keyValue : listKeyValueLang) {// add the language variable
-						if(!publisherFilter.doesExcludeDependencyQueryContainsContentletId(keyValue.getIdentifier())) {
+						if (!publisherFilter.doesExcludeDependencyQueryContainsContentletId(keyValue.getIdentifier())) {
 							contents.addOrClean(keyValue.getIdentifier(), keyValue.getModDate());
 						}
 					}

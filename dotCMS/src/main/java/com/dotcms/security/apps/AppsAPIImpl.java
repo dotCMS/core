@@ -33,9 +33,11 @@ import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
+import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple2;
+import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -139,10 +141,11 @@ public class AppsAPIImpl implements AppsAPI {
      * @throws DotDataException
      */
     private Set<String> getValidSites() throws DotSecurityException, DotDataException {
-        return contentletAPI
-                .searchIndex("+contentType:Host +working:true -deleted:true ", 0, 0, null,
-                        APILocator.systemUser(), false).stream()
-                .map(ContentletSearch::getIdentifier).collect(Collectors.toSet());
+        return Stream.concat(
+                Stream.of(APILocator.systemHost()),
+                hostAPI.findAllFromCache(APILocator.systemUser(), false).stream()
+        ).filter(host -> Try.of(() -> !host.isArchived()).getOrElse(false)).map(Host::getIdentifier)
+                .map(String::toLowerCase).collect(Collectors.toSet());
     }
 
     /**

@@ -6,6 +6,8 @@ import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableSet;
+import java.util.Set;
 
 /**
  * @author Jason Tesser
@@ -14,7 +16,8 @@ import com.dotmarketing.util.UtilMethods;
 public class HostCacheImpl extends HostCache {
 	
 	final String DEFAULT_HOST = "_dotCMSDefaultHost_";
-	
+	final String SITES = "_dotSites_";
+
 	private DotCacheAdministrator cache;
 	
 
@@ -41,13 +44,29 @@ public class HostCacheImpl extends HostCache {
     		String key3 =DEFAULT_HOST;
         	cache.put(key3,host,PRIMARY_GROUP);
         }
-        
 
 
 		return host;
 		
 	}
-	
+
+	protected void addAll(final Iterable<Host> hosts){
+        for(final Host host:hosts){
+           add(host);
+        }
+
+		cache.put(SITES, ImmutableSet.copyOf(hosts), PRIMARY_GROUP);
+    }
+
+
+	protected Set<Host> getAllSites(){
+		return (Set<Host>) cache.getNoThrow(SITES, PRIMARY_GROUP);
+	}
+
+	private void clearSitesList(){
+		cache.remove(SITES, PRIMARY_GROUP);
+	}
+
 	protected Host getHostByAlias(String key) {
 		Host host = null;
     	try{
@@ -112,6 +131,7 @@ public class HostCacheImpl extends HostCache {
     	} 
     		        	
     	clearAliasCache();
+    	clearSitesList();
     	 
     }
 
