@@ -103,7 +103,8 @@ describe('DotTemplateThumbnailFieldComponent', () => {
             component.asset = {
                 ...dotcmsContentletMock,
                 assetVersion: 'path/to/something.png',
-                name: 'Something'
+                name: 'Something',
+                inode: '123inode'
             };
 
             fixture.detectChanges();
@@ -113,7 +114,7 @@ describe('DotTemplateThumbnailFieldComponent', () => {
                 jasmine.objectContaining({ accept: 'image/*', style: 'height: 7.14rem;' })
             );
 
-            expect(field.nativeNode.previewImageUrl).toBe('path/to/something.png');
+            expect(field.nativeNode.previewImageUrl).toBe('/dA/123inode');
             expect(field.nativeNode.previewImageName).toBe('Something');
         });
 

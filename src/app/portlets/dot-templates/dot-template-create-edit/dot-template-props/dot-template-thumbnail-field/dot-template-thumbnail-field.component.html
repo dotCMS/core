@@ -1,7 +1,7 @@
 <dot-binary-file
     (dotValueChange)="onThumbnailChange($event)"
     [disabled]="loading"
-    [previewImageUrl]="asset?.assetVersion"
+    [previewImageUrl]="asset?.inode ? '/dA/' + asset?.inode : null"
     [previewImageName]="asset?.name"
     [style.height.rem]="asset ? '7.14' : '3.35'"
     accept="image/*"
