@@ -406,10 +406,8 @@ public class BundleAPIImpl implements BundleAPI {
         final PushPublisherConfig pushPublisherConfig = new PushPublisherConfig(bundle);
         pushPublisherConfig.setPublishers(Arrays.asList(GenerateBundlePublisher.class));
 
-        try {
-			final TarGzipBundlerOutput tarGzipPublisherOutput = new TarGzipBundlerOutput(pushPublisherConfig);
-            APILocator.getPublisherAPI().publish(pushPublisherConfig, tarGzipPublisherOutput);
-			tarGzipPublisherOutput.close();
+        try (final TarGzipBundlerOutput tarGzipPublisherOutput = new TarGzipBundlerOutput(pushPublisherConfig)) {
+			APILocator.getPublisherAPI().publish(pushPublisherConfig, tarGzipPublisherOutput);
             return tarGzipPublisherOutput.getFile();
         }
         catch(final Exception e) {

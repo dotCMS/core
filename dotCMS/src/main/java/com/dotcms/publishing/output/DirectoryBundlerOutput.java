@@ -2,14 +2,19 @@ package com.dotcms.publishing.output;
 
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.PublisherConfig;
+import com.liferay.util.FileUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.util.Collection;
 
 public class DirectoryBundlerOutput extends BundlerOutput {
+    private String lastFilePath;
+    private File lastFile;
     private File directoryRootPath;
 
     public DirectoryBundlerOutput(final PublisherConfig publisherConfig) {
@@ -18,13 +23,25 @@ public class DirectoryBundlerOutput extends BundlerOutput {
     }
 
     @Override
-    protected OutputStream innerAddFile(final File file) throws IOException {
-        final File parent = file.getParentFile();
+    public Collection<File> getFiles(final FileFilter fileFilter){
+        return FileUtil.listFilesRecursively(directoryRootPath, fileFilter);
+    }
 
-        final File dir = getRealFile(parent);
-        dir.mkdirs();
+    @Override
+    public long lastModified(String filePath) {
+        return getRealFile(filePath).lastModified();
+    }
 
-        final File fileAbsolute = getRealFile(file);
+    @Override
+    public void setLastModified(final String filePath, final long timeInMillis) {
+        final File fileAbsolute = getRealFile(filePath);
+        fileAbsolute.setLastModified(timeInMillis);
+    }
+
+    @Override
+    public OutputStream addFile(final String filePath) throws IOException {
+        final File fileAbsolute = getRealFile(filePath);
+        fileAbsolute.getParentFile().mkdir();
 
         if (!fileAbsolute.exists()) {
             fileAbsolute.createNewFile();
@@ -34,8 +51,17 @@ public class DirectoryBundlerOutput extends BundlerOutput {
     }
 
     @NotNull
-    private File getRealFile(File parent) {
-        return new File(directoryRootPath.getAbsolutePath() + File.separator + parent.getAbsolutePath());
+    private File getRealFile(final String path) {
+        if (path.equals(lastFilePath)) {
+            return this.lastFile;
+        }
+
+        final File file = new File(directoryRootPath.getAbsolutePath() + File.separator + path);
+
+        this.lastFilePath = path;
+        this.lastFile = file;
+
+        return file;
     }
 
     @Override
@@ -44,9 +70,14 @@ public class DirectoryBundlerOutput extends BundlerOutput {
     }
 
     @Override
-    public void delete(final File file) {
-        if(this.exists(file)) {
-            final File realFile = getRealFile(file);
+    public File getFile(final String filePath) {
+        return getRealFile(filePath);
+    }
+
+    @Override
+    public void delete(final String filePath) {
+        if(this.exists(filePath)) {
+            final File realFile = getRealFile(filePath);
             realFile.delete();
         }
     }
@@ -56,8 +87,8 @@ public class DirectoryBundlerOutput extends BundlerOutput {
 
     }
 
-    public boolean exists(final File searchedFile) {
-        final File realFile = getRealFile(searchedFile);
+    public boolean exists(final String filePath) {
+        final File realFile = getRealFile(filePath);
         return realFile.exists();
     }
 }
