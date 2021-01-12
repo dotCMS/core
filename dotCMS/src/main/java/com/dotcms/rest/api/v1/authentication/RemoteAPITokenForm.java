@@ -43,8 +43,8 @@ public class RemoteAPITokenForm {
         return map(
                 "network", token.network,
                 "expirationSeconds", token.expirationSeconds,
-                "userId", token.userId,
-                "claims", token.claims
+                "claims", token.claims,
+                "shouldBeAdmin", true
         );
     }
 
