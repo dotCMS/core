@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.viewtools;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.RoleAPI;
@@ -111,6 +112,7 @@ public class SQLResultsViewTool implements ViewTool {
      *
      * @return The results returned by the SQL query.
      */
+    @CloseDBIfOpened
     private ArrayList<HashMap<String, String>> getResults(final String dataSource, final String sql, final
     ArrayList<Object> parameterList, int startRow, int maxRow) {
         if (dataSource.equals(DEFAULT_DATASOURCE) && !Config.getBooleanProperty
