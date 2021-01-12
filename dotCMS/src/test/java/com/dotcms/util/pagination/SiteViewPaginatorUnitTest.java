@@ -68,10 +68,6 @@ public class SiteViewPaginatorUnitTest {
 
         when(hostAPI.findAllFromCache(any(User.class),anyBoolean())).thenReturn(hosts);
 
-        //final List<ContentletSearch> mockedSearch = mockSearchResults(allSites);
-        //final ContentletAPI contentletAPI = mock(ContentletAPI.class);
-        //when(contentletAPI.searchIndex(anyString(), anyInt(), anyInt(), eq("title"), any(User.class), anyBoolean())).thenReturn(mockedSearch);
-
         final PermissionAPI permissionAPI = mock(PermissionAPI.class);
         when(permissionAPI.doesUserHavePermission(any(Host.class),anyInt(),any(User.class))).thenReturn(true);
 
@@ -116,18 +112,13 @@ public class SiteViewPaginatorUnitTest {
                name = String.format("%s%d",alphabet[i++],time);
                host = mockSite(identifier, name);
             }
-            //System.out.println(identifier + ":" + name);
-            //debugInfo.put(identifier,name);
+
             when(hostAPI.find(eq(identifier),any(User.class), anyBoolean())).thenReturn(host);
             allSitesSortedIdentifiers.add(identifier);
             hosts.add(host);
         }
 
         final Set<String> sitesWithIntegrations = mockSitesWithIntegrations(allSites, maxConfigured);
-        //System.out.println("Sites with integrations: ");
-        //for (final String configurationIdentifier : sitesWithIntegrations) {
-        //    System.out.println( configurationIdentifier + ":"  + debugInfo.get(configurationIdentifier));
-        //}
 
         final PermissionAPI permissionAPI = mock(PermissionAPI.class);
         when(permissionAPI.doesUserHavePermission(any(Host.class),anyInt(),any(User.class))).thenReturn(true);
