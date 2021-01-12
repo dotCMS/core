@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import com.dotcms.rest.api.v1.apps.SiteViewPaginator;
 import com.dotcms.rest.api.v1.apps.view.SiteView;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -51,7 +52,7 @@ public class SiteViewPaginatorUnitTest {
         final HostAPI hostAPI = mock(HostAPI.class);
         final long time = System.currentTimeMillis();
         int i = 0;
-        //System.out.println("Site names: ");
+        final List<Host> hosts = new ArrayList<>();
         for(final String identifier:allSites){
             final Host host;
             if(Host.SYSTEM_HOST.equals(identifier)){
@@ -59,18 +60,24 @@ public class SiteViewPaginatorUnitTest {
                 when(hostAPI.find(eq(identifier),any(User.class), anyBoolean())).thenReturn(host);
             } else {
                 final String name = String.format("%s%d",alphabet[i++],time);
-                //System.out.println(name);
                 host = mockSite(identifier, name);
             }
             when(hostAPI.find(eq(identifier),any(User.class), anyBoolean())).thenReturn(host);
+            hosts.add(host);
         }
 
-        final List<ContentletSearch> mockedSearch = mockSearchResults(allSites);
-        final ContentletAPI contentletAPI = mock(ContentletAPI.class);
-        when(contentletAPI.searchIndex(anyString(), anyInt(), anyInt(), eq("title"), any(User.class), anyBoolean())).thenReturn(mockedSearch);
+        when(hostAPI.findAllFromCache(any(User.class),anyBoolean())).thenReturn(hosts);
+
+        //final List<ContentletSearch> mockedSearch = mockSearchResults(allSites);
+        //final ContentletAPI contentletAPI = mock(ContentletAPI.class);
+        //when(contentletAPI.searchIndex(anyString(), anyInt(), anyInt(), eq("title"), any(User.class), anyBoolean())).thenReturn(mockedSearch);
+
+        final PermissionAPI permissionAPI = mock(PermissionAPI.class);
+        when(permissionAPI.doesUserHavePermission(any(Host.class),anyInt(),any(User.class))).thenReturn(true);
+
         final Supplier<Set<String>> configuredSitesSupplier = () -> sitesWithIntegrations;
         final Supplier<Map<String, Map<String, List<String>>>> warningsBySiteSupplier = () -> ImmutableBiMap.of();
-        final SiteViewPaginator paginator = new SiteViewPaginator(configuredSitesSupplier, warningsBySiteSupplier ,hostAPI, contentletAPI);
+        final SiteViewPaginator paginator = new SiteViewPaginator(configuredSitesSupplier, warningsBySiteSupplier ,hostAPI, permissionAPI);
         final int limit = sitesWithIntegrations.size();
         final PaginatedArrayList<SiteView> items = paginator
                 .getItems(user, null, limit, 0, null, null, emptyMap());
@@ -97,6 +104,7 @@ public class SiteViewPaginatorUnitTest {
         //final Map<String,String> debugInfo = new TreeMap<>();
         int i = 0;
         //System.out.println("Site names: ");
+        final List<Host> hosts = new ArrayList<>();
         for(final String identifier:allSites){
             final Host host;
             final String name;
@@ -112,6 +120,7 @@ public class SiteViewPaginatorUnitTest {
             //debugInfo.put(identifier,name);
             when(hostAPI.find(eq(identifier),any(User.class), anyBoolean())).thenReturn(host);
             allSitesSortedIdentifiers.add(identifier);
+            hosts.add(host);
         }
 
         final Set<String> sitesWithIntegrations = mockSitesWithIntegrations(allSites, maxConfigured);
@@ -120,12 +129,13 @@ public class SiteViewPaginatorUnitTest {
         //    System.out.println( configurationIdentifier + ":"  + debugInfo.get(configurationIdentifier));
         //}
 
-        final List<ContentletSearch> mockedSearch = mockSearchResults(allSitesSortedIdentifiers);
-        final ContentletAPI contentletAPI = mock(ContentletAPI.class);
-        when(contentletAPI.searchIndex(anyString(), anyInt(), anyInt(), eq("title"), any(User.class), anyBoolean())).thenReturn(mockedSearch);
+        final PermissionAPI permissionAPI = mock(PermissionAPI.class);
+        when(permissionAPI.doesUserHavePermission(any(Host.class),anyInt(),any(User.class))).thenReturn(true);
+        when(hostAPI.findAllFromCache(any(User.class),anyBoolean())).thenReturn(hosts);
+
         final Supplier<Set<String>> configuredSitesSupplier = () -> sitesWithIntegrations;
         final Supplier<Map<String, Map<String, List<String>>>> warningsBySiteSupplier = ImmutableBiMap::of;
-        final SiteViewPaginator paginator = new SiteViewPaginator(configuredSitesSupplier, warningsBySiteSupplier, hostAPI, contentletAPI);
+        final SiteViewPaginator paginator = new SiteViewPaginator(configuredSitesSupplier, warningsBySiteSupplier, hostAPI, permissionAPI);
 
         //First batch of 6.
         int limit = sitesWithIntegrations.size();
