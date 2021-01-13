@@ -10,7 +10,7 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 
 import org.apache.velocity.tools.view.tools.ViewTool;
-
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 
 /**
@@ -87,11 +87,15 @@ public class MailerTool implements ViewTool {
 			return "Invalid Subject: " + e.getMessage();
 		}
 
+		
+		
+		final String velocityMailerMimeType = Config.getStringProperty("VELOCITY_MAILTOOL_MIME_TYPE", "text/html; charset=UTF-8");
+		
 		/* See if using HTML or not */
 		if (html) {
 			/* Set the HTML Message */
 			try {
-				msg.setContent(message, "text/html");
+				msg.setContent(message, velocityMailerMimeType);
 			} catch (Exception e) {
 				Logger.error(this, "Error Setting Content", e);
 				return "Invalid Message: " + e.getMessage();
