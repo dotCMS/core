@@ -36,6 +36,7 @@ import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -56,13 +57,7 @@ public class DotSamlResource implements Serializable {
 	private final IdentityProviderConfigurationFactory identityProviderConfigurationFactory;
 	private final WebResource						   webResource;
 
-	public static final List<String> dotsamlPathSegments = new ArrayList<String>() {
-		{
-			add("login");
-			add("logout");
-			add("metadata");
-		}
-	};
+	public static final List<String> dotsamlPathSegments = Arrays.asList("login", "logout", "metadata");
 
 
 	public DotSamlResource() {
