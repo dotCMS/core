@@ -4,11 +4,14 @@ const JS_MIME_TYPE = 'text/javascript';
 const CSS_MIME_TYPE = 'text/css';
 
 /**
- * Util class for work directly with DOM element
+ * Util service to create html elements to inject into our edit mode
+ *
+ * @export
+ * @class DotDOMHtmlUtilService
  */
 @Injectable()
 export class DotDOMHtmlUtilService {
-    public createLinkElement(href: string): HTMLLinkElement {
+    createLinkElement(href: string): HTMLLinkElement {
         const cssElement = document.createElement('link');
         cssElement.rel = 'stylesheet';
         cssElement.type = CSS_MIME_TYPE;
@@ -18,19 +21,28 @@ export class DotDOMHtmlUtilService {
         return cssElement;
     }
 
-    public createStyleElement(css: string): any {
-        const cssElement: any = document.createElement('style');
-
-        if (cssElement.styleSheet) {
-            cssElement.styleSheet.cssText = css;
-        } else {
-            cssElement.appendChild(document.createTextNode(css));
-        }
-
+    /**
+     * Create a <style> element with the string received
+     *
+     * @param {string} css
+     * @returns {HTMLStyleElement}
+     * @memberof DotDOMHtmlUtilService
+     */
+    createStyleElement(css: string): HTMLStyleElement {
+        const cssElement: HTMLStyleElement = document.createElement('style');
+        cssElement.appendChild(document.createTextNode(css));
         return cssElement;
     }
 
-    public creatExternalScriptElement(src: string, onLoadCallback?: () => void): any {
+    /**
+     * Create a <script> with external url and load callback
+     *
+     * @param {string} src
+     * @param {() => void} [onLoadCallback]
+     * @returns {HTMLScriptElement}
+     * @memberof DotDOMHtmlUtilService
+     */
+    creatExternalScriptElement(src: string, onLoadCallback?: () => void): HTMLScriptElement {
         const script = this.createScriptElement();
         script.src = src;
         script.onload = onLoadCallback;
@@ -38,18 +50,30 @@ export class DotDOMHtmlUtilService {
         return script;
     }
 
-    public createInlineScriptElement(text: string): any {
+    /**
+     * Create a <script> element with inner text
+     *
+     * @param {string} text
+     * @returns {HTMLScriptElement}
+     * @memberof DotDOMHtmlUtilService
+     */
+    createInlineScriptElement(text: string): HTMLScriptElement {
         const script = this.createScriptElement();
         script.text = text;
 
         return script;
     }
 
-    public getButtomHTML(
-        label: string,
-        className: string,
-        dataset: { [key: string]: string }
-    ): string {
+    /**
+     * Creates a button with the params and return the html string
+     *
+     * @param {string} label
+     * @param {string} className
+     * @param {{ [key: string]: string }} dataset
+     * @returns {string}
+     * @memberof DotDOMHtmlUtilService
+     */
+    getButtomHTML(label: string, className: string, dataset: { [key: string]: string }): string {
         // TODO look for a better way to do this
         let datasetString = '';
 

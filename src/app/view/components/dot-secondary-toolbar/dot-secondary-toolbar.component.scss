@@ -7,7 +7,7 @@
 
 .dot-secondary-toolbar__main {
     background-color: $white;
-    border-bottom: solid 1px $gray-light;
+    border-bottom: solid 1px $gray-lighter;
     display: flex;
     padding: $spacing-3;
 }
@@ -16,6 +16,8 @@
     display: flex;
     padding: 0 $spacing-3;
     flex-wrap: wrap;
+    background-color: $white;
+    border-bottom: solid 1px $gray-lighter;
 }
 
 ::ng-deep {
