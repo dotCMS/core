@@ -23,6 +23,11 @@ public class DirectoryBundleOutput extends BundleOutput {
     }
 
     @Override
+    public boolean useHardLink() {
+        return true;
+    }
+
+    @Override
     public Collection<File> getFiles(final FileFilter fileFilter){
         return FileUtil.listFilesRecursively(directoryRootPath, fileFilter);
     }
