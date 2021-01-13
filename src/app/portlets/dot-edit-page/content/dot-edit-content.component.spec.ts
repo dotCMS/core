@@ -54,7 +54,7 @@ import { SiteServiceMock } from '@tests/site-service.mock';
 import { LoginServiceMock, mockUser } from '@tests/login-service.mock';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotWorkflowServiceMock } from '@tests/dot-workflow-service.mock';
-import { mockDotRenderedPage, mockDotLayout } from '@tests/dot-page-render.mock';
+import { mockDotRenderedPage } from '@tests/dot-page-render.mock';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
 import { DotPageContent } from '../shared/models';
@@ -573,14 +573,10 @@ describe('DotEditContentComponent', () => {
                 it('should handle load', fakeAsync(() => {
                     spyOn(dotLoadingIndicatorService, 'hide');
                     spyOn(dotUiColorsService, 'setColors');
-                    spyOn(dotEditContentHtmlService, 'setContaintersChangeHeightListener');
                     detectChangesForIframeRender(fixture);
 
                     expect(dotLoadingIndicatorService.hide).toHaveBeenCalled();
                     expect(dotUiColorsService.setColors).toHaveBeenCalled();
-                    expect(
-                        dotEditContentHtmlService.setContaintersChangeHeightListener
-                    ).toHaveBeenCalledWith(jasmine.objectContaining(mockDotLayout()));
                 }));
 
                 describe('custom', () => {

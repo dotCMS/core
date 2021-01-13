@@ -8,13 +8,6 @@
     </div>
 
     <div class="main-toolbar-right">
-        <button
-            pButton
-            type="button"
-            class="edit-page-toolbar__cancel p-button-secondary p-button-sm"
-            [label]="'dot.common.cancel' | dm"
-            (click)="cancel.emit($event)"
-        ></button>
         <dot-edit-page-workflows-actions
             [page]="pageState.page"
             (fired)="actionFired.emit($event)"
