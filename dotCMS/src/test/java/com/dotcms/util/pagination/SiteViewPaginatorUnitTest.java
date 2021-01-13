@@ -12,7 +12,6 @@ import com.dotcms.rest.api.v1.apps.SiteViewPaginator;
 import com.dotcms.rest.api.v1.apps.view.SiteView;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -44,7 +43,7 @@ public class SiteViewPaginatorUnitTest {
         final int max = alphabet.length - 1;
         final User user = mockAdminUser();
         final List<String> allSites = mockAllSitesIdentifiers(max);
-        final Set<String> sitesWithIntegrations = mockSitesWithIntegrations(allSites, 10);
+        final Set<String> sitesWithIntegrations = mockSitesWithConfigurations(allSites, 10);
         sitesWithIntegrations.forEach(System.out::println);
         final HostAPI hostAPI = mock(HostAPI.class);
         final long time = System.currentTimeMillis();
@@ -69,7 +68,7 @@ public class SiteViewPaginatorUnitTest {
         when(permissionAPI.doesUserHavePermission(any(Host.class),anyInt(),any(User.class))).thenReturn(true);
 
         final Supplier<Set<String>> configuredSitesSupplier = () -> sitesWithIntegrations;
-        final Supplier<Map<String, Map<String, List<String>>>> warningsBySiteSupplier = () -> ImmutableBiMap.of();
+        final Supplier<Map<String, Map<String, List<String>>>> warningsBySiteSupplier = ImmutableBiMap::of;
         final SiteViewPaginator paginator = new SiteViewPaginator(configuredSitesSupplier, warningsBySiteSupplier ,hostAPI, permissionAPI);
         final int limit = sitesWithIntegrations.size();
         final PaginatedArrayList<SiteView> items = paginator
@@ -79,8 +78,7 @@ public class SiteViewPaginatorUnitTest {
         Assert.assertFalse(items.isEmpty());
         Assert.assertEquals(items.get(0).getId(), Host.SYSTEM_HOST);
         Assert.assertEquals(items.size(), limit);
-        //First item is'nt necessarily configured. So we start counting from 1.
-        for(int j=1; j < limit; j++){
+        for(int j=0; j < limit; j++){
             Assert.assertTrue(items.get(j).isConfigured());
         }
     }
@@ -92,7 +90,6 @@ public class SiteViewPaginatorUnitTest {
         final int maxConfigured = 6; //Only the first page is expected to bring back configured items.
         final List<String> allSites = mockAllSitesIdentifiers(alphabet.length - 1);
         final HostAPI hostAPI = mock(HostAPI.class);
-        final List<String> allSitesSortedIdentifiers = new LinkedList<>();
         final long time = System.currentTimeMillis();
         int i = 0;
         final List<Host> hosts = new ArrayList<>();
@@ -109,11 +106,10 @@ public class SiteViewPaginatorUnitTest {
             }
 
             when(hostAPI.find(eq(identifier),any(User.class), anyBoolean())).thenReturn(host);
-            allSitesSortedIdentifiers.add(identifier);
             hosts.add(host);
         }
 
-        final Set<String> sitesWithIntegrations = mockSitesWithIntegrations(allSites, maxConfigured);
+        final Set<String> sitesWithIntegrations = mockSitesWithConfigurations(allSites, maxConfigured);
 
         final PermissionAPI permissionAPI = mock(PermissionAPI.class);
         when(permissionAPI.doesUserHavePermission(any(Host.class),anyInt(),any(User.class))).thenReturn(true);
@@ -188,26 +184,16 @@ public class SiteViewPaginatorUnitTest {
         return allSites;
     }
 
-    private Set<String> mockSitesWithIntegrations(final List<String> allSites, final int bound){
+    private Set<String> mockSitesWithConfigurations(final List<String> allSites, final int bound){
         if( bound > allSites.size()){
            throw new IllegalArgumentException("bound must be less or equal to allSites.size ");
         }
         final Random random = new Random();
-        final List<String> sitesWithIntegrations = new LinkedList<>();
+        final List<String> sitesWithConfigurations = new LinkedList<>();
         for (int i=0; i <= bound; i++ ){
-            sitesWithIntegrations.add(allSites.get(random.nextInt(bound)));
+            sitesWithConfigurations.add(allSites.get(random.nextInt(bound)));
         }
-        return new HashSet<>(sitesWithIntegrations);
-    }
-
-    private List<ContentletSearch> mockSearchResults(final List<String> allSites){
-        final List<ContentletSearch> mocks = new ArrayList<>(allSites.size());
-        for (final String identifier : allSites) {
-            final ContentletSearch search = mock(ContentletSearch.class);
-            when(search.getIdentifier()).thenReturn(identifier);
-            mocks.add(search);
-        }
-        return mocks;
+        return new HashSet<>(sitesWithConfigurations);
     }
 
 }
