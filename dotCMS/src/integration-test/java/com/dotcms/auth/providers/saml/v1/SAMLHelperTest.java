@@ -28,6 +28,10 @@ import java.util.stream.Stream;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+/**
+ * Test for {@link SAMLHelper}
+ * @author jsanca
+ */
 public class SAMLHelperTest extends IntegrationTestBase {
 
     @BeforeClass
