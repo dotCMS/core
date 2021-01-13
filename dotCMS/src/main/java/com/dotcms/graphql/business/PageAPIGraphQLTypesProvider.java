@@ -226,8 +226,10 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                     .put("persona", new TypeFetcher(GraphQLTypeReference.typeRef("PersonaBaseType"),
                             new PropertyDataFetcher<Visitor>("persona")));
         }
+
         visitorFields.put("geo", new TypeFetcher(GraphQLTypeReference.typeRef(DOT_PAGE_GEOLOCATION),
-                new PropertyDataFetcher<Visitor>("geo")));
+        PropertyDataFetcher.fetching((Function<Visitor, Geolocation>)
+                (visitor)->Try.of(visitor::getGeo).getOrNull())));
 
         typesMap.put(DOT_PAGE_VISITOR, TypeUtil.createObjectType(DOT_PAGE_VISITOR, visitorFields));
 

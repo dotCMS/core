@@ -46,11 +46,13 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
             final String pageModeAsString = environment.getArgument("pageMode")
                     != null ? environment.getArgument("pageMode") : PageMode.LIVE.name();
             final boolean fireRules = environment.getArgument("fireRules");
+            final String persona = environment.getArgument("persona");
 
             context.addParam("url", url);
             context.addParam("languageId", languageId);
             context.addParam("pageMode", pageModeAsString);
             context.addParam("fireRules", fireRules);
+            context.addParam("persona", persona);
 
             final PageMode mode = PageMode.get(pageModeAsString);
             PageMode.setPageMode(request, mode);
@@ -58,6 +60,10 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
             // we need to set the language to the request
             if(UtilMethods.isSet(languageId)) {
                 request.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, languageId);
+            }
+
+            if(UtilMethods.isSet(persona)) {
+                request.setAttribute(WebKeys.CMS_PERSONA_PARAMETER, persona);
             }
 
             final PageContext pageContext = PageContextBuilder.builder()
