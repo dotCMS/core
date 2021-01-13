@@ -46,6 +46,7 @@ export class DotTemplateBuilderMockComponent {
     @Input() item;
     @Output() save = new EventEmitter();
     @Output() cancel = new EventEmitter();
+    @Output() custom: EventEmitter<CustomEvent> = new EventEmitter();
 
     constructor() {}
 }
@@ -402,7 +403,7 @@ describe('DotTemplateCreateEditComponent', () => {
             beforeEach(() => {
                 const storeMock = jasmine.createSpyObj(
                     'DotTemplateStore',
-                    ['saveTemplate', 'goToTemplateList'],
+                    ['saveTemplate', 'goToTemplateList', 'goToEditTemplate'],
                     {
                         vm$: of({
                             original: {
@@ -484,6 +485,15 @@ describe('DotTemplateCreateEditComponent', () => {
                     builder.triggerEventHandler('cancel', {});
 
                     expect(store.goToTemplateList).toHaveBeenCalledTimes(1);
+                });
+
+                it('should go to edit template page', () => {
+                    const builder = de.query(By.css('dot-template-builder'));
+                    builder.triggerEventHandler('custom', {
+                        detail: { data: { id: '1', inode: '2' } }
+                    });
+
+                    expect(store.goToEditTemplate).toHaveBeenCalledWith('1', '2');
                 });
             });
 

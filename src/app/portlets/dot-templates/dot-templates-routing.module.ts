@@ -28,6 +28,16 @@ const routes: Routes = [
         resolve: {
             template: DotTemplateCreateEditResolver
         }
+    },
+    {
+        path: 'edit/:id/inode/:inode',
+        loadChildren: () =>
+            import(
+                '@portlets/dot-templates/dot-template-create-edit/dot-template-create-edit.module.ts'
+            ).then((m) => m.DotTemplateCreateEditModule),
+        resolve: {
+            template: DotTemplateCreateEditResolver
+        }
     }
 ];
 

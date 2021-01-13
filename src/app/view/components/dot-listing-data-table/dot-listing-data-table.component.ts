@@ -51,6 +51,7 @@ export class DotListingDataTableComponent implements OnInit {
     @Input() actions: DotActionMenuItem[];
     @Input() dataKey = '';
     @Input() checkbox = false;
+    @Input() contextMenu = false;
     @Input() firstPageData: any[];
     @Output() rowWasClicked: EventEmitter<any> = new EventEmitter();
     @Output() selectedItems: EventEmitter<any> = new EventEmitter();

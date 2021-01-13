@@ -10,6 +10,7 @@ export class DotTemplateBuilderComponent implements OnInit {
     @Input() item: DotTemplateItem;
     @Output() save = new EventEmitter<DotTemplateItem>();
     @Output() cancel = new EventEmitter();
+    @Output() custom: EventEmitter<CustomEvent> = new EventEmitter();
     permissionsUrl = '';
     historyUrl = '';
 

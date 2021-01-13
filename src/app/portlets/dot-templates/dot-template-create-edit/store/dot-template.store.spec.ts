@@ -225,6 +225,10 @@ describe('DotTemplateStore', () => {
             expect(dotTemplateContainersCacheService.set).not.toHaveBeenCalled();
         });
 
+        it('should redirect to edit template', () => {
+            service.goToEditTemplate('1', '2');
+            expect(dotRouterService.goToEditTemplate).toHaveBeenCalledWith('1', '2');
+        });
         describe('selectors', () => {
             it('should update the didTemplateChanged$', () => {
                 service.updateBody('Hello');

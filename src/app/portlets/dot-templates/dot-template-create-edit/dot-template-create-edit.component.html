@@ -17,6 +17,7 @@
             [item]="vm.original"
             (save)="saveTemplate($event)"
             (cancel)="cancelTemplate()"
+            (custom)="onCustomEvent($event)"
         ></dot-template-builder>
     </dot-portlet-base>
 </ng-container>

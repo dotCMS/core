@@ -29,7 +29,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
         private store: DotTemplateStore,
         private fb: FormBuilder,
         private dialogService: DialogService,
-        private dotMessageServide: DotMessageService
+        private dotMessageService: DotMessageService
     ) {}
 
     ngOnInit() {
@@ -60,7 +60,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
      */
     editTemplateProps(): void {
         this.dialogService.open(DotTemplatePropsComponent, {
-            header: this.dotMessageServide.get('templates.properties.title'),
+            header: this.dotMessageService.get('templates.properties.title'),
             width: '30rem',
             data: {
                 template: this.form.value,
@@ -103,9 +103,19 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
         this.store.goToTemplateList();
     }
 
+    /**
+     * Handle the custom event emitted by the History Tab
+     *
+     * @param CustomEvent $event
+     * @memberof DotTemplateBuilderComponent
+     */
+    onCustomEvent($event: CustomEvent): void {
+        this.store.goToEditTemplate($event.detail.data.id, $event.detail.data.inode);
+    }
+
     private createTemplate(): void {
         this.dialogService.open(DotTemplatePropsComponent, {
-            header: this.dotMessageServide.get('templates.create.title'),
+            header: this.dotMessageService.get('templates.create.title'),
             width: '30rem',
             closable: false,
             closeOnEscape: false,

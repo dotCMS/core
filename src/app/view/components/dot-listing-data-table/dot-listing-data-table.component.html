@@ -12,7 +12,7 @@
 </dot-action-header>
 <p-table
     #dataTable
-    [contextMenu]="cm"
+    [contextMenu]="contextMenu ? cm : null"
     (onLazyLoad)="loadDataPaginationEvent($event)"
     (onRowSelect)="handleRowCheck()"
     (onRowUnselect)="handleRowCheck()"

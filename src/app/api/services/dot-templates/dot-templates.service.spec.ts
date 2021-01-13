@@ -103,6 +103,30 @@ describe('DotTemplatesService', () => {
         });
     });
 
+    it('should get a templates by filter', () => {
+        service.getFiltered('123').subscribe((template) => {
+            expect(template as any).toEqual([
+                {
+                    identifier: '123',
+                    name: 'Theme name'
+                }
+            ]);
+        });
+
+        const req = httpMock.expectOne(`${TEMPLATE_API_URL}?filter=123`);
+
+        expect(req.request.method).toBe('GET');
+
+        req.flush({
+            entity: [
+                {
+                    identifier: '123',
+                    name: 'Theme name'
+                }
+            ]
+        });
+    });
+
     it('should post to create a template', () => {
         service
             .create({

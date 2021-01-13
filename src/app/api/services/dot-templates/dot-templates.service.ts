@@ -48,6 +48,20 @@ export class DotTemplatesService {
     }
 
     /**
+     * Get the template filtered by tittle or inode .
+     *
+     * @param {string} filter
+     * @returns {Observable<DotTemplate>}
+     * @memberof DotTemplatesService
+     */
+    getFiltered(filter: string): Observable<DotTemplate[]> {
+        const url = `${TEMPLATE_API_URL}?filter=${filter}`;
+        return this.request<DotTemplate[]>({
+            url
+        });
+    }
+
+    /**
      * Creates a template
      *
      * @param {DotTemplate} values

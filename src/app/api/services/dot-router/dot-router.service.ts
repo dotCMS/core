@@ -108,13 +108,16 @@ export class DotRouterService {
     }
 
     /**
-     * Redirect to edit the template id passed
+     * Redirect to edit the template.
+     * If the inode is paased, load a specific version of the template
      *
      * @param {string} id
      * @memberof DotRouterService
      */
-    goToEditTemplate(id: string): void {
-        this.router.navigate([`/templates/edit/${id}`]);
+    goToEditTemplate(id: string, inode?: string): void {
+        this.router.navigate([
+            inode ? `/templates/edit/${id}/inode/${inode}` : `/templates/edit/${id}`
+        ]);
     }
 
     goToURL(url: string): void {

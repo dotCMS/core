@@ -189,6 +189,15 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
         this.dotRouterService.gotoPortlet('templates');
     };
 
+    /**
+     * Redirect to edit specific version of a template.
+     *
+     * @memberof DotTemplateStore
+     */
+    goToEditTemplate = (id, inode) => {
+        this.dotRouterService.goToEditTemplate(id, inode);
+    };
+
     private getApiLink(identifier: string): string {
         return identifier ? `/api/v1/templates/${identifier}/working` : '';
     }
