@@ -43,7 +43,7 @@ public class ImageFilterExporter implements BinaryContentExporter {
             parameters.put("filters", filters.keySet().toArray(new String[filters.size()]));
             
             // run pdf filter first (if a pdf)
-            if(!filters.isEmpty() && "pdf".equals(UtilMethods.getFileExtension(file.getName())) && !filters.values().contains(PDFImageFilter.class)) {
+            if(!filters.isEmpty() && "pdf".equals(UtilMethods.getFileExtension(file.getName())) && !filters.containsKey("pdf")) {
                 file = new PDFImageFilter().runFilter(file, parameters);
             }
             
