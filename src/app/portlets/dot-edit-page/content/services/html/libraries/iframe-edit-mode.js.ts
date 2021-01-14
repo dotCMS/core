@@ -71,6 +71,19 @@ export const EDIT_PAGE_JS = `
     });
 
     drake.on('drag', function() {
+        window.requestAnimationFrame(function() {
+            const el = document.querySelector('.gu-mirror');
+            const rect = el.getBoundingClientRect();
+            let transform = 'rotate(4deg)';
+
+            if (rect.width > 500) {
+                const scale = 500 / rect.width;
+                transform = transform + ' scale(' + scale + ') '
+            }
+
+            el.style.transform = transform;
+        });
+
         currentModel = getDotNgModel();
     })
 

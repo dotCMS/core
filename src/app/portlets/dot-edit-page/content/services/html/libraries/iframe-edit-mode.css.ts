@@ -58,7 +58,7 @@ export const getEditPageCss = (timestampId: string): string => {
     ${timestampId} [data-dot-object="contentlet"].gu-mirror {
         margin: 0 !important;
         border: solid 1px #53c2f9;
-        padding: 2rem !important;
+        padding: 1rem !important;
         background: #FFF !important;
         color: #444 !important;
         height: auto !important;
@@ -67,6 +67,7 @@ export const getEditPageCss = (timestampId: string): string => {
         z-index: 2147483648 !important;
         pointer-events: none !important;
         user-select: none !important;
+
     }
 
     /*
@@ -82,7 +83,7 @@ export const getEditPageCss = (timestampId: string): string => {
         margin: 0px !important;
         height: 10px;
         margin: 0 16px !important;
-        z-index: 100;
+        z-index: 100 !important;
     }
 
 
