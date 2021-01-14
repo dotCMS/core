@@ -83,13 +83,14 @@ export class DotCrumbtrailService {
 
     private getCrumbtrailSection(sectionKey: string): string {
         const data: Data = this.getData();
-
         let currentData: any = data;
-
-        this.portletsTitlePathFinder[sectionKey]
-            .split('.')
-            .forEach((key) => (currentData = currentData[key]));
-        return currentData;
+        if (Object.keys(data).length) {
+            this.portletsTitlePathFinder[sectionKey]
+                .split('.')
+                .forEach((key) => (currentData = currentData[key]));
+            return currentData;
+        }
+        return null;
     }
 
     private getData(): Data {
@@ -110,11 +111,10 @@ export class DotCrumbtrailService {
 
         return this.getMenuLabel(portletId).pipe(
             map((crumbTrail: DotCrumb[]) => {
-                if (sections.length > 1 && this.isPortletTitleAvailable(url)) {
+                if (this.shouldAddSection(sections, url)) {
                     const sectionLabel = this.getCrumbtrailSection(sections[0]);
-
                     crumbTrail.push({
-                        label: sectionLabel,
+                        label: sectionLabel ? sectionLabel : sections[1],
                         url: ''
                     });
                 }
@@ -122,6 +122,10 @@ export class DotCrumbtrailService {
                 return crumbTrail;
             })
         );
+    }
+
+    private shouldAddSection(sections: String[], url: string): boolean {
+        return sections.length > 1 && this.isPortletTitleAvailable(url);
     }
 
     private isPortletTitleAvailable(url: string): boolean {

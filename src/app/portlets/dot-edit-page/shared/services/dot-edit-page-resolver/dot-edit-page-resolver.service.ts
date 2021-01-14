@@ -1,3 +1,4 @@
+import { HttpResponse, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import { throwError, Observable, of } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { Resolve, ActivatedRouteSnapshot } from '@angular/router';
@@ -10,7 +11,6 @@ import { DotPageStateService } from '../../../content/services/dot-page-state/do
 import { DotPageRenderOptions } from '@services/dot-page-render/dot-page-render.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { HttpResponse, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 
 /**
  * With the url return a string of the edit page html

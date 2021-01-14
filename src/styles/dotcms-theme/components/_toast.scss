@@ -11,6 +11,7 @@
 .p-toast .p-toast-message .p-toast-message-content {
     padding: $spacing-4;
     border-width: 0 0 0 0;
+    align-items: center;
 }
 
 .p-toast .p-toast-message .p-toast-message-content .p-toast-message-text {
@@ -54,7 +55,7 @@
 }
 
 .p-toast .p-toast-message .p-toast-message-icon {
-    color: white;
+    color: $white;
     background: $brand-secondary;
     border-radius: 50%;
     display: flex;
@@ -66,4 +67,7 @@
 
 .p-toast .p-toast-message .p-toast-icon-close {
     color: $gray-dark;
+    position: absolute;
+    top: $spacing-2;
+    right: $spacing-2;
 }

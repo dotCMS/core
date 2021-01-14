@@ -4,6 +4,7 @@ export const MODEL_VAR_NAME = 'dotNgModel';
 export const EDIT_PAGE_JS = `
 (function () {
     var forbiddenTarget;
+    let currentModel;
 
     function getContainers() {
         var containers = [];
@@ -68,17 +69,37 @@ export const EDIT_PAGE_JS = `
             return !handle.classList.contains('dotedit-contentlet__drag');
         }
     });
+
+    drake.on('drag', function() {
+        currentModel = getDotNgModel();
+    })
+
+    drake.on('over', function(el, container, source) {
+        container.classList.add('over')
+    })
+
+    drake.on('out', function(el, container, source) {
+        container.classList.remove('over')
+    })
+
     drake.on('dragend', function(el) {
         if (forbiddenTarget && forbiddenTarget.classList.contains('no')) {
             forbiddenTarget.classList.remove('no');
         }
 
-        window.${MODEL_VAR_NAME}.next({
-            model: getDotNgModel(),
-            type: 3,
-        });
+        currentModel = [];
     });
+
     drake.on('drop', function(el, target, source, sibling) {
+        const updatedModel = getDotNgModel();
+
+        if (JSON.stringify(updatedModel) !== JSON.stringify(currentModel)) {
+            window.${MODEL_VAR_NAME}.next({
+                model: getDotNgModel(),
+                type: 3,
+            });
+        }
+
         if (target !== source) {
             window.contentletEvents.next({
                 name: 'relocate',
@@ -97,7 +118,18 @@ export const EDIT_PAGE_JS = `
     })
 
     window.getDotNgModel = getDotNgModel;
-})();
-`;
 
-export const EDIT_PAGE_JS_DOJO_REQUIRE = `require(['/html/js/dragula-3.7.2/dragula.min.js'], function(dragula) { ${EDIT_PAGE_JS} });  `;
+    var myAutoScroll = autoScroll([
+        window
+    ],{
+        margin: 100,
+        maxSpeed: 60,
+        scrollWhenOutside: true,
+        autoScroll: function(){
+            // Only scroll when the pointer is down, and there is a child being dragged.
+            return this.down && drake.dragging;
+        }
+    });
+})();
+
+`;

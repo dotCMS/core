@@ -24,6 +24,7 @@ export const getEditPageCss = (timestampId: string): string => {
         display: flex !important;
         flex-direction: column !important;
         width: 100% !important;
+        height: 100% !important;
     }
 
     ${timestampId} [data-dot-object="container"].no {
@@ -39,39 +40,72 @@ export const getEditPageCss = (timestampId: string): string => {
 
     ${timestampId} [data-dot-object="contentlet"] {
         background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAQElEQVQoU2NkIAIEH/6VxkhIHUjRWlu2WXgVwhSBDMOpEFkRToXoirAqxKYIQyEuRSgK8SmCKySkCKyQGEUghQCguSaB0AmkRwAAAABJRU5ErkJggg==") !important;
-        margin: 40px 16px 16px !important;
+        margin: 16px 16px 16px !important;
         min-height: 60px !important;
         position: relative;
         padding-top: 25px !important;
         transition: background ${animation} !important;
     }
 
+    ${timestampId} [data-dot-object="contentlet"]:first-child {
+        margin-top: 40px !important;
+    }
+
+    /*
+        When you start D&D in a contentlet dragula clones the elements and append it to the end
+        the body and position to the mouse movement. This styles are for that element
+    */
+    ${timestampId} [data-dot-object="contentlet"].gu-mirror {
+        margin: 0 !important;
+        border: solid 1px #53c2f9;
+        padding: 2rem !important;
+        background: #FFF !important;
+        color: #444 !important;
+        height: auto !important;
+        min-height: auto !important;
+        box-shadow: 0 0 40px 0 #00000038;
+        z-index: 2147483648 !important;
+        pointer-events: none !important;
+        user-select: none !important;
+    }
+
+    /*
+        .gu-transit is the element that dragula place is the possible drop area
+        We change that to be a 10px line to indicate the user where is going to
+        drop the element is dragging.
+    */
+    ${timestampId} [data-dot-object="contentlet"].gu-transit:not(.gu-mirror) {
+        min-height: 0 !important;
+        background: rgba(83, 194, 249, 0.5) !important;
+        overflow: hidden;
+        padding: 0px !important;
+        margin: 0px !important;
+        height: 10px;
+        margin: 0 16px !important;
+        z-index: 100;
+    }
+
+
+    /* Hide all the elements inside the contentlet while were relocating */
+    ${timestampId} [data-dot-object="contentlet"].gu-transit:not(.gu-mirror) * {
+        display: none;
+    }
+
+    ${timestampId} [data-dot-object="contentlet"].gu-mirror .dotedit-contentlet__toolbar {
+        display: none !important;
+    }
+
     ${timestampId} [data-dot-object="contentlet"][data-dot-has-page-lang-version="false"] {
         display: none !important;
     }
 
-    ${timestampId} [data-dot-object="container"]:hover [data-dot-object="contentlet"] {
+    ${timestampId} [data-dot-object="container"]:hover [data-dot-object="contentlet"]:not(.gu-transit) {
         background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAQElEQVQoU2NkIAIEH/r5n5GQOpCitXbsjHgVwhSBDMOpEFkRToXoirAqxKYIQyEuRSgK8SmCKySkCKyQGEUghQCQPycYlScX0wAAAABJRU5ErkJggg==") !important;
     }
 
-    ${timestampId} [data-dot-object="edit-content"] {
-        background-image: url(data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjNDQ0NDQ0IiBoZWlnaHQ9IjE4IiB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSIxOCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4gICAgPHBhdGggZD0iTTMgMTcuMjVWMjFoMy43NUwxNy44MSA5Ljk0bC0zLjc1LTMuNzVMMyAxNy4yNXpNMjAuNzEgNy4wNGMuMzktLjM5LjM5LTEuMDIgMC0xLjQxbC0yLjM0LTIuMzRjLS4zOS0uMzktMS4wMi0uMzktMS40MSAwbC0xLjgzIDEuODMgMy43NSAzLjc1IDEuODMtMS44M3oiLz4gICAgPHBhdGggZD0iTTAgMGgyNHYyNEgweiIgZmlsbD0ibm9uZSIvPjwvc3ZnPg==) !important;
-        background-position: center !important;
-        background-repeat: no-repeat !important;
-        border-radius: 16px !important;
-        cursor: pointer !important;
-        float: right !important;
-        height: 32px !important;
-        opacity: 0.7 !important;
-        position: relative! important;
-        transition: all ${animation} !important;
-        width: 32px !important;
-        z-index: 2147483647 !important;
-    }
-
-    ${timestampId} [data-dot-object="edit-content"]:hover {
-        background-color: rgba(68, 68, 68, 0.1) !important;
-        opacity: 1 !important;
+    ${timestampId} [data-dot-object="container"].over [data-dot-object="contentlet"] {
+        pointer-events: none;
+        user-select: none !important;
     }
 
     ${timestampId} .dotedit-container__toolbar {
@@ -99,6 +133,7 @@ export const getEditPageCss = (timestampId: string): string => {
     ${timestampId} .dotedit-container__toolbar button:not([disabled]):hover,
     ${timestampId} .dotedit-contentlet__toolbar button:not([disabled]):hover {
         box-shadow: ${mdShadow3} !important;
+        transform: scale(1.1) !important;
     }
 
     ${timestampId} .dotedit-container__toolbar button:active,
@@ -150,6 +185,7 @@ export const getEditPageCss = (timestampId: string): string => {
         background-repeat: no-repeat !important;
         transition: background-color ${animation},
                     box-shadow ${animation},
+                    transform ${animation},
                     color ${animation} !important;
     }
 
@@ -213,7 +249,7 @@ export const getEditPageCss = (timestampId: string): string => {
         padding: 8px 0 !important;
         position: absolute !important;
         right: 0 !important;
-        transition: all ${animation} !important;
+        transition: opacity ${animation} !important;
         visibility: hidden !important;
         z-index:1 !important;
     }
