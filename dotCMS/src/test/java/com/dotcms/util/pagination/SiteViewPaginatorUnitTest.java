@@ -54,6 +54,7 @@ public class SiteViewPaginatorUnitTest {
             if(Host.SYSTEM_HOST.equals(identifier)){
                 host = mockSite(identifier, "System Host");
                 when(hostAPI.find(eq(identifier),any(User.class), anyBoolean())).thenReturn(host);
+                when(hostAPI.findSystemHost()).thenReturn(host);
             } else {
                 final String name = String.format("%s%d",alphabet[i++],time);
                 host = mockSite(identifier, name);
@@ -100,6 +101,7 @@ public class SiteViewPaginatorUnitTest {
                name = "System Host";
                host = mockSite(identifier, name);
                when(hostAPI.find(eq(identifier),any(User.class), anyBoolean())).thenReturn(host);
+               when(hostAPI.findSystemHost()).thenReturn(host);
             } else {
                name = String.format("%s%d",alphabet[i++],time);
                host = mockSite(identifier, name);
@@ -177,6 +179,7 @@ public class SiteViewPaginatorUnitTest {
 
     private List<String> mockAllSitesIdentifiers(final int allSitesNumber){
         final List<String> allSites = new LinkedList<>();
+        //Include System host in the first position
         allSites.add(0, Host.SYSTEM_HOST);
         for(int i=0; i<= allSitesNumber; i++){
             allSites.add(""+i);
@@ -184,14 +187,20 @@ public class SiteViewPaginatorUnitTest {
         return allSites;
     }
 
-    private Set<String> mockSitesWithConfigurations(final List<String> allSites, final int bound){
-        if( bound > allSites.size()){
+    private Set<String> mockSitesWithConfigurations(final List<String> allSites, final int high){
+        if( high > allSites.size()){
            throw new IllegalArgumentException("bound must be less or equal to allSites.size ");
         }
         final Random random = new Random();
+        final int low = 1;
+
         final List<String> sitesWithConfigurations = new LinkedList<>();
-        for (int i=0; i <= bound; i++ ){
-            sitesWithConfigurations.add(allSites.get(random.nextInt(bound)));
+        //Always include system host in the mocked sites.
+        //Add System host upfront.
+        sitesWithConfigurations.add(allSites.get(0));
+        for (int i=0; i <= high; i++ ){
+        //Let's add random sites making sure we dont override the first position which is already taken by system host
+            sitesWithConfigurations.add(allSites.get(random.nextInt(high - low) + low));
         }
         return new HashSet<>(sitesWithConfigurations);
     }

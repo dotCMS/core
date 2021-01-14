@@ -168,7 +168,7 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
     private List<String> getHostIdentifiers(final User user, final String filter)
             throws DotDataException, DotSecurityException {
         Stream<Host> hostStream = Stream.concat(
-                Stream.of(APILocator.systemHost()),
+                Stream.of(hostAPI.findSystemHost()),
                 hostAPI.findAllFromCache(user, false).stream()
                         .filter(host -> Try.of(() -> !host.isArchived()).getOrElse(false))
                 );
