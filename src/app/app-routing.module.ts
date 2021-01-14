@@ -100,6 +100,13 @@ const PORTLETS_IFRAME = [
                 children: [
                     {
                         loadChildren: () =>
+                            import(
+                                '@components/dot-contentlet-editor/dot-contentlet-editor.routing.module'
+                            ).then((m) => m.DotContentletEditorRoutingModule),
+                        path: 'new'
+                    },
+                    {
+                        loadChildren: () =>
                             import('@portlets/dot-porlet-detail/dot-portlet-detail.module').then(
                                 (m) => m.DotPortletDetailModule
                             ),
