@@ -62,7 +62,7 @@ public class TemplatePaginatorTest {
         final PaginatedArrayList<TemplateView> templateViews = templatePaginator.getItems(user, filter, limit, offset, orderby,
                 OrderDirection.ASC, map(ContainerPaginator.HOST_PARAMETER_ID, hostId));
 
-        assertEquals(templateViews.getTotalResults(), totalRecords);
+        assertEquals(totalRecords, templateViews.getTotalResults());
     }
 
 }
