@@ -4,7 +4,6 @@ const DRAGULA_CSS = `
         margin: 0 !important;
         z-index: 9999 !important;
         opacity: 1;
-        transform: scale(0.5);
         transform-origin: right top;
     }
 
