@@ -1,5 +1,6 @@
 package com.dotcms.auth.providers.saml.v1;
 
+import com.dotcms.company.CompanyAPI;
 import com.dotcms.saml.Attributes;
 import com.dotcms.saml.DotSamlConstants;
 import com.dotcms.saml.DotSamlException;
@@ -54,13 +55,15 @@ public class SAMLHelper {
     private final HostWebAPI hostWebAPI;
     private final UserAPI    userAPI;
     private final RoleAPI    roleAPI;
+    private final CompanyAPI companyAPI;
     private final SamlAuthenticationService  samlAuthenticationService;
 
-    public SAMLHelper(final SamlAuthenticationService samlAuthenticationService) {
+    public SAMLHelper(final SamlAuthenticationService samlAuthenticationService, final CompanyAPI companyAPI) {
 
         this.userAPI      = APILocator.getUserAPI();
         this.roleAPI      = APILocator.getRoleAPI();
         this.hostWebAPI   = WebAPILocator.getHostWebAPI();
+        this.companyAPI   = companyAPI;
         this.samlAuthenticationService = samlAuthenticationService;
     }
 
@@ -87,6 +90,9 @@ public class SAMLHelper {
 
         return user;
     }
+
+
+
     // Gets the attributes from the Assertion, based on the attributes
     // see if the user exists return it from the dotCMS records, if does not
     // exist then, tries to create it.
@@ -102,7 +108,7 @@ public class SAMLHelper {
             Logger.debug(this, ()-> "Validating user - " + attributes);
 
             systemUser             = this.userAPI.getSystemUser();
-            final Company company  = APILocator.getCompanyAPI().getDefaultCompany();
+            final Company company  = companyAPI.getDefaultCompany();
             final String  authType = company.getAuthType();
             user                   = Company.AUTH_TYPE_ID.equals(authType)?
                     this.loadUserById(this.samlAuthenticationService.getValue(attributes.getNameID()),      systemUser):

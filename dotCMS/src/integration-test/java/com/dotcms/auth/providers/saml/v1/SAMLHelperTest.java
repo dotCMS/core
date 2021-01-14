@@ -1,6 +1,7 @@
 package com.dotcms.auth.providers.saml.v1;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.company.CompanyAPI;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.saml.Attributes;
 import com.dotcms.saml.DotSamlConstants;
@@ -10,6 +11,7 @@ import com.dotcms.saml.SamlName;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -101,7 +103,9 @@ public class SAMLHelperTest extends IntegrationTestBase {
 
         final SamlAuthenticationService samlAuthenticationService         = new MockSamlAuthenticationService();
         final IdentityProviderConfiguration identityProviderConfiguration = mock(IdentityProviderConfiguration.class);
-        final SAMLHelper           		samlHelper                        = new SAMLHelper(samlAuthenticationService);
+        final CompanyAPI companyAPI                                       = mock(CompanyAPI.class);
+        final Company    company                                          = new Company();
+        final SAMLHelper           		samlHelper                        = new SAMLHelper(samlAuthenticationService, companyAPI);
         final String nativeLastName     = "For SAML";
         final String nativeFirstName    = "Native User";
         final String nativeEmailAddress = "native.user" + UUID.randomUUID() +  "@dotcms.com";
@@ -111,13 +115,19 @@ public class SAMLHelperTest extends IntegrationTestBase {
         final String samlFirstName      = "Native User";
         final String samlEmailAddress   = "saml.user" + UUID.randomUUID() +  "@dotcms.com";
 
+
         //// create necessary mocks
+
+        // wants login by id
+        company.setAuthType(Company.AUTH_TYPE_ID);
+        when(companyAPI.getDefaultCompany()).thenReturn(company);
+
         // no want to sync roles
         when(identityProviderConfiguration.containsOptionalProperty(SamlName.DOTCMS_SAML_BUILD_ROLES.getPropertyName())).thenReturn(true);
         when(identityProviderConfiguration.getOptionalProperty(SamlName.DOTCMS_SAML_BUILD_ROLES.getPropertyName())).thenReturn(DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_NONE_VALUE);
 
         // creates a new native user
-        final User nativeUser = new UserDataGen().active(true).lastName(nativeLastName).firstName(nativeFirstName)
+            final User nativeUser = new UserDataGen().active(true).lastName(nativeLastName).firstName(nativeFirstName)
                 .emailAddress(nativeEmailAddress).nextPersisted();
 
         final Attributes nativeUserAttributes = new Attributes.Builder().firstName(nativeFirstName + "Updated")

@@ -11,6 +11,7 @@ import com.dotcms.saml.SamlAuthenticationService;
 import com.dotcms.saml.DotSamlException;
 import com.dotcms.saml.SamlConfigurationService;
 import com.dotcms.saml.SamlName;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
@@ -65,7 +66,7 @@ public class DotSamlResource implements Serializable {
 		this.samlConfigurationService			  = DotSamlProxyFactory.getInstance().samlConfigurationService();
 		this.samlAuthenticationService            = DotSamlProxyFactory.getInstance().samlAuthenticationService();
 		this.identityProviderConfigurationFactory = DotSamlProxyFactory.getInstance().identityProviderConfigurationFactory();
-		this.samlHelper                           = new SAMLHelper(this.samlAuthenticationService);
+		this.samlHelper                           = new SAMLHelper(this.samlAuthenticationService, APILocator.getCompanyAPI());
 		this.webResource						  = new WebResource();
 	}
 
