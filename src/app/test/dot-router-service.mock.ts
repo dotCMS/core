@@ -18,24 +18,6 @@ export class MockDotRouterService {
         return {};
     }
 
-    get currentSavedURL(): string {
-        return this._currentSavedURL;
-    }
-
-    set currentSavedURL(url: string) {
-        this._currentSavedURL = url;
-    }
-
-    get previousSavedURL(): string {
-        return this._previousSavedURL;
-    }
-
-    set previousSavedURL(url: string) {
-        this._previousSavedURL = url;
-    }
-
-    _previousSavedURL = '';
-    _currentSavedURL = '';
     replaceQueryParams = jasmine.createSpy('replaceQueryParams');
     getPortletId = jasmine.createSpy('getPortletId').and.returnValue('test');
     goToEditContentType = jasmine.createSpy('goToEditContentType');
@@ -44,10 +26,6 @@ export class MockDotRouterService {
     goToEditTask = jasmine.createSpy('goToEditTask');
     goToForgotPassword = jasmine.createSpy('goToForgotPassword');
     goToLogin = jasmine.createSpy('goToLogin');
-    goToContent = jasmine.createSpy('goToContent');
-    goToCreateContent = jasmine.createSpy('goToCreateContent');
-    goToPreviousUrl = jasmine.createSpy('goToPreviousUrl');
-    goToStarter = jasmine.createSpy('goToStarter');
     doLogOut = jasmine.createSpy('doLogOut');
     goToMain = jasmine.createSpy('goToMain');
     gotoPortlet = jasmine

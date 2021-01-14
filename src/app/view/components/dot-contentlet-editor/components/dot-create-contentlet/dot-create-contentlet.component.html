@@ -1,5 +1,5 @@
 <dot-contentlet-wrapper
     [url]="url$ | async"
-    (close)="onClose($event)"
-    (custom)="onCustom($event)"
+    (close)="close.emit($event)"
+    (custom)="custom.emit($event)"
 ></dot-contentlet-wrapper>

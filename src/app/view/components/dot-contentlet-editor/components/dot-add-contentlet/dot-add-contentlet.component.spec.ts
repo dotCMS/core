@@ -32,7 +32,6 @@ import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.servic
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '@tests/dot-test-bed';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import cleanUpDialog from '@tests/clean-up-dialog';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 describe('DotAddContentletComponent', () => {
     let component: DotAddContentletComponent;
@@ -56,7 +55,6 @@ describe('DotAddContentletComponent', () => {
                     DotAlertConfirmService,
                     ConfirmationService,
                     FormatDateService,
-                    DotHttpErrorManagerService,
                     { provide: CoreWebService, useClass: CoreWebServiceMock },
                     { provide: DotRouterService, useClass: MockDotRouterService },
                     ApiRoot,

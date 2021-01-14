@@ -1,17 +1,9 @@
 import { of as observableOf } from 'rxjs';
+import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotContentletEditorService } from './dot-contentlet-editor.service';
 import { DotMenuService } from '@services/dot-menu.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-import { MockDotRouterService } from '@tests/dot-router-service.mock';
-import { LoginServiceMock } from '@tests/login-service.mock';
-import { CoreWebService, LoginService } from 'dotcms-js';
-import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
-import { ConfirmationService } from 'primeng/api';
-import { FormatDateService } from '@services/format-date-service';
+import { RouterTestingModule } from '@angular/router/testing';
 
 describe('DotContentletEditorService', () => {
     const load = () => {};
@@ -19,48 +11,18 @@ describe('DotContentletEditorService', () => {
     let service: DotContentletEditorService;
     let dotMenuService: DotMenuService;
     let dotRouterService: DotRouterService;
-    let httpMock: HttpTestingController;
     let injector;
 
     beforeEach(() => {
-        injector = TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
-            providers: [
-                DotContentletEditorService,
-                DotMenuService,
-                DotHttpErrorManagerService,
-                DotAlertConfirmService,
-                ConfirmationService,
-                FormatDateService,
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                { provide: DotRouterService, useClass: MockDotRouterService },
-                {
-                    provide: LoginService,
-                    useClass: LoginServiceMock
-                }
-            ]
+        injector = DOTTestBed.configureTestingModule({
+            providers: [DotContentletEditorService, DotMenuService, DotRouterService],
+            imports: [RouterTestingModule]
         });
 
-        service = injector.inject(DotContentletEditorService);
-        dotMenuService = injector.inject(DotMenuService);
-        dotRouterService = injector.inject(DotRouterService);
-        httpMock = injector.inject(HttpTestingController);
+        service = injector.get(DotContentletEditorService);
+        dotMenuService = injector.get(DotMenuService);
+        dotRouterService = injector.get(DotRouterService);
         spyOn(dotMenuService, 'getDotMenuId').and.returnValue(observableOf('456'));
-    });
-
-    it('should get action url', () => {
-        const url = `v1/portlet/_actionurl/test`;
-
-        service.getActionUrl('test').subscribe((urlString: string) => {
-            expect(urlString).toEqual('testString');
-        });
-
-        const req = httpMock.expectOne(url);
-        expect(req.request.method).toBe('GET');
-        req.flush({
-            entity: 'testString'
-        });
-        httpMock.verify();
     });
 
     it('should set data to add', () => {

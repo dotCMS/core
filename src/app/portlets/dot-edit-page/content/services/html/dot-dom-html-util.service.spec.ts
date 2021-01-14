@@ -2,22 +2,23 @@ import { DotDOMHtmlUtilService } from './dot-dom-html-util.service';
 import { TestBed, waitForAsync } from '@angular/core/testing';
 
 describe('DotDOMHtmlUtilService', () => {
-    let service: DotDOMHtmlUtilService;
+    let dotDOMHtmlUtilService: DotDOMHtmlUtilService;
 
     beforeEach(
         waitForAsync(() => {
             TestBed.configureTestingModule({
-                providers: [DotDOMHtmlUtilService]
+                providers: [DotDOMHtmlUtilService],
+                imports: []
             });
 
-            service = TestBed.get(DotDOMHtmlUtilService);
+            dotDOMHtmlUtilService = TestBed.get(DotDOMHtmlUtilService);
         })
     );
 
     it('should create a link element', () => {
         const href = 'https://testing/test.css';
 
-        const cssElementCreated = service.createLinkElement(href);
+        const cssElementCreated = dotDOMHtmlUtilService.createLinkElement(href);
 
         expect(cssElementCreated.rel).toEqual('stylesheet');
         expect(cssElementCreated.type).toEqual('text/css');
@@ -26,7 +27,7 @@ describe('DotDOMHtmlUtilService', () => {
     });
 
     it('should create an style element', () => {
-        const styleElementCreated = service.createStyleElement('h1 {color: red}');
+        const styleElementCreated = dotDOMHtmlUtilService.createStyleElement('h1 {color: red}');
         expect(styleElementCreated.innerHTML).toEqual('h1 {color: red}');
     });
 
@@ -34,7 +35,10 @@ describe('DotDOMHtmlUtilService', () => {
         const src = 'https://testing/test.js';
         const onloadCallbackFunc = () => {};
 
-        const scriptElementCreated = service.creatExternalScriptElement(src, onloadCallbackFunc);
+        const scriptElementCreated = dotDOMHtmlUtilService.creatExternalScriptElement(
+            src,
+            onloadCallbackFunc
+        );
 
         expect(scriptElementCreated.src).toEqual(src);
         expect(scriptElementCreated.onload).toEqual(onloadCallbackFunc);
@@ -43,7 +47,7 @@ describe('DotDOMHtmlUtilService', () => {
     it('should create a inline script', () => {
         const text = 'var a = 2;';
 
-        const scriptElementCreated = service.createInlineScriptElement(text);
+        const scriptElementCreated = dotDOMHtmlUtilService.createInlineScriptElement(text);
 
         expect(scriptElementCreated.text).toEqual(text);
     });
@@ -55,7 +59,7 @@ describe('DotDOMHtmlUtilService', () => {
             a: 'a value',
             b: 'b value'
         };
-        const buttonHTML = service.getButtomHTML(label, className, dataset);
+        const buttonHTML = dotDOMHtmlUtilService.getButtomHTML(label, className, dataset);
 
         const divElement = document.createElement('div');
         divElement.innerHTML = buttonHTML;

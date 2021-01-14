@@ -1,13 +1,13 @@
 import { Injectable } from '@angular/core';
 import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotCMSEditPageEvent } from '@components/dot-contentlet-editor/components/dot-contentlet-wrapper/dot-contentlet-wrapper.component';
 import { DotPushPublishDialogService, DotUiColors } from 'dotcms-js';
 import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-handler/dot-workflow-event-handler.service';
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 /**
  * Handle Custom events
  *
@@ -21,8 +21,8 @@ export class DotCustomEventHandlerService {
     constructor(
         private dotLoadingIndicatorService: DotLoadingIndicatorService,
         private dotRouterService: DotRouterService,
-        private dotUiColorsService: DotUiColorsService,
         private dotContentletEditorService: DotContentletEditorService,
+        private dotUiColorsService: DotUiColorsService,
         private dotIframeService: DotIframeService,
         private dotPushPublishDialogService: DotPushPublishDialogService,
         private dotDownloadBundleDialogService: DotDownloadBundleDialogService,
@@ -58,8 +58,6 @@ export class DotCustomEventHandlerService {
         this.dotContentletEditorService.create({
             data: $event.detail.data
         });
-        // TODO: Enabled this and remove previous 3 lines of code when endpoint gets updated
-        // this.dotRouterService.goToCreateContent($event.detail.data);
     }
 
     private goToEditPage($event: CustomEvent<DotCMSEditPageEvent>): void {

@@ -200,6 +200,25 @@ describe('DotEditPageToolbarComponent', () => {
         });
     });
 
+    describe('edit-page-toolbar-cancel', () => {
+        it('should have right attr', () => {
+            fixtureHost.detectChanges();
+            const editPageCancelBtn = de.query(By.css('.edit-page-toolbar__cancel'));
+            expect(editPageCancelBtn.attributes.class).toEqual(
+                'edit-page-toolbar__cancel p-button-secondary p-button-sm p-button p-component'
+            );
+            expect(editPageCancelBtn.nativeElement.innerText).toBe('CANCEL');
+        });
+
+        it('should emit on click', () => {
+            spyOn(component.cancel, 'emit');
+            fixtureHost.detectChanges();
+            const editPageCancelBtn = de.query(By.css('.edit-page-toolbar__cancel'));
+            editPageCancelBtn.triggerEventHandler('click', {});
+            expect(component.cancel.emit).toHaveBeenCalled();
+        });
+    });
+
     describe('dot-edit-page-workflows-actions', () => {
         it('should have pageState attr', () => {
             fixtureHost.detectChanges();

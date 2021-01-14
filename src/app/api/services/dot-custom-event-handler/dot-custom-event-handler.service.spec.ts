@@ -43,8 +43,8 @@ describe('DotCustomEventHandlerService', () => {
     let dotLoadingIndicatorService: DotLoadingIndicatorService;
     let dotRouterService: DotRouterService;
     let dotUiColorsService: DotUiColorsService;
-    let dotPushPublishDialogService: DotPushPublishDialogService;
     let dotContentletEditorService: DotContentletEditorService;
+    let dotPushPublishDialogService: DotPushPublishDialogService;
     let dotDownloadBundleDialogService: DotDownloadBundleDialogService;
     let dotWorkflowEventHandlerService: DotWorkflowEventHandlerService;
 
@@ -128,7 +128,9 @@ describe('DotCustomEventHandlerService', () => {
             new CustomEvent('ng-event', {
                 detail: {
                     name: 'create-contentlet',
-                    data: { url: 'hello.world.com' }
+                    data: {
+                        url: 'hello.world.com'
+                    }
                 }
             })
         );

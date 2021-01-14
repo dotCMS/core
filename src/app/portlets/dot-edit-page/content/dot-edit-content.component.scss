@@ -21,7 +21,8 @@ dot-whats-changed,
     height: 100%;
     max-width: 100%;
     min-width: 100%;
-    padding: $spacing-5;
+    overflow: scroll;
+    padding: 0 $spacing-3 $spacing-3;
     width: 100%;
 
     &.dot-edit__page-wrapper--deviced {
@@ -37,9 +38,6 @@ dot-whats-changed,
 .dot-edit-content__wrapper {
     position: relative;
     height: 100%;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
 }
 
 .dot-edit__page-wrapper:after {
@@ -53,7 +51,6 @@ dot-whats-changed,
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    border: solid 1px $gray-lighter;
 
     .dot-edit__page-wrapper--deviced & {
         flex-grow: 0;

@@ -1,6 +1,6 @@
 import { Observable, Subject, fromEvent, merge } from 'rxjs';
 
-import { filter, takeUntil, pluck, take, tap, skip } from 'rxjs/operators';
+import { filter, takeUntil, pluck, take, tap } from 'rxjs/operators';
 import { ActivatedRoute } from '@angular/router';
 import { Component, OnInit, ViewChild, ElementRef, NgZone, OnDestroy } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -157,6 +157,15 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
      */
     onLoad($event): void {
         this.dotLoadingIndicatorService.hide();
+        if (
+            this.shouldSetContainersHeight() &&
+            $event.currentTarget.contentDocument.body.innerHTML
+        ) {
+            this.dotEditContentHtmlService.setContaintersChangeHeightListener(
+                this.pageStateInternal.layout
+            );
+        }
+
         const doc = $event.target.contentWindow.document;
         this.dotUiColorsService.setColors(doc.querySelector('html'));
     }
@@ -215,9 +224,26 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         return this.route.snapshot.queryParams.url === url;
     }
 
+    private shouldSetContainersHeight() {
+        return (
+            this.pageStateInternal &&
+            this.pageStateInternal.layout &&
+            this.pageStateInternal.state.mode === DotPageMode.EDIT
+        );
+    }
+
     private saveContent(event: PageModelChangeEvent): void {
         this.saveToPage(event.model)
-            .pipe(filter(() => this.shouldReload(event.type)))
+            .pipe(
+                tap(() => {
+                    if (this.shouldSetContainersHeight()) {
+                        this.dotEditContentHtmlService.setContaintersSameHeight(
+                            this.pageStateInternal.layout
+                        );
+                    }
+                }),
+                filter(() => this.shouldReload(event.type))
+            )
             .subscribe(() => {
                 this.reload();
             });
@@ -412,7 +438,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     }
 
     private subscribeSwitchSite(): void {
-        this.siteService.switchSite$.pipe(skip(1), takeUntil(this.destroy$)).subscribe(() => {
+        this.siteService.switchSite$.pipe(takeUntil(this.destroy$)).subscribe(() => {
             this.reload();
         });
     }

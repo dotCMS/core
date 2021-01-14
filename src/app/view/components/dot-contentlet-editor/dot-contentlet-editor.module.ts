@@ -8,7 +8,6 @@ import { DotContentletEditorService } from './services/dot-contentlet-editor.ser
 import { DotContentletWrapperComponent } from './components/dot-contentlet-wrapper/dot-contentlet-wrapper.component';
 import { DotReorderMenuComponent } from './components/dot-reorder-menu/dot-reorder-menu.component';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { DotCreateContentletResolver } from './components/dot-create-contentlet/dot-create-contentlet.resolver.service';
 
 @NgModule({
     imports: [CommonModule, DotIframeDialogModule, DotPipesModule],
@@ -25,6 +24,6 @@ import { DotCreateContentletResolver } from './components/dot-create-contentlet/
         DotCreateContentletComponent,
         DotReorderMenuComponent
     ],
-    providers: [DotContentletEditorService, DotCreateContentletResolver]
+    providers: [DotContentletEditorService]
 })
 export class DotContentletEditorModule {}

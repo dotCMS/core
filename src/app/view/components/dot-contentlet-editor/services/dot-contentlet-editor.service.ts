@@ -1,9 +1,6 @@
-import { HttpErrorResponse } from '@angular/common/http';
-import { CoreWebService } from 'dotcms-js';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { Injectable } from '@angular/core';
 import { Subject, Observable, of } from 'rxjs';
-import { mergeMap, map, filter, catchError, pluck, take } from 'rxjs/operators';
+import { mergeMap, map, filter } from 'rxjs/operators';
 
 interface DotAddEditEvents {
     load?: ($event: any) => void;
@@ -33,10 +30,7 @@ export class DotContentletEditorService {
     private _load: ($event: any) => void;
     private _keyDown: ($event: KeyboardEvent) => void;
 
-    constructor(
-        private coreWebService: CoreWebService,
-        private httpErrorManagerService: DotHttpErrorManagerService
-    ) {}
+    constructor() {}
 
     get addUrl$(): Observable<string> {
         return this.data.pipe(
@@ -135,28 +129,6 @@ export class DotContentletEditorService {
         if (this._load) {
             this._load($event);
         }
-    }
-
-    /**
-     * Returns action url to display create contentlet dialog
-     * @param {string} contentTypeVariable
-     * @returns Observable<string>
-     * @memberof DotContentletEditorService
-     */
-    getActionUrl(contentTypeVariable: string): Observable<string> {
-        return this.coreWebService
-            .requestView({
-                url: `v1/portlet/_actionurl/${contentTypeVariable}`
-            })
-            .pipe(
-                pluck('entity'),
-                catchError((error: HttpErrorResponse) => {
-                    return this.httpErrorManagerService.handle(error).pipe(
-                        take(1),
-                        map(() => null)
-                    );
-                })
-            );
     }
 
     private bindEvents(events: DotAddEditEvents): void {

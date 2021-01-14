@@ -78,31 +78,37 @@ export class DotEditContentToolbarHtmlService {
     }
 
     /**
-     * Bind event to the document to add the contentlet toolbar on contentlet element mouseover
+     * Edit contentlet html to add button and content
      *
-     * @param {Document} doc
+     * @param Document doc
      * @memberof DotEditContentToolbarHtmlService
      */
-    bindContentletEvents(doc: Document): void {
-        doc.addEventListener('mouseover', (e) => {
-            const contentlet: HTMLElement = (e.target as Element).closest(
-                '[data-dot-object="contentlet"]:not([data-dot-toolbar="true"]'
-            );
+    addContentletMarkup(doc: Document): void {
+        const contentletQuery = `[data-dot-object="contentlet"][data-dot-has-page-lang-version="true"]`;
+        const contentlets: HTMLDivElement[] = Array.from(doc.querySelectorAll(contentletQuery));
 
-            if (contentlet) {
-                contentlet.setAttribute('data-dot-toolbar', 'true');
-                this.addToolbarToContentlet(contentlet);
-            }
+        contentlets.forEach((contentlet: HTMLDivElement) => {
+            this.addToolbarToContentlet(contentlet);
         });
     }
 
-    /**
-     * Return the HTML of the buttons for the contentlets
-     *
-     * @param {{ [key: string]: any }} contentletDataset
-     * @returns {string}
-     * @memberof DotEditContentToolbarHtmlService
-     */
+    addToolbarToContentlet(contentlet: HTMLElement) {
+        const contentletToolbar = document.createElement('div');
+        contentletToolbar.classList.add('dotedit-contentlet__toolbar');
+
+        const vtls: HTMLElement[] = Array.from(
+            contentlet.querySelectorAll('[data-dot-object="vtl-file"]')
+        );
+
+        if (vtls.length) {
+            contentletToolbar.innerHTML += this.getEditVtlButtons(vtls);
+        }
+
+        contentletToolbar.innerHTML += this.getContentButton(contentlet.dataset);
+
+        contentlet.insertAdjacentElement('afterbegin', contentletToolbar);
+    }
+
     getContentButton(contentletDataset: { [key: string]: any }): string {
         const identifier: string = contentletDataset.dotIdentifier;
         const inode: string = contentletDataset.dotInode;
@@ -145,13 +151,6 @@ export class DotEditContentToolbarHtmlService {
         `;
     }
 
-    /**
-     * Returns the html for the edit vlt buttons
-     *
-     * @param {HTMLElement[]} vtls
-     * @returns {string}
-     * @memberof DotEditContentToolbarHtmlService
-     */
     getEditVtlButtons(vtls: HTMLElement[]): string {
         return this.getDotEditPopupMenuHtml({
             button: {
@@ -169,23 +168,6 @@ export class DotEditContentToolbarHtmlService {
                 };
             })
         });
-    }
-
-    private addToolbarToContentlet(contentlet: HTMLElement) {
-        const contentletToolbar = document.createElement('div');
-        contentletToolbar.classList.add('dotedit-contentlet__toolbar');
-
-        const vtls: HTMLElement[] = Array.from(
-            contentlet.querySelectorAll('[data-dot-object="vtl-file"]')
-        );
-
-        if (vtls.length) {
-            contentletToolbar.innerHTML += this.getEditVtlButtons(vtls);
-        }
-
-        contentletToolbar.innerHTML += this.getContentButton(contentlet.dataset);
-
-        contentlet.insertAdjacentElement('afterbegin', contentletToolbar);
     }
 
     private createContainerToolbar(container: HTMLElement) {
