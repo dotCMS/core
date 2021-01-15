@@ -16,6 +16,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPIImpl;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
@@ -147,9 +148,19 @@ public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
 
 	    if (hostId != null && user.isBackendUser()) {
 	        return Optional.ofNullable(find(hostId, user, respectAnonPerms));
-        } else if (request.getParameter(Host.HOST_VELOCITY_VAR_NAME) != null) {
-            final String hostName = request.getParameter(Host.HOST_VELOCITY_VAR_NAME);
-            return this.resolveHostNameWithoutDefault(hostName, user, respectAnonPerms);
+        } else if (UtilMethods.isSet(request.getParameter(Host.HOST_VELOCITY_VAR_NAME))
+            || UtilMethods.isSet(request.getAttribute(Host.HOST_VELOCITY_VAR_NAME))) {
+
+	        final String hostIdOrName = UtilMethods.isSet(
+                    request.getParameter(Host.HOST_VELOCITY_VAR_NAME))
+                            ? request.getParameter(Host.HOST_VELOCITY_VAR_NAME)
+                            : (String) request.getAttribute(Host.HOST_VELOCITY_VAR_NAME);
+
+            Host host = find(hostIdOrName, user, respectAnonPerms);
+
+            if(host!=null) return Optional.of(host);
+
+            return this.resolveHostNameWithoutDefault(hostIdOrName, user, respectAnonPerms);
         } else if (request.getAttribute(WebKeys.CURRENT_HOST) != null) {
 	        return Optional.of((Host) request.getAttribute(WebKeys.CURRENT_HOST));
         } else {
