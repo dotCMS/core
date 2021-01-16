@@ -2465,6 +2465,94 @@
 					"response": []
 				},
 				{
+					"name": "pre_ImportBundleWithPageInDifferentSite",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "b90dbf9c-bf27-4e26-939d-95ad0e9879e7",
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"page-in-another-site.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/page-in-another-site.tar.gz"
+								}
+							],
+							"options": {
+								"formdata": {}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "GivenRequestByURI_givenASite_shouldReturnExpectedPage",
 					"event": [
 						{
@@ -5067,87 +5155,87 @@
 	],
 	"variable": [
 		{
-			"id": "733703c6-5f7a-44e4-81cc-c2cb25b953b4",
+			"id": "751f34dc-dc57-43bf-a013-1f9326c41dc1",
 			"key": "languageId",
 			"value": 1609799506077
 		},
 		{
-			"id": "9760df0d-6c16-4960-9aa6-547d6245573b",
+			"id": "77da8d6d-ad31-4081-a25c-4aaceeea9cc9",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "325bd6c3-5e6b-4225-91d6-c1faf4a6869f",
+			"id": "cf28efd4-e64e-4a29-88a7-23ff214af294",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType30413852"
 		},
 		{
-			"id": "92bacbdb-4344-49cb-a2cd-311e92095f2b",
+			"id": "d76bb34f-c7d6-4c4a-abf0-0fc24de355e7",
 			"key": "contentIdentifier",
 			"value": "a5bf0d80-4273-41e1-8f1f-22a3d4ac986f"
 		},
 		{
-			"id": "a91d7637-43a6-4bd5-9118-4569bc6c5449",
+			"id": "230d4a69-5c47-4c19-956c-c48d3eda54fd",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "10834696-6795-4931-9931-6556da01908d",
+			"id": "a15f09b1-9550-4701-99b7-6af9a1cc2c00",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType49851579"
 		},
 		{
-			"id": "d01fe45a-83dc-450b-9b30-c16251ba67a7",
+			"id": "444ec021-9840-4a55-9825-683b75a2f028",
 			"key": "imageContentIdentifier",
 			"value": "4cb59737-913d-4c5f-b021-dbe213a15739"
 		},
 		{
-			"id": "814c1d5c-74d2-472e-bc04-503d7397465e",
+			"id": "f18ecc16-878a-4a1b-8fa4-8391c2bf02f2",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "e983c08d-4884-41e5-805f-60f240378827",
+			"id": "a362d5b1-2bb5-44d6-a80c-158433451272",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "faeeb6bb-8852-4b29-ab6b-862c28e11fbe",
+			"id": "166ca507-f712-42af-befd-408a97acd4bf",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "36acff4d-4c35-4cad-9a8c-0919c723d424",
+			"id": "3a7ffbd2-7f87-42d4-aadd-932de9f55391",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "e73187db-b27e-49d0-948d-d77ff1c20ccf",
+			"id": "cc309ffb-5149-41e1-857a-ef3aa241b0f1",
 			"key": "fileContentIdentifier",
 			"value": "434f474a-4d89-4b96-ad38-aa46483be3e5"
 		},
 		{
-			"id": "974b0aa6-88c0-4b64-8982-1c4ef2d0995d",
+			"id": "feb67b8c-957e-4e1f-9294-a3b76ccc1a41",
 			"key": "childContentTypeVariable",
 			"value": "childType40723544"
 		},
 		{
-			"id": "5ed232a0-10be-477a-b6ab-e17b1857f665",
+			"id": "e3bc277a-1e2d-4111-bb60-dc38b52a8c75",
 			"key": "parentContentTypeVariable",
 			"value": "parentType84267241"
 		},
 		{
-			"id": "afec7aa9-7747-4d82-b5a8-7015af5ceb77",
+			"id": "6f97345d-a38d-4f5e-be2d-dbded615fd22",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "169d2767-efcc-4907-a1b0-32861e446aa6",
+			"id": "b8506b44-ed6f-4f39-870a-d54f377b2a08",
 			"key": "childContentIdentifier",
 			"value": "69953bca-0384-487c-8288-5118f455c127"
 		},
 		{
-			"id": "9ca0f7c5-4c88-418f-93ad-a48b4a480d87",
+			"id": "4980ee3e-df38-4236-bbf4-69d7227aadbb",
 			"key": "parentContentIdentifier",
 			"value": "5f487236-01fb-4ff1-a25e-8eecc99b2312"
 		}
