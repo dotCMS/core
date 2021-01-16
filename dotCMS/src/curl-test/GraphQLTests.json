@@ -2463,6 +2463,91 @@
 						"description": "This tests that given a persona tag in the parameters of the `page` field, the page rendering needs to take the persona into consideration and return the persona info"
 					},
 					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_givenASite_shouldReturnExpectedPage",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "c4895d63-9a74-4a75-99b0-f114449827a1",
+								"exec": [
+									"",
+									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Expected page fetched\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.page.title, 'FAILED:[jsonData.data.page.title]').equal(\"copy-page\");",
+									"    pm.expect(jsonData.data.page.url, 'FAILED:[jsonData.data.page.url]').equal(\"/copy-page\");",
+									"    pm.expect(jsonData.data.page.host.hostName, 'FAILED:[jsonData.data.page.host.hostName]').equal(\"copy.dotcms.com\");",
+									"    ",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"type": "text",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"type": "text",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/copy-page\", fireRules: true, site: \"copy.dotcms.com\") {\n    title\n    url\n    host {\n      hostName\n    }\n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "This tests that given a persona tag in the parameters of the `page` field, the page rendering needs to take the persona into consideration and return the persona info"
+					},
+					"response": []
 				}
 			],
 			"protocolProfileBehavior": {}
@@ -4982,87 +5067,87 @@
 	],
 	"variable": [
 		{
-			"id": "417ebf45-f4d0-4f5f-94ea-8223e4b09a85",
+			"id": "733703c6-5f7a-44e4-81cc-c2cb25b953b4",
 			"key": "languageId",
 			"value": 1609799506077
 		},
 		{
-			"id": "9ca87e01-b8e2-468e-b06c-f187d5b66c83",
+			"id": "9760df0d-6c16-4960-9aa6-547d6245573b",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "48cc40eb-292b-45fd-bd75-60bce3f7a7b3",
+			"id": "325bd6c3-5e6b-4225-91d6-c1faf4a6869f",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType30413852"
 		},
 		{
-			"id": "bc20c633-2c30-4ac0-afd8-a060a38e9cca",
+			"id": "92bacbdb-4344-49cb-a2cd-311e92095f2b",
 			"key": "contentIdentifier",
 			"value": "a5bf0d80-4273-41e1-8f1f-22a3d4ac986f"
 		},
 		{
-			"id": "3f0eed4d-e10d-495f-8f34-edd7829309b1",
+			"id": "a91d7637-43a6-4bd5-9118-4569bc6c5449",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "940b9433-8dad-467c-8a96-df33caba8717",
+			"id": "10834696-6795-4931-9931-6556da01908d",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType49851579"
 		},
 		{
-			"id": "1814c0d0-4131-4603-85df-47e6945960f1",
+			"id": "d01fe45a-83dc-450b-9b30-c16251ba67a7",
 			"key": "imageContentIdentifier",
 			"value": "4cb59737-913d-4c5f-b021-dbe213a15739"
 		},
 		{
-			"id": "4f6f5fdb-766e-4207-9b95-0367a779db41",
+			"id": "814c1d5c-74d2-472e-bc04-503d7397465e",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "c8bc6588-f29b-46f6-bd2f-d90b4dc38db9",
+			"id": "e983c08d-4884-41e5-805f-60f240378827",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "1cc147e5-45bc-4651-9043-b496fbb35005",
+			"id": "faeeb6bb-8852-4b29-ab6b-862c28e11fbe",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "f252a88a-6c59-447b-90fe-1989ae108dac",
+			"id": "36acff4d-4c35-4cad-9a8c-0919c723d424",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "8bc6c4e5-be72-4bc1-831b-8819d79021bb",
+			"id": "e73187db-b27e-49d0-948d-d77ff1c20ccf",
 			"key": "fileContentIdentifier",
 			"value": "434f474a-4d89-4b96-ad38-aa46483be3e5"
 		},
 		{
-			"id": "eadfb0d8-39cc-444e-ab96-a523c322863b",
+			"id": "974b0aa6-88c0-4b64-8982-1c4ef2d0995d",
 			"key": "childContentTypeVariable",
 			"value": "childType40723544"
 		},
 		{
-			"id": "8c4053f5-3814-46cb-a074-324164c63bc6",
+			"id": "5ed232a0-10be-477a-b6ab-e17b1857f665",
 			"key": "parentContentTypeVariable",
 			"value": "parentType84267241"
 		},
 		{
-			"id": "0e10d996-4e59-4bae-85cb-c5910c02eaab",
+			"id": "afec7aa9-7747-4d82-b5a8-7015af5ceb77",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "9a8b7d08-1d2a-416f-a14b-ded46f572674",
+			"id": "169d2767-efcc-4907-a1b0-32861e446aa6",
 			"key": "childContentIdentifier",
 			"value": "69953bca-0384-487c-8288-5118f455c127"
 		},
 		{
-			"id": "e22ed666-f69a-4b8a-9763-7dd66ad90415",
+			"id": "9ca0f7c5-4c88-418f-93ad-a48b4a480d87",
 			"key": "parentContentIdentifier",
 			"value": "5f487236-01fb-4ff1-a25e-8eecc99b2312"
 		}
