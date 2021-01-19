@@ -151,9 +151,10 @@ public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
         } else if (UtilMethods.isSet(request.getParameter(Host.HOST_VELOCITY_VAR_NAME))
             || UtilMethods.isSet(request.getAttribute(Host.HOST_VELOCITY_VAR_NAME))) {
 
-	        final String hostIdOrName = UtilMethods.isSet(
-                    request.getParameter(Host.HOST_VELOCITY_VAR_NAME))
-                            ? request.getParameter(Host.HOST_VELOCITY_VAR_NAME)
+            final String hostVelocityVarName = request.getParameter(Host.HOST_VELOCITY_VAR_NAME);
+
+	        final String hostIdOrName = UtilMethods.isSet(hostVelocityVarName)
+                            ? hostVelocityVarName
                             : (String) request.getAttribute(Host.HOST_VELOCITY_VAR_NAME);
 
             Host host = find(hostIdOrName, user, respectAnonPerms);
