@@ -1,6 +1,6 @@
 import { Observable, Subject, merge } from 'rxjs';
 
-import { take, pluck, takeUntil } from 'rxjs/operators';
+import { pluck, takeUntil, tap } from 'rxjs/operators';
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { DotPageRenderState } from '../../shared/models/dot-rendered-page-state.model';
@@ -17,6 +17,8 @@ import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler
 export class DotEditPageMainComponent implements OnInit, OnDestroy {
     pageState$: Observable<DotPageRenderState>;
     private pageUrl: string;
+    private languageId: string;
+    private pageIsSaved: boolean = false;
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private readonly customEventsHandler;
 
@@ -29,10 +31,9 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
     ) {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
-                'save-page': (e: CustomEvent) => {
-                    if (e.detail.payload) {
-                        this.pageUrl = e.detail.payload.htmlPageReferer.split('?')[0];
-                    }
+                'save-page': ({ detail: { payload } }: CustomEvent) => {
+                    this.pageUrl = payload.htmlPageReferer.split('?')[0];
+                    this.pageIsSaved = true;
                 },
                 'deleted-page': () => {
                     this.dotRouterService.goToSiteBrowser();
@@ -45,9 +46,14 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
         this.pageState$ = merge(
             this.route.data.pipe(pluck('content')),
             this.dotPageStateService.state$
-        ).pipe(takeUntil(this.destroy$));
+        ).pipe(
+            takeUntil(this.destroy$),
+            tap(({ page }: DotPageRenderState) => {
+                this.pageUrl = page.pageURI;
+                this.languageId = page.languageId.toString();
+            })
+        );
 
-        this.pageUrl = this.route.snapshot.queryParams.url;
         this.subscribeIframeCloseAction();
     }
 
@@ -71,21 +77,21 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
 
     private subscribeIframeCloseAction(): void {
         this.dotContentletEditorService.close$.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            this.pageState$.pipe(take(1)).subscribe((pageState: DotPageRenderState) => {
+            if (this.pageIsSaved) {
                 if (this.pageUrl !== this.route.snapshot.queryParams.url) {
                     this.dotRouterService.goToEditPage({
                         url: this.pageUrl,
-                        language_id: pageState.page.languageId.toString()
+                        language_id: this.languageId
                     });
                 } else {
                     this.dotPageStateService.get({
-                        url: this.route.snapshot.queryParams.url,
+                        url: this.pageUrl,
                         viewAs: {
-                            language: pageState.page.languageId
+                            language: parseInt(this.languageId, 10)
                         }
                     });
                 }
-            });
+            }
         });
     }
 }
