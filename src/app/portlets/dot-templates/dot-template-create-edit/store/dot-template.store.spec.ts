@@ -343,6 +343,45 @@ describe('DotTemplateStore', () => {
                     });
                 });
             });
+            it('should update template and update the state when updates props', () => {
+                service.saveProperties({
+                    body: 'string',
+                    friendlyName: 'string',
+                    identifier: 'string',
+                    title: 'string'
+                });
+
+                expect<any>(dotTemplatesService.update).toHaveBeenCalledWith({
+                    body: 'string',
+                    friendlyName: 'string',
+                    identifier: 'string',
+                    title: 'string'
+                });
+
+                service.state$.subscribe((res) => {
+                    expect(res).toEqual({
+                        working: {
+                            type: 'advanced',
+                            identifier: '222-3000-333---30303-394',
+                            title: 'Updated template',
+                            friendlyName: '',
+                            drawed: false,
+                            body: '<h4>Hi you</h1>',
+                            image: ''
+                        },
+                        original: {
+                            type: 'advanced',
+                            identifier: '222-3000-333---30303-394',
+                            title: 'Updated template',
+                            friendlyName: '',
+                            drawed: false,
+                            body: '<h4>Hi you</h1>',
+                            image: ''
+                        },
+                        apiLink: '/api/v1/templates/2d87af36-a935-4689-b427-dea75e9d84cf/working'
+                    });
+                });
+            });
         });
     });
 });
