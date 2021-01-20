@@ -117,7 +117,7 @@ public class MaintenanceResource implements Serializable {
 
             final File logFile = new File(FileUtil.getAbsolutlePath(tailLogFolder + fileName));
             if(!logFile.exists()){
-                throw new DoesNotExistException("Requested LogFile: " + fileName + " does not exist. Under Path: " + tailLogFolder);
+                throw new DoesNotExistException("Requested LogFile: " + logFile.getCanonicalPath() + " does not exist.");
             }
 
             Logger.info(this.getClass(), "Requested logFile: " + logFile.getCanonicalPath());
