@@ -96,7 +96,7 @@ public class MaintenanceResource implements Serializable {
     @GET
     @JSONP
     @NoCache
-    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
     public final Response downloadLogFile(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response, @PathParam("fileName") final String fileName)
             throws IOException {
