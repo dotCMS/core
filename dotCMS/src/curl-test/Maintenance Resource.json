@@ -165,7 +165,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/maintenance/_downloadLog/catalina.out",
+							"raw": "{{serverURL}}/api/v1/maintenance/_downloadLog/dotcms.log",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -174,7 +174,7 @@
 								"v1",
 								"maintenance",
 								"_downloadLog",
-								"catalina.out"
+								"dotcms.log"
 							]
 						}
 					},
@@ -239,7 +239,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/maintenance/_downloadLog/catalina.out",
+							"raw": "{{serverURL}}/api/v1/maintenance/_downloadLog/dotcms.log",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -248,7 +248,7 @@
 								"v1",
 								"maintenance",
 								"_downloadLog",
-								"catalina.out"
+								"dotcms.log"
 							]
 						}
 					},
