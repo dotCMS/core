@@ -10,6 +10,8 @@ import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.type.*;
 import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
@@ -549,7 +551,6 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     limit = (limit < 0) ? 10000 : limit;
 
     
-    
     // our legacy code passes in raw sql conditions and so we need to detect
     // and handle those
     SearchCondition searchCondition = new SearchCondition(search);
@@ -572,7 +573,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     dc.addParam(bottom);
     dc.addParam(top);
     
-    Logger.debug(this, "QUERY " + dc.getSQL());
+    Logger.debug(this, ()-> "QUERY " + dc.getSQL());
 
     if(LOAD_FROM_CACHE) {
         return dc.loadObjectResults()
@@ -591,6 +592,11 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     int bottom = (baseType == 0) ? 0 : baseType;
     int top = (baseType == 0) ? 100000 : baseType;
 
+    search = LicenseManager.getInstance().isCommunity() 
+                    ? search + " and structuretype <> " + BaseContentType.FORM.getType() +" and structuretype <> " + BaseContentType.PERSONA.getType() 
+                    : search;
+    
+    
     SearchCondition searchCondition = new SearchCondition(search);
 
     DotConnect dc = new DotConnect();
@@ -673,18 +679,24 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     final String search;
     final String condition;
 
+
+    final String appendCondition = LicenseManager.getInstance().isCommunity() 
+                    ? " and structuretype <> " + BaseContentType.FORM.getType() + " and structuretype <> " + BaseContentType.PERSONA.getType() 
+                    : "";
+    
+    
     SearchCondition(final String searchOrCondition) {
       if (!UtilMethods.isSet(searchOrCondition) || searchOrCondition.equals("%")) {
-        this.condition = "";
+        this.condition = appendCondition;
         this.search = "%";
       } else if (searchOrCondition.contains("<") || searchOrCondition.contains("=") || searchOrCondition.contains("<")
           || searchOrCondition.contains(" like ") || searchOrCondition.contains(" is ")) {
         this.search = "%";
         this.condition =
-            (searchOrCondition.toLowerCase().trim().startsWith("and")) ? searchOrCondition : "and " + searchOrCondition;
+            (searchOrCondition.toLowerCase().trim().startsWith("and")) ? searchOrCondition : "and " + searchOrCondition + appendCondition;
 
       } else {
-        this.condition = "";
+        this.condition = appendCondition;
         this.search = "%" + searchOrCondition + "%";
 
       }

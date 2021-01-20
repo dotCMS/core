@@ -19,11 +19,11 @@ import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
@@ -61,18 +61,18 @@ class AppsHelper {
 
     private final AppsAPI appsAPI;
     private final HostAPI hostAPI;
-    private final ContentletAPI contentletAPI;
+    private final PermissionAPI permissionAPI;
 
     @VisibleForTesting
     AppsHelper(
-            final AppsAPI appsAPI, final HostAPI hostAPI, final ContentletAPI contentletAPI) {
+            final AppsAPI appsAPI, final HostAPI hostAPI, final PermissionAPI permissionAPI) {
         this.appsAPI = appsAPI;
         this.hostAPI = hostAPI;
-        this.contentletAPI = contentletAPI;
+        this.permissionAPI = permissionAPI;
     }
 
     AppsHelper() {
-        this(APILocator.getAppsAPI(), APILocator.getHostAPI(), APILocator.getContentletAPI());
+        this(APILocator.getAppsAPI(), APILocator.getHostAPI(), APILocator.getPermissionAPI());
     }
 
     private static Comparator<AppView> compareByCountAndName = (o1, o2) -> {
@@ -165,7 +165,7 @@ class AppsHelper {
                 .computeWarningsBySite(appDescriptor, sitesWithConfigurations, user);
 
         final PaginationUtil paginationUtil = new PaginationUtil(new SiteViewPaginator(
-                () -> sitesWithConfigurations, ()-> warningsBySite, hostAPI, contentletAPI));
+                () -> sitesWithConfigurations, ()-> warningsBySite, hostAPI, permissionAPI));
         return paginationUtil
                 .getPage(request, user,
                         paginationContext.getFilter(),

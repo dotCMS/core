@@ -113,8 +113,9 @@ public class PublishAuditHistory implements Serializable {
 		}
 	}
 	
+	static XStream xstream=new XStream(new DomDriver());
 	public String getSerialized() {
-		XStream xstream=new XStream(new DomDriver());
+		
 	       
         String xml=xstream.toXML(this);
         return xml;
@@ -122,7 +123,6 @@ public class PublishAuditHistory implements Serializable {
 	
 	public static PublishAuditHistory getObjectFromString(String serializedString) {
 		PublishAuditHistory ret = null;
-		XStream xstream=new XStream(new DomDriver());
 		if(UtilMethods.isSet(serializedString)){
 			try{
 				return (PublishAuditHistory) xstream.fromXML(serializedString);

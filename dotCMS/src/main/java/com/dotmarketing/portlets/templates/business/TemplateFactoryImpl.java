@@ -264,6 +264,12 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 				resultList = TransformerLocator.createTemplateTransformer(dc.loadObjectResults()).asList();
 
+				//Search by inode
+				if(resultList.isEmpty()){
+					final Template templateInode = find(params.get("filter").toString());
+					resultList = templateInode != null ? Collections.singletonList(templateInode) : Collections.emptyList();
+				}
+
 				PermissionAPI permAPI = APILocator.getPermissionAPI();
 				toReturn.addAll(permAPI.filterCollection(resultList, PermissionAPI.PERMISSION_READ, false, user));
 				if(countLimit > 0 && toReturn.size() >= countLimit + offset)
