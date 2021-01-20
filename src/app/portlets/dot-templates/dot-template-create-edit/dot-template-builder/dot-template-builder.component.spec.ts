@@ -3,10 +3,12 @@ import {
     Component,
     ContentChild,
     DebugElement,
+    ElementRef,
     EventEmitter,
     Input,
     Output,
-    TemplateRef
+    TemplateRef,
+    ViewChild
 } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
@@ -15,8 +17,13 @@ import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotTemplateBuilderComponent } from './dot-template-builder.component';
 import { By } from '@angular/platform-browser';
-import { EMPTY_TEMPLATE_ADVANCED, EMPTY_TEMPLATE_DESIGN } from '../store/dot-template.store';
+import {
+    DotTemplateItem,
+    EMPTY_TEMPLATE_ADVANCED,
+    EMPTY_TEMPLATE_DESIGN
+} from '../store/dot-template.store';
 import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
+import { IframeComponent } from '@components/_common/iframe/iframe-component';
 
 @Component({
     selector: 'dot-edit-layout-designer',
@@ -47,6 +54,7 @@ class DotTemplateAdvancedMockComponent {
 export class IframeMockComponent {
     @Input() src: string;
     @Output() custom: EventEmitter<CustomEvent> = new EventEmitter();
+    @ViewChild('iframeElement') iframeElement: ElementRef;
 }
 
 @Component({
@@ -72,10 +80,21 @@ export class TabPanelMockComponent implements AfterContentInit {
     }
 }
 
+@Component({
+    selector: 'dot-test-host-component',
+    template: '<dot-template-builder #builder [item]="item"></dot-template-builder> '
+})
+class DotTestHostComponent {
+    @ViewChild('builder') builder: DotTemplateBuilderComponent;
+    item: DotTemplateItem;
+}
+
 describe('DotTemplateBuilderComponent', () => {
     let component: DotTemplateBuilderComponent;
     let fixture: ComponentFixture<DotTemplateBuilderComponent>;
     let de: DebugElement;
+    let dotTestHostComponent: DotTestHostComponent;
+    let hostFixture: ComponentFixture<DotTestHostComponent>;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
@@ -85,7 +104,8 @@ describe('DotTemplateBuilderComponent', () => {
                 DotTemplateAdvancedMockComponent,
                 IframeMockComponent,
                 TabViewMockComponent,
-                TabPanelMockComponent
+                TabPanelMockComponent,
+                DotTestHostComponent
             ],
             imports: [DotMessagePipeModule, DotPortletBoxModule],
             providers: [
@@ -197,10 +217,40 @@ describe('DotTemplateBuilderComponent', () => {
         });
 
         it('should set iframe history url', () => {
-            const permissions = de.query(By.css('[data-testId="historyIframe"]'));
-            expect(permissions.componentInstance.src).toBe(
+            const historyIframe = de.query(By.css('[data-testId="historyIframe"]'));
+            expect(historyIframe.componentInstance.src).toBe(
                 '/html/templates/push_history.jsp?templateId=123&popup=true'
             );
+        });
+
+        it('should reload iframe when changes in the template happens', () => {
+            hostFixture = TestBed.createComponent(DotTestHostComponent);
+            dotTestHostComponent = hostFixture.componentInstance;
+            dotTestHostComponent.item = {
+                ...EMPTY_TEMPLATE_DESIGN,
+                theme: '123'
+            };
+            hostFixture.detectChanges();
+            dotTestHostComponent.builder.historyIframe = {
+                iframeElement: {
+                    nativeElement: {
+                        contentWindow: {
+                            location: {
+                                reload: jasmine.createSpy('reload')
+                            }
+                        }
+                    }
+                }
+            } as IframeComponent;
+            dotTestHostComponent.item = {
+                ...EMPTY_TEMPLATE_DESIGN,
+                theme: 'dotcms-123'
+            };
+            hostFixture.detectChanges();
+            expect(
+                dotTestHostComponent.builder.historyIframe.iframeElement.nativeElement.contentWindow
+                    .location.reload
+            ).toHaveBeenCalledTimes(1);
         });
 
         it('should handle custom event', () => {
