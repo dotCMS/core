@@ -13,6 +13,7 @@ jobs:
       GITHUB_USER: dotcmsbuild
       GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
       PULL_REQUEST: ${{ github.event.number }}
+      TEST_RUN: true
     steps:
       - name: Checkout core
         uses: actions/checkout@v2
@@ -21,7 +22,8 @@ jobs:
       - name: GITHUB CONTEXT
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
+        run: echo "${GITHUB_CONTEXT}"
+        if: env.TEST_RUN == 'true'
       - name: Get commit message
         id: get-commit-message
         uses: dotcms/get-commit-message@master
@@ -51,9 +53,12 @@ jobs:
       - name: Generate Javadoc
         run: |
           dotcicd/library/pipeline.sh generateJavadoc
-      - name: Push distro file
+      - name: Push distro and javadoc
         run: |
-          dotcicd/library/pipeline.sh pushToStaticDotCMS all true
+          dotcicd/library/pipeline.sh pushToStaticDotCMS all ${{ env.TEST_RUN }}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - name: Update OSGI version
+        run: |
+          dotcicd/library/pipeline.sh updateOsgiVersion ${{ env.TEST_RUN }}
