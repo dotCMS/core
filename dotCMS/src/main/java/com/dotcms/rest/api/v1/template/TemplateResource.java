@@ -159,8 +159,9 @@ public class TemplateResource {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
         final User user = initData.getUser();
+        final String currentHost = Try.of(() -> Host.class.cast(httpRequest.getSession().getAttribute(WebKeys.CURRENT_HOST)).getIdentifier()).getOrNull();
         final Optional<String> checkedHostId = Optional.ofNullable(Try.of(()-> APILocator.getHostAPI()
-                .find(hostId, user, false).getIdentifier()).getOrNull());
+                .find(hostId, user, false).getIdentifier()).getOrElse(currentHost));
 
         Logger.debug(this, ()-> "Getting the List of templates");
 
