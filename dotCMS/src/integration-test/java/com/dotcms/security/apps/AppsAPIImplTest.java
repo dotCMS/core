@@ -10,6 +10,9 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
+import com.dotcms.content.elasticsearch.business.IndiciesAPI;
+import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.datagen.AppDescriptorDataGen;
 import com.dotcms.datagen.LayoutDataGen;
 import com.dotcms.datagen.PortletDataGen;
@@ -17,6 +20,7 @@ import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.rest.api.v1.apps.ExportSecretForm;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.LicenseValiditySupplier;
@@ -52,12 +56,14 @@ import java.nio.file.Path;
 import java.security.Key;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -545,9 +551,13 @@ public class AppsAPIImplTest {
             descriptorDataGen.param(entry.getKey(), entry.getValue());
         }
         final File file = descriptorDataGen.nextPersistedDescriptor();
-        final AppsAPI api = APILocator.getAppsAPI();
-        final User admin = TestUserUtils.getAdminUser();
-        return api.createAppDescriptor(file, admin);
+        try {
+            final AppsAPI api = APILocator.getAppsAPI();
+            final User admin = TestUserUtils.getAdminUser();
+            return api.createAppDescriptor(file, admin);
+        } finally {
+            file.delete();
+        }
 
     }
 
@@ -731,7 +741,7 @@ public class AppsAPIImplTest {
     private final AppsAPI nonValidLicenseAppsAPI = new AppsAPIImpl(
             APILocator.getLayoutAPI(),
             APILocator.getHostAPI(), APILocator.getContentletAPI(), SecretsStore.INSTANCE.get(),
-            CacheLocator.getAppsCache(), APILocator.getLocalSystemEventsAPI(),
+            CacheLocator.getAppsCache(), APILocator.getLocalSystemEventsAPI(), new AppDescriptorHelper(),
             new LicenseValiditySupplier() {
                 public boolean hasValidLicense() {
                     return false;
@@ -792,6 +802,42 @@ public class AppsAPIImplTest {
         final User admin = TestUserUtils.getAdminUser();
         final Host systemHost = APILocator.getHostAPI().findSystemHost();
         nonValidLicenseAppsAPI.getSecrets("anyKey", true, systemHost, admin);
+    }
+
+    /**
+     * Given scenario: We simulate a non valid license situation then we call  AppsAPI#exportSecrets
+     * Expected Results: we should get an InvalidLicenseException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test(expected = InvalidLicenseException.class)
+    public void Test_Export_With_Non_Valid_License()
+            throws DotDataException, DotSecurityException, IOException {
+
+        final User admin = TestUserUtils.getAdminUser();
+        //AES only supports key sizes of 16, 24 or 32 bytes.
+        final String password = RandomStringUtils.randomAlphanumeric(32);
+        final Key key = AppsUtil.generateKey(password);
+        nonValidLicenseAppsAPI.exportSecrets(key,true,ImmutableMap.of(),admin);
+    }
+
+    /**
+     * Given scenario: We simulate a non valid license situation then we call  AppsAPI#importSecretsAndSave
+     * Expected Results: we should get an InvalidLicenseException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test(expected = InvalidLicenseException.class)
+    public void Test_Import_With_Non_Valid_License()
+            throws DotDataException, DotSecurityException, IOException, EncryptorException {
+
+        final User admin = TestUserUtils.getAdminUser();
+        //AES only supports key sizes of 16, 24 or 32 bytes.
+        final String password = RandomStringUtils.randomAlphanumeric(32);
+        final Key key = AppsUtil.generateKey(password);
+        //any file would do we're just testing license
+        final Path path = File.createTempFile("fileName1", "txt").toPath();
+        nonValidLicenseAppsAPI.importSecretsAndSave(path, key, admin);
     }
 
     /**
@@ -877,7 +923,7 @@ public class AppsAPIImplTest {
      * @throws URISyntaxException
      */
     @Test(expected = DotSecurityException.class)
-    public void Test_Add_System_File_Retrieve_Descriptors_Verify_()
+    public void Test_Add_System_File_Retrieve_Descriptors_Verify()
             throws DotDataException, DotSecurityException, IOException, URISyntaxException {
             //Generate a yml file
         final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
@@ -888,29 +934,35 @@ public class AppsAPIImplTest {
                 .withDescription("system-app-demo")
                 .withExtraParameters(false);
         final File file = dataGen.nextPersistedDescriptor();
+        try {
+            //Move the file to the system folder
+            final Path systemAppsDescriptorDirectory = AppDescriptorHelper
+                    .getSystemAppsDescriptorDirectory();
+            final boolean result = file.renameTo(new File(
+                    systemAppsDescriptorDirectory.toString() + File.separator + file.getName()));
+            assertTrue(result);
 
-        //Move the file to the system folder
-        final Path systemAppsDescriptorDirectory = AppsAPIImpl.getSystemAppsDescriptorDirectory();
-        final boolean result = file.renameTo(new File(systemAppsDescriptorDirectory.toString() + File.separator + file.getName()));
-        assertTrue(result);
+            final User admin = TestUserUtils.getAdminUser();
+            final AppsAPI api = APILocator.getAppsAPI();
+            final AppsCache appsCache = CacheLocator.getAppsCache();
 
-        final User admin = TestUserUtils.getAdminUser();
-        final AppsAPI api = APILocator.getAppsAPI();
-        final AppsCache appsCache = CacheLocator.getAppsCache();
+            //Invalidate cache so the new descriptors get picked
+            appsCache.invalidateDescriptorsCache();
+            final List<AppDescriptor> appDescriptors = api.getAppDescriptors(admin);
 
-        //Invalidate cache so the new descriptors get picked
-        appsCache.invalidateDescriptorsCache();
-        final List<AppDescriptor> appDescriptors = api.getAppDescriptors(admin);
-
-        //Verify the file we just submitted is recognized as a system-app-file
-        final Optional<AppDescriptor> optional = appDescriptors.stream()
-                .filter(appDescriptor -> dataGen.getKey().equals(appDescriptor.getKey())).findFirst();
-        assertTrue(optional.isPresent());
-        final AppDescriptor descriptor = optional.get();
-        final AppDescriptorImpl impl = (AppDescriptorImpl)descriptor;
-        assertTrue(impl.isSystemApp());
-        //Now attempt a delete and instruct the api to remove the system app
-        api.removeApp(descriptor.getKey(), admin, true);
+            //Verify the file we just submitted is recognized as a system-app-file
+            final Optional<AppDescriptor> optional = appDescriptors.stream()
+                    .filter(appDescriptor -> dataGen.getKey().equals(appDescriptor.getKey()))
+                    .findFirst();
+            assertTrue(optional.isPresent());
+            final AppDescriptor descriptor = optional.get();
+            final AppDescriptorImpl impl = (AppDescriptorImpl) descriptor;
+            assertTrue(impl.isSystemApp());
+            //Now attempt a delete and instruct the api to remove the system app
+            api.removeApp(descriptor.getKey(), admin, true);
+        } finally {
+            file.delete();
+        }
     }
 
     /**
@@ -938,32 +990,42 @@ public class AppsAPIImplTest {
                 .withDescription("system-app")
                 .withExtraParameters(false);
         final File file = dataGen.nextPersistedDescriptor();
+        try {
+            //Move the file to the system folder
+            final Path systemAppsDescriptorDirectory = AppDescriptorHelper
+                    .getSystemAppsDescriptorDirectory();
+            final boolean result = file.renameTo(new File(
+                    systemAppsDescriptorDirectory.toString() + File.separator + file.getName()));
+            assertTrue(result);
+            //Even though we just moved the file under apps-system-folder this should recreate the file again.
+            //But before that.. lets make a small change so we can tell the difference between the tow files.
+            dataGen.withDescription("user-app");
+            final File newFile = dataGen.nextPersistedDescriptor();
+            try{
+                api.createAppDescriptor(newFile, admin);
 
-        //Move the file to the system folder
-        final Path systemAppsDescriptorDirectory = AppsAPIImpl.getSystemAppsDescriptorDirectory();
-        final boolean result = file.renameTo(new File(systemAppsDescriptorDirectory.toString() + File.separator + file.getName()));
-        assertTrue(result);
-        //Even though we just moved the file under apps-system-folder this should recreate the file again.
-        //But before that.. lets make a small change so we can tell the difference between the tow files.
-        dataGen.withDescription("user-app");
-        final File newFile = dataGen.nextPersistedDescriptor();
-         api.createAppDescriptor(newFile, admin);
+                //Invalidate cache so the new descriptors get picked
+                appsCache.invalidateDescriptorsCache();
+                final List<AppDescriptor> appDescriptors = api.getAppDescriptors(admin);
 
-        //Invalidate cache so the new descriptors get picked
-        appsCache.invalidateDescriptorsCache();
-        final List<AppDescriptor> appDescriptors = api.getAppDescriptors(admin);
-
-        //Verify the file we just submitted is recognized as a system-app-file
-        final Optional<AppDescriptor> optional = appDescriptors.stream()
-                .filter(appDescriptor -> dataGen.getKey().equals(appDescriptor.getKey())).findFirst();
-        assertTrue(optional.isPresent());
-        //
-        final AppDescriptor descriptor = optional.get();
-        final AppDescriptorImpl impl = (AppDescriptorImpl)descriptor;
-        assertTrue(impl.isSystemApp());
-        //This proves that even though we had two files named the same. 1 in the user apps folder and another 1 in the system-apps folder.
-        //The one from the system-folder takes precedence.
-        assertEquals("system-app", impl.getDescription());
+                //Verify the file we just submitted is recognized as a system-app-file
+                final Optional<AppDescriptor> optional = appDescriptors.stream()
+                        .filter(appDescriptor -> dataGen.getKey().equals(appDescriptor.getKey()))
+                        .findFirst();
+                assertTrue(optional.isPresent());
+                //
+                final AppDescriptor descriptor = optional.get();
+                final AppDescriptorImpl impl = (AppDescriptorImpl) descriptor;
+                assertTrue(impl.isSystemApp());
+                //This proves that even though we had two files named the same. 1 in the user apps folder and another 1 in the system-apps folder.
+                //The one from the system-folder takes precedence.
+                assertEquals("system-app", impl.getDescription());
+            } finally {
+                newFile.delete();
+            }
+        } finally {
+            file.delete();
+        }
     }
 
     /**
@@ -992,41 +1054,52 @@ public class AppsAPIImplTest {
                 .withDescription("system-app")
                 .withExtraParameters(false);
         final File file = dataGen.nextPersistedDescriptor();
+        try {
+            //Move the file to the system folder and save it in upper case
+            final Path systemAppsDescriptorDirectory = AppDescriptorHelper
+                    .getSystemAppsDescriptorDirectory();
+            final boolean result = file.renameTo(new File(
+                    systemAppsDescriptorDirectory.toString() + File.separator + file.getName()
+                            .toUpperCase().replace("YML", "yml")));
+            assertTrue(result);
+            //Even though we just moved the file under apps-system-folder this should recreate the file again.
+            //But before that.. lets make a small change so we can tell the difference between the two files.
+            dataGen.withDescription("user-app");
+            final File newFile = dataGen.nextPersistedDescriptor();
+            try{
+                api.createAppDescriptor(newFile, admin);
 
-        //Move the file to the system folder and save it in upper case
-        final Path systemAppsDescriptorDirectory = AppsAPIImpl.getSystemAppsDescriptorDirectory();
-        final boolean result = file.renameTo(new File(
-                systemAppsDescriptorDirectory.toString() + File.separator + file.getName()
-                        .toUpperCase().replace("YML", "yml")));
-        assertTrue(result);
-        //Even though we just moved the file under apps-system-folder this should recreate the file again.
-        //But before that.. lets make a small change so we can tell the difference between the two files.
-        dataGen.withDescription("user-app");
-        final File newFile = dataGen.nextPersistedDescriptor();
-        api.createAppDescriptor(newFile, admin);
+                //Invalidate cache so the new descriptors get picked
+                appsCache.invalidateDescriptorsCache();
+                final List<AppDescriptor> appDescriptors = api.getAppDescriptors(admin);
 
-        //Invalidate cache so the new descriptors get picked
-        appsCache.invalidateDescriptorsCache();
-        final List<AppDescriptor> appDescriptors = api.getAppDescriptors(admin);
-
-        //Verify the file we just submitted is recognized as a system-app-file
-        assertEquals(1, appDescriptors.stream()
-                .filter(appDescriptor -> dataGen.getKey().equalsIgnoreCase(appDescriptor.getKey())).count());
-        final Optional<AppDescriptor> optional = appDescriptors.stream()
-                .filter(appDescriptor -> dataGen.getKey().equalsIgnoreCase(appDescriptor.getKey())).findFirst();
-        assertTrue(optional.isPresent());
-        //
-        final AppDescriptor descriptor = optional.get();
-        final AppDescriptorImpl impl = (AppDescriptorImpl)descriptor;
-        assertTrue(impl.isSystemApp());
-        //This proves that even though we had two files named the same. 1 in the user apps folder and another 1 in the system-apps folder.
-        //The one from the system-folder takes precedence.
-        assertEquals("system-app", impl.getDescription());
+                //Verify the file we just submitted is recognized as a system-app-file
+                assertEquals(1, appDescriptors.stream()
+                        .filter(appDescriptor -> dataGen.getKey()
+                                .equalsIgnoreCase(appDescriptor.getKey())).count());
+                final Optional<AppDescriptor> optional = appDescriptors.stream()
+                        .filter(appDescriptor -> dataGen.getKey()
+                                .equalsIgnoreCase(appDescriptor.getKey())).findFirst();
+                assertTrue(optional.isPresent());
+                //
+                final AppDescriptor descriptor = optional.get();
+                final AppDescriptorImpl impl = (AppDescriptorImpl) descriptor;
+                assertTrue(impl.isSystemApp());
+                //This proves that even though we had two files named the same. 1 in the user apps folder and another 1 in the system-apps folder.
+                //The one from the system-folder takes precedence.
+                assertEquals("system-app", impl.getDescription());
+            }finally {
+                newFile.delete();
+            }
+        } finally {
+            file.delete();
+        }
     }
 
     /**
-     * Given Scenario: This test creates secrets then exports them Then re-imports the file with the generated secrets.
-     * Expected Result: The test should be Able to recreate the secrets from the generated file.
+     * Method to test {@link AppsAPIImpl#exportSecrets(Key, boolean, Map, User)} and {@link AppsAPIImpl#importSecretsAndSave(Path, Key, User)}
+     * Given Scenario: This test creates secrets then exports them Then re-imports the file with the generated secrets for different host.
+     * Expected Result: The test should be Able to recreate the secrets from the generated file regardless of the host.
      * @throws DotDataException
      * @throws DotSecurityException
      * @throws IOException
@@ -1034,44 +1107,346 @@ public class AppsAPIImplTest {
      * @throws ClassNotFoundException
      */
     @Test
-    public void Test_Create_Secrets_Then_Export_Them_Then_Import_Then_Save()
-            throws DotDataException, DotSecurityException, IOException, EncryptorException, ClassNotFoundException {
+    @UseDataProvider("getTargetSitesTestCases")
+    public void Test_Create_Secrets_Then_Export_Them_Then_Import_Then_Save(final Host site)
+            throws DotDataException, DotSecurityException, IOException, EncryptorException, AlreadyExistException {
+        final User admin = TestUserUtils.getAdminUser();
+        final AppsAPI api = APILocator.getAppsAPI();
+        //generate a descriptor
+        final AppSecrets.Builder builder1 = new AppSecrets.Builder();
+        final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                .stringParam("p1", false, true)
+                .stringParam("p2", false, true)
+                .withName("system-app-example")
+                .withDescription("system-app")
+                .withExtraParameters(false);
+        final File file = dataGen.nextPersistedDescriptor();
+        try {
+            api.createAppDescriptor(file, admin);
+
+            final String appKey = dataGen.getKey();
+            //generate secrets
+            AppSecrets secrets = builder1.withKey(appKey)
+                    .withHiddenSecret("p1", "secret-1")
+                    .withHiddenSecret("p2", "secret-2")
+                    .build();
+            //Save it
+            api.saveSecrets(secrets, site, admin);
+            final Optional<AppSecrets> secretsOptional = api.getSecrets(appKey, site, admin);
+            Assert.assertTrue(secretsOptional.isPresent());
+            secrets = secretsOptional.get();
+
+            //AES only supports security Key of sizes of 16, 24 or 32 bytes.
+            final String password = RandomStringUtils.randomAlphanumeric(32);
+            final Key securityKey = AppsUtil.generateKey(password);
+
+            //Now that we have a valid key lets dump our selection of secrets
+            final Map<String, Set<String>> appKeysBySite = ImmutableMap
+                    .of(site.getIdentifier(), ImmutableSet.of(appKey));
+            final Path exportSecretsFile = api
+                    .exportSecrets(securityKey, false, appKeysBySite, admin);
+            assertTrue(exportSecretsFile.toFile().exists());
+
+            //Remove the secret we dumped we can re import it.
+            api.deleteSecrets(appKey, site, admin);
+
+            //import it
+            api.importSecretsAndSave(exportSecretsFile, securityKey, admin);
+
+            //verify
+            final Optional<AppSecrets> secretsOptionalPostImport = api
+                    .getSecrets(appKey, site, admin);
+            assertTrue(secretsOptionalPostImport.isPresent());
+            final AppSecrets restoredSecrets = secretsOptionalPostImport.get();
+
+            assertEquals(restoredSecrets.getKey(), secrets.getKey());
+            assertEquals(restoredSecrets.getSecrets().size(), secrets.getSecrets().size());
+            for (final Entry<String, Secret> entry : secrets.getSecrets().entrySet()) {
+                final Secret originalSecret = entry.getValue();
+                final Secret restoredSecret = restoredSecrets.getSecrets().get(entry.getKey());
+                assertTrue(originalSecret.equals(restoredSecret));
+            }
+        } finally {
+            file.delete();
+        }
+    }
+
+    @DataProvider
+    public static Object[] getTargetSitesTestCases() throws Exception {
+        return new Object[]{
+                new SiteDataGen().nextPersisted(),
+                APILocator.getHostAPI().findSystemHost()
+        };
+    }
+
+    /**
+     * Method to test {@link AppsAPIImpl#exportSecrets(Key, boolean, Map, User)} and {@link AppsAPIImpl#importSecretsAndSave(Path, Key, User)}
+     * Given Scenario: This test creates secrets then exports them Then Deletes the appDescriptor used to generate the import Then re-imports the file with the generated secrets.
+     * Expected Result: The test should be Able to recreate the secrets from the generated file but due to the inconsistency we get an Exception.
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     * @throws EncryptorException
+     * @throws AlreadyExistException
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void Test_Create_Offending_Secrets_Missing_Descriptor_Then_Export_Them_Then_Import_Then_Save()
+            throws DotDataException, DotSecurityException, IOException, EncryptorException, AlreadyExistException {
+
         final User admin = TestUserUtils.getAdminUser();
         final Host site = new SiteDataGen().nextPersisted();
         final AppsAPI api = APILocator.getAppsAPI();
+        //generate a descriptor
         final AppSecrets.Builder builder1 = new AppSecrets.Builder();
-        final String appKey = "appKey-1-Host-1";
-        final AppSecrets secrets = builder1.withKey(appKey)
-                .withHiddenSecret("test:secret1", "secret-1")
-                .withHiddenSecret("test:secret2", "secret-2")
-                .withHiddenSecret("test:secret3", "secret3")
-                .withHiddenSecret("test:secret4", "secret-4")
-                .build();
-        //Save it
-        api.saveSecrets(secrets, site, admin);
-        final Optional<AppSecrets> secretsOptional = api.getSecrets(appKey, site, admin);
-        final AppSecrets appSecretsPostSave = secretsOptional.get();
+        final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                .stringParam("p1", false,  true)
+                .stringParam("p2", false,  true)
+                .withName("system-app-example")
+                .withDescription("system-app")
+                .withExtraParameters(false);
+        final File file = dataGen.nextPersistedDescriptor();
+        try {
+            api.createAppDescriptor(file, admin);
 
-        //AES only supports key sizes of 16, 24 or 32 bytes.
-        final String password = RandomStringUtils.randomAlphanumeric(32);
-        final Key key = AppsUtil.generateKey(password);
-        final Path exportSecretsFile = api.exportSecrets(key, true, null, admin);
-        assertTrue(exportSecretsFile.toFile().exists());
+            final String appKey = dataGen.getKey();
+            //generate secrets
+            final AppSecrets secrets = builder1.withKey(appKey)
+                    .withHiddenSecret("p1", "secret-1")
+                    .withHiddenSecret("p2", "secret-2")
+                    .build();
+            //Save it
+            api.saveSecrets(secrets, site, admin);
+            final Optional<AppSecrets> secretsOptional = api.getSecrets(appKey, site, admin);
+            Assert.assertTrue(secretsOptional.isPresent());
 
-        //Remove so we can re import them.
-        api.deleteSecrets(appKey, site, admin);
+            //AES only supports security Key of sizes of 16, 24 or 32 bytes.
+            final String password = RandomStringUtils.randomAlphanumeric(32);
+            final Key securityKey = AppsUtil.generateKey(password);
 
-        final Map<String, List<AppSecrets>> secretAppsBySiteId = api.importSecrets(exportSecretsFile, key, admin);
-        assertFalse(secretAppsBySiteId.isEmpty());
-        assertTrue(secretAppsBySiteId.containsKey(site.getIdentifier()));
-        final List<AppSecrets> appSecretsBySite = secretAppsBySiteId.get(site.getIdentifier());
-        assertFalse(appSecretsBySite.isEmpty());
-        final AppSecrets importedSecrets = appSecretsBySite.get(0);
-        assertEquals(importedSecrets, appSecretsPostSave);
+            //Now that we have a valid key lets dump our selection of secrets
+            final Map<String, Set<String>> appKeysBySite = ImmutableMap
+                    .of(site.getIdentifier(), ImmutableSet.of(appKey));
+            final Path exportSecretsFile = api
+                    .exportSecrets(securityKey, false, appKeysBySite, admin);
+            assertTrue(exportSecretsFile.toFile().exists());
 
-        api.saveSecrets(importedSecrets, site, admin);
-        final Optional<AppSecrets> secretsOptionalPostImport = api.getSecrets(appKey, site, admin);
-        assertTrue(secretsOptionalPostImport.isPresent());
+            //Remove the secret we dumped we can re import it.
+            api.deleteSecrets(appKey, site, admin);
+
+            //Now we're gonna create an inconsistency removing the app descriptor and then try to import the secret.
+            api.removeApp(appKey, admin, true);
+
+            //and finally import it
+            api.importSecretsAndSave(exportSecretsFile, securityKey, admin);
+        }finally {
+            file.delete();
+        }
     }
 
+    /**
+     * Method to test {@link AppsAPIImpl#exportSecrets(Key, boolean, Map, User)} and {@link AppsAPIImpl#importSecretsAndSave(Path, Key, User)}
+     * Given Scenario: This test creates secrets then exports them Then Deletes the site used to generate the import Then re-imports the file with the generated secrets.
+     * Expected Result: The test should be Able to recreate the secrets from the generated file but due to the inconsistency we get an Exception.
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     * @throws EncryptorException
+     * @throws AlreadyExistException
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void Test_Create_Offending_Secrets_Missing_Site_Then_Export_Them_Then_Import_Then_Save()
+            throws DotDataException, DotSecurityException, IOException, EncryptorException, AlreadyExistException {
+
+        final User admin = TestUserUtils.getAdminUser();
+        final Host site = new SiteDataGen().nextPersisted();
+        final AppsAPI api = APILocator.getAppsAPI();
+        //generate a descriptor
+        final AppSecrets.Builder builder1 = new AppSecrets.Builder();
+        final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                .stringParam("p1", false,  true)
+                .stringParam("p2", false,  true)
+                .withName("system-app-example")
+                .withDescription("system-app")
+                .withExtraParameters(false);
+        final File file = dataGen.nextPersistedDescriptor();
+        try {
+            api.createAppDescriptor(file, admin);
+
+            final String appKey = dataGen.getKey();
+            //generate secrets
+            final AppSecrets secrets = builder1.withKey(appKey)
+                    .withHiddenSecret("p1", "secret-1")
+                    .withHiddenSecret("p2", "secret-2")
+                    .build();
+            //Save it
+            api.saveSecrets(secrets, site, admin);
+            final Optional<AppSecrets> secretsOptional = api.getSecrets(appKey, site, admin);
+            Assert.assertTrue(secretsOptional.isPresent());
+
+            //AES only supports security Key of sizes of 16, 24 or 32 bytes.
+            final String password = RandomStringUtils.randomAlphanumeric(32);
+            final Key securityKey = AppsUtil.generateKey(password);
+
+            //Now that we have a valid key lets dump our selection of secrets
+            final Map<String, Set<String>> appKeysBySite = ImmutableMap
+                    .of(site.getIdentifier(), ImmutableSet.of(appKey));
+            final Path exportSecretsFile = api
+                    .exportSecrets(securityKey, false, appKeysBySite, admin);
+            assertTrue(exportSecretsFile.toFile().exists());
+
+            //Remove the secret we dumped we can re import it.
+            api.deleteSecrets(appKey, site, admin);
+
+            //Now we're gonna create an inconsistency removing the app descriptor and then try to import the secret.
+            final HostAPI hostAPI = APILocator.getHostAPI();
+            hostAPI.archive(site, admin, false);
+            hostAPI.delete(site, admin, false);
+
+            //and finally import it
+            api.importSecretsAndSave(exportSecretsFile, securityKey, admin);
+        }finally {
+            file.delete();
+        }
+    }
+
+    /**
+     * Method to test {@link AppsAPIImpl#exportSecrets(Key, boolean, Map, User)} and {@link AppsAPIImpl#collectSecretsForExport(Map, User)}
+     * Given scenario: We're testing exporting secrets generated for different sites (one being SYSTEM_HOST)
+     * Expected results:  We should be able to recover everything that initially got exported using the "exportAll" param regardless of site.
+     * @throws DotDataException
+     * @throws IOException
+     * @throws AlreadyExistException
+     * @throws DotSecurityException
+     * @throws EncryptorException
+     */
+    @Test
+    public void Test_Export_All_Secrets_For_System_Non_System_Sites()
+            throws DotDataException, IOException, AlreadyExistException, DotSecurityException, EncryptorException {
+        final User admin = TestUserUtils.getAdminUser();
+        final AppsAPI api = APILocator.getAppsAPI();
+        api.resetSecrets(admin);
+
+        final Host site = new SiteDataGen().nextPersisted();
+        final Host systemHost = APILocator.getHostAPI().findSystemHost();
+
+        //generate a descriptor
+        final AppSecrets.Builder builder1 = new AppSecrets.Builder();
+        final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                .stringParam("p1", false,  true)
+                .stringParam("p2", false,  true)
+                .withName("app-example")
+                .withDescription("app")
+                .withExtraParameters(false);
+        final File file = dataGen.nextPersistedDescriptor();
+        try {
+            api.createAppDescriptor(file, admin);
+
+            final String appKey = dataGen.getKey();
+            //generate secrets
+            final AppSecrets secrets = builder1.withKey(appKey)
+                    .withHiddenSecret("p1", "secret-1")
+                    .withHiddenSecret("p2", "secret-2")
+                    .build();
+
+            //Save it
+            api.saveSecrets(secrets, site, admin);
+            final Optional<AppSecrets> siteSecretsOptional = api.getSecrets(appKey, site, admin);
+
+            api.saveSecrets(secrets, systemHost, admin);
+            final Optional<AppSecrets> systemHostSecretsOptional = api
+                    .getSecrets(appKey, systemHost, admin);
+
+            //AES only supports security Key of sizes of 16, 24 or 32 bytes.
+            final String password = RandomStringUtils.randomAlphanumeric(32);
+            final Key securityKey = AppsUtil.generateKey(password);
+
+            //Now that we have a valid key lets dump all our secrets.
+            final Path exportSecretsFile = api.exportSecrets(securityKey, true, null, admin);
+            assertTrue(exportSecretsFile.toFile().exists());
+
+            assertTrue(exportSecretsFile.toFile().exists());
+
+            //Remove the secret we dumped we can re import it.
+            api.deleteSecrets(appKey, site, admin);
+            api.deleteSecrets(appKey, systemHost, admin);
+
+            //and finally import it
+            api.importSecretsAndSave(exportSecretsFile, securityKey, admin);
+
+            //verify
+            final Optional<AppSecrets> secretsOptionalPostImport1 = api.getSecrets(appKey, site, admin);
+            assertTrue(secretsOptionalPostImport1.isPresent());
+            final AppSecrets restoredSecrets1 = secretsOptionalPostImport1.get();
+
+            final Optional<AppSecrets> secretsOptionalPostImport2 = api.getSecrets(appKey, systemHost, admin);
+            assertTrue(secretsOptionalPostImport2.isPresent());
+            final AppSecrets restoredSecrets2 = secretsOptionalPostImport2.get();
+
+            assertEquals(restoredSecrets1.getKey(),appKey);
+            assertEquals(restoredSecrets2.getKey(),appKey);
+
+            assertTrue(restoredSecrets1.getSecrets().containsKey("p1"));
+            assertTrue(restoredSecrets2.getSecrets().containsKey("p2"));
+
+        }finally {
+           file.delete();
+        }
+
+    }
+
+    /**
+     * Method to test {@link ExportSecretForm#toString()}
+     * Given scenario: We feed the form with null and non null values
+     * Expected results: We expect the form to behave NPE Free when calling toString
+     */
+    @Test
+    public void Test_NPE_Free_ToString(){
+        final ExportSecretForm formAllNull = new ExportSecretForm(null, false, null);
+        assertNotNull(formAllNull.toString());
+
+        final ExportSecretForm formNotAllNull = new ExportSecretForm(null, false, ImmutableMap.of("1", ImmutableSet.of("1","2")));
+        assertNotNull(formNotAllNull.toString());
+    }
+
+    /**
+     * Method to test {@link AppsAPI#appKeysByHost()}}
+     * Given scenario: Here we deactivate both indices and then call the method in question that was causing an NPE
+     * Expected results: We should get back all the sites even when there are no active indices
+     * @throws DotDataException
+     * @throws IOException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Test_AppKeyByHost_On_Index_Deactivation()
+            throws DotDataException, IOException, DotSecurityException {
+        final ContentletIndexAPI contentletIndexAPI = APILocator.getContentletIndexAPI();
+        final IndiciesAPI indiciesAPI = APILocator.getIndiciesAPI();
+        final IndiciesInfo indiciesInfo = indiciesAPI.loadIndicies();
+        try {
+
+            AppSecrets.Builder builder = new AppSecrets.Builder();
+            final String appKey = "anyAppKey";
+            final AppSecrets bean = builder.withKey(appKey)
+                    .withHiddenSecret("mySecret1", "lol")
+                    .withHiddenSecret("mySecret2", "lol")
+                    .withSecret("boolSecret1", true)
+                    .withSecret("boolSecret2", false)
+                    .build();
+
+            final Host host = new SiteDataGen().nextPersisted();
+
+            contentletIndexAPI.deactivateIndex(indiciesInfo.getWorking());
+            contentletIndexAPI.deactivateIndex(indiciesInfo.getLive());
+
+            final AppsAPI api = APILocator.getAppsAPI();
+            api.saveSecrets(bean,host,APILocator.systemUser());
+            final Map<String, Set<String>> keysByHost = api.appKeysByHost();
+
+            assertTrue(keysByHost.get(host.getIdentifier()).contains(appKey.toLowerCase()));
+
+        } finally {
+            contentletIndexAPI.activateIndex(indiciesInfo.getWorking());
+            contentletIndexAPI.activateIndex(indiciesInfo.getLive());
+        }
+    }
 }

@@ -27,27 +27,27 @@ jobs:
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
-      - name: Get the latest commit on PR
-        id: get-latest-commit
-        uses: ActionsRML/get-PR-latest-commit@v1
-        if: github.event_name == 'pull_request'
+      - name: Get commit message
+        id: get-commit-message
+        uses: dotcms/get-commit-message@master
+        with:
+          accessToken: ${{ secrets.GITHUB_TOKEN }}
       - name: Set Common Vars
         run: |
-          if [[ "${{ github.event_name }}" == 'pull_request' ]]; then
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             CURRENT_BRANCH="${{ github.head_ref }}"
-            COMMIT_MESSG="${{ steps.get-latest-commit.outputs.latest_commit_message }}"
           else
             CURRENT_BRANCH=$(basename "${{ github.ref }}")
-            COMMIT_MESSG=$(git log --format=%s -n 1 ${{ github.event.after }})
           fi
 
+          COMMIT_MESSG="${{ steps.get-commit-message.outputs.commit_message }}"
           echo "COMMIT_MESSG: ${COMMIT_MESSG}"
-          echo ::set-env name=CURRENT_BRANCH::${CURRENT_BRANCH}
+          echo "CURRENT_BRANCH=${CURRENT_BRANCH}" >> $GITHUB_ENV
 
-          if [[ "${{ github.event_name }}" == 'pull_request' || ${CURRENT_BRANCH} =~ master|^release-.*|^test-.* || ${COMMIT_MESSG} =~ run-all|run-unit ]]; then
-            echo ::set-env name=jobRun::'true'
+          if [[ "${{ github.event_name }}" == "pull_request" || ${CURRENT_BRANCH} =~ master|^release-.*|^test-.* || ${COMMIT_MESSG} =~ run-all|run-unit ]]; then
+            echo "jobRun=true" >> $GITHUB_ENV
           else
-            echo ::set-env name=jobRun::'false'
+            echo "jobRun=false" >> $GITHUB_ENV
           fi
       - name: Prepare dot-cicd
         run: |
@@ -59,7 +59,7 @@ jobs:
         if: env.jobRun == 'true'
       - name: Fail provider
         run: |
-          echo ::set-env name=jobRun::'false'
+          echo "jobRun=false" >> $GITHUB_ENV
         if: env.jobRun == 'true' && failure()
       - name: Build Tests Base Image
         run: |
@@ -91,13 +91,14 @@ jobs:
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
-      - name: Get the latest commit on PR
-        id: get-latest-commit
-        uses: ActionsRML/get-PR-latest-commit@v1
-        if: github.event_name == 'pull_request'
+      - name: Get commit message
+        id: get-commit-message
+        uses: dotcms/get-commit-message@master
+        with:
+          accessToken: ${{ secrets.GITHUB_TOKEN }}
       - name: Set Common Vars
         run: |
-          if [[ "${{ github.event_name }}" == 'pull_request' ]]; then
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             IS_PR=true
           else
             IS_PR=false
@@ -105,15 +106,14 @@ jobs:
 
           if [[ ${IS_PR} == true ]]; then
             CURRENT_BRANCH="${{ github.head_ref }}"
-            COMMIT_MESSG="${{ steps.get-latest-commit.outputs.latest_commit_message }}"
           else
             CURRENT_BRANCH=$(basename "${{ github.ref }}")
-            COMMIT_MESSG=$(git log --format=%s -n 1 ${{ github.event.after }})
           fi
 
+          COMMIT_MESSG="${{ steps.get-commit-message.outputs.commit_message }}"
           echo "COMMIT_MESSG: ${COMMIT_MESSG}"
-          echo ::set-env name=CURRENT_BRANCH::"${CURRENT_BRANCH}"
-          echo ::set-env name=COMMIT_MESSG::${COMMIT_MESSG}
+          echo "CURRENT_BRANCH=${CURRENT_BRANCH}" >> $GITHUB_ENV
+          echo "COMMIT_MESSG=${COMMIT_MESSG}" >> $GITHUB_ENV
 
           if [[ ${CURRENT_BRANCH} =~ master|^release-.*|^test-.* ]]; then
             SPECIAL_BRANCH=true
@@ -122,9 +122,9 @@ jobs:
           fi
 
           if [[ ${IS_PR} == true || ${SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ run-all|run-curl ]]; then
-            echo ::set-env name=jobRun::'true'
+            echo "jobRun=true" >> $GITHUB_ENV
           else
-            echo ::set-env name=jobRun::'false'
+            echo "jobRun=false" >> $GITHUB_ENV
           fi
       - name: Prepare dot-cicd
         run: |
@@ -136,7 +136,7 @@ jobs:
         if: env.jobRun == 'true'
       - name: Fail provider
         run: |
-          echo ::set-env name=jobRun::'false'
+          echo "jobRun=false" >> $GITHUB_ENV
         if: env.jobRun == 'true' && failure()
       - name: Build DotCMS Image
         run: |
@@ -178,13 +178,14 @@ jobs:
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
-      - name: Get the latest commit on PR
-        id: get-latest-commit
-        uses: ActionsRML/get-PR-latest-commit@v1
-        if: github.event_name == 'pull_request'
+      - name: Get commit message
+        id: get-commit-message
+        uses: dotcms/get-commit-message@master
+        with:
+          accessToken: ${{ secrets.GITHUB_TOKEN }}
       - name: Set Common Vars
         run: |
-          if [[ "${{ github.event_name }}" == 'pull_request' ]]; then
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             IS_PR=true
           else
             IS_PR=false
@@ -192,15 +193,14 @@ jobs:
 
           if [[ ${IS_PR} == true ]]; then
             CURRENT_BRANCH="${{ github.head_ref }}"
-            COMMIT_MESSG="${{ steps.get-latest-commit.outputs.latest_commit_message }}"
           else
             CURRENT_BRANCH=$(basename "${{ github.ref }}")
-            COMMIT_MESSG=$(git log --format=%s -n 1 ${{ github.event.after }})
           fi
 
+          COMMIT_MESSG="${{ steps.get-commit-message.outputs.commit_message }}"
           echo "COMMIT_MESSG: ${COMMIT_MESSG}"
-          echo ::set-env name=CURRENT_BRANCH::${CURRENT_BRANCH}
-          echo ::set-env name=COMMIT_MESSG::${COMMIT_MESSG}
+          echo "CURRENT_BRANCH=${CURRENT_BRANCH}" >> $GITHUB_ENV
+          echo "COMMIT_MESSG=${COMMIT_MESSG}" >> $GITHUB_ENV
 
           if [[ ${CURRENT_BRANCH} =~ master|^release-.*|^test-.* ]]; then
             SPECIAL_BRANCH=true
@@ -219,35 +219,37 @@ jobs:
           else
             RUN_POSTGRES=false
           fi
-          echo ::set-env name=runPostgres::"${RUN_POSTGRES}"
+          echo "runPostgres=${RUN_POSTGRES}" >> $GITHUB_ENV
 
           if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ run-all|run-mysql ]]; then
             RUN_MYSQL=true
           else
             RUN_MYSQL=false
           fi
-          echo ::set-env name=runMysql::"${RUN_MYSQL}"
+          echo "runMysql=${RUN_MYSQL}" >> $GITHUB_ENV
 
           if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ run-all|run-oracle ]]; then
             RUN_ORACLE=true
           else
             RUN_ORACLE=false
           fi
-          echo ::set-env name=runOracle::"${RUN_ORACLE}"
+          echo "runOracle=${RUN_ORACLE}" >> $GITHUB_ENV
 
           if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ run-all|run-mssql ]]; then
             RUN_MSSQL=true
           else
             RUN_MSSQL=false
           fi
-          echo ::set-env name=runMssql::"${RUN_MSSQL}"
+          echo "runMssql=${RUN_MSSQL}" >> $GITHUB_ENV
 
-          echo ::set-env name=jobRun::'false'
+          JOB_RUN=false
+          echo "jobRun=false" >> $GITHUB_ENV
           if [[ ${IS_PR} == true || ${SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ run-all|run-postgres|run-mysql|run-oracle|run-mssql|run-unit ]]; then
-            if [[ (${RUN_POSTGRES} == true && "${{ matrix.databaseType }}" == 'postgres') || (${RUN_MYSQL} == true && "${{ matrix.databaseType }}" == 'mysql') || (${RUN_ORACLE}  == true && "${{ matrix.databaseType }}" == 'oracle') || (${RUN_MSSQL} == true && "${{ matrix.databaseType }}" == 'mssql') ]]; then
-              echo ::set-env name=jobRun::'true'
+            if [[ (${RUN_POSTGRES} == true && "${{ matrix.databaseType }}" == "postgres") || (${RUN_MYSQL} == true && "${{ matrix.databaseType }}" == "mysql") || (${RUN_ORACLE}  == true && "${{ matrix.databaseType }}" == "oracle") || (${RUN_MSSQL} == true && "${{ matrix.databaseType }}" == "mssql") ]]; then
+              JOB_RUN=true
             fi
           fi
+          echo "jobRun=${JOB_RUN}" >> $GITHUB_ENV
       - name: Prepare dot-cicd
         run: |
           chmod +x .cicd/discover.sh && .cicd/discover.sh
@@ -258,7 +260,7 @@ jobs:
         if: env.jobRun == 'true'
       - name: Fail provider
         run: |
-          echo ::set-env name=jobRun::'false'
+          echo "jobRun=false" >> $GITHUB_ENV
         if: env.jobRun == 'true' && failure()
       - name: Build Tests Base Image
         run: |
@@ -289,10 +291,10 @@ jobs:
         run: echo "$GITHUB_CONTEXT"
       - name: Set Common Vars
         run: |
-          if [[ "${{ github.event_name }}" == 'pull_request' ]]; then
-            echo ::set-env name=CURRENT_BRANCH::"${{ github.head_ref }}"
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "CURRENT_BRANCH=${{ github.head_ref }}" >> $GITHUB_ENV
           else
-            echo ::set-env name=CURRENT_BRANCH::$(basename "${{ github.ref }}")
+            echo "CURRENT_BRANCH=$(basename ${{ github.ref }})" >> $GITHUB_ENV
           fi
       - name: Notify through CI/CD slack action
         env:
@@ -301,4 +303,3 @@ jobs:
         with:
           github-user: ${{ github.actor }}
           branch: ${{ env.CURRENT_BRANCH }}
-

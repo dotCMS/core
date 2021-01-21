@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.folders.model;
 
 import com.dotcms.api.tree.Parentable;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.*;
@@ -12,7 +13,9 @@ import com.dotmarketing.portlets.folders.struts.FolderForm;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
 import java.io.Serializable;
@@ -51,7 +54,21 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 
     private Date modDate;
 
-
+    
+    @JsonIgnore
+    public Host getHost() {
+        return Try.of(()->APILocator.getHostAPI().find(hostId, APILocator.systemUser(), false)).getOrNull();
+    }
+    
+    @JsonIgnore
+    public boolean isSystemFolder() {
+        return Try.of(()->FolderAPI.SYSTEM_FOLDER.equals(inode)).getOrElse(false);
+    }
+    
+    
+    
+    
+    
 	public Folder() {
     	this.setType("folder");
     	modDate = new Date();

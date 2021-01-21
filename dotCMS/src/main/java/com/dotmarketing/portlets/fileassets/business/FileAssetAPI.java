@@ -362,5 +362,22 @@ public interface FileAssetAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-  FileAsset find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	FileAsset find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+
+    
+    /**
+     * Takes a {@link FileAssetSearcher} searcher object and returns fileAssets based on it. You can build a new
+     * searcher using a builder , e.g.
+     * FileAssetSearcher searcher = FileAssetSearcher.builder()
+     * .folder(parent)
+     * .user(user)
+     * .respectFrontendRoles(true)
+     * .build()
+     * 
+     * @param searcher
+     * @return
+     */
+    List<FileAsset> findFileAssetsByDB(FileAssetSearcher searcher);
+    
 }

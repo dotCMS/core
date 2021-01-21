@@ -21,19 +21,16 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.factories.PersonalizedContentlet;
 import com.dotmarketing.portlets.containers.business.*;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
 import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
-import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -52,9 +49,7 @@ import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
-import io.vavr.control.Try;
 import org.apache.velocity.context.Context;
-import org.jetbrains.annotations.Nullable;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
@@ -269,7 +264,8 @@ public class PageRenderUtil implements Serializable {
             this.addPermissions(container);
 
             final Map<String, List<Contentlet>> contentMaps = Maps.newLinkedHashMap();
-            final Map<String, List<String>> containerUuidPersona     = Maps.newHashMap();
+            final ContainerUUIDPersona containerUuidPersona = new ContainerUUIDPersona();
+
             for (final String uniqueId : pageContents.row(containerId).keySet()) {
 
                 final String uniqueUUIDForRender = needParseContainerPrefix(container, uniqueId) ?
@@ -281,7 +277,7 @@ public class PageRenderUtil implements Serializable {
 
                 final Collection<PersonalizedContentlet> personalizedContentletSet = pageContents.get(containerId, uniqueId);
                 final List<Contentlet> personalizedContentletMap          = Lists.newArrayList();
-                int   contentletIncludedCount = 1;
+
                 for (final PersonalizedContentlet personalizedContentlet : personalizedContentletSet) {
 
                     final Contentlet nonHydratedContentlet = this.getContentlet(personalizedContentlet);
@@ -294,7 +290,10 @@ public class PageRenderUtil implements Serializable {
                             .defaultOptions().content(nonHydratedContentlet).build();
                     final Contentlet contentlet = transformer.hydrate().get(0);
 
-                    if (container.getMaxContentlets() < contentletIncludedCount) {
+                    final long contentsSize = containerUuidPersona
+                            .getSize(container, uniqueUUIDForRender, personalizedContentlet);
+
+                    if (container.getMaxContentlets() < contentsSize) {
 
                         Logger.debug(this, ()-> "Contentlet: "          + contentlet.getIdentifier()
                                 + ", has been skipped. Max contentlet: "    + container.getMaxContentlets()
@@ -302,11 +301,9 @@ public class PageRenderUtil implements Serializable {
                         continue;
                     }
 
-                    containerUuidPersona
-                            .computeIfAbsent(
-                                    containerId + uniqueUUIDForRender + personalizedContentlet.getPersonalization(),
-                                    k -> Lists.newArrayList())
-                            .add(personalizedContentlet.getContentletId());
+                    containerUuidPersona.add(container, uniqueUUIDForRender, personalizedContentlet);
+
+
                     contextMap.put("EDIT_CONTENT_PERMISSION" + contentlet.getIdentifier(),
                             permissionAPI.doesUserHavePermission(contentlet, PERMISSION_WRITE, user));
 
@@ -317,7 +314,6 @@ public class PageRenderUtil implements Serializable {
 
                         contentlet.getMap().put("contentType", contentlet.getContentType().variable());
                         personalizedContentletMap.add(contentlet);
-                        contentletIncludedCount++;
                     }
                 }
 
@@ -338,7 +334,7 @@ public class PageRenderUtil implements Serializable {
 
     private boolean isLive(final HttpServletRequest request) {
 
-        return request != null && request.getSession(false) != null && request.getSession().getAttribute("tm_date") != null ?
+        return request != null && request.getSession(false) != null && request.getSession(false).getAttribute("tm_date") != null ?
                 false :
                 mode.showLive;
     }
@@ -513,5 +509,44 @@ public class PageRenderUtil implements Serializable {
         final boolean hasPersonalizations = personalizationsForPage.contains(currentPersonaTag);
 
         return hasPersonalizations ? currentPersonaTag : MultiTree.DOT_PERSONALIZATION_DEFAULT;
+    }
+
+    /**
+     * Util class to sort the {@link Contentlet} by {@link Persona} and {@link Container}
+     */
+    private static class ContainerUUIDPersona {
+        Map<String, List<String>> contents = Maps.newHashMap();
+
+        public void add(
+                final Container container,
+                final String uniqueUUIDForRender,
+                final PersonalizedContentlet personalizedContentlet) {
+
+            get(container, uniqueUUIDForRender, personalizedContentlet)
+                    .add(personalizedContentlet.getContentletId());
+        }
+
+        private List<String> get(Container container, String uniqueUUIDForRender, PersonalizedContentlet personalizedContentlet) {
+            return contents
+                    .computeIfAbsent(
+                            getKey(container, uniqueUUIDForRender, personalizedContentlet),
+                            k -> Lists.newArrayList()
+                    );
+        }
+
+        private String getKey(Container container, String uniqueUUIDForRender, PersonalizedContentlet personalizedContentlet) {
+            return container.getIdentifier() + uniqueUUIDForRender + personalizedContentlet.getPersonalization();
+        }
+
+        public long getSize(
+                final Container container,
+                final String uniqueUUIDForRender,
+                final PersonalizedContentlet personalizedContentlet) {
+            return get(container, uniqueUUIDForRender, personalizedContentlet).size();
+        }
+
+        public Set<? extends Map.Entry<String, List<String>>> entrySet() {
+            return contents.entrySet();
+        }
     }
 }

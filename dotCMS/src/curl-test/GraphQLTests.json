@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "8ebdc33c-110c-4f94-adf0-6d4844cc5ee1",
+		"_postman_id": "0d698dd7-5810-4b6e-bdb0-3057489f6005",
 		"name": "GraphQL",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -14,7 +14,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d7ce458d-7749-4ce1-9655-c3d9c0ae5cf0",
+								"id": "f3049e48-4629-4e62-9bbb-5639323ebf07",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -103,7 +103,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "314ca4fc-bb50-4e0f-9677-05899558558b",
+								"id": "91fd578b-2ecf-40f2-95f7-8972e32193b5",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -187,12 +187,177 @@
 					"response": []
 				},
 				{
+					"name": "pre_ImportBundleWithDemoHost",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "f14c9bb3-ce91-419a-9bb5-c31d161b7597",
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"demo.dotcms.com.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/demo.dotcms.com.tar.gz"
+								}
+							],
+							"options": {
+								"formdata": {}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* Imports demo.dotcms.com"
+					},
+					"response": []
+				},
+				{
+					"name": "Switch site to 'demo.dotcms.com'",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "63a08958-807f-4be1-8cf2-9cfc34f42c97",
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    var jsonData = pm.response.json();",
+									"",
+									"    pm.expect(jsonData.entity.hostSwitched).equal(true);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site/switch/48190c8c-42c4-46af-8d1a-0cd5db894797",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site",
+								"switch",
+								"48190c8c-42c4-46af-8d1a-0cd5db894797"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "RenderDestinationsCostaRicaPage",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "267edb03-3cc8-492e-a452-df2b90115cb3",
+								"id": "fa570426-6079-4d88-b3f0-90c104338f8d",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 200\", function () {",
@@ -332,7 +497,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "74c6a123-8fe9-4477-ae63-877b1183abb7",
+								"id": "f0a5e9c3-6715-48b8-bfff-7d85a0b44e45",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 200\", function () {",
@@ -460,7 +625,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "660cfe4e-65d2-4c3b-b08f-33d249785c41",
+								"id": "57e4466f-94da-473b-8997-f07936f70c0a",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 200\", function () {",
@@ -567,7 +732,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "bd54b3e0-c765-4780-a7a8-4060d8789ba0",
+								"id": "564047ac-1a71-4e81-8702-7ee8fef2b749",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 200\", function () {",
@@ -578,9 +743,9 @@
 									"    var jsonData = pm.response.json();",
 									"    var template = jsonData.data.page.template;",
 									"",
-									"    pm.expect(template[\"iDate\"], 'FAILED:[iDate]').equal(\"1578687702481\");",
+									"    pm.expect(template[\"iDate\"], 'FAILED:[iDate]').to.be.not.null",
 									"    pm.expect(template[\"type\"], 'FAILED:[type]').equal(\"template\");",
-									"    pm.expect(template[\"owner\"].firstName, 'FAILED:[owner.firstName]').equal(null);",
+									"    pm.expect(template[\"owner\"].firstName, 'FAILED:[owner.firstName]').equal(\"system user\");",
 									"    pm.expect(template[\"inode\"], 'FAILED:[inode]').equal(\"cfda9246-cce3-4313-8cc3-2080d1935cf9\");",
 									"    pm.expect(template[\"identifier\"], 'FAILED:[identifier]').equal(\"0c556e37-99e0-4458-a2cd-d42cc7a11045\");",
 									"    pm.expect(template[\"source\"], 'FAILED:[source]').equal(\"DB\");",
@@ -675,7 +840,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "9d090461-f727-4f42-b182-729576504571",
+								"id": "877cae57-b491-41a4-b0b4-b2cffc93fcda",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -840,7 +1005,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "bde8aed5-7a1b-46b6-b091-a5f74a4a43be",
+								"id": "efffdef7-9f31-46d0-ab95-c2a9ed247c1c",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -925,7 +1090,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f389f7b1-13d3-4629-8a2f-0cf8d5e7dc2a",
+								"id": "ee6d650a-d7cc-4368-bf3c-7c6da9f66211",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1002,12 +1167,100 @@
 					"response": []
 				},
 				{
+					"name": "pre_ImportBundleWithURLMappedContent",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "70f7e410-b60f-41f5-87ad-e4ae04db7495",
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"urlmap-bundle.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/urlmap-bundle.tar.gz"
+								}
+							],
+							"options": {
+								"formdata": {}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "GivenRequestByURI_PageContainsUrlMappedContentField",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "3946c1d0-2052-473e-9a2c-07661f8f1606",
+								"id": "a1b96e98-a19a-48e7-9602-31e0ecb72b23",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -1020,10 +1273,13 @@
 									"    var jsonData = pm.response.json();",
 									"    var urlmappedContent = jsonData.data.page.urlContentMap;",
 									"",
-									"    // mode",
-									"    pm.expect(urlmappedContent.title, 'FAILED:[urlmappedContent.title]').equal(\"Ecotourism in Costa Rica\");",
-									"    pm.expect(urlmappedContent.identifier, 'FAILED:[urlmappedContent.identifier]').equal(\"57ee7cd3-66fc-4f01-9b7e-11e53553c220\");",
-									"    pm.expect(urlmappedContent.urlMap, 'FAILED:[urlmappedContent.urlMap]').equal(\"/blog/post/ecotourism-in-costa-rica\");",
+									"    pm.expect(urlmappedContent.title, 'FAILED:[urlmappedContent.title]').equal(\"Eagles Nest Outfitters DoubleNest Hammock Patriot\");",
+									"    pm.expect(urlmappedContent.identifier, 'FAILED:[urlmappedContent.identifier]').equal(\"46e52dc2-e72a-4641-8925-026abf2adccd\");",
+									"    pm.expect(urlmappedContent.urlMap, 'FAILED:[urlmappedContent.urlMap]').equal(\"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\");",
+									"    pm.expect(urlmappedContent.contentType, 'FAILED:[urlmappedContent.contentType]').equal(\"Product\");",
+									"    pm.expect(urlmappedContent.productNumber, 'FAILED:[urlmappedContent.productNumber]').equal(\"9315054521506-1280000\");",
+									"",
+									"    pm.expect(urlmappedContent.image.idPath, 'FAILED:[urlmappedContent.image.idPath]').equal(\"/dA/46e52dc2e7/image/hammock-1.jpg?language_id=1\");",
 									"",
 									"});",
 									""
@@ -1070,7 +1326,7 @@
 						"body": {
 							"mode": "graphql",
 							"graphql": {
-								"query": "{\n  page(url:\"/blog/post/ecotourism-in-costa-rica\", pageMode: \"live\", languageId: \"1\") {\n     urlContentMap {\n        title\n        identifier\n        urlMap\n        contentType\n    }\n  }\n}",
+								"query": "{\n  page(url: \"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\") {\n    title\n    urlContentMap {\n      ... on Product {\n        title\n        tags\n        urlTitle\n        identifier\n        urlMap\n        contentType\n        productNumber\n        image {\n          idPath\n        }\n      }\n    }\n  }\n}\n",
 								"variables": ""
 							}
 						},
@@ -1094,7 +1350,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "104ea22a-a663-4ef4-9308-a724b82242b7",
+								"id": "470f5a85-698c-4b12-a652-873222cd9c93",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1183,7 +1439,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f8a0d0cc-61ee-426d-9351-69fe76628b7a",
+								"id": "07ad265c-463b-4b93-aeaf-b99511b42113",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -1309,7 +1565,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "6a1e31db-9d14-4334-b68d-ed3fc9c921a0",
+								"id": "94fd90a3-1d7c-48ea-afb2-0ff3229925e7",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -1431,7 +1687,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "4bc167b7-fc5f-4022-b3d4-4753fc350d7c",
+								"id": "12311c3e-71d2-4e39-9991-d1726d6191cc",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -1546,7 +1802,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "81e885fb-9c24-4249-b80a-d3fab80927b7",
+								"id": "818aa592-aa77-49a6-8e8e-184af85339df",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -1644,7 +1900,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d2b9fac1-95f0-48cf-a257-1a20155a1fb6",
+								"id": "98b7c9bd-8f9b-44a2-95ca-66aa116e710e",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1733,7 +1989,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d38eb470-9084-4546-9048-740c9c9fac7c",
+								"id": "dc95e454-8a94-4556-9a0c-3d11d5303693",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -1878,7 +2134,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "63944a3e-4ff3-472b-b58b-c7ad0008b659",
+								"id": "e4be4de5-fd8c-4342-9ac9-14bf8ba517cd",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1966,7 +2222,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f8e9a9c0-b8f4-407a-aa02-5cd2f280e6fc",
+								"id": "2140e026-f588-4a27-ab23-1a1d1ae0890f",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -2043,12 +2299,12 @@
 					"response": []
 				},
 				{
-					"name": "GivenRequestByURI_FireRulesFALSE_PREVIEW_MODE_pageRuleShouldNOTFire",
+					"name": "GivenRequestByURI_FireRulesTrue_PREVIEW_MODE_pageRuleShouldFire Copy",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "6ec045de-e014-4084-a5b3-78cd87b3f513",
+								"id": "dd044a8e-ff95-45a7-83ab-26e7014c8873",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -2057,9 +2313,9 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"pm.test(\"Rule NOT fired\", function () {",
+									"pm.test(\"Rule fired\", function () {",
 									"    var rulesFired = pm.response.headers.get(\"rulesFired\");",
-									"    pm.expect(rulesFired, 'FAILED:[rulesFired').equal(undefined);",
+									"    pm.expect(rulesFired, 'FAILED:[rulesFired').equal(\"true\");",
 									"    ",
 									"});",
 									""
@@ -2106,7 +2362,7 @@
 						"body": {
 							"mode": "graphql",
 							"graphql": {
-								"query": "{\n  page(url: \"/destinations/costa-rica\", pageMode: \"preview_mode\", languageId: \"1\", fireRules: false) {\n    title\n    viewAs {\n      persona {\n        name\n      }\n    }\n  }\n}\n",
+								"query": "{\n  page(url: \"/destinations/mexico\", pageMode: \"preview_mode\", languageId: \"1\", fireRules: true) {\n    title\n  }\n}\n",
 								"variables": ""
 							}
 						},
@@ -2123,6 +2379,90 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "GivenRequestByURLMAP_givenRequestedPersona_shouldRenderUsingPersona",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "cdc972e0-ad4e-4805-b368-b0ef49e83362",
+								"exec": [
+									"",
+									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Persona present\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.page.viewAs.visitor.persona.keyTag, 'FAILED:[jsonData.data.page.viewAs.visitor.persona.keyTag]').equal(\"EcoEnthusiast\");",
+									"    pm.expect(jsonData.data.page.viewAs.visitor.persona.identifier, 'FAILED:[jsonData.data.page.viewAs.visitor.persona.identifier]').equal(\"0ed8e71a-47c7-4b30-a6f2-3796aa71ba49\");",
+									"    ",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"type": "text",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"type": "text",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\", fireRules: true, persona: \"EcoEnthusiast\") {\n    viewAs {\n      visitor {\n        device\n        persona {\n          keyTag\n          identifier\n        }\n        tags {\n          tag\n        }\n      }\n    }\n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "This tests that given a persona tag in the parameters of the `page` field, the page rendering needs to take the persona into consideration and return the persona info"
+					},
+					"response": []
 				}
 			],
 			"protocolProfileBehavior": {}
@@ -2136,7 +2476,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "9f53bc11-d480-4feb-a011-4e10b9cffd0e",
+								"id": "fe28366f-df27-4d96-bdb9-45e65b599fa4",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2225,7 +2565,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "80116f04-0625-4544-a952-180cd5e78c3a",
+								"id": "5d32dec8-364e-47d8-bcfc-514b31daebe7",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2314,7 +2654,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "c12b9f4d-6f4c-4068-b38e-1ad8d2b64710",
+								"id": "1e9e2b9d-ca3c-4b0f-ba3f-a6be3989468f",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2403,7 +2743,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "6b19625f-015c-40ef-8c6e-ae65895ba6aa",
+								"id": "80ea3967-f211-47f4-99fc-313165188cff",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2492,7 +2832,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d28d0656-61ee-41fe-b14a-95e0909c23b6",
+								"id": "c4058e0a-d076-4320-b005-6ca89e1bf468",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2581,7 +2921,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "51028aad-acb6-4543-96a4-dc95881bb850",
+								"id": "7504aec3-bc09-4c79-a744-58bfaeb42a18",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2670,7 +3010,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "b1526eba-52b6-47f5-9b9b-c54a9d03245d",
+								"id": "2240143d-4b94-4715-bc0d-ef9e8dbe97e6",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2759,7 +3099,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "6fff3e00-260e-4748-992c-e351ae010266",
+								"id": "06605530-2566-4cb5-8764-156f27b19cc4",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2821,7 +3161,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "31904990-e291-44ae-9ade-478858cc2979",
+								"id": "66dc491c-a562-458c-9bc3-2af4cfd4d8da",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2875,7 +3215,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "e1cd8656-c620-48c2-8f18-4872da53526d",
+								"id": "de0bf637-1812-4dd0-836d-d4af2efb4997",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2945,7 +3285,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "5bfea9fd-07c6-4449-8991-56451e38eb0a",
+								"id": "855db62d-ddb0-468b-81a5-4fb282aa5174",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2994,7 +3334,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d47a71d5-c7dd-4cfd-a83c-45566f580cb5",
+								"id": "a43b5a88-8859-4bc2-8b27-4ef313be3030",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -3043,7 +3383,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "a47cc911-35c1-403e-a4bf-f0a539ab8cc2",
+								"id": "cf7d1123-4fd0-450b-aa58-b050a486e884",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -3096,7 +3436,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "435a011a-3dfe-4848-94fa-c303673badc5",
+								"id": "07ee703c-8e03-4c17-ac15-e13a3e7052d4",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -3150,7 +3490,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "b0d7f45a-38fa-4230-9b5b-e370cad0a87a",
+								"id": "ab4d1bc7-87f0-4c05-97f3-3eddb71480c4",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"languageId\", jsonData.entity.id);"
@@ -3213,7 +3553,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "11cff9ca-b5d7-44d0-a36d-f4a1d9613a4c",
+								"id": "814ec828-4faa-4725-90f2-d6ad88f20f91",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);"
@@ -3271,7 +3611,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d93b684a-c5a6-4794-8c5d-9d3faa57ea2d",
+								"id": "ece223eb-a1c3-4235-b016-84eb3d31b7f9",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);"
@@ -3330,7 +3670,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f0ccfb65-eed7-4957-b0cf-509296b1cfbb",
+								"id": "65af5a3d-e614-40c1-a4c9-306f47d8c81d",
 								"exec": [
 									"pm.test(\"Content in new Language should be retrieved\", function () {",
 									"    var jsonData = pm.response.json();",
@@ -3380,7 +3720,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "88c92ddb-bd41-4abb-bd39-314c0c2d95dd",
+								"id": "54e0c2c4-bf7a-4fae-92fc-6372d36fe974",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"imageContentTypeVariable\", jsonData.entity[0].variable);"
@@ -3438,7 +3778,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f2d75aa1-040b-4f5e-8e76-2858ce83563d",
+								"id": "d7becc6b-11f4-4137-9709-426098af301d",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -3501,7 +3841,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "59ef896e-c8d5-494d-aff9-973197df63ca",
+								"id": "91056632-8f2a-4db8-98b5-73db60a27a58",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"imageContentIdentifier\", jsonData.entity.identifier);"
@@ -3512,7 +3852,7 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "141f88b9-e401-4a7c-a477-96b173f13642",
+								"id": "15152ce2-3e95-40be-b2f4-8acd189be75f",
 								"exec": [
 									""
 								],
@@ -3575,7 +3915,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "974446be-0beb-4bed-af7a-db9195f0bc86",
+								"id": "fa9825c1-7e94-4e9f-8c4a-ef1cfefeb582",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"fileContentIdentifier\", jsonData.entity.identifier);"
@@ -3639,7 +3979,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "8c9e38ef-0ed8-4b2b-a354-dfd2e823c32f",
+								"id": "4ff6d567-21c7-4d15-a35e-1b9c46d8ec1e",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);"
@@ -3692,7 +4032,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "2e6ec58b-9957-48c6-a96c-a7eb2efb7a04",
+								"id": "a52f1190-6aa4-4a29-a9a0-553d89bb6a16",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"var imageFieldVariable = pm.collectionVariables.get(\"imageFieldVariable\");",
@@ -3808,7 +4148,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "46e91aba-8d25-44d1-86c3-dbc8287ce600",
+								"id": "01444b11-d5fa-4ad2-949c-bbf9f50de674",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"languageId\", jsonData.entity.id);"
@@ -3871,7 +4211,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "33d07a12-5450-4f75-9b79-74cfdce51d40",
+								"id": "37b5ae06-218b-4d79-8d80-b8c701a55582",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"childContentTypeVariable\", jsonData.entity[0].variable);"
@@ -3929,7 +4269,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "efb2bbf5-73e3-4a3d-8a6f-a89df40bd3bd",
+								"id": "78aff940-d884-48d8-8a8e-c917ac263872",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"parentContentTypeVariable\", jsonData.entity[0].variable);",
@@ -3988,7 +4328,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "55b8d053-9d63-4c0c-813c-4f26ec31f2a1",
+								"id": "8238f7d0-4808-46bf-b1db-0c219f1baa23",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"childContentIdentifier\", jsonData.entity.identifier);"
@@ -4047,7 +4387,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ab0baa96-788c-46ca-9974-a89af8227466",
+								"id": "1a6216d5-9cbb-41af-b270-787b901f09b2",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"parentContentIdentifier\", jsonData.entity.identifier);"
@@ -4106,7 +4446,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "9141c398-72ef-4683-b385-0159820a21a5",
+								"id": "13bed146-c650-409a-b997-dea970da4e3c",
 								"exec": [
 									"pm.test(\"Content parent and child content returned in requested language\", function () {",
 									"    var jsonData = pm.response.json();",
@@ -4162,7 +4502,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "3fbe595a-e5f3-4320-aa86-f2a23496ba64",
+								"id": "c4f47cdb-1241-4f2c-b9c4-aa9d3c14cd53",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -4225,7 +4565,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ba29446d-4c81-4e34-b7e5-a013783f8ed1",
+								"id": "f0712d98-3a0f-41e5-b508-e00e6028e41d",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -4271,7 +4611,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "2faf096d-b38b-4e9b-b109-b5b5cc7b4966",
+								"id": "fb4503b0-b418-433f-92a2-904b0576a515",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -4360,7 +4700,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "940848d6-42bb-43d6-9f8b-23dcce7c5225",
+								"id": "4041b521-e9dc-4c67-958e-58154786a8b0",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -4449,7 +4789,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "165bb850-5f6d-4f51-9e31-144d10b4bf09",
+								"id": "e0bb0e43-ca1c-4f85-9821-87f12cf554d3",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -4500,93 +4840,231 @@
 				}
 			],
 			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Related content with condition / query",
+			"item": [
+				{
+					"name": "pre_ImportBundleWithContext",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "c3178cc7-b516-4564-821e-251e5ed96dcf",
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"movies-studios-ratings-bundle.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/movies-studios-ratings-bundle.tar.gz"
+								}
+							],
+							"options": {
+								"formdata": {}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* HTMLPage /blog/index\n* HTMLPage /blog/destinations/costa-rica\n* Contentlet [Blog] Ecotourism in Costa Rica\n* Blog Detail Page /blog/blog-detail"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Related Content with condition",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "c9628bc0-b7d2-4121-86aa-a7fc165e0265",
+								"exec": [
+									"pm.test(\"Filtered relationship fetched\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    ",
+									"    pm.expect(jsonData.data.MovieCollection[3].studio[0].name).to.eql(\"Walt Disney Pictures\");",
+									"",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  MovieCollection {\n    title\n    studio(query: \"+studio.name:\\\"Walt Disney Pictures\\\"\", sortBy: \"+studio.name\") {\n      name\n    }\n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
 		}
 	],
 	"variable": [
 		{
-			"id": "dd31fbc5-8c36-4c8a-b13d-906a124230ca",
+			"id": "417ebf45-f4d0-4f5f-94ea-8223e4b09a85",
 			"key": "languageId",
-			"value": 1592433023079
+			"value": 1609799506077
 		},
 		{
-			"id": "1e41caa2-ed88-4fc2-833e-b916fee9488e",
+			"id": "9ca87e01-b8e2-468e-b06c-f187d5b66c83",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "f5d52420-cf17-4f6e-922b-16ba0371efe0",
+			"id": "48cc40eb-292b-45fd-bd75-60bce3f7a7b3",
 			"key": "contentTypeVariable",
-			"value": "MyCustomType53380831"
+			"value": "MyCustomType30413852"
 		},
 		{
-			"id": "f957965d-2016-4f2d-a32f-446be57840f0",
+			"id": "bc20c633-2c30-4ac0-afd8-a060a38e9cca",
 			"key": "contentIdentifier",
-			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
+			"value": "a5bf0d80-4273-41e1-8f1f-22a3d4ac986f"
 		},
 		{
-			"id": "c1dd6d87-be5e-4639-b32d-546a1bd0b7b3",
+			"id": "3f0eed4d-e10d-495f-8f34-edd7829309b1",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "0d164387-1836-4fa1-8759-416cef14f497",
+			"id": "940b9433-8dad-467c-8a96-df33caba8717",
 			"key": "imageContentTypeVariable",
-			"value": "MyImageType22920449"
+			"value": "MyImageType49851579"
 		},
 		{
-			"id": "0fbbe0c1-8607-45e5-b5c4-768bfd120d7d",
+			"id": "1814c0d0-4131-4603-85df-47e6945960f1",
 			"key": "imageContentIdentifier",
-			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
+			"value": "4cb59737-913d-4c5f-b021-dbe213a15739"
 		},
 		{
-			"id": "8dec6289-2ce9-40d9-837e-8ef42a9d53ad",
+			"id": "4f6f5fdb-766e-4207-9b95-0367a779db41",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "1de3de59-2edd-4ce8-b615-321544b2720b",
+			"id": "c8bc6588-f29b-46f6-bd2f-d90b4dc38db9",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "70f058da-1ccd-4ad2-a6f0-325a3859ae68",
+			"id": "1cc147e5-45bc-4651-9043-b496fbb35005",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "be967554-b004-47d6-b013-42c7ccd54bf6",
+			"id": "f252a88a-6c59-447b-90fe-1989ae108dac",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "3518c31f-7c8e-4cd7-b901-c75b9a562649",
+			"id": "8bc6c4e5-be72-4bc1-831b-8819d79021bb",
 			"key": "fileContentIdentifier",
-			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
+			"value": "434f474a-4d89-4b96-ad38-aa46483be3e5"
 		},
 		{
-			"id": "9f7f05a2-16c8-4e81-a2a0-fc3c6cc80d98",
+			"id": "eadfb0d8-39cc-444e-ab96-a523c322863b",
 			"key": "childContentTypeVariable",
-			"value": "childType23553509"
+			"value": "childType40723544"
 		},
 		{
-			"id": "9c16ca70-6f94-4894-b247-b415ecf6fc6e",
+			"id": "8c4053f5-3814-46cb-a074-324164c63bc6",
 			"key": "parentContentTypeVariable",
-			"value": "parentType65070125"
+			"value": "parentType84267241"
 		},
 		{
-			"id": "8bc8816e-583b-46a1-ac63-cf5f5c113591",
+			"id": "0e10d996-4e59-4bae-85cb-c5910c02eaab",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "fbdd03fa-bc82-4fd8-8b3a-2059cf105119",
+			"id": "9a8b7d08-1d2a-416f-a14b-ded46f572674",
 			"key": "childContentIdentifier",
-			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
+			"value": "69953bca-0384-487c-8288-5118f455c127"
 		},
 		{
-			"id": "a90210cb-0915-4165-ac0e-cadc549d551d",
+			"id": "e22ed666-f69a-4b8a-9763-7dd66ad90415",
 			"key": "parentContentIdentifier",
-			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
+			"value": "5f487236-01fb-4ff1-a25e-8eecc99b2312"
 		}
 	],
 	"protocolProfileBehavior": {}

@@ -150,11 +150,10 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
     }
     
     /**
-     * Sets title property to the TemplateDataGen instance. This will be used when a new {@link
-     * Template} instance is created
+     * Sets the host where the template lives.
      *
-     * @param title the title of this template
-     * @return TemplateDataGen with title property set
+     * @param host the host of this template
+     * @return TemplateDataGen with host property set
      */
     public TemplateDataGen host(Host host) {
         this.host = host;
@@ -261,6 +260,8 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
         template.setBody(body);
         template.setDrawedBody(drawedBody);
         template.setTheme(theme);
+        template.setCountAddContainer(0);
+        template.setCountContainers(0);
         return template;
     }
 

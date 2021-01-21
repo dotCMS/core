@@ -439,16 +439,23 @@ public class DotPortletAction extends PortletAction {
 	public void _retrieveWebAsset(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user, Class myClass,
 			String webkey) throws Exception {
 		WebAsset webAsset;
-		
+		Identifier ident = null;
 		String inode=req.getParameter("inode");
 		
 		if(InodeUtils.isSet(inode)) {
 			// editing existing asset
-			
-			Identifier ident=APILocator.getIdentifierAPI().findFromInode(inode);
+			if(Template.class.equals(myClass)){
+				ident = APILocator.getIdentifierAPI().find(APILocator.getTemplateAPI().find(inode,user,false).getIdentifier());
+			} else {
+				ident = APILocator.getIdentifierAPI().findFromInode(inode);
+			}
 			webAsset = (WebAsset) APILocator.getVersionableAPI().findWorkingVersion(ident, user, false);
 			if(!webAsset.getInode().equals(inode)){
-				webAsset = (WebAsset)InodeFactory.getInode(inode, myClass);
+				if(Template.class.equals(myClass)){
+					webAsset = APILocator.getTemplateAPI().find(inode,user,false);
+				} else {
+					webAsset = (WebAsset) InodeFactory.getInode(inode, myClass);
+				}
 			}
 			
 			// Checking permissions

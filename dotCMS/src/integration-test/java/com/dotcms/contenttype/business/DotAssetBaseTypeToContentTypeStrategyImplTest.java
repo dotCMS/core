@@ -104,7 +104,7 @@ public class DotAssetBaseTypeToContentTypeStrategyImplTest  extends IntegrationT
         request.setHeader("Origin", "localhost");
         request.setAttribute(WebKeys.USER, APILocator.systemUser());
 
-        final File file = FileUtil.createTemporalFile("test", "txt");
+        final File file = FileUtil.createTemporaryFile("test", "txt");
         final String content = "This is a test temporal file";
         try (final FileWriter fileWriter = new FileWriter(file)) {
 

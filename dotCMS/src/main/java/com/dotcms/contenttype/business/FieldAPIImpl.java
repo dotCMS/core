@@ -132,6 +132,13 @@ public class FieldAPIImpl implements FieldAPI {
   @WrapInTransaction
   @Override
   public Field save(final Field field, final User user) throws DotDataException, DotSecurityException {
+        return save(field, user, true);
+  }
+
+  @WrapInTransaction
+  @Override
+  public Field save(final Field field, final User user, final boolean reorder)
+          throws DotDataException, DotSecurityException {
 
       if(!UtilMethods.isSet(field.contentTypeId())){
           Logger.error(this, "ContentTypeId needs to be set to save the Field");
@@ -171,7 +178,7 @@ public class FieldAPIImpl implements FieldAPI {
                       + "please use the following: " + oldField.contentTypeId());
                 }
 
-                if (oldField.sortOrder() != field.sortOrder()){
+                if (reorder && oldField.sortOrder() != field.sortOrder()){
 	    		    if (oldField.sortOrder() > field.sortOrder()) {
                         fieldFactory.moveSortOrderForward(type.id(), field.sortOrder(), oldField.sortOrder());
                     } else {
@@ -198,7 +205,10 @@ public class FieldAPIImpl implements FieldAPI {
                 Logger.error(this, errorMessage);
                 throw new DotDataValidationException(errorMessage);
             }
-            fieldFactory.moveSortOrderForward(type.id(), field.sortOrder());
+
+            if (reorder) {
+                fieldFactory.moveSortOrderForward(type.id(), field.sortOrder());
+            }
         }
 
         if (field instanceof RelationshipField && !(((RelationshipField)field).skipRelationshipCreation())) {
@@ -819,7 +829,7 @@ public class FieldAPIImpl implements FieldAPI {
   @WrapInTransaction
   public void saveFields(final List<Field> fields, final User user) throws DotSecurityException, DotDataException {
     for (final Field field : fields) {
-        save(field, user);
+        save(field, user, false);
     }
   }
 

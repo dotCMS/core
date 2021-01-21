@@ -343,7 +343,7 @@ public class BundleAPIImpl implements BundleAPI {
 											final Function<T, String> bundleToIdentifierConverter)    // convert T to bundle id
 			throws IOException {
 
-		final File tempFile       = FileUtil.createTemporalFile("bundle-ids");
+		final File tempFile       = FileUtil.createTemporaryFile("bundle-ids");
 		final int limit           = 100;
 		int offset                = 0;
 		List<T> sentBundles       = bundleFinder.apply(limit, offset);

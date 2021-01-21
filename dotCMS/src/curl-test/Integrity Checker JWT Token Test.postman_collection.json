@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "bf248c74-2817-4a70-9d13-d4569d5cfbc7",
+		"_postman_id": "aa2685ce-73db-4505-af17-dbaf2c46491f",
 		"name": "Integrity Checker JWT Token Test",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -17,7 +17,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "8528c13c-c1b3-4a40-96b8-544d7f693cad",
+										"id": "3b6fad29-65b5-4086-8ab8-d94ac110864b",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -80,7 +80,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "483d1c70-0e40-4541-a32f-879e0e15defc",
+										"id": "a7081ff1-eb57-4144-805a-8e8eae337795",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -113,7 +113,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "3d922fc4-9843-49c5-b8fb-57a301bd2b37",
+										"id": "c1c1e34b-7836-4f4c-bc04-4ca06ffb2947",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -163,7 +163,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "324b2288-3fe9-4293-8ad5-78a787e093de",
+										"id": "3074a9ea-729c-4ad8-a879-c7b0d2ebdf54",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -226,7 +226,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "9f2fc11c-3c1b-4922-8308-854f1ddfcc8d",
+										"id": "56351728-6cc5-4534-8d20-34ed18fa53f3",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(401);",
@@ -301,7 +301,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "744a21f4-a854-4557-9f12-0dc055d7363e",
+										"id": "af8e3f70-4aac-48f3-b82b-b06faaa1380a",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(401);",
@@ -367,7 +367,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "29df161e-45c2-41ba-a911-79d215d8f68b",
+										"id": "4c5c8833-e552-4a09-a194-f1c0d573cdea",
 										"exec": [
 											"pm.test(\"Status code is 401\", function () {",
 											"    pm.response.to.have.status(401);",
@@ -446,7 +446,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "53422518-17a5-4800-acc0-c0ff2c9a0ac3",
+										"id": "1484478a-01e1-470b-b5a9-9715f5101cc3",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -454,7 +454,7 @@
 											"    var jsonData = pm.response.json();",
 											"    console.log(jsonData);",
 											"",
-											"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"folder_integrity_test.tar.gz\");",
+											"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"folder_integrity_test_demo.tar.gz\");",
 											"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
 											"});"
 										],
@@ -498,7 +498,7 @@
 											"key": "file",
 											"contentType": "application/tar+gzip ",
 											"type": "file",
-											"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/folder_integrity_test.tar.gz"
+											"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/folder_integrity_test_demo.tar.gz"
 										}
 									],
 									"options": {
@@ -526,7 +526,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "5ced69a2-1210-4397-8720-0a75f3212ad5",
+										"id": "b8e60a1f-3836-4c2f-bdf0-4e52ffdb4dc5",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -589,7 +589,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "0c961544-d102-4b53-b07d-156e7c2b3966",
+										"id": "33283402-c4e1-4108-a8b5-0c9385d7027c",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -638,7 +638,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"upgradeTaskClass\":\"com.dotmarketing.startup.runonce.Task05390RemoveEndpointIdForeignKeyInIntegrityResolverTables\"\n}\n",
+									"raw": "{\n    \"upgradeTaskClass\":\"com.dotmarketing.startup.runonce.Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTables\"\n}\n",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -667,7 +667,7 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "19f3c1ff-6198-4fb0-9a62-af68ae085972",
+										"id": "5656c97e-1477-4c2b-94b4-6e9b0c8f05dc",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -703,7 +703,7 @@
 										{
 											"key": "DATA_TO_FIX",
 											"type": "file",
-											"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/DataToFix.zip"
+											"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/DataToFix_demo.zip"
 										},
 										{
 											"key": "TYPE",
@@ -732,13 +732,13 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "fe24a02b-8770-481f-808f-88193f19af81",
+										"id": "60920dd4-5498-44b5-955b-e548c17d92ea",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
 											"",
 											"    var jsonData = pm.response.json();",
-											"    pm.expect(jsonData[\"entity\"][\"identifier\"]).to.eql(\"ecf8d1d2-d150-4af8-9a0b-93bd53143c11\");",
+											"    pm.expect(jsonData[\"entity\"][\"inode\"]).to.eql(\"8b30893d-8b91-4c1f-8289-1308032961a0\");",
 											"});"
 										],
 										"type": "text/javascript"
@@ -764,7 +764,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{serverURL}}/api/v1/folder/sitename/default/uri/folder_integrity_test",
+									"raw": "{{serverURL}}/api/v1/folder/sitename/demo.dotcms.com/uri/folder_integrity_test",
 									"host": [
 										"{{serverURL}}"
 									],
@@ -773,7 +773,285 @@
 										"v1",
 										"folder",
 										"sitename",
-										"default",
+										"demo.dotcms.com",
+										"uri",
+										"folder_integrity_test"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete folder",
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Origin",
+										"value": "{{serverURL}}/",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{serverURL}}/c/portal/layout?p_l_id=b7ab5d3c-5ee0-4195-a17e-8f5579d718dd&p_p_id=site-browser&p_p_action=1&p_p_state=maximized&angularCurrentPortlet=site-browser&p_p_mode=view&_site_browser_struts_action=%2Fext%2Ffolders%2Fedit_folder&_site_browser_cmd=delete&inode=8b30893d-8b91-4c1f-8289-1308032961a0",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"c",
+										"portal",
+										"layout"
+									],
+									"query": [
+										{
+											"key": "p_l_id",
+											"value": "b7ab5d3c-5ee0-4195-a17e-8f5579d718dd"
+										},
+										{
+											"key": "p_p_id",
+											"value": "site-browser"
+										},
+										{
+											"key": "p_p_action",
+											"value": "1"
+										},
+										{
+											"key": "p_p_state",
+											"value": "maximized"
+										},
+										{
+											"key": "angularCurrentPortlet",
+											"value": "site-browser"
+										},
+										{
+											"key": "p_p_mode",
+											"value": "view"
+										},
+										{
+											"key": "_site_browser_struts_action",
+											"value": "%2Fext%2Ffolders%2Fedit_folder"
+										},
+										{
+											"key": "_site_browser_cmd",
+											"value": "delete"
+										},
+										{
+											"key": "inode",
+											"value": "8b30893d-8b91-4c1f-8289-1308032961a0"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "create folder again",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "755c8934-3479-4836-a487-fb246894aa71",
+										"exec": [
+											"pm.test(\"Bundle uploaded sucessfully\", function () {",
+											"    pm.response.to.have.status(200);",
+											"",
+											"    var jsonData = pm.response.json();",
+											"    console.log(jsonData);",
+											"",
+											"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"folder_integrity_test_demo.tar.gz\");",
+											"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"type": "text",
+										"value": "application/octet-stream"
+									},
+									{
+										"key": "Content-Disposition",
+										"type": "text",
+										"value": "attachment"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"contentType": "application/tar+gzip ",
+											"type": "file",
+											"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/folder_integrity_test_demo.tar.gz"
+										}
+									],
+									"options": {
+										"formdata": {}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/bundle/sync",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"bundle",
+										"sync"
+									]
+								},
+								"description": "Imports a Bundle that includes:\n*  A piece of content of type \"Rich text\" with \"test Content\" as title and body"
+							},
+							"response": []
+						},
+						{
+							"name": "request_fix_conflicts again",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "941c0f23-cc7a-4294-a9e5-7f99284040cf",
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"warning": "This is a duplicate header and will be overridden by the Content-Type header generated by Postman.",
+										"key": "Content-Type",
+										"value": "multipart/form-data",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "DATA_TO_FIX",
+											"type": "file",
+											"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/DataToFix_demo.zip"
+										},
+										{
+											"key": "TYPE",
+											"value": "FOLDERS",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/integrity/_fixconflictsfromremote",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"integrity",
+										"_fixconflictsfromremote"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "check folder id again",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "603592d5-0ea2-42b4-b59a-812b1090147e",
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData[\"entity\"][\"inode\"]).to.eql(\"8b30893d-8b91-4c1f-8289-1308032961a0\");",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/folder/sitename/demo.dotcms.com/uri/folder_integrity_test",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"folder",
+										"sitename",
+										"demo.dotcms.com",
 										"uri",
 										"folder_integrity_test"
 									]
@@ -793,7 +1071,7 @@
 		{
 			"listen": "prerequest",
 			"script": {
-				"id": "d94022a9-d19d-40ab-a076-be58a63cf3b3",
+				"id": "2e6b89ca-835e-441e-8d20-8f69a2486a56",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -803,7 +1081,7 @@
 		{
 			"listen": "test",
 			"script": {
-				"id": "f64070e5-f3ce-4a59-bc69-b4478ae941eb",
+				"id": "7aef68af-5cae-4dbf-a733-33377caef2bd",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -813,22 +1091,22 @@
 	],
 	"variable": [
 		{
-			"id": "81a21cd1-affe-4e42-914a-894e7ffde1e9",
+			"id": "5b4948d2-12b3-4e06-b207-56296ab79e92",
 			"key": "serverURL",
 			"value": "http://localhost:8080"
 		},
 		{
-			"id": "547ffe1c-a555-4e44-903f-c80060dccb1c",
+			"id": "975334c6-db15-4b59-9e23-0030230c5ef7",
 			"key": "token",
-			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGk1MGY1N2RlNi02MjJhLTQyMWYtYThjYy0wZTY0ZDIwOGY3NTgiLCJ4bW9kIjoxNjAwOTgwMTYyMDAwLCJuYmYiOjE2MDA5ODAxNjIsImlzcyI6IjZmZWRmNjBhMTYiLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2OTU1NTE1MjcsImlhdCI6MTYwMDk4MDE2MiwianRpIjoiZjAwYjcyZmItNDQ0YS00MGUzLWI1MzItMDBiZDk4NzFmMTk3In0.S3W8wZV8SAtTxPwlxoB1nzd301wvNDZDEFzVis-UdfA"
+			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGk2NTdmY2ZhMy02YWRlLTQ3NWMtOGY5OS03YzM2NDg0Y2E2YWEiLCJ4bW9kIjoxNjA0NDE3NzA3MDAwLCJuYmYiOjE2MDQ0MTc3MDcsImlzcyI6IjhlNTFiMGFiOGUiLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2OTg5ODkwNzIsImlhdCI6MTYwNDQxNzcwNywianRpIjoiN2VjZDE1ODEtMDc2OS00YWZkLWIxYWUtODlhOTQ3M2M1ZjRiIn0.ZIr7ZJSv5UJSPFB0QGxy3Ye2tyA8LK_tqDx6987OP34"
 		},
 		{
-			"id": "1f57fb71-9bc1-4a31-b3b4-4ab44647f181",
+			"id": "1d5a2e52-f063-430f-b0ad-0c79bc3c349e",
 			"key": "bundle_id",
 			"value": "bundle_1598948729120"
 		},
 		{
-			"id": "b4166b36-71b9-4cc9-ab25-4514b88e07c7",
+			"id": "6ba6721d-8932-4429-84f7-b5a282bf270b",
 			"key": "transactionId",
 			"value": "48db03da-d303-47cc-af29-9be490e99648"
 		}

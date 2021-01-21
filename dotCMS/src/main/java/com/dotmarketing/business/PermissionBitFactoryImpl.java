@@ -1705,12 +1705,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
       persistenceService.setParam(permissionable.getPermissionId());
       persistenceService.setParam(permissionable.getPermissionId());
       bitPermissionsList = (List<Permission>) persistenceService.list();
-
-      bitPermissionsList.forEach(p -> p.setBitPermission(true));
+      
       // adding to cache if found
-      
-      permissionCache.addToPermissionCache(permissionKey, bitPermissionsList);
-      
+      if (!bitPermissionsList.isEmpty()) {
+          bitPermissionsList.forEach(p -> p.setBitPermission(true));
+          permissionCache.addToPermissionCache(permissionKey, bitPermissionsList);
+      }
       return bitPermissionsList;
 
     })).getOrElseThrow(e -> new DotDataException(e));

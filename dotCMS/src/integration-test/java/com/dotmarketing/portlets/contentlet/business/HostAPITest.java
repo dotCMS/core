@@ -36,6 +36,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -703,5 +704,27 @@ public class HostAPITest extends IntegrationTestBase  {
         final Host hostReturned2 = APILocator.getHostAPI().findByAlias("prod-anotherclient.dotcms.com", user, false);
         assertNotEquals(host, hostReturned2);
         assertEquals(host_2, hostReturned2);
+    }
+
+    /**
+     * Method to test: {@link HostAPI#findAllFromCache(User, boolean)}
+     * This verifies that after creating and removing a host the method continues to return accurate results.
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void Test_findAllCache() throws DotSecurityException, DotDataException {
+        final User systemUser = APILocator.systemUser();
+        final HostAPI hostAPI = APILocator.getHostAPI();
+        final List<Host> allFromDB1 = hostAPI.findAllFromDB(systemUser, false);
+        final List<Host> allFromCache1 = hostAPI.findAllFromCache(systemUser, false);
+        Assert.assertEquals(allFromDB1, allFromCache1);
+        final Host host1 = new SiteDataGen().aliases("any.client.dotcms.com").nextPersisted();
+        final List<Host> allFromCache2 = hostAPI.findAllFromCache(systemUser, false);
+        assertTrue(allFromCache1.size() < allFromCache2.size());
+        hostAPI.archive(host1, systemUser, false);
+        hostAPI.delete(host1, systemUser, false);
+        final List<Host> allFromCache3 = hostAPI.findAllFromCache(systemUser, false);
+        assertEquals(allFromCache3.size() , allFromCache1.size());
     }
 }

@@ -72,7 +72,7 @@
     for (ContentType contentType: contentTypes) {
         containerStructures = containerStructures + "{";
         containerStructures = containerStructures + "\"inode\":" + "\"" + contentType.id() + "\",";
-        containerStructures = containerStructures + "\"name\":" + "\"" + contentType.name() + "\",";
+        containerStructures = containerStructures + "\"name\":" + "\"" + contentType.name().replace("'", "%27").replace("\"", "%22") + "\",";
         containerStructures = containerStructures + "\"baseType\":" + "\"" + contentType.baseType() + "\",";
         containerStructures = containerStructures + "\"variable\":" + "\"" + contentType.variable() + "\"";
         containerStructures = containerStructures + "}";

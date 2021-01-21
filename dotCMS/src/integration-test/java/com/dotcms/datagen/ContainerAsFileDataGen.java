@@ -42,6 +42,7 @@ public class ContainerAsFileDataGen extends AbstractDataGen<FileAssetContainer> 
         }
     }
 
+    private boolean ignoreDefaultContentTypes = false;
     private Host host;
     private String folderName = "/large-column" + System.currentTimeMillis();
     private List<ContentTypeContent> contentTypes = new ArrayList<>();
@@ -65,6 +66,11 @@ public class ContainerAsFileDataGen extends AbstractDataGen<FileAssetContainer> 
 
     public ContainerAsFileDataGen host(final Host host) {
         this.host = host;
+        return this;
+    }
+
+    public ContainerAsFileDataGen ignoreDefaultContentTypes() {
+        this.ignoreDefaultContentTypes = true;
         return this;
     }
 
@@ -104,7 +110,7 @@ public class ContainerAsFileDataGen extends AbstractDataGen<FileAssetContainer> 
         try {
             final Folder containerFolder = createFileAsContainerFolderIfNeeded();
 
-            if (contentTypes.isEmpty()) {
+            if (contentTypes.isEmpty() && !ignoreDefaultContentTypes) {
                 contentTypes = getDefaultContentTypes();
             }
 

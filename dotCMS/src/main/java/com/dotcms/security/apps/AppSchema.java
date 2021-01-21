@@ -3,6 +3,7 @@ package com.dotcms.security.apps;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.annotations.VisibleForTesting;
+import java.io.Serializable;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -25,7 +26,7 @@ import java.util.Objects;
  *  required: false
  *
  */
-public class AppSchema {
+public class AppSchema implements Serializable{
 
     protected final String name;
 
