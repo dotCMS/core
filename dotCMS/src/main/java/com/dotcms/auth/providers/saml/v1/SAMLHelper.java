@@ -1,5 +1,6 @@
 package com.dotcms.auth.providers.saml.v1;
 
+import com.dotcms.company.CompanyAPI;
 import com.dotcms.saml.Attributes;
 import com.dotcms.saml.DotSamlConstants;
 import com.dotcms.saml.DotSamlException;
@@ -19,8 +20,10 @@ import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
@@ -28,11 +31,15 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import com.liferay.util.Encryptor;
+import io.vavr.control.Try;
 import org.apache.commons.lang.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -48,15 +55,43 @@ public class SAMLHelper {
     private final HostWebAPI hostWebAPI;
     private final UserAPI    userAPI;
     private final RoleAPI    roleAPI;
+    private final CompanyAPI companyAPI;
     private final SamlAuthenticationService  samlAuthenticationService;
 
-    public SAMLHelper(final SamlAuthenticationService samlAuthenticationService) {
+    public SAMLHelper(final SamlAuthenticationService samlAuthenticationService, final CompanyAPI companyAPI) {
 
         this.userAPI      = APILocator.getUserAPI();
         this.roleAPI      = APILocator.getRoleAPI();
         this.hostWebAPI   = WebAPILocator.getHostWebAPI();
+        this.companyAPI   = companyAPI;
         this.samlAuthenticationService = samlAuthenticationService;
     }
+
+    /*
+    * Tries to load the user by id, if not found, tries to hash the user id in case the id was previously hashed.
+     */
+    private User loadUserById (final String userId, final User currentUser) throws DotSecurityException, DotDataException {
+
+        User user = null;
+
+        // first try unhashed
+        user = Try.of(()->this.userAPI.loadUserById(userId, currentUser, false)).getOrNull();
+
+        if(null == user) {
+
+            // not found, try hashed
+            final String hashedUserId= Try.of(()->this.hashIt(userId)).getOrNull();
+
+            if (null != hashedUserId) {
+
+                user = this.userAPI.loadUserById(hashedUserId, currentUser, false);
+            }
+        }
+
+        return user;
+    }
+
+
 
     // Gets the attributes from the Assertion, based on the attributes
     // see if the user exists return it from the dotCMS records, if does not
@@ -73,10 +108,10 @@ public class SAMLHelper {
             Logger.debug(this, ()-> "Validating user - " + attributes);
 
             systemUser             = this.userAPI.getSystemUser();
-            final Company company  = APILocator.getCompanyAPI().getDefaultCompany();
+            final Company company  = companyAPI.getDefaultCompany();
             final String  authType = company.getAuthType();
             user                   = Company.AUTH_TYPE_ID.equals(authType)?
-                    this.userAPI.loadUserById(this.samlAuthenticationService.getValue(attributes.getNameID()),      systemUser, false):
+                    this.loadUserById(this.samlAuthenticationService.getValue(attributes.getNameID()),      systemUser):
                     this.userAPI.loadByUserByEmail(this.samlAuthenticationService.getValue(attributes.getNameID()), systemUser, false);
         } catch (NoSuchUserException e) {
 
@@ -209,11 +244,16 @@ public class SAMLHelper {
             if (DotSamlProxyFactory.getInstance().samlConfigurationService().getConfigAsString(identityProviderConfiguration,
                     SamlName.DOTCMS_SAML_OPTIONAL_USER_ROLE) != null) {
 
-                this.addRole(user, DotSamlProxyFactory.getInstance().samlConfigurationService().getConfigAsString(identityProviderConfiguration,
-                        SamlName.DOTCMS_SAML_OPTIONAL_USER_ROLE), false, false);
-                Logger.debug(this, ()-> "Optional user role: " +
-                        DotSamlProxyFactory.getInstance().samlConfigurationService().getConfigAsString(identityProviderConfiguration,
-                                SamlName.DOTCMS_SAML_OPTIONAL_USER_ROLE) + " has been assigned");
+                final String [] rolesExtra = DotSamlProxyFactory.getInstance().samlConfigurationService().getConfigAsString(identityProviderConfiguration,
+                        SamlName.DOTCMS_SAML_OPTIONAL_USER_ROLE).split(",");
+
+                for (final String roleExtra : rolesExtra){
+
+                    this.addRole(user, roleExtra, false, false);
+                    Logger.debug(this, () -> "Optional user role: " +
+                            DotSamlProxyFactory.getInstance().samlConfigurationService().getConfigAsString(identityProviderConfiguration,
+                                    SamlName.DOTCMS_SAML_OPTIONAL_USER_ROLE) + " has been assigned");
+                }
             }
         } else {
 
@@ -372,19 +412,26 @@ public class SAMLHelper {
         return null == rolePatterns ? DotSamlConstants.NULL : Arrays.asList(rolePatterns).toString();
     }
 
+    private String hashIt (final String token) throws NoSuchAlgorithmException {
+
+        final String hashed = Encryptor.Hashing.sha256().append(token.getBytes(StandardCharsets.UTF_8)).buildUnixHash();
+        return org.apache.commons.lang3.StringUtils.abbreviate(hashed, Config.getIntProperty("dotcms.user.id.maxlength", 100));
+    }
+
     protected User createNewUser(final User systemUser, final Attributes attributesBean,
                                  final IdentityProviderConfiguration identityProviderConfiguration) {
         User user = null;
 
         try {
 
-            final String nameID = this.samlAuthenticationService.getValue(attributesBean.getNameID());
+            final String nameID       = this.samlAuthenticationService.getValue(attributesBean.getNameID());
+            final String hashedNameID = this.hashIt(nameID);
             try {
 
-                user = this.userAPI.createUser(nameID, attributesBean.getEmail());
+                user = this.userAPI.createUser(hashedNameID, attributesBean.getEmail());
             } catch (DuplicateUserException due) {
 
-                user = this.onDuplicateUser(attributesBean, identityProviderConfiguration, nameID);
+                user = this.onDuplicateUser(attributesBean, identityProviderConfiguration, hashedNameID);
             }
 
             user.setFirstName(attributesBean.getFirstName());

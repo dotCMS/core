@@ -1,6 +1,7 @@
 package com.dotcms;
 
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
+import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
@@ -366,7 +367,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v1.template.TemplateResourceTest.class,
         Task201102UpdateColumnSitelicTableTest.class,
         DependencyManagerTest.class,
-        com.dotcms.rest.api.v1.versionable.VersionableResourceTest.class
+        com.dotcms.rest.api.v1.versionable.VersionableResourceTest.class,
+        SAMLHelperTest.class
 })
 public class MainSuite {
 
