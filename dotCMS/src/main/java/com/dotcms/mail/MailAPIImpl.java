@@ -52,7 +52,7 @@ public class MailAPIImpl implements MailAPI {
 
     private Session createNewMailContext() {
 
-        final Properties properties = new MailConfig().read();
+        final Properties properties = new MailConfig().properties.get();
         Session session = Session.getInstance(properties, createAuthenticator(properties));
 
         
