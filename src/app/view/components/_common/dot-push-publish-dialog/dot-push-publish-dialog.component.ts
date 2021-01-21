@@ -72,7 +72,7 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
                 )
                 .pipe(takeUntil(this.destroy$))
                 .subscribe((result: DotAjaxActionResponseView) => {
-                    if (!result.errors) {
+                    if (!result?.errors) {
                         this.close();
                     } else {
                         this.errorMessage = result.errors;
