@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DOT_CICD_CLOUD_PROVIDER: github
-      DOT_CICD_TARGET: dotcms-release
+      DOT_CICD_TARGET: core
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_USER: dotcmsbuild
       GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
@@ -17,8 +17,6 @@ jobs:
     steps:
       - name: Checkout core
         uses: actions/checkout@v2
-        with:
-          fetch-depth: 1
       - name: GITHUB CONTEXT
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
@@ -33,20 +31,24 @@ jobs:
         run: |
           BRANCH=$(basename "${{ github.ref }}")
           echo "branch=${BRANCH}" >> $GITHUB_ENV
+          echo "eeBranch=${BRANCH}" >> $GITHUB_ENV
 
           eval $(cat dotCMS/gradle.properties | grep dotcmsReleaseVersion)
           echo "DOTCMS_VERSION=${dotcmsReleaseVersion}" >> $GITHUB_ENV
       - name: Prepare dot-cicd
         run: |
           chmod +x .cicd/discover.sh && .cicd/discover.sh
-      - name: Generate/Deploy DotCMS EE
-        uses: dotcms/generate-ee-jar@main
-        with:
-          repo-username: ${{ secrets.EE_REPO_USERNAME }}
-          repo-password: ${{ secrets.EE_REPO_PASSWORD }}
-          build-id: ${{ env.branch }}
-          core-build-id: ${{ env.coreBranch }}
-          rsa-key: ${{ secrets.EE_RSA_KEY }}
+#      - name: Update/Publish Docker Image
+#        run: |
+#          dotcicd/library/pipeline.sh updatePublishDockerImage
+      - name: Generate/Deploy EE
+        run: |
+          dotcicd/library/pipeline.sh generateUploadEeJar ${{ secrets.EE_REPO_USERNAME }} ${{ secrets.EE_REPO_PASSWORD }} ${{ env.branch }} ${{ env.eeBranch }}
+        env:
+          RSA_KEY: ${{ secrets.EE_RSA_KEY }}
+      - name: Generate/Deploy DotCMS
+        run: |
+          dotcicd/library/pipeline.sh generateUploadDotCMSJar ${{ secrets.EE_REPO_USERNAME }} ${{ secrets.EE_REPO_PASSWORD }} ${{ env.branch }}
       - name: Build distro files
         run: |
           dotcicd/library/pipeline.sh buildDistro
@@ -55,10 +57,10 @@ jobs:
           dotcicd/library/pipeline.sh generateJavadoc
       - name: Push distro and javadoc
         run: |
-          dotcicd/library/pipeline.sh pushToStaticDotCMS all ${{ env.TEST_RUN }}
+          dotcicd/library/pipeline.sh pushToStaticDotCMS all
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       - name: Update OSGI version
         run: |
-          dotcicd/library/pipeline.sh updateOsgiVersion ${{ env.TEST_RUN }}
+          dotcicd/library/pipeline.sh updateOsgiVersion
