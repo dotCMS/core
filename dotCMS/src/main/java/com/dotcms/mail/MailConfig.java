@@ -17,7 +17,7 @@ class MailConfig {
 
 
 
-    static Lazy<Properties> properties = Lazy.of(()->{
+    Lazy<Properties> properties = Lazy.of(()->{
 
         final Properties properties = new Properties();
 

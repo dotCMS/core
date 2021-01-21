@@ -2,6 +2,7 @@ package com.dotcms.mail;
 
 import java.util.Map;
 import java.util.Properties;
+import javax.mail.Authenticator;
 import javax.mail.Session;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -64,8 +65,7 @@ public class MailAPIImplTest {
     @Test
     public void test_mail_config_properties() {
 
-        MailConfig config = new MailConfig();
-        Properties props = config.properties.get();
+        Properties props = new MailConfig().properties.get();
         
         assert(props.get("mail.smtp.user").equals("testUser"));
         assert(props.get("mail.smtp.host").equals("testHost"));
@@ -80,6 +80,40 @@ public class MailAPIImplTest {
     
     
     
-    
+    @Test
+    public void test_building_authenticator() {
+        
+        // test default
+        Properties properties = new Properties();
+        Authenticator authenticator = new MailAPIImpl(properties).createAuthenticator();
+        assert(authenticator ==null);
 
+        // test smtp.auth=false
+        properties.setProperty("mail.smtp.auth", "false");
+        authenticator = new MailAPIImpl(properties).createAuthenticator();
+        assert(authenticator ==null);
+        
+        
+        // Test no password
+        properties.setProperty("mail.smtp.auth", "true");
+        properties.setProperty("mail.smtp.user", "test");
+        authenticator = new MailAPIImpl(properties).createAuthenticator();
+        assert(authenticator ==null);
+        
+        
+        // Test password
+        properties.setProperty("mail.smtp.auth", "true");
+        properties.setProperty("mail.smtp.user", "test");
+        properties.setProperty("mail.smtp.password", "test");
+        authenticator = new MailAPIImpl(properties).createAuthenticator();
+        assert(authenticator !=null);
+        
+        
+        
+    }
+
+    
+    
+    
+    
 }

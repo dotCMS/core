@@ -8,15 +8,25 @@ import javax.mail.Session;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import com.dotmarketing.util.Logger;
+import com.google.common.annotations.VisibleForTesting;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 
 public class MailAPIImpl implements MailAPI {
 
 
-    
-    
-    
+    private final Properties properties;
+
+
+    public MailAPIImpl() {
+        this(new MailConfig().properties.get());
+    }
+
+    @VisibleForTesting
+    MailAPIImpl(Properties properties) {
+        this.properties = properties;
+    }
+
     @Override
     public Session getMailSession() {
         return mailSessionHolder.get();
@@ -44,18 +54,16 @@ public class MailAPIImpl implements MailAPI {
     }
 
     private static Lazy<Session> mailSessionHolder = Lazy.of(() -> {
-        return new MailAPIImpl().loadMailSessionFromContext()
-                    .orElse(new MailAPIImpl().createNewMailContext());
+        return new MailAPIImpl().loadMailSessionFromContext().orElse(new MailAPIImpl().createNewMailContext());
 
     });
 
 
     private Session createNewMailContext() {
 
-        final Properties properties = new MailConfig().properties.get();
-        Session session = Session.getInstance(properties, createAuthenticator(properties));
+        Session session = Session.getInstance(properties, createAuthenticator());
 
-        
+
         // bind session if not already there
         if (!hasMailInContext()) {
             Try.run(() -> new InitialContext().bind(MAIL_JNDI_NAME, session))
@@ -65,29 +73,36 @@ public class MailAPIImpl implements MailAPI {
 
 
     }
-    
-    private Authenticator createAuthenticator(final Properties properties) {
-        
-     
+
+    @VisibleForTesting
+    Authenticator createAuthenticator() {
+
+
         boolean enabled = "true".equals(properties.getProperty("mail.smtp.auth"));
-        if(!enabled) {
+        if (!enabled) {
+            return null;
+        }
+
+
+        String user = properties.containsKey("mail.smtp.user") ? properties.getProperty("mail.smtp.user")
+                        : properties.getProperty("mail.user");
+        String password = properties.containsKey("mail.smtp.password") ? properties.getProperty("mail.smtp.password")
+                        : properties.getProperty("mail.password");
+
+
+
+        
+        if(user==null || password==null) {
             return null;
         }
         
-        
-        String user =  properties.contains("mail.smtp.user") ? properties.getProperty("mail.smtp.user") : properties.getProperty("mail.user");
-        String password = properties.contains("mail.smtp.password") ? properties.getProperty("mail.smtp.password") : properties.getProperty("mail.password");
-        
-
-        
         return new javax.mail.Authenticator() {
             protected PasswordAuthentication getPasswordAuthentication() {
-               return new PasswordAuthentication( user, password);
+                return new PasswordAuthentication(user, password);
             }
-         };
-        
+        };
+
     }
-    
 
 
 }
