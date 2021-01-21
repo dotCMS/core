@@ -275,7 +275,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
             return true;
         }
         
-        if(userIn.isAdmin()) {
+        if(user.isAdmin()) {
             return true;
         }
         
@@ -293,7 +293,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
         // short circut for UserProxy
         if(permissionable instanceof UserProxy) {
-            return userPermissions((UserProxy) permissionable, userIn);
+            return userPermissions((UserProxy) permissionable, user);
         }
 		
 
