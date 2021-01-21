@@ -24,6 +24,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.Base64;
 import java.util.ArrayList;
@@ -985,6 +986,35 @@ public class TemplateResourceTest {
         templateB = APILocator.getTemplateAPI().saveTemplate(templateB,newHostB,adminUser,false);
         //Call Resource
         final Response responseResource = resource.list(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,"",0,40,"mod_date","DESC",newHostA.getIdentifier(),false);
+        //Check that the response is 200, OK
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+        final PaginatedArrayList paginatedArrayList = PaginatedArrayList.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(1,paginatedArrayList.size());
+    }
+
+    /**
+     * Method to test: list in the TemplateResource
+     * Given Scenario: Create a template on hostA, and a template on hostB. Get the templates of hostA, but using the
+     *                  currentHost not the query param.
+     * ExpectedResult: The endpoint should return 200, and the size of the results must be 1.
+     */
+    @Test
+    public void test_listTemplate_filterByHost_usingCurrentHost()
+            throws DotSecurityException, DotDataException {
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHostA = new SiteDataGen().nextPersisted();
+        final Host newHostB = new SiteDataGen().nextPersisted();
+        //Create template
+        Template templateA = new TemplateDataGen().title(title).next();
+        templateA = APILocator.getTemplateAPI().saveTemplate(templateA,newHostA,adminUser,false);
+        Template templateB = new TemplateDataGen().title(title).next();
+        templateB = APILocator.getTemplateAPI().saveTemplate(templateB,newHostB,adminUser,false);
+        //Create Request and set Attribute
+        final HttpServletRequest request = getHttpRequest(adminUser.getEmailAddress(),"admin");
+        request.getSession().setAttribute(WebKeys.CURRENT_HOST,newHostA);
+        //Call Resource
+        final Response responseResource = resource.list(request,response,"",0,40,"mod_date","DESC","",false);
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
