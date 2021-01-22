@@ -1048,6 +1048,7 @@ task cleanDotCmsWebComponents {
 task copyDotCmsUi(type: Copy) {
     from(file("./src/main/webapp/$angularFolder/package"))
     into("./src/main/webapp/$angularFolder")
+    finalizedBy 'deleteDotCmsUi'
 }
 
 task copyDotCmsWebComponents(type: Copy) {
@@ -1065,7 +1066,7 @@ task extractDotCmsUi(type: NpmArtifactExtractTask) {
     version = coreWebReleaseVersion
     dest = "./src/main/webapp/$angularFolder"
     dependsOn 'cleanDotCmsUi'
-    finalizedBy 'copyDotCmsUi', 'deleteDotCmsUi'
+    finalizedBy 'copyDotCmsUi'
 }
 extractDotCmsUi.group = 'extract dotcms-ui'
 extractDotCmsUi.description = 'Extracts package from dotcms-ui artifact to dotAdmin'

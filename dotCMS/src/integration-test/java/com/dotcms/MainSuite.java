@@ -1,6 +1,7 @@
 package com.dotcms;
 
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
+import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
@@ -256,7 +257,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.business.IdentifierAPITest.class,
         com.dotmarketing.business.CommitListenerCacheWrapperTest.class,
         com.dotmarketing.business.RoleAPITest.class,
-        com.dotmarketing.business.UserProxyFactoryTest.class,
         com.dotmarketing.business.IdentifierConsistencyIntegrationTest.class,
         com.dotmarketing.business.LayoutAPITest.class,
         com.dotmarketing.business.PermissionAPIIntegrationTest.class,
@@ -368,7 +368,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task201102UpdateColumnSitelicTableTest.class,
         DependencyManagerTest.class,
         com.dotcms.rest.api.v1.versionable.VersionableResourceTest.class,
-        GenericBundleActivatorTest.class
+        GenericBundleActivatorTest.class,
+        SAMLHelperTest.class
 })
 public class MainSuite {
 
