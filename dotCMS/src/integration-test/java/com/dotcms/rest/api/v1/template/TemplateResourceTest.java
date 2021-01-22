@@ -1020,6 +1020,8 @@ public class TemplateResourceTest {
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final PaginatedArrayList paginatedArrayList = PaginatedArrayList.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(1,paginatedArrayList.size());
+        Assert.assertEquals(APILocator.getIdentifierAPI().find(templateA.getIdentifier()).getHostId(),
+                APILocator.getIdentifierAPI().find(((TemplateView) paginatedArrayList.get(0)).getIdentifier()).getHostId());
     }
 
     /**
