@@ -5118,7 +5118,7 @@
 									"pm.test(\"Filtered relationship fetched\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    ",
-									"    pm.expect(jsonData.data.MovieCollection[4].studio[0].name).to.eql(\"Walt Disney Pictures\");",
+									"    pm.expect(jsonData.data.MovieCollection[2].studio[0].name).to.eql(\"Walt Disney Pictures\");",
 									"",
 									"});"
 								],
@@ -5132,7 +5132,7 @@
 						"body": {
 							"mode": "graphql",
 							"graphql": {
-								"query": "{\n  MovieCollection {\n    title\n    studio(query: \"+studio.name:\\\"Walt Disney Pictures\\\"\", sortBy: \"+studio.name\") {\n      name\n    }\n  }\n}\n",
+								"query": "{\n  MovieCollection(sortBy: \"Movie.title\") {\n    title\n    studio(query: \"+studio.name:\\\"Walt Disney Pictures\\\"\") {\n      name\n    }\n  }\n}\n",
 								"variables": ""
 							}
 						},
@@ -5156,87 +5156,87 @@
 	],
 	"variable": [
 		{
-			"id": "f6fc4970-8886-4d55-9ceb-609b707a0caf",
+			"id": "c3337617-530f-4938-b6b5-0497761d9c99",
 			"key": "languageId",
 			"value": 1609799506077
 		},
 		{
-			"id": "49a3cd68-d730-474a-8626-34190360b89e",
+			"id": "7b17edd4-55a8-45bd-b931-dc33c9272ca3",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "a4667da8-f1ab-4349-8e79-53f0c5979f6b",
+			"id": "1faac49d-7a77-492c-91e1-b9536dbf9302",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType30413852"
 		},
 		{
-			"id": "b48f36db-f777-409e-8849-c1ff33d8c08d",
+			"id": "74bc16b1-bc81-4953-8c9d-c5e04dc371f0",
 			"key": "contentIdentifier",
 			"value": "a5bf0d80-4273-41e1-8f1f-22a3d4ac986f"
 		},
 		{
-			"id": "b7abd837-ee99-4968-a24f-c1a7818ce56a",
+			"id": "b0bb2018-ff58-481c-b462-636d8c75cafe",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "da1dc054-e1c2-4c71-a6a1-7b7f59a1fefe",
+			"id": "14579271-c0ec-4685-817a-731b40a509d3",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType49851579"
 		},
 		{
-			"id": "d693f4c1-0f87-40d3-860b-f98bfbf91ba2",
+			"id": "6abfd9a4-df6c-49a5-a4ce-4c2908e358e8",
 			"key": "imageContentIdentifier",
 			"value": "4cb59737-913d-4c5f-b021-dbe213a15739"
 		},
 		{
-			"id": "13a4ef5e-392a-4fd5-aadd-448e7ee89ce0",
+			"id": "7ed69565-1576-4317-94d0-fff6eb2bec69",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "47026ff8-29f7-44a7-816a-186d76b6a898",
+			"id": "07820789-4ddf-4321-b365-12b7774c2811",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "4366ed59-b128-404f-a19d-13a030cc5db5",
+			"id": "286b339b-9b7c-4d15-9739-64bca1204a9f",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "58e8a31d-77da-4746-afdf-8e0d747844c5",
+			"id": "a6933e0a-ec2d-4e21-b022-8cf78cf9eb79",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "2be5df46-e653-4664-b19b-9e349bdec5de",
+			"id": "5734459a-7633-4b30-b568-2e99c6654e53",
 			"key": "fileContentIdentifier",
 			"value": "434f474a-4d89-4b96-ad38-aa46483be3e5"
 		},
 		{
-			"id": "e77a2da4-b010-44ee-afb5-0d047627072d",
+			"id": "53fa432a-8556-48bc-9b29-b23582c22b22",
 			"key": "childContentTypeVariable",
 			"value": "childType40723544"
 		},
 		{
-			"id": "717d6db4-8b45-40c2-b824-f169eddc4470",
+			"id": "34c7b668-0cbd-4832-8927-5332693a359d",
 			"key": "parentContentTypeVariable",
 			"value": "parentType84267241"
 		},
 		{
-			"id": "b24d789e-7623-4517-835f-73be0aacb3c2",
+			"id": "e9da1a63-9ee8-40dc-bba6-060d5f4d5161",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "4747458a-682e-46b8-9753-4a6dacec5784",
+			"id": "76af6f09-2c74-48e3-a4df-d44383674a8e",
 			"key": "childContentIdentifier",
 			"value": "69953bca-0384-487c-8288-5118f455c127"
 		},
 		{
-			"id": "62cd28f6-2035-4b62-97c5-4a8c44a38c40",
+			"id": "7a8967e6-7e8d-45eb-9c16-0e5bfdad901e",
 			"key": "parentContentIdentifier",
 			"value": "5f487236-01fb-4ff1-a25e-8eecc99b2312"
 		}
