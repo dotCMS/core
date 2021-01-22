@@ -24,6 +24,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.Base64;
 import java.util.ArrayList;
@@ -222,81 +223,6 @@ public class TemplateResourceTest {
     }
 
     /**
-     * Method to test: archive in the TemplateResource
-     * Given Scenario: Create a template on working state, and try to archive it.
-     *                  Should fail since the template is locked by another user.
-     * ExpectedResult: The endpoint should return 200, the failed array size
-     *                   must be 1 because the action failed over 1 template
-     *
-     */
-    @Test
-    public void test_archiveTemplate_templateIsLockByAnotherUser_failedToArchive()
-            throws DotSecurityException, DotDataException {
-        final String title = "Template" + System.currentTimeMillis();
-        final Host newHost = new SiteDataGen().nextPersisted();
-        //Create template
-        Template template = new TemplateDataGen().title(title).next();
-        template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
-        //Create the limited user
-        final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
-        final String password = "admin";
-        limitedUser.setPassword(password);
-        APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
-        //Give Permissions Over the Template
-        final Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
-                template.getPermissionId(),
-                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
-                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true);
-        APILocator.getPermissionAPI().save(permissions, template, APILocator.systemUser(), false);
-        //Call Resource to Lock
-        Response responseResource = resource.lock(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,template.getIdentifier());
-        //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
-        //Call Resource
-        responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
-        //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
-        final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFails().size());
-    }
-
-    /**
-     * Method to test: archive in the TemplateResource
-     * Given Scenario: Create a template on live state, and lock it. Then
-     *                  try to archive it.
-     * ExpectedResult: The endpoint should return 200, the successCount must be 1 because
-     *                  the action was executed successfully over 1 template. Since the lockedBy
-     *                   is the same as the user exec the action.
-     *
-     *
-     */
-    @Test
-    public void test_archiveTemplate_templateIsLockBySameUser_success()
-            throws DotSecurityException, DotDataException {
-        final String title = "Template" + System.currentTimeMillis();
-        final Host newHost = new SiteDataGen().nextPersisted();
-        //Create template
-        Template template = new TemplateDataGen().title(title).next();
-        template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
-        //Call Resource to Lock
-        Response responseResource = resource.lock(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,template.getIdentifier());
-        //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
-        //Call Resource
-        responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
-        //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
-        final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFails().size());
-    }
-
-    /**
      * Method to test: unarchive in the TemplateResource
      * Given Scenario: Create a template and archive it. Then try to unarchive the template.
      * ExpectedResult: The endpoint should return 200, the successCount must be 1 because
@@ -464,84 +390,6 @@ public class TemplateResourceTest {
         results = BulkResultView.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
         Assert.assertEquals(1,results.getFails().size());
-    }
-
-    /**
-     * Method to test: unarchive in the TemplateResource
-     * Given Scenario: Create a template on working state, and try to unarchive it.
-     *                  Should fail since the template is locked by another user.
-     * ExpectedResult: The endpoint should return 200, the failed array size
-     *                   must be 1 because the action failed over 1 template
-     *
-     */
-    @Test
-    public void test_unarchiveTemplate_templateIsLockByAnotherUser_failedToUnArchive()
-            throws DotSecurityException, DotDataException {
-        final String title = "Template" + System.currentTimeMillis();
-        final Host newHost = new SiteDataGen().nextPersisted();
-        //Create template
-        Template template = new TemplateDataGen().title(title).next();
-        template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
-        //Create the limited user
-        final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
-        final String password = "admin";
-        limitedUser.setPassword(password);
-        APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
-        //Give Permissions Over the Template
-        final Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
-                template.getPermissionId(),
-                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
-                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true);
-        APILocator.getPermissionAPI().save(permissions, template, APILocator.systemUser(), false);
-        //Call Resource to Lock
-        Response responseResource = resource.lock(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,template.getIdentifier());
-        //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
-        //Call Resource
-        responseResource = resource.unarchive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
-        //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
-        final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFails().size());
-    }
-
-    /**
-     * Method to test: unarchive in the TemplateResource
-     * Given Scenario: Create a template on live state, and lock it. Then
-     *                  try to unarchive it.
-     * ExpectedResult: The endpoint should return 200, the successCount must be 1 because
-     *                  the action was executed successfully over 1 template. Since the lockedBy
-     *                   is the same as the user exec the action.
-     *
-     *
-     */
-    @Test
-    public void test_unarchiveTemplate_templateIsLockBySameUser_success()
-            throws DotSecurityException, DotDataException {
-        final String title = "Template" + System.currentTimeMillis();
-        final Host newHost = new SiteDataGen().nextPersisted();
-        //Create template
-        Template template = new TemplateDataGen().title(title).next();
-        template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
-        //Call Resource to Lock
-        Response responseResource = resource.lock(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,template.getIdentifier());
-        //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
-        //Call Resource to Archive
-        responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
-        //Call Resource
-        responseResource = resource.unarchive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
-        //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
-        final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFails().size());
     }
 
     /**
@@ -734,84 +582,6 @@ public class TemplateResourceTest {
     }
 
     /**
-     * Method to test: delete in the TemplateResource
-     * Given Scenario: Create a template on working state, and try to delete it.
-     *                  Should fail since the template is locked by another user.
-     * ExpectedResult: The endpoint should return 200, the failed array size
-     *                   must be 1 because the action failed over 1 template
-     *
-     */
-    @Test
-    public void test_deleteTemplate_templateIsLockByAnotherUser_failedToDelete()
-            throws DotSecurityException, DotDataException {
-        final String title = "Template" + System.currentTimeMillis();
-        final Host newHost = new SiteDataGen().nextPersisted();
-        //Create template
-        Template template = new TemplateDataGen().title(title).next();
-        template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
-        //Create the limited user
-        final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
-        final String password = "admin";
-        limitedUser.setPassword(password);
-        APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
-        //Give Permissions Over the Template
-        final Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
-                template.getPermissionId(),
-                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
-                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true);
-        APILocator.getPermissionAPI().save(permissions, template, APILocator.systemUser(), false);
-        //Call Resource to Lock
-        Response responseResource = resource.lock(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,template.getIdentifier());
-        //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
-        //Call Resource
-        responseResource = resource.delete(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
-        //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
-        final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFails().size());
-    }
-
-    /**
-     * Method to test: delete in the TemplateResource
-     * Given Scenario: Create a template on live state, and lock it. Then
-     *                  try to delete it.
-     * ExpectedResult: The endpoint should return 200, the successCount must be 1 because
-     *                  the action was executed successfully over 1 template. Since the lockedBy
-     *                   is the same as the user exec the action.
-     *
-     *
-     */
-    @Test
-    public void test_deleteTemplate_templateIsLockBySameUser_success()
-            throws DotSecurityException, DotDataException {
-        final String title = "Template" + System.currentTimeMillis();
-        final Host newHost = new SiteDataGen().nextPersisted();
-        //Create template
-        Template template = new TemplateDataGen().title(title).next();
-        template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
-        //Call Resource to Lock
-        Response responseResource = resource.lock(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,template.getIdentifier());
-        //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
-        //Call Resource to Archive
-        responseResource = resource.archive(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
-        //Call Resource
-        responseResource = resource.delete(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
-        //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
-        final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFails().size());
-    }
-
-    /**
      * Method to test: publish in the TemplateResource
      * Given Scenario: Create a template on working state, and publish it.
      * ExpectedResult: The endpoint should return 200, the successCount must be 1 because
@@ -978,81 +748,6 @@ public class TemplateResourceTest {
     }
 
     /**
-     * Method to test: publish in the TemplateResource
-     * Given Scenario: Create a template on working state, and try to publish it.
-     *                  Should fail since the template is locked by another user.
-     * ExpectedResult: The endpoint should return 200, the failed array size
-     *                   must be 1 because the action failed over 1 template
-     *
-     */
-    @Test
-    public void test_publishTemplate_templateIsLockByAnotherUser_failedToPublish()
-            throws DotSecurityException, DotDataException {
-        final String title = "Template" + System.currentTimeMillis();
-        final Host newHost = new SiteDataGen().nextPersisted();
-        //Create template
-        Template template = new TemplateDataGen().title(title).next();
-        template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
-        //Create the limited user
-        final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
-        final String password = "admin";
-        limitedUser.setPassword(password);
-        APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
-        //Give Permissions Over the Template
-        final Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
-                template.getPermissionId(),
-                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
-                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true);
-        APILocator.getPermissionAPI().save(permissions, template, APILocator.systemUser(), false);
-        //Call Resource to Lock
-        Response responseResource = resource.lock(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,template.getIdentifier());
-        //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
-        //Call Resource
-        responseResource = resource.publish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
-        //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
-        final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFails().size());
-    }
-
-    /**
-     * Method to test: publish in the TemplateResource
-     * Given Scenario: Create a template on live state, and lock it. Then
-     *                  try to publish it.
-     * ExpectedResult: The endpoint should return 200, the successCount must be 1 because
-     *                  the action was executed successfully over 1 template. Since the lockedBy
-     *                   is the same as the user exec the action.
-     *
-     *
-     */
-    @Test
-    public void test_publishTemplate_templateIsLockBySameUser_success()
-            throws DotSecurityException, DotDataException {
-        final String title = "Template" + System.currentTimeMillis();
-        final Host newHost = new SiteDataGen().nextPersisted();
-        //Create template
-        Template template = new TemplateDataGen().title(title).next();
-        template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
-        //Call Resource to Lock
-        Response responseResource = resource.lock(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,template.getIdentifier());
-        //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
-        //Call Resource
-        responseResource = resource.publish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
-        //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
-        final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFails().size());
-    }
-
-    /**
      * Method to test: unpublish in the TemplateResource
      * Given Scenario: Create a template on live state, and unpublish it.
      * ExpectedResult: The endpoint should return 200, the successCount must be 1 because
@@ -1213,209 +908,6 @@ public class TemplateResourceTest {
     }
 
     /**
-     * Method to test: unpublish in the TemplateResource
-     * Given Scenario: Create a template on working state, and try to unpublish it.
-     *                  Should fail since the template is locked by another user.
-     * ExpectedResult: The endpoint should return 200, the failed array size
-     *                   must be 1 because the action failed over 1 template
-     *
-     */
-    @Test
-    public void test_unpublishTemplate_templateIsLockByAnotherUser_failedToUnpublish()
-            throws DotSecurityException, DotDataException {
-        final String title = "Template" + System.currentTimeMillis();
-        final Host newHost = new SiteDataGen().nextPersisted();
-        //Create template
-        Template template = new TemplateDataGen().title(title).next();
-        template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
-        //Create the limited user
-        final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
-        final String password = "admin";
-        limitedUser.setPassword(password);
-        APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
-        //Give Permissions Over the Template
-        final Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
-                template.getPermissionId(),
-                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
-                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true);
-        APILocator.getPermissionAPI().save(permissions, template, APILocator.systemUser(), false);
-        //Call Resource to Lock
-        Response responseResource = resource.lock(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,template.getIdentifier());
-        //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
-        //Call Resource
-        responseResource = resource.unpublish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
-        //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
-        final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(0L).get(),results.getSuccessCount());
-        Assert.assertEquals(1,results.getFails().size());
-    }
-
-    /**
-     * Method to test: unpublish in the TemplateResource
-     * Given Scenario: Create a template on live state, and lock it. Then
-     *                  try to unpublish it.
-     * ExpectedResult: The endpoint should return 200, the successCount must be 1 because
-     *                  the action was executed successfully over 1 template. Since the lockedBy
-     *                   is the same as the user exec the action.
-     *
-     *
-     */
-    @Test
-    public void test_unpublishTemplate_templateIsLockBySameUser_success()
-            throws DotSecurityException, DotDataException {
-        final String title = "Template" + System.currentTimeMillis();
-        final Host newHost = new SiteDataGen().nextPersisted();
-        //Create template
-        Template template = new TemplateDataGen().title(title).next();
-        template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
-        //Call Resource to Lock
-        Response responseResource = resource.lock(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,template.getIdentifier());
-        //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
-        //Call Resource
-        responseResource = resource.unpublish(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,new ArrayList<>(
-                Collections.singleton(template.getIdentifier())));
-        //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
-        final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        final BulkResultView results = BulkResultView.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(java.util.Optional.of(1L).get(),results.getSuccessCount());
-        Assert.assertEquals(0,results.getFails().size());
-    }
-
-    /**
-     * Method to test: lock in the TemplateResource
-     * Given Scenario: Create a template on working state, and lock it.
-     * ExpectedResult: The endpoint should return 200.
-     *
-     */
-    @Test
-    public void test_lockTemplate_success()
-            throws DotSecurityException, DotDataException {
-        final String title = "Template" + System.currentTimeMillis();
-        final Host newHost = new SiteDataGen().nextPersisted();
-        //Create template
-        Template template = new TemplateDataGen().title(title).next();
-        template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
-        //Call Resource
-        Response responseResource = resource.lock(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,template.getIdentifier());
-        //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
-    }
-
-    /**
-     * Method to test: lock in the TemplateResource
-     * Given Scenario: Create a template on live state. Now as a Limited User
-     *                  without Edit Permissions try to lock the template.
-     * ExpectedResult: Should throw a DotSecurityException
-     *
-     */
-    @Test (expected = DotSecurityException.class)
-    public void test_lockTemplate_LimitedUserWithoutEditPermissions_failedToLock()
-            throws DotDataException, DotSecurityException {
-        final String title = "Template" + System.currentTimeMillis();
-        final Host newHost = new SiteDataGen().nextPersisted();
-        //Create template
-        final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
-        //Create the limited user
-        final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
-        final String password = "admin";
-        limitedUser.setPassword(password);
-        APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
-        //Give Permissions Over the Folder
-        Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
-                template.getPermissionId(),
-                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
-                PermissionAPI.PERMISSION_READ, true);
-        APILocator.getPermissionAPI().save(permissions, template, APILocator.systemUser(), false);
-        //Call Resource
-        resource.lock(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,template.getIdentifier());
-
-    }
-
-    /**
-     * Method to test: lock in the TemplateResource
-     * Given Scenario: Create a UUID that does not belong to any template and try to lock.
-     * ExpectedResult: Should throw a DoesNotExistException
-     *
-     */
-    @Test (expected = DoesNotExistException.class)
-    public void test_lockTemplate_IdDoesNotBelongToAnyTemplate_failedToLock()
-            throws DotSecurityException, DotDataException {
-        final String uuid = UUIDGenerator.generateUuid();
-        //Call Resource
-        resource.lock(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,uuid);
-    }
-
-    /**
-     * Method to test: unlock in the TemplateResource
-     * Given Scenario: Create a template on working state, and unlock it.
-     * ExpectedResult: The endpoint should return 200.
-     *
-     */
-    @Test
-    public void test_unlockTemplate_success()
-            throws DotSecurityException, DotDataException {
-        final String title = "Template" + System.currentTimeMillis();
-        final Host newHost = new SiteDataGen().nextPersisted();
-        //Create template
-        Template template = new TemplateDataGen().title(title).next();
-        template = APILocator.getTemplateAPI().saveTemplate(template,newHost,adminUser,false);
-        //Call Resource
-        Response responseResource = resource.unlock(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,template.getIdentifier());
-        //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
-    }
-
-    /**
-     * Method to test: unlock in the TemplateResource
-     * Given Scenario: Create a template on live state. Now as a Limited User
-     *                  without Edit Permissions try to unlock the template.
-     * ExpectedResult: Should throw a DotSecurityException
-     *
-     */
-    @Test (expected = DotSecurityException.class)
-    public void test_unlockTemplate_LimitedUserWithoutEditPermissions_failedToUnLock()
-            throws DotDataException, DotSecurityException {
-        final String title = "Template" + System.currentTimeMillis();
-        final Host newHost = new SiteDataGen().nextPersisted();
-        //Create template
-        final Template template = new TemplateDataGen().title(title).host(newHost).nextPersisted();
-        //Create the limited user
-        final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
-        final String password = "admin";
-        limitedUser.setPassword(password);
-        APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
-        //Give Permissions Over the Folder
-        Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
-                template.getPermissionId(),
-                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
-                PermissionAPI.PERMISSION_READ, true);
-        APILocator.getPermissionAPI().save(permissions, template, APILocator.systemUser(), false);
-        //Call Resource
-        resource.unlock(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,template.getIdentifier());
-
-    }
-
-    /**
-     * Method to test: unlock in the TemplateResource
-     * Given Scenario: Create a UUID that does not belong to any template and try to unlock.
-     * ExpectedResult: Should throw a DoesNotExistException
-     *
-     */
-    @Test (expected = DoesNotExistException.class)
-    public void test_unlockTemplate_IdDoesNotBelongToAnyTemplate_failedToUnLock()
-            throws DotSecurityException, DotDataException {
-        final String uuid = UUIDGenerator.generateUuid();
-        //Call Resource
-        resource.unlock(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,uuid);
-    }
-
-    /**
      * Method to test: copy in the TemplateResource
      * Given Scenario: Create a template on working state, and try to copy it.
      * ExpectedResult: The endpoint should return 200 and the new template info should
@@ -1499,6 +991,37 @@ public class TemplateResourceTest {
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final PaginatedArrayList paginatedArrayList = PaginatedArrayList.class.cast(responseEntityView.getEntity());
         Assert.assertEquals(1,paginatedArrayList.size());
+    }
+
+    /**
+     * Method to test: list in the TemplateResource
+     * Given Scenario: Create a template on hostA, and a template on hostB. Get the templates of hostA, but using the
+     *                  currentHost not the query param.
+     * ExpectedResult: The endpoint should return 200, and the size of the results must be 1.
+     */
+    @Test
+    public void test_listTemplate_filterByHost_usingCurrentHost()
+            throws DotSecurityException, DotDataException {
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHostA = new SiteDataGen().nextPersisted();
+        final Host newHostB = new SiteDataGen().nextPersisted();
+        //Create template
+        Template templateA = new TemplateDataGen().title(title).next();
+        templateA = APILocator.getTemplateAPI().saveTemplate(templateA,newHostA,adminUser,false);
+        Template templateB = new TemplateDataGen().title(title).next();
+        templateB = APILocator.getTemplateAPI().saveTemplate(templateB,newHostB,adminUser,false);
+        //Create Request and set Attribute
+        final HttpServletRequest request = getHttpRequest(adminUser.getEmailAddress(),"admin");
+        request.getSession().setAttribute(WebKeys.CURRENT_HOST,newHostA);
+        //Call Resource
+        final Response responseResource = resource.list(request,response,"",0,40,"mod_date","DESC","",false);
+        //Check that the response is 200, OK
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+        final PaginatedArrayList paginatedArrayList = PaginatedArrayList.class.cast(responseEntityView.getEntity());
+        Assert.assertEquals(1,paginatedArrayList.size());
+        Assert.assertEquals(APILocator.getIdentifierAPI().find(templateA.getIdentifier()).getHostId(),
+                APILocator.getIdentifierAPI().find(((TemplateView) paginatedArrayList.get(0)).getIdentifier()).getHostId());
     }
 
     /**

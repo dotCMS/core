@@ -2299,12 +2299,12 @@
 					"response": []
 				},
 				{
-					"name": "GivenRequestByURI_FireRulesFALSE_PREVIEW_MODE_pageRuleShouldNOTFire",
+					"name": "GivenRequestByURI_FireRulesTrue_PREVIEW_MODE_pageRuleShouldFire Copy",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "cdc972e0-ad4e-4805-b368-b0ef49e83362",
+								"id": "dd044a8e-ff95-45a7-83ab-26e7014c8873",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -2313,9 +2313,9 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"pm.test(\"Rule NOT fired\", function () {",
+									"pm.test(\"Rule fired\", function () {",
 									"    var rulesFired = pm.response.headers.get(\"rulesFired\");",
-									"    pm.expect(rulesFired, 'FAILED:[rulesFired').equal(undefined);",
+									"    pm.expect(rulesFired, 'FAILED:[rulesFired').equal(\"true\");",
 									"    ",
 									"});",
 									""
@@ -2362,7 +2362,7 @@
 						"body": {
 							"mode": "graphql",
 							"graphql": {
-								"query": "{\n  page(url: \"/destinations/costa-rica\", pageMode: \"preview_mode\", languageId: \"1\", fireRules: false) {\n    title\n    viewAs {\n      persona {\n        name\n      }\n    }\n  }\n}\n",
+								"query": "{\n  page(url: \"/destinations/mexico\", pageMode: \"preview_mode\", languageId: \"1\", fireRules: true) {\n    title\n  }\n}\n",
 								"variables": ""
 							}
 						},
@@ -2377,6 +2377,90 @@
 								"graphql"
 							]
 						}
+					},
+					"response": []
+				},
+				{
+					"name": "GivenRequestByURLMAP_givenRequestedPersona_shouldRenderUsingPersona",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "cdc972e0-ad4e-4805-b368-b0ef49e83362",
+								"exec": [
+									"",
+									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Persona present\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.page.viewAs.visitor.persona.keyTag, 'FAILED:[jsonData.data.page.viewAs.visitor.persona.keyTag]').equal(\"EcoEnthusiast\");",
+									"    pm.expect(jsonData.data.page.viewAs.visitor.persona.identifier, 'FAILED:[jsonData.data.page.viewAs.visitor.persona.identifier]').equal(\"0ed8e71a-47c7-4b30-a6f2-3796aa71ba49\");",
+									"    ",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"type": "text",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"type": "text",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\", fireRules: true, persona: \"EcoEnthusiast\") {\n    viewAs {\n      visitor {\n        device\n        persona {\n          keyTag\n          identifier\n        }\n        tags {\n          tag\n        }\n      }\n    }\n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "This tests that given a persona tag in the parameters of the `page` field, the page rendering needs to take the persona into consideration and return the persona info"
 					},
 					"response": []
 				}
@@ -4860,7 +4944,7 @@
 									"pm.test(\"Filtered relationship fetched\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    ",
-									"    pm.expect(jsonData.data.MovieCollection[0].studio.name).to.eql(\"Walt Disney Pictures\");",
+									"    pm.expect(jsonData.data.MovieCollection[3].studio[0].name).to.eql(\"Walt Disney Pictures\");",
 									"",
 									"});"
 								],
@@ -4874,7 +4958,7 @@
 						"body": {
 							"mode": "graphql",
 							"graphql": {
-								"query": "{\n  MovieCollection {\n    title\n    studio(query: \"+studio.name:\\\"Walt Disney Pictures\\\"\") {\n      name\n    }\n  }\n}\n",
+								"query": "{\n  MovieCollection {\n    title\n    studio(query: \"+studio.name:\\\"Walt Disney Pictures\\\"\", sortBy: \"+studio.name\") {\n      name\n    }\n  }\n}\n",
 								"variables": ""
 							}
 						},
@@ -4898,89 +4982,89 @@
 	],
 	"variable": [
 		{
-			"id": "18669c4a-6b23-4ce3-a08a-8536909128c7",
+			"id": "417ebf45-f4d0-4f5f-94ea-8223e4b09a85",
 			"key": "languageId",
-			"value": 1606779763018
+			"value": 1609799506077
 		},
 		{
-			"id": "8063ec1b-8d5a-4e62-b0ee-5c1c17c97859",
+			"id": "9ca87e01-b8e2-468e-b06c-f187d5b66c83",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "d72ace58-ecb4-45e8-80c8-987e1f2b6ea2",
+			"id": "48cc40eb-292b-45fd-bd75-60bce3f7a7b3",
 			"key": "contentTypeVariable",
 			"value": "MyCustomType30413852"
 		},
 		{
-			"id": "03f7e5bb-051a-40b8-ab55-6077720ab833",
+			"id": "bc20c633-2c30-4ac0-afd8-a060a38e9cca",
 			"key": "contentIdentifier",
 			"value": "a5bf0d80-4273-41e1-8f1f-22a3d4ac986f"
 		},
 		{
-			"id": "5eb25991-c737-403e-afca-e4afc1545c8b",
+			"id": "3f0eed4d-e10d-495f-8f34-edd7829309b1",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "40aa4082-bc44-46b4-8804-84fca76b54d8",
+			"id": "940b9433-8dad-467c-8a96-df33caba8717",
 			"key": "imageContentTypeVariable",
 			"value": "MyImageType49851579"
 		},
 		{
-			"id": "37309743-e5c6-4185-b9c7-dd90f6e9c51a",
+			"id": "1814c0d0-4131-4603-85df-47e6945960f1",
 			"key": "imageContentIdentifier",
 			"value": "4cb59737-913d-4c5f-b021-dbe213a15739"
 		},
 		{
-			"id": "26c7f249-ac37-4e6f-862b-1ea423f3330a",
+			"id": "4f6f5fdb-766e-4207-9b95-0367a779db41",
 			"key": "imageFieldVariable",
 			"value": "myImage"
 		},
 		{
-			"id": "62888629-2516-4c88-8ef1-b276495c1999",
+			"id": "c8bc6588-f29b-46f6-bd2f-d90b4dc38db9",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "4458efce-f555-44ff-9646-e31249f44810",
+			"id": "1cc147e5-45bc-4651-9043-b496fbb35005",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "3cccab6c-1d47-4def-8526-79a2f3c13d07",
+			"id": "f252a88a-6c59-447b-90fe-1989ae108dac",
 			"key": "fileFieldVariable",
 			"value": "myFile"
 		},
 		{
-			"id": "887ba7ab-6d0b-4b1d-ab79-8cdfb9e76140",
+			"id": "8bc6c4e5-be72-4bc1-831b-8819d79021bb",
 			"key": "fileContentIdentifier",
 			"value": "434f474a-4d89-4b96-ad38-aa46483be3e5"
 		},
 		{
-			"id": "a0f300f0-789b-4be5-a613-9406e817a41e",
+			"id": "eadfb0d8-39cc-444e-ab96-a523c322863b",
 			"key": "childContentTypeVariable",
-			"value": "childType71358234"
+			"value": "childType40723544"
 		},
 		{
-			"id": "5353dac8-62cf-4045-9dc3-f145eb90664c",
+			"id": "8c4053f5-3814-46cb-a074-324164c63bc6",
 			"key": "parentContentTypeVariable",
-			"value": "parentType83488647"
+			"value": "parentType84267241"
 		},
 		{
-			"id": "c1ef4304-5bd5-4933-b668-872aac242ffc",
+			"id": "0e10d996-4e59-4bae-85cb-c5910c02eaab",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "f83f32e3-b392-4ffd-89c4-0aa296e7b5f4",
+			"id": "9a8b7d08-1d2a-416f-a14b-ded46f572674",
 			"key": "childContentIdentifier",
-			"value": "2d5a9f9b-c5ad-4f97-8aaa-e4277afdb52a"
+			"value": "69953bca-0384-487c-8288-5118f455c127"
 		},
 		{
-			"id": "534cdde9-71be-46a5-b62b-9559abdf3bae",
+			"id": "e22ed666-f69a-4b8a-9763-7dd66ad90415",
 			"key": "parentContentIdentifier",
-			"value": "778f726b-fa40-49c8-8139-9e2dee93b392"
+			"value": "5f487236-01fb-4ff1-a25e-8eecc99b2312"
 		}
 	],
 	"protocolProfileBehavior": {}

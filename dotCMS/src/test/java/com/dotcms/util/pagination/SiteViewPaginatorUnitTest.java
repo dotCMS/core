@@ -4,7 +4,6 @@ import static java.util.Collections.emptyMap;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -12,10 +11,9 @@ import static org.mockito.Mockito.when;
 import com.dotcms.rest.api.v1.apps.SiteViewPaginator;
 import com.dotcms.rest.api.v1.apps.view.SiteView;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UUIDUtil;
@@ -45,32 +43,34 @@ public class SiteViewPaginatorUnitTest {
         final int max = alphabet.length - 1;
         final User user = mockAdminUser();
         final List<String> allSites = mockAllSitesIdentifiers(max);
-        final Set<String> sitesWithIntegrations = mockSitesWithIntegrations(allSites, 10);
-        //System.out.println("Sites with integrations: ");
+        final Set<String> sitesWithIntegrations = mockSitesWithConfigurations(allSites, 10);
         sitesWithIntegrations.forEach(System.out::println);
         final HostAPI hostAPI = mock(HostAPI.class);
         final long time = System.currentTimeMillis();
         int i = 0;
-        //System.out.println("Site names: ");
+        final List<Host> hosts = new ArrayList<>();
         for(final String identifier:allSites){
             final Host host;
             if(Host.SYSTEM_HOST.equals(identifier)){
                 host = mockSite(identifier, "System Host");
                 when(hostAPI.find(eq(identifier),any(User.class), anyBoolean())).thenReturn(host);
+                when(hostAPI.findSystemHost()).thenReturn(host);
             } else {
                 final String name = String.format("%s%d",alphabet[i++],time);
-                //System.out.println(name);
                 host = mockSite(identifier, name);
             }
             when(hostAPI.find(eq(identifier),any(User.class), anyBoolean())).thenReturn(host);
+            hosts.add(host);
         }
 
-        final List<ContentletSearch> mockedSearch = mockSearchResults(allSites);
-        final ContentletAPI contentletAPI = mock(ContentletAPI.class);
-        when(contentletAPI.searchIndex(anyString(), anyInt(), anyInt(), eq("title"), any(User.class), anyBoolean())).thenReturn(mockedSearch);
+        when(hostAPI.findAllFromCache(any(User.class),anyBoolean())).thenReturn(hosts);
+
+        final PermissionAPI permissionAPI = mock(PermissionAPI.class);
+        when(permissionAPI.doesUserHavePermission(any(Host.class),anyInt(),any(User.class))).thenReturn(true);
+
         final Supplier<Set<String>> configuredSitesSupplier = () -> sitesWithIntegrations;
-        final Supplier<Map<String, Map<String, List<String>>>> warningsBySiteSupplier = () -> ImmutableBiMap.of();
-        final SiteViewPaginator paginator = new SiteViewPaginator(configuredSitesSupplier, warningsBySiteSupplier ,hostAPI, contentletAPI);
+        final Supplier<Map<String, Map<String, List<String>>>> warningsBySiteSupplier = ImmutableBiMap::of;
+        final SiteViewPaginator paginator = new SiteViewPaginator(configuredSitesSupplier, warningsBySiteSupplier ,hostAPI, permissionAPI);
         final int limit = sitesWithIntegrations.size();
         final PaginatedArrayList<SiteView> items = paginator
                 .getItems(user, null, limit, 0, null, null, emptyMap());
@@ -79,8 +79,7 @@ public class SiteViewPaginatorUnitTest {
         Assert.assertFalse(items.isEmpty());
         Assert.assertEquals(items.get(0).getId(), Host.SYSTEM_HOST);
         Assert.assertEquals(items.size(), limit);
-        //First item is'nt necessarily configured. So we start counting from 1.
-        for(int j=1; j < limit; j++){
+        for(int j=0; j < limit; j++){
             Assert.assertTrue(items.get(j).isConfigured());
         }
     }
@@ -92,11 +91,9 @@ public class SiteViewPaginatorUnitTest {
         final int maxConfigured = 6; //Only the first page is expected to bring back configured items.
         final List<String> allSites = mockAllSitesIdentifiers(alphabet.length - 1);
         final HostAPI hostAPI = mock(HostAPI.class);
-        final List<String> allSitesSortedIdentifiers = new LinkedList<>();
         final long time = System.currentTimeMillis();
-        //final Map<String,String> debugInfo = new TreeMap<>();
         int i = 0;
-        //System.out.println("Site names: ");
+        final List<Host> hosts = new ArrayList<>();
         for(final String identifier:allSites){
             final Host host;
             final String name;
@@ -104,28 +101,25 @@ public class SiteViewPaginatorUnitTest {
                name = "System Host";
                host = mockSite(identifier, name);
                when(hostAPI.find(eq(identifier),any(User.class), anyBoolean())).thenReturn(host);
+               when(hostAPI.findSystemHost()).thenReturn(host);
             } else {
                name = String.format("%s%d",alphabet[i++],time);
                host = mockSite(identifier, name);
             }
-            //System.out.println(identifier + ":" + name);
-            //debugInfo.put(identifier,name);
+
             when(hostAPI.find(eq(identifier),any(User.class), anyBoolean())).thenReturn(host);
-            allSitesSortedIdentifiers.add(identifier);
+            hosts.add(host);
         }
 
-        final Set<String> sitesWithIntegrations = mockSitesWithIntegrations(allSites, maxConfigured);
-        //System.out.println("Sites with integrations: ");
-        //for (final String configurationIdentifier : sitesWithIntegrations) {
-        //    System.out.println( configurationIdentifier + ":"  + debugInfo.get(configurationIdentifier));
-        //}
+        final Set<String> sitesWithIntegrations = mockSitesWithConfigurations(allSites, maxConfigured);
 
-        final List<ContentletSearch> mockedSearch = mockSearchResults(allSitesSortedIdentifiers);
-        final ContentletAPI contentletAPI = mock(ContentletAPI.class);
-        when(contentletAPI.searchIndex(anyString(), anyInt(), anyInt(), eq("title"), any(User.class), anyBoolean())).thenReturn(mockedSearch);
+        final PermissionAPI permissionAPI = mock(PermissionAPI.class);
+        when(permissionAPI.doesUserHavePermission(any(Host.class),anyInt(),any(User.class))).thenReturn(true);
+        when(hostAPI.findAllFromCache(any(User.class),anyBoolean())).thenReturn(hosts);
+
         final Supplier<Set<String>> configuredSitesSupplier = () -> sitesWithIntegrations;
         final Supplier<Map<String, Map<String, List<String>>>> warningsBySiteSupplier = ImmutableBiMap::of;
-        final SiteViewPaginator paginator = new SiteViewPaginator(configuredSitesSupplier, warningsBySiteSupplier, hostAPI, contentletAPI);
+        final SiteViewPaginator paginator = new SiteViewPaginator(configuredSitesSupplier, warningsBySiteSupplier, hostAPI, permissionAPI);
 
         //First batch of 6.
         int limit = sitesWithIntegrations.size();
@@ -185,6 +179,7 @@ public class SiteViewPaginatorUnitTest {
 
     private List<String> mockAllSitesIdentifiers(final int allSitesNumber){
         final List<String> allSites = new LinkedList<>();
+        //Include System host in the first position
         allSites.add(0, Host.SYSTEM_HOST);
         for(int i=0; i<= allSitesNumber; i++){
             allSites.add(""+i);
@@ -192,26 +187,22 @@ public class SiteViewPaginatorUnitTest {
         return allSites;
     }
 
-    private Set<String> mockSitesWithIntegrations(final List<String> allSites, final int bound){
-        if( bound > allSites.size()){
+    private Set<String> mockSitesWithConfigurations(final List<String> allSites, final int high){
+        if( high > allSites.size()){
            throw new IllegalArgumentException("bound must be less or equal to allSites.size ");
         }
         final Random random = new Random();
-        final List<String> sitesWithIntegrations = new LinkedList<>();
-        for (int i=0; i <= bound; i++ ){
-            sitesWithIntegrations.add(allSites.get(random.nextInt(bound)));
-        }
-        return new HashSet<>(sitesWithIntegrations);
-    }
+        final int low = 1;
 
-    private List<ContentletSearch> mockSearchResults(final List<String> allSites){
-        final List<ContentletSearch> mocks = new ArrayList<>(allSites.size());
-        for (final String identifier : allSites) {
-            final ContentletSearch search = mock(ContentletSearch.class);
-            when(search.getIdentifier()).thenReturn(identifier);
-            mocks.add(search);
+        final List<String> sitesWithConfigurations = new LinkedList<>();
+        //Always include system host in the mocked sites.
+        //Add System host upfront.
+        sitesWithConfigurations.add(allSites.get(0));
+        for (int i=0; i <= high; i++ ){
+        //Let's add random sites making sure we dont override the first position which is already taken by system host
+            sitesWithConfigurations.add(allSites.get(random.nextInt(high - low) + low));
         }
-        return mocks;
+        return new HashSet<>(sitesWithConfigurations);
     }
 
 }

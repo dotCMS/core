@@ -39,6 +39,7 @@ import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import org.apache.commons.lang.StringUtils;
 
@@ -376,6 +377,17 @@ public class HostAPIImpl implements HostAPI {
         return hosts;
     }
 
+    @Override
+    public List<Host> findAllFromCache(final User user,
+            final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        Set<Host> cachedSites = hostCache.getAllSites();
+        if(null == cachedSites){
+            final List<Host> allFromDB = findAllFromDB(user, respectFrontendRoles);
+            hostCache.addAll(allFromDB);
+            cachedSites = hostCache.getAllSites();
+        }
+        return ImmutableList.copyOf(cachedSites);
+    }
 
     /**
      * @throws DotSecurityException
