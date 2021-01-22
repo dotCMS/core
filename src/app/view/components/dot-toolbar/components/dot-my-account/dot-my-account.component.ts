@@ -17,6 +17,8 @@ import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotcmsConfigService, LoginService, User, Auth } from 'dotcms-js';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DotMenuService } from '@services/dot-menu.service';
+import { Observable } from 'rxjs';
 
 interface AccountUserForm extends AccountUser {
     confirmPassword?: string;
@@ -48,6 +50,7 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
     message = null;
     changePasswordOption = false;
     dialogActions: DotDialogActions;
+    showStarter: Observable<boolean>;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -56,7 +59,8 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
         private accountService: AccountService,
         private dotcmsConfigService: DotcmsConfigService,
         private loginService: LoginService,
-        private dotRouterService: DotRouterService
+        private dotRouterService: DotRouterService,
+        private dotMenuService: DotMenuService
     ) {
         this.passwordMatch = false;
         this.changePasswordOption = false;
@@ -79,6 +83,8 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
                 label: this.dotMessageService.get('modes.Close')
             }
         };
+
+        this.showStarter = this.dotMenuService.isPortletInMenu('starter');
 
         this.form.valueChanges
             .pipe(takeUntil(this.destroy$))
@@ -113,6 +119,20 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
 
     toggleChangePasswordOption(): void {
         this.changePasswordOption = !this.changePasswordOption;
+    }
+
+    /**
+     * Calls Api based on checked input to add/remove starter portlet from menu
+     *
+     * @param {boolean} checked
+     * @memberof DotMyAccountComponent
+     */
+    toggleShowStarter(checked: boolean): void {
+        if (checked) {
+            this.accountService.addStarterPage().subscribe();
+        } else {
+            this.accountService.removeStarterPage().subscribe();
+        }
     }
 
     getRequiredMessage(...args: string[]): string {

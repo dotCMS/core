@@ -126,4 +126,15 @@
             </small>
         </div>
     </form>
+
+    <div class="p-field">
+        <p-checkbox
+            data-testid="showStarterBtn"
+            (onChange)="toggleShowStarter($event.checked)"
+            [ngModel]="showStarter | async"
+            binary="true"
+            label="{{ 'starter.show.getting.started' | dm }}"
+        >
+        </p-checkbox>
+    </div>
 </dot-dialog>
