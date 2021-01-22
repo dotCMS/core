@@ -1,4 +1,5 @@
 export interface PortletNav {
     url: string;
-    id: string;
+    previousUrl?: string;
+    id?: string;
 }
