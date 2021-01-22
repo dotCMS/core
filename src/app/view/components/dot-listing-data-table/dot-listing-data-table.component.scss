@@ -60,6 +60,14 @@
     }
 }
 
+.listing-datatable__empty {
+    display: flex;
+    justify-content: center;
+    font-size: $spacing-9;
+    font-size: $font-size-xx-large;
+    margin-top: $spacing-9;
+}
+
 dot-action-header {
     background: $white;
     position: relative;
