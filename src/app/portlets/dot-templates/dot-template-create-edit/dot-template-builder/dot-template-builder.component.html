@@ -29,6 +29,7 @@
         <ng-template pTemplate="content">
             <dot-portlet-box>
                 <dot-iframe
+                    #historyIframe
                     (custom)="custom.emit($event)"
                     data-testId="historyIframe"
                     [src]="historyUrl"

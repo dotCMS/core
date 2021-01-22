@@ -1,4 +1,4 @@
-import { Routes, RouterModule } from '@angular/router';
+import { Routes, RouterModule, RouteReuseStrategy } from '@angular/router';
 import { NgModule } from '@angular/core';
 import { MainCoreLegacyComponent } from '@components/main-core-legacy/main-core-legacy-component';
 import { MainComponentLegacyComponent } from '@components/main-legacy/main-legacy.component';
@@ -13,6 +13,7 @@ import { PublicAuthGuardService } from '@services/guards/public-auth-guard.servi
 import { DotLoginPageComponent } from '@components/login/main/dot-login-page.component';
 import { DotLoginPageResolver } from '@components/login/dot-login-page-resolver.service';
 import { DotIframePortletLegacyResolver } from '@components/_common/iframe/service/dot-iframe-porlet-legacy-resolver.service';
+import { DotCustomReuseStrategyService } from '@shared/dot-custom-reuse-strategy/dot-custom-reuse-strategy.service';
 
 const PORTLETS_ANGULAR = [
     {
@@ -186,6 +187,7 @@ const appRoutes: Routes = [
         RouterModule.forRoot(appRoutes, {
             useHash: true
         })
-    ]
+    ],
+    providers: [{ provide: RouteReuseStrategy, useClass: DotCustomReuseStrategyService }]
 })
 export class AppRoutingModule {}

@@ -109,14 +109,7 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
 
     readonly saveTemplate = this.effect((origin$: Observable<DotTemplateItem>) => {
         return origin$.pipe(
-            switchMap((template: DotTemplateItem) => {
-                delete template.type;
-
-                if (template.type === 'design') {
-                    delete template.containers;
-                }
-                return this.dotTemplateService.update(template as DotTemplate);
-            }),
+            switchMap((template: DotTemplateItem) => this.persistTemplate(template)),
             tap((template: DotTemplate) => {
                 if (template.drawed) {
                     this.templateContainersCacheService.set(template.containers);
@@ -124,6 +117,15 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
 
                 this.updateTemplate(this.getTemplateItem(template));
                 this.goToTemplateList();
+            })
+        );
+    });
+
+    readonly saveProperties = this.effect((origin$: Observable<DotTemplateItem>) => {
+        return origin$.pipe(
+            switchMap((template: DotTemplateItem) => this.persistTemplate(template)),
+            tap((template: DotTemplate) => {
+                this.updateTemplate(this.getTemplateItem(template));
             })
         );
     });
@@ -240,5 +242,13 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
         }
 
         return result;
+    }
+
+    private persistTemplate(template: DotTemplateItem): Observable<DotTemplate> {
+        delete template.type;
+        if (template.type === 'design') {
+            delete template.containers;
+        }
+        return this.dotTemplateService.update(template as DotTemplate);
     }
 }

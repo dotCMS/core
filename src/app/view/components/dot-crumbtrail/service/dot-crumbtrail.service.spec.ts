@@ -365,4 +365,35 @@ describe('DotCrumbtrailService', () => {
             }
         ]);
     });
+
+    it('Should get URL segment if resolver data is not available', () => {
+        mockActivatedRoute.root = {
+            firstChild: {
+                data: new BehaviorSubject({}),
+                firstChild: {
+                    data: new BehaviorSubject({}),
+                    firstChild: {
+                        firstChild: {
+                            firstChild: null,
+                            data: new BehaviorSubject({})
+                        },
+                        data: new BehaviorSubject({})
+                    }
+                }
+            }
+        };
+
+        dotNavigationServiceMock.navigationEnd.next({
+            url: 'templates/new',
+            urlAfterRedirects: 'templates/new',
+            id: 1
+        });
+
+        expect(secondCrumb).toEqual([
+            {
+                label: 'new',
+                url: ''
+            }
+        ]);
+    });
 });

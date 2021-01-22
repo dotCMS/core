@@ -14,7 +14,6 @@ import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotBulkInformationModule } from '@components/_common/dot-bulk-information/dot-bulk-information.module';
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 import { DotTemplateSelectorModule } from './components/dot-template-selector/dot-template-selector.module';
 import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-empty-state.module';
 
@@ -33,7 +32,6 @@ import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-emp
         DotAddToBundleModule,
         DynamicDialogModule,
         DotBulkInformationModule,
-        DotIconModule,
         DotTemplateSelectorModule,
         DotEmptyStateModule
     ],
