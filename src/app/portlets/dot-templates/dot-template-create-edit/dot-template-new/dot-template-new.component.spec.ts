@@ -53,8 +53,7 @@ describe('DotTemplateNewComponent', () => {
     it('should open template type selector', () => {
         expect(dialogService.open).toHaveBeenCalledWith(jasmine.any(Function), {
             header: 'Create a template',
-            width: '37rem',
-            closeOnEscape: false
+            width: '37rem'
         });
     });
 

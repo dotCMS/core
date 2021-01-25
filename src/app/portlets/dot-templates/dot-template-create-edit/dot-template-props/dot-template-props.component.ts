@@ -53,7 +53,7 @@ export class DotTemplatePropsComponent implements OnInit {
      */
     onSave(): void {
         this.config.data?.onSave?.(this.form.value);
-        this.ref.close();
+        this.ref.close(false);
     }
 
     /**
@@ -62,7 +62,6 @@ export class DotTemplatePropsComponent implements OnInit {
      * @memberof DotTemplatePropsComponent
      */
     onCancel(): void {
-        this.config.data?.onCancel?.();
-        this.ref.close();
+        this.ref.close(true);
     }
 }

@@ -22,8 +22,7 @@ export class DotTemplateNewComponent implements OnInit {
     ngOnInit(): void {
         const ref = this.dialogService.open(DotTemplateSelectorComponent, {
             header: this.dotMessageService.get('templates.select.template.title'),
-            width: '37rem',
-            closeOnEscape: false
+            width: '37rem'
         });
 
         ref.onClose.pipe(take(1)).subscribe((value: string) => {

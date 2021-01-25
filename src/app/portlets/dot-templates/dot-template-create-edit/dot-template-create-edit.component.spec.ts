@@ -265,8 +265,6 @@ describe('DotTemplateCreateEditComponent', () => {
                 expect(dialogService.open).toHaveBeenCalledWith(jasmine.any(Function), {
                     header: 'Create new template',
                     width: '30rem',
-                    closable: false,
-                    closeOnEscape: false,
                     data: {
                         template: {
                             title: '',
@@ -283,8 +281,7 @@ describe('DotTemplateCreateEditComponent', () => {
                             theme: '',
                             image: ''
                         },
-                        onSave: jasmine.any(Function),
-                        onCancel: jasmine.any(Function)
+                        onSave: jasmine.any(Function)
                     }
                 });
             });
@@ -351,8 +348,6 @@ describe('DotTemplateCreateEditComponent', () => {
                 expect(dialogService.open).toHaveBeenCalledWith(jasmine.any(Function), {
                     header: 'Create new template',
                     width: '30rem',
-                    closable: false,
-                    closeOnEscape: false,
                     data: {
                         template: {
                             title: '',
@@ -361,8 +356,7 @@ describe('DotTemplateCreateEditComponent', () => {
                             friendlyName: '',
                             image: ''
                         },
-                        onSave: jasmine.any(Function),
-                        onCancel: jasmine.any(Function)
+                        onSave: jasmine.any(Function)
                     }
                 });
             });
