@@ -179,7 +179,7 @@ public class SQLResultsViewTool implements ViewTool {
      * a Contentlet. Otherwise, or if an error occurs, returns {@code null}.
      */
     protected Contentlet getDbAccessorContentlet() {
-        ica = new InternalContextAdapterImpl(this.ctx);
+        this.ica = new InternalContextAdapterImpl(this.ctx);
         final String fieldResourceName = this.ica.getCurrentTemplateName();
         try {
             final Pattern pattern = Pattern.compile("[^/LIVE][^/WORKING][^/EDIT_MODE][^/PREVIEW_MODE][^/ADMIN_MODE](.*?)(?=\\/)");
@@ -226,7 +226,7 @@ public class SQLResultsViewTool implements ViewTool {
                     "forbidden."), "Check content with id: " + contentlet.getIdentifier());
             return Boolean.FALSE;
         }
-        if (containsEvilSqlWords(lowerCasedSql)) {
+        if (SQLUtil.containsEvilSqlWords(lowerCasedSql)) {
             reportError(CollectionsUtils.map(DOT_CONNECT_SQL_ERROR, "SQLResultsViewTool is trying to execute a " +
                     "forbidden query."), "Check content with id: " + contentlet.getIdentifier());
             return Boolean.FALSE;
@@ -261,20 +261,6 @@ public class SQLResultsViewTool implements ViewTool {
         }
         this.errorResults.add(HashMap.class.cast(errors));
         return this.errorResults;
-    }
-
-    /**
-     * Scans the SQL query passed down by the user/developer looking for evil SQL words, as only {@code SELECT} queries
-     * (data reading operations) are allowed.
-     *
-     * @param sqlQuery The SQL query.
-     *
-     * @return If the SQL query is safe, returns {@code true}. Otherwise, returns {@code false}.
-     */
-    protected boolean containsEvilSqlWords(final String sqlQuery) {
-        final String evilWord = SQLUtil.getEvilSqlConditionWords().stream().filter(restrictedWord -> sqlQuery
-                .contains(restrictedWord + " ")).findFirst().orElse(null);
-        return UtilMethods.isSet(evilWord) ? Boolean.TRUE : Boolean.FALSE;
     }
 
 }
