@@ -411,7 +411,20 @@
 		<property name="treeOrder" column="tree_order" length="10" type="integer" />
 	</class>
 
+    <class name="com.dotmarketing.beans.MultiTree" table="multi_tree">
 
+
+        <composite-id unsaved-value="any">
+            <key-property name="child" column="child" type="string" length="36" />
+            <key-property name="parent1" column="parent1" type="string" length="36" />
+            <key-property name="parent2" column="parent2" type="string" length="36" />
+            <key-property name="personalization" column="personalization" length="255" type="string" />
+        </composite-id>
+        <property name="relationType" type="string">
+            <column name="relation_type" length="64" index="idx_multitree_1" />
+        </property>
+        <property name="treeOrder" column="tree_order" length="10" type="integer" />
+    </class>
 
 	<class name="com.dotmarketing.beans.Clickstream" table="clickstream">
 		<id name="clickstreamId" column="clickstream_id" type="long" unsaved-value="0">
