@@ -1,6 +1,7 @@
 package com.dotcms;
 
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
+import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
@@ -17,13 +18,17 @@ import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleAPITest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
+import com.dotcms.publisher.util.DependencyManagerTest;
 import com.dotcms.publishing.PublisherFilterImplTest;
 import com.dotcms.publishing.PushPublishFiltersInitializerTest;
 import com.dotcms.publishing.job.SiteSearchJobImplTest;
 import com.dotcms.rendering.velocity.directive.DotParseTest;
 import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateToolTest;
+import com.dotcms.rendering.velocity.viewtools.JSONToolTest;
+import com.dotcms.rest.BundlePublisherResourceIntegrationTest;
 import com.dotcms.rest.BundleResourceTest;
+import com.dotcms.rest.IntegrityResourceIntegrationTest;
 import com.dotcms.rest.api.v1.apps.AppsResourceTest;
 import com.dotcms.rest.api.v1.apps.view.AppsInterpolationTest;
 import com.dotcms.rest.api.v1.folder.FolderResourceTest;
@@ -37,14 +42,17 @@ import com.dotcms.storage.StoragePersistenceAPITest;
 import com.dotcms.security.apps.AppsCacheImplTest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
+import com.dotmarketing.osgi.GenericBundleActivatorTest;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
+import com.dotmarketing.portlets.containers.business.ContainerFactoryImplTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
 import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPIImplIntegrationTest;
 import com.dotmarketing.portlets.contentlet.model.IntegrationResourceLinkTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegrationTest;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryIntegrationTest;
 import com.dotmarketing.portlets.folders.business.FolderFactoryImplTest;
+import com.dotmarketing.portlets.templates.business.TemplateFactoryImplTest;
+import com.dotmarketing.portlets.folders.model.FolderTest;
 import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
 import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
 import com.dotmarketing.quartz.DotStatefulJobTest;
@@ -62,6 +70,7 @@ import com.dotmarketing.startup.runonce.Task05395RemoveEndpointIdForeignKeyInInt
 import com.dotmarketing.startup.runalways.Task00050LoadAppsSecretsTest;
 import com.dotmarketing.startup.runonce.Task201013AddNewColumnsToIdentifierTableTest;
 import com.dotmarketing.startup.runonce.Task201014UpdateColumnsValuesInIdentifierTableTest;
+import com.dotmarketing.startup.runonce.Task201102UpdateColumnSitelicTableTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
@@ -248,7 +257,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.business.IdentifierAPITest.class,
         com.dotmarketing.business.CommitListenerCacheWrapperTest.class,
         com.dotmarketing.business.RoleAPITest.class,
-        com.dotmarketing.business.UserProxyFactoryTest.class,
         com.dotmarketing.business.IdentifierConsistencyIntegrationTest.class,
         com.dotmarketing.business.LayoutAPITest.class,
         com.dotmarketing.business.PermissionAPIIntegrationTest.class,
@@ -290,8 +298,11 @@ import org.junit.runners.Suite.SuiteClasses;
         CleanUpFieldReferencesJobTest.class,
         ESContentletAPIImplTest.class,
         CachedParameterDecoratorTest.class,
+        ContainerFactoryImplTest.class,
+        TemplateFactoryImplTest.class,
         TestConfig.class,
         ConfigTest.class,
+        FolderTest.class,
         PublishAuditAPITest.class,
         BundleFactoryTest.class,
         com.dotcms.security.apps.SecretsStoreKeyStoreImplTest.class,
@@ -304,7 +315,6 @@ import org.junit.runners.Suite.SuiteClasses;
         RulesAPIImplIntegrationTest.class,
         FileAssetAPIImplIntegrationTest.class,
         FileAssetFactoryIntegrationTest.class,
-        FileAssetAPIImplTest.class,
         UserResourceIntegrationTest.class,
         SiteSearchJobImplTest.class,
         IntegrationResourceLinkTest.class,
@@ -344,13 +354,22 @@ import org.junit.runners.Suite.SuiteClasses;
         Task05390MakeRoomForLongerJobDetailTest.class,
         IntegrityDataGenerationJobTest.class,
         Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest.class,
+        JSONToolTest.class,
+        BundlePublisherResourceIntegrationTest.class,
+        IntegrityResourceIntegrationTest.class,
         Task00050LoadAppsSecretsTest.class,
         StoragePersistenceAPITest.class,
         FileMetadataAPITest.class,
         StartupTasksExecutorTest.class,
         Task201013AddNewColumnsToIdentifierTableTest.class,
         Task201014UpdateColumnsValuesInIdentifierTableTest.class,
-        AppsInterpolationTest.class
+        AppsInterpolationTest.class,
+        com.dotcms.rest.api.v1.template.TemplateResourceTest.class,
+        Task201102UpdateColumnSitelicTableTest.class,
+        DependencyManagerTest.class,
+        com.dotcms.rest.api.v1.versionable.VersionableResourceTest.class,
+        GenericBundleActivatorTest.class,
+        SAMLHelperTest.class
 })
 public class MainSuite {
 

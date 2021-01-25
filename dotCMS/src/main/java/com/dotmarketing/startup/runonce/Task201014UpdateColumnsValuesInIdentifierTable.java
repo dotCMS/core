@@ -69,7 +69,8 @@ public class Task201014UpdateColumnsValuesInIdentifierTable extends AbstractJDBC
                 .append("where temp.identifier=custom_select.identifier\n")
                 .append("and inode.inode=temp.inode and inode.idate=custom_select.idate \n")
                 .append("and temp.structure_inode = struc.inode) my_query\n")
-                .append("set ident.owner=my_query.mod_user, ident.create_date=my_query.idate\n")
+                .append("set ident.owner=my_query.mod_user, ident.create_date=my_query.idate,\n")
+                .append("ident.asset_subtype=my_query.velocity_var_name\n")
                 .append("where ident.id=my_query.myID;");
 
         return query.toString();
@@ -100,7 +101,11 @@ public class Task201014UpdateColumnsValuesInIdentifierTable extends AbstractJDBC
                 .append("where temp.identifier=custom_select.identifier\n")
                 .append("and inode.inode=temp.inode and inode.idate=custom_select.idate \n")
                 .append("and temp.structure_inode = struc.inode)\n")
-                .append("st ON (ident.id = st.myID) \n");
+                .append("st ON (ident.id = st.myID) \n")
+                .append("WHEN MATCHED THEN\n")
+                .append("    UPDATE SET ident.owner = st.mod_user,\n")
+                .append("               ident.asset_subtype = st.velocity_var_name,\n")
+                .append("               ident.create_date = st.idate\n");
 
         return query.toString();
     }

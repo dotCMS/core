@@ -438,6 +438,13 @@ public class UserAPIImpl implements UserAPI {
 
         logDelete(DeletionStage.END, userToDelete, user, "Inodes");
 
+        //replace the user reference in Identifier
+        logDelete(DeletionStage.BEGINNING, userToDelete, user, "Identifier");
+
+        APILocator.getIdentifierAPI().updateUserReferences(userToDelete.getUserId(), replacementUser.getUserId());
+
+        logDelete(DeletionStage.END, userToDelete, user, "Identifier");
+
         //replace the user references in contentlets
         logDelete(DeletionStage.BEGINNING, userToDelete, user, "Contentlets");
 
@@ -458,9 +465,6 @@ public class UserAPIImpl implements UserAPI {
         logDelete(DeletionStage.BEGINNING, userToDelete, user, "HostVariables");
         APILocator.getHostVariableAPI().updateUserReferences(userToDelete.getUserId(), replacementUser.getUserId());
         logDelete(DeletionStage.END, userToDelete, user, "HostVariables");
-
-
-
 
         //replace user references in containers
         logDelete(DeletionStage.BEGINNING, userToDelete, user, "Containers");

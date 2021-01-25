@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.templates.business;
 
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -19,7 +20,7 @@ public interface TemplateFactory {
 		
 	List<Template> findTemplatesUserCanUse(User user, String hostId, String query,boolean searchHost, int offset, int limit) throws DotDataException, DotSecurityException ;
 
-	void delete(Template template) throws DotDataException;
+//	void delete(Template template) throws DotDataException;
 	
 	/**
 	 * Save template into a persistent repository.
@@ -28,7 +29,7 @@ public interface TemplateFactory {
 	 * @throws DotDataException
 	 */
 	void save(Template template) throws DotDataException;
-	void save(Template template, String existingId)throws DotDataException;
+	void save(Template template, String inode)throws DotDataException;
 	
 	/**
 	 * Delete template from cache.
@@ -75,4 +76,32 @@ public interface TemplateFactory {
 	 * @throws DotSecurityException 
 	 */
 	 void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException;
+
+	/**
+	 * Brings the versions of a specific template, if bringOldVersions is true brings all the versions,
+	 * if is set to false, only brings the working and the live version
+	 * @param identifier id of the template
+	 * @param bringOldVersions true = all versions, false = only live and working
+	 * @return
+	 * @throws DotDataException
+	 */
+	List<Template> findAllVersions(final Identifier identifier, final boolean bringOldVersions)
+			throws DotDataException;
+
+	/**
+	 * Deletes a template by inode
+	 * @param templateInode templateInode to be deleted
+	 * @throws DotDataException
+	 */
+	void deleteTemplateByInode(final String templateInode) throws DotDataException;
+
+	/**
+	 * Finds the templates where the containerInode is set as a parent in the tree table.
+	 * Was created to recreate InodeFactory.getChildrenClass(Inode p, Class c) since it uses Hibernate
+	 * and Templates were remove from the hbm files.
+	 * @param containerInode
+	 * @return
+	 * @throws DotDataException
+	 */
+	List<Template> findTemplatesByContainerInode(final String containerInode) throws DotDataException;
 }

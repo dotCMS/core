@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
 import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.lucene.search.TotalHits;
 import org.apache.lucene.search.TotalHits.Relation;
 import org.elasticsearch.ElasticsearchException;
@@ -41,6 +43,8 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.core.CountRequest;
+import org.elasticsearch.client.core.CountResponse;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -122,7 +126,10 @@ import io.vavr.control.Try;
  *
  */
 public class ESContentFactoryImpl extends ContentletFactory {
+
     private static final String[] ES_FIELDS = {"inode", "identifier"};
+    public static final int ES_TRACK_TOTAL_HITS_DEFAULT = 10000000;
+    public static final String ES_TRACK_TOTAL_HITS = "ES_TRACK_TOTAL_HITS";
     private final ContentletCache contentletCache;
 	private final LanguageAPI languageAPI;
 	private final IndiciesAPI indiciesAPI;
@@ -597,7 +604,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 
         //Now workflows, and versions
-        List<String> identsDeleted = new ArrayList<String>();
+        Set<String> identsDeleted = new HashSet<>();
         for (Contentlet con : contentlets) {
             contentletCache.remove(con.getInode());
 
@@ -647,8 +654,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	        for (Contentlet c : contentlets) {
 	            if(InodeUtils.isSet(c.getInode())){
 	                Identifier ident = APILocator.getIdentifierAPI().find(c.getIdentifier());
-	                String si = ident.getInode();
-	                if(!identsDeleted.contains(si) && si!=null && si!="" ){
+	                if(ident==null || UtilMethods.isEmpty(ident.getId())) {
+	                    continue;
+	                }
+	                String si = ident.getId();
+	                if(!identsDeleted.contains(si)){
 	                    APILocator.getIdentifierAPI().delete(ident);
 	                    identsDeleted.add(si);
 	                }
@@ -1426,113 +1436,37 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	protected long indexCount(final String query) {
 	    final String qq = LuceneQueryDateTimeFormatter
                 .findAndReplaceQueryDates(translateQuery(query, null).getQuery());
-
-	    // we check the query to figure out wich indexes to hit
-        String indexToHit;
-        IndiciesInfo info;
-        try {
-            info = APILocator.getIndiciesAPI().loadIndicies();
-        }
-        catch(DotDataException ee) {
-            Logger.fatal(this, "Can't get indicies information",ee);
-            return 0;
-        }
-        if(query.contains("+live:true") && !query.contains("+deleted:true")) {
-            indexToHit = info.getLive();
-        } else {
-            indexToHit = info.getWorking();
-        }
-
-        SearchRequest searchRequest = getCountSearchRequest(qq);
-        searchRequest.indices(indexToHit);
-
-        final SearchHits hits = cachedIndexSearch(searchRequest);
-       return hits.getTotalHits().value;
-	}
-
-    @Override
-    protected long indexCount(final String query,
-                        final long timeoutMillis) {
-
-        final String queryStringQuery =
-                LuceneQueryDateTimeFormatter.findAndReplaceQueryDates(translateQuery(query, null).getQuery());
-
-        // we check the query to figure out which indexes to hit
-        IndiciesInfo info;
-
-        try {
-
-            info = this.indiciesAPI.loadIndicies();
-        } catch(DotDataException ee) {
-            Logger.fatal(this, "Can't get indicies information",ee);
-            return 0;
-        }
-
-        SearchRequest searchRequest = getCountSearchRequest(queryStringQuery);
-        searchRequest.indices(query.contains("+live:true") && !query.contains("+deleted:true")?
-                info.getLive(): info.getWorking());
-
-        final SearchHits hits = cachedIndexSearch(searchRequest);
-        return hits.getTotalHits().value;
-    }
-
-    @Override
-    protected void indexCount(final String query,
-                              final long timeoutMillis,
-                              final Consumer<Long> indexCountSuccess,
-                              final Consumer<Exception> indexCountFailure) {
-
-        final String queryStringQuery =
-                LuceneQueryDateTimeFormatter.findAndReplaceQueryDates(translateQuery(query, null).getQuery());
-
-        // we check the query to figure out wich indexes to hit
-        IndiciesInfo info;
-
-        try {
-
-            info=APILocator.getIndiciesAPI().loadIndicies();
-        } catch(DotDataException ee) {
-            Logger.fatal(this, "Can't get indicies information",ee);
-            if (null != indexCountFailure) {
-
-                indexCountFailure.accept(ee);
-            }
-            return;
-        }
-
-        SearchRequest searchRequest = getCountSearchRequest(queryStringQuery);
-        searchRequest.indices(query.contains("+live:true") && !query.contains("+deleted:true")?
-                info.getLive(): info.getWorking());
-
-        RestHighLevelClientProvider.getInstance().getClient().searchAsync(searchRequest, RequestOptions.DEFAULT,
-                        new ActionListener<SearchResponse>() {
-            @Override
-            public void onResponse(SearchResponse searchResponse) {
-
-                indexCountSuccess.accept(searchResponse.getHits().getTotalHits().value);
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-
-                if (null != indexCountFailure) {
-
-                    indexCountFailure.accept(e);
-                }
-            }
-        });
+        final CountRequest countRequest = getCountRequest(qq);
+        return cachedIndexCount(countRequest);
     }
 
     @NotNull
-    private SearchRequest getCountSearchRequest(final String queryString) {
-        SearchRequest searchRequest = new SearchRequest();
-        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-        searchSourceBuilder.query(QueryBuilders.queryStringQuery(queryString));
-        searchSourceBuilder.size(0);
-        searchSourceBuilder.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-        searchRequest.source(searchSourceBuilder);
-        return searchRequest;
+    private CountRequest getCountRequest(final String queryString) {
+        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
+        sourceBuilder.query(QueryBuilders.queryStringQuery(queryString));
+        final CountRequest countRequest = new CountRequest(inferIndexToHit(queryString));
+        countRequest.source(sourceBuilder);
+        return countRequest;
     }
+
+   private String inferIndexToHit(final String query)  {
+       // we check the query to figure out which indexes to hit
+
+       final IndiciesInfo info;
+       try {
+           info = APILocator.getIndiciesAPI().loadIndicies();
+       } catch (DotDataException e) {
+           throw new DotRuntimeException(e);
+       }
+
+       final String indexToHit;
+       if(query.contains("+live:true") && !query.contains("+deleted:true")) {
+           indexToHit = info.getLive();
+       } else {
+           indexToHit = info.getWorking();
+       }
+       return indexToHit;
+   }
 
     /**
      * It will call createRequest with null as sortBy parameter
@@ -1594,8 +1528,26 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
         return useQueryCache;
     }
-    
 
+    /**
+     * The track_total_hits parameter allows you to control how the total number of hits should be tracked.
+     * The default is set to 10K. This means that requests will count the total hit accurately up to 10,000 hits.
+     * If the param is absent from the properties it still default to 10000000. The param can also be set to a true|false
+     * if set to true it'll track as many items as there are. if set to false no tracking will be performed at all.
+     * So it's better if it isn't set to false ever.
+     * @param searchSourceBuilder
+     */
+     @VisibleForTesting
+     void setTrackHits(final SearchSourceBuilder searchSourceBuilder){
+        final int trackTotalHits = Config.getIntProperty(ES_TRACK_TOTAL_HITS, ES_TRACK_TOTAL_HITS_DEFAULT);
+        searchSourceBuilder.trackTotalHitsUpTo(trackTotalHits);
+    }
+
+    /**
+     * if enabled SearchRequests are executed and then cached
+     * @param searchRequest
+     * @return
+     */
     SearchHits cachedIndexSearch(final SearchRequest searchRequest) {
         
         final Optional<SearchHits> optionalHits = shouldQueryCache() ? queryCache.get(searchRequest) : Optional.empty();
@@ -1627,7 +1579,40 @@ public class ESContentFactoryImpl extends ContentletFactory {
         
         
     }
-    
+
+    /**
+     * if enabled CountRequest are executed and then cached
+     * @param countRequest
+     * @return
+     */
+    Long cachedIndexCount(final CountRequest countRequest) {
+
+        final Optional<Long> optionalCount = shouldQueryCache() ? queryCache.get(countRequest) : Optional.empty();
+        if(optionalCount.isPresent()) {
+            return optionalCount.get();
+        }
+        try {
+            final CountResponse response = RestHighLevelClientProvider.getInstance().getClient().count(countRequest, RequestOptions.DEFAULT);
+            final long count = response.getCount();
+            if(shouldQueryCache()) {
+                queryCache.put(countRequest, count);
+            }
+            return count;
+        } catch (final ElasticsearchStatusException | IndexNotFoundException | SearchPhaseExecutionException e) {
+            final String exceptionMsg = (null != e.getCause() ? e.getCause().getMessage() : e.getMessage());
+            Logger.warn(this.getClass(), "----------------------------------------------");
+            Logger.warn(this.getClass(), String.format("Elasticsearch error in index '%s'", (countRequest.indices()!=null) ? String.join(",", countRequest.indices()): "unknown"));
+            Logger.warn(this.getClass(), String.format("ES Query: %s", String.valueOf(countRequest.source()) ));
+            Logger.warn(this.getClass(), String.format("Class %s: %s", e.getClass().getName(), exceptionMsg));
+            Logger.warn(this.getClass(), "----------------------------------------------");
+            return -1L;
+        } catch (final Exception e) {
+            final String errorMsg = String.format("An error occurred when executing the Lucene Query [ %s ] : %s",
+                    countRequest.source().toString(), e.getMessage());
+            Logger.warnAndDebug(ESContentFactoryImpl.class, errorMsg, e);
+            throw new DotRuntimeException(errorMsg, e);
+        }
+    }
 
     
     
@@ -1637,25 +1622,19 @@ public class ESContentFactoryImpl extends ContentletFactory {
         final String formattedQuery = LuceneQueryDateTimeFormatter
                 .findAndReplaceQueryDates(translateQuery(query, sortBy).getQuery());
 
-        // we check the query to figure out wich indexes to hit
-        String indexToHit;
-        IndiciesInfo info;
+        // we check the query to figure out which indexes to hit
+        final String indexToHit;
         try {
-            info=APILocator.getIndiciesAPI().loadIndicies();
-        }
-        catch(DotDataException ee) {
-            Logger.fatal(this, "Can't get indicies information",ee);
+            indexToHit = inferIndexToHit(query);
+        } catch (Exception e) {
+            Logger.fatal(this, "Can't get indices information.", e);
             return null;
-        }
-        if(query.contains("+live:true") && !query.contains("+deleted:true")) {
-            indexToHit = info.getLive();
-        } else {
-            indexToHit = info.getWorking();
         }
 
         final SearchRequest searchRequest = new SearchRequest();
-        SearchResponse response;
         final SearchSourceBuilder searchSourceBuilder = createSearchSourceBuilder(formattedQuery, sortBy);
+        setTrackHits(searchSourceBuilder);
+
         searchSourceBuilder.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
         searchRequest.indices(indexToHit);
 
@@ -1693,7 +1672,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }else{
             searchSourceBuilder.sort("moddate", SortOrder.DESC);
         }
-
         searchRequest.source(searchSourceBuilder);
         return cachedIndexSearch(searchRequest);
 
@@ -1705,20 +1683,13 @@ public class ESContentFactoryImpl extends ContentletFactory {
         final String formattedQuery = LuceneQueryDateTimeFormatter
                 .findAndReplaceQueryDates(translateQuery(query, sortBy).getQuery());
 
-        // we check the query to figure out wich indexes to hit
-        String indexToHit;
-        IndiciesInfo info;
+        // we check the query to figure out which indexes to hit
+        final String indexToHit;
         try {
-            info=APILocator.getIndiciesAPI().loadIndicies();
-        }
-        catch(DotDataException ee) {
-            Logger.fatal(this, "Can't get indicies information",ee);
+            indexToHit = inferIndexToHit(query);
+        } catch (Exception e) {
+            Logger.fatal(this, "Can't get indices information.", e);
             return null;
-        }
-        if(query.contains("+live:true") && !query.contains("+deleted:true")) {
-            indexToHit = info.getLive();
-        } else {
-            indexToHit = info.getWorking();
         }
 
         final SearchRequest searchRequest = new SearchRequest();

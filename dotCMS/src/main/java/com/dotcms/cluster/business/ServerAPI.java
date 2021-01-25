@@ -63,4 +63,11 @@ public interface ServerAPI {
  */
   List<String> getReindexingServers() throws DotDataException;
 
+	/**
+	 * Gets the servers start time
+	 *
+	 * @return milliseconds representing the date-time when the server started.
+	 */
+	long getServerStartTime();
+
 }

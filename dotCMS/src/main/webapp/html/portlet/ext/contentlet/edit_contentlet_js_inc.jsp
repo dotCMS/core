@@ -642,15 +642,14 @@
 
             if((data["referer"] != null && data["referer"] != '' && !data["contentletLocked"])) {
                 if (data['isHtmlPage'] && workingContentletInode.length === 0 && !data["referer"].includes("relend")) {
-                    customEventDetail = {
-                        name: 'close'
+                    customEventDetail = {	
+                        name: 'close'	
                     };
                     var params = data['htmlPageReferer'].split('?')[1].split('&');
                     var languageQueryParam = params.find(function(queryParam) {
                         return queryParam.startsWith('com.dotmarketing.htmlpage.language');
                     });
                     var languageId = languageQueryParam.split('=')[1];
-                    
                     window.top.location = '/dotAdmin/#/edit-page/content?url=' + data['htmlPageReferer'].split('?')[0] + '&language_id=' + languageId;
                 }
             }
@@ -742,9 +741,6 @@
             dojo.empty(myDiv);
         }
         var hideRulePushOptions = false
-        <%if(contentlet.getStructure().isHTMLPageAsset()){%>
-        hideRulePushOptions=true;
-        <%}%>
         myCp = new dojox.layout.ContentPane({
             id : "contentletRulezDivCp",
             style: "height:100%",

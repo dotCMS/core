@@ -44,7 +44,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import java.util.stream.Collectors;
+import io.vavr.control.Try;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.oro.text.regex.Pattern;
@@ -219,6 +219,8 @@ public class FolderFactoryImpl extends FolderFactory {
 		if(site == null || path == null){
 			return null;
 		}
+		// replace nasty double //
+		path=path.replaceAll(StringPool.DOUBLE_SLASH, StringPool.SLASH);
 
 		if(path.equals("/") || path.equals(SYSTEM_FOLDER_PARENT_PATH)) {
 			folder = this.findSystemFolder();
@@ -1222,6 +1224,9 @@ public class FolderFactoryImpl extends FolderFactory {
 
 		HibernateUtil.getSession().clear();
 		HibernateUtil.saveOrUpdate(folderInode);
+		
+		// try clearing cache
+		Try.run(()->folderCache.removeFolder(folderInode, APILocator.getIdentifierAPI().find(folderInode.getIdentifier())));
 	}
 
 	@Override

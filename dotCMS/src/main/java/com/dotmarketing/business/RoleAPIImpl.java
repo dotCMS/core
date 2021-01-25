@@ -1,5 +1,7 @@
 package com.dotmarketing.business;
 
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -7,6 +9,9 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.RoleNameException;
 import com.dotmarketing.portlets.user.ajax.UserAjax;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.*;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
@@ -16,6 +21,7 @@ import com.liferay.util.SystemProperties;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * @author Jason Tesser
@@ -134,54 +140,83 @@ public class RoleAPIImpl implements RoleAPI {
 
     @WrapInTransaction
 	@Override
-    public void delete (final Role role ) throws DotDataException, DotStateException {
+    public void delete(final Role role) throws DotDataException, DotStateException {
 
-        Role r = loadRoleById( role.getId() );
+        final Role roleFromDB = loadRoleById( role.getId() );
 
-        for ( String uid : roleFactory.findUserIdsForRole( role, true ) ) {
+        for (final String uid : roleFactory.findUserIdsForRole(role, true)) {
             CacheLocator.getRoleCache().remove( uid );
         }
 
-        if ( r.isLocked() ) {
-            throw new DotStateException( "Cannot delete locked role" );
+        if (roleFromDB.isLocked()) {
+			throw new DotStateException(String.format("Role %s (%s) is locked. It cannot be deleted.", role.getName(),
+					role.getId()));
         }
-        if ( r.isSystem() ) {
-            throw new DotStateException( "Cannot edit a system role" );
+        if (roleFromDB.isSystem()) {
+			throw new DotStateException(String.format("Role %s (%s) is a System Role. It cannot be deleted.", role
+					.getName(), role.getId()));
         }
 
         try {
+            roleFromDB.setEditPermissions( true );
+            roleFromDB.setEditLayouts( true );
+            roleFromDB.setEditUsers( true );
+            roleFactory.save( roleFromDB );
 
-            r.setEditPermissions( true );
-            r.setEditLayouts( true );
-            r.setEditUsers( true );
-            roleFactory.save( r );
-
-            List<User> users = findUsersForRole( r.getId() );
+            final List<User> users = findUsersForRole( roleFromDB.getId() );
             if ( users != null ) {
-                for ( User u : users ) {
-                    removeRoleFromUser( r, u );
+                for (final User u : users) {
+                    removeRoleFromUser(roleFromDB, u);
                 }
             }
-
-            PermissionAPI permAPI = APILocator.getPermissionAPI();
+			findDependentWorkflowActions(role);
+            final PermissionAPI permAPI = APILocator.getPermissionAPI();
             permAPI.removePermissionsByRole( role.getId() );
-            LayoutAPI layoutAPI = APILocator.getLayoutAPI();
-            for ( Layout l : layoutAPI.loadLayoutsForRole( role ) ) {
-                removeLayoutFromRole( l, role );
+            final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
+            for (final Layout layout : layoutAPI.loadLayoutsForRole(role)) {
+                removeLayoutFromRole(layout, role);
             }
-            SecurityLogger.logInfo(this.getClass(), "Deleting role:'" + role.getName() + "' " + role);
+			SecurityLogger.logInfo(this.getClass(), "Deleting role '" + role.getName() + "': " + role);
             roleFactory.delete( role );
-
-        } catch ( Exception e ) {
-
-            if ( role != null ) {
-                Logger.error( this.getClass(), "Error deleting Role: " + role.getName(), e );
-            } else {
-                Logger.error( this.getClass(), "Error deleting Role", e );
-            }
-            throw new DotDataException( e.getMessage() );
-        }
+		} catch (final Exception e) {
+			final String errorMsg = null != role ? String.format("Error deleting Role '%s' (%s): %s", role.getName(),
+					role.getId(), e.getMessage()) : String.format("Error deleting Role: %s", e.getMessage());
+			Logger.error(this.getClass(), errorMsg, e);
+			throw new DotDataException(errorMsg);
+		}
     }
+
+	/**
+	 * Traverses the Workflow Actions on every Workflow Scheme in the dotCMS instance, and returns those whose {@code
+	 * Assign To} value matches the specified Role. If at least one result is found, then an error must be reported
+	 * because all Roles must be unassigned from all Workflow Schemes before being deleted.
+	 *
+	 * @param role The {@link Role} used to find matching Workflow Actions.
+	 *
+	 * @throws DotDataException     An error occurred when interacting with the data source.
+	 * @throws DotSecurityException A user permission problem has occurred.
+	 */
+	private void findDependentWorkflowActions(final Role role) throws DotDataException, DotSecurityException {
+		final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+		boolean foundActions = Boolean.FALSE;
+		final StringBuilder schemesAndActions = new StringBuilder();
+		final List<WorkflowScheme> schemes = workflowAPI.findSchemes(true);
+		for (final WorkflowScheme scheme : schemes) {
+			final List<WorkflowAction> actions = workflowAPI.findActions(scheme, APILocator.getUserAPI()
+					.getSystemUser(), (WorkflowAction action) -> action.getNextAssign().equals(role.getId()));
+            if (!actions.isEmpty()) {
+                foundActions = Boolean.TRUE;
+                final String conflictingActions = actions.stream().map(WorkflowAction::getName).collect(Collectors
+                        .joining(", "));
+                schemesAndActions.append(scheme.getName()).append(" [action(s) : ").append(conflictingActions).append
+                        ("] ");
+            }
+        }
+		if (foundActions) {
+			throw new DotDataException(String.format("Please remove all references to the '%s' Role from the following" +
+					" Workflow Scheme Actions: %s", role.getName(), schemesAndActions.toString()));
+		}
+	}
 
     @WrapInTransaction
 	@Override
@@ -361,6 +396,7 @@ public class RoleAPIImpl implements RoleAPI {
 			throw new DotStateException("Cannot alter layouts on this role");
 		}
 		roleFactory.addLayoutToRole(layout, role);
+        APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
 	}
 
 	@CloseDBIfOpened
@@ -380,7 +416,15 @@ public class RoleAPIImpl implements RoleAPI {
 		if(!r.isEditLayouts()){
 			throw new DotStateException("Cannot alter layouts on this role");
 		}
+		if(layout==null || UtilMethods.isNotSet(layout.getId())){
+			Logger.error(this.getClass(),"ToolGroup is not valid");
+			throw new DotDataException("ToolGroup is not valid");
+		}
+		Logger.info(this.getClass(), "removing layout " + layout.getName() + " from role " + role.getName());
 		roleFactory.removeLayoutFromRole(layout, role);
+
+	    APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
+
 	}
 
 	@CloseDBIfOpened
@@ -394,6 +438,7 @@ public class RoleAPIImpl implements RoleAPI {
 	public void removeRoleFromUser(final Role role, final User user) throws DotDataException, DotStateException {
 		final Role roleFromDb = loadRoleById(role.getId());
 		roleFactory.removeRoleFromUser(roleFromDb, user);
+	    APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
 	}
 
 	@Override
@@ -403,6 +448,7 @@ public class RoleAPIImpl implements RoleAPI {
 		for(Role role : roles) {
 			removeRoleFromUser(role, user);
 		}
+        APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
 	}
 
 	@WrapInTransaction

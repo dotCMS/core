@@ -22,6 +22,7 @@ import com.dotcms.enterprise.publishing.remote.bundler.UserBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.WorkflowBundler;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.*;
+import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.environment.bean.Environment;
@@ -198,6 +199,7 @@ public class PushPublisher extends Publisher {
 							if (DeliveryStrategy.ALL_ENDPOINTS.equals(this.config.getDeliveryStrategy())
 									|| (DeliveryStrategy.FAILED_ENDPOINTS.equals(this.config.getDeliveryStrategy())
 									&& PublishAuditStatus.Status.SUCCESS.getCode() != epDetail.getStatus()
+                                    && Status.SUCCESS_WITH_WARNINGS.getCode() != epDetail.getStatus()
 									&& PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode() != epDetail.getStatus())) {
 								endpoints.add(ep);
 							}
@@ -239,10 +241,13 @@ public class PushPublisher extends Publisher {
 								PushPublishLogger.log(this.getClass(), "Status Update: Bundle sent");
 								detail.setStatus(PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
 								detail.setInfo("Everything ok");
-							} else if (response.getStatus() == HttpStatus.SC_UNAUTHORIZED
-									|| response.getStatus() == HttpStatus.SC_FORBIDDEN) {
+							} else if (response.getStatus() == HttpStatus.SC_UNAUTHORIZED) {
 
 								handleInvalidTokenResponse(environment, endpoint, detail, response);
+								failedEnvironment = true;
+								errorCounter++;
+							} else if (response.getStatus() == HttpStatus.SC_FORBIDDEN){
+								markAsLicenseRequired(environment, endpoint, detail);
 								failedEnvironment = true;
 								errorCounter++;
 							} else {
@@ -355,15 +360,43 @@ public class PushPublisher extends Publisher {
 			final EndpointDetail detail,
 			final String errorKey) throws DotDataException, LanguageException {
 
+		final String message = LanguageUtil.get(String.format("push_publish.end_point.%s_message", errorKey));
+		APILocator.getPublisherEndPointAPI().updateEndPoint(endpoint);
+
+		final PublishAuditStatus.Status invalidToken = PublishAuditStatus.Status.INVALID_TOKEN;
+		updatingPublishingDetailStatus(environment, endpoint, detail, errorKey, invalidToken, message);
+	}
+
+	private void markAsLicenseRequired(
+			final Environment environment,
+			final PublishingEndPoint endpoint,
+			final EndpointDetail detail) throws DotDataException, LanguageException {
+
+		final String message = LanguageUtil.get(String.format("push_publish.end_point.license_required_message"));
+		APILocator.getPublisherEndPointAPI().updateEndPoint(endpoint);
+
+		final PublishAuditStatus.Status licenseRequired = PublishAuditStatus.Status.LICENSE_REQUIRED;
+		updatingPublishingDetailStatus(environment, endpoint, detail, null, licenseRequired, message);
+	}
+
+	private void updatingPublishingDetailStatus(
+			final Environment environment,
+			final PublishingEndPoint endpoint,
+			final EndpointDetail detail,
+			final String newAuthKey,
+			final PublishAuditStatus.Status status,
+			final String message) throws DotDataException {
+
 		APILocator.getPushedAssetsAPI().deletePushedAssets(this.config.getId(), environment.getId());
 
-		detail.setStatus(PublishAuditStatus.Status.INVALID_TOKEN.getCode());
-
-		final String message = LanguageUtil.get(String.format("push_publish.end_point.%s_message", errorKey));
+		detail.setStatus(status.getCode());
 		detail.setInfo(message);
 		PushPublishLogger.log(this.getClass(), message);
 
-		endpoint.setAuthKey(errorKey);
+		if (newAuthKey != null) {
+			endpoint.setAuthKey(newAuthKey);
+		}
+
 		APILocator.getPublisherEndPointAPI().updateEndPoint(endpoint);
 
 		try {

@@ -99,7 +99,7 @@ public class EMAWebInterceptor  implements WebInterceptor{
                 final ProxyResponse pResponse = proxy.sendPost(proxyUrl.get(), params);
 
                 if (pResponse.getResponseCode() == 200) {
-                    responseStringBuilder.append(pResponse.getResponse());
+                    responseStringBuilder.append(new String(pResponse.getResponse()));
                 }else {
                     responseStringBuilder.append("<html><body>")
                     .append("<h3>Unable to connect with the rendering engine</h3>")

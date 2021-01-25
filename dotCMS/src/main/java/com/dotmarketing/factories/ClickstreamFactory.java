@@ -294,21 +294,9 @@ public class ClickstreamFactory {
 					+ nsue.getMessage(), nsue);
 		}
 
-		boolean clickstreamEnabled = false;
-		if (user != null) {
-			UserProxy userProxy = null;
-			try {
-				userProxy = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(user,APILocator.getUserAPI().getSystemUser(), false);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			if (!userProxy.isNoclicktracking()) {
-				clickstreamEnabled = true;
-			}
-		}else{
-			clickstreamEnabled = true;
+		boolean clickstreamEnabled = true;
 
-		}
+		
 
 		if(clickstreamEnabled){
 			Clickstream404 clickstream404 = new Clickstream404();

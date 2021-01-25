@@ -230,7 +230,7 @@ public class VersionableAPIImpl implements VersionableAPI {
 
 	@CloseDBIfOpened
     @Override
-    public boolean isDeleted(final Versionable versionable) throws DotDataException, DotStateException, DotSecurityException {
+    public boolean isDeleted(final Versionable versionable) throws DotDataException, DotStateException {
 
         if(!UtilMethods.isSet(versionable) || !InodeUtils.isSet(versionable.getVersionId()))
         	return false;

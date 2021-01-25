@@ -32,6 +32,7 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
 	public static final String ASSET_TYPE_FOLDER = "folder";
 	public static final String ASSET_TYPE_HTML_PAGE = "htmlpage";
 	public static final String ASSET_TYPE_CONTENTLET = "contentlet";
+	public static final String ASSET_TYPE_TEMPLATE = "template";
 
 	public Identifier() {
 	}
