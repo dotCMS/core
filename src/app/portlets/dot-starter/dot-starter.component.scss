@@ -170,9 +170,10 @@ $number-link-icon-size: 2.28rem;
         box-shadow: $md-shadow-4;
         display: flex;
         flex-grow: 1;
+        height: 100%;
         margin: $spacing-3 $spacing-1 0;
         overflow: hidden;
-        padding: 2rem 0;
+        padding: $spacing-3 0;
         transition: background-color $basic-speed ease-in;
 
         &:hover {
@@ -193,6 +194,7 @@ $number-link-icon-size: 2.28rem;
 
     .dot-starter-bottom__link-data {
         align-self: center;
+        margin-right: $spacing-5;
         padding: 0;
 
         h4 {

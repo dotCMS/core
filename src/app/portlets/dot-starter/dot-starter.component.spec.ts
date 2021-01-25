@@ -13,42 +13,44 @@ import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module
 import { DotToolGroupService } from '@services/dot-tool-group/dot-tool-group.service';
 import { Checkbox, CheckboxModule } from 'primeng/checkbox';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { MockDotRouterService } from '@tests/dot-router-service.mock';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 const messages = {
     'starter.title': 'Welcome!',
     'starter.description': 'You are logged in as <em>{0}</em>.',
     'starter.dont.show': `Don't show this again`,
     'starter.main.link.data.model.title': 'Create data model',
-    'starter.main.link.data.model.description': 'Lorem, ipsum dolor sit amet...',
+    'starter.main.link.data.model.description': 'Create data model description',
     'starter.main.link.add.content.title': 'Add content',
-    'starter.main.link.add.content.description': 'Lorem, ipsum dolor sit amet...',
+    'starter.main.link.add.content.description': 'Add content description',
     'starter.main.link.design.layout.title': 'Design a layout',
-    'starter.main.link.design.layout.description': 'Lorem, ipsum dolor sit amet...',
+    'starter.main.link.design.layout.description': 'Design a layout description',
     'starter.main.link.create.page.title': 'Create a page',
-    'starter.main.link.create.page.description': 'Lorem, ipsum dolor sit amet...',
+    'starter.main.link.create.page.description': 'Create a page description',
     'starter.side.title': 'APIs and Services',
     'starter.side.link.graphQl.title': 'GraphQL API',
-    'starter.side.link.graphQl.description': 'GraphQL is an open query language...',
+    'starter.side.link.graphQl.description': 'GraphQL API description',
     'starter.side.link.content.title': 'Content API',
-    'starter.side.link.content.description': 'GraphQL is an open query language...',
+    'starter.side.link.content.description': 'Content API description',
     'starter.side.link.image.processing.title': 'Image Resizing and Processing',
-    'starter.side.link.image.processing.description': 'GraphQL is an open query .',
+    'starter.side.link.image.processing.description': 'Image Resizing and Processing description',
     'starter.side.link.page.layout.title': 'Page Layout API (Layout as a Service)',
-    'starter.side.link.page.layout.description': 'The Page REST API enables you...',
+    'starter.side.link.page.layout.description': 'Page Layout API description',
     'starter.side.link.generate.key.title': 'Generate API Key',
-    'starter.side.link.generate.key.description': 'The Page REST API enables you...',
+    'starter.side.link.generate.key.description': 'Generate API Key description',
     'starter.footer.link.documentation.title': 'Documentation',
-    'starter.footer.link.documentation.description': 'Lorem, ipsum dolor sit amet...',
+    'starter.footer.link.documentation.description': 'Documentation description',
     'starter.footer.link.examples.title': 'Examples',
-    'starter.footer.link.examples.description': 'Lorem, ipsum dolor sit amet...',
+    'starter.footer.link.examples.description': 'Examples description',
     'starter.footer.link.community.title': 'Community',
-    'starter.footer.link.community.description': 'Lorem, ipsum dolor sit amet...',
+    'starter.footer.link.community.description': 'Community description',
     'starter.footer.link.training.title': 'Training Videos',
-    'starter.footer.link.training.description': 'Lorem, ipsum dolor sit amet...',
+    'starter.footer.link.training.description': 'Training Videos description',
     'starter.footer.link.review.title': 'Write A Review',
-    'starter.footer.link.review.description': 'Lorem, ipsum dolor sit amet...',
+    'starter.footer.link.review.description': 'Write A Review description',
     'starter.footer.link.feedback.title': 'Feedback',
-    'starter.footer.link.feedback.description': 'Lorem, ipsum dolor sit amet...'
+    'starter.footer.link.feedback.description': 'Feedback description'
 };
 
 const routeDatamock = {
@@ -79,6 +81,7 @@ describe('DotStarterComponent', () => {
                         useClass: ActivatedRouteMock
                     },
                     { provide: CoreWebService, useClass: CoreWebServiceMock },
+                    { provide: DotRouterService, useClass: MockDotRouterService },
                     DotStarterResolver,
                     DotToolGroupService
                 ]
@@ -87,9 +90,10 @@ describe('DotStarterComponent', () => {
             fixture = TestBed.createComponent(DotStarterComponent);
             component = fixture.debugElement.componentInstance;
 
-            fixture.detectChanges();
             de = fixture.debugElement;
             dotToolGroupService = TestBed.inject(DotToolGroupService);
+
+            fixture.detectChanges();
         })
     );
 
@@ -105,36 +109,36 @@ describe('DotStarterComponent', () => {
             'You are logged in as Admin'
         );
         expect(
-            de.query(By.css('[data-testid="starter.main.link.data.model"] h4')).nativeElement
+            de.query(By.css('[data-testId="starter.main.link.data.model"] h4')).nativeElement
                 .innerText
         ).toContain(messageServiceMock.get('starter.main.link.data.model.title'));
         expect(
-            de.query(By.css('[data-testid="starter.main.link.data.model"] p')).nativeElement
+            de.query(By.css('[data-testId="starter.main.link.data.model"] p')).nativeElement
                 .innerText
         ).toContain(messageServiceMock.get('starter.main.link.data.model.description'));
 
         expect(
-            de.query(By.css('[data-testid="starter.main.link.content"] h4')).nativeElement.innerText
+            de.query(By.css('[data-testId="starter.main.link.content"] h4')).nativeElement.innerText
         ).toContain(messageServiceMock.get('starter.main.link.add.content.title'));
         expect(
-            de.query(By.css('[data-testid="starter.main.link.content"] p')).nativeElement.innerText
+            de.query(By.css('[data-testId="starter.main.link.content"] p')).nativeElement.innerText
         ).toContain(messageServiceMock.get('starter.main.link.add.content.description'));
 
         expect(
-            de.query(By.css('[data-testid="starter.main.link.design.layout"] h4')).nativeElement
+            de.query(By.css('[data-testId="starter.main.link.design.layout"] h4')).nativeElement
                 .innerText
         ).toContain(messageServiceMock.get('starter.main.link.design.layout.title'));
         expect(
-            de.query(By.css('[data-testid="starter.main.link.design.layout"] p')).nativeElement
+            de.query(By.css('[data-testId="starter.main.link.design.layout"] p')).nativeElement
                 .innerText
         ).toContain(messageServiceMock.get('starter.main.link.design.layout.description'));
 
         expect(
-            de.query(By.css('[data-testid="starter.main.link.create.page"] h4')).nativeElement
+            de.query(By.css('[data-testId="starter.main.link.create.page"] h4')).nativeElement
                 .innerText
         ).toContain(messageServiceMock.get('starter.main.link.create.page.title'));
         expect(
-            de.query(By.css('[data-testid="starter.main.link.create.page"] p')).nativeElement
+            de.query(By.css('[data-testId="starter.main.link.create.page"] p')).nativeElement
                 .innerText
         ).toContain(messageServiceMock.get('starter.main.link.create.page.description'));
     });
@@ -144,100 +148,123 @@ describe('DotStarterComponent', () => {
             de.query(By.css('.dot-starter-top-secondary__section h3')).nativeElement.innerText
         ).toContain(messageServiceMock.get('starter.side.title'));
         expect(
-            de.query(By.css('[data-testid="starter.side.link.graphQl"] h4')).nativeElement.innerText
+            de.query(By.css('[data-testId="starter.side.link.graphQl"] h4')).nativeElement.innerText
         ).toContain(messageServiceMock.get('starter.side.link.graphQl.title'));
         expect(
-            de.query(By.css('[data-testid="starter.side.link.graphQl"] p')).nativeElement.innerText
+            de.query(By.css('[data-testId="starter.side.link.graphQl"] p')).nativeElement.innerText
         ).toContain(messageServiceMock.get('starter.side.link.graphQl.description'));
 
         expect(
-            de.query(By.css('[data-testid="starter.side.link.content"] h4')).nativeElement.innerText
+            de.query(By.css('[data-testId="starter.side.link.content"] h4')).nativeElement.innerText
         ).toContain(messageServiceMock.get('starter.side.link.content.title'));
         expect(
-            de.query(By.css('[data-testid="starter.side.link.content"] p')).nativeElement.innerText
+            de.query(By.css('[data-testId="starter.side.link.content"] p')).nativeElement.innerText
         ).toContain(messageServiceMock.get('starter.side.link.content.description'));
 
         expect(
-            de.query(By.css('[data-testid="starter.side.link.image.processing"] h4')).nativeElement
+            de.query(By.css('[data-testId="starter.side.link.image.processing"] h4')).nativeElement
                 .innerText
         ).toContain(messageServiceMock.get('starter.side.link.image.processing.title'));
         expect(
-            de.query(By.css('[data-testid="starter.side.link.image.processing"] p')).nativeElement
+            de.query(By.css('[data-testId="starter.side.link.image.processing"] p')).nativeElement
                 .innerText
         ).toContain(messageServiceMock.get('starter.side.link.image.processing.description'));
 
         expect(
-            de.query(By.css('[data-testid="starter.side.link.page.layout"] h4')).nativeElement
+            de.query(By.css('[data-testId="starter.side.link.page.layout"] h4')).nativeElement
                 .innerText
         ).toContain(messageServiceMock.get('starter.side.link.page.layout.title'));
         expect(
-            de.query(By.css('[data-testid="starter.side.link.page.layout"] p')).nativeElement
+            de.query(By.css('[data-testId="starter.side.link.page.layout"] p')).nativeElement
                 .innerText
         ).toContain(messageServiceMock.get('starter.side.link.page.layout.description'));
 
         expect(
-            de.query(By.css('[data-testid="starter.side.link.generate.key"] h4')).nativeElement
+            de.query(By.css('[data-testId="starter.side.link.generate.key"] h4')).nativeElement
                 .innerText
         ).toContain(messageServiceMock.get('starter.side.link.generate.key.title'));
         expect(
-            de.query(By.css('[data-testid="starter.side.link.generate.key"] p')).nativeElement
+            de.query(By.css('[data-testId="starter.side.link.generate.key"] p')).nativeElement
                 .innerText
         ).toContain(messageServiceMock.get('starter.side.link.generate.key.description'));
     });
 
     it('should set proper labels to the footer container', () => {
         expect(
-            de.query(By.css('[data-testid="starter.footer.link.documentation"] h4')).nativeElement
+            de.query(By.css('[data-testId="starter.footer.link.documentation"] h4')).nativeElement
                 .innerText
         ).toContain(messageServiceMock.get('starter.footer.link.documentation.title'));
         expect(
-            de.query(By.css('[data-testid="starter.footer.link.documentation"] p')).nativeElement
+            de.query(By.css('[data-testId="starter.footer.link.documentation"] p')).nativeElement
                 .innerText
         ).toContain(messageServiceMock.get('starter.footer.link.documentation.description'));
 
         expect(
-            de.query(By.css('[data-testid="starter.footer.link.examples"] h4')).nativeElement
+            de.query(By.css('[data-testId="starter.footer.link.examples"] h4')).nativeElement
                 .innerText
         ).toContain(messageServiceMock.get('starter.footer.link.examples.title'));
         expect(
-            de.query(By.css('[data-testid="starter.footer.link.examples"] p')).nativeElement
+            de.query(By.css('[data-testId="starter.footer.link.examples"] p')).nativeElement
                 .innerText
         ).toContain(messageServiceMock.get('starter.footer.link.examples.description'));
 
         expect(
-            de.query(By.css('[data-testid="starter.footer.link.community"] h4')).nativeElement
+            de.query(By.css('[data-testId="starter.footer.link.community"] h4')).nativeElement
                 .innerText
         ).toContain(messageServiceMock.get('starter.footer.link.community.title'));
         expect(
-            de.query(By.css('[data-testid="starter.footer.link.community"] p')).nativeElement
+            de.query(By.css('[data-testId="starter.footer.link.community"] p')).nativeElement
                 .innerText
         ).toContain(messageServiceMock.get('starter.footer.link.community.description'));
 
         expect(
-            de.query(By.css('[data-testid="starter.footer.link.training"] h4')).nativeElement
+            de.query(By.css('[data-testId="starter.footer.link.training"] h4')).nativeElement
                 .innerText
         ).toContain(messageServiceMock.get('starter.footer.link.training.title'));
         expect(
-            de.query(By.css('[data-testid="starter.footer.link.training"] p')).nativeElement
+            de.query(By.css('[data-testId="starter.footer.link.training"] p')).nativeElement
                 .innerText
         ).toContain(messageServiceMock.get('starter.footer.link.training.description'));
 
         expect(
-            de.query(By.css('[data-testid="starter.footer.link.review"] h4')).nativeElement
+            de.query(By.css('[data-testId="starter.footer.link.review"] h4')).nativeElement
                 .innerText
         ).toContain(messageServiceMock.get('starter.footer.link.review.title'));
         expect(
-            de.query(By.css('[data-testid="starter.footer.link.review"] p')).nativeElement.innerText
+            de.query(By.css('[data-testId="starter.footer.link.review"] p')).nativeElement.innerText
         ).toContain(messageServiceMock.get('starter.footer.link.review.description'));
 
         expect(
-            de.query(By.css('[data-testid="starter.footer.link.feedback"] h4')).nativeElement
+            de.query(By.css('[data-testId="starter.footer.link.feedback"] h4')).nativeElement
                 .innerText
         ).toContain(messageServiceMock.get('starter.footer.link.feedback.title'));
         expect(
-            de.query(By.css('[data-testid="starter.footer.link.feedback"] p')).nativeElement
+            de.query(By.css('[data-testId="starter.footer.link.feedback"] p')).nativeElement
                 .innerText
         ).toContain(messageServiceMock.get('starter.footer.link.feedback.description'));
+    });
+
+    fit('should have right links to internal portlets', () => {
+        expect(
+            de.query(By.css('[data-testId="starter.main.link.data.model"]')).nativeElement
+                .attributes['routerLink'].value
+        ).toEqual('/content-types-angular/create/content');
+
+        expect(
+            de.query(By.css('[data-testId="starter.main.link.content"]')).nativeElement.attributes[
+                'routerLink'
+            ].value
+        ).toEqual('/c/content/new/webPageContent');
+
+        expect(
+            de.query(By.css('[data-testId="starter.main.link.design.layout"]')).nativeElement
+                .attributes['routerLink'].value
+        ).toEqual('/templates/new/designer');
+
+        expect(
+            de.query(By.css('[data-testId="starter.main.link.create.page"]')).nativeElement
+                .attributes['routerLink'].value
+        ).toEqual('/c/content/new/htmlpageasset');
     });
 
     it('should call the endpoint to hide/show the portlet', () => {

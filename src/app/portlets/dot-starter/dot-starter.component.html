@@ -18,8 +18,8 @@
                 <div class="dot-starter-top-main__section">
                     <a
                         class="dot-starter-top-main__block"
-                        data-testid="starter.main.link.data.model"
-                        href="#"
+                        data-testId="starter.main.link.data.model"
+                        routerLink="/content-types-angular/create/content"
                     >
                         <div class="dot-starter-top-main__link-number">
                             <span>1</span>
@@ -33,9 +33,9 @@
                         </span>
                     </a>
                     <a
-                        href="#"
-                        data-testid="starter.main.link.content"
+                        data-testId="starter.main.link.content"
                         class="dot-starter-top-main__block"
+                        routerLink="/c/content/new/webPageContent"
                     >
                         <div class="dot-starter-top-main__link-number">
                             <span>2</span>
@@ -49,9 +49,9 @@
                         </span>
                     </a>
                     <a
-                        href="#"
-                        data-testid="starter.main.link.design.layout"
+                        data-testId="starter.main.link.design.layout"
                         class="dot-starter-top-main__block"
+                        routerLink="/templates/new/designer"
                     >
                         <div class="dot-starter-top-main__link-number">
                             <span>3</span>
@@ -65,9 +65,9 @@
                         </span>
                     </a>
                     <a
-                        href="#"
-                        data-testid="starter.main.link.create.page"
+                        data-testId="starter.main.link.create.page"
                         class="dot-starter-top-main__block"
+                        routerLink="/c/content/new/htmlpageasset"
                     >
                         <div class="dot-starter-top-main__link-number">
                             <span>4</span>
@@ -86,9 +86,10 @@
                 <div class="dot-starter-top-secondary__section">
                     <h3>{{ 'starter.side.title' | dm }}</h3>
                     <a
-                        href="#"
-                        data-testid="starter.side.link.graphQl"
+                        href="https://dotcms.com/docs/latest/graphql"
+                        data-testId="starter.side.link.graphQl"
                         class="dot-starter-top-secondary__block"
+                        target="_blank"
                     >
                         <div class="dot-starter-top-secondary__link-icon">
                             <span>
@@ -120,9 +121,10 @@
                         </div>
                     </a>
                     <a
-                        href="#"
-                        data-testid="starter.side.link.content"
+                        href="https://dotcms.com/docs/latest/content-api"
+                        data-testId="starter.side.link.content"
                         class="dot-starter-top-secondary__block"
+                        target="_blank"
                     >
                         <div class="dot-starter-top-secondary__link-icon">
                             <span class="material-icons"> wysiwyg </span>
@@ -133,9 +135,10 @@
                         </div>
                     </a>
                     <a
-                        href="#"
-                        data-testid="starter.side.link.image.processing"
+                        href="https://dotcms.com/docs/latest/image-resizing-and-processing"
+                        data-testId="starter.side.link.image.processing"
                         class="dot-starter-top-secondary__block"
+                        target="_blank"
                     >
                         <div class="dot-starter-top-secondary__link-icon">
                             <span class="material-icons"> insert_photo </span>
@@ -146,9 +149,10 @@
                         </div>
                     </a>
                     <a
-                        href="#"
-                        data-testid="starter.side.link.page.layout"
+                        href="https://dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas"
+                        data-testId="starter.side.link.page.layout"
                         class="dot-starter-top-secondary__block"
+                        target="_blank"
                     >
                         <div class="dot-starter-top-secondary__link-icon">
                             <span class="material-icons"> web </span>
@@ -159,9 +163,10 @@
                         </div>
                     </a>
                     <a
-                        href="#"
-                        data-testid="starter.side.link.generate.key"
+                        href="https://dotcms.com/docs/latest/rest-api-authentication#APIToken"
+                        data-testId="starter.side.link.generate.key"
                         class="dot-starter-top-secondary__block"
+                        target="_blank"
                     >
                         <div class="dot-starter-top-secondary__link-icon">
                             <span class="material-icons"> vpn_key </span>
@@ -180,9 +185,10 @@
 <div class="dot-starter-bottom-content">
     <div class="p-lg-4 p-md-12">
         <a
-            href="#"
-            data-testid="starter.footer.link.documentation"
+            href="https://dotcms.com/docs/latest/"
+            data-testId="starter.footer.link.documentation"
             class="dot-starter-bottom__block"
+            target="_blank"
         >
             <div class="dot-starter-bottom__link-icon">
                 <span class="material-icons"> text_snippet </span>
@@ -194,7 +200,12 @@
         </a>
     </div>
     <div class="p-lg-4 p-md-12">
-        <a href="#" data-testid="starter.footer.link.examples" class="dot-starter-bottom__block">
+        <a
+            href="https://dotcms.com/codeshare/"
+            data-testId="starter.footer.link.examples"
+            class="dot-starter-bottom__block"
+            target="_blank"
+        >
             <div class="dot-starter-bottom__link-icon">
                 <span class="material-icons"> label </span>
             </div>
@@ -205,7 +216,12 @@
         </a>
     </div>
     <div class="p-lg-4 p-md-12">
-        <a href="#" data-testid="starter.footer.link.community" class="dot-starter-bottom__block">
+        <a
+            href="https://dotcms.com/forum/"
+            data-testId="starter.footer.link.community"
+            class="dot-starter-bottom__block"
+            target="_blank"
+        >
             <div class="dot-starter-bottom__link-icon">
                 <span class="material-icons"> people </span>
             </div>
@@ -216,7 +232,12 @@
         </a>
     </div>
     <div class="p-lg-4 p-md-12">
-        <a href="#" data-testid="starter.footer.link.training" class="dot-starter-bottom__block">
+        <a
+            href="https://dotcms.com/courses/"
+            data-testId="starter.footer.link.training"
+            class="dot-starter-bottom__block"
+            target="_blank"
+        >
             <div class="dot-starter-bottom__link-icon">
                 <span class="material-icons"> movie </span>
             </div>
@@ -227,7 +248,12 @@
         </a>
     </div>
     <div class="p-lg-4 p-md-12">
-        <a href="#" data-testid="starter.footer.link.review" class="dot-starter-bottom__block">
+        <a
+            href="https://dotcms.com/review/"
+            data-testId="starter.footer.link.review"
+            class="dot-starter-bottom__block"
+            target="_blank"
+        >
             <div class="dot-starter-bottom__link-icon">
                 <span class="material-icons"> star </span>
             </div>
@@ -238,7 +264,12 @@
         </a>
     </div>
     <div class="p-lg-4 p-md-12">
-        <a href="#" data-testid="starter.footer.link.feedback" class="dot-starter-bottom__block">
+        <a
+            href="https://dotcms.com/contact-us/"
+            data-testId="starter.footer.link.feedback"
+            class="dot-starter-bottom__block"
+            target="_blank"
+        >
             <div class="dot-starter-bottom__link-icon">
                 <span class="material-icons"> comment </span>
             </div>

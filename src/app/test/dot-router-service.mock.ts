@@ -50,6 +50,7 @@ export class MockDotRouterService {
     goToStarter = jasmine.createSpy('goToStarter');
     doLogOut = jasmine.createSpy('doLogOut');
     goToMain = jasmine.createSpy('goToMain');
+    goToURL = jasmine.createSpy('goToURL');
     gotoPortlet = jasmine
         .createSpy('gotoPortlet')
         .and.callFake(() => new Promise((resolve) => resolve(true)));
