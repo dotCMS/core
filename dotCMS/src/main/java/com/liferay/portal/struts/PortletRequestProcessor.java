@@ -332,7 +332,7 @@ public class PortletRequestProcessor extends StxxTilesRequestProcessor {
 		PortletRequestDispatcherImpl prd = (PortletRequestDispatcherImpl)
 			portletConfig.getPortletContext().getRequestDispatcher(
 				Constants.TEXT_HTML_DIR + uri);
-		final User user = WebAPILocator.getUserWebAPI().getLoggedInUser(req);
+		final User user = PortalUtil.getUser(req);
 		if (null != user && user.isBackendUser()) {
 			PageMode.setPageMode(req, PageMode.NAVIGATE_EDIT_MODE);
 		}
