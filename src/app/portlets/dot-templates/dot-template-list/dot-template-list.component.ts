@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { pluck, take } from 'rxjs/operators';
+import { filter, pluck, take, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { DotTemplate } from '@models/dot-edit-layout-designer';
 import { DataTableColumn } from '@models/data-table';
@@ -12,7 +12,7 @@ import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.
 import { DotTemplatesService } from '@services/dot-templates/dot-templates.service';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
-import { DotPushPublishDialogService } from 'dotcms-js';
+import { DotPushPublishDialogService, Site, SiteService } from 'dotcms-js';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DialogService } from 'primeng/dynamicdialog';
 import { DotBulkInformationComponent } from '@components/_common/dot-bulk-information/dot-bulk-information.component';
@@ -42,14 +42,15 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
-        private route: ActivatedRoute,
-        private dotMessageService: DotMessageService,
-        private dotTemplatesService: DotTemplatesService,
+        private dotAlertConfirmService: DotAlertConfirmService,
         private dotMessageDisplayService: DotMessageDisplayService,
+        private dotMessageService: DotMessageService,
         private dotPushPublishDialogService: DotPushPublishDialogService,
         private dotRouterService: DotRouterService,
-        public dialogService: DialogService,
-        private dotAlertConfirmService: DotAlertConfirmService
+        private dotSiteService: SiteService,
+        private dotTemplatesService: DotTemplatesService,
+        private route: ActivatedRoute,
+        public dialogService: DialogService
     ) {}
 
     ngOnInit(): void {
@@ -62,6 +63,32 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
                 this.templateBulkActions = this.setTemplateBulkActions();
             });
         this.setAddOptions();
+
+        /**
+         * When the portlet reload (from the browser reload button), the site service emits
+         * the switchSite$ because the `currentSite` was undefined and the loads the site, that trigger
+         * an unwanted reload.
+         *
+         * This extra work in the filter is to prevent that extra reload.
+         *
+         */
+        let currentHost = this.dotSiteService.currentSite?.hostname || null;
+
+        this.dotSiteService.switchSite$
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((site: Site) => {
+                    if (currentHost === null) {
+                        currentHost = site?.hostname;
+                        return false;
+                    }
+
+                    return true;
+                })
+            )
+            .subscribe(() => {
+                this.dotRouterService.gotoPortlet('templates');
+            });
     }
 
     ngOnDestroy(): void {
