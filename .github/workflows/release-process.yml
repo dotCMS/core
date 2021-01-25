@@ -54,9 +54,9 @@ jobs:
           dotcicd/library/pipeline.sh generateUploadEeJar ${{ secrets.EE_REPO_USERNAME }} ${{ secrets.EE_REPO_PASSWORD }} ${{ env.branch }} ${{ env.eeBranch }}
         env:
           RSA_KEY: ${{ secrets.EE_RSA_KEY }}
-      - name: Generate/Deploy DotCMS
-        run: |
-          dotcicd/library/pipeline.sh generateUploadDotCMSJar ${{ secrets.EE_REPO_USERNAME }} ${{ secrets.EE_REPO_PASSWORD }} ${{ env.branch }}
+#      - name: Generate/Deploy DotCMS
+#        run: |
+#          dotcicd/library/pipeline.sh generateUploadDotCMSJar ${{ secrets.EE_REPO_USERNAME }} ${{ secrets.EE_REPO_PASSWORD }} ${{ env.branch }}
       - name: Build distro files
         run: |
           dotcicd/library/pipeline.sh buildDistro
