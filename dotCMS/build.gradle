@@ -79,7 +79,7 @@ apply plugin: 'idea'
 apply plugin: 'eclipse'
 eclipse {
     project {
-        name = 'dotcms_5'
+        name = 'dotCMS'
     }
 }
 
