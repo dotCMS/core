@@ -41,6 +41,14 @@ jobs:
 #      - name: Update/Publish Docker Image
 #        run: |
 #          dotcicd/library/pipeline.sh updatePublishDockerImage
+      - name: Generate/Deploy DotCMS EE
+        uses: dotcms/generate-ee-jar@main
+        with:
+          repo-username: ${{ secrets.EE_REPO_USERNAME }}
+          repo-password: ${{ secrets.EE_REPO_PASSWORD }}
+          build-id: ${{ env.branch }}
+          ee-build-id: ${{ env.eeBranch }}
+          rsa-key: ${{ secrets.EE_RSA_KEY }}
       - name: Generate/Deploy EE
         run: |
           dotcicd/library/pipeline.sh generateUploadEeJar ${{ secrets.EE_REPO_USERNAME }} ${{ secrets.EE_REPO_PASSWORD }} ${{ env.branch }} ${{ env.eeBranch }}
