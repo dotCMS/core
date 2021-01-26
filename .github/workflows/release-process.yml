@@ -18,7 +18,7 @@ jobs:
       - name: Checkout core
         uses: actions/checkout@v2
         with:
-          submodules: recursive
+          submodules: true
           ssh-key: ${{ secrets.EE_REPO_PASSWORD }}
       - name: GITHUB CONTEXT
         env:
