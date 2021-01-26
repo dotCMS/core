@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "df9f1a8c-13f4-43b4-883e-bd3111efc813",
+		"_postman_id": "93d36d2e-b2a7-412c-93d1-f49f40dd5444",
 		"name": "DotAsset",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -80,61 +80,6 @@
 					]
 				},
 				"description": "Creates a DotAsset with accept such as application/pdf"
-			},
-			"response": []
-		},
-		{
-			"name": "Create Pdf Accept PDFDotAsset FieldVariables",
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						}
-					]
-				},
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"name": "Content-Type",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\"key\":\"accept\",\"value\":\"img/*,image/*\",\"clazz\":\"com.dotcms.contenttype.model.field.FieldVariable\"}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/contenttype/PDFDotAsset/fields/var/asset/variables",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"contenttype",
-						"PDFDotAsset",
-						"fields",
-						"var",
-						"asset",
-						"variables"
-					]
-				}
 			},
 			"response": []
 		},
@@ -285,6 +230,61 @@
 			"response": []
 		},
 		{
+			"name": "Create Pdf Accept PDFDotAsset FieldVariables",
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"key\":\"accept\",\"value\":\"img/*,image/*\",\"clazz\":\"com.dotcms.contenttype.model.field.FieldVariable\"}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/contenttype/PDFDotAsset/fields/var/asset/variables",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"contenttype",
+						"PDFDotAsset",
+						"fields",
+						"var",
+						"asset",
+						"variables"
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "Fire NEW for PDFDotAsset with an image",
 			"request": {
 				"auth": {
@@ -424,7 +424,7 @@
 	"variable": [
 		{
 			"key": "pdfIdToThumbnail",
-			"value": "1e653493-f109-4e0a-8cad-4817ebdad25f"
+			"value": "75e9338b-3180-4d57-9d68-edf344d970df"
 		}
 	]
 }
