@@ -210,6 +210,7 @@ describe('DotEditPageMainComponent', () => {
     });
 
     it('should call goToEditPage if page properties were saved with different URLs', () => {
+        spyOn(dotPageStateService, 'get').and.callThrough();
         editContentlet.custom.emit({
             detail: {
                 name: 'save-page',
@@ -224,6 +225,9 @@ describe('DotEditPageMainComponent', () => {
             url: '/index',
             language_id: '1'
         });
+        dotContentletEditorService.close$.next(true);
+        expect(dotRouterService.goToEditPage).toHaveBeenCalledTimes(1);
+        expect(dotPageStateService.get).not.toHaveBeenCalled();
     });
 
     it('should call get if page properties were saved with equal URLs', () => {
