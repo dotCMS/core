@@ -195,6 +195,7 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.slf4j-jcl', version:'1.7.12_2'
     compile (group: 'xerces', name: 'xercesImpl', version: '2.11.0'){
         transitive = false
+        exclude(module: 'javax.xml.parsers')
     }
     compile (group: 'org.apache.commons', name: 'commons-compress', version: '1.15'){
         transitive = false
@@ -433,6 +434,7 @@ dependencies {
     compile(group: 'org.apache.felix', name: 'org.apache.felix.http.bundle', version: '3.0.0') {
         exclude(group: 'commons-logging')
         exclude(group: 'org.slf4j')
+//        exclude(group: 'javax.servlet')
     }
     compile(group: 'org.apache.felix', name: 'org.apache.felix.http.bridge', version: '3.0.18') {
         exclude(module: 'commons-logging')
@@ -457,8 +459,12 @@ dependencies {
 
     compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.2'
 
-    compile group: 'org.apache.xmlgraphics', name: 'batik-rasterizer', version:'1.10'
-    compile group: 'org.apache.xmlgraphics', name: 'batik-codec', version:'1.10'
+    compile (group: 'org.apache.xmlgraphics', name: 'batik-rasterizer', version:'1.10') {
+        exclude(group: 'xml-apis')
+    }
+    compile (group: 'org.apache.xmlgraphics', name: 'batik-codec', version:'1.10') {
+        exclude(group: 'xml-apis')
+    }
     compile (group: 'org.apache.xmlgraphics', name: 'xmlgraphics-commons', version:'1.5') {
         exclude(group: 'commons-logging')
     }
@@ -488,6 +494,8 @@ dependencies {
     }
 
     compile 'com.jayway.jsonpath:json-path:2.4.0'
+    compile 'com.sun.activation:javax.activation:1.2.0'
+    compile 'jakarta.xml.bind:jakarta.xml.bind-api:3.0.0'
 
     //https://www.oracle.com/database/technologies/appdev/jdbc-downloads.html
     providedCompile (group: 'com.oracle.jdbc', name: 'ojdbc8', version: '19.3') {
