@@ -4,6 +4,7 @@ $number-link-icon-size: 2.28rem;
 
 :host {
     display: block;
+    font-size: $font-size-medium;
     height: 100%;
     overflow: auto;
 
@@ -33,7 +34,6 @@ $number-link-icon-size: 2.28rem;
 
     .dot-starter-description {
         color: $gray;
-        font-size: $font-size-large;
         margin: 0 $spacing-3 $spacing-5 $spacing-3;
     }
 
@@ -92,11 +92,11 @@ $number-link-icon-size: 2.28rem;
         h4 {
             color: $brand-primary;
             font-size: $font-size-large;
+            font-weight: bold;
             margin: 0;
         }
         p {
             color: $gray;
-            font-size: $font-size-small;
             margin: 0;
         }
     }
@@ -153,7 +153,6 @@ $number-link-icon-size: 2.28rem;
         }
         p {
             color: $gray;
-            font-size: $font-size-small;
             margin: 0;
         }
     }
@@ -204,7 +203,6 @@ $number-link-icon-size: 2.28rem;
         }
         p {
             color: $gray;
-            font-size: $font-size-small;
             margin: 0;
         }
     }
