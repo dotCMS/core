@@ -17,6 +17,9 @@ jobs:
     steps:
       - name: Checkout core
         uses: actions/checkout@v2
+        with:
+          submodules: recursive
+          ssh-key: ${{ secrets.EE_REPO_PASSWORD }}
       - name: GITHUB CONTEXT
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
