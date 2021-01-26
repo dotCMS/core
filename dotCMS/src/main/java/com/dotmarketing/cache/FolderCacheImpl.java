@@ -1,5 +1,6 @@
 package com.dotmarketing.cache;
 
+import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.CacheLocator;
@@ -25,8 +26,11 @@ public class FolderCacheImpl extends FolderCache {
 		final String inode = folder.getInode();
 		if (Folder.SYSTEM_FOLDER.equals(inode)) {
 		    // For SYSTEM_FOLDER, always make sure that it points to SYSTEM_HOST
-			folder.setHostId(Host.SYSTEM_HOST);
-		}
+            Logger.error(this, String.format("Host ID for SYSTEM_FOLDER must always be SYSTEM_HOST. Value '%s' was " +
+                    "set.", folder.getHostId()));
+            Logger.error(this, ExceptionUtil.getCurrentStackTraceAsString());
+            folder.setHostId(Host.SYSTEM_HOST);
+        }
 		cache.put(getPrimaryGroup() + inode, folder, getPrimaryGroup());
 
 		// Folder by Path
