@@ -37,6 +37,10 @@ jobs:
         run: |
           export DOT_CICD_BRANCH=18562-automate-release-process
           sh -c "$(curl -fsSL https://raw.githubusercontent.com/dotCMS/dot-cicd/${DOT_CICD_BRANCH}/seed/install-dot-cicd.sh)"
+      - name: Build DotCMS Release Docker Image
+        run: |
+          dotcicd/library/pipeline.sh buildRelease
+        if: env.TEST_RUN == 'true'
       - name: Run DotCMS Release Docker Image
         run: |
           dotcicd/library/pipeline.sh runRelease ${{ secrets.EE_REPO_USERNAME }} ${{ secrets.EE_REPO_PASSWORD }}
