@@ -38,7 +38,9 @@ import com.dotcms.repackage.org.apache.struts.action.ActionServlet;
 import com.dotcms.repackage.org.apache.struts.config.ForwardConfig;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
 import com.dotcms.util.SecurityUtils;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
@@ -330,7 +332,10 @@ public class PortletRequestProcessor extends StxxTilesRequestProcessor {
 		PortletRequestDispatcherImpl prd = (PortletRequestDispatcherImpl)
 			portletConfig.getPortletContext().getRequestDispatcher(
 				Constants.TEXT_HTML_DIR + uri);
-
+		final User user = PortalUtil.getUser(req);
+		if (null != user && user.isBackendUser()) {
+			PageMode.setPageMode(req, PageMode.NAVIGATE_EDIT_MODE);
+		}
 		try {
 			if (prd == null) {
 				_log.error(uri + " is not a valid include");
