@@ -15,8 +15,6 @@ jobs:
       PULL_REQUEST: ${{ github.event.number }}
       TEST_RUN: true
     steps:
-      - name: Checkout core
-        uses: actions/checkout@v2
       - name: GITHUB CONTEXT
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
@@ -37,7 +35,8 @@ jobs:
           echo "DOTCMS_VERSION=${dotcmsReleaseVersion}" >> $GITHUB_ENV
       - name: Prepare dot-cicd
         run: |
-          chmod +x .cicd/discover.sh && .cicd/discover.sh
+          DOT_CICD_BRANCH=18562-automate-release-process
+          sh -c "$(curl -fsSL https://raw.githubusercontent.com/dotCMS/dot-cicd/${DOT_CICD_BRANCH}/seed/install-dot-cicd.sh)"
       - name: Run DotCMS Release Docker Image
         run: |
           dotcicd/library/pipeline.sh runRelease ${{ secrets.EE_REPO_USERNAME }} ${{ secrets.EE_REPO_PASSWORD }}
