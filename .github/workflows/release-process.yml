@@ -28,7 +28,7 @@ jobs:
       - name: Set Common Vars
         run: |
           BRANCH=$(basename "${{ github.ref }}")
-          RSA_KEY=${{ secrets.EE_RSA_KEY }}
+          RSA_KEY="${{ secrets.EE_RSA_KEY }}"
           echo "branch=${BRANCH}" >> $GITHUB_ENV
           echo "eeBranch=${BRANCH}" >> $GITHUB_ENV
 #          echo "rsa_key=${RSA_KEY}" >> $GITHUB_ENV
