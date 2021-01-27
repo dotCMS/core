@@ -31,6 +31,7 @@ jobs:
           echo "branch=${BRANCH}" >> $GITHUB_ENV
           echo "ee_branch=${BRANCH}" >> $GITHUB_ENV
           echo "${{ secrets.EE_RSA_KEY }}" > hola
+          ls -las hola
           cat hola
       - name: Prepare dot-cicd
         run: |
