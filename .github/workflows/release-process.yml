@@ -29,8 +29,12 @@ jobs:
       - name: Set Common Vars
         run: |
           BRANCH=$(basename "${{ github.ref }}")
+          REPO_USERNAME=${{ secrets.EE_REPO_USERNAME }}
+          REPO_PASSWORD=${{ secrets.EE_REPO_PASSWORD }}
           echo "branch=${BRANCH}" >> $GITHUB_ENV
           echo "ee_branch=${BRANCH}" >> $GITHUB_ENV
+          echo "repo_username=${REPO_USERNAME}" >> $GITHUB_ENV
+          echo "repo_password=${REPO_PASSWORD}" >> $GITHUB_ENV
           echo "base_folder=$(pwd)" >> $GITHUB_ENV
       - name: Prepare dot-cicd
         run: |
@@ -45,7 +49,7 @@ jobs:
         if: env.TEST_RUN == 'true'
       - name: Run DotCMS Release Docker Image
         run: |
-          dotcicd/library/pipeline.sh runRelease ${{ secrets.EE_REPO_USERNAME }} ${{ secrets.EE_REPO_PASSWORD }}
+          dotcicd/library/pipeline.sh runRelease
 #      - name: Build distro files
 #        run: |
 #          dotcicd/library/pipeline.sh buildDistro
