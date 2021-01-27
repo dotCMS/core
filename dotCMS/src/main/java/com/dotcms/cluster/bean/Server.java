@@ -132,10 +132,9 @@ public class Server implements Serializable {
         if (serverId == null) {
             if (other.serverId != null)
                 return false;
-        } else if (!serverId.equals(other.serverId))
+        } else if (!serverId.equals(other.serverId)){
             return false;
-        //if (startupTime != other.startupTime)
-        //    return false;
+	}
         return true;
     }
 
