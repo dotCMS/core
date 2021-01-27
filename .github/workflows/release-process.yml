@@ -43,10 +43,7 @@ jobs:
         if: env.TEST_RUN == 'true'
       - name: Run DotCMS Release Docker Image
         run: |
-          echo ${{ secrets.EE_RSA_KEY }}
-          dotcicd/library/pipeline.sh runRelease ${{ secrets.EE_REPO_USERNAME }} ${{ secrets.EE_REPO_PASSWORD }}
-        env:
-          RSA_KEY: ${{ secrets.EE_RSA_KEY }}
+          dotcicd/library/pipeline.sh runRelease ${{ secrets.EE_REPO_USERNAME }} ${{ secrets.EE_REPO_PASSWORD }} "${{ secrets.EE_RSA_KEY }}"
 #      - name: Build distro files
 #        run: |
 #          dotcicd/library/pipeline.sh buildDistro

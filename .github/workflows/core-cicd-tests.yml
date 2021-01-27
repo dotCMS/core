@@ -170,10 +170,6 @@ jobs:
       GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
       PULL_REQUEST: ${{ github.event.number }}
     steps:
-      - name: Checkout core
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 1
       - name: GITHUB CONTEXT
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
@@ -252,8 +248,8 @@ jobs:
           echo "jobRun=${JOB_RUN}" >> $GITHUB_ENV
       - name: Prepare dot-cicd
         run: |
-          chmod +x .cicd/discover.sh && .cicd/discover.sh
-        if: env.jobRun == 'true'
+          export DOT_CICD_BRANCH=18562-automate-release-process
+          sh -c "$(curl -fsSL https://raw.githubusercontent.com/dotCMS/dot-cicd/${DOT_CICD_BRANCH}/seed/install-dot-cicd.sh)"
       - name: Check Provider
         run: |
           dotcicd/library/checkProvider.sh github
