@@ -30,11 +30,10 @@ jobs:
           BRANCH=$(basename "${{ github.ref }}")
           echo "branch=${BRANCH}" >> $GITHUB_ENV
           echo "ee_branch=${BRANCH}" >> $GITHUB_ENV
-          pwd
+          echo "base_folder=$(pwd)" >> $GITHUB_ENV
           mkdir .ssh
           echo "${{ secrets.EE_RSA_KEY }}" > .ssh/id_rsa
           chmod 600 .ssh/id_rsa
-          ls -las .ssh
       - name: Prepare dot-cicd
         run: |
           export DOT_CICD_BRANCH=18562-automate-release-process
@@ -43,11 +42,9 @@ jobs:
         run: |
           dotcicd/library/pipeline.sh buildRelease
         if: env.TEST_RUN == 'true'
-#      - name: Run DotCMS Release Docker Image
-#        run: |
-#          dotcicd/library/pipeline.sh runRelease ${{ secrets.EE_REPO_USERNAME }} ${{ secrets.EE_REPO_PASSWORD }}
-#        env:
-#          rsa_key: "${{ secrets.EE_RSA_KEY }}"
+      - name: Run DotCMS Release Docker Image
+        run: |
+          dotcicd/library/pipeline.sh runRelease ${{ secrets.EE_REPO_USERNAME }} ${{ secrets.EE_REPO_PASSWORD }}
 #      - name: Build distro files
 #        run: |
 #          dotcicd/library/pipeline.sh buildDistro
