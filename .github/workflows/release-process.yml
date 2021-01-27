@@ -35,7 +35,7 @@ jobs:
           echo "DOTCMS_VERSION=${dotcmsReleaseVersion}" >> $GITHUB_ENV
       - name: Prepare dot-cicd
         run: |
-          DOT_CICD_BRANCH=18562-automate-release-process
+          export DOT_CICD_BRANCH=18562-automate-release-process
           sh -c "$(curl -fsSL https://raw.githubusercontent.com/dotCMS/dot-cicd/${DOT_CICD_BRANCH}/seed/install-dot-cicd.sh)"
       - name: Run DotCMS Release Docker Image
         run: |
