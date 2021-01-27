@@ -14,12 +14,13 @@ jobs:
       GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
       PULL_REQUEST: ${{ github.event.number }}
       TEST_RUN: true
+      DEBUG: false
     steps:
       - name: GITHUB CONTEXT
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "${GITHUB_CONTEXT}"
-        if: false == true #env.TEST_RUN == 'true'
+        if: env.DEBUG == 'true'
       - name: Get commit message
         id: get-commit-message
         uses: dotcms/get-commit-message@master
