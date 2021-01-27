@@ -28,10 +28,10 @@ jobs:
       - name: Set Common Vars
         run: |
           BRANCH=$(basename "${{ github.ref }}")
-          RSA_KEY="${{ secrets.EE_RSA_KEY }}"
+#          RSA_KEY="${{ secrets.EE_RSA_KEY }}"
           echo "branch=${BRANCH}" >> $GITHUB_ENV
           echo "ee_branch=${BRANCH}" >> $GITHUB_ENV
-          echo "rsa_key="${RSA_KEY}"" >> $GITHUB_ENV
+#          echo "rsa_key="${RSA_KEY}"" >> $GITHUB_ENV
       - name: Prepare dot-cicd
         run: |
           export DOT_CICD_BRANCH=18562-automate-release-process
@@ -42,7 +42,7 @@ jobs:
         if: env.TEST_RUN == 'true'
       - name: Run DotCMS Release Docker Image
         run: |
-          dotcicd/library/pipeline.sh runRelease ${{ secrets.EE_REPO_USERNAME }} ${{ secrets.EE_REPO_PASSWORD }}
+          dotcicd/library/pipeline.sh runRelease ${{ secrets.EE_REPO_USERNAME }} ${{ secrets.EE_REPO_PASSWORD }} "${{ secrets.EE_RSA_KEY }}"
 #      - name: Build distro files
 #        run: |
 #          dotcicd/library/pipeline.sh buildDistro
