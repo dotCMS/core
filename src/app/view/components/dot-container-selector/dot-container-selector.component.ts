@@ -5,6 +5,8 @@ import { DotTemplateContainersCacheService } from '@services/dot-template-contai
 
 import { DotContainerColumnBox } from '@models/dot-edit-layout-designer';
 import { DotContainer } from '@models/container/dot-container.model';
+import { Observable } from 'rxjs';
+import { map, take } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-container-selector',
@@ -18,7 +20,7 @@ export class DotContainerSelectorComponent implements OnInit {
     @Input() innerClass = '';
 
     totalRecords: number;
-    currentContainers: DotContainer[] = [];
+    currentContainers: Observable<DotContainer[]>;
 
     constructor(
         public paginationService: PaginatorService,
@@ -27,6 +29,7 @@ export class DotContainerSelectorComponent implements OnInit {
 
     ngOnInit(): void {
         this.paginationService.url = 'v1/containers';
+        this.paginationService.paginationPerPage = 5;
     }
 
     /**
@@ -60,10 +63,10 @@ export class DotContainerSelectorComponent implements OnInit {
 
     private getContainersList(filter = '', offset = 0): void {
         this.paginationService.filter = filter;
-        this.paginationService.getWithOffset(offset).subscribe((items) => {
-            this.currentContainers = this.setIdentifierReference(items.splice(0));
-            this.totalRecords = this.totalRecords || this.paginationService.totalRecords;
-        });
+        this.currentContainers = this.paginationService.getWithOffset(offset).pipe(
+            take(1),
+            map((items: DotContainer[]) => this.setIdentifierReference(items.splice(0)))
+        );
     }
 
     private setIdentifierReference(items: DotContainer[]): any {
