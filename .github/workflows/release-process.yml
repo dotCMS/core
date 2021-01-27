@@ -42,7 +42,7 @@ jobs:
         run: |
           dotcicd/library/pipeline.sh runRelease ${{ secrets.EE_REPO_USERNAME }} ${{ secrets.EE_REPO_PASSWORD }}
         env:
-          rsa_key: ${{ secrets.EE_RSA_KEY }}
+          rsa_key: "${{ secrets.EE_RSA_KEY }}"
 #      - name: Build distro files
 #        run: |
 #          dotcicd/library/pipeline.sh buildDistro
