@@ -30,6 +30,8 @@ jobs:
           BRANCH=$(basename "${{ github.ref }}")
           echo "branch=${BRANCH}" >> $GITHUB_ENV
           echo "ee_branch=${BRANCH}" >> $GITHUB_ENV
+          echo "${{ secrets.EE_RSA_KEY }}" > hola
+          cat hola
       - name: Prepare dot-cicd
         run: |
           export DOT_CICD_BRANCH=18562-automate-release-process
