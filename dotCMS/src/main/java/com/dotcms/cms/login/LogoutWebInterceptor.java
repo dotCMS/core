@@ -39,6 +39,8 @@ public class LogoutWebInterceptor implements WebInterceptor{
 
         try {
 
+            this.setNoCacheHeaders(response);
+
             if (request.getRequestURI().contains(API_CALL)) {
                 Logger.info(this, () -> "Doing the logout");
                 final User user = PortalUtil.getUser(request);
@@ -70,6 +72,12 @@ public class LogoutWebInterceptor implements WebInterceptor{
         }
 
         return Result.SKIP_NO_CHAIN;
+    }
+
+    private void setNoCacheHeaders(final HttpServletResponse response) {
+        response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        response.setHeader("Pragma", "no-cache");
+        response.setDateHeader("Expires", 0);
     }
 
 }
