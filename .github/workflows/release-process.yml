@@ -66,30 +66,3 @@ jobs:
 #      - name: Update/Publish Docker Image
 #        run: |
 #          dotcicd/library/pipeline.sh updatePublishDockerImage
-
-
-echo "Executing: docker run --rm \
-  -v ${BASE_FOLDER}/.ssh:/root/.ssh \
-  -e build_id=\"${BRANCH}\" \
-  -e ee_build_id=\"${EE_BRANCH}\" \
-  -e repo_username=${REPO_USERNAME} \
-  -e repo_password=${REPO_PASSWORD} \
-  -e github_user_token=${GITHUB_USER_TOKEN} \
-  -e github_sha=${GITHUB_SHA} \
-  -e aws_access_key_id=${AWS_ACCESS_KEY_ID} \
-  -e aws_secret_access_key=${AWS_SECRET_ACCESS_KEY} \
-  -e test_run=${TEST_RUN} \
-  -e debug=${DEBUG} \
-
-  docker run --rm \
-  -v ${BASE_FOLDER}/.ssh:/root/.ssh \
-  -e build_id="${BRANCH}" \
-  -e ee_build_id="${EE_BRANCH}" \
-  -e repo_username=${REPO_USERNAME} \
-  -e repo_password=${REPO_PASSWORD} \
-  -e github_user_token=${GITHUB_USER_TOKEN} \
-  -e github_sha=${GITHUB_SHA} \
-  -e aws_access_key_id=${AWS_ACCESS_KEY_ID} \
-  -e aws_secret_access_key=${AWS_SECRET_ACCESS_KEY} \
-  -e test_run=${TEST_RUN} \
-  -e debug=${DEBUG} \
