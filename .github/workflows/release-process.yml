@@ -7,12 +7,18 @@ jobs:
     name: Release Process Automation
     runs-on: ubuntu-latest
     env:
+      DOT_CICD_BRANCH: 18562-automate-release-process
       DOT_CICD_CLOUD_PROVIDER: github
       DOT_CICD_TARGET: core
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_USER: dotcmsbuild
       GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
       PULL_REQUEST: ${{ github.event.number }}
+      REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
+      REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      SSH_RSA_KEY: ${{ secrets.EE_RSA_KEY }}
       TEST_RUN: true
       DEBUG: false
     steps:
@@ -29,24 +35,12 @@ jobs:
       - name: Set Common Vars
         run: |
           BRANCH=$(basename "${{ github.ref }}")
-          REPO_USERNAME=${{ secrets.EE_REPO_USERNAME }}
-          REPO_PASSWORD=${{ secrets.EE_REPO_PASSWORD }}
-          AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          echo "branch=${BRANCH}" >> $GITHUB_ENV
-          echo "ee_branch=${BRANCH}" >> $GITHUB_ENV
-          echo "repo_username=${REPO_USERNAME}" >> $GITHUB_ENV
-          echo "repo_password=${REPO_PASSWORD}" >> $GITHUB_ENV
-          echo "aws_access_key_id=${AWS_ACCESS_KEY_ID}" >> $GITHUB_ENV
-          echo "aws_secret_access_key=${AWS_SECRET_ACCESS_KEY}" >> $GITHUB_ENV
-          echo "base_folder=$(pwd)" >> $GITHUB_ENV
+          echo "BRANCH=${BRANCH}" >> $GITHUB_ENV
+          echo "EE_BRANCH=${BRANCH}" >> $GITHUB_ENV
+          echo "BASE_FOLDER=$(pwd)" >> $GITHUB_ENV
       - name: Prepare dot-cicd
         run: |
-          export DOT_CICD_BRANCH=18562-automate-release-process
           sh -c "$(curl -fsSL https://raw.githubusercontent.com/dotCMS/dot-cicd/${DOT_CICD_BRANCH}/seed/install-dot-cicd.sh)"
-          mkdir .ssh
-          echo "${{ secrets.EE_RSA_KEY }}" > .ssh/id_rsa
-          chmod 600 .ssh/id_rsa
       - name: Build DotCMS Release Docker Image
         run: |
           dotcicd/library/pipeline.sh buildRelease
@@ -72,3 +66,30 @@ jobs:
 #      - name: Update/Publish Docker Image
 #        run: |
 #          dotcicd/library/pipeline.sh updatePublishDockerImage
+
+
+echo "Executing: docker run --rm \
+  -v ${BASE_FOLDER}/.ssh:/root/.ssh \
+  -e build_id=\"${BRANCH}\" \
+  -e ee_build_id=\"${EE_BRANCH}\" \
+  -e repo_username=${REPO_USERNAME} \
+  -e repo_password=${REPO_PASSWORD} \
+  -e github_user_token=${GITHUB_USER_TOKEN} \
+  -e github_sha=${GITHUB_SHA} \
+  -e aws_access_key_id=${AWS_ACCESS_KEY_ID} \
+  -e aws_secret_access_key=${AWS_SECRET_ACCESS_KEY} \
+  -e test_run=${TEST_RUN} \
+  -e debug=${DEBUG} \
+
+  docker run --rm \
+  -v ${BASE_FOLDER}/.ssh:/root/.ssh \
+  -e build_id="${BRANCH}" \
+  -e ee_build_id="${EE_BRANCH}" \
+  -e repo_username=${REPO_USERNAME} \
+  -e repo_password=${REPO_PASSWORD} \
+  -e github_user_token=${GITHUB_USER_TOKEN} \
+  -e github_sha=${GITHUB_SHA} \
+  -e aws_access_key_id=${AWS_ACCESS_KEY_ID} \
+  -e aws_secret_access_key=${AWS_SECRET_ACCESS_KEY} \
+  -e test_run=${TEST_RUN} \
+  -e debug=${DEBUG} \
