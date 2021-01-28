@@ -1,0 +1,48 @@
+package com.dotcms.test.util.assertion;
+
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotcms.enterprise.publishing.remote.bundler.FileBundlerTestUtil;
+
+import java.io.File;
+import java.util.Collection;
+import java.util.Map;
+
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.map;
+
+public class RelationshipAssertionChecker implements AssertionChecker<Relationship> {
+    @Override
+    public Map<String, Object> getFileArguments(final Relationship relationship, File file) {
+        return map(
+                "inode", relationship.getInode(),
+                "parent_inode", relationship.getParentStructure().id(),
+                "child_inode", relationship.getChildStructure().id(),
+                "child_name", relationship.getChildRelationName(),
+                "relation_type", relationship.getRelationTypeValue(),
+                "cardinality", relationship.getCardinality()
+        );
+    }
+
+    @Override
+    public String getFilePathExpected(File file) {
+        return "/bundlers-test/relationship/relationship.relationship.xml";
+    }
+
+    @Override
+    public File getFileInner(final Relationship relationship, final File bundleRoot) {
+        try {
+            return FileBundlerTestUtil.getRelationshipPath(relationship, bundleRoot);
+        } catch (DotSecurityException | DotDataException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public Collection<String> getRegExToRemove(File file) {
+        return list(
+                "<iDate>.*</iDate>"
+        );
+    }
+}
