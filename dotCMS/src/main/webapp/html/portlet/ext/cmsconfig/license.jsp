@@ -224,10 +224,8 @@
                         else{
                             dojo.create("td", { innerHTML: expiredSpan + licenseAdmin.displayId(lic.serverId) + closeSpan }, row);
                         }
-                        
                         dojo.create("td", { innerHTML: expiredSpan + licenseAdmin.displayId(lic.serial) + closeSpan}, row);
-                        dojo.create("td", { innerHTML: lic.serverId ? lic.startupTime  : ""}, row);
-                        dojo.create("td", { innerHTML: lic.serverId ? lic.lastPingStr : ""}, row);
+                        dojo.create("td", { innerHTML: !lic.available || lic.serverId ? lic.lastPingStr : ""}, row);
                         
                         
                         
@@ -539,10 +537,7 @@
                     <th>&nbsp;</th>
                     <th><%= LanguageUtil.get(pageContext, "license-repo-serverid") %></th>
                     <th><%= LanguageUtil.get(pageContext, "license-serial") %></th>
-                    <th><%= LanguageUtil.get("license-repo-running-since", "Started") %></th>
-                    <th>
-                        <%= LanguageUtil.get(pageContext, "license-repo-last-ping") %>
-                    </th>
+                    <th><%= LanguageUtil.get(pageContext, "license-repo-last-ping") %></th>
                     <th><%= LanguageUtil.get(pageContext, "license-repo-validuntil") %></th>
                     <th><%= LanguageUtil.get(pageContext, "license-repo-level") %></th>
                     <th><%= LanguageUtil.get(pageContext, "license-repo-type") %></th>

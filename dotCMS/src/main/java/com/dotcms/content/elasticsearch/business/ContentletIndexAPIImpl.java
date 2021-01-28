@@ -350,8 +350,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                     return false;
                 }
                 if (!luckyServer.equals(ConfigUtils.getServerId())) {
-                    logSwitchover(oldInfo, luckyServer);
-                    DateUtil.sleep(5000);
+                    Logger.info(this.getClass(), "fullReindexSwitchover: Letting server [" + luckyServer + "] make the switch. My id : ["
+                            + ConfigUtils.getServerId() + "]");
+                    DateUtil.sleep(4000);
                     return false;
                 }
             }
@@ -364,7 +365,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
             final IndiciesInfo newInfo = builder.build();
 
-            logSwitchover(oldInfo, luckyServer);
+            logSwitchover(oldInfo);
             APILocator.getIndiciesAPI().point(newInfo);
 
             DotConcurrentFactory.getInstance().getSubmitter().submit(() -> {
@@ -435,16 +436,13 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     return Optional.empty();
   }
 
-    private void logSwitchover(final IndiciesInfo oldInfo, final String luckyServer) {
+    private void logSwitchover(IndiciesInfo oldInfo) {
         Logger.info(this, "-------------------------------");
-        final String myServerId=APILocator.getServerAPI().readServerId();
-        final Optional<String> duration = reindexTimeElapsed();
+        Optional<String> duration = reindexTimeElapsed();
         if (duration.isPresent()) {
             Logger.info(this, "Reindex took        : " + duration.get() );
         }
-        
-        Logger.info(this, "Switching Server Id : " + luckyServer + (luckyServer.equals(myServerId) ? " (this server) " : " (NOT this server)") );
-        
+        Logger.info(this, "Switching Server Id : " + ConfigUtils.getServerId() );
         Logger.info(this, "Old indicies        : [" + esIndexApi
                 .removeClusterIdFromName(oldInfo.getWorking()) + "," + esIndexApi
                 .removeClusterIdFromName(oldInfo.getLive()) + "]");
