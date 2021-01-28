@@ -587,7 +587,8 @@ public class ContentletForm extends ValidatorForm {
        }
 
 
-	final Optional<Map<String, Serializable>> loadMetadataIfAny(final String velocityVariableName,
+	private Optional<Map<String, Serializable>> loadMetadataIfAny(
+			final String velocityVariableName,
 			final String inode)  {
 		if (InodeUtils.isSet(getInode()) && FileAssetAPI.META_DATA_FIELD
 				.equals(velocityVariableName)) {

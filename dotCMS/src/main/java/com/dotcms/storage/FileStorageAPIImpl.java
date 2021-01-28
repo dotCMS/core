@@ -113,6 +113,10 @@ public class FileStorageAPIImpl implements FileStorageAPI {
                 mapBuilder.put(LENGTH_META_KEY, binary.length());
             }
 
+            if (metaDataKeyFilter.test(SIZE_META_KEY)) {
+                mapBuilder.put(SIZE_META_KEY, binary.length());
+            }
+
             if (metaDataKeyFilter.test(CONTENT_TYPE_META_KEY)) {
                 mapBuilder.put(CONTENT_TYPE_META_KEY, MimeTypeUtils.getMimeType(binary));
             }
@@ -121,7 +125,6 @@ public class FileStorageAPIImpl implements FileStorageAPI {
             mapBuilder.put(SHA226_META_KEY,
                     Try.of(() -> FileUtil.sha256toUnixHash(binary)).getOrElse("unknown"));
 
-            //TODO: Test this!
             mapBuilder.put(IS_IMAGE_META_KEY, UtilMethods.isImage(relPath));
 
         }

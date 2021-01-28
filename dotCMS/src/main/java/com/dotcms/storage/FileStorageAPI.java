@@ -22,6 +22,7 @@ public interface FileStorageAPI {
     String TITLE_META_KEY         = "title";
     String PATH_META_KEY          = "path";
     String LENGTH_META_KEY        = "length";
+    String SIZE_META_KEY          = "fileSize";
     String CONTENT_TYPE_META_KEY  = "contentType";
     String MOD_DATE_META_KEY      = "modDate";
     String SHA226_META_KEY        = "sha256";
@@ -33,9 +34,10 @@ public interface FileStorageAPI {
     Set<String> BASIC_METADATA_FIELDS = ImmutableSet
             .of(
                     TITLE_META_KEY, PATH_META_KEY,
-                    LENGTH_META_KEY, CONTENT_TYPE_META_KEY,
-                    MOD_DATE_META_KEY, SHA226_META_KEY,
-                    IS_IMAGE_META_KEY, WIDTH_META_KEY, HEIGHT_META_KEY
+                    LENGTH_META_KEY, SIZE_META_KEY,
+                    CONTENT_TYPE_META_KEY, MOD_DATE_META_KEY,
+                    SHA226_META_KEY, IS_IMAGE_META_KEY,
+                    WIDTH_META_KEY, HEIGHT_META_KEY
             );
 
 

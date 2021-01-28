@@ -5023,7 +5023,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             String desc = UtilMethods.getFileName(binFile.getName());
                             contentlet.setProperty(FileAssetAPI.DESCRIPTION, desc);
                         }
-
+                        //This remains here for backwards compatibility
                         final Map<String, String> metaMap = APILocator.getFileAssetAPI().getMetaDataMap(contentlet, binFile);
 
                         if(metaMap != null) {

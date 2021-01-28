@@ -221,7 +221,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
 
         final Set<String> metadataFields = customIndexMetaDataFieldsOpt.isPresent()?
                 new HashSet<>(Arrays.asList(customIndexMetaDataFieldsOpt.get().value().split(StringPool.COMMA))):
-                this.getConfiguredMetadataFields();
+                getConfiguredMetadataFields();
 
         Logger.info(FileMetadataAPIImpl.class,
                 () -> String.format(" `%s` has these fields: `%s` ", fieldIdentifier, String
@@ -233,7 +233,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * Reads INDEX_METADATA_FIELDS for  pre-configured metadata fields
      * @return
      */
-    private Set<String> getConfiguredMetadataFields(){
+    static Set<String> getConfiguredMetadataFields(){
 
         final String configFields = Config.getStringProperty("INDEX_METADATA_FIELDS", null);
 

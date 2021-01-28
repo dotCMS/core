@@ -115,7 +115,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	static final String EXCLUDE_DOTRAW_METADATA_FIELDS = "exclude.dotraw.metadata.fields";
 
     //Default fields to exclude from meta-data dotRaw generation
-	public static final String[] defaultExcludedDotRawMetadataFields = {
+	static final String[] defaultExcludedDotRawMetadataFields = {
 	        FileAssetAPI.CONTENT_FIELD,
 			FileStorageAPI.IS_IMAGE_META_KEY,
 			FileStorageAPI.SHA226_META_KEY

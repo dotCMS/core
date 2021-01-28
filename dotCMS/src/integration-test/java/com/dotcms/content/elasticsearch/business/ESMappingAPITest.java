@@ -1,7 +1,11 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.EXCLUDE_DOTRAW_METADATA_FIELDS;
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.INDEX_DOTRAW_METADATA_FIELDS;
 import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.TEXT;
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.WRITE_METADATA_ON_REINDEX;
 import static com.dotcms.datagen.TestDataUtils.getCommentsLikeContentType;
+import static com.dotcms.datagen.TestDataUtils.getMultipleBinariesContent;
 import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
 import static com.dotcms.datagen.TestDataUtils.relateContentTypes;
 import static com.dotcms.util.CollectionsUtils.list;
@@ -60,6 +64,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.google.common.collect.Sets;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
@@ -71,6 +76,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -408,7 +417,89 @@ public class ESMappingAPITest {
 
     }
 
+    /**
+     * Method to Test: {@link ESMappingAPIImpl#toMap(Contentlet)}
+     * Given scenario: When we call {@link ESMappingAPIImpl#toMap(Contentlet)} setting on or off properties we can control the inclusion/exclusion of metadata.something_dotraw fields
+     * Expected:
+     *      When we specify via `EXCLUDE_DOTRAW_METADATA_FIELDS` a group of fields that need to be excluded from the resulting map we should not see those in the resulting dotraw metadata fields
+     *      if we set the prop `EXCLUDE_DOTRAW_METADATA_FIELDS` to en empty string nothing gets excluded not even the defaults
+     *      if we turn off the prop `INDEX_DOTRAW_METADATA_FIELDS` we should not see any metadata-dotraw field
+     */
     @Test
+    public void Test_toMap_Metadata_dotRaw() {
+
+        final boolean writeMetadataOnReindex = Config.getBooleanProperty(WRITE_METADATA_ON_REINDEX, true);
+        final boolean indexDotRowMetaDataFields = Config
+                .getBooleanProperty(INDEX_DOTRAW_METADATA_FIELDS,true);
+        final String[] excludeDotRawFields = Config
+                .getStringArrayProperty(EXCLUDE_DOTRAW_METADATA_FIELDS);
+
+        try {
+            Config.setProperty(WRITE_METADATA_ON_REINDEX, true);
+            Config.setProperty(INDEX_DOTRAW_METADATA_FIELDS, true);
+
+            final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl();
+            final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+            final Contentlet multipleBinariesContent = getMultipleBinariesContent(true, langId,
+                    null);
+
+            final Set<String> excludedDotRawFields = Stream
+                    .of(ESMappingAPIImpl.defaultExcludedDotRawMetadataFields)
+                    .map(s -> "metadata." + s + "_dotraw").map(String::toLowerCase)
+                    .collect(Collectors.toSet());
+
+            final Map<String, Object> contentletMap = esMappingAPI.toMap(multipleBinariesContent);
+            Assert.assertNotNull(contentletMap);
+            //We get the list of metadata dot-raw keys
+            final List<String> dotRawMetaList = contentletMap.keySet().stream()
+                    .filter(s -> s.startsWith("metadata") && s.endsWith("dotraw"))
+                    .collect(Collectors.toList());
+
+            //Test that with the default configuration the default dotRaw fields are truly excluded
+            Assert.assertFalse(dotRawMetaList.containsAll(excludedDotRawFields));
+
+            //Now lets set an empty list to force skipping the defaults
+            Config.setProperty(EXCLUDE_DOTRAW_METADATA_FIELDS, "");
+            final Map<String, Object> contentletMapIncludingAll = esMappingAPI
+                    .toMap(multipleBinariesContent);
+
+            //Now lets get the list of metadata keys
+            final List<String> dotRawMetaListForceNoneExclusion = contentletMapIncludingAll.keySet()
+                    .stream()
+                    .filter(s -> s.startsWith("metadata") && s.endsWith("dotraw"))
+                    .collect(Collectors.toList());
+
+            Assert.assertTrue(dotRawMetaListForceNoneExclusion.containsAll(excludedDotRawFields));
+
+            //Now lets set a list with entries to exclude
+            Config.setProperty(EXCLUDE_DOTRAW_METADATA_FIELDS, "isImage,content");
+            final Map<String, Object> contentletMapCustomExclude = esMappingAPI
+                    .toMap(multipleBinariesContent);
+
+            assertTrue(contentletMapCustomExclude.containsKey("metadata.isimage"));
+            assertFalse(contentletMapCustomExclude.containsKey("metadata.isimage_dotraw"));
+
+            assertTrue(contentletMapCustomExclude.containsKey("metadata.content"));
+            assertFalse(contentletMapCustomExclude.containsKey("metadata.content_dotraw"));
+
+            //Test disconnecting the dot raw fields generation
+            Config.setProperty(INDEX_DOTRAW_METADATA_FIELDS, false);
+            final Map<String, Object> noneDotRaw = esMappingAPI
+                    .toMap(multipleBinariesContent);
+            //Verify no dotRaw metadata fields has been returned
+            assertFalse(
+                    noneDotRaw.keySet().stream()
+                            .anyMatch(s -> s.startsWith("metadata") && s.endsWith("dotraw")));
+        } finally {
+            Config.setProperty(WRITE_METADATA_ON_REINDEX, writeMetadataOnReindex);
+            Config.setProperty(INDEX_DOTRAW_METADATA_FIELDS, indexDotRowMetaDataFields);
+            Config.setProperty(EXCLUDE_DOTRAW_METADATA_FIELDS, excludeDotRawFields);
+        }
+
+    }
+
+
+        @Test
     public void testLoadRelationshipFields_whenUsingLegacyRelationships_shouldSuccess()
             throws DotDataException, DotSecurityException {
 

@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.fileassets.business;
 
-import com.dotcms.util.Loadable;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -99,7 +98,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	}
 
 	public long getFileSize() {
-		return 	Try.of(() -> Integer.parseInt(getMetaDataMap().get("length").toString())).getOrElse(0);
+		return 	Try.of(() -> Integer.parseInt(getMetaDataMap().get("fileSize").toString())).getOrElse(0);
 	}
 
 	public int getHeight() {

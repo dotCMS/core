@@ -93,6 +93,7 @@ public interface FileAssetAPI {
 	 * @param contentlet Contentlet owner of the file to parse
 	 * @param binFile File to parse the metadata from it
 	 */
+	@Deprecated
 	Map<String, String> getMetaDataMap(Contentlet contentlet, File binFile) throws DotDataException;
 
 	/**
@@ -284,6 +285,7 @@ public interface FileAssetAPI {
 	 * @param inode content inode
 	 * @return
 	 */
+	@Deprecated
 	File getContentMetadataFile(String inode);
 
 	/**
@@ -303,6 +305,7 @@ public interface FileAssetAPI {
 	 * @param inode
 	 * @return
 	 */
+	 @Deprecated
 	String getContentMetadataAsString(File metadataFile) throws Exception;
 
     /**
