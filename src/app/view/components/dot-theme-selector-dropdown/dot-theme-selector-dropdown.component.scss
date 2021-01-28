@@ -1,5 +1,9 @@
 @use "variables"as *;
 
+:host {
+    display: flex;
+}
+
 .theme-selector__data-list-item {
     cursor: pointer;
     display: flex;
@@ -51,4 +55,53 @@
             display: block;
         }
     }
+}
+
+dot-searchable-dropdown {
+    width: 100%;
+    display: block;
+}
+
+.theme-selector__filters {
+    display: flex;
+    margin: 0 $spacing-2;
+    position: relative;
+
+    dot-site-selector {
+        margin-right: $spacing-2;
+        display: block;
+
+        // Required for shadow piercing. Required to force a style down to child components
+        ::ng-deep {
+            .site-selector__title {
+                display: block;
+                background: $gray-lighter;
+                border: 1px solid $gray-light;
+                border-radius: $border-radius;
+                padding: $spacing-2;
+                font-size: $font-size-medium;
+                color: $gray-dark;
+                text-overflow: ellipsis;
+                min-width: 10rem;
+                white-space: nowrap;
+                overflow: hidden;
+            }
+        }
+    }
+}
+
+.searchable-dropdown__search-section {
+    flex-grow: 1;
+    position: relative;
+
+    input.searchable-dropdown__search-inputfield {
+        width: 100%;
+    }
+}
+
+.searchable-dropdown__search-icon {
+    color: $gray;
+    position: absolute;
+    right: $spacing-1;
+    top: 9px;
 }

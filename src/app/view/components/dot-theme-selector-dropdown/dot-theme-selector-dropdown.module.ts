@@ -6,11 +6,22 @@ import { SearchableDropDownModule } from '@components/_common/searchable-dropdow
 import { FormsModule } from '@angular/forms';
 import { DotThemesService } from '@services/dot-themes/dot-themes.service';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotSiteSelectorModule } from '@components/_common/dot-site-selector/dot-site-selector.module';
+import { InputTextModule } from 'primeng/inputtext';
+import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 
 @NgModule({
     declarations: [DotThemeSelectorDropdownComponent],
     exports: [DotThemeSelectorDropdownComponent],
     providers: [PaginatorService, DotThemesService],
-    imports: [CommonModule, SearchableDropDownModule, FormsModule, DotMessagePipeModule]
+    imports: [
+        CommonModule,
+        SearchableDropDownModule,
+        FormsModule,
+        DotMessagePipeModule,
+        DotSiteSelectorModule,
+        InputTextModule,
+        DotIconModule
+    ]
 })
 export class DotThemeSelectorDropdownModule {}

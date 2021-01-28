@@ -1,12 +1,13 @@
-import { Component, forwardRef, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, forwardRef, OnInit, ViewChild } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { SearchableDropdownComponent } from '@components/_common/searchable-dropdown/component';
 import { DotTheme } from '@models/dot-edit-layout-designer';
 import { DotThemesService } from '@services/dot-themes/dot-themes.service';
 import { PaginatorService } from '@services/paginator';
-import { SiteService } from 'dotcms-js';
+import { Site, SiteService } from 'dotcms-js';
 import { LazyLoadEvent } from 'primeng/api';
-import { mergeMap, pluck, take } from 'rxjs/operators';
+import { fromEvent } from 'rxjs';
+import { debounceTime, mergeMap, pluck, take } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-theme-selector-dropdown',
@@ -20,15 +21,18 @@ import { mergeMap, pluck, take } from 'rxjs/operators';
         }
     ]
 })
-export class DotThemeSelectorDropdownComponent implements OnInit, ControlValueAccessor {
+export class DotThemeSelectorDropdownComponent
+    implements OnInit, ControlValueAccessor, AfterViewInit {
     themes: DotTheme[] = [];
     value: DotTheme = null;
     totalRecords: number = 0;
-    currentSiteIdentifier: string;
     currentOffset: number;
 
     @ViewChild('searchableDropdown', { static: true })
     searchableDropdown: SearchableDropdownComponent;
+
+    @ViewChild('searchInput', { static: false })
+    searchInput: ElementRef;
 
     constructor(
         public readonly paginatorService: PaginatorService,
@@ -45,7 +49,6 @@ export class DotThemeSelectorDropdownComponent implements OnInit, ControlValueAc
             .pipe(
                 pluck('identifier'),
                 mergeMap((identifier: string) => {
-                    this.currentSiteIdentifier = identifier;
                     this.paginatorService.setExtraParams('hostId', identifier);
                     return this.paginatorService.getWithOffset(0).pipe(take(1));
                 }),
@@ -53,7 +56,15 @@ export class DotThemeSelectorDropdownComponent implements OnInit, ControlValueAc
             )
             .subscribe((themes: DotTheme[]) => {
                 this.themes = themes;
-                this.totalRecords = this.paginatorService.totalRecords;
+                this.setTotalRecords();
+            });
+    }
+
+    ngAfterViewInit(): void {
+        fromEvent(this.searchInput.nativeElement, 'keyup')
+            .pipe(debounceTime(500))
+            .subscribe((keyboardEvent: KeyboardEvent) => {
+                this.getFilteredThemes(keyboardEvent.target['value']);
             });
     }
 
@@ -85,6 +96,15 @@ export class DotThemeSelectorDropdownComponent implements OnInit, ControlValueAc
                 });
         }
     }
+    /**
+     *  Sets the themes on site host change
+     *
+     * @param {Site} event
+     * @memberof DotThemeSelectorDropdownComponent
+     */
+    siteChange(event: Site): void {
+        this.setHostThemes(event.identifier);
+    }
 
     /**
      * Handles the onChange behavior of the select input
@@ -97,25 +117,7 @@ export class DotThemeSelectorDropdownComponent implements OnInit, ControlValueAc
         this.propagateChange(theme.identifier);
         this.searchableDropdown.toggleOverlayPanel();
     }
-    /**
-     * Handles page change for pagination purposes.
-     *
-     * @param {LazyLoadEvent} event
-     * @return void
-     * @memberof DotThemeSelectorDropdownComponent
-     */
-    handlePageChange(event: LazyLoadEvent): void {
-        if (!this.currentSiteIdentifier) return;
 
-        this.currentOffset = event.first;
-
-        this.paginatorService
-            .getWithOffset(event.first)
-            .pipe(take(1))
-            .subscribe((themes) => {
-                this.themes = themes;
-            });
-    }
     /**
      *  Fetch theme list via the DotThemeSelectorDropdownComponent input text
      *
@@ -126,14 +128,49 @@ export class DotThemeSelectorDropdownComponent implements OnInit, ControlValueAc
         this.getFilteredThemes(filter);
     }
 
+    /**
+     * Handles page change for pagination purposes.
+     *
+     * @param {LazyLoadEvent} event
+     * @return void
+     * @memberof DotThemeSelectorDropdownComponent
+     */
+    handlePageChange(event: LazyLoadEvent): void {
+        this.currentOffset = event.first;
+
+        this.paginatorService
+            .getWithOffset(event.first)
+            .pipe(take(1))
+            .subscribe((themes) => {
+                this.themes = themes;
+            });
+    }
+
+    private setHostThemes(identifier: string) {
+        this.paginatorService.setExtraParams('hostId', identifier);
+
+        this.paginatorService
+            .getWithOffset(0)
+            .pipe(take(1))
+            .subscribe((themes: DotTheme[]) => {
+                this.themes = themes;
+                this.setTotalRecords();
+            });
+    }
+
     private getFilteredThemes(filter = '', offset = 0): void {
         this.paginatorService.searchParam = filter;
+
         this.paginatorService
             .getWithOffset(this.currentOffset || offset)
             .pipe(take(1))
             .subscribe((themes: DotTheme[]) => {
                 this.themes = themes;
-                this.totalRecords = this.paginatorService.totalRecords;
+                this.setTotalRecords();
             });
+    }
+
+    private setTotalRecords() {
+        this.totalRecords = this.paginatorService.totalRecords;
     }
 }
