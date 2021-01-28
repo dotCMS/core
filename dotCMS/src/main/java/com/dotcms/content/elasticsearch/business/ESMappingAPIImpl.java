@@ -23,6 +23,7 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.storage.ContentletMetadata;
 import com.dotcms.storage.FileMetadataAPI;
+import com.dotcms.storage.FileStorageAPI;
 import com.dotcms.tika.TikaUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
@@ -62,6 +63,7 @@ import com.dotmarketing.util.ThreadSafeSimpleDateFormat;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import java.io.IOException;
@@ -105,10 +107,24 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
     //This property basically tells the Metadata-API whether or not we should generate metadata upon reindexing a piece of content
 	public static final String WRITE_METADATA_ON_REINDEX = "write.metadata.on.reindex";
-	//If you want to exclude the dotraw metadata generation it can be accomplished by setting this to `off`
-	public static final String INDEX_DOTRAW_METADATA_FIELDS = "index.dotraw.metadata.fields";
-	//if you want to include the content of the binary fields in the index set this to `on`
-	public static final String INDEX_METADATA_CONTENT = "index.metadata.content";
+
+	//If you want to skip indexing metadata dotraw fields set this prop to false
+	static final String INDEX_DOTRAW_METADATA_FIELDS = "index.dotraw.metadata.fields";
+
+    //If you want to override and specify a set of particular fields to be excluded from the dotRaw generation it can be accomplished through this prop.
+	static final String EXCLUDE_DOTRAW_METADATA_FIELDS = "exclude.dotraw.metadata.fields";
+
+    //Default fields to exclude from meta-data dotRaw generation
+	public static final String[] defaultExcludedDotRawMetadataFields = {
+	        FileAssetAPI.CONTENT_FIELD,
+			FileStorageAPI.IS_IMAGE_META_KEY,
+			FileStorageAPI.SHA226_META_KEY
+	};
+
+	// if you want to limit the size of the field `metadata.content`
+	// it can be accomplished by setting this property to the number of chars desired
+	// by default it'll attempt to include the whole thing returned by the FileMetadataAPI
+	public static final String INDEX_METADATA_CONTENT_LENGTH = "index.metadata.content.length";
 
 	public static final String TEXT = "_text";
 	public static final String DOTRAW = "_dotraw";
@@ -372,24 +388,32 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 mlowered.put(lowerCaseKey, lowerCaseValue);
 			}
 
-			if (Config.getBooleanProperty(WRITE_METADATA_ON_REINDEX, true)){
+			if (Config.getBooleanProperty(WRITE_METADATA_ON_REINDEX, true)) {
 				if (contentlet.isLive() || contentlet.isWorking()) {
 					final ContentletMetadata metadata = fileMetadataAPI
 							.generateContentletMetadata(contentlet);
 					final Map<String, Map<String, Serializable>> fullMetadataMap = metadata
 							.getFullMetadataMap();
 
-                    //Full metadata map is expected to have one single entry
+					//Full metadata map is expected to have one single entry with everything
 					fullMetadataMap.forEach((field, metadataValues) -> {
 						if (null != metadataValues) {
-						    metadataValues.forEach((metadataKey, metadataValue) -> {
 
-						        final String  contentData =  metadataValue != null ? metadataValue.toString() : BLANK;
-								final String compositeKey = FileAssetAPI.META_DATA_FIELD.toLowerCase() + PERIOD + metadataKey.toLowerCase();
+							final Set<String> dotRawExclude = Sets.newHashSet(
+									Config.getStringArrayProperty(
+											EXCLUDE_DOTRAW_METADATA_FIELDS,
+											defaultExcludedDotRawMetadataFields));
+
+							metadataValues.forEach((metadataKey, metadataValue) -> {
+
+								final String contentData =
+										metadataValue != null ? metadataValue.toString() : BLANK;
+								final String compositeKey =
+										FileAssetAPI.META_DATA_FIELD.toLowerCase() + PERIOD +  metadataKey.toLowerCase();
 								final Object value = preProcessValue(compositeKey, metadataValue);
 								mlowered.put(compositeKey, value);
 
-								if(Config.getBooleanProperty(INDEX_DOTRAW_METADATA_FIELDS, true)){
+								if (Config.getBooleanProperty(INDEX_DOTRAW_METADATA_FIELDS, true) && !dotRawExclude.contains(metadataKey)) {
 									mlowered.put(compositeKey + DOTRAW, value);
 								}
 
@@ -397,7 +421,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 									sw.append(contentData).append(' ');
 								}
 
-						    });
+							});
 						}
 					});
 				}
@@ -421,10 +445,18 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	}
 
 
-    private Object preProcessValue(final String compositeKey, final Object value){
-        if("metadata.content".equals(compositeKey)){
-           //This "NO_METADATA" constant is getting relocated from tika utils
-           return value == null ? NO_METADATA : value.toString().toLowerCase();
+    private Object preProcessValue(final String compositeKey, final Object value) {
+        if ("metadata.content".equals(compositeKey)) {
+            if (null == value) {
+                //This "NO_METADATA" constant is getting relocated from tika utils
+                return NO_METADATA;
+            }
+            final int length = Config.getIntProperty(INDEX_METADATA_CONTENT_LENGTH, 0);
+            final String string = value.toString().toLowerCase();
+            if (length > 0) {
+                return string.substring(0, Math.min(length, string.length()));
+            }
+            return string;
         }
         return value;
     }
