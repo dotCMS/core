@@ -18,7 +18,7 @@ plugins {
 }
 
 project.ext {
-    aspectjVersion = '1.8.10'
+    aspectjVersion = '1.9.2'
 }
 
 
@@ -77,6 +77,7 @@ apply plugin: 'org.unbroken-dome.test-sets'
 apply plugin: 'project-report' /*For gradle dependencies: ./gradlew htmlDependencyReport*/
 apply plugin: 'idea'
 apply plugin: 'eclipse'
+
 eclipse {
     project {
         name = 'dotCMS'
@@ -503,7 +504,7 @@ task clonePullTomcat(type: ClonePullTomcatTask) {
 
 }
 clonePullTomcat.group='dotCMS Util'
-clonePullTomcat.description='Clones or pull /tomcat8 folder.'
+clonePullTomcat.description='Clones or pull /tomcat9 folder.'
 
 //Executes clonePullTomcat task from dist version
 task clonePullTomcatDist(type: ClonePullTomcatTask) {
@@ -698,7 +699,11 @@ task buildPlugins(dependsOn: 'jar') {
             from "$buildDir/libs/"
         }
 
-        def pluginsFolder = new File("src/main/plugins");
+        println project.buildDir
+        println project.buildDir
+
+//        def pluginsFolder = new File("src/main/plugins");
+        def pluginsFolder = file('src/main/plugins')
 
         if (!pluginsFolder.exists()) {
             pluginsFolder = new File("../plugins");
@@ -945,13 +950,15 @@ class ClonePullTomcatTask extends DefaultTask{
 
     @TaskAction
     def pull(){
-        def folder = new File( tomcatLocation )
+        def folder = project.file( tomcatLocation )
+
+        println folder
         if( !folder.exists() ) {
 
             try {
 
                 println "Cloning the $project.tomcatInstallRepo, branch $project.tomcatInstallBranch on $tomcatLocation";
-                org.ajoberstar.grgit.Grgit.clone(dir: "$tomcatLocation", uri: "$project.tomcatInstallRepo", refToCheckout: "$project.tomcatInstallBranch")
+                org.ajoberstar.grgit.Grgit.clone(dir: folder.absolutePath, uri: "$project.tomcatInstallRepo", refToCheckout: "$project.tomcatInstallBranch")
             } catch (Exception exception) {
                 //Do nothing, this will fail only if git is not installed on this machine
             }
