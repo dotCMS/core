@@ -443,13 +443,13 @@ task prepareFelixForTests {
 prepareFelixForTests.group='dotCMS tests'
 prepareFelixForTests.description='Copies the felix bundle jars and the osgi-extra-generated.conf file to the specified felix home location'
 
-// Delete ROOT under tomcat8/webapps
+// Delete ROOT under tomcat9/webapps
 task undeployWarTomcat(type: Delete) {
     delete tomcatInstallLocation + webAppRootFolder
     followSymlinks = true
 }
 undeployWarTomcat.group='dotCMS Util'
-undeployWarTomcat.description='Removes /tomcat8/webapps folder. (reset tomcat)'
+undeployWarTomcat.description='Removes /tomcat9/webapps folder. (reset tomcat)'
 
 undeployWarTomcat.mustRunAfter 'backupWarTomcatData'
 
