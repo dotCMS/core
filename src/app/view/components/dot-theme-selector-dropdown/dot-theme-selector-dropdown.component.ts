@@ -61,11 +61,13 @@ export class DotThemeSelectorDropdownComponent
     }
 
     ngAfterViewInit(): void {
-        fromEvent(this.searchInput.nativeElement, 'keyup')
-            .pipe(debounceTime(500))
-            .subscribe((keyboardEvent: KeyboardEvent) => {
-                this.getFilteredThemes(keyboardEvent.target['value']);
-            });
+        if (this.searchInput) {
+            fromEvent(this.searchInput.nativeElement, 'keyup')
+                .pipe(debounceTime(500))
+                .subscribe((keyboardEvent: KeyboardEvent) => {
+                    this.getFilteredThemes(keyboardEvent.target['value']);
+                });
+        }
     }
 
     propagateChange = (_: any) => {};

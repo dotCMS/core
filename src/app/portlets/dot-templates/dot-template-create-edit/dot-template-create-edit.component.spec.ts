@@ -25,8 +25,11 @@ import { DotTempFileUploadService } from '@services/dot-temp-file-upload/dot-tem
 import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 import { PaginatorService } from '@services/paginator';
 import { mockDotThemes } from '@tests/dot-themes.mock';
-import { SiteService } from 'dotcms-js';
+import { CoreWebService, SiteService } from 'dotcms-js';
 import { DotThemesService } from '@services/dot-themes/dot-themes.service';
+import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { DotEventsService } from '@services/dot-events/dot-events.service';
 
 @Component({
     selector: 'dot-api-link',
@@ -92,16 +95,14 @@ async function makeFormValid(fixture) {
 
     title.dispatchEvent(event);
 
-    const theme: HTMLInputElement = document.querySelector(
+    await fixture.whenRenderingDone();
+
+    const themeButton: HTMLInputElement = document.querySelector(
         '[data-testid="templatePropsThemeField"] button'
     );
 
-    theme.click();
-
-    await fixture.whenRenderingDone();
-
+    themeButton.click();
     const item: HTMLElement = document.querySelector('.theme-selector__data-list-item');
-
     item.click();
 }
 
@@ -128,10 +129,20 @@ describe('DotTemplateCreateEditComponent', () => {
                 BrowserAnimationsModule,
                 DotFormDialogModule,
                 DotTemplatePropsModule,
-                ButtonModule
+                ButtonModule,
+                HttpClientTestingModule
             ],
             providers: [
                 DialogService,
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                {
+                    provide: DotEventsService,
+                    useValue: {
+                        listen() {
+                            return of([]);
+                        }
+                    }
+                },
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
@@ -200,6 +211,13 @@ describe('DotTemplateCreateEditComponent', () => {
                 {
                     provide: SiteService,
                     useValue: {
+                        refreshSites$: of({}),
+                        switchSite$: of({}),
+                        getSiteById() {
+                            return of({
+                                identifier: '123'
+                            });
+                        },
                         getCurrentSite() {
                             return of({
                                 identifier: '123'
@@ -264,7 +282,9 @@ describe('DotTemplateCreateEditComponent', () => {
             it('should open create dialog', async () => {
                 expect(dialogService.open).toHaveBeenCalledWith(jasmine.any(Function), {
                     header: 'Create new template',
-                    width: '30rem',
+                    width: '40rem',
+                    closable: false,
+                    closeOnEscape: false,
                     data: {
                         template: {
                             title: '',
@@ -302,6 +322,7 @@ describe('DotTemplateCreateEditComponent', () => {
                 const button: HTMLButtonElement = document.querySelector(
                     '[data-testid="dotFormDialogSave"]'
                 );
+
                 button.click();
 
                 expect(store.createTemplate).toHaveBeenCalledWith({
@@ -347,7 +368,9 @@ describe('DotTemplateCreateEditComponent', () => {
             it('should open create dialog', async () => {
                 expect(dialogService.open).toHaveBeenCalledWith(jasmine.any(Function), {
                     header: 'Create new template',
-                    width: '30rem',
+                    width: '40rem',
+                    closable: false,
+                    closeOnEscape: false,
                     data: {
                         template: {
                             title: '',
