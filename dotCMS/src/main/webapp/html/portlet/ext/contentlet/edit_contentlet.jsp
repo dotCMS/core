@@ -81,10 +81,10 @@
 
 	}
 
-	boolean canUserPublishContentlet = conPerAPI.doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_PUBLISH,user);
+	boolean canUserPublishContentlet = conPerAPI.doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_PUBLISH,user, PageMode.get(request).respectAnonPerms);
 
 	if(!InodeUtils.isSet(contentlet.getInode())) {
-		canUserPublishContentlet = conPerAPI.doesUserHavePermission(structure,PermissionAPI.PERMISSION_PUBLISH,user);
+		canUserPublishContentlet = conPerAPI.doesUserHavePermission(structure,PermissionAPI.PERMISSION_PUBLISH,user, PageMode.get(request).respectAnonPerms);
 		//Set roles = conPerAPI.getPublishRoles();
 		if(!canUserPublishContentlet){
 			canUserPublishContentlet = conPerAPI.doesRoleHavePermission(structure, PermissionAPI.PERMISSION_PUBLISH,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSOwnerRole());
@@ -176,15 +176,15 @@
 		}
 	}
 
-	boolean canEditAsset = conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user);
+	boolean canEditAsset = conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user, PageMode.get(request).respectAnonPerms);
 	final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
     boolean canSeeRules = layoutAPI.doesUserHaveAccessToPortlet("rules", user)
             && conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_USE, user, PageMode.get(request).respectAnonPerms)
-            && conPerAPI.doesUserHavePermissions(contentlet.getParentPermissionable(), "RULES: " + PermissionAPI.PERMISSION_USE, user);
+            && conPerAPI.doesUserHavePermissions(contentlet.getParentPermissionable(), "RULES: " + PermissionAPI.PERMISSION_USE, user, PageMode.get(request).respectAnonPerms);
     
     boolean hasViewPermision = layoutAPI.doesUserHaveAccessToPortlet("permissions", user)
             && conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_USE, user, PageMode.get(request).respectAnonPerms)
-            && conPerAPI.doesUserHavePermissions(contentlet.getParentPermissionable(), "PERMISSIONS: " + PermissionAPI.PERMISSION_USE, user);
+            && conPerAPI.doesUserHavePermissions(contentlet.getParentPermissionable(), "PERMISSIONS: " + PermissionAPI.PERMISSION_USE, user, PageMode.get(request).respectAnonPerms);
 
     Boolean isContentEditable = (Boolean) request.getAttribute(com.dotmarketing.util.WebKeys.CONTENT_EDITABLE);
 	isContentEditable = isContentEditable != null ? isContentEditable : false;
@@ -410,7 +410,7 @@
                                 Host host = APILocator.getHostAPI().findSystemHost();
 
                                 String hostId = host.getIdentifier();
-                                if (!conPerAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user)) {
+                                if (!conPerAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, PageMode.get(request).respectAnonPerms)) {
                                     hostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
                                 }
 
