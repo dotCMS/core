@@ -47,10 +47,18 @@ public class FileMetadataAPITest {
     private static final String FILE_ASSET = FileAssetAPI.BINARY_FIELD;
     private static FileMetadataAPI contentletMetadataAPI;
 
-    @BeforeClass
-    public static void prepare() throws Exception {
-        IntegrationTestInitService.getInstance().init();
-        contentletMetadataAPI = APILocator.getFileMetadataAPI();
+    /**
+     * if we have a code that requires some environment initialization required to run prior to our dataProvider Methods the @BeforeClass annotation won't do
+     * See https://github.com/TNG/junit-dataprovider/issues/114
+     * That's why I'm making this a static method and calling it from every data provider we have here.
+     * I know.. it Sucks.
+     * @throws Exception
+     */
+    public static void prepareIfNecessary() throws Exception {
+       if(contentletMetadataAPI == null){
+         IntegrationTestInitService.getInstance().init();
+         contentletMetadataAPI = APILocator.getFileMetadataAPI();
+       }
     }
 
     /**
@@ -88,7 +96,8 @@ public class FileMetadataAPITest {
     }
 
     @DataProvider
-    public static Object[] getFileAssetMetadataTestCases() {
+    public static Object[] getFileAssetMetadataTestCases() throws Exception {
+        prepareIfNecessary();
         final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
         final boolean defaultValue = Config.getBooleanProperty(WRITE_METADATA_ON_REINDEX, true);
         //disconnect the MD generation on indexing so we can test the generation directly using the API.
@@ -183,7 +192,7 @@ public class FileMetadataAPITest {
      * @param metaData
      */
     private void validateBasicStrict(final Map<String, Serializable> metaData){
-        final int expectedFields = 6;
+        final int expectedFields = 7;
         validateBasic(metaData);
         assertEquals(String.format("we're expecting exactly `%d` entries.",expectedFields),expectedFields, metaData.size());
     }
@@ -387,7 +396,8 @@ public class FileMetadataAPITest {
     }
 
     @DataProvider
-    public static Object[] getStorageType() {
+    public static Object[] getStorageType() throws Exception {
+        prepareIfNecessary();
         return new Object[]{
          StorageType.FILE_SYSTEM,
          StorageType.DB
