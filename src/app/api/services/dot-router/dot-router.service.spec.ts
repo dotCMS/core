@@ -262,4 +262,20 @@ describe('DotRouterService', () => {
             jasmine.clock().uninstall();
         });
     });
+
+    describe('go to logout', () => {
+        beforeEach(() => {
+            const mockDate = new Date(1466424490000);
+            jasmine.clock().install();
+            jasmine.clock().mockDate(mockDate);
+        });
+
+        it('should add the cache busting', () => {
+            service.doLogOut();
+            expect(router.navigate).toHaveBeenCalledWith(['/dotAdmin/logout'], {
+                queryParams: { r: 1466424490000 }
+            });
+            jasmine.clock().uninstall();
+        });
+    });
 });

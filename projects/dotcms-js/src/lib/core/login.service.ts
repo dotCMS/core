@@ -319,7 +319,7 @@ export class LoginService {
      * @returns Observable<any>
      */
     private logOutUser(): void {
-        window.location.href = LOGOUT_URL;
+        window.location.href = `${LOGOUT_URL}?r=${new Date().getTime()}`;
     }
 }
 

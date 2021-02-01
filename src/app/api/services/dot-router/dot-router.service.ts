@@ -186,7 +186,7 @@ export class DotRouterService {
      * @memberof DotRouterService
      */
     doLogOut(): void {
-        window.location.href = LOGOUT_URL;
+        this.router.navigate([LOGOUT_URL], this.addCacheBusting());
     }
 
     /**
@@ -319,7 +319,7 @@ export class DotRouterService {
         }
     }
 
-    private addCacheBusting(navExtras: NavigationExtras): NavigationExtras {
+    private addCacheBusting(navExtras?: NavigationExtras): NavigationExtras {
         if (navExtras) {
             navExtras.queryParams['r'] = new Date().getTime();
         } else {
