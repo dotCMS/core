@@ -1,4 +1,5 @@
 @use "variables" as *;
+@use "dotcms-theme/utils/theme-variables" as *;
 
 .p-tabview .p-tabview-nav {
     border: solid rgba(0, 0, 0, 0.12);
@@ -32,12 +33,13 @@
 
 .p-tabview .p-tabview-nav li:not(.p-highlight):not(.p-disabled):hover .p-tabview-nav-link {
     background: $bg-hover;
-    border-color: transparent;
     color: $text-color-hover;
+    background-clip: padding-box;
+    border-bottom: $tabview-item-border-height solid $bg-hover;
 }
 
 .p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
-    border-color: transparent;
+    border-bottom: $tabview-item-border-height solid $brand-secondary;
 }
 
 .p-tabview .p-tabview-left-icon {
@@ -64,7 +66,7 @@
 }
 
 .p-tabview .p-tabview-nav li .p-tabview-nav-link {
-    transition: background-color 0.2s;
+    transition: background-color 0.2s, border-bottom 0.2s;
     border-radius: 0;
 }
 
@@ -81,7 +83,7 @@
     display: block;
     position: absolute;
     bottom: 0;
-    height: 4px;
+    height: $tabview-item-border-height;
     background-color: $brand-secondary;
     transition: 500ms cubic-bezier(0.35, 0, 0.25, 1);
 }
