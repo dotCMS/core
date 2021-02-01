@@ -68,6 +68,18 @@
         </div>
 
         <div class="p-field">
+            <p-checkbox
+                data-testid="showStarterBtn"
+                (onChange)="toggleShowStarter($event.checked)"
+                [ngModel]="showStarter | async"
+                [ngModelOptions]="{ standalone: true }"
+                binary="true"
+                label="{{ 'starter.show.getting.started' | dm }}"
+            >
+            </p-checkbox>
+        </div>
+
+        <div class="p-field">
             <label for="dot-my-account-current-password-input">{{ 'current-password' | dm }}</label>
             <input
                 pPassword
@@ -126,15 +138,4 @@
             </small>
         </div>
     </form>
-
-    <div class="p-field">
-        <p-checkbox
-            data-testid="showStarterBtn"
-            (onChange)="toggleShowStarter($event.checked)"
-            [ngModel]="showStarter | async"
-            binary="true"
-            label="{{ 'starter.show.getting.started' | dm }}"
-        >
-        </p-checkbox>
-    </div>
 </dot-dialog>

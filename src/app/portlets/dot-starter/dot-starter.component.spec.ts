@@ -244,7 +244,7 @@ describe('DotStarterComponent', () => {
         ).toContain(messageServiceMock.get('starter.footer.link.feedback.description'));
     });
 
-    fit('should have right links to internal portlets', () => {
+    it('should have right links to internal portlets', () => {
         expect(
             de.query(By.css('[data-testId="starter.main.link.data.model"]')).nativeElement
                 .attributes['routerLink'].value
