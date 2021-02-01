@@ -15,6 +15,7 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -104,6 +105,13 @@ public class BundleDataGen extends AbstractDataGen<Bundle> {
                         (PushPublisherConfig config) -> config.getRules(),
                         (Object asset) -> ((Rule) asset).getId(),
                         PusheableAsset.RULE
+                )
+        );
+
+        howAddInBundle.put(Language.class, new MetaData(
+                        (PushPublisherConfig config) -> config.getLanguages(),
+                        (Object asset) -> Long.toString(((Language) asset).getId()),
+                        PusheableAsset.LANGUAGE
                 )
         );
     }

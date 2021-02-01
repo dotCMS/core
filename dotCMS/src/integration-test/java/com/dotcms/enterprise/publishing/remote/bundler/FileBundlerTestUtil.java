@@ -77,10 +77,12 @@ public class FileBundlerTestUtil {
 
     public static File getHostFilePath(final Host host, final File bundleRoot) throws DotSecurityException, DotDataException {
 
-        final Host parentHost = APILocator.getHostAPI().find(host.getHost(), APILocator.systemUser(), false);
-        String assetName = File.separator + "content." + host.getInode() + ".host.xml";
+        String inode = getLiveInode(host);
 
-        final String liveWorking = hasLiveVersion(host.getIdentifier()) ? "live" : "working";
+        final Host parentHost = APILocator.getHostAPI().find(host.getHost(), APILocator.systemUser(), false);
+        String assetName = File.separator + "content." + inode + ".host.xml";
+
+        final String liveWorking = host.isLive() ? "live" : "working";
 
         String hostFilePath = bundleRoot.getPath() + File.separator
                 + liveWorking + File.separator
@@ -88,6 +90,18 @@ public class FileBundlerTestUtil {
                 + host.getLanguageId() + assetName;
 
         return new File(hostFilePath);
+    }
+
+    private static String getLiveInode(Host host) throws DotDataException, DotSecurityException {
+        String inode = host.getInode();
+
+        if (!host.isLive()) {
+            final ContentletVersionInfo contentletVersionInfo =
+                    APILocator.getVersionableAPI().getContentletVersionInfo(host.getIdentifier(), 1).get();
+
+            inode = contentletVersionInfo.getLiveInode() != null ? contentletVersionInfo.getLiveInode() : host.getInode();
+        }
+        return inode;
     }
 
     public static File getFolderFilePath(final Folder folder, final File bundleRoot)
@@ -158,7 +172,7 @@ public class FileBundlerTestUtil {
 
         final Host host = getHost(link.getIdentifier());
 
-        final String liveWorking = hasLiveVersion(link.getIdentifier()) ? "live" : "working";
+        final String liveWorking = link.isLive() ? "live" : "working";
 
         String linkFilePath = bundleRoot.getPath() + File.separator
                 + liveWorking + File.separator
@@ -174,10 +188,12 @@ public class FileBundlerTestUtil {
         final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
         final Host host = getHost(contentlet.getIdentifier());
 
+        final String assetName = contentlet.isFileAsset() ? contentlet.getInode() : "content." + contentlet.getInode();
+
         String contentletFilePath = bundleRoot.getPath() + File.separator
                 + liveWorking + File.separator
                 + host.getHostname() + File.separator +
-                + contentlet.getLanguageId() + File.separator + countOrder + "-" + contentlet.getInode() + ".content.xml";
+                + contentlet.getLanguageId() + File.separator + countOrder + "-" + assetName + ".content.xml";
 
         return new File(contentletFilePath);
     }
@@ -190,7 +206,7 @@ public class FileBundlerTestUtil {
                 .collect(Collectors.toList());
 
         for (final String fileName : filesName) {
-            if (fileName.contains(String.format("-%s.content.xml", inode))) {
+            if (fileName.contains(String.format("%s.content.xml", inode))) {
                 return fileName.charAt(0) - 48;
             }
         }

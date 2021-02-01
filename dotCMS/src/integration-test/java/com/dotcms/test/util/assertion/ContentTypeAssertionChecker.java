@@ -4,6 +4,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.ImmutableCategoryField;
 import com.dotcms.contenttype.model.field.ImmutableRelationshipField;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ImmutableKeyValueContentType;
 import com.dotcms.enterprise.publishing.remote.bundler.FileBundlerTestUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -96,6 +97,7 @@ public class ContentTypeAssertionChecker implements AssertionChecker<ContentType
 
     @Override
     public boolean checkFileContent(ContentType contentType) {
-        return !contentType.name().equals("Host") && !contentType.name().equals("File Asset");
+        return !contentType.name().equals("Host") && !contentType.name().equals("File Asset") &&
+                !ImmutableKeyValueContentType.class.isInstance(contentType);
     }
 }

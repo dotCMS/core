@@ -4,6 +4,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.*;
 import com.dotcms.enterprise.rules.RulesAPIImpl;
+import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.DependencyManagerTest;
@@ -21,6 +22,8 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageDataGen;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.rules.RuleDataGen;
 import com.dotmarketing.portlets.rules.model.Condition;
@@ -30,11 +33,14 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -106,8 +112,36 @@ public class DependencyBundlerTest {
         all.addAll(createContainerTestCase());
         all.addAll(createFolderTestCase());
         all.addAll(createHostTestCase());
-
+        all.addAll(createLinkTestCase());
+        all.addAll(createWorkflowTestCase());
+        all.addAll(createLanguageTestCase());
         return all.toArray();
+    }
+
+    private static Collection<TestData> createLanguageTestCase() {
+        final Language language = new LanguageDataGen().nextPersisted();
+
+        return list(
+                new TestData(list(language), list(), filterDescriptorAllDependencies),
+                new TestData(list(language), list(), filterDescriptorNotDependencies),
+                new TestData(list(language), list(), filterDescriptorNotRelationship),
+                new TestData(list(language), list(), filterDescriptorNotDependenciesRelationship)
+        );
+
+    }
+
+    private static Collection<TestData> createWorkflowTestCase() {
+        final WorkflowScheme workflowScheme = new WorkflowDataGen().nextPersisted();
+        final WorkflowStep workflowStep = new WorkflowStepDataGen(workflowScheme.getId()).nextPersisted();
+        final WorkflowAction workflowAction = new WorkflowActionDataGen(workflowScheme.getId(), workflowStep.getId())
+                .nextPersisted();
+
+        return list(
+                new TestData(list(workflowScheme), list(), filterDescriptorAllDependencies),
+                new TestData(list(workflowScheme), list(), filterDescriptorNotDependencies),
+                new TestData(list(workflowScheme), list(), filterDescriptorNotRelationship),
+                new TestData(list(workflowScheme), list(), filterDescriptorNotDependenciesRelationship)
+        );
     }
 
     private static Collection<TestData> createHostTestCase() throws DotDataException {
@@ -172,6 +206,23 @@ public class DependencyBundlerTest {
                 new TestData(list(hostWithFolder), list(), filterDescriptorNotDependencies),
                 new TestData(list(hostWithFolder), list(), filterDescriptorNotRelationship),
                 new TestData(list(hostWithFolder), list(), filterDescriptorNotDependenciesRelationship)
+        );
+    }
+
+    private static Collection<TestData> createLinkTestCase() throws DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+        final Link link = new LinkDataGen(folder)
+                .hostId(host.getIdentifier())
+                .nextPersisted();
+
+
+        return list(
+                new TestData(list(link), list(host, folder), filterDescriptorAllDependencies),
+                new TestData(list(link), list(), filterDescriptorNotDependencies),
+                new TestData(list(link), list(), filterDescriptorNotRelationship),
+                new TestData(list(link), list(), filterDescriptorNotDependenciesRelationship)
         );
     }
 
@@ -432,7 +483,74 @@ public class DependencyBundlerTest {
         assertAll(config, testData.dependenciesToAssert);
     }
 
-    private void assertAll(final PushPublisherConfig config, final List<Object> dependenciesToAssert) {
+    @Test
+    public void addLanguageVariableTestCaseInBundle() throws DotSecurityException, DotDataException, DotBundleException {
+        Contentlet contentlet = null;
+
+        try {
+            final PushPublisherConfig config = new PushPublisherConfig();
+
+            final String langVarsQuery = "+contentType:" + LanguageVariableAPI.LANGUAGEVARIABLE;
+            final User systemUser = APILocator.systemUser();
+
+            final List<Contentlet> langVariables = APILocator.getContentletAPI().search(langVarsQuery, 0, -1,
+                    StringPool.BLANK, systemUser, false);
+
+            final ContentType languageVariableContentType =
+                    APILocator.getContentTypeAPI(systemUser).find(LanguageVariableAPI.LANGUAGEVARIABLE);
+
+            if (langVariables.isEmpty()) {
+                final Language language = new LanguageDataGen().nextPersisted();
+
+                final Host host = new SiteDataGen().nextPersisted();
+                contentlet = new ContentletDataGen(languageVariableContentType.id())
+                        .setProperty("key", "teset_key")
+                        .setProperty("value", "value_test")
+                        .languageId(language.getId())
+                        .host(host)
+                        .nextPersisted();
+                langVariables.add(contentlet);
+            }
+
+            final FilterDescriptor filterDescriptor = new FileDescriptorDataGen().nextPersisted();
+            new BundleDataGen()
+                    .pushPublisherConfig(config)
+                    .filter(filterDescriptor)
+                    .nextPersisted();
+
+            bundler.setConfig(config);
+            bundler.generate(bundleRoot, status);
+
+            final Set<Object> dependencies = new HashSet<>();
+            dependencies.add(languageVariableContentType);
+
+            for (final Contentlet langVariable : langVariables) {
+                final Host host = APILocator.getHostAPI().find(langVariable.getHost(), systemUser, false);
+
+                final Language language = APILocator.getLanguageAPI().getLanguage(langVariable.getLanguageId());
+                dependencies.add(langVariable);
+                dependencies.add(host);
+                dependencies.add(language);
+            }
+
+            final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
+            final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
+            final Host systemHost = APILocator.systemHost();
+
+            dependencies.add(systemWorkflowScheme);
+            dependencies.add(systemFolder);
+            dependencies.add(systemHost);
+
+            assertAll(config, dependencies);
+        } finally {
+            if (contentlet != null) {
+                ContentletDataGen.remove(contentlet);
+            }
+        }
+
+    }
+
+    private void assertAll(final PushPublisherConfig config, final Collection<Object> dependenciesToAssert) {
         AssignableFromMap<Integer> counts = new AssignableFromMap<>();
 
         for (Object asset : dependenciesToAssert) {

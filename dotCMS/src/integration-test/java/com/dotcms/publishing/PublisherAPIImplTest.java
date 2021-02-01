@@ -3,6 +3,7 @@ package com.dotcms.publishing;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.*;
+import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.repackage.com.google.common.collect.Sets;
@@ -19,15 +20,25 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.rules.RuleDataGen;
+import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import org.jetbrains.annotations.NotNull;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -40,6 +51,9 @@ import static org.jgroups.util.Util.assertEquals;
 
 @RunWith(DataProviderRunner.class)
 public class PublisherAPIImplTest {
+
+    private static Contentlet languageVariableCreated;
+    private static Set<Object> languageVariableDependencies;
 
     public static class PushPublisherMock extends PushPublisher {
         @Override
@@ -54,6 +68,33 @@ public class PublisherAPIImplTest {
         IntegrationTestInitService.getInstance().init();
     }
 
+    @AfterClass
+    public static void removeLanguageVariable(){
+        ContentletDataGen.remove(languageVariableCreated);
+    }
+
+    @BeforeClass
+    public static void createLanguageVariableIfNeeded() throws DotSecurityException, DotDataException {
+        final User systemUser = APILocator.systemUser();
+        final List<Contentlet> langVariables = getLanguageVariables();
+
+        final ContentType languageVariableContentType =
+                APILocator.getContentTypeAPI(systemUser).find(LanguageVariableAPI.LANGUAGEVARIABLE);
+
+        if (langVariables.isEmpty()) {
+            final Language language = new com.dotmarketing.portlets.languagesmanager.business.LanguageDataGen().nextPersisted();
+
+            final Host host = new SiteDataGen().nextPersisted();
+            languageVariableCreated = new ContentletDataGen(languageVariableContentType.id())
+                    .setProperty("key", "teset_key")
+                    .setProperty("value", "value_test")
+                    .languageId(language.getId())
+                    .host(host)
+                    .nextPersisted();
+        }
+
+        languageVariableDependencies = getLanguagesVariableDependencies(systemUser);
+    }
 
     @DataProvider
     public static Object[] publishers() throws Exception {
@@ -63,17 +104,25 @@ public class PublisherAPIImplTest {
                 getContentTypeWithHost(),
                 getTemplateWithDependencies(),
                 getContainerWithDependencies(),
-                getFolderWithDependencies()
+                getFolderWithDependencies(),
+                getHostWithDependencies(),
+                getLinkWithDependencies(),
+                getWorkflowWithDependencies(),
+                getLanguageWithDependencies()
         );
         final List<Class<? extends Publisher>> publishers = list(
                 GenerateBundlePublisher.class,
                 PushPublisherMock.class
         );
 
+        createLanguageVariableIfNeeded();
+        addLanguageVariableDependencies(assets);
+
         final List<TestCase> cases = new ArrayList<>();
 
         //final Set<Set<TestAsset>> sets = new HashSet();
         //sets.add(set(assets));
+
         final Set<Set<TestAsset>> sets = Sets.powerSet(assets);
 
         for (final Class<? extends Publisher> publisher : publishers) {
@@ -82,6 +131,73 @@ public class PublisherAPIImplTest {
             }
         }
         return cases.toArray();
+    }
+
+    private static TestAsset getLanguageWithDependencies() {
+        final Language language = new LanguageDataGen().nextPersisted();
+
+        return new TestAsset(language, set(), "/bundlers-test/language/language.language.xml");
+    }
+
+    private static TestAsset getHostWithDependencies() {
+        try {
+            final Host host = new SiteDataGen().nextPersisted();
+
+            final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+            final ContentType containerContentType = new ContentTypeDataGen().host(host).nextPersisted();
+            final Container container = new ContainerDataGen()
+                    .site(host)
+                    .withContentType(containerContentType, "")
+                    .nextPersisted();
+
+            final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
+            final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+            final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
+
+            final Structure folderStructure = CacheLocator.getContentTypeCache().getStructureByInode(systemFolder.getDefaultFileType());
+            final ContentType folderContentType = new StructureTransformer(folderStructure).from();
+
+            final ContentType contentType = new ContentTypeDataGen()
+                    .host(host)
+                    .nextPersisted();
+            final Contentlet contentlet = new ContentletDataGen(contentType.id()).host(host).nextPersisted();
+            final Language language = APILocator.getLanguageAPI().getLanguage(contentlet.getLanguageId());
+
+            final Rule rule = new RuleDataGen().host(host).nextPersisted();
+
+
+            return new TestAsset(host,
+                    set(template, container, containerContentType, systemWorkflowScheme, folder, folderContentType,
+                            contentType, contentlet, language, rule), "/bundlers-test/host/host.host.xml");
+        } catch (DotDataException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static TestAsset getLinkWithDependencies() {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+        final Link link = new LinkDataGen(folder)
+                .hostId(host.getIdentifier())
+                .nextPersisted();
+
+
+        return new TestAsset(link, set(host, folder), "/bundlers-test/link/link.link.xml");
+    }
+
+    private static TestAsset getWorkflowWithDependencies() {
+
+        final WorkflowScheme workflowScheme = new WorkflowDataGen().nextPersisted();
+        final WorkflowStep workflowStep = new WorkflowStepDataGen(workflowScheme.getId()).nextPersisted();
+        final WorkflowAction workflowAction = new WorkflowActionDataGen(workflowScheme.getId(), workflowStep.getId())
+                .nextPersisted();
+
+
+        return new TestAsset(workflowScheme, set(), "/bundlers-test/workflow/workflow_with_steps_and_action.workflow.xml");
     }
 
     private static TestAsset getFolderWithDependencies() throws DotDataException, DotSecurityException {
@@ -122,7 +238,7 @@ public class PublisherAPIImplTest {
         final ContentType folderContentType = new StructureTransformer(folderStructure).from();
 
         return new TestAsset(folderWithDependencies,
-                list(host, parentFolder, folderContentType, systemWorkflowScheme,
+                set(host, parentFolder, folderContentType, systemWorkflowScheme,
                         contentType, contentlet, language, link, subFolder, contentlet_2),
                 "/bundlers-test/folder/folder.folder.xml");
     }
@@ -156,7 +272,7 @@ public class PublisherAPIImplTest {
                 .nextPersisted();
 
         return new TestAsset(templateWithTemplateLayout,
-                list(host, container_1, container_2, contentType, systemWorkflowScheme),
+                set(host, container_1, container_2, contentType, systemWorkflowScheme),
                 "/bundlers-test/template/template.template.xml");
     }
 
@@ -187,7 +303,7 @@ public class PublisherAPIImplTest {
         final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
 
         return new TestAsset(contentType,
-                list(host, workflowScheme, systemWorkflowScheme, contentTypeChild, relationship, category),
+                set(host, workflowScheme, systemWorkflowScheme, contentTypeChild, relationship, category),
                 "/bundlers-test/content_types/content_types_with_category_and_relationship.contentType.json");
     }
 
@@ -204,7 +320,7 @@ public class PublisherAPIImplTest {
         final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
 
         return new TestAsset(containerWithContentType,
-                list(host, contentType, systemWorkflowScheme),
+                set(host, contentType, systemWorkflowScheme),
                 "/bundlers-test/container/container.containers.container.xml");
     }
 
@@ -219,11 +335,11 @@ public class PublisherAPIImplTest {
     public void publish(final TestCase testCase) throws DotPublishingException, DotSecurityException, IOException, DotDataException {
         final Class<? extends Publisher> publisher = testCase.publisher;
         final Set<TestAsset> testAssets = testCase.assets;
-        final Set<Object> assets = new HashSet<>();
+        final Set<Object> assetsToAddInBundle = new HashSet<>();
         final Set<Object> dependencies = new HashSet<>();
 
         for (final TestAsset testAsset : testAssets) {
-            assets.add(testAsset.asset);
+            assetsToAddInBundle.add(testAsset.asset);
             dependencies.addAll(testAsset.expectedInBundle);
         }
 
@@ -239,7 +355,7 @@ public class PublisherAPIImplTest {
 
         new BundleDataGen()
                 .pushPublisherConfig(config)
-                .addAssets(list(assets))
+                .addAssets(list(assetsToAddInBundle))
                 .filter(filterDescriptor)
                 .nextPersisted();
 
@@ -247,29 +363,33 @@ public class PublisherAPIImplTest {
 
         final File bundleRoot = BundlerUtil.getBundleRoot(config);
 
+        int nFiles = 0;
+
         for (final TestAsset testAsset : testAssets) {
-            FileTestUtil.assertBundleFile(bundleRoot, testAsset.asset, testAsset.fileExpectedPath);
+            final Collection<File> files = FileTestUtil.assertBundleFile(bundleRoot, testAsset.asset, testAsset.fileExpectedPath);
+            nFiles += files.size();
         }
 
-        int nDependencies = 0;
         for (Object assetToAssert : dependencies) {
-            final int dependenciesProcessed = FileTestUtil.assertBundleFile(bundleRoot, assetToAssert);
-            nDependencies += dependenciesProcessed;
+            final Collection<File> files = FileTestUtil.assertBundleFile(bundleRoot, assetToAssert);
+            final int dependenciesProcessed = files.size();
+            nFiles += dependenciesProcessed;
         }
 
         final String messagesPath = bundleRoot.getAbsolutePath() + File.separator + "messages";
+
         final String systemHostPath = bundleRoot.getAbsolutePath()
                 + "/working/System Host/855a2d72-f2f3-4169-8b04-ac5157c4380c.contentType.json";
 
         final List<File> fileList = FileUtil.listFilesRecursively(bundleRoot);
         final long numberFiles =fileList.stream()
                 .filter(file -> file.isFile())
-                .filter(file -> !file.getParentFile().getAbsolutePath().equals(messagesPath))
                 .filter(file -> !file.getAbsolutePath().equals(systemHostPath))
+                .filter(file -> !file.getParentFile().getAbsolutePath().equals(messagesPath))
                 .count();
 
         //All the dependencies plus, the asset and the bundle xml
-        long numberFilesExpected = nDependencies + assets.size() + 1;
+        long numberFilesExpected = nFiles + 1;
 
         assertEquals(String.format("Expected %d but get %d in %s",numberFilesExpected, numberFiles, bundleRoot),
                 numberFilesExpected, numberFiles);
@@ -288,17 +408,56 @@ public class PublisherAPIImplTest {
         }
     }
 
+    private static List<Contentlet> getLanguageVariables() throws DotDataException, DotSecurityException {
+        final User systemUser = APILocator.systemUser();
+        final String langVarsQuery = "+contentType:" + LanguageVariableAPI.LANGUAGEVARIABLE;
+        final List<Contentlet> langVariables = APILocator.getContentletAPI().search(langVarsQuery, 0, -1,
+                StringPool.BLANK, systemUser, false);
+        return langVariables;
+    }
+
+    private static void addLanguageVariableDependencies(final Set<TestAsset> assets) throws DotSecurityException, DotDataException {
+
+        for (final TestAsset asset : assets) {
+            asset.expectedInBundle.addAll(languageVariableDependencies);
+        }
+    }
+
+    @NotNull
+    private static Set<Object> getLanguagesVariableDependencies(User systemUser) throws DotDataException, DotSecurityException {
+        final List<Contentlet> languageVariables = getLanguageVariables();
+        Set<Object> dependencies = new HashSet<>();
+
+        for (final Contentlet langVariable : languageVariables) {
+            final Host host = APILocator.getHostAPI().find(langVariable.getHost(), systemUser, false);
+
+            final Language language = APILocator.getLanguageAPI().getLanguage(langVariable.getLanguageId());
+            dependencies.add(langVariable);
+            dependencies.add(host);
+            dependencies.add(language);
+        }
+
+        final ContentType languageVariableContentType =
+                APILocator.getContentTypeAPI(systemUser).find(LanguageVariableAPI.LANGUAGEVARIABLE);
+
+        dependencies.add(languageVariableContentType);
+
+        final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
+        dependencies.add(systemWorkflowScheme);
+        return dependencies;
+    }
+
     private static class TestAsset {
         Object asset;
-        List<Object> expectedInBundle;
+        Set<Object> expectedInBundle;
         String fileExpectedPath;
 
-        public TestAsset(Object asset, List<Object> expectedInBundle, String fileExpectedPath) {
+        public TestAsset(Object asset, Set<Object> expectedInBundle, String fileExpectedPath) {
             this.asset = asset;
             this.expectedInBundle = expectedInBundle;
             this.fileExpectedPath = fileExpectedPath;
 
-            //todo: uncomment ehrn merge into the performance branch
+            //todo: uncomment when it merge into the performance branch
             /*try {
                 final ContentType hostContentType
                         = APILocator.getContentTypeAPI(APILocator.systemUser()).find("host");

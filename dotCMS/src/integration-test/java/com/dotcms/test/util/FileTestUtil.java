@@ -12,6 +12,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
@@ -44,6 +45,8 @@ public class FileTestUtil {
         assertions.put(Link.class, new LinkAssertionChecker());
         assertions.put(Contentlet.class, new ContentletAssertionChecker());
         assertions.put(Language.class, new LanguageAssertionChecker());
+        assertions.put(Rule.class, new RuleAssertionChecker());
+        assertions.put(Link.class, new LinkAssertionChecker());
     }
 
     private FileTestUtil(){}
@@ -71,7 +74,7 @@ public class FileTestUtil {
         return new File(FileTestUtil.class.getResource(path).getFile());
     }
 
-    public static int assertBundleFile(
+    public static Collection<File> assertBundleFile(
             final File bundleRoot,
             final Object asset) throws IOException {
         final AssertionChecker assertionChecker = assertions.get(asset.getClass());
@@ -80,14 +83,14 @@ public class FileTestUtil {
     }
 
 
-    public static int assertBundleFile(
+    public static Collection<File> assertBundleFile(
             final File bundleRoot,
             final Object asset,
             final String expectedFilePath) throws IOException {
         return assertBundleFile(bundleRoot, asset, list(expectedFilePath));
     }
 
-    public static int assertBundleFile(
+    public static Collection<File> assertBundleFile(
             final File bundleRoot,
             final Object asset,
             final Collection<String> expectedFilesPath) throws IOException {
@@ -119,7 +122,7 @@ public class FileTestUtil {
                     fileContentExpected, fileContent);
         }
 
-        return files.size();
+        return files;
     }
 
     private static Optional<String> getFileWithSameExt(Collection<String> expectedFilesPath, final File fileToFind) {

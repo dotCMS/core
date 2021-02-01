@@ -29,7 +29,7 @@ public class HostAssertionChecker implements AssertionChecker<Host> {
 
             return map(
                     "host_id", host.getIdentifier(),
-                    "host_live_inode", contentletVersionInfo.getLiveInode(),
+                    "host_live_inode", contentletVersionInfo.getLiveInode() != null ? contentletVersionInfo.getLiveInode() : "null",
                     "host_working_inode", contentletVersionInfo.getWorkingInode(),
                     "host_lang", host.getLanguageId(),
                     "host_name", host.getHostname(),
@@ -62,7 +62,10 @@ public class HostAssertionChecker implements AssertionChecker<Host> {
                 "<createDate class=\"sql-timestamp\">.*</createDate>",
                 "<lockedOn class=\"sql-timestamp\">.*</lockedOn>",
                 "<versionTs class=\"sql-timestamp\">.*</versionTs>",
-                "<string>modDate</string><sql-timestamp>.*</sql-timestamp>"
+                "<string>modDate</string><sql-timestamp>.*</sql-timestamp>",
+                "<string>modDate</string><date>.*</date>",
+                "<liveInode>null</liveInode>",
+                "<lockedBy>system</lockedBy>"
         );
     }
 }

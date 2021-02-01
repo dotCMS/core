@@ -145,7 +145,7 @@ public class ContentletAssertionChecker implements AssertionChecker<Contentlet> 
             }
         }
 
-        return null;
+        return Optional.empty();
     }
 
     @Override

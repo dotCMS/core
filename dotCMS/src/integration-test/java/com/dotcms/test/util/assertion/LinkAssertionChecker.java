@@ -2,6 +2,7 @@ package com.dotcms.test.util.assertion;
 
 import com.dotcms.enterprise.publishing.remote.bundler.FileBundlerTestUtil;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -20,6 +21,8 @@ public class LinkAssertionChecker implements AssertionChecker<Link> {
         try {
             final Identifier identifier = APILocator.getIdentifierAPI().find(asset.getIdentifier());
 
+            final VersionInfo info =APILocator.getVersionableAPI().getVersionInfo(asset.getIdentifier());
+
             return map(
                     "id", asset.getIdentifier(),
                     "asset_name", identifier.getAssetName(),
@@ -28,7 +31,8 @@ public class LinkAssertionChecker implements AssertionChecker<Link> {
                     "inode", asset.getInode(),
                     "title", asset.getTitle(),
                     "friendly_name", asset.getFriendlyName(),
-                    "sort_order", asset.getSortOrder()
+                    "sort_order", asset.getSortOrder(),
+                    "live_inode", info.getLiveInode() != null ? info.getLiveInode() : "null"
             );
         } catch (DotDataException e) {
             throw new RuntimeException(e);
@@ -58,7 +62,8 @@ public class LinkAssertionChecker implements AssertionChecker<Link> {
                 "<lockedOn class=\"sql-timestamp\">.*</lockedOn>",
                 "<versionTs class=\"sql-timestamp\">.*</versionTs>",
                 "<lockedOn>.*</lockedOn>",
-                "<versionTs>.*</versionTs>"
+                "<versionTs>.*</versionTs>",
+                "<liveInode>.*</liveInode>"
         );
     }
 }
