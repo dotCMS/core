@@ -31,3 +31,13 @@ This maintenance release includes the following code fixes:
 13. https://github.com/dotCMS/core/issues/19566 : [logging] : General logging improvements
 
 14. https://github.com/dotCMS/core/issues/18834 : Wonky Field Reordering
+
+15. https://github.com/dotCMS/core/issues/19854 : [core] : Page Mode set incorrectly with limited user
+
+16. https://github.com/dotCMS/core/issues/19831 : [core] : URL validation for new pages under Site root is not correct
+
+17. https://github.com/dotCMS/core/issues/19796 : depth>=3 doesn't work for self-related content
+
+18. https://github.com/dotCMS/core/issues/19773 : SAML needs to transform user ID sent by IdP into a valid dotCMS user ID
+
+19. https://github.com/dotCMS/core/issues/19753 : Thumbnail creator filter is not working for .pdf files
