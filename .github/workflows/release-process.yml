@@ -44,12 +44,12 @@ jobs:
           sh -c "$(curl -fsSL https://raw.githubusercontent.com/dotCMS/dot-cicd/${DOT_CICD_BRANCH}/seed/install-dot-cicd.sh)"
       - name: Build DotCMS Release Docker Image
         run: |
+          docker --version
+          diocker buildx --help
           dotcicd/library/pipeline.sh buildRelease
         if: env.TEST_RUN == 'true'
       - name: Run DotCMS Release Docker Image
         run: |
-          docker --version
-          diocker buildx --help
           dotcicd/library/pipeline.sh runRelease
 #      - name: Build distro files
 #        run: |
