@@ -44,7 +44,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import java.util.stream.Collectors;
+import io.vavr.control.Try;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.oro.text.regex.Pattern;
@@ -1218,6 +1218,10 @@ public class FolderFactoryImpl extends FolderFactory {
 
 	@Override
 	protected void save(Folder folderInode) throws DotDataException {
+        if (SYSTEM_FOLDER.equals(folderInode.getInode()) && !Host.SYSTEM_HOST.equals(folderInode.getHostId())) {
+            throw new DotRuntimeException(String.format("Host ID for SYSTEM_FOLDER must always be SYSTEM_HOST. Value " +
+                    "'%s' was set.", folderInode.getHostId()));
+        }
 		validateFolderName(folderInode);
 
 		HibernateUtil.getSession().clear();
@@ -1226,6 +1230,10 @@ public class FolderFactoryImpl extends FolderFactory {
 
 	@Override
 	protected void save(Folder folderInode, String existingId) throws DotDataException {
+        if (SYSTEM_FOLDER.equals(folderInode.getInode()) && !Host.SYSTEM_HOST.equals(folderInode.getHostId())) {
+            throw new DotRuntimeException(String.format("Host ID for SYSTEM_FOLDER must always be SYSTEM_HOST. Value " +
+                    "'%s' was set.", folderInode.getHostId()));
+        }
 		validateFolderName(folderInode);
 
 		if(existingId==null){
