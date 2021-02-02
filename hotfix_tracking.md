@@ -45,3 +45,5 @@ This maintenance release includes the following code fixes:
 20. https://github.com/dotCMS/core/issues/19715 : Make XStream initialization static
 
 21. https://github.com/dotCMS/core/issues/19560 : Add a "Download" button to the Log Files tab in the Maintenance portlet
+
+22. https://github.com/dotCMS/core/issues/19728	: graphql query of [Blog] -> [related File with Category field] produces error
