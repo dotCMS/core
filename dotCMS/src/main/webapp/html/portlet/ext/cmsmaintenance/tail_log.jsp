@@ -51,8 +51,13 @@
 
 	function reloadTail(){
 		var x = dijit.byId("fileName").getValue();
+        if(x) {
 		dojo.byId("tailingFrame").src='/dotTailLogServlet/?fileName='+x;
         disableFollowOnScrollUp();
+            dijit.byId("downloadLog").attr("disabled", false);
+        } else {
+            dijit.byId("downloadLog").attr("disabled", true);
+        }
 	}
 
     function disableFollowOnScrollUp() {
@@ -250,6 +255,9 @@
             </div>
             <button dojoType="dijit.form.Button" onClick="doPopup()" value="popup" name="popup">
                 <%= com.liferay.portal.language.LanguageUtil.get(pageContext,"popup") %>
+            </button>
+            <button dojoType="dijit.form.Button" onclick="location.href='/api/v1/maintenance/_downloadLog/' + document.getElementById('fileName').value"  id="downloadLog" value="download" name="download" disabled>
+                <%= com.liferay.portal.language.LanguageUtil.get(pageContext,"Download") %>
             </button>
         </div>
     </div>
