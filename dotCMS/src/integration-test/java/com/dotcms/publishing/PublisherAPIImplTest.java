@@ -18,6 +18,7 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.rules.RuleDataGen;
@@ -45,6 +46,7 @@ import org.junit.runner.RunWith;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.*;
 import static org.jgroups.util.Util.assertEquals;
@@ -93,7 +95,7 @@ public class PublisherAPIImplTest {
                     .nextPersisted();
         }
 
-        languageVariableDependencies = getLanguagesVariableDependencies(systemUser);
+        languageVariableDependencies = getLanguagesVariableDependencies();
     }
 
     @DataProvider
@@ -101,14 +103,15 @@ public class PublisherAPIImplTest {
         prepare();
 
         final Set<TestAsset> assets = set(
-                getContentTypeWithHost(),
+                /*getContentTypeWithHost(),
                 getTemplateWithDependencies(),
                 getContainerWithDependencies(),
                 getFolderWithDependencies(),
                 getHostWithDependencies(),
                 getLinkWithDependencies(),
                 getWorkflowWithDependencies(),
-                getLanguageWithDependencies()
+                getLanguageWithDependencies(),*/
+                getRuleWithDependencies()
         );
         final List<Class<? extends Publisher>> publishers = list(
                 GenerateBundlePublisher.class,
@@ -120,10 +123,10 @@ public class PublisherAPIImplTest {
 
         final List<TestCase> cases = new ArrayList<>();
 
-        //final Set<Set<TestAsset>> sets = new HashSet();
-        //sets.add(set(assets));
+        final Set<Set<TestAsset>> sets = new HashSet();
+        sets.add(set(assets));
 
-        final Set<Set<TestAsset>> sets = Sets.powerSet(assets);
+        //final Set<Set<TestAsset>> sets = Sets.powerSet(assets);
 
         for (final Class<? extends Publisher> publisher : publishers) {
             for (Set<TestAsset> set : sets) {
@@ -131,6 +134,16 @@ public class PublisherAPIImplTest {
             }
         }
         return cases.toArray();
+    }
+
+    private static TestAsset getRuleWithDependencies() {
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
+        final Rule ruleWithPage = new RuleDataGen().page(htmlPageAsset).nextPersisted();
+
+        return new TestAsset(ruleWithPage, set(), "/bundlers-test/rule/rule.rule.xml", false);
     }
 
     private static TestAsset getLanguageWithDependencies() {
@@ -408,7 +421,7 @@ public class PublisherAPIImplTest {
         }
     }
 
-    private static List<Contentlet> getLanguageVariables() throws DotDataException, DotSecurityException {
+    public static List<Contentlet> getLanguageVariables() throws DotDataException, DotSecurityException {
         final User systemUser = APILocator.systemUser();
         final String langVarsQuery = "+contentType:" + LanguageVariableAPI.LANGUAGEVARIABLE;
         final List<Contentlet> langVariables = APILocator.getContentletAPI().search(langVarsQuery, 0, -1,
@@ -419,12 +432,15 @@ public class PublisherAPIImplTest {
     private static void addLanguageVariableDependencies(final Set<TestAsset> assets) throws DotSecurityException, DotDataException {
 
         for (final TestAsset asset : assets) {
-            asset.expectedInBundle.addAll(languageVariableDependencies);
+            if (asset.addLanguageVariableAsDependencies) {
+                asset.expectedInBundle.addAll(languageVariableDependencies);
+            }
         }
     }
 
-    @NotNull
-    private static Set<Object> getLanguagesVariableDependencies(User systemUser) throws DotDataException, DotSecurityException {
+
+    public static Set<Object> getLanguagesVariableDependencies() throws DotDataException, DotSecurityException {
+        final User systemUser = APILocator.systemUser();
         final List<Contentlet> languageVariables = getLanguageVariables();
         Set<Object> dependencies = new HashSet<>();
 
@@ -444,6 +460,12 @@ public class PublisherAPIImplTest {
 
         final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
         dependencies.add(systemWorkflowScheme);
+
+        final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
+        dependencies.add(systemFolder);
+
+        final Host systemHost = APILocator.getHostAPI().findSystemHost();
+        dependencies.add(systemHost);
         return dependencies;
     }
 
@@ -451,11 +473,18 @@ public class PublisherAPIImplTest {
         Object asset;
         Set<Object> expectedInBundle;
         String fileExpectedPath;
+        boolean addLanguageVariableAsDependencies;
 
-        public TestAsset(Object asset, Set<Object> expectedInBundle, String fileExpectedPath) {
+        public TestAsset(Object asset, Set<Object> expectedInBundle, String fileExpectedPath){
+            this(asset, expectedInBundle, fileExpectedPath, true);
+        }
+
+        public TestAsset(Object asset, Set<Object> expectedInBundle, String fileExpectedPath,
+                         boolean addLanguageVariableAsDependencies) {
             this.asset = asset;
             this.expectedInBundle = expectedInBundle;
             this.fileExpectedPath = fileExpectedPath;
+            this.addLanguageVariableAsDependencies = addLanguageVariableAsDependencies;
 
             //todo: uncomment when it merge into the performance branch
             /*try {

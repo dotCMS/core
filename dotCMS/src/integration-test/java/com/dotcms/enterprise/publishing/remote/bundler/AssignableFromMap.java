@@ -1,6 +1,7 @@
 package com.dotcms.enterprise.publishing.remote.bundler;
 
 import com.dotcms.rest.exception.NotFoundException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -26,25 +27,35 @@ public class AssignableFromMap<T> {
         return get(clazzToFind, null);
     }
 
-    public T get(final Class clazzToFind, final T defaultValue){
-        for (Class clazz : map.keySet()) {
-            if (clazz.isAssignableFrom(clazzToFind)) {
-                return map.get(clazz);
+    public T get(final Class clazzToFind, final T defaultValue) {
+        try {
+            final Class key = getKey(clazzToFind);
+            return this.map.get(key);
+        }catch (NotFoundException e) {
+            if (defaultValue == null) {
+                throw new IllegalArgumentException("Invalid Asset Type: " + clazzToFind);
+            } else {
+                return defaultValue;
             }
-        }
-
-        if (defaultValue == null) {
-            throw new IllegalArgumentException("Invalid Asset Type: " + clazzToFind);
-        } else {
-            return defaultValue;
         }
     }
 
     public Class getKey(final Class clazzToFind){
+
+        Class couldReturn = null;
+
         for (Class clazz : map.keySet()) {
-            if (clazz.isAssignableFrom(clazzToFind)) {
+            if (clazz.equals(clazzToFind)) {
                 return clazz;
             }
+
+            if (clazz.isAssignableFrom(clazzToFind)) {
+                couldReturn = clazz;
+            }
+        }
+
+        if (couldReturn != null) {
+            return couldReturn;
         }
 
         throw new NotFoundException("Invalid Asset Type: "+ clazzToFind);
@@ -58,8 +69,12 @@ public class AssignableFromMap<T> {
         T oldValue = null;
 
         try {
-            oldValue = get(aClass);
-        } catch (IllegalArgumentException e){
+            final Class key = getKey(aClass);
+
+            if (!Contentlet.class.equals(key) || aClass.equals(key)) {
+                oldValue = get(aClass);
+            }
+        } catch (NotFoundException e) {
             //ignore
         }
 

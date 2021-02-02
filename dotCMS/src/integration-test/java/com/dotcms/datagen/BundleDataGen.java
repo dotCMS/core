@@ -187,7 +187,7 @@ public class BundleDataGen extends AbstractDataGen<Bundle> {
         return this;
     }
 
-    public BundleDataGen addAssets(final List<Object> assetsToAddInBundle) {
+    public BundleDataGen addAssets(final Collection<Object> assetsToAddInBundle) {
         for (Object asset : assetsToAddInBundle) {
             final MetaData metaData = howAddInBundle.get(asset.getClass());
             this.addAsset(metaData.dataToAdd.apply(asset), metaData.pusheableAsset);

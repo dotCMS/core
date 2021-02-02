@@ -11,6 +11,7 @@ import com.dotcms.publisher.util.DependencyManagerTest;
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.FilterDescriptor;
+import com.dotcms.publishing.PublisherAPIImplTest;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -22,6 +23,7 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageDataGen;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
@@ -55,6 +57,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
+import static com.dotcms.publishing.PublisherAPIImplTest.getLanguagesVariableDependencies;
 import static com.dotcms.util.CollectionsUtils.add;
 import static com.dotcms.util.CollectionsUtils.list;
 import static org.jgroups.util.Util.assertEquals;
@@ -115,7 +118,29 @@ public class DependencyBundlerTest {
         all.addAll(createLinkTestCase());
         all.addAll(createWorkflowTestCase());
         all.addAll(createLanguageTestCase());
+        all.addAll(createRuleTestCase());
         return all.toArray();
+    }
+
+    private static Collection<TestData> createRuleTestCase() {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Rule rule = new RuleDataGen().host(host).nextPersisted();
+
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
+        final Rule ruleWithPage = new RuleDataGen().page(htmlPageAsset).nextPersisted();
+
+        return list(
+                new TestData(list(rule), list(host), filterDescriptorAllDependencies),
+                new TestData(list(rule), list(), filterDescriptorNotDependencies),
+                new TestData(list(rule), list(), filterDescriptorNotRelationship),
+                new TestData(list(rule), list(), filterDescriptorNotDependenciesRelationship),
+
+                new TestData(list(ruleWithPage), list(htmlPageAsset), filterDescriptorAllDependencies),
+                new TestData(list(ruleWithPage), list(), filterDescriptorNotDependencies),
+                new TestData(list(ruleWithPage), list(), filterDescriptorNotRelationship),
+                new TestData(list(ruleWithPage), list(), filterDescriptorNotDependenciesRelationship)
+        );
     }
 
     private static Collection<TestData> createLanguageTestCase() {
@@ -162,6 +187,7 @@ public class DependencyBundlerTest {
         final Host hostWithContent = new SiteDataGen().nextPersisted();
         final ContentType contentType = new ContentTypeDataGen().host(hostWithContent).nextPersisted();
         final Contentlet contentlet = new ContentletDataGen(contentType.id()).host(hostWithContent).nextPersisted();
+        final Language language = APILocator.getLanguageAPI().getLanguage(contentlet.getLanguageId());
 
         final Host hostWithRule = new SiteDataGen().nextPersisted();
         final Rule rule = new RuleDataGen().host(hostWithRule).nextPersisted();
@@ -190,7 +216,7 @@ public class DependencyBundlerTest {
                 new TestData(list(hostWithContainer), list(), filterDescriptorNotRelationship),
                 new TestData(list(hostWithContainer), list(), filterDescriptorNotDependenciesRelationship),
 
-                new TestData(list(hostWithContent), list(contentType, contentlet, systemWorkflowScheme,systemFolder),
+                new TestData(list(hostWithContent), list(contentType, contentlet, systemWorkflowScheme,systemFolder, language),
                         filterDescriptorAllDependencies),
                 new TestData(list(hostWithContent), list(), filterDescriptorNotDependencies),
                 new TestData(list(hostWithContent), list(), filterDescriptorNotRelationship),
@@ -247,6 +273,8 @@ public class DependencyBundlerTest {
         final Contentlet contentlet = new FileAssetDataGen(folderWithContent, image)
                 .host(host)
                 .nextPersisted();
+        final Language language = APILocator.getLanguageAPI().getLanguage(contentlet.getLanguageId());
+
 
         final Folder folderWithLink = new FolderDataGen().site(host).nextPersisted();
         final Link link = new LinkDataGen(folderWithLink).nextPersisted();
@@ -292,19 +320,20 @@ public class DependencyBundlerTest {
                 new TestData(list(folderWithContentType), list(), filterDescriptorNotRelationship),
                 new TestData(list(folderWithContentType), list(), filterDescriptorNotDependenciesRelationship),
 
-                new TestData(list(folderWithContent), list(host, folderContentType, systemHost, systemFolder, contentlet, systemWorkflowScheme),
-                        filterDescriptorAllDependencies),
+                new TestData(list(folderWithContent), list(host, folderContentType, systemHost, systemFolder, contentlet,
+                        systemWorkflowScheme, language), filterDescriptorAllDependencies),
                 new TestData(list(folderWithContent), list(), filterDescriptorNotDependencies),
                 new TestData(list(folderWithContent), list(), filterDescriptorNotRelationship),
                 new TestData(list(folderWithContent), list(), filterDescriptorNotDependenciesRelationship),
 
-                new TestData(list(folderWithLink), list(host, folderContentType, systemHost, systemFolder, link, systemWorkflowScheme),
-                        filterDescriptorAllDependencies),
+                new TestData(list(folderWithLink), list(host, folderContentType, systemHost, systemFolder, link,
+                        systemWorkflowScheme), filterDescriptorAllDependencies),
                 new TestData(list(folderWithLink), list(), filterDescriptorNotDependencies),
                 new TestData(list(folderWithLink), list(), filterDescriptorNotRelationship),
                 new TestData(list(folderWithLink), list(), filterDescriptorNotDependenciesRelationship),
 
-                new TestData(list(folderWithSubFolder), list(host, folderContentType, systemHost, systemFolder, subFolder, contentlet_2, systemWorkflowScheme),
+                new TestData(list(folderWithSubFolder), list(host, folderContentType, systemHost, systemFolder,
+                        subFolder, contentlet_2, systemWorkflowScheme, language),
                         filterDescriptorAllDependencies),
                 new TestData(list(folderWithSubFolder), list(), filterDescriptorNotDependencies),
                 new TestData(list(folderWithSubFolder), list(), filterDescriptorNotRelationship),
@@ -386,7 +415,6 @@ public class DependencyBundlerTest {
         );
     }
 
-    @NotNull
     private static List<TestData> createContentTypeTestCase() throws DotDataException {
 
         final Host host = new SiteDataGen().nextPersisted();
@@ -467,7 +495,7 @@ public class DependencyBundlerTest {
     @Test
     @UseDataProvider("assets")
     public void addAssetInBundle(final TestData testData)
-            throws IOException, DotBundleException, DotDataException {
+            throws IOException, DotBundleException, DotDataException, DotSecurityException {
 
 
         final PushPublisherConfig config = new PushPublisherConfig();
@@ -483,6 +511,29 @@ public class DependencyBundlerTest {
         assertAll(config, testData.dependenciesToAssert);
     }
 
+    private static Set<Object> addLanguageVariablesDependencies(Collection<Object> dependencies) throws DotDataException, DotSecurityException {
+        final Set<Object> languagesVariableDependencies = getLanguagesVariableDependencies();
+        final Set<Object> allDependencies = new HashSet<>();
+        allDependencies.addAll(languagesVariableDependencies);
+        allDependencies.addAll(dependencies);
+        return allDependencies;
+    }
+
+    private static Set<Object> addLanguageVariables(final Collection<Object> dependencies) throws DotSecurityException, DotDataException {
+
+        final List<Contentlet> languageVariables = PublisherAPIImplTest.getLanguageVariables();
+
+        final Set<Object> allDependencies = new HashSet<>();
+
+        for (final Contentlet languageVariable : languageVariables) {
+            final Language language = APILocator.getLanguageAPI().getLanguage(languageVariable.getLanguageId());
+            allDependencies.add(language);
+        }
+
+        allDependencies.addAll(dependencies);
+        return allDependencies;
+    }
+
     @Test
     public void addLanguageVariableTestCaseInBundle() throws DotSecurityException, DotDataException, DotBundleException {
         Contentlet contentlet = null;
@@ -493,24 +544,7 @@ public class DependencyBundlerTest {
             final String langVarsQuery = "+contentType:" + LanguageVariableAPI.LANGUAGEVARIABLE;
             final User systemUser = APILocator.systemUser();
 
-            final List<Contentlet> langVariables = APILocator.getContentletAPI().search(langVarsQuery, 0, -1,
-                    StringPool.BLANK, systemUser, false);
-
-            final ContentType languageVariableContentType =
-                    APILocator.getContentTypeAPI(systemUser).find(LanguageVariableAPI.LANGUAGEVARIABLE);
-
-            if (langVariables.isEmpty()) {
-                final Language language = new LanguageDataGen().nextPersisted();
-
-                final Host host = new SiteDataGen().nextPersisted();
-                contentlet = new ContentletDataGen(languageVariableContentType.id())
-                        .setProperty("key", "teset_key")
-                        .setProperty("value", "value_test")
-                        .languageId(language.getId())
-                        .host(host)
-                        .nextPersisted();
-                langVariables.add(contentlet);
-            }
+            PublisherAPIImplTest.createLanguageVariableIfNeeded();
 
             final FilterDescriptor filterDescriptor = new FileDescriptorDataGen().nextPersisted();
             new BundleDataGen()
@@ -521,29 +555,11 @@ public class DependencyBundlerTest {
             bundler.setConfig(config);
             bundler.generate(bundleRoot, status);
 
-            final Set<Object> dependencies = new HashSet<>();
-            dependencies.add(languageVariableContentType);
-
-            for (final Contentlet langVariable : langVariables) {
-                final Host host = APILocator.getHostAPI().find(langVariable.getHost(), systemUser, false);
-
-                final Language language = APILocator.getLanguageAPI().getLanguage(langVariable.getLanguageId());
-                dependencies.add(langVariable);
-                dependencies.add(host);
-                dependencies.add(language);
-            }
-
-            final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
-            final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
-            final Host systemHost = APILocator.systemHost();
-
-            dependencies.add(systemWorkflowScheme);
-            dependencies.add(systemFolder);
-            dependencies.add(systemHost);
-
+            final Collection<Object> dependencies = getLanguagesVariableDependencies();
             assertAll(config, dependencies);
         } finally {
             if (contentlet != null) {
+                ContentletDataGen.archive(contentlet);
                 ContentletDataGen.remove(contentlet);
             }
         }
@@ -576,18 +592,29 @@ public class DependencyBundlerTest {
     }
 
     private static class TestData {
-        List<Object> assetsToAddInBundle;
-        List<Object> dependenciesToAssert;
+        Collection<Object> assetsToAddInBundle;
+        Collection<Object> dependenciesToAssert;
         FilterDescriptor filterDescriptor;
 
         public TestData(
-                final List<Object> assetsToAddInBundle,
-                final List<Object> dependenciesToAssert,
-                final FilterDescriptor filterDescriptor) {
+                final Collection<Object> assetsToAddInBundle,
+                final Collection<Object> dependenciesToAssert,
+                final FilterDescriptor filterDescriptor)  {
             this.assetsToAddInBundle = assetsToAddInBundle;
-            this.dependenciesToAssert = new ArrayList<>(dependenciesToAssert);
-            this.dependenciesToAssert.addAll(assetsToAddInBundle);
             this.filterDescriptor = filterDescriptor;
+
+            try {
+                if (filterDescriptorAllDependencies == filterDescriptor) {
+                    this.dependenciesToAssert = addLanguageVariablesDependencies(dependenciesToAssert);
+                } else {
+                    this.dependenciesToAssert = new HashSet<>();
+                    dependenciesToAssert.addAll(dependenciesToAssert);
+                }
+            }catch (DotDataException | DotSecurityException e) {
+                throw new RuntimeException(e);
+            }
+
+            this.dependenciesToAssert.addAll(assetsToAddInBundle);
         }
     }
 }
