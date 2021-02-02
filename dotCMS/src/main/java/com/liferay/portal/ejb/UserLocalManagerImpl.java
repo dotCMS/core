@@ -73,10 +73,9 @@ import org.apache.commons.lang3.StringUtils;
  *
  * @author  Brian Wing Shun Chan
  * @version $Revision: 1.5 $
- *
+ * @deprecated Use {@link com.dotmarketing.business.UserAPI} instead
  */
-
-
+@Deprecated
 public class UserLocalManagerImpl implements UserLocalManager {
 
 	private final String USERNAME_REGEXP_PATTERN = GetterUtil.getString( SystemProperties.get( "UserName.regexp.pattern" ) );

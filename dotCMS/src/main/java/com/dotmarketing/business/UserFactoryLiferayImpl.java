@@ -38,9 +38,10 @@ import org.apache.logging.log4j.util.Strings;
 
 /**
  * @author Jason Tesser
- *
+ * @deprecated Use {@link UserFactory } instead
  */
-public class UserFactoryLiferayImpl extends UserFactory {
+@Deprecated
+public class UserFactoryLiferayImpl extends UserFactoryLiferay {
 
 	private UserCache uc;
 
