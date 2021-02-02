@@ -66,6 +66,7 @@ import com.liferay.util.SystemProperties;
 import com.liferay.util.Time;
 import com.liferay.util.Validator;
 import com.liferay.util.mail.MailMessage;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * <a href="UserLocalManagerImpl.java.html"><b><i>View Source</i></b></a>
@@ -171,7 +172,7 @@ public class UserLocalManagerImpl implements UserLocalManager {
 		user.setSkinId(defaultUser.getSkinId());
 		user.setDottedSkins(defaultUser.isDottedSkins());
 		user.setRoundedSkins(defaultUser.isRoundedSkins());
-		user.setGreeting(greeting);
+		user.setGreeting(StringUtils.abbreviate(greeting, 100));
 		user.setResolution(defaultUser.getResolution());
 		user.setRefreshRate(defaultUser.getRefreshRate());
 		user.setLayoutIds("");

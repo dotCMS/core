@@ -46,11 +46,15 @@ public class Encryptor {
 
 	public static final String ENCODING = "UTF8";
 
-	public static final String DIGEST_ALGORITHM = Config.getStringProperty("ENCRYPTION_DIGEST_ALGORITHM","SHA-256");
+	public static final String SHA256_ALGORITHM = "SHA-256";
+	public static final String DIGEST_ALGORITHM = Config.getStringProperty("ENCRYPTION_DIGEST_ALGORITHM",SHA256_ALGORITHM);
 
 	public static final String KEY_ALGORITHM = Config.getStringProperty("ENCRYPTION_KEY_ALGORITHM","AES");
     public static final int KEY_LENGTH = Config.getIntProperty("ENCRYPTION_KEY_LENGTH",256);
 	
+	private Encryptor() {
+	}
+
 	public static Key generateKey() throws EncryptorException {
 		return generateKey(KEY_ALGORITHM);
 	}
@@ -158,4 +162,60 @@ public class Encryptor {
 
 	private static final Log _log = LogFactory.getLog(Encryptor.class);
 
+	public static class Hashing {
+
+		public static HashBuilder sha256() throws NoSuchAlgorithmException {
+
+			return new SHA236HashBuilder();
+		}
+	}
+
+	private static class SHA236HashBuilder implements HashBuilder {
+
+		private static final char[] HEXADECIMAL_ALPHABET_ARRAY = "0123456789abcdef".toCharArray();
+		private final MessageDigest sha256;
+
+		private SHA236HashBuilder() throws NoSuchAlgorithmException {
+
+			this.sha256 = MessageDigest.getInstance(SHA256_ALGORITHM);
+		}
+
+		@Override
+		public HashBuilder append(final byte[] bytes) {
+
+			this.sha256.update(bytes);
+			return this;
+		}
+
+		@Override
+		public HashBuilder append(final byte [] bytes, final int maxBytes) {
+			this.sha256.update(bytes, 0, maxBytes);
+			return this;
+		}
+
+		@Override
+		public String buildHexa() {
+			return Base64.encode(this.buildBytes());
+		}
+
+		@Override
+		public byte[] buildBytes() {
+			return this.sha256.digest();
+		}
+
+		@Override
+		public String buildUnixHash() {
+
+			final byte [] bytes             = this.buildBytes();
+			final StringBuilder hashBuilder = new StringBuilder(2 * bytes.length);
+			for (final byte _byte : bytes) {
+
+				hashBuilder.append(HEXADECIMAL_ALPHABET_ARRAY[(_byte >> 4) & 0xf])
+						.append(HEXADECIMAL_ALPHABET_ARRAY[_byte & 0xf]);
+			}
+
+			return hashBuilder.toString();
+		}
+
+	}
 }
