@@ -547,7 +547,7 @@ public class ContentResource {
             return ExceptionMapperUtil.createResponse(new DotStateException("No Permissions"), Response.Status.FORBIDDEN);
         } catch (Exception e) {
             if (idPassed) {
-                Logger.warnAndDebug(this.getClass(), "Can't find Content with Identifier: " + id, e);
+                Logger.warnAndDebug(this.getClass(), "Can't find Content with Identifier: " + id + " " + e.getMessage(), e);
             } else if (queryPassed || UtilMethods.isSet(related)) {
                 Logger.warn(this, "Error searching Content : " + e.getMessage());
             } else if (inodePassed) {
@@ -795,7 +795,9 @@ public class ContentResource {
             if (addedRelationships.contains(relationship)) {
                 continue;
             }
+            if (!relationship.getParentStructureInode().equals(relationship.getChildStructureInode())) {
             addedRelationships.add(relationship);
+            }
 
             final boolean isChildField = relationshipAPI.isChildField(relationship, field);
 
@@ -1043,7 +1045,9 @@ public class ContentResource {
             if (addedRelationships.contains(relationship)){
                 continue;
             }
-            addedRelationships.add(relationship);
+            if (!relationship.getParentStructureInode().equals(relationship.getChildStructureInode())) {
+                addedRelationships.add(relationship);
+            }
 
             final boolean isChildField = relationshipAPI.isChildField(relationship, field);
 
@@ -1209,7 +1213,7 @@ public class ContentResource {
         for (String key : map.keySet()) {
             if (Arrays.binarySearch(ignoreFields, key) < 0) {
                 if (jsonFields.contains(key)) {
-                    Logger.info(ContentResource.class,
+                    Logger.debug(ContentResource.class,
                             key + " is a json field: " + map.get(key).toString());
                     jo.put(key, new JSONObject(con.getKeyValueProperty(key)));
                 } else if (isCategoryField(type, key) && map.get(key) instanceof Collection) {
