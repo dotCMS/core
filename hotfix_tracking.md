@@ -64,3 +64,5 @@ This release includes the following code fixes:
 29. https://github.com/dotCMS/core/issues/19753 : Thumbnail creator filter is not working for .pdf files
 
 30. https://github.com/dotCMS/core/issues/19715 : Make XStream initialization static
+
+31. https://github.com/dotCMS/core/issues/19728	: graphql query of [Blog] -> [related File with Category field] produces error 
