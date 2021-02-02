@@ -9,7 +9,7 @@ on:
 jobs:
   run-unit-tests-job:
     name: Unit Tests
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     env:
       DOT_CICD_CLOUD_PROVIDER: github
       DOT_CICD_TARGET: core
