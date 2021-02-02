@@ -10,6 +10,7 @@
 <%@page import="java.util.Map"%>
 <%@ page import="com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo" %>
 <%@ page import="com.dotmarketing.util.Logger" %>
+<%@ page import="com.dotmarketing.util.PageMode" %>
 <%
 
 if(user == null){
@@ -103,7 +104,7 @@ function editPage(url, languageId) {
 <%}%>
 
 <%--check permissions to display the save and publish button or not--%>
-<%boolean canUserWriteToContentlet = conPerAPI.doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_WRITE,user);%>
+<%boolean canUserWriteToContentlet = conPerAPI.doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_WRITE,user, PageMode.get(request).respectAnonPerms);%>
 
 <%if(!"edit-page".equals(request.getParameter("angularCurrentPortlet")) && contentlet.isHTMLPage() && contentlet.getIdentifier() != "" && (canUserWriteToContentlet)) {%>
    <div class="content-edit-actions" >
