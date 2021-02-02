@@ -860,21 +860,27 @@ public class UserAjax {
 		HttpServletRequest request = ctx.getHttpServletRequest();
 		try {
 
-			User user = uAPI.loadUserById(userId,uWebAPI.getLoggedInUser(request),false);
+			final User user = uAPI.loadUserById(userId, modUser, !uWebAPI.isLoggedToBackend(request));
 
-
-			User u = uAPI.loadUserById(userId, modUser, !uWebAPI.isLoggedToBackend(request));
-
-
-			if(!active && u.getUserId().equals(modUser.getUserId())){
+			if(!active && user.getUserId().equals(modUser.getUserId())){
 				throw new DotRuntimeException(LanguageUtil.get(uWebAPI.getLoggedInUser(request),"deactivate-your-own-user-error"));
 			}
 
-			u.setActive(active);
+			user.setActive(active);
 
+			final Map<String, String> additionalUserInfo = new HashMap<>();
 
+			additionalUserInfo.put("prefix", prefix);
+            additionalUserInfo.put("suffix", suffix);
+            additionalUserInfo.put("title", title);
+            additionalUserInfo.put("company", company);
+            additionalUserInfo.put("website", website);
 
-			uAPI.save(u, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
+            for(int i = 1; i <= additionalVars.length; i++) {
+                additionalUserInfo.put("var" + i, additionalVars[i - 1]);
+            }
+
+			uAPI.save(user, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
 	
 
 			String date = DateUtil.getCurrentDate();
