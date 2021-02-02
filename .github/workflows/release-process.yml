@@ -48,6 +48,8 @@ jobs:
         if: env.TEST_RUN == 'true'
       - name: Run DotCMS Release Docker Image
         run: |
+          docker --version
+          diocker buildx --help
           dotcicd/library/pipeline.sh runRelease
 #      - name: Build distro files
 #        run: |
