@@ -103,15 +103,15 @@ public class PublisherAPIImplTest {
         prepare();
 
         final Set<TestAsset> assets = set(
-                /*getContentTypeWithHost(),
+                getContentTypeWithHost()/*,
                 getTemplateWithDependencies(),
                 getContainerWithDependencies(),
                 getFolderWithDependencies(),
                 getHostWithDependencies(),
                 getLinkWithDependencies(),
                 getWorkflowWithDependencies(),
-                getLanguageWithDependencies(),*/
-                getRuleWithDependencies()
+                getLanguageWithDependencies(),
+                getRuleWithDependencies()*/
         );
         final List<Class<? extends Publisher>> publishers = list(
                 GenerateBundlePublisher.class,
@@ -123,10 +123,7 @@ public class PublisherAPIImplTest {
 
         final List<TestCase> cases = new ArrayList<>();
 
-        final Set<Set<TestAsset>> sets = new HashSet();
-        sets.add(set(assets));
-
-        //final Set<Set<TestAsset>> sets = Sets.powerSet(assets);
+        final Set<Set<TestAsset>> sets = Sets.powerSet(assets);
 
         for (final Class<? extends Publisher> publisher : publishers) {
             for (Set<TestAsset> set : sets) {
@@ -432,8 +429,36 @@ public class PublisherAPIImplTest {
     private static void addLanguageVariableDependencies(final Set<TestAsset> assets) throws DotSecurityException, DotDataException {
 
         for (final TestAsset asset : assets) {
+            List<Object> languageVariablesDependencies = null;
+
             if (asset.addLanguageVariableAsDependencies) {
-                asset.expectedInBundle.addAll(languageVariableDependencies);
+                final Host systemHost = APILocator.getHostAPI().findSystemHost();
+                final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
+
+                languageVariablesDependencies = languageVariableDependencies.stream()
+                        .filter(dependency -> {
+                            if (Host.class.isInstance(dependency)){
+                                return !((Host) dependency).getIdentifier().equals(systemHost.getIdentifier());
+                            } else  if (Folder.class.isInstance(dependency)){
+                                return !((Folder) dependency).getIdentifier().equals(systemFolder.getIdentifier());
+                            } else {
+                                return true;
+                            }
+                        })
+                        .collect(Collectors.toList());
+
+            } else {
+                final Host systemHost = APILocator.getHostAPI().findSystemHost();
+
+                languageVariablesDependencies = languageVariableDependencies.stream()
+                        .filter(dependency -> Host.class.isInstance(dependency))
+                        .map(dependency -> (Host) dependency)
+                        .filter(host -> !host.getIdentifier().equals(systemHost.getIdentifier()))
+                        .collect(Collectors.toList());
+            }
+
+            if (languageVariableDependencies != null){
+                asset.expectedInBundle.addAll(languageVariablesDependencies);
             }
         }
     }
