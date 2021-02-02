@@ -41,3 +41,5 @@ This maintenance release includes the following code fixes:
 18. https://github.com/dotCMS/core/issues/19773 : SAML needs to transform user ID sent by IdP into a valid dotCMS user ID
 
 19. https://github.com/dotCMS/core/issues/19753 : Thumbnail creator filter is not working for .pdf files
+
+20. https://github.com/dotCMS/core/issues/19715 : Make XStream initialization static
