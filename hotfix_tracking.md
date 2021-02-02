@@ -1,7 +1,5 @@
 #DOTCMS_CORE
 
-Version: 25
-
 
 This release includes the following code fixes:
 
@@ -56,3 +54,11 @@ This release includes the following code fixes:
 24. https://github.com/dotCMS/core/issues/18920 : [Push Publishing] : Existing archived content is causing push to fail
 
 25. https://github.com/dotCMS/core/issues/18951 : [Reindex] : Process is intermittently failing to retrieve content parent folder
+
+26. https://github.com/dotCMS/core/issues/19854 : [core] : Page Mode set incorrectly with limited user
+
+27. https://github.com/dotCMS/core/issues/19831 : [core] : URL validation for new pages under Site root is not correct
+
+28. https://github.com/dotCMS/core/issues/19796 : depth>=3 doesn't work for self-related content
+
+29. https://github.com/dotCMS/core/issues/19753 : Thumbnail creator filter is not working for .pdf files
