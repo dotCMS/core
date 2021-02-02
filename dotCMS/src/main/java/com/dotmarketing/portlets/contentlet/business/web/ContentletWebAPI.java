@@ -5,13 +5,17 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.portal.model.User;
 
 import java.util.Map;
-/*
- * //http://jira.dotmarketing.net/browse/DOTCMS-2273
- * To save content via ajax.
+
+/**
+ * This Web API allows the interaction between the back-end user, and the dotCMS contents via DWR. This is the
+ * implementation that allows JavaScript code to make direct calls to the Java APIs. Most of the user interactions
+ * available in the <b>Content Search</b> portlet are provided by this Web API. This is legacy code, and will be
+ * replaced with REST APIs in the near future.
+ *
+ * @author root
+ * @since Mar 22, 2012
  */
 public interface ContentletWebAPI {
-
-
 
 	/**
 	 * Saves the formData info, in addition sends an event
@@ -38,7 +42,6 @@ public interface ContentletWebAPI {
 	String saveContent(Map<String, Object> formData, boolean isAutoSave, boolean isCheckin, User user,
 					   boolean generateSystemEvent) throws Exception;
 
-
     /**
      * Validates the new/modified page taken into account the following
      * criteria:
@@ -63,5 +66,3 @@ public interface ContentletWebAPI {
 								  String currentContentletInode, User user) throws Exception;
 
 }
-
-
