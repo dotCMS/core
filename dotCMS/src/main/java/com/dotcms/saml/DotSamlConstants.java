@@ -38,27 +38,19 @@ public class DotSamlConstants {
 	public static final String DOT_SAML_AUTHENTICATION_SERVICE_CLASS_NAME = "authentication.service.classname";
 
 	/**
-	 * Optional key to configure the strategy to sync the roles from IDP to
-	 * DOTCMS Remove user from all roles, add to roles from IdP & saml_user_role
-	 * (if set) DOTCMS_SAML_BUILD_ROLES_ALL_VALUE = " all"; Remove user from all
-	 * roles, add to roles from IdP DOTCMS_SAML_BUILD_ROLES_IDP_VALUE = "idp";
-	 * Remove user from all roles, add to roles from saml_user_role (if set).
-	 * Ignore roles from IdP. DOTCMS_SAML_BUILD_ROLES_STATIC_ONLY_VALUE =
-	 * "staticonly; Do not alter existing user roles, add to roles from
-	 * saml_user_role (if set). Ignore roles from IdP.
-	 * DOTCMS_SAML_BUILD_ROLES_STATIC_ADD_VALUE = "staticadd;
-	 * DOTCMS_SAML_BUILD_ROLES_NONE_VALUE Do not alter user roles in any way
+	 * All will keep the dotcms roles and merge the idp roles
 	 */
-
 	public static final String DOTCMS_SAML_BUILD_ROLES_ALL_VALUE = "all";
 
+	/**
+	 * Will delete the cms roles and add the idp roles
+	 */
 	public static final String DOTCMS_SAML_BUILD_ROLES_IDP_VALUE = "idp";
 
-	public static final String DOTCMS_SAML_BUILD_ROLES_NONE_VALUE = "none";
-
-	public static final String DOTCMS_SAML_BUILD_ROLES_STATIC_ADD_VALUE = "staticadd";
-
-	public static final String DOTCMS_SAML_BUILD_ROLES_STATIC_ONLY_VALUE = "staticonly";
+	/**
+	 * Idp roles will be ignore
+	 */
+	public static final String DOTCMS_SAML_BUILD_ROLES_CMS_VALUE = "cms";
 
 	/**
 	 * Default value for the metadata protocol see

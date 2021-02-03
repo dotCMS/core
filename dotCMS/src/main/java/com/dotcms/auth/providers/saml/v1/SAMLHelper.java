@@ -111,7 +111,7 @@ public class SAMLHelper {
             final Company company  = companyAPI.getDefaultCompany();
             final String  authType = company.getAuthType();
             user                   = Company.AUTH_TYPE_ID.equals(authType)?
-                    this.loadUserById(this.samlAuthenticationService.getValue(attributes.getNameID()),      systemUser):
+                    this.loadUserById(this.samlAuthenticationService.getValue(attributes.getNameID()),      systemUser):  // todo: not sure if here we can try a fallback by email if present
                     this.userAPI.loadByUserByEmail(this.samlAuthenticationService.getValue(attributes.getNameID()), systemUser, false);
         } catch (NoSuchUserException e) {
 
@@ -191,11 +191,26 @@ public class SAMLHelper {
 
     public boolean checkBuildRoles(final String buildRolesProperty) {
 
-        return DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_ALL_VALUE.equalsIgnoreCase( buildRolesProperty )  ||
-                DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_IDP_VALUE.equalsIgnoreCase( buildRolesProperty ) ||
-                DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_STATIC_ONLY_VALUE.equalsIgnoreCase( buildRolesProperty ) ||
-                DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_STATIC_ADD_VALUE.equalsIgnoreCase( buildRolesProperty )  ||
-                DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_NONE_VALUE.equalsIgnoreCase( buildRolesProperty );
+        return DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_ALL_VALUE.equalsIgnoreCase(buildRolesProperty)  ||
+                DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_IDP_VALUE.equalsIgnoreCase(buildRolesProperty) ||
+                DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_CMS_VALUE.equalsIgnoreCase(buildRolesProperty);
+    }
+
+    private static interface RoleStrategy {
+
+        void apply (final User user, final Attributes attributesBean, final IdentityProviderConfiguration identityProviderConfiguration);
+    }
+
+    private void applyAllRoleStrategy (final User user, final Attributes attributesBean, final IdentityProviderConfiguration identityProviderConfiguration) {
+
+        try {
+
+           // this.handleRoles(user, attributesBean, identityProviderConfiguration, buildRolesStrategy);
+        } catch (DotDataException e) {
+
+            Logger.error(this, "Error adding roles to user '" + user.getUserId() + "': " + e.getMessage(), e);
+            throw new DotSamlException(e.getMessage(), e);
+        }
     }
 
     private void addRoles(final User user, final Attributes attributesBean, final IdentityProviderConfiguration identityProviderConfiguration) {
