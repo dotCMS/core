@@ -25,7 +25,6 @@ package com.liferay.portal.ejb;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.util.user.LiferayUserTransformer;
-import com.dotcms.util.user.UserTransformer;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
