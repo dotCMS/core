@@ -4,7 +4,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { BehaviorSubject, of } from 'rxjs';
+import { BehaviorSubject, of, Subject } from 'rxjs';
 
 import { DialogService } from 'primeng/dynamicdialog';
 import { ButtonModule } from 'primeng/button';
@@ -30,6 +30,7 @@ import { DotThemesService } from '@services/dot-themes/dot-themes.service';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { mockSites } from '@tests/site-service.mock';
 
 @Component({
     selector: 'dot-api-link',
@@ -112,6 +113,7 @@ describe('DotTemplateCreateEditComponent', () => {
     let component: DotTemplateCreateEditComponent;
     let dialogService: DialogService;
     let store: DotTemplateStore;
+    const switchSiteSubject = new Subject();
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
@@ -212,7 +214,9 @@ describe('DotTemplateCreateEditComponent', () => {
                     provide: SiteService,
                     useValue: {
                         refreshSites$: of({}),
-                        switchSite$: of({}),
+                        get switchSite$() {
+                            return switchSiteSubject.asObservable();
+                        },
                         getSiteById() {
                             return of({
                                 identifier: '123'
@@ -511,6 +515,12 @@ describe('DotTemplateCreateEditComponent', () => {
                     });
 
                     expect(store.goToEditTemplate).toHaveBeenCalledWith('1', '2');
+                });
+
+                it('should go to listing if page site changes', () => {
+                    switchSiteSubject.next(mockSites[0]); // setting the site
+                    switchSiteSubject.next(mockSites[1]); // switching the site
+                    expect(store.goToTemplateList).toHaveBeenCalledTimes(1);
                 });
             });
 

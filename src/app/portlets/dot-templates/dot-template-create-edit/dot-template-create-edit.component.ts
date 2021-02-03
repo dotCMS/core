@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { filter, takeUntil } from 'rxjs/operators';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -12,6 +12,7 @@ import { DotTemplatePropsComponent } from './dot-template-props/dot-template-pro
 import { DotTemplateItem, DotTemplateState, DotTemplateStore } from './store/dot-template.store';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DynamicDialogRef } from 'primeng/dynamicdialog/dynamicdialog-ref';
+import { Site, SiteService } from 'dotcms-js';
 
 @Component({
     selector: 'dot-template-create-edit',
@@ -30,7 +31,8 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
         private store: DotTemplateStore,
         private fb: FormBuilder,
         private dialogService: DialogService,
-        private dotMessageService: DotMessageService
+        private dotMessageService: DotMessageService,
+        private dotSiteService: SiteService
     ) {}
 
     ngOnInit() {
@@ -47,6 +49,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
                 this.createTemplate();
             }
         });
+        this.setSwitchSiteListener();
     }
 
     ngOnDestroy(): void {
@@ -174,5 +177,31 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
             friendlyName: template.friendlyName,
             image: template.image
         };
+    }
+
+    private setSwitchSiteListener(): void {
+        /**
+         * When the portlet reload (from the browser reload button), the site service emits
+         * the switchSite$ because the `currentSite` was undefined and the loads the site, that trigger
+         * an unwanted reload.
+         *
+         * This extra work in the filter is to prevent that extra reload.
+         *
+         */
+        let currentHost = this.dotSiteService.currentSite?.hostname || null;
+        this.dotSiteService.switchSite$
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((site: Site) => {
+                    if (currentHost === null) {
+                        currentHost = site?.hostname;
+                        return false;
+                    }
+                    return true;
+                })
+            )
+            .subscribe(() => {
+                this.store.goToTemplateList();
+            });
     }
 }
