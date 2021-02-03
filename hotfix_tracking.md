@@ -49,3 +49,5 @@ This maintenance release includes the following code fixes:
 22. https://github.com/dotCMS/core/issues/19728	: graphql query of [Blog] -> [related File with Category field] produces error
 
 23. https://github.com/dotCMS/core/issues/19725 : GraphQL freezes when PP new content
+
+24. https://github.com/dotCMS/core/issues/19686 : Error when editing multilingual content that is referenced on monolingual HTML pages
