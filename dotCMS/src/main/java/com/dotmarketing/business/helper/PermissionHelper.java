@@ -62,7 +62,7 @@ public class PermissionHelper {
 
         final List<Integer> permissionsToReturn = UtilMethods.isSet(permissions) ? permissions
                 : CollectionsUtils
-                        .list(PermissionAPI.PERMISSION_READ, PermissionAPI.PERMISSION_WRITE);
+                        .list(PermissionAPI.PERMISSION_WRITE, PermissionAPI.PERMISSION_READ);
 
         final List<PermissionableType> permissionTypesToReturn =
                 UtilMethods.isSet(permissionableTypes) ? permissionableTypes.stream()
