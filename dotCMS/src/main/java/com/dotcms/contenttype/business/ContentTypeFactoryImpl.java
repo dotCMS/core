@@ -10,6 +10,8 @@ import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.type.*;
 import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
@@ -538,11 +540,16 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   private List<ContentType> dbSearch(String search, int baseType, String orderBy, int limit, int offset)
       throws DotDataException {
-    int bottom = (baseType == 0) ? 0 : baseType;
-    int top = (baseType == 0) ? 100000 : baseType;
+    final int bottom = (baseType == 0) ? 0 : baseType;
+    final int top = (baseType == 0) ? 100000 : baseType;
     if (limit == 0)
       throw new DotDataException("limit param must be more than 0");
     limit = (limit < 0) ? 10000 : limit;
+
+    search = LicenseManager.getInstance().isCommunity()
+                    ? search + " and structuretype <> " + BaseContentType.FORM.getType() + " and structuretype <> " + BaseContentType.PERSONA.getType()
+                    : search;
+
     // our legacy code passes in raw sql conditions and so we need to detect
     // and handle those
     SearchCondition searchCondition = new SearchCondition(search);
@@ -560,7 +567,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     dc.addParam(bottom);
     dc.addParam(top);
     
-    Logger.debug(this, "QUERY " + dc.getSQL());
+    Logger.debug(this, ()-> "QUERY " + dc.getSQL());
 
     return new DbContentTypeTransformer(dc.loadObjectResults()).asList();
 
@@ -569,6 +576,11 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
   private int dbCount(String search, int baseType) throws DotDataException {
     int bottom = (baseType == 0) ? 0 : baseType;
     int top = (baseType == 0) ? 100000 : baseType;
+
+    search = LicenseManager.getInstance().isCommunity()
+                    ? search + " and structuretype <> " + BaseContentType.FORM.getType() +" and structuretype <> " + BaseContentType.PERSONA.getType()
+                    : search;
+
 
     SearchCondition searchCondition = new SearchCondition(search);
 
