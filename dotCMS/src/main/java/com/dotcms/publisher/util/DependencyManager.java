@@ -185,6 +185,7 @@ public class DependencyManager {
 		for (PublishQueueElement asset : assets) {
 			//Check if the asset.Type is in the excludeClasses filter, if it is, the asset is not added to the bundle
 			if(publisherFilter.doesExcludeClassesContainsType(asset.getType())){
+				Logger.info(getClass(),"Asset Id: " + asset.getAsset() +  " will not be added to the bundle since it's type: " + asset.getType() + " must be excluded according to the filter");
 				continue;
 			}
 
@@ -1223,7 +1224,7 @@ public class DependencyManager {
 						}
 					} catch (Exception ex) {
 						Logger.debug(this, ex.toString());
-						throw new DotStateException("Problem occured while publishing file");
+						throw new DotStateException("Problem occured while publishing file:" +ex.getMessage(), ex );
 					}
 				}
 
@@ -1340,7 +1341,13 @@ public class DependencyManager {
 			Set<Contentlet> allContents = new HashSet<Contentlet>(); // we will put here those already added and the ones from lucene queries
 
 			for(String id : cons){
+                if (id == null) {
+                    continue;
+                }
                 final Identifier ident = APILocator.getIdentifierAPI().find(id);
+                if (ident == null || UtilMethods.isEmpty(ident.getId())) {
+                    continue;
+                }
                 final List<Contentlet> contentList = APILocator.getContentletAPI().findAllVersions(ident, false, user, false);
 				allContents.addAll(contentList);
 			}

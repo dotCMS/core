@@ -53,3 +53,5 @@ This maintenance release includes the following code fixes:
 24. https://github.com/dotCMS/core/issues/19686 : Error when editing multilingual content that is referenced on monolingual HTML pages
 
 25. https://github.com/dotCMS/core/issues/19639	: Content API not returning name or title in dotAsset
+
+26. https://github.com/dotCMS/core/issues/19636	: Bundling fails when adding content to a bundle then attepting to push or download the bundle
