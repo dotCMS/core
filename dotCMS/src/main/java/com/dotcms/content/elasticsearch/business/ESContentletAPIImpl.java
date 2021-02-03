@@ -553,7 +553,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public void publish(final Contentlet contentlet, final User userIn, final boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException {
         final User user = (userIn!=null) ? userIn : APILocator.getUserAPI().getAnonymousUser();
-        String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
+        String contentPushPublishDate = contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE);
         String contentPushExpireDate  = contentlet.getStringProperty("wfExpireDate");
 
         contentPushPublishDate = UtilMethods.isSet(contentPushPublishDate)?contentPushPublishDate:"N/D";
@@ -650,7 +650,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             APILocator.getWorkflowAPI().fireWorkflowPostCheckin(workflow);
         }
 
-        if(contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) {
+        if(contentlet.isFileAsset()) {
 
             cleanFileAssetCache(contentlet, user, respectFrontendRoles);
         }
@@ -786,9 +786,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
             } catch (DotSecurityException e) {
                 Logger.debug(this, "User has permissions to publish the content = " + contentlet.getIdentifier()
                         + " but not the related link = " + link.getIdentifier());
-                throw new DotStateException("Problem occured while publishing link");
+                throw new DotStateException("Problem occured while publishing link: " + e.getMessage(), e);
             } catch (Exception e) {
-                throw new DotStateException("Problem occured while publishing file");
+                throw new DotStateException("Problem occured while publishing file: " + e.getMessage(), e);
             }
         }
     } // publishRelatedLinks.
@@ -1160,8 +1160,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         final List<MultiTree> trees = APILocator.getMultiTreeAPI().getMultiTreesByChild(id.getId());
         for (final MultiTree tree : trees) {
-            final IHTMLPage page = loadPageByIdentifier(tree.getParent1(), false, contentlet.getLanguageId(), APILocator.getUserAPI().getSystemUser(), false);
-            final Container container = APILocator.getContainerAPI().getWorkingContainerById(tree.getParent2(), APILocator.getUserAPI().getSystemUser(), false);
+            final IHTMLPage page = APILocator.getHTMLPageAssetAPI()
+                    .findByIdLanguageFallback(tree.getParent1(), contentlet.getLanguageId(), false,
+                            APILocator.getUserAPI().getSystemUser(), false);
+            final Container container = APILocator.getContainerAPI()
+                    .getWorkingContainerById(tree.getParent2(),
+                            APILocator.getUserAPI().getSystemUser(), false);
             if (InodeUtils.isSet(page.getInode()) && InodeUtils.isSet(container.getInode())) {
                 final Map<String, Object> map = new HashMap<String, Object>();
                 map.put("page", page);
@@ -1408,8 +1412,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotContentletStateException("The contentlet cannot Be null");
         }
 
-        final String contentPushPublishDate = UtilMethods.get(contentlet.getStringProperty("wfPublishDate"), ND_SUPPLIER);
-        final String contentPushExpireDate  = UtilMethods.get(contentlet.getStringProperty("wfExpireDate"),  ND_SUPPLIER);
+        final String contentPushPublishDate = UtilMethods.get(contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE), ND_SUPPLIER);
+        final String contentPushExpireDate  = UtilMethods.get(contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE),  ND_SUPPLIER);
 
         ActivityLogger.logInfo(getClass(), "Unlocking Content", "StartDate: " +contentPushPublishDate+ "; "
                 + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
@@ -1515,7 +1519,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return getRelatedContent(contentlet, rel, null, user, respectFrontendRoles);
         } catch (final Exception e) {
             final String errorMessage = String.format("Related content for contentlet with " +
-                    "identifier '%s', title '%s', Relationship Name '%s was not found: %s'", contentlet.getIdentifier(), contentlet
+                    "identifier '%s', title '%s', Relationship Name '%s' was not found: %s", contentlet.getIdentifier(), contentlet
                     .getTitle(), rel.getRelationTypeValue(), e.getMessage());
             if (e instanceof SearchPhaseExecutionException || e
                     .getCause() instanceof SearchPhaseExecutionException) {
@@ -1547,11 +1551,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private List<Contentlet> getRelatedChildren(final Contentlet contentlet, final Relationship rel,
             final User user, final boolean respectFrontendRoles, final int limit, final int offset)
             throws DotSecurityException, DotDataException {
-        final boolean HAS_PARENTS = Boolean.TRUE;
+        final boolean HAS_PARENT = Boolean.TRUE;
         final boolean WORKING_VERSION = Boolean.FALSE;
         if (rel.isRelationshipField() && GET_RELATED_CONTENT_FROM_DB){
             return FactoryLocator.getRelationshipFactory()
-                    .dbRelatedContent(rel, contentlet, HAS_PARENTS, WORKING_VERSION, "tree_order", limit, offset);
+                    .dbRelatedContent(rel, contentlet, HAS_PARENT, WORKING_VERSION, "tree_order", limit, offset);
         } else{
 
             final List<Contentlet> result = new ArrayList<>();
@@ -1627,11 +1631,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private List<Contentlet> getRelatedParents(final Contentlet contentlet, final Relationship rel,
             final User user, final boolean respectFrontendRoles, final int limit, final int offset)
             throws DotSecurityException, DotDataException {
-        final boolean HAS_NO_PARENTS = Boolean.FALSE;
+        final boolean HAS_NO_PARENT = Boolean.FALSE;
         final boolean WORKING_VERSION = Boolean.FALSE;
         if (rel.isRelationshipField() && GET_RELATED_CONTENT_FROM_DB){
             return FactoryLocator.getRelationshipFactory()
-                    .dbRelatedContent(rel, contentlet, HAS_NO_PARENTS, WORKING_VERSION, "tree_order", limit, offset);
+                    .dbRelatedContent(rel, contentlet, HAS_NO_PARENT, WORKING_VERSION, "tree_order", limit, offset);
         } else{
             final Map<String, Contentlet> relatedMap = new HashMap<>();
             final String relationshipName = rel.getRelationTypeValue().toLowerCase();
@@ -1680,9 +1684,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final Boolean pullByParent, final User user, final boolean respectFrontendRoles, final int limit, final int offset,
             final String sortBy, final long language, final Boolean live)
             throws DotDataException {
+        String fieldVariable = rel.getRelationTypeValue();
         try {
-            String fieldVariable = rel.getRelationTypeValue();
-
             if (rel.isRelationshipField()) {
                 if ((relationshipAPI.sameParentAndChild(rel) && pullByParent != null
                         && pullByParent) || (relationshipAPI
@@ -1702,7 +1705,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final String id = contentlet!=null ? contentlet.getIdentifier() : "null";
             final String relName = rel!=null ? rel.getRelationTypeValue() : "null";
             final String errorMessage = String.format("Unable to look up related content for contentlet with " +
-                    "identifier '%s', Relationship name '%s': %s", id, relName, e.getMessage());
+                    "identifier '%s', Relationship name '%s'(%s): %s", id, relName, fieldVariable, e.getMessage());
 
             if (e instanceof SearchPhaseExecutionException || e
                     .getCause() instanceof SearchPhaseExecutionException) {
@@ -2936,8 +2939,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
 
-        final String contentPushPublishDate = UtilMethods.get(contentlet.getStringProperty("wfPublishDate"), ND_SUPPLIER);
-        final String contentPushExpireDate  = UtilMethods.get(contentlet.getStringProperty("wfExpireDate"),  ND_SUPPLIER);
+        final String contentPushPublishDate = UtilMethods.get(contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE), ND_SUPPLIER);
+        final String contentPushExpireDate  = UtilMethods.get(contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE),  ND_SUPPLIER);
 
         ActivityLogger.logInfo(getClass(), "Locking Content", "StartDate: " +contentPushPublishDate+ "; "
                 + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
@@ -2984,7 +2987,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             reindexQueueAPI.addStructureReindexEntries(structure.getInode());
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
-            throw new DotReindexStateException("Unable to complete reindex",e);
+            throw new DotReindexStateException("Unable to complete reindex: " + e.getMessage(),e);
         }
     }
 
@@ -3001,7 +3004,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             //CacheLocator.getContentletCache().clearCache();
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
-            throw new DotReindexStateException("Unable to complete reindex",e);
+            throw new DotReindexStateException("Unable to complete reindex: " + e.getMessage(),e);
         }
 
     }
@@ -3054,7 +3057,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             reindexQueueAPI.refreshContentUnderHost(host);
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
-            throw new DotReindexStateException("Unable to complete reindex",e);
+            throw new DotReindexStateException("Unable to complete reindex: " + e.getMessage(),e);
         }
 
     }
@@ -3066,7 +3069,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             reindexQueueAPI.refreshContentUnderFolder(folder);
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
-            throw new DotReindexStateException("Unable to complete reindex",e);
+            throw new DotReindexStateException("Unable to complete reindex " + e.getMessage(),e);
         }
 
     }
@@ -3078,7 +3081,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             reindexQueueAPI.refreshContentUnderFolderPath(hostId, folderPath);
         } catch ( DotDataException e ) {
             Logger.error(this, e.getMessage(), e);
-            throw new DotReindexStateException("Unable to complete reindex", e);
+            throw new DotReindexStateException("Unable to complete reindex " + e.getMessage(),e);
         }
     }
 
@@ -3168,8 +3171,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
         }
 
-        final String contentPushPublishDate = UtilMethods.get(contentlet.getStringProperty("wfPublishDate"), ND_SUPPLIER);
-        final String contentPushExpireDate  = UtilMethods.get(contentlet.getStringProperty("wfExpireDate"),  ND_SUPPLIER);
+        final String contentPushPublishDate = UtilMethods.get(contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE), ND_SUPPLIER);
+        final String contentPushExpireDate  = UtilMethods.get(contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE),  ND_SUPPLIER);
 
         ActivityLogger.logInfo(getClass(), "Unpublishing Content", "StartDate: " +contentPushPublishDate+ "; "
                 + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
@@ -3363,8 +3366,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public void unarchive(final Contentlet contentlet, final User user, final boolean respectFrontendRoles)
             throws DotDataException,DotSecurityException, DotContentletStateException {
 
-        final String contentPushPublishDate = UtilMethods.get(contentlet.getStringProperty("wfPublishDate"), ND_SUPPLIER);
-        final String contentPushExpireDate  = UtilMethods.get(contentlet.getStringProperty("wfExpireDate"),  ND_SUPPLIER);
+        final String contentPushPublishDate = UtilMethods.get(contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE), ND_SUPPLIER);
+        final String contentPushExpireDate  = UtilMethods.get(contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE),  ND_SUPPLIER);
 
         ActivityLogger.logInfo(getClass(), "Unarchiving Content", "StartDate: " +contentPushPublishDate+ "; "
                 + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
@@ -4079,8 +4082,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         try {
 
-            String wfPublishDate = contentletIn.getStringProperty("wfPublishDate");
-            String wfExpireDate  = contentletIn.getStringProperty("wfExpireDate");
+            String wfPublishDate = contentletIn.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE);
+            String wfExpireDate  = contentletIn.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE);
             final boolean isWorkflowInProgress = contentletIn.isWorkflowInProgress();
             final String contentPushPublishDateBefore = UtilMethods.isSet(wfPublishDate) ? wfPublishDate : "N/D";
             final String contentPushExpireDateBefore  = UtilMethods.isSet(wfExpireDate) ? wfExpireDate : "N/D";
@@ -4118,11 +4121,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 )
                         ); // end synchronized block
             } catch (final Throwable t) {
+              Logger.warn(getClass(),t.getMessage(),t);
                  bubbleUpException(t);
             }
 
-            wfPublishDate = contentletOut.getStringProperty("wfPublishDate");
-            wfExpireDate = contentletOut.getStringProperty("wfExpireDate");
+            wfPublishDate = contentletOut.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE);
+            wfExpireDate = contentletOut.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE);
 
             final String contentPushPublishDateAfter = UtilMethods.isSet(wfPublishDate) ? wfPublishDate : "N/D";
             final String contentPushExpireDateAfter = UtilMethods.isSet(wfExpireDate) ? wfExpireDate : "N/D";
@@ -5846,7 +5850,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return search(buffy.toString(), 0, -1, orderBy, user, respectFrontendRoles);
         } catch (Exception pe) {
             Logger.error(this,"Unable to search for contentlets" ,pe);
-            throw new DotContentletStateException("Unable to search for contentlets", pe);
+            throw new DotContentletStateException("Unable to search for contentlets: " + pe.getMessage(), pe);
         }
     }
 
@@ -5965,7 +5969,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 }
             }catch (IOException e) {
-                throw new DotContentletStateException("Unable to set binary file Object",e);
+                throw new DotContentletStateException("Unable to set binary file Object: " + e.getMessage(),e);
             }
         }else if(field.getFieldContentlet().startsWith("system_field")){
             if(value.getClass()==java.lang.String.class){
@@ -6025,7 +6029,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
             return !incomingFileName.equals(identifier.getAssetName());
         } catch (Exception e) {
-            throw new DotContentletStateException("Exception trying to determine if there's a new incoming file.",e);
+            throw new DotContentletStateException("Exception trying to determine if there's a new incoming file:" + e.getMessage(),e);
         }
     }
 
@@ -8175,13 +8179,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                        final String description, final User user) {
 
         String contentPushPublishDate = contentlet
-                .getStringProperty("wfPublishDate");
+                .getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE);
         String contentPushPublishTime = contentlet
-                .getStringProperty("wfPublishTime");
+                .getStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME);
         String contentPushExpireDate = contentlet
-                .getStringProperty("wfExpireDate");
+                .getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE);
         String contentPushExpireTime = contentlet
-                .getStringProperty("wfExpireTime");
+                .getStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME);
         contentPushPublishDate = UtilMethods.isSet(contentPushPublishDate) ? contentPushPublishDate
                 : "N/A";
         contentPushPublishTime = UtilMethods.isSet(contentPushPublishTime) ? contentPushPublishTime
