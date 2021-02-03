@@ -21,6 +21,11 @@ import java.util.stream.Collectors;
 public class PermissionHelper {
 
     private final PermissionAPI permissionAPI;
+    private final List<Integer> DEFAULT_PERMISSIONS = CollectionsUtils
+            .list(PermissionAPI.PERMISSION_WRITE, PermissionAPI.PERMISSION_READ);
+
+    private final List<PermissionableType> DEFAULT_PERMISSIONABLE_TYPES = Arrays
+            .asList(PermissionableType.values());
 
     private PermissionHelper() {
         this.permissionAPI = APILocator.getPermissionAPI();
@@ -61,15 +66,14 @@ public class PermissionHelper {
         final Map<String, Map<String, Boolean>> result = new HashMap<>();
 
         final List<Integer> permissionsToReturn = UtilMethods.isSet(permissions) ? permissions
-                : CollectionsUtils
-                        .list(PermissionAPI.PERMISSION_WRITE, PermissionAPI.PERMISSION_READ);
+                : DEFAULT_PERMISSIONS;
 
         final List<PermissionableType> permissionTypesToReturn =
                 UtilMethods.isSet(permissionableTypes) ? permissionableTypes.stream()
                         .map(type -> PermissionableType.valueOf(type)).collect(
-                                Collectors.toList()) : Arrays.asList(PermissionableType.values());
+                                Collectors.toList()) : DEFAULT_PERMISSIONABLE_TYPES;
 
-        for (PermissionableType type : permissionTypesToReturn) {
+        for (final PermissionableType type : permissionTypesToReturn) {
             final Map<String, Boolean> allowedPermissions = new HashMap<>();
             boolean hasWritePermissions = false;
             if (permissionsToReturn.contains(PermissionAPI.PERMISSION_WRITE)) {
