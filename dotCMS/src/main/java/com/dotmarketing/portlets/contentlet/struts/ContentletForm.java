@@ -600,7 +600,7 @@ public class ContentletForm extends ValidatorForm {
 				if (null != contentlet && contentlet.isFileAsset()) {
 					return Optional.ofNullable(
 					     Try.of(()->
-							APILocator.getFileMetadataAPI().getFullMetadataNoCache(contentlet,FileAssetAPI.BINARY_FIELD)
+							APILocator.getFileMetadataAPI().getFullMetadataNoCacheForceGenerate(contentlet,FileAssetAPI.BINARY_FIELD)
 					       ).getOrNull()
 					);
 				}

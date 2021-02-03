@@ -25,7 +25,7 @@ public interface FileStorageAPI {
     String SIZE_META_KEY          = "fileSize";
     String CONTENT_TYPE_META_KEY  = "contentType";
     String MOD_DATE_META_KEY      = "modDate";
-    String SHA226_META_KEY        = "sha256";
+    String SHA256_META_KEY        = "sha256";
     String IS_IMAGE_META_KEY      = "isImage";
     String WIDTH_META_KEY         = "width";
     String HEIGHT_META_KEY        = "height";
@@ -36,7 +36,7 @@ public interface FileStorageAPI {
                     TITLE_META_KEY, PATH_META_KEY,
                     LENGTH_META_KEY, SIZE_META_KEY,
                     CONTENT_TYPE_META_KEY, MOD_DATE_META_KEY,
-                    SHA226_META_KEY, IS_IMAGE_META_KEY,
+                    SHA256_META_KEY, IS_IMAGE_META_KEY,
                     WIDTH_META_KEY, HEIGHT_META_KEY
             );
 
@@ -99,6 +99,15 @@ public interface FileStorageAPI {
      * @param requestMetaData {@link RequestMetadata}
      * @return  Map with the metadata
      */
-    Map<String, Serializable> retrieveMetaData(RequestMetadata requestMetaData) throws DotDataException;
+    Map<String, Serializable> retrieveMetaData(final RequestMetadata requestMetaData) throws DotDataException;
+
+
+    /**
+     * Delete metadata
+     * @param requestMetaData
+     * @return a set with the different keyPaths removed
+     * @throws DotDataException
+     */
+    boolean removeMetaData(final RequestMetadata requestMetaData) throws DotDataException;
 
 }

@@ -114,6 +114,7 @@ public class TikaUtils {
      * @param inode Contentlet owner of the file to parse
      * @param binFile File to parse the metadata from it
      */
+    @Deprecated
     public Map<String, String> getMetaDataMapForceMemory(final String inode, final File binFile) {
         return getMetaDataMap(inode, binFile, true);
     }
@@ -127,6 +128,7 @@ public class TikaUtils {
      * @param inode Contentlet owner of the file to parse
      * @param binFile File to parse the metadata from it
      */
+    @Deprecated
     public Map<String, String> getMetaDataMap(final String inode, final File binFile) {
         return getMetaDataMap(inode, binFile, false);
     }
@@ -140,6 +142,7 @@ public class TikaUtils {
      * @param contentlet Content parse in order to extract the metadata info
      * @return True if a metadata file was generated.
      */
+    @Deprecated
     public boolean generateMetaData(Contentlet contentlet)
             throws DotDataException, DotSecurityException {
         return generateMetaData(contentlet, false);
@@ -153,6 +156,7 @@ public class TikaUtils {
      * @param contentlet Content parse in order to extract the metadata info
      * @return True if a metadata file was generated.
      */
+    @Deprecated
     public Map<String, Object> generateMetaDataForce(final Contentlet contentlet, final File binaryField,
                                                      final String fieldVariableName, final Set<String> metadataFields) {
 
@@ -167,6 +171,7 @@ public class TikaUtils {
      * @param contentlet Content parse in order to extract the metadata info
      * @return True if a metadata file was generated.
      */
+    @Deprecated
     public Map<String, Object> generateMetaData(final Contentlet contentlet, final File binaryField,
                                                 final String fieldVariableName, final Set<String> metadataFields) {
 
@@ -174,7 +179,7 @@ public class TikaUtils {
     }
 
     @CloseDBIfOpened
-    private Map<String, Object>  generateMetaData(final Contentlet contentlet, final File binaryField, final String fieldVariableName,
+    private Map<String, Object> generateMetaData(final Contentlet contentlet, final File binaryField, final String fieldVariableName,
                                                  final Set<String> metadataFields, final boolean force) {
 
         //See if we have content metadata file
@@ -276,6 +281,7 @@ public class TikaUtils {
      * existing metadata file in order to force a parse and generation of the metadata file.
      * @return True if a metadata file was generated.
      */
+    @Deprecated
     @CloseDBIfOpened
     public boolean generateMetaData(Contentlet contentlet, boolean force)
             throws DotSecurityException, DotDataException {

@@ -9,7 +9,6 @@ import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
@@ -122,7 +121,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
             }
 
             mapBuilder.put(MOD_DATE_META_KEY, binary.lastModified());
-            mapBuilder.put(SHA226_META_KEY,
+            mapBuilder.put(SHA256_META_KEY,
                     Try.of(() -> FileUtil.sha256toUnixHash(binary)).getOrElse("unknown"));
 
             mapBuilder.put(IS_IMAGE_META_KEY, UtilMethods.isImage(relPath));
@@ -345,6 +344,24 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         }
 
         return metadataMap;
+    }
+
+    /***
+     * {@inheritDoc}
+     * @param requestMetaData {@link RequestMetadata}
+     * @return
+     * @throws DotDataException
+     */
+    public boolean removeMetaData(final RequestMetadata requestMetaData) throws DotDataException{
+        boolean deleteSucceeded = false;
+        final StorageKey storageKey = requestMetaData.getStorageKey();
+        final StoragePersistenceAPI storage = persistenceProvider
+                .getStorage(storageKey.getStorage());
+        this.checkBucket(storageKey, storage);
+        if (storage.existsObject(storageKey.getGroup(), storageKey.getPath())) {
+           deleteSucceeded = storage.deleteObject(storageKey.getGroup(), storageKey.getPath());
+        }
+        return deleteSucceeded;
     }
 
 }

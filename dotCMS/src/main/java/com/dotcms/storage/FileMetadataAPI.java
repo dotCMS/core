@@ -4,11 +4,13 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.function.Supplier;
 
 /**
  * Encapsulates the generation of the contentlet metadata, in addition the interaction of the file system and cache to stores the metadata and the actual generation of the meta
@@ -48,6 +50,15 @@ public interface FileMetadataAPI {
      */
     Map<String, Serializable> getMetadata(Contentlet contentlet, Field field) throws DotDataException;
 
+    /**
+     * Retrieves the basic metadata projection for the contentlet
+     * @param contentlet
+     * @param field
+     * @param forceGenerate
+     * @return
+     * @throws DotDataException
+     */
+    Map<String, Serializable> getMetadata(final Contentlet contentlet, final Field field, final boolean forceGenerate) throws DotDataException;
 
     /**
      * Retrieves the basic metadata for the contentlet (a projection over the full MD)
@@ -59,8 +70,18 @@ public interface FileMetadataAPI {
             throws DotDataException;
 
     /**
+     * Retrieves the basic metadata for the contentlet (a projection over the full MD)
+     * If the MD has never been generated this will force it's generation
+     * @param contentlet          {@link Contentlet}
+     * @param fieldVariableName  {@link String}
+     * @return Map
+     */
+    public Map<String, Serializable> getMetadataForceGenerate(final Contentlet contentlet, final String fieldVariableName)
+            throws DotDataException;
+
+    /**
      * Retrieves the full metadata for the contentlet
-     * When we specify that we must not perform a cache read it means we will nbe loading the FM stored in disc
+     * When we specify that we must not perform a cache read it means we will be loading the FM stored in disc
      * @param contentlet          {@link Contentlet}
      * @param fieldVariableName  {@link String}
      * @return Map
@@ -69,9 +90,38 @@ public interface FileMetadataAPI {
             throws DotDataException;
 
     /**
+     * Retrieves the full metadata for the contentlet
+     * if no MD exists this will force it's generation.
+     * @param contentlet source content
+     * @param fieldVariableName field
+     * @return
+     * @throws DotDataException
+     */
+    Map<String, Serializable> getFullMetadataNoCacheForceGenerate(final Contentlet contentlet,
+            final String fieldVariableName) throws DotDataException;
+
+    /**
      * Compiles all metadata for the contentlet returning a natural ordered map.
      * @param contentlet {@link Contentlet}
      * @return Map
      */
-    Map<String, Map<String, Serializable>> collectFieldsMetadata(final Contentlet contentlet);
+    Map<String, Map<String, Serializable>> collectFieldsMetadata(Contentlet contentlet);
+
+    /**
+     * Removes metadata for a given Contentlet
+     * @param contentlet
+     * @return @{@link Map} with the info of the entries removed
+     */
+    Map<String, Set<String>> removeMetadata(Contentlet contentlet);
+
+    /**
+     *
+     * @param binary
+     * @param fallbackContentlet
+     * @return
+     * @throws DotDataException
+     */
+    Map<String, Serializable> getFullMetadataNoCache(File binary, Supplier<Contentlet> fallbackContentlet)
+            throws DotDataException;
+
 }

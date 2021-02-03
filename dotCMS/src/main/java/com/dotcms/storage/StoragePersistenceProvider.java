@@ -2,6 +2,7 @@ package com.dotcms.storage;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import java.io.File;
 import java.util.Map;
@@ -88,7 +89,7 @@ public final class StoragePersistenceProvider {
     private static void initFileSystemStorage(final Map<StorageType, StoragePersistenceAPI> storageMap) {
         final FileSystemStoragePersistenceAPIImpl fileSystemStorage = new FileSystemStoragePersistenceAPIImpl();
         final String metadataGroupName = Config.getStringProperty(METADATA_GROUP_NAME, "dotmetadata");
-        final File assetsDir = new File(APILocator.getFileAssetAPI().getRealAssetsRootPath());
+        final File assetsDir = new File(ConfigUtils.getAbsoluteAssetsRootPath());
         if(!assetsDir.exists()){
            assetsDir.mkdirs();
         }

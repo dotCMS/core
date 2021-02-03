@@ -41,8 +41,11 @@ public interface IHTMLPage extends Serializable, Versionable, Permissionable,
     
     String getInode();
     void setInode(String inode);
-    
+
+    @Deprecated
     String getMetadata();
+
+    @Deprecated
     void setMetadata(String metadata);
     
     String getPageUrl();

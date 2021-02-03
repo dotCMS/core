@@ -36,6 +36,7 @@ import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.rendering.velocity.services.PageLoader;
+import com.dotcms.storage.FileMetadataAPI;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -235,6 +236,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private final TagAPI                tagAPI;
     private final IdentifierStripedLock lockManager;
     private final TempFileAPI           tempApi ;
+    private final FileMetadataAPI       fileMetadataAPI;
     public static final int MAX_LIMIT = 10000;
     private static final boolean INCLUDE_DEPENDENCIES = true;
 
@@ -277,6 +279,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         localSystemEventsAPI      = APILocator.getLocalSystemEventsAPI();
         lockManager = DotConcurrentFactory.getInstance().getIdentifierStripedLock();
         tempApi=  APILocator.getTempFileAPI();
+        fileMetadataAPI = APILocator.getFileMetadataAPI();
         this.esReadOnlyMonitor = esReadOnlyMonitor;
     }
 
@@ -4789,8 +4792,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 
             // Binary Files
-            String newInode = contentlet.getInode();
-            String oldInode = workingContentlet.getInode();
+            final String newInode = contentlet.getInode();
+            final String oldInode = workingContentlet.getInode();
 
 
             File newDir = new File(APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator
@@ -4832,16 +4835,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                     final File binaryFieldFolder = new File(newDir.getAbsolutePath() + File.separator + velocityVarNm);
 
-                    final File metadata=(contentType instanceof FileAssetContentType) ? 
-                        APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode()) : null;
+                    //TODO: 6. When saving a contentlet that has previous versions, we should copy the metadata???
+                    final File metadata=(contentType instanceof FileAssetContentType) ? APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode()) : null;
                     
 
                     // if the user has removed this  file via the ui
                     if (incomingFile == null  || incomingFile.getAbsolutePath().contains("-removed-")){
                         FileUtil.deltree(binaryFieldFolder);
                         contentlet.setBinary(velocityVarNm, null);
-                        if(metadata!=null && metadata.exists())
-                            metadata.delete();
+                        //TODO: Remove this block commented
+                        //if(metadata!=null && metadata.exists()) {
+                          //  metadata.delete();
+                        //}
+                        //For removed files we should cleanup any existing metadata.
+                        if(contentlet.isFileAsset()){
+                           fileMetadataAPI.removeMetadata(contentlet);
+                        }
                         continue;
                     }
 
@@ -4864,7 +4873,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         }
 
                         //The file name must be preserved so it remains the same across versions.
-                        File newFile = new File(newDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator +  oldFileName);
+                        final File newFile = new File(newDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator +  oldFileName);
                         binaryFieldFolder.mkdirs();
 
                         // we move files that have been newly uploaded or edited
@@ -4878,11 +4887,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             }
                             // We want to copy (not move) cause the same file could be in
                             // another field and we don't want to delete it in the first time.
+
                             final boolean contentVersionHardLink = Config
                                     .getBooleanProperty("CONTENT_VERSION_HARD_LINK", true);
                             FileUtil.copyFile(incomingFile, newFile, contentVersionHardLink, validateEmptyFile);
 
-
+                            //TODO:
                             // delete old content metadata if exists
                             if(metadata!=null && metadata.exists()){
                                 metadata.delete();
@@ -4896,15 +4906,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                             // try to get the content metadata from the old version
                             if (metadata != null) {
-                                File oldMeta = APILocator.getFileAssetAPI()
-                                        .getContentMetadataFile(oldInode);
+                                File oldMeta = APILocator.getFileAssetAPI().getContentMetadataFile(oldInode);
                                 if (oldMeta.exists() && !oldMeta.equals(metadata)) {
-                                    if (metadata
-                                            .exists()) {// unlikely to happend. deleting just in case
+                                    if (metadata.exists()) {// unlikely to happen. deleting just in case
                                         metadata.delete();
                                     }
                                     metadata.getParentFile().mkdirs();
                                     FileUtil.copyFile(oldMeta, metadata);
+
                                 }
                             }
                         }

@@ -295,6 +295,7 @@ public interface FileAssetAPI {
 	 * @param fileName {@link String}  fileName for the metadata
 	 * @return File
 	 */
+	@Deprecated
 	File getContentMetadataFile(String inode, String fileName);
 	
 	/**
@@ -302,7 +303,7 @@ public interface FileAssetAPI {
 	 * It handles compression gzip, bzip2 or none using Tika to detect it 
 	 * based on the file header.
 	 * 
-	 * @param inode
+	 * @param metadataFile
 	 * @return
 	 */
 	 @Deprecated

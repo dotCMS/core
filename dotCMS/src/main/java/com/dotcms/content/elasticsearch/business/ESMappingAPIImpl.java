@@ -114,11 +114,12 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
     //If you want to override and specify a set of particular fields to be excluded from the dotRaw generation it can be accomplished through this prop.
 	static final String EXCLUDE_DOTRAW_METADATA_FIELDS = "exclude.dotraw.metadata.fields";
 
+	//TODO: Flip this logic so this set includes fiedls that must be used to generate dotraws
     //Default fields to exclude from meta-data dotRaw generation
 	static final String[] defaultExcludedDotRawMetadataFields = {
 	        FileAssetAPI.CONTENT_FIELD,
 			FileStorageAPI.IS_IMAGE_META_KEY,
-			FileStorageAPI.SHA226_META_KEY
+			FileStorageAPI.SHA256_META_KEY
 	};
 
 	// if you want to limit the size of the field `metadata.content`
@@ -451,6 +452,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 //This "NO_METADATA" constant is getting relocated from tika utils
                 return NO_METADATA;
             }
+            //TODO:make sure this is not a dupe META_DATA_MAX_SIZE
             final int length = Config.getIntProperty(INDEX_METADATA_CONTENT_LENGTH, 0);
             final String string = value.toString().toLowerCase();
             if (length > 0) {

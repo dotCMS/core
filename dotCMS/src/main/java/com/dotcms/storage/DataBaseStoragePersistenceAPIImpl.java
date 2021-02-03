@@ -1,6 +1,6 @@
 package com.dotcms.storage;
 
-import static com.dotcms.storage.FileStorageAPI.SHA226_META_KEY;
+import static com.dotcms.storage.FileStorageAPI.SHA256_META_KEY;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.util.CloseUtils;
@@ -383,7 +383,7 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
         // 2.1 if exists only insert on the reference
         // 2.2 if does not exists, insert a new one
         final Map<String, Serializable> metaData = processMetadata(file, extraMeta);
-        final String fileHash = (String) metaData.get(SHA226_META_KEY);
+        final String fileHash = (String) metaData.get(SHA256_META_KEY);
 
         return wrapInTransaction(
                 () -> {
@@ -432,11 +432,11 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
             //So when we were recovering the Metadata file from db again we would end-up getting the binary
             //So this instructs the Api to regenerate the sha256 with the temp file which has the Metadata written to it.
             if (Try.of(() -> (Boolean) extraMeta.get("hashObject")).getOrElse(false)) {
-                extraMeta.put(SHA226_META_KEY,
+                extraMeta.put(SHA256_META_KEY,
                         Try.of(() -> FileUtil.sha256toUnixHash(file)).getOrElse("unknown"));
             }
 
-            if (extraMeta.containsKey(SHA226_META_KEY)) {
+            if (extraMeta.containsKey(SHA256_META_KEY)) {
 
                 return extraMeta;
             }
