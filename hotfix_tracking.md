@@ -57,3 +57,5 @@ This maintenance release includes the following code fixes:
 26. https://github.com/dotCMS/core/issues/19636	: Bundling fails when adding content to a bundle then attepting to push or download the bundle
 
 27. https://github.com/dotCMS/core/issues/19634	: Push publishing a page fails due to invalid urlMap detail page
+
+28. https://github.com/dotCMS/core/issues/19621 : Stop eating errors
