@@ -68,3 +68,5 @@ This release includes the following code fixes:
 31. https://github.com/dotCMS/core/issues/19728	: graphql query of [Blog] -> [related File with Category field] produces error
 
 32. https://github.com/dotCMS/core/issues/19686 : Error when editing multilingual content that is referenced on monolingual HTML pages
+
+33. https://github.com/dotCMS/core/issues/19621	: Stop eating errors
