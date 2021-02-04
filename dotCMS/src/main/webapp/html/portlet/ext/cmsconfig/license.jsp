@@ -539,7 +539,7 @@
                     <th>&nbsp;</th>
                     <th><%= LanguageUtil.get(pageContext, "license-repo-serverid") %></th>
                     <th><%= LanguageUtil.get(pageContext, "license-serial") %></th>
-                    <th><%= LanguageUtil.get("license-repo-running-since", "Started") %></th>
+                    <th><%= LanguageUtil.getOrDefaultValue("license-repo-running-since", "Started") %></th>
                     <th>
                         <%= LanguageUtil.get(pageContext, "license-repo-last-ping") %>
                     </th>
