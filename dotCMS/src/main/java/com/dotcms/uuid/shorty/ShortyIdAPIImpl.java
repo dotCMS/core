@@ -81,7 +81,8 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
       return shortyId.type == ShortType.CACHE_MISS ? Optional.empty() : Optional.of(shortyId);
     } catch (ShortyException se) {
 
-      Logger.warn(this.getClass(), se.getMessage());
+      Logger.warn(this.getClass(), String.format("An error occurred when getting shorty value for '%s' of type " +
+              "'%s': %s", shortStr, shortyType, se.getMessage()));
       return Optional.empty();
     }
   }
