@@ -6,6 +6,7 @@ import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.publisher.bundle.business.BundleAPI;
+import com.dotcms.rest.api.v1.authentication.DotInvalidTokenException;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -315,6 +316,14 @@ public class UserAPIImpl implements UserAPI {
     public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous, boolean includeDefault, String roleId)
             throws DotDataException {
         return userFactory.getCountUsersByNameOrEmailOrUserID(filter, includeAnonymous, includeDefault, roleId);
+    }
+
+    @Override
+    public String getUserIdByIcqId(final String icqId) throws DotInvalidTokenException {
+        if(!UtilMethods.isSet(icqId)){
+            throw new DotInvalidTokenException("icqId is not set");
+        }
+        return userFactory.getUserIdByIcqId(icqId);
     }
 
     @CloseDBIfOpened
