@@ -26,7 +26,12 @@
 
 <ng-template #externalFilterTemplate>
     <div class="theme-selector__filters">
-        <dot-site-selector width="12.8rem" (change)="siteChange($event)"></dot-site-selector>
+        <dot-site-selector
+            #siteSelector
+            width="12.8rem"
+            [id]="id"
+            (change)="siteChange($event)"
+        ></dot-site-selector>
         <div class="searchable-dropdown__search-section">
             <dot-icon class="searchable-dropdown__search-icon" name="search"></dot-icon>
             <input
@@ -44,6 +49,8 @@
 
 <dot-searchable-dropdown
     #searchableDropdown
+    (hide)="onHide()"
+    (show)="onShow()"
     [(ngModel)]="value"
     (filterChange)="handleFilterChange($event)"
     (change)="onChange($event)"

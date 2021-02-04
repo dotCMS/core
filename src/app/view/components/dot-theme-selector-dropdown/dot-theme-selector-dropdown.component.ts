@@ -1,5 +1,6 @@
 import { AfterViewInit, Component, ElementRef, forwardRef, OnInit, ViewChild } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { DotSiteSelectorComponent } from '@components/_common/dot-site-selector/dot-site-selector.component';
 import { SearchableDropdownComponent } from '@components/_common/searchable-dropdown/component';
 import { DotTheme } from '@models/dot-edit-layout-designer';
 import { DotThemesService } from '@services/dot-themes/dot-themes.service';
@@ -7,7 +8,7 @@ import { PaginatorService } from '@services/paginator';
 import { Site, SiteService } from 'dotcms-js';
 import { LazyLoadEvent } from 'primeng/api';
 import { fromEvent } from 'rxjs';
-import { debounceTime, mergeMap, pluck, take } from 'rxjs/operators';
+import { debounceTime, filter, pluck, take } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-theme-selector-dropdown',
@@ -27,12 +28,16 @@ export class DotThemeSelectorDropdownComponent
     value: DotTheme = null;
     totalRecords: number = 0;
     currentOffset: number;
+    currentSiteIdentifier: string;
 
     @ViewChild('searchableDropdown', { static: true })
     searchableDropdown: SearchableDropdownComponent;
 
     @ViewChild('searchInput', { static: false })
     searchInput: ElementRef;
+
+    @ViewChild('siteSelector')
+    siteSelector: DotSiteSelectorComponent;
 
     constructor(
         public readonly paginatorService: PaginatorService,
@@ -41,22 +46,11 @@ export class DotThemeSelectorDropdownComponent
     ) {}
 
     ngOnInit(): void {
-        this.paginatorService.url = 'v1/themes';
-        this.paginatorService.paginationPerPage = 5;
-
         this.siteService
             .getCurrentSite()
-            .pipe(
-                pluck('identifier'),
-                mergeMap((identifier: string) => {
-                    this.paginatorService.setExtraParams('hostId', identifier);
-                    return this.paginatorService.getWithOffset(0).pipe(take(1));
-                }),
-                take(1)
-            )
-            .subscribe((themes: DotTheme[]) => {
-                this.themes = themes;
-                this.setTotalRecords();
+            .pipe(pluck('identifier'), take(1))
+            .subscribe((identifier: string) => {
+                this.currentSiteIdentifier = identifier;
             });
     }
 
@@ -68,6 +62,22 @@ export class DotThemeSelectorDropdownComponent
                     this.getFilteredThemes(keyboardEvent.target['value']);
                 });
         }
+    }
+
+    onHide(): void {
+        if (this.value) {
+            this.siteService
+                .getSiteById(this.value.hostId)
+                .pipe(take(1))
+                .subscribe((site) => {
+                    this.siteSelector.updateCurrentSite(site);
+                });
+        }
+
+        // Reset back to its original state
+        this.searchInput.nativeElement.value = '';
+        this.setHostThemes(this.currentSiteIdentifier);
+        this.getFilteredThemes('');
     }
 
     propagateChange = (_: any) => {};
@@ -95,6 +105,9 @@ export class DotThemeSelectorDropdownComponent
                 .pipe(take(1))
                 .subscribe((theme: DotTheme) => {
                     this.value = theme;
+                    this.siteService.getSiteById(this.value.hostId).subscribe((site) => {
+                        this.siteSelector?.updateCurrentSite(site);
+                    });
                 });
         }
     }
@@ -105,7 +118,23 @@ export class DotThemeSelectorDropdownComponent
      * @memberof DotThemeSelectorDropdownComponent
      */
     siteChange(event: Site): void {
+        this.currentSiteIdentifier = event.identifier;
         this.setHostThemes(event.identifier);
+    }
+    /**
+     * Sets the themes when the drop down is opened
+     *
+     * @memberof DotThemeSelectorDropdownComponent
+     */
+    onShow(): void {
+        this.paginatorService.url = 'v1/themes';
+        this.paginatorService.paginationPerPage = 5;
+
+        if (this.value) {
+            this.currentSiteIdentifier = this.value.hostId;
+        }
+
+        this.setHostThemes(this.currentSiteIdentifier);
     }
 
     /**
@@ -139,32 +168,32 @@ export class DotThemeSelectorDropdownComponent
      */
     handlePageChange(event: LazyLoadEvent): void {
         this.currentOffset = event.first;
-
-        this.paginatorService
-            .getWithOffset(event.first)
-            .pipe(take(1))
-            .subscribe((themes) => {
-                this.themes = themes;
-            });
-    }
-
-    private setHostThemes(identifier: string) {
-        this.paginatorService.setExtraParams('hostId', identifier);
-
-        this.paginatorService
-            .getWithOffset(0)
-            .pipe(take(1))
-            .subscribe((themes: DotTheme[]) => {
-                this.themes = themes;
-                this.setTotalRecords();
-            });
+        if (this.currentSiteIdentifier) {
+            this.paginatorService
+                .getWithOffset(event.first)
+                /*
+                We load the first page of themes (onShow) so we dont want to load them when the
+                first paginate event from the dataview inside <dot-searchable-dropdown> triggers
+            */
+                .pipe(
+                    take(1),
+                    filter(() => !!(this.currentSiteIdentifier && this.themes.length))
+                )
+                .subscribe((themes) => {
+                    this.themes = themes;
+                });
+        }
     }
 
     private getFilteredThemes(filter = '', offset = 0): void {
         this.paginatorService.searchParam = filter;
+        this.setHostThemes(this.currentSiteIdentifier, this.currentOffset || offset);
+    }
 
+    private setHostThemes(hostId: string, offset: number = 0) {
+        this.paginatorService.setExtraParams('hostId', hostId);
         this.paginatorService
-            .getWithOffset(this.currentOffset || offset)
+            .getWithOffset(offset)
             .pipe(take(1))
             .subscribe((themes: DotTheme[]) => {
                 this.themes = themes;

@@ -122,6 +122,11 @@ describe('DotThemeSelectorDropdownComponent', () => {
                             return of({
                                 identifier: '123'
                             });
+                        },
+                        getSiteById() {
+                            return of({
+                                identifier: '123'
+                            });
                         }
                     }
                 },
@@ -158,23 +163,33 @@ describe('DotThemeSelectorDropdownComponent', () => {
         });
 
         describe('html', () => {
-            it('should pass themes', () => {
-                const searchable = de.query(By.css('dot-searchable-dropdown')).componentInstance;
-                expect(searchable.data).toEqual(mockDotThemes);
+            it('should set themes if theme selector is open', () => {
+                component.onShow();
+                expect(component.totalRecords).toEqual(3);
+                expect(component.themes).toEqual(mockDotThemes);
             });
 
-            it('shoud set the right attributes', () => {
+            it('should set the right attributes', () => {
                 const element = de.query(By.css('dot-searchable-dropdown'));
 
                 const instance = element.componentInstance;
-
-                expect(instance.totalRecords).toBe(3);
                 expect(instance.placeholder).toBe('Select Themes');
-                expect(instance.rows).toBe(5);
-                expect(instance.data).toEqual([...mockDotThemes]);
                 expect(element.attributes.overlayWidth).toBe('490px');
                 expect(element.attributes.labelPropertyName).toBe('name');
                 expect(element.attributes.valuePropertyName).toBe('name');
+
+                component.onShow();
+                fixture.detectChanges();
+                expect(instance.rows).toBe(5);
+            });
+
+            it('should reset values onHide', () => {
+                spyOn(paginationService, 'getWithOffset').and.returnValue(of(mockDotThemes));
+                component.onHide();
+
+                expect(paginationService.getWithOffset).toHaveBeenCalledWith(0);
+                expect(component.totalRecords).toBe(3);
+                expect(paginationService.searchParam).toBe('');
             });
         });
 

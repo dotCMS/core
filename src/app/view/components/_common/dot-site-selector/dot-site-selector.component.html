@@ -1,5 +1,5 @@
 <dot-searchable-dropdown
-    *ngIf="totalRecords > 1"
+    *ngIf="paginationService.totalRecords > 1; else hostName"
     #searchableDropdown
     (change)="siteChange($event)"
     (filterChange)="handleFilterChange($event)"
@@ -7,7 +7,7 @@
     (pageChange)="handlePageChange($event)"
     (show)="show.emit()"
     [data]="sitesCurrentPage"
-    [ngModel]="currentSite | async"
+    [ngModel]="currentSite$ | async"
     [pageLinkSize]="3"
     [rows]="10"
     [totalRecords]="paginationService.totalRecords"
@@ -17,6 +17,8 @@
 >
 </dot-searchable-dropdown>
 
-<span *ngIf="totalRecords == 1" class="site-selector__title">{{
-    (currentSite | async)?.hostname
-}}</span>
+<ng-template #hostName>
+    <span class="site-selector__title">
+        {{ (currentSite$ | async)?.hostname }}
+    </span>
+</ng-template>

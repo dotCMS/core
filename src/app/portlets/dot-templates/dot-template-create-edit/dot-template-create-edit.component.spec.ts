@@ -96,13 +96,14 @@ async function makeFormValid(fixture) {
 
     title.dispatchEvent(event);
 
-    await fixture.whenRenderingDone();
-
-    const themeButton: HTMLInputElement = document.querySelector(
+    const themeButton: any = document.querySelector(
         '[data-testid="templatePropsThemeField"] button'
     );
 
+    await fixture.whenRenderingDone();
     themeButton.click();
+    fixture.detectChanges();
+    await fixture.whenRenderingDone();
     const item: HTMLElement = document.querySelector('.theme-selector__data-list-item');
     item.click();
 }
