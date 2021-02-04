@@ -62,4 +62,6 @@ This maintenance release includes the following code fixes:
 
 29. https://github.com/dotCMS/core/issues/19608 : Contentlets lose inherited permissions until cache is flushed
 
-30. https://github.com/dotCMS/core/issues/19578	: [OSGI] : Overriding Classes does not work in latest master 
+30. https://github.com/dotCMS/core/issues/19578	: [OSGI] : Overriding Classes does not work in latest master
+
+31. https://github.com/dotCMS/core/issues/19564	: 301 and 302 Vanity URL redirects do not pass querystrings
