@@ -72,3 +72,5 @@ This release includes the following code fixes:
 33. https://github.com/dotCMS/core/issues/19621	: Stop eating errors
 
 34. https://github.com/dotCMS/core/issues/19608 : Contentlets lose inherited permissions until cache is flushed
+
+35. https://github.com/dotCMS/core/issues/19566 : [logging] : General logging improvements

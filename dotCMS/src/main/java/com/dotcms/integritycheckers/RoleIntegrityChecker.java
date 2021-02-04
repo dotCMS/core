@@ -58,12 +58,12 @@ public class RoleIntegrityChecker extends AbstractIntegrityChecker {
         final String outputFile = outputPath + File.separator
                 + getIntegrityType().getDataToCheckCSVName();
 
-        File csvFile = new File(outputFile);
+        final File csvFile = new File(outputFile);
         try {
-        	CsvWriter writer = new CsvWriter(new FileWriter(csvFile, true), '|');
+        	final CsvWriter writer = new CsvWriter(new FileWriter(csvFile, true), '|');
 
         	try {
-        		MutableInt count = new MutableInt(0);
+        		final MutableInt count = new MutableInt(0);
 
         		queryAndConsumeRoles(role -> {
         			try {
@@ -88,15 +88,16 @@ public class RoleIntegrityChecker extends AbstractIntegrityChecker {
             } finally {
             	writer.close();
             }
-        } catch(Exception e) {
-        	throw e;
+        } catch (final Exception e) {
+            throw new DotDataException(String.format("An error occurred when generating the CSV file '%s': %s",
+                    outputFile, e.getMessage()), e);
         }
 
         return csvFile;
     }
 
     @Override
-    public boolean generateIntegrityResults(String endpointId) throws Exception {
+    public boolean generateIntegrityResults(final String endpointId) throws Exception {
         try {
             final DotConnect dc = new DotConnect();
 
@@ -117,8 +118,9 @@ public class RoleIntegrityChecker extends AbstractIntegrityChecker {
 					dc.addParam(role.getQualifiedName());
 
 					dc.loadResult();
-				} catch (DotDataException e) {
-					throw new RuntimeException("An error occured when generating local temp table for role: "+ role.getRoleId(), e);
+				} catch (final DotDataException e) {
+					throw new RuntimeException(String.format("An error occurred when generating local temp table for " +
+							"role '%s': %s", role.getRoleId(), e.getMessage()), e);
 				}
             });
 
@@ -129,12 +131,12 @@ public class RoleIntegrityChecker extends AbstractIntegrityChecker {
 
 			dc.executeStatement(getTempTableCreateStatement(NAME_TEMP_TABLE_REMOTE));
 
-            CsvReader roles = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator
+            final CsvReader roles = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator
                     + endpointId + File.separator + getIntegrityType().getDataToCheckCSVName(),
                     '|', Charset.forName("UTF-8"));
             while (roles.readRecord()) {
 				try {
-					CmsRole role = new CmsRole(roles.get(0), roles.get(1), roles.get(2), roles.get(3), roles.get(4));
+					final CmsRole role = new CmsRole(roles.get(0), roles.get(1), roles.get(2), roles.get(3), roles.get(4));
 
 					dc.setSQL(INSERT_TEMP_TABLE_REMOTE);
 					dc.addParam(role.getRoleId());
@@ -144,8 +146,9 @@ public class RoleIntegrityChecker extends AbstractIntegrityChecker {
 					dc.addParam(role.getQualifiedName());
 
 					dc.loadResult();
-				} catch (DotDataException e) {
-					throw new DotDataException("An error occured when generating remote temp table for role: "+ roles.get(0), e);
+				} catch (final DotDataException e) {
+					throw new DotDataException(String.format("An error occurred when generating local temp table for " +
+                            "role '%s': %s", roles.get(0), e.getMessage()), e);
 				}
             }
 
@@ -154,7 +157,7 @@ public class RoleIntegrityChecker extends AbstractIntegrityChecker {
             dc.setSQL("select 1 from "+NAME_TEMP_TABLE_LOCAL +" tr1 join "+NAME_TEMP_TABLE_REMOTE +" tr2 on tr1.role_key = tr2.role_key "
                     + "where tr1.qualified_name = tr2.qualified_name and tr1.qualified_id <> tr2.qualified_id");
 
-            List<Map<String, Object>> results = dc.loadObjectResults();
+            final List<Map<String, Object>> results = dc.loadObjectResults();
 
             if (!results.isEmpty()) {
                 // If there are conflicts, populate the results table
@@ -173,8 +176,9 @@ public class RoleIntegrityChecker extends AbstractIntegrityChecker {
             }
 
             return (Long) dc.getRecordCount(getIntegrityType().getResultsTableName(), "where endpoint_id = '"+ endpointId+ "'") > 0;
-        } catch (Exception e) {
-            throw new Exception("Error running the Roles Integrity Check", e);
+        } catch (final Exception e) {
+            throw new Exception(String.format("Error running the Roles Integrity Check for Endpoint '%s': %s",
+                    endpointId, e.getMessage()), e);
         }
     }
 
@@ -182,18 +186,18 @@ public class RoleIntegrityChecker extends AbstractIntegrityChecker {
      * Fixes role inconsistencies for a given server id. Fixing a role means
      * updating its id with the one received from the other end
      *
-     * @param endpointId
+     * @param key
      * @throws DotDataException
      * @throws DotSecurityException
      */
     @Override
-    public void executeFix(final String endpointId) throws DotDataException, DotSecurityException {
+    public void executeFix(final String key) throws DotDataException, DotSecurityException {
         
         DotConnect dc = new DotConnect();
 
         dc.setSQL("select name, local_role_id, remote_role_id from "+ getIntegrityType().getResultsTableName() +
             	 " where endpoint_id = ? order by name asc");
-        dc.addParam(endpointId);
+        dc.addParam(key);
 
         for (Map<String, Object> result : dc.loadObjectResults()) {
         	String oldRoleId = (String) result.get("local_role_id");

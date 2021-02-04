@@ -1,5 +1,6 @@
 package com.dotcms.integritycheckers;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.repackage.com.csvreader.CsvWriter;
 import com.dotcms.rest.IntegrityResource;
@@ -59,7 +60,7 @@ public class IntegrityUtil {
 
     private File generateDataToFixCSV(String outputPath, String endpointId, IntegrityType type)
             throws DotDataException, IOException {
-        File csvFile = null;
+        File csvFile;
         CsvWriter writer = null;
 
         try {
@@ -67,13 +68,13 @@ public class IntegrityUtil {
             csvFile = new File(outputFile);
             writer = new CsvWriter(new FileWriter(csvFile, true), '|');
 
-            String resultsTable = type.getResultsTableName();
+            final String resultsTable = type.getResultsTableName();
             if (!type.hasResultsTable()) {
                 throw new DotDataException("Integrity type =[" + type
                         + "] does not support this method, because results table is not available.");
             }
 
-            StringBuilder sbSelectTempTable = new StringBuilder();
+            final StringBuilder sbSelectTempTable = new StringBuilder();
             switch(type) {
             	case HTMLPAGES:
             	case FILEASSETS:
@@ -97,10 +98,10 @@ public class IntegrityUtil {
             }
             sbSelectTempTable.append(resultsTable).append(" where endpoint_id = ?");
             
-            Connection conn = DbConnectionFactory.getConnection();
-            PreparedStatement statement = conn.prepareStatement(sbSelectTempTable.toString());
+            final Connection conn = DbConnectionFactory.getConnection();
+            final PreparedStatement statement = conn.prepareStatement(sbSelectTempTable.toString());
             statement.setString(1, endpointId);
-            try (ResultSet rs = statement.executeQuery()) {
+            try (final ResultSet rs = statement.executeQuery()) {
                 int count = 0;
 
                 while (rs.next()) {
@@ -147,8 +148,9 @@ public class IntegrityUtil {
                     statement.close();
                 } catch (Exception e) {}
             }
-        } catch (SQLException e) {
-            throw new DotDataException(e.getMessage(), e);
+        } catch (final SQLException e) {
+            throw new DotDataException(String.format("An error occurred when generating the Data-To-Fix CSV file for " +
+                    "type '%s' in Endpoint '%s': %s", type.getLabel(), endpointId, e.getMessage()), e);
         } finally {
             if (writer != null)
                 writer.close();
@@ -187,8 +189,8 @@ public class IntegrityUtil {
         }
     }
 
-    public static void unzipFile(InputStream zipFile, String outputDir) throws Exception {
-        File dir = new File(outputDir);
+    public static void unzipFile(final InputStream zipFile, final String outputDir) throws Exception {
+        final File dir = new File(outputDir);
 
         // if file doesn't exists, then create it
         if (!dir.exists()) {
@@ -197,16 +199,15 @@ public class IntegrityUtil {
         
         ZipInputStream zin = null;
         OutputStream os = null;
-        
+        ZipEntry ze = null;
         try {
-            
-            ZipEntry ze = null;
+
             zin = new ZipInputStream(zipFile);
             while ((ze = zin.getNextEntry()) != null) {
                 
              // for each entry to be extracted
                 int bytesRead;
-                byte[] buf = new byte[1024];
+                final byte[] buf = new byte[1024];
                 
                 Logger.info(IntegrityUtil.class, "Unzipping " + ze.getName());
 
@@ -222,9 +223,11 @@ public class IntegrityUtil {
                     Logger.warn( IntegrityUtil.class, "Error Closing Stream.", e );
                 }
             }
-        } catch (IOException e) {
-            Logger.error(IntegrityUtil.class, "Error while unzipping Integrity Data", e);
-            throw new Exception("Error while unzipping Integrity Data", e);
+        } catch (final IOException e) {
+            final String errorMsg = String.format("Error while unzipping Integrity Data in file '%s': %s", null != ze
+                    ? ze.getName() : "", e.getMessage());
+            Logger.error(IntegrityUtil.class, errorMsg, e);
+            throw new Exception(errorMsg, e);
         } finally { // close your streams
             if ( zin != null ) {
                 try {
@@ -349,7 +352,7 @@ public class IntegrityUtil {
             	}
             }
         } catch (SQLException e) {
-            Logger.error(getClass(), "Error dropping Temp tables");
+            Logger.error(IntegrityResource.class, "Error dropping Temp tables");
             throw new DotDataException("Error dropping Temp tables", e);
         }
     }
@@ -382,7 +385,7 @@ public class IntegrityUtil {
 	 * 
 	 * @param dataToFix
 	 *            - The {@link InputStream} containing the data to fix.
-	 * @param endpointId
+	 * @param key
 	 *            - The ID of the end point where the data will be fixed.
 	 * @param type
 	 *            - The type of object (Content Page, Folder, Content Type,
@@ -391,16 +394,17 @@ public class IntegrityUtil {
 	 *             An error occurred during the integrity fix process. The
 	 *             results table must be wiped out.
 	 */
-    public void fixConflicts(InputStream dataToFix, String endpointId, IntegrityType type)
+	@WrapInTransaction
+    public void fixConflicts(InputStream dataToFix, String key, IntegrityType type)
             throws Exception {
-        final String outputDir = ConfigUtils.getIntegrityPath() + File.separator + endpointId;
+        final String outputDir = ConfigUtils.getIntegrityPath() + File.separator + key;
 
         // lets first unzip the given file
         unzipFile(dataToFix, outputDir);
 
         // lets generate the tables with the data to be fixed
-        generateDataToFixTable(endpointId, type);
-        fixConflicts(endpointId, type);
+        generateDataToFixTable(key, type);
+        fixConflicts(key, type);
 
         HibernateUtil.addCommitListener(new FlushCacheRunnable() {
             @Override
@@ -433,7 +437,7 @@ public class IntegrityUtil {
 	 * which indicates what records <b>MUST</b> be changed in the specified end
 	 * point.
 	 * 
-	 * @param endpointId
+	 * @param key
 	 *            - The ID of the end point where the data will be fixed.
 	 * @param type
 	 *            - The type of object (Content Page, Folder, Content Type,
@@ -441,11 +445,11 @@ public class IntegrityUtil {
 	 * @throws Exception
 	 *             An error occurred during the integrity fix process.
 	 */
-    public void generateDataToFixTable(String endpointId, IntegrityType type) throws Exception {
+    public void generateDataToFixTable(String key, IntegrityType type) throws Exception {
 
         try {
-            CsvReader csvFile = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator
-                    + endpointId + File.separator + type.getDataToFixCSVName(), '|',
+            final CsvReader csvFile = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator
+                    + key + File.separator + type.getDataToFixCSVName(), '|',
                     Charset.forName("UTF-8"));
 
             final String resultsTable = type.getResultsTableName();
@@ -455,7 +459,7 @@ public class IntegrityUtil {
             }
 
             // Create insert query for temporary table
-            StringBuilder sbInsertTempTable = new StringBuilder("insert into ").append(resultsTable);
+            final StringBuilder sbInsertTempTable = new StringBuilder("insert into ").append(resultsTable);
             switch(type) {
 	        	case HTMLPAGES:
 	        	case FILEASSETS:
@@ -503,7 +507,7 @@ public class IntegrityUtil {
 	                }
                 }
 
-                dc.addParam(endpointId);
+                dc.addParam(key);
 
                 if (type == IntegrityType.HTMLPAGES || type == IntegrityType.FILEASSETS) {
                     dc.addParam(new Long(csvFile.get(7))); // languageId
@@ -512,8 +516,9 @@ public class IntegrityUtil {
                 dc.loadResult();
             }
 
-        } catch (Exception e) {
-            throw new Exception("Error generating data to fix", e);
+        } catch (final Exception e) {
+            throw new Exception(String.format("An error occurred when generating data to fix for type '%s' in " +
+                    "Endpoint '%s': %s", type.getLabel(), key, e.getMessage()), e);
         }
     }
 
@@ -561,7 +566,7 @@ public class IntegrityUtil {
 	/**
 	 * Executes the integrity fix process according to the specified type.
 	 * 
-	 * @param endpointId
+	 * @param key
 	 *            - The ID of the end point where the data will be fixed.
 	 * @param type
 	 *            - The type of object (Content Page, Folder, Content Type,
@@ -572,9 +577,10 @@ public class IntegrityUtil {
 	 *             The specified user does not have permissions to perform the
 	 *             action.
 	 */
-    public void fixConflicts(final String endpointId, IntegrityType type) throws DotDataException,
+	@WrapInTransaction
+    public void fixConflicts(final String key, IntegrityType type) throws DotDataException,
             DotSecurityException {
-        type.getIntegrityChecker().executeFix(endpointId);
+        type.getIntegrityChecker().executeFix(key);
     }
 
     /**
@@ -598,6 +604,7 @@ public class IntegrityUtil {
      * @throws DotDataException
      * @throws Exception
      */
+    @WrapInTransaction
     public void completeDiscardConflicts(final String endpointId) throws DotDataException {
         IntegrityType[] types = IntegrityType.values();
         for (IntegrityType integrityType : types) {
@@ -614,6 +621,7 @@ public class IntegrityUtil {
      * @return is there is at least one conflict returns true, otherwise false
      * @throws Exception
      */
+    @WrapInTransaction
     public boolean completeCheckIntegrity(final String endpointId) throws Exception {
         boolean existConflicts = false;
 
