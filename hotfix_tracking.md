@@ -67,3 +67,5 @@ This maintenance release includes the following code fixes:
 31. https://github.com/dotCMS/core/issues/19564	: 301 and 302 Vanity URL redirects do not pass querystrings
 
 32. https://github.com/dotCMS/core/issues/19555	: Deleting a user is not replacing the owner on identifier table
+
+33. 
