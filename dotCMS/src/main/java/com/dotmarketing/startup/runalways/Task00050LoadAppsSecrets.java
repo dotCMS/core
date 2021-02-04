@@ -11,6 +11,7 @@ import static com.dotcms.security.apps.AppsUtil.validateForSave;
 import static com.dotmarketing.util.UtilMethods.isSet;
 import static com.liferay.util.StringPool.BLANK;
 
+import com.dotcms.enterprise.cluster.ClusterFactory.ClusterData;
 import com.dotcms.security.apps.AppDescriptor;
 import com.dotcms.security.apps.AppDescriptorHelper;
 import com.dotcms.security.apps.AppSecrets;
@@ -22,6 +23,8 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
+import com.dotmarketing.startup.runonce.Task04355SystemEventAddServerIdColumn;
+import com.dotmarketing.startup.runonce.Task05350AddDotSaltClusterColumn;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
@@ -80,6 +83,7 @@ public class Task00050LoadAppsSecrets implements StartupTask {
 
     @Override
     public boolean forceRun() {
+        addDotSaltClusterColumnIfNeeded();
         return keyStoreHelper.size() == 0 && isSet(Config.getStringProperty(APPS_IMPORT_EXPORT_DEFAULT_PASSWORD, BLANK)) ;
     }
 
@@ -151,6 +155,29 @@ public class Task00050LoadAppsSecrets implements StartupTask {
         } catch (Exception e) {
             Logger.error(Task00050LoadAppsSecrets.class, "Error Importing AppSecret from starter.",
                     e);
+        }
+    }
+
+    /**
+     * This Task attempts to create a security repo that depends on a call to {@link ClusterData#getClusterSalt()}
+     * This creates a conflict When upgrading from 4.x since back then we didn't have the column `cluster_salt`
+     * For which we need to call the upgrade task from here
+     */
+    private void addDotSaltClusterColumnIfNeeded() {
+        try {
+            final Task05350AddDotSaltClusterColumn task05350AddDotSaltClusterColumn = new Task05350AddDotSaltClusterColumn();
+            if (task05350AddDotSaltClusterColumn.forceRun()) {
+                task05350AddDotSaltClusterColumn.executeUpgrade();
+            }
+
+            final Task04355SystemEventAddServerIdColumn systemEventAddServerIdColumn = new Task04355SystemEventAddServerIdColumn();
+            if (systemEventAddServerIdColumn.forceRun()) {
+                systemEventAddServerIdColumn.executeUpgrade();
+            }
+
+        } catch (Exception e) {
+            Logger.error(Task00050LoadAppsSecrets.class,
+                    "Error Applying upgrade task from Task00050LoadAppsSecrets.", e);
         }
     }
 
