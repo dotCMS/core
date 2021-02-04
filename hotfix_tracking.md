@@ -70,3 +70,5 @@ This release includes the following code fixes:
 32. https://github.com/dotCMS/core/issues/19686 : Error when editing multilingual content that is referenced on monolingual HTML pages
 
 33. https://github.com/dotCMS/core/issues/19621	: Stop eating errors
+
+34. https://github.com/dotCMS/core/issues/19608 : Contentlets lose inherited permissions until cache is flushed

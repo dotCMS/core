@@ -1067,7 +1067,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		String parentPermissionableId = permissionable.getPermissionId();
 
 		final boolean isHost = permissionable instanceof Host ||
-		(permissionable instanceof Contentlet && ((Contentlet)permissionable).getStructure().getVelocityVarName().equals("Host"));
+		(permissionable instanceof Contentlet && ((Contentlet)permissionable).isHost());
 		final boolean isFolder = permissionable instanceof Folder;
 		final boolean isCategory = permissionable instanceof Category;
 		final boolean isContentType = permissionable instanceof Structure || permissionable instanceof ContentType;
@@ -1513,16 +1513,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 
 
-
-	private boolean containsPermission(List<Permission> permissions, Permission permission) {
-        for(Permission p : permissions) {
-                if(p.getInode().equals(permission.getInode()) && p.getRoleId().equals(permission.getRoleId())
-                                && p.getType().equals(permission.getType()) && p.getPermission()!=0)
-                        return true;
-        }
-        return false;
-	}
-
 	/* 
 	 * @deprecated Use savePermission(permission) instead.
 	 */
@@ -1868,32 +1858,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 	}
 
-	/**
-	 * This method return true if exists in db that permission object
-	 * @param p permission
-	 * @return boolean
-	 * @version 1.7
-	 * @since 1.0
-	 */
-	private boolean permissionExists(Permission p) {
-		HibernateUtil persistanceService = new HibernateUtil(Permission.class);
-		try {
-			if (p.isBitPermission()) {
-				Permission permission = (Permission) persistanceService.load(p.getId());
-				if (permission != null) {
-					return true;
-				}
-			} else {
-				Permission permission = findPermissionByInodeAndRole(p.getInode(), p.getRoleId(), p.getType());
-				if (permission != null && permission.getId() > 0 && ((permission.getPermission() & p.getPermission()) > 0)) {
-					return true;
-				}
-			}
-			return false;
-		} catch (DotHibernateException e) {
-			throw new DataAccessException(e.getMessage(), e);
-		}
-	}
+
 
 	/**
 	 * This method let you convert a list of bit permission to the old non bit kind of permission, so you
@@ -1971,7 +1936,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
   }
 
   @CloseDBIfOpened
-  @SuppressWarnings("unchecked")
   private List<Permission> loadPermissions(final Permissionable permissionable, final boolean forceDB) throws DotDataException {
      	if(forceDB){
      	   permissionCache.remove(permissionable.getPermissionId());
@@ -2011,11 +1975,11 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
       persistenceService.setParam(permissionable.getPermissionId());
       bitPermissionsList = (List<Permission>) persistenceService.list();
 
-      bitPermissionsList.forEach(p -> p.setBitPermission(true));
       // adding to cache if found
-      
-      permissionCache.addToPermissionCache(permissionKey, bitPermissionsList);
-      
+      if (!bitPermissionsList.isEmpty()) {
+		  bitPermissionsList.forEach(p -> p.setBitPermission(true));
+          permissionCache.addToPermissionCache(permissionKey, bitPermissionsList);
+      }
       return bitPermissionsList;
 
     })).getOrElseThrow(e -> new DotDataException(e));
@@ -2232,14 +2196,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		return filteredList;
 	}
 
-	private List<Permission> filterAssetOnlyPermissions(List<Permission> permissions, String permissionableId) {
-		List<Permission> filteredList = new ArrayList<Permission>();
-		for(Permission p: permissions) {
-			if(p.getInode().equals(permissionableId))
-				filteredList.add(p);
-		}
-		return filteredList;
-	}
+
 
 	@SuppressWarnings("unchecked")
 	@Override
