@@ -68,4 +68,4 @@ This maintenance release includes the following code fixes:
 
 32. https://github.com/dotCMS/core/issues/19555	: Deleting a user is not replacing the owner on identifier table
 
-33. 
+33. https://github.com/dotCMS/core/issues/19547	: Network Tab not reporting on Nodes
