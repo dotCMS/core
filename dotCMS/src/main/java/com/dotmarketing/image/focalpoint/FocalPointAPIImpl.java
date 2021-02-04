@@ -50,21 +50,21 @@ public class FocalPointAPIImpl implements FocalPointAPI {
         dotFP.getParentFile().mkdirs();
 
         if (focalPoint.x == 0 && focalPoint.y == 0) {
-            Logger.info(this.getClass(), "Deleteing focalpoint:" + focalPoint);
+            Logger.info(this.getClass(), "Deleting focal-point:" + focalPoint);
             dotFP.delete();
             cache.remove(inode, fieldVar);
             return;
         }
 
         try (OutputStream out = Files.newOutputStream(dotFP.toPath())) {
-            Logger.info(this.getClass(), "Writing focalpoint:" + focalPoint + " to " + dotFP);
+            Logger.info(this.getClass(), "Writing focal-point:" + focalPoint + " to " + dotFP);
             IOUtils.write(focalPoint.x + "," + focalPoint.y, out, Charset.defaultCharset());
         } catch (IOException e) {
             throw new DotRuntimeException(e);
         }
 
    
-        cache.add(inode, fieldVar, Optional.ofNullable(focalPoint));
+        cache.add(inode, fieldVar, focalPoint);
         
 
     }
@@ -99,7 +99,7 @@ public class FocalPointAPIImpl implements FocalPointAPI {
     public Optional<FocalPoint> readFocalPoint(final String inode, final String fieldVar) {
 
         Optional<FocalPoint> focalPoint = cache.get(inode, fieldVar);
-        if (focalPoint!=null) {
+        if (focalPoint.isPresent()) {
             return focalPoint;
         }
 
@@ -109,15 +109,15 @@ public class FocalPointAPIImpl implements FocalPointAPI {
         if(focalPointTag.isPresent()) {
             focalPoint = Try.of(()->new FocalPoint(focalPointTag.get().getTagName().replace("fp:", ""))).toJavaOptional();
             if (focalPoint.isPresent()) {
-                cache.add(inode, fieldVar, focalPoint);
+                cache.add(inode, fieldVar, focalPoint.get());
                 return focalPoint;
             }
         }
        
 
         final File file = getFPFile(inode, fieldVar);
-        focalPoint= readFocalPoint(file);
-        cache.add(inode, fieldVar, focalPoint);
+        focalPoint = readFocalPoint(file);
+        focalPoint.ifPresent(point -> cache.add(inode, fieldVar, point));
         return focalPoint;
     }
 
