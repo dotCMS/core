@@ -1,21 +1,18 @@
 package com.dotcms.mail;
 
-import java.util.Map;
-import java.util.Properties;
-import javax.mail.Authenticator;
-import javax.mail.Session;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.util.Config;
-import com.google.common.collect.ImmutableMap;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import javax.mail.Authenticator;
+import javax.mail.Session;
+import java.util.Properties;
 
 public class MailAPIImplTest {
     
-    MailAPIImpl api = new MailAPIImpl();
-    
+    MailAPIImpl mailAPI = new MailAPIImpl();
 
-    
     @BeforeClass
     public static void prepare() throws Exception {
         // Setting web app environment
@@ -28,27 +25,17 @@ public class MailAPIImplTest {
         Config.setProperty("DOT_MAIL_SMTP_auth", "true");
         Config.setProperty("DOT_MAIL_SMTP_ehlo", "false");
         Config.setProperty("mail.testing.XXX", "true");
-        
     }
-
-    
-    
-    
-    
 
     @Test
     public void test_loadMailSessionFromContext() {
-        
-        
-        
-        assert(!api.loadMailSessionFromContext().isPresent());
-        
-        Session session = api.getMailSession();
+
+        assert(!mailAPI.loadMailSessionFromContext().isPresent());
+        final Session session = mailAPI.getMailSession();
         
         // JNDI context not working
         //assert(api.loadMailSessionFromContext().isPresent());
-        
-        Session session2 = api.getMailSession();
+        final Session session2 = mailAPI.getMailSession();
         
         assert(session == session2);
     }
