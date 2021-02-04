@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Host;
@@ -31,6 +32,7 @@ import java.io.StringWriter;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -575,4 +577,24 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		return assetType;
 	}
 
+	@Override
+	protected void updateUserReferences(final String userId, final String replacementUserId)throws DotDataException, DotSecurityException{
+		DotConnect dc = new DotConnect();
+
+		//Get all ids that will be updated, to remove it from cache
+		dc.setSQL("select id from identifier where owner = ?");
+		dc.addParam(userId);
+		final List<HashMap<String, String>> identifiers = dc.loadResults();
+
+		//Update owner
+		dc.setSQL("update identifier set owner = ? where owner = ?");
+		dc.addParam(replacementUserId);
+		dc.addParam(userId);
+		dc.loadResult();
+
+		//Remove all identifier that were updated from cache
+		for(final HashMap<String,String> id : identifiers){
+			ic.removeFromCacheByIdentifier(id.get("id"));
+        }
+	}
 }
