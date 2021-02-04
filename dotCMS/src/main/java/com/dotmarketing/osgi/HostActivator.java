@@ -4,17 +4,14 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 
-import javax.servlet.ServletContext;
-
 public class HostActivator implements BundleActivator {
 	
     private BundleContext m_context = null;
-    private ServletContext servletContext;
+
 
     private static HostActivator instance;
 
-	private HostActivator() {
-	}
+    private HostActivator() {}
 
 	public synchronized static HostActivator instance() {
 		if ( instance == null )
@@ -24,9 +21,7 @@ public class HostActivator implements BundleActivator {
 	
     public void start(BundleContext context) {
 
-        if ( servletContext != null ) {
-            servletContext.setAttribute( BundleContext.class.getName(), context );
-        }
+
         m_context = context;
     }
 
@@ -34,9 +29,6 @@ public class HostActivator implements BundleActivator {
         m_context = null;
     }
 
-    public void setServletContext ( ServletContext servletContext ) {
-        this.servletContext = servletContext;
-    }
 
     public BundleContext getBundleContext() {
     	return m_context;

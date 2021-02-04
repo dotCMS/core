@@ -44,8 +44,8 @@ import java.util.zip.GZIPOutputStream;
 
 public class TikaUtils {
 
-    private static final int SIZE = 1024;
-    private static final int DEFAULT_META_DATA_MAX_SIZE = 5;
+    public static final int SIZE = 1024;
+    public static final int DEFAULT_META_DATA_MAX_SIZE = 5;
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private TikaProxyService tikaService;
@@ -58,7 +58,7 @@ public class TikaUtils {
             if (!osgiInitialized) {
                 Logger.warn(this.getClass(),
                         "OSGI Framework not initialized, trying to initialize...");
-                OSGIUtil.getInstance().initializeFramework(Config.CONTEXT);
+                OSGIUtil.getInstance().initializeFramework();
                 osgiInitialized = true;
             }
         } catch (Exception e) {

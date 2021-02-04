@@ -61,3 +61,5 @@ This maintenance release includes the following code fixes:
 28. https://github.com/dotCMS/core/issues/19621 : Stop eating errors
 
 29. https://github.com/dotCMS/core/issues/19608 : Contentlets lose inherited permissions until cache is flushed
+
+30. https://github.com/dotCMS/core/issues/19578	: [OSGI] : Overriding Classes does not work in latest master 
