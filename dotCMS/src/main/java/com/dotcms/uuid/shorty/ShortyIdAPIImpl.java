@@ -59,19 +59,19 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
 
   @Override
   public Optional<ShortyId> getShorty(final String shortStr, final ShortyInputType shortyType) {
+
+
     try {
       if(shortStr.startsWith(TempFileAPI.TEMP_RESOURCE_PREFIX) && APILocator.getTempFileAPI().isTempResource(shortStr)) {
-          return Optional.of(new ShortyId(shortStr, shortStr, ShortType.TEMP_FILE, ShortType.TEMP_FILE));
+        return Optional.of(new ShortyId(shortStr, shortStr, ShortType.TEMP_FILE, ShortType.TEMP_FILE));
       }
-      final boolean isExactMatch = NumberUtils.isParsable(shortStr) ? Boolean.TRUE : Boolean.FALSE;
-      if (!isExactMatch) {
-        validShorty(shortStr);
-      }
-      ShortyId shortyId;
+
+      validShorty(shortStr);
+      ShortyId shortyId = null;
       final Optional<ShortyId> opt = new ShortyIdCache().get(shortStr);
       if (opt.isPresent()) {
         shortyId = opt.get();
-      } else if (shortStr.length() == 36 || isExactMatch) {
+      } else if (shortStr.length() == 36) {
         shortyId = viaDbEquals(shortStr, shortyType);
         new ShortyIdCache().add(shortyId);
       } else {
@@ -79,9 +79,9 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
         new ShortyIdCache().add(shortyId);
       }
       return shortyId.type == ShortType.CACHE_MISS ? Optional.empty() : Optional.of(shortyId);
-    } catch (final ShortyException se) {
-        Logger.warn(this.getClass(), String.format("An error occurred when getting shorty value for '%s' of type " +
-                "'%s': %s", shortStr, shortyType, se.getMessage()));
+    } catch (ShortyException se) {
+
+      Logger.warn(this.getClass(), se.getMessage());
       return Optional.empty();
     }
   }
@@ -128,7 +128,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
   }
 
   @CloseDBIfOpened
-  private ShortyId viaDbEquals(final String shorty, final ShortyInputType shortyType) {
+  protected ShortyId viaDbEquals(final String shorty, final ShortyInputType shortyType) {
     this.dbHits++;
     final DotConnect db = new DotConnect();
     this.dbEqualsStrategyMap.get(shortyType).apply(db, shorty);
@@ -147,7 +147,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
   }
 
   @CloseDBIfOpened
-  private ShortyId viaDbLike(final String shorty, final ShortyInputType shortyType) {
+  protected ShortyId viaDbLike(final String shorty, final ShortyInputType shortyType) {
     this.dbHits++;
     final DotConnect db = new DotConnect();
     final String uuid = uuidIfy(shorty);
