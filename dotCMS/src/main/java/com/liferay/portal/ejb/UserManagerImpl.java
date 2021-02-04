@@ -19,6 +19,7 @@
 
 package com.liferay.portal.ejb;
 
+import com.liferay.util.StringPool;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
@@ -371,8 +372,8 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
         // we use the ICQ field to store the token:timestamp of the
         // password reset request we put in the email
         // the timestamp is used to set an expiration on the token
-        String token = ResetPasswordTokenUtil.createToken();
-        user.setIcqId(token + ":" + new Date().getTime());
+        final String token = ResetPasswordTokenUtil.createToken() + StringPool.COLON + new Date().getTime();
+        user.setIcqId(token);
 
         UserUtil.update(user);
 

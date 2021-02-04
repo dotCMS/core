@@ -394,9 +394,9 @@ public class UserServiceFactory implements Serializable {
 					Logger.debug(UserServiceFactory.class, "Generating the token for reset password");
 				}
 
-				token = ResetPasswordTokenUtil.createToken();
-				user.setIcqId(new StringBuilder(token)
-						.append(TOKEN_SPLITTER).append(new Date().getTime()).toString());
+				token = new StringBuilder(ResetPasswordTokenUtil.createToken())
+						.append(TOKEN_SPLITTER).append(new Date().getTime()).toString();
+				user.setIcqId(token);
 
 				this.update(user);
 
