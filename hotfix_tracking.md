@@ -74,3 +74,5 @@ This release includes the following code fixes:
 34. https://github.com/dotCMS/core/issues/19608 : Contentlets lose inherited permissions until cache is flushed
 
 35. https://github.com/dotCMS/core/issues/19566 : [logging] : General logging improvements
+
+36. https://github.com/dotCMS/core/issues/19555	: Deleting a user is not replacing the owner on identifier table

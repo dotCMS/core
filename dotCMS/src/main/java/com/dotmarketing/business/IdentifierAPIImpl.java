@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import com.dotmarketing.exception.DotSecurityException;
 import java.util.List;
 
 import com.dotcms.business.CloseDBIfOpened;
@@ -176,6 +177,13 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 	public String getAssetTypeFromDB(final String identifier) throws DotDataException {
 
 		return identifierFactory.getAssetTypeFromDB(identifier);
+	}
+
+	@Override
+	@WrapInTransaction
+	public void updateUserReferences(final String userId, final String replacementUserId)
+			throws DotDataException, DotSecurityException {
+		identifierFactory.updateUserReferences(userId,replacementUserId);
 	}
 
 }
