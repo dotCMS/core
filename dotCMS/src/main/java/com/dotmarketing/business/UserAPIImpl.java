@@ -96,7 +96,7 @@ public class UserAPIImpl implements UserAPI {
 
     @CloseDBIfOpened
     @Override
-    public User loadUserById(final String userId) throws DotDataException, DotSecurityException,com.dotmarketing.business.NoSuchUserException {
+    public User loadUserById(final String userId) throws DotDataException,com.dotmarketing.business.NoSuchUserException {
         if(!UtilMethods.isSet(userId)){
             throw new DotDataException("You must specifiy an userId to search for");
         }

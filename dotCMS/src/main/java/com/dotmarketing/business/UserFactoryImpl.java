@@ -244,13 +244,16 @@ public class UserFactoryImpl implements UserFactory {
         if (user.getUserId() == null) {
             throw new DotRuntimeException("Can't save a user without a userId");
         } else{
-            final User oldUser = loadUserById(user.getUserId());
-            if (!UtilMethods.isSet(oldUser)){
+            try {
+                final User oldUser = loadUserById(user.getUserId());
+                if (UtilMethods.isSet(oldUser)) {
+                    return updateUser(user, oldUser);
+                }
+            }catch(NoSuchUserException e){
                 return createUser(user);
-            } else {
-                return updateUser(user, oldUser);
             }
         }
+        return user;
     }
 
     private User createUser(final User user) throws DotDataException {
@@ -267,7 +270,7 @@ public class UserFactoryImpl implements UserFactory {
                 .append("favoritemusic, languageid, timezoneid, skinid, dottedskins, roundedskins, ")
                 .append("greeting, resolution, refreshrate, layoutids, comments, logindate, loginip, ")
                 .append("lastlogindate, lastloginip, failedloginattempts, agreedtotermsofuse, active_, ")
-                .append("delete_in_progress, delete_date, additional_info ")
+                .append("delete_in_progress, delete_date, additional_info) ")
                 .append("VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ")
                 .append("?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 

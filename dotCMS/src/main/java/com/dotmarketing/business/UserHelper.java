@@ -162,7 +162,7 @@ public class UserHelper {
                     throw new DuplicateUserIdException();
                 }
             }
-            catch (DotDataException | DotSecurityException nsue) {
+            catch (com.dotmarketing.business.NoSuchUserException | DotDataException | DotSecurityException nsue) {
                 Logger.warn(this, "Error loading user with id " + userId);
             }
 
