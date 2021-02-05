@@ -93,7 +93,7 @@ public class ServerAPIImplTest {
 
         assertTrue("We have 6 servers", aliveServers.size()==6);
         for(Server server : aliveServers) {
-            Logger.error(this, server.getServerId() + " " + server.getLicenseSerial()+ " " + server.getStartupTime());
+            Logger.error("SERVERS LOG:  ", "SERVERS LOG:  " + server.getServerId() + " " + server.getLicenseSerial()+ " " + server.getStartupTime());
         }
 
         // the oldest server is the first alive server ordered by startup_time asc
