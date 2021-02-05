@@ -1,12 +1,11 @@
 package com.dotcms.rest.api.v1.authentication;
 
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.UtilMethods;
 import java.util.Locale;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.auth.providers.jwt.beans.JWToken;
-import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
-import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -36,26 +35,20 @@ import com.liferay.util.LocaleUtil;
 @Path("/v1/changePassword")
 public class ResetPasswordResource {
 
-    private static final String TOKEN_SEPARATOR_REGEX = "\\+{3}";
-
     private final UserManager userManager;
     private final ResponseUtil responseUtil;
-    private final JsonWebTokenService   jsonWebTokenService;
 
     public ResetPasswordResource(){
         this ( UserManagerFactory.getManager(),
-                ResponseUtil.INSTANCE,
-                JsonWebTokenFactory.getInstance().getJsonWebTokenService());
+                ResponseUtil.INSTANCE);
     }
 
     @VisibleForTesting
     public ResetPasswordResource(final UserManager userManager,
-                                 final ResponseUtil responseUtil,
-                                 final JsonWebTokenService   jsonWebTokenService) {
+                                 final ResponseUtil responseUtil) {
 
         this.userManager = userManager;
         this.responseUtil = responseUtil;
-        this.jsonWebTokenService  = jsonWebTokenService;
     }
 
     @POST
@@ -68,38 +61,21 @@ public class ResetPasswordResource {
 
         Response res;
         final String password = resetPasswordForm.getPassword();
-        final String tokens = resetPasswordForm.getToken();
+        final String token = resetPasswordForm.getToken();
         final Locale locale   = LocaleUtil.getLocale(request);
-        final String changePasswordToken;
-        final String userId;
-        final JWToken jwtBean;
 
         try {
 
-            /*
-            Parsing the token sent in the URL, we have two tokens here, the JWT and the
-            change password security token.
-             */
-            String[] tokensArray = tokens.split(TOKEN_SEPARATOR_REGEX);
-            final String jwtToken = tokensArray[0];
-            changePasswordToken = tokensArray[1];
-
-            jwtBean = this.jsonWebTokenService.parseToken(jwtToken);
-            if (null == jwtBean) {
-            	SecurityLogger.logInfo(ResetPasswordResource.class,
-            			"Error reseting password. "
-            	        + this.responseUtil.getFormattedMessage(null,"reset-password-token-expired"));
-                res = this.responseUtil.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, null,
-                        "reset-password-token-expired");
-            } else {
-                userId = jwtBean.getSubject();
-
-                this.userManager.resetPassword(userId, changePasswordToken, password);
-
-                SecurityLogger.logInfo(ResetPasswordResource.class,
-                		String.format("User %s successful changed his password from IP: %s", userId, request.getRemoteAddr()));
-                res = Response.ok(new ResponseEntityView(userId)).build();
+            final String userId = APILocator.getUserAPI().getUserIdByIcqId(token);
+            if(UtilMethods.isNotSet(userId)){
+                throw new DotInvalidTokenException(token);
             }
+
+            this.userManager.resetPassword(userId, token, password);
+
+            SecurityLogger.logInfo(ResetPasswordResource.class,
+                    String.format("User %s successful changed his password from IP: %s", userId, request.getRemoteAddr()));
+            res = Response.ok(new ResponseEntityView(userId)).build();
         } catch (NoSuchUserException e) {
         	SecurityLogger.logInfo(ResetPasswordResource.class,
         			"Error resetting password. "
