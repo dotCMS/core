@@ -457,7 +457,6 @@ public class UserFactoryLiferayImpl extends UserFactory {
 	}
 
 	@Override
-	@WrapInTransaction
 	protected String getUserIdByIcqId(final String icqId) {
 		final String sql = "select userid from user_ where icqid = ?";
 		DotConnect dotConnect = new DotConnect();

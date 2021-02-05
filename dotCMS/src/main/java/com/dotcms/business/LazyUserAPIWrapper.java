@@ -10,6 +10,7 @@ import com.liferay.portal.model.User;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * This is just a lazy user api for the {@link UserAPI}
@@ -134,7 +135,7 @@ public class LazyUserAPIWrapper implements UserAPI {
     }
 
     @Override
-    public String getUserIdByIcqId(final String icqId) throws DotInvalidTokenException {
+    public Optional<String> getUserIdByIcqId(final String icqId) throws DotInvalidTokenException {
         return this.getUserAPI().getUserIdByIcqId(icqId);
     }
 

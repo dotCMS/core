@@ -9,6 +9,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.Address;
 import com.liferay.portal.model.User;
+import java.util.Optional;
 
 /**
  * UserAPI is an API intended to be a helper class for class to get User
@@ -439,6 +440,6 @@ public interface UserAPI {
 	 * @param icqId icqId to search for
 	 * @return userId that the icqId is associated
 	 */
-  public String getUserIdByIcqId(final String icqId) throws DotInvalidTokenException;
+	public Optional<String> getUserIdByIcqId(final String icqId) throws DotInvalidTokenException;
 
 }

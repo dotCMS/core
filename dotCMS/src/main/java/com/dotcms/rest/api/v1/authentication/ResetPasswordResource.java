@@ -4,6 +4,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.UtilMethods;
 import java.util.Locale;
 
+import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -66,16 +67,16 @@ public class ResetPasswordResource {
 
         try {
 
-            final String userId = APILocator.getUserAPI().getUserIdByIcqId(token);
-            if(UtilMethods.isNotSet(userId)){
+            final Optional<String> userIdOpt = APILocator.getUserAPI().getUserIdByIcqId(token);
+            if(!userIdOpt.isPresent()){
                 throw new DotInvalidTokenException(token);
             }
 
-            this.userManager.resetPassword(userId, token, password);
+            this.userManager.resetPassword(userIdOpt.get(), token, password);
 
             SecurityLogger.logInfo(ResetPasswordResource.class,
-                    String.format("User %s successful changed his password from IP: %s", userId, request.getRemoteAddr()));
-            res = Response.ok(new ResponseEntityView(userId)).build();
+                    String.format("User %s successful changed his password from IP: %s", userIdOpt.get(), request.getRemoteAddr()));
+            res = Response.ok(new ResponseEntityView(userIdOpt.get())).build();
         } catch (NoSuchUserException e) {
         	SecurityLogger.logInfo(ResetPasswordResource.class,
         			"Error resetting password. "

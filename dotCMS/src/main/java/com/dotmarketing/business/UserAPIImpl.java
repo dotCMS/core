@@ -37,6 +37,7 @@ import java.text.MessageFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import org.apache.commons.lang.StringUtils;
 
 /**
@@ -318,12 +319,13 @@ public class UserAPIImpl implements UserAPI {
         return userFactory.getCountUsersByNameOrEmailOrUserID(filter, includeAnonymous, includeDefault, roleId);
     }
 
+    @CloseDBIfOpened
     @Override
-    public String getUserIdByIcqId(final String icqId) throws DotInvalidTokenException {
+    public Optional<String> getUserIdByIcqId(final String icqId) throws DotInvalidTokenException {
         if(!UtilMethods.isSet(icqId)){
             throw new DotInvalidTokenException("icqId is not set");
         }
-        return userFactory.getUserIdByIcqId(icqId);
+        return Optional.ofNullable(userFactory.getUserIdByIcqId(icqId));
     }
 
     @CloseDBIfOpened
