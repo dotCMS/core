@@ -1,5 +1,7 @@
 package com.dotcms.vanityurl.filters;
 
+import static com.dotmarketing.filters.Constants.VANITY_URL_OBJECT;
+
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.UtilMethods;
@@ -82,6 +84,7 @@ public class VanityURLFilter implements Filter {
           final Optional<CachedVanityUrl> cachedVanity = vanityApi.resolveVanityUrl(uri, host, language);
           
           if (cachedVanity.isPresent()) {
+              request.setAttribute(VANITY_URL_OBJECT, cachedVanity.get());
               final VanityUrlResult vanityUrlResult = cachedVanity.get().handle( uri, response);
               final VanityUrlRequestWrapper vanityUrlRequestWrapper = new VanityUrlRequestWrapper(request, vanityUrlResult);
               // If the handler already resolved the requested URI we stop the processing here
