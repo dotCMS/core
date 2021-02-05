@@ -71,3 +71,5 @@ This maintenance release includes the following code fixes:
 33. https://github.com/dotCMS/core/issues/19547	: Network Tab not reporting on Nodes
 
 34. https://github.com/dotCMS/core/issues/19536	: CSV Importer should use _dotraw for text key and unique fields
+
+35. https://github.com/dotCMS/core/issues/19513	: Fix possible NPE in MimeTypeUtils
