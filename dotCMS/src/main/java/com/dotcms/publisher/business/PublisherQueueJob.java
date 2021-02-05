@@ -44,6 +44,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
 import org.apache.logging.log4j.ThreadContext;
@@ -340,7 +341,7 @@ public class PublisherQueueJob implements StatefulJob {
 			message.setMessage(LanguageUtil.get(
 					notificationMessage,
 					notificationMessageArgument));
-			message.setLife(86400000);
+			message.setLife(TimeUnit.MINUTES.toMillis(30));
 			message.setSeverity(MessageSeverity.ERROR);
 		} else if (groupPushStats.getCountGroupFailed() > 0 && groupPushStats.getCountGroupFailed() == endpointTrackingMap.size()) {
 			// If bundle cannot be installed in all groups
