@@ -104,7 +104,7 @@ public class UserFactoryImpl implements UserFactory {
 
         final StringBuffer query = new StringBuffer();
         query.append(
-                "select * FROM use_ WHERE ");
+                "select * FROM user_ WHERE ");
         query.append("companyId = ?");
         query.append(" AND ");
         query.append("emailAddress = ?");
