@@ -92,7 +92,7 @@ public class ServerAPIImplTest {
         final String oldestServerId = serverApi.getOldestServer();
 
         assertTrue("We have 6 servers", aliveServers.size()==6);
-        for(Server server : aliveServers) {
+        for(final Server server : serverApi.getAllServers()) {
             Logger.error("SERVERS LOG:  ", "SERVERS LOG:  " + server.getServerId() + " " + server.getLicenseSerial()+ " " + server.getStartupTime());
         }
 
