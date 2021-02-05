@@ -102,8 +102,8 @@ public class PublisherAPIImplTest {
     public static Object[] publishers() throws Exception {
         prepare();
 
-        final Set<TestAsset> assets = set(
-                getContentTypeWithHost()/*,
+        final List<TestAsset> assets = list(
+                getContentTypeWithHost(),
                 getTemplateWithDependencies(),
                 getContainerWithDependencies(),
                 getFolderWithDependencies(),
@@ -111,7 +111,7 @@ public class PublisherAPIImplTest {
                 getLinkWithDependencies(),
                 getWorkflowWithDependencies(),
                 getLanguageWithDependencies(),
-                getRuleWithDependencies()*/
+                getRuleWithDependencies()
         );
         final List<Class<? extends Publisher>> publishers = list(
                 GenerateBundlePublisher.class,
@@ -123,13 +123,12 @@ public class PublisherAPIImplTest {
 
         final List<TestCase> cases = new ArrayList<>();
 
-        final Set<Set<TestAsset>> sets = Sets.powerSet(assets);
-
         for (final Class<? extends Publisher> publisher : publishers) {
-            for (Set<TestAsset> set : sets) {
-                cases.add(new TestCase(publisher, set));
+            for (TestAsset asset : assets) {
+                cases.add(new TestCase(publisher, set(asset)));
             }
         }
+
         return cases.toArray();
     }
 
@@ -312,7 +311,7 @@ public class PublisherAPIImplTest {
 
         final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
 
-        return new TestAsset(contentType,
+            return new TestAsset(contentType,
                 set(host, workflowScheme, systemWorkflowScheme, contentTypeChild, relationship, category),
                 "/bundlers-test/content_types/content_types_with_category_and_relationship.contentType.json");
     }
@@ -426,7 +425,7 @@ public class PublisherAPIImplTest {
         return langVariables;
     }
 
-    private static void addLanguageVariableDependencies(final Set<TestAsset> assets) throws DotSecurityException, DotDataException {
+    private static void addLanguageVariableDependencies(final Collection<TestAsset> assets) throws DotSecurityException, DotDataException {
 
         for (final TestAsset asset : assets) {
             List<Object> languageVariablesDependencies = null;
@@ -478,19 +477,22 @@ public class PublisherAPIImplTest {
             dependencies.add(language);
         }
 
-        final ContentType languageVariableContentType =
-                APILocator.getContentTypeAPI(systemUser).find(LanguageVariableAPI.LANGUAGEVARIABLE);
+        if (!languageVariables.isEmpty()) {
+            final ContentType languageVariableContentType =
+                    APILocator.getContentTypeAPI(systemUser).find(LanguageVariableAPI.LANGUAGEVARIABLE);
 
-        dependencies.add(languageVariableContentType);
+            dependencies.add(languageVariableContentType);
 
-        final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
-        dependencies.add(systemWorkflowScheme);
+            final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
+            dependencies.add(systemWorkflowScheme);
 
-        final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
-        dependencies.add(systemFolder);
+            final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
+            dependencies.add(systemFolder);
 
-        final Host systemHost = APILocator.getHostAPI().findSystemHost();
-        dependencies.add(systemHost);
+            final Host systemHost = APILocator.getHostAPI().findSystemHost();
+            dependencies.add(systemHost);
+        }
+
         return dependencies;
     }
 
