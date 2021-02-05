@@ -117,7 +117,7 @@ public class UserFactoryImpl implements UserFactory {
 
         dotConnect.setSQL(query.toString());
         dotConnect.addParam(companyId);
-        dotConnect.addParam(email);
+        dotConnect.addParam(email.trim().toLowerCase());
 
         return TransformerLocator.createUserTransformer(dotConnect.loadObjectResults()).findFirst();
 
@@ -244,6 +244,14 @@ public class UserFactoryImpl implements UserFactory {
         if (user.getUserId() == null) {
             throw new DotRuntimeException("Can't save a user without a userId");
         } else{
+
+            user.setModificationDate(new Date());
+
+            final String emailAddress = user.getEmailAddress();
+            if (UtilMethods.isSet(emailAddress)) {
+                user.setEmailAddress(emailAddress.trim().toLowerCase());
+            }
+
             try {
                 final User oldUser = loadUserById(user.getUserId());
                 if (UtilMethods.isSet(oldUser)) {
@@ -275,7 +283,7 @@ public class UserFactoryImpl implements UserFactory {
                 .append("?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
         dotConnect.setSQL(query.toString());
-        dotConnect.addParam(user.getUserId());
+        dotConnect.addParam(user.getUserId().trim().toLowerCase());
         setDotConnectParamsForSave(dotConnect, user);
         dotConnect.loadResult();
         return user;
@@ -294,11 +302,6 @@ public class UserFactoryImpl implements UserFactory {
             }
         }
         user.setModified(true);
-        final String emailAddress = user.getEmailAddress();
-        if (UtilMethods.isSet(emailAddress)) {
-            user.setEmailAddress(emailAddress.trim().toLowerCase());
-        }
-        user.setModificationDate(new Date());
 
         final DotConnect dotConnect = new DotConnect();
 
@@ -317,7 +320,7 @@ public class UserFactoryImpl implements UserFactory {
 
         dotConnect.setSQL(query.toString());
         setDotConnectParamsForSave(dotConnect, user);
-        dotConnect.addParam(user.getUserId());
+        dotConnect.addParam(user.getUserId().trim().toLowerCase());
         dotConnect.loadResult();
         return user;
     }
