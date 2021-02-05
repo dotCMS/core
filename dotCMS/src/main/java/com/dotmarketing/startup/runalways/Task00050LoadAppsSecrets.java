@@ -11,7 +11,6 @@ import static com.dotcms.security.apps.AppsUtil.validateForSave;
 import static com.dotmarketing.util.UtilMethods.isSet;
 import static com.liferay.util.StringPool.BLANK;
 
-import com.dotcms.enterprise.cluster.ClusterFactory.ClusterData;
 import com.dotcms.security.apps.AppDescriptor;
 import com.dotcms.security.apps.AppDescriptorHelper;
 import com.dotcms.security.apps.AppSecrets;
