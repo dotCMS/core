@@ -729,16 +729,9 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
     public void resetPassword(String userId, String token, String newPassword) throws com.dotmarketing.business.NoSuchUserException,
             DotSecurityException, DotInvalidTokenException, DotInvalidPasswordException {
         try {
-            if (UtilMethods.isSet(userId) && UtilMethods.isSet(token)) {
-                User user = APILocator.getUserAPI().loadUserById(userId);
-
-                if (user == null) {
-                    throw new com.dotmarketing.business.NoSuchUserException("");
-                }
-
+                final User user = APILocator.getUserAPI().loadUserById(userId);
                 ResetPasswordTokenUtil.checkToken(user, token);
                 APILocator.getUserAPI().updatePassword(user, newPassword, APILocator.getUserAPI().getSystemUser(), false);
-            }
         } catch (DotDataException e) {
             throw new IllegalArgumentException();
         }
