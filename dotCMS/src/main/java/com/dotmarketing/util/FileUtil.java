@@ -40,10 +40,8 @@ public class FileUtil {
 	}
 
 	public static File createTemporaryDirectory(final String prefix) throws IOException {
-		final String strTmp = System.getProperty("java.io.tmpdir");
-		final File dir = new File(strTmp + File.separator + prefix + System.currentTimeMillis());
-		dir.mkdirs();
-		return dir;
+		final Path tempDirectory = Files.createTempDirectory(prefix);
+		return tempDirectory.toFile();
 	}
 
 	/**
