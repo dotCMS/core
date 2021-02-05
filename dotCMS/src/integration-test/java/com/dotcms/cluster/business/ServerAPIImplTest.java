@@ -4,7 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import com.dotmarketing.util.Logger;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -88,13 +87,11 @@ public class ServerAPIImplTest {
     @Test
     public void testGetOldestServerReturnsProperServer() throws Exception{
         // we get the alive servers ordered by startup_time asc
+        serverApi.getReindexingServers().clear();// clean the list of servers so it gets all the created ones
         final List<Server> aliveServers = serverApi.getAliveServers();
         final String oldestServerId = serverApi.getOldestServer();
 
         assertTrue("We have 6 servers", aliveServers.size()==6);
-        for(final Server server : serverApi.getAllServers()) {
-            Logger.error("SERVERS LOG:  ", "SERVERS LOG:  " + server.getServerId() + " " + server.getLicenseSerial()+ " " + server.getStartupTime());
-        }
 
         // the oldest server is the first alive server ordered by startup_time asc
         assertEquals(oldestServerId, aliveServers.get(0).serverId);
