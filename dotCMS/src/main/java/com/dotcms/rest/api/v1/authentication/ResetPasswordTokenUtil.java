@@ -27,24 +27,18 @@ public class ResetPasswordTokenUtil {
      * @throws DotInvalidTokenException if the token is invalid, if the token expired then the expired properties
      *          is set to true
      */
-    public static void checkToken(User user, String token) throws DotInvalidTokenException {
-        String tokenInfo = user.getIcqId();
-        if(UtilMethods.isSet(tokenInfo) && tokenInfo.matches("^[a-zA-Z0-9]+:[0-9]+$")) {
-            String userToken = tokenInfo.substring(0,tokenInfo.indexOf(':'));
-            if(userToken.equals(token)) {
+    public static void checkToken(final User user, final String token) throws DotInvalidTokenException {
+        final String userIcqId = user.getIcqId();
+        if(UtilMethods.isSet(userIcqId) && userIcqId.matches("^[a-zA-Z0-9]+:[0-9]+$") && userIcqId.equals(token) && UtilMethods.isSet(token)) {
                 // check if token expired
                 Calendar ttl = Calendar.getInstance();
-                ttl.setTimeInMillis(Long.parseLong(tokenInfo.substring(tokenInfo.indexOf(':')+1)));
+                ttl.setTimeInMillis(Long.parseLong(userIcqId.substring(userIcqId.indexOf(':')+1)));
                 ttl.add(Calendar.MINUTE, Config.getIntProperty("RECOVER_PASSWORD_TOKEN_TTL_MINS", 20));
                 if(!ttl.after(Calendar.getInstance())) {
-                    throw new DotInvalidTokenException(tokenInfo, true);
+                    throw new DotInvalidTokenException(userIcqId, true);
                 }
-            }
-            else {
-                throw new DotInvalidTokenException(tokenInfo);
-            }
         }else{
-            throw new DotInvalidTokenException(tokenInfo);
+            throw new DotInvalidTokenException(userIcqId);
         }
     }
 
