@@ -3,6 +3,7 @@ package com.dotcms.publishing;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.*;
+import com.dotcms.enterprise.publishing.remote.bundler.ContainerBundler;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
@@ -98,6 +99,17 @@ public class PublisherAPIImplTest {
         languageVariableDependencies = getLanguagesVariableDependencies();
     }
 
+
+    /**
+     * Method to Test: {@link PublisherAPIImpl#publish(PublisherConfig)}
+     * When: Add a {@link Container} in a bundle
+     * Should:
+     * - The file should be create in:
+     * For Live Version: <bundle_root_path>/live/<container_host_name>/<container_id>.container.xml
+     * For Working: <bundle_root_path>/working/<container_host_name>/<container_id>.container.xml
+     *
+     * If the Container has live and working version then to files will be created
+     */
     @DataProvider
     public static Object[] publishers() throws Exception {
         prepare();
@@ -335,9 +347,8 @@ public class PublisherAPIImplTest {
 
     /**
      * Method to Test: {@link PublisherAPIImpl#publish(PublisherConfig)}
-     * When: Add any assets
-     * Should:
-     * - create files correctly
+     * When: Add different assets into a bundle
+     * Should: Create all the files
      */
     @Test
     @UseDataProvider("publishers")

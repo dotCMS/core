@@ -14,6 +14,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -63,6 +64,17 @@ public class HostBundlerTest {
         };
     }
 
+
+    /**
+     * Method to Test: {@link HostBundler#generate(File, BundlerStatus)}
+     * When: Add a {@link Host} in a bundle
+     * Should:
+     * - The file should be create in:
+     * For Live Version: <bundle_root_path>/live/SYSTEM HOST/<default_language_id>/<host_inode>.host.xml
+     * For Working: <bundle_root_path>/working/SYSTEM HOST/<default_language_id>/<host_inode>.host.xml
+     *
+     * If the Host has live and working version then to files will be created
+     */
     @Test
     @UseDataProvider("hosts")
     public void addHostInBundle(final HostBundlerTest.TestCase testCase)

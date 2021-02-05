@@ -13,6 +13,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.FileUtil;
@@ -86,9 +87,13 @@ public class ContentTypeBundlerTest {
 
     /**
      * Method to Test: {@link ContentTypeBundler#generate(File, BundlerStatus)}
-     * When: Add a ContentType inthe {@link PushPublisherConfig}
+     * When: Add a {@link ContentType} in a bundle
      * Should:
-     * - create the ContentType file in the bundle directory
+     * - The file should be create in:
+     * For Live Version: <bundle_root_path>/live/<content_type_host_name>/<content_type_inode>.contentType.json
+     * For Working: <bundle_root_path>/working/<content_type_host_name>/<content_type_inode>.contentType.json
+     *
+     * If the ContentType has live and working version then to files will be created
      */
     @Test
     @UseDataProvider("contentTypes")

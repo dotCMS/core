@@ -80,10 +80,14 @@ public class ContainerBundlerTest {
     }
 
     /**
-     * Method to Test: {@link ContentTypeBundler#generate(File, BundlerStatus)}
-     * When: Add a ContentType inthe {@link PushPublisherConfig}
+     * Method to Test: {@link ContainerBundler#generate(File, BundlerStatus)}
+     * When: Add a {@link Container} in a bundle
      * Should:
-     * - create the ContentType file in the bundle directory
+     * - The file should be create in:
+     * For Live Version: <bundle_root_path>/live/<container_host_name>/<container_id>.container.xml
+     * For Working: <bundle_root_path>/working/<container_host_name>/<container_id>.container.xml
+     *
+     * If the Container has live and working version then to files will be created
      */
     @Test
     @UseDataProvider("containers")

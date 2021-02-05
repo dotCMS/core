@@ -12,6 +12,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
@@ -60,6 +61,17 @@ public class LinkBundlerTest {
         };
     }
 
+
+    /**
+     * Method to Test: {@link LinkBundler#generate(File, BundlerStatus)}
+     * When: Add a {@link Link} in a bundle
+     * Should:
+     * - The file should be create in:
+     * For Live Version: <bundle_root_path>/live/<link_host_name>/<link_id>.link.xml
+     * For Working: <bundle_root_path>/working/<link_host_name>/<link_id>.link.xml
+     *
+     * If the Link has live and working version then to files will be created
+     */
     @Test
     @UseDataProvider("links")
     public void addLinkInBundle(final LinkBundlerTest.TestCase testCase)

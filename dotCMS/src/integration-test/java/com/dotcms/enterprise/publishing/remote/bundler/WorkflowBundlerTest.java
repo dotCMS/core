@@ -12,6 +12,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
@@ -53,6 +54,14 @@ public class WorkflowBundlerTest {
                 new WorkflowBundlerTest.TestCase(workflowScheme, "/bundlers-test/workflow/workflow_with_steps_and_action.workflow.xml")
         };
     }
+
+
+    /**
+     * Method to Test: {@link WorkflowBundler#generate(File, BundlerStatus)}
+     * When: Add a {@link WorkflowScheme} in a bundle
+     * Should:
+     * - The file should be create in: <bundle_root_path>/<workflow_id>.workflow.xml
+     */
 
     @Test
     @UseDataProvider("workflows")

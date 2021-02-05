@@ -30,6 +30,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Provide methods to get the path that should have a File into a bundle root directory according to its assets
+ */
 public class FileBundlerTestUtil {
 
     private FileBundlerTestUtil(){}

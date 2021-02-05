@@ -12,6 +12,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.FileUtil;
 import com.liferay.portal.model.User;
@@ -62,6 +63,14 @@ public class FolderBundlerTest {
         };
     }
 
+
+    /**
+     * Method to Test: {@link FolderBundler#generate(File, BundlerStatus)}
+     * When: Add a {@link Folder} in a bundle
+     * Should:
+     * - The file should be create in:
+     * For Live Version: <bundle_root_path>/ROOT/<folder_path>/.../<folder_id>.folder.xml
+     */
     @Test
     @UseDataProvider("folders")
     public void addFolderInBundle(final TestCase testCase)

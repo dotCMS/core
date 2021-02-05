@@ -75,11 +75,16 @@ public class TemplateBundlerTest {
         };
     }
 
+
     /**
-     * Method to Test: {@link ContentTypeBundler#generate(File, BundlerStatus)}
-     * When: Add a ContentType inthe {@link PushPublisherConfig}
+     * Method to Test: {@link TemplateBundler#generate(File, BundlerStatus)}
+     * When: Add a {@link Template} in a bundle
      * Should:
-     * - create the ContentType file in the bundle directory
+     * - The file should be create in:
+     * For Live Version: <bundle_root_path>/live/<container_host_name>/<template_id>.template.xml
+     * For Working: <bundle_root_path>/working/<container_host_name>/<template_id>.template.xml
+     *
+     * If the Template has live and working version then to files will be created
      */
     @Test
     @UseDataProvider("templates")

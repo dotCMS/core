@@ -13,6 +13,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.rules.RuleDataGen;
@@ -60,6 +61,13 @@ public class RuleBundlerTest {
         };
     }
 
+
+    /**
+     * Method to Test: {@link RuleBundler#generate(File, BundlerStatus)}
+     * When: Add a {@link Rule} in a bundle
+     * Should:
+     * - The file should be create in: <bundle_root_path>/live/<container_host_name>/<rule_id>.rule.xml
+     */
     @Test
     @UseDataProvider("rules")
     public void addRuleInBundle(final TestCase testCase)

@@ -484,13 +484,19 @@ public class DependencyBundlerTest {
         );
     }
 
+
     /**
      * Method to Test: {@link DependencyBundler#generate(File, BundlerStatus)}
-     * When: Add a ContentType without dependency
-     * Should: 
-     * - Add the {@link com.dotcms.contenttype.model.type.ContentType} in {@link PushPublisherConfig#setStructures(Set)}
-     * - Add the ContentType's {@link com.dotmarketing.beans.Host} in {@link PushPublisherConfig#setHostSet(Set)} (List)}
-     *
+     * When: Case tested:
+     * - Add a {@link ContentType} into a Bundle
+     * - Add a {@link Container} into a Bundle
+     * - Add a {@link Template} into a Bundle
+     * - Add a {@link Folder} into a Bundle
+     * - Add a {@link Host} into a Bundle
+     * - Add a {@link Link} into a Bundle
+     * - Add a {@link WorkflowScheme} into a Bundle
+     * - Add a {@link Language} into a Bundle
+     * - Add a {@link Rule} into a Bundle
      */
     @Test
     @UseDataProvider("assets")

@@ -28,6 +28,9 @@ import static com.dotcms.util.CollectionsUtils.*;
 import static org.jgroups.util.Util.assertEquals;
 import static org.jgroups.util.Util.assertTrue;
 
+/**
+ * Provide util test for testing
+ */
 public class FileTestUtil {
 
     static AssignableFromMap<AssertionChecker> assertions;
@@ -51,29 +54,80 @@ public class FileTestUtil {
 
     private FileTestUtil(){}
 
+    /**
+     * Get the content file and formatted it with the arguments
+     * For example if the file has the content:
+     * <pre>
+     *     Hello __name__
+     * </pre>
+     *
+     * and as argument we pass:
+     *
+     * name -> Wordl
+     *
+     * then the method will be return
+     * <pre>
+     *     Hello Wordl
+     * </pre>
+     *
+     * @param file
+     * @param arguments
+     * @return
+     * @throws IOException
+     */
     public static String getFormattedContent(final File file, final Map<String, Object> arguments) throws IOException {
         final byte[] bytes = FileUtil.getBytes(file);
         final String fileContent = new String(bytes);
         return StringFormatterTestUtil.format(fileContent, arguments);
     }
 
+    /**
+     * Get the content file and formatted it with the arguments, and removing al the content in the end of each line
+     *
+     * @param file
+     * @param arguments
+     * @return
+     * @throws IOException
+     */
     public static String getFormattedContentWithoutSpace(final File file, final Map<String, Object> arguments) throws IOException {
         return removeSpace(getFormattedContent(file, arguments));
     }
 
-    public static String removeSpace(final String message){
+    private static String removeSpace(final String message){
         return message.replaceAll("\n[ \\t\\r\\n\\v\\f]*", "");
     }
 
+    /**
+     * Return the content of the file
+     *
+     * @param file
+     * @return
+     * @throws IOException
+     */
     public static String getFileContent(final File file) throws IOException {
         final byte[] bytes = FileUtil.getBytes(file);
         return new String(bytes);
     }
 
+    /**
+     * Look a file into the resource directory
+     *
+     * @param path file relative path in the resource directory
+     * @return
+     * @throws IOException
+     */
     public static File getFileInResources(final String path){
         return new File(FileTestUtil.class.getResource(path).getFile());
     }
 
+    /**
+     * Check in bundleRoot exists the file for the asset and it have the right content
+     *
+     * @param bundleRoot
+     * @param asset
+     * @return
+     * @throws IOException if the file not exists or not has the right content
+     */
     public static Collection<File> assertBundleFile(
             final File bundleRoot,
             final Object asset) throws IOException {
@@ -82,7 +136,14 @@ public class FileTestUtil {
         return assertBundleFile(bundleRoot, asset, assertionChecker.getFilesPathExpected());
     }
 
-
+    /**
+     * Check in bundleRoot exists the file for the asset and it have the same content that the file in expectedFilePath
+     *
+     * @param bundleRoot
+     * @param asset
+     * @return
+     * @throws IOException if the file not exists or not has the right content
+     */
     public static Collection<File> assertBundleFile(
             final File bundleRoot,
             final Object asset,
@@ -134,14 +195,12 @@ public class FileTestUtil {
                 .findFirst();
     }
 
-    public static String getFileExt(final File file) {
+    private static String getFileExt(final File file) {
         final String fileName = file.getName();
         final int index = fileName.indexOf(".");
         return index != -1 ? fileName.substring(index) : fileName;
     }
 
-
-    @NotNull
     private static String removeContent(String content, Collection<String> toRemove) {
         for (String regex : toRemove) {
             content = content.replaceAll(regex, "");
