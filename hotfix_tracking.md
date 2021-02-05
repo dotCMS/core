@@ -75,3 +75,5 @@ This maintenance release includes the following code fixes:
 35. https://github.com/dotCMS/core/issues/19513	: Fix possible NPE in MimeTypeUtils
 
 36. https://github.com/dotCMS/core/issues/19498	: Add Resolved VanityUrl as request attribute
+
+37. https://github.com/dotCMS/core/issues/19497	: PP Sometimes fails because of file-based containers

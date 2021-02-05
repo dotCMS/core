@@ -1024,19 +1024,24 @@ public class DependencyManager {
 	 * @return
 	 */
 	private Set<Folder> collectFileAssetContainerDependencies(final FileAssetContainer fileAssetContainer){
-       final Set<Folder> collectedFolders = new HashSet<>();
-       final List<FileAsset> fileAssets = fileAssetContainer.getContainerStructuresAssets();
-       for(final FileAsset fileAsset:fileAssets){
 		   try {
-			   final Folder folder = APILocator.getFolderAPI().findFolderByPath(fileAsset.getPath(), fileAsset.getHost(),user, false);
-			   if(UtilMethods.isSet(folder)) {
-				  collectedFolders.add(folder);
+			final String path = fileAssetContainer.getPath();
+			final Folder rootFolder = APILocator.getFolderAPI()
+					.findFolderByPath(path, fileAssetContainer.getHost(), user, false);
+			final List<Folder> subFolders = APILocator.getFolderAPI()
+					.findSubFolders(rootFolder, user, false);
+
+			final Set<Folder> dependenciesFolders = new HashSet<>();
+			dependenciesFolders.add(rootFolder);
+			dependenciesFolders.addAll(subFolders);
+
+			return dependenciesFolders;
+		   } catch (final DotSecurityException | DotDataException e) {
+               Logger.error(DependencyManager.class, String.format("An error occurred when collecting dependencies " +
+                       "for File Container '%s' (%s): %s", fileAssetContainer.getIdentifier(), fileAssetContainer
+                       .getPath(), e.getMessage()), e);
+               return Collections.emptySet();
 			   }
-		   } catch (DotSecurityException | DotDataException e) {
-			   Logger.error(this, "Error collecting folders for FileAssetContainer " + fileAsset.getFileName() ,e);
-		   }
-       }
-       return collectedFolders;
     }
 
 	/**
