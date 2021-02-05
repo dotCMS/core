@@ -292,7 +292,7 @@ public class LanguageUtil {
     	return get(pageContext, key, (Object[])null);
 	}
 	
-    public static String get(final String key, final String defaultValue) throws LanguageException {
+    public static String getOrDefaultValue(final String key, final String defaultValue) throws LanguageException {
         final User user = PortalUtil.getUser();
         
         final Optional<String> optValue = getOpt(APILocator.getCompanyAPI().getDefaultCompany().getCompanyId(), user.getLocale(), key);
