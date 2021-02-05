@@ -176,7 +176,8 @@ create table User_ (
 	agreedToTermsOfUse tinyint,
 	active_ tinyint,
 	delete_in_progress BOOLEAN DEFAULT FALSE,
-	delete_date DATETIME
+	delete_date DATETIME,
+    additional_info BLOB NULL
 );
 
 create table UserTracker (

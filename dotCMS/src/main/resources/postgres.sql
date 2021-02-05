@@ -177,7 +177,7 @@ create table User_ (
 	active_ bool,
     delete_in_progress BOOLEAN DEFAULT FALSE,
     delete_date TIMESTAMP,
-    additional_info BYTEA NULL
+    additional_info JSONB NULL
 );
 
 create table UserTracker (

@@ -176,7 +176,8 @@ create table User_ (
 	agreedToTermsOfUse number(1, 0),
 	active_ number(1, 0),
 	delete_in_progress number(1,0) default 0,
-	delete_date DATE
+	delete_date DATE,
+	additional_info BLOB NULL
 );
 
 create table UserTracker (
