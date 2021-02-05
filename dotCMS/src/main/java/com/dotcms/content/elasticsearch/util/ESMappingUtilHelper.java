@@ -13,9 +13,11 @@ import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.MultiSelectField;
 import com.dotcms.contenttype.model.field.RadioField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.SelectField;
+import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.field.TimeField;
@@ -361,20 +363,31 @@ public class ESMappingUtilHelper {
                 .of(DataTypes.BOOL, "boolean", DataTypes.FLOAT, "double", DataTypes.INTEGER,
                         "long");
         String mappingForField = null;
+
+        if (!matchesExclusions(fieldVariableName)) {
         if (field instanceof DateField || field instanceof DateTimeField
                 || field instanceof TimeField) {
             mappingForField = "{\n\"type\":\"date\",\n";
             mappingForField += "\"format\": \"yyyy-MM-dd't'HH:mm:ss||MMM d, yyyy h:mm:ss a||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis\"\n}";
         } else if (field instanceof TextField || field instanceof TextAreaField
                 || field instanceof WysiwygField || field instanceof RadioField
-                || field instanceof SelectField) {
+                    || field instanceof SelectField || field instanceof MultiSelectField
+                    || field instanceof TagField) {
+
             if (dataTypesMap.containsKey(field.dataType())) {
-                mappingForField = String.format("{\n\"type\":\"%s\"\n}", dataTypesMap.get(field.dataType()));
-            } else if (!matchesExclusions(fieldVariableName)){
+                    mappingForField = String
+                            .format("{\n\"type\":\"%s\"\n}",
+                                    dataTypesMap.get(field.dataType()));
+                } else {
+                    if (field.unique() || field instanceof TagField) {
+                        mappingForField = "{\n\"type\":\"keyword\"\n}";
+                    } else {
                 mappingForField = "{\n"
-                        + "\"type\":\"text\",\n"
+                                + ("\"type\":\"text\",\n")
                         + "\"analyzer\":\"my_analyzer\""
                         + "\n}";
+            }
+        }
             }
         }
 
@@ -383,12 +396,19 @@ public class ESMappingUtilHelper {
             mappingList.add(Tuple.of(field.variable().toLowerCase(),
                     new JSONObject(mappingForField)));
 
-            //Put mapping for _dotraw fields and _text if needed
+            //Put mapping for _dotraw, _sha256 and _text fields if needed
             mappingList.add(Tuple.of(field.variable().toLowerCase() + "_dotraw",
                     new JSONObject("{\n"
                             + "\"type\":\"keyword\",\n"
                             + "\"ignore_above\": 8191"
                             + "\n}")));
+
+            mappingList.add(Tuple.of(field.variable().toLowerCase() + ESUtils.SHA_256,
+                    new JSONObject("{\n"
+                            + "\"type\":\"keyword\",\n"
+                            + "\"ignore_above\": 8191"
+                            + "\n}")));
+
             if (Config
                     .getBooleanProperty("CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS", false)) {
                 mappingList.add(Tuple.of(field.variable().toLowerCase() + ESMappingAPIImpl.TEXT,
