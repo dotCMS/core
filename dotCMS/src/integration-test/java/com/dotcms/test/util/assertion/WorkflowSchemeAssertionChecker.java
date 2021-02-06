@@ -4,6 +4,7 @@ import com.dotcms.enterprise.publishing.remote.bundler.FileBundlerTestUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
@@ -16,6 +17,9 @@ import java.util.Map;
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 
+/**
+ * {@link AssertionChecker} concrete class for {@link WorkflowScheme}
+ */
 public class WorkflowSchemeAssertionChecker implements AssertionChecker<WorkflowScheme> {
     @Override
     public Map<String, Object> getFileArguments(final WorkflowScheme workflowScheme, File file) {

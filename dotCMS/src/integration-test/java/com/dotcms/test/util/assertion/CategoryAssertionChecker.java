@@ -12,6 +12,9 @@ import java.util.Map;
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 
+/**
+ * {@link AssertionChecker} concrete class for {@link Category}
+ */
 public class CategoryAssertionChecker implements AssertionChecker<Category> {
     @Override
     public Map<String, Object> getFileArguments(final Category category, File file) {

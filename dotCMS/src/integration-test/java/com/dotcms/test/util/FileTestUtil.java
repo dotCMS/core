@@ -84,6 +84,8 @@ public class FileTestUtil {
     /**
      * Get the content file and formatted it with the arguments, and removing al the content in the end of each line
      *
+     * @see FileTestUtil#getFormattedContent(File, Map)
+     *
      * @param file
      * @param arguments
      * @return
@@ -121,12 +123,24 @@ public class FileTestUtil {
     }
 
     /**
-     * Check in bundleRoot exists the file for the asset and it have the right content
+     * Check in bundleRoot exists the file for the asset and it have the right content.
+     * it use the {@link AssertionChecker} class to know how to make the asserts, step by step this method
+     * do the follow:
      *
-     * @param bundleRoot
-     * @param asset
+     * - Check if the Files get by {@link AssertionChecker#getFile(Object, File)} method exists}, If any of the files not
+     * exists throw a {@link AssertionError}.
+     * - If {@link AssertionChecker#checkFileContent(Object)} return true then check the content of the file.
+     * - Use the file path return by {@link AssertionChecker#getFilePathExpected(File)} as template, then populate it using
+     * {@link AssertionChecker#getFileArguments(Object, File)} method, later compare the result with the content of
+     * {@link AssertionChecker#getFile(Object, File)}, if the content are not equal then throw a {@link AssertionError}
+     *
+     * @param bundleRoot bundle root directory
+     * @param asset asset to be Assert
      * @return
      * @throws IOException if the file not exists or not has the right content
+     *
+     * @see FileTestUtil#getFormattedContent(File, Map)
+     * @see AssertionChecker
      */
     public static Collection<File> assertBundleFile(
             final File bundleRoot,
@@ -144,6 +158,31 @@ public class FileTestUtil {
      * @return
      * @throws IOException if the file not exists or not has the right content
      */
+
+    /**
+     * Check in bundleRoot exists the file for the asset and it have the right content.
+     * it use the {@link AssertionChecker} class to know how to make the asserts, step by step this method
+     * do the follow:
+     *
+     * - Check if the Files get by {@link AssertionChecker#getFile(Object, File)} method exists}, If any of the files not
+     * exists throw a {@link AssertionError}.
+     * - If {@link AssertionChecker#checkFileContent(Object)} return true then check the content of the file.
+     * - If the file to compare have the same ext that <code>expectedFilePath</code> then use the file in <code>expectedFilePath</code>
+     * as template otherwise use Use the file path return by {@link AssertionChecker#getFilePathExpected(File)}.
+     * - Then populate the template using {@link AssertionChecker#getFileArguments(Object, File)} method,
+     * later compare the result with the content of {@link AssertionChecker#getFile(Object, File)},
+     * if the content are not equal then throw a {@link AssertionError}
+     *
+     * @param bundleRoot bundle root directory
+     * @param asset asset to be Assert
+     * @param expectedFilePath  Template file to populate and compare
+     * @return
+     * @throws IOException if the file not exists or not has the right content
+     *
+     * @see FileTestUtil#getFormattedContent(File, Map)
+     * @see AssertionChecker
+     *
+     */
     public static Collection<File> assertBundleFile(
             final File bundleRoot,
             final Object asset,
@@ -151,6 +190,30 @@ public class FileTestUtil {
         return assertBundleFile(bundleRoot, asset, list(expectedFilePath));
     }
 
+    /**
+     * Check in bundleRoot exists the file for the asset and it have the right content.
+     * it use the {@link AssertionChecker} class to know how to make the asserts, step by step this method
+     * do the follow:
+     *
+     * - Check if the Files get by {@link AssertionChecker#getFile(Object, File)} method exists}, If any of the files not
+     * exists throw a {@link AssertionError}.
+     * - If {@link AssertionChecker#checkFileContent(Object)} return true then check the content of the file.
+     * - If the file to compare have the same ext that one in <code>expectedFilesPath</code> then use it
+     * as template otherwise use Use the file path return by {@link AssertionChecker#getFilePathExpected(File)}.
+     * - Then populate the template using {@link AssertionChecker#getFileArguments(Object, File)} method,
+     * later compare the result with the content of {@link AssertionChecker#getFile(Object, File)},
+     * if the content are not equal then throw a {@link AssertionError}
+     *
+     * @param bundleRoot bundle root directory
+     * @param asset asset to be Assert
+     * @param expectedFilePath  Template file to populate and compare
+     * @return
+     * @throws IOException if the file not exists or not has the right content
+     *
+     * @see FileTestUtil#getFormattedContent(File, Map)
+     * @see AssertionChecker
+     *
+     */
     public static Collection<File> assertBundleFile(
             final File bundleRoot,
             final Object asset,

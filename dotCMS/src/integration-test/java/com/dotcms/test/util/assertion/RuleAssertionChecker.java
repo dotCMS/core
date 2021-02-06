@@ -4,6 +4,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.liferay.portal.model.User;
@@ -14,6 +15,9 @@ import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
+/**
+ * {@link AssertionChecker} concrete class for {@link Rule}
+ */
 public class RuleAssertionChecker implements AssertionChecker<Rule> {
     @Override
     public Map<String, Object> getFileArguments(Rule rule, File file) {

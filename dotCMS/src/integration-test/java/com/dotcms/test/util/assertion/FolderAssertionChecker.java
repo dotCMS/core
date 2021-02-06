@@ -6,6 +6,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.liferay.portal.model.User;
 
@@ -16,6 +17,9 @@ import java.util.Map;
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 
+/**
+ * {@link AssertionChecker} concrete class for {@link Folder}
+ */
 public class FolderAssertionChecker implements AssertionChecker<Folder> {
     @Override
     public Map<String, Object> getFileArguments(final Folder folder, File file) {

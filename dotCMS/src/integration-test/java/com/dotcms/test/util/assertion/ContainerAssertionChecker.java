@@ -6,6 +6,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
@@ -19,6 +20,9 @@ import java.util.Map;
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 
+/**
+ * {@link AssertionChecker} concrete class for {@link Container}
+ */
 public class ContainerAssertionChecker implements AssertionChecker<Container> {
     @Override
     public Map<String, Object> getFileArguments(Container containerParams, File file) {

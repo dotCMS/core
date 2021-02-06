@@ -2,6 +2,7 @@ package com.dotcms.test.util.assertion;
 
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotcms.enterprise.publishing.remote.bundler.FileBundlerTestUtil;
 
@@ -12,6 +13,9 @@ import java.util.Map;
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 
+/**
+ * {@link AssertionChecker} concrete class for {@link Relationship}
+ */
 public class RelationshipAssertionChecker implements AssertionChecker<Relationship> {
     @Override
     public Map<String, Object> getFileArguments(final Relationship relationship, File file) {

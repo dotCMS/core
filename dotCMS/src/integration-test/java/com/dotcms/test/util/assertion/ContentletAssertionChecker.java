@@ -7,6 +7,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -23,6 +24,9 @@ import java.util.Optional;
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 
+/**
+ * {@link AssertionChecker} concrete class for {@link Contentlet}
+ */
 public class ContentletAssertionChecker implements AssertionChecker<Contentlet> {
 
     public static final String CONTENT_EXPECTED_DEFAULT_FILE_PATH = "/bundlers-test/contentlet/contentlet.content.xml";

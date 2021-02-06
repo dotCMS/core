@@ -6,6 +6,7 @@ import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.links.model.Link;
 
 import java.io.File;
@@ -15,6 +16,9 @@ import java.util.Map;
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 
+/**
+ * {@link AssertionChecker} concrete class for {@link Link}
+ */
 public class LinkAssertionChecker implements AssertionChecker<Link> {
     @Override
     public Map<String, Object> getFileArguments(Link asset, File file) {
