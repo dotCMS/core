@@ -383,17 +383,16 @@ public class PublisherAPIImplTest {
 
         final File bundleRoot = BundlerUtil.getBundleRoot(config);
 
-        int nFiles = 0;
+        final Collection<File> filesExpected = new HashSet<>();
 
         for (final TestAsset testAsset : testAssets) {
             final Collection<File> files = FileTestUtil.assertBundleFile(bundleRoot, testAsset.asset, testAsset.fileExpectedPath);
-            nFiles += files.size();
+            filesExpected.addAll(files);
         }
 
         for (Object assetToAssert : dependencies) {
             final Collection<File> files = FileTestUtil.assertBundleFile(bundleRoot, assetToAssert);
-            final int dependenciesProcessed = files.size();
-            nFiles += dependenciesProcessed;
+            filesExpected.addAll(files);
         }
 
         final String messagesPath = bundleRoot.getAbsolutePath() + File.separator + "messages";
@@ -401,17 +400,21 @@ public class PublisherAPIImplTest {
         final String systemHostPath = bundleRoot.getAbsolutePath()
                 + "/working/System Host/855a2d72-f2f3-4169-8b04-ac5157c4380c.contentType.json";
 
-        final List<File> fileList = FileUtil.listFilesRecursively(bundleRoot);
-        final long numberFiles =fileList.stream()
+        final List<File> files = FileUtil.listFilesRecursively(bundleRoot).stream()
                 .filter(file -> file.isFile())
                 .filter(file -> !file.getAbsolutePath().equals(systemHostPath))
                 .filter(file -> !file.getParentFile().getAbsolutePath().equals(messagesPath))
-                .count();
+                .collect(Collectors.toList());
 
         //All the dependencies plus, the asset and the bundle xml
-        long numberFilesExpected = nFiles + 1;
+        long numberFilesExpected = filesExpected.size() + 1;
+        final int numberFiles = files.size();
 
-        assertEquals(String.format("Expected %d but get %d in %s",numberFilesExpected, numberFiles, bundleRoot),
+        final String filesExpectedPath = filesExpected.stream().map(file -> file.getAbsolutePath()).collect(Collectors.joining());
+        final String filesPath = files.stream().map(file -> file.getAbsolutePath()).collect(Collectors.joining());
+
+        assertEquals(String.format("Expected %d but get %d in %s\nExpected %s\nExisting %s\n",
+                    numberFilesExpected, numberFiles, bundleRoot, filesExpectedPath, filesPath),
                 numberFilesExpected, numberFiles);
     }
 

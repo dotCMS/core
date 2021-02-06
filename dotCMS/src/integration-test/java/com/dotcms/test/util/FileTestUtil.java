@@ -18,6 +18,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.google.common.collect.ImmutableList;
 import com.liferay.util.FileUtil;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -206,7 +207,7 @@ public class FileTestUtil {
      *
      * @param bundleRoot bundle root directory
      * @param asset asset to be Assert
-     * @param expectedFilePath  Template file to populate and compare
+     * @param expectedFilesPath  Template file to populate and compare
      * @return
      * @throws IOException if the file not exists or not has the right content
      *
@@ -242,8 +243,9 @@ public class FileTestUtil {
             String fileContent = FileTestUtil.removeSpace(FileTestUtil.getFileContent(file));
             fileContent = removeContent(fileContent, toRemove);
 
-            assertEquals(String.format("Fail for %s: %s", asset.getClass().getName(),  asset.toString()),
-                    fileContentExpected, fileContent);
+            final String difference = StringUtils.difference(fileContentExpected, fileContent);
+            assertEquals(String.format("Fail for %s:\nAsset -> %s \ndifference -> %s", asset.getClass().getSimpleName(),
+                    asset.toString(), difference), fileContentExpected, fileContent);
         }
 
         return files;

@@ -43,7 +43,6 @@ import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-
 import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -53,10 +52,10 @@ import org.junit.runner.RunWith;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.dotcms.publishing.PublisherAPIImplTest.getLanguagesVariableDependencies;
-import static com.dotcms.util.CollectionsUtils.add;
-import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.*;
 import static org.jgroups.util.Util.assertEquals;
 import static org.jgroups.util.Util.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -102,7 +101,7 @@ public class DependencyBundlerTest {
         bundler = new DependencyBundler();
     }
 
-    @DataProvider
+    @DataProvider(format = "%m: %p[0]")
     public static Object[] assets() throws Exception {
         prepare();
 
@@ -589,7 +588,8 @@ public class DependencyBundlerTest {
             final BundleDataGen.MetaData metaData = BundleDataGen.howAddInBundle.get(clazz);
             final int count = metaData.collection.apply(config).size();
 
-            assertEquals(String.format("Expected %d not %d to %s: %s", expectedCount, count, clazz, counts),
+            assertEquals(String.format("Expected %d not %d to %s: %s", expectedCount, count, clazz.getSimpleName(),
+                    metaData.collection.apply(config).stream().map(object -> object.toString()).collect(Collectors.joining())),
                     expectedCount, count);
         }
     }
@@ -618,6 +618,15 @@ public class DependencyBundlerTest {
             }
 
             this.dependenciesToAssert.addAll(assetsToAddInBundle);
+        }
+
+        @Override
+        public String toString() {
+            return "TestData{" +
+                    "assetsToAddInBundle=" + assetsToAddInBundle.getClass() +
+                    ", dependenciesToAssert=" + dependenciesToAssert.stream().map(Object::getClass) +
+                    ", filterDescriptor=" + filterDescriptor.getFilters() +
+                    '}';
         }
     }
 }
