@@ -19,6 +19,11 @@
 	   <scope>application</scope>
 	   <class>org.apache.velocity.tools.generic.AlternatorTool</class>
 	</tool>
+    <tool>
+       <key>logger</key>
+       <scope>application</scope>
+       <class>com.dotcms.rendering.velocity.viewtools.VelocityLoggerTool</class>
+    </tool>
 	<tool>
 		<key>cookietool</key>
 		<scope>request</scope>
