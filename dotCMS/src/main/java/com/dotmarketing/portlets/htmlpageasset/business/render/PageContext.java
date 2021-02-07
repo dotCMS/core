@@ -13,6 +13,7 @@ public class PageContext {
     private final String pageUri;
     private final PageMode pageMode;
     private final HTMLPageAsset page;
+    private final boolean graphQL;
 
     public PageContext(
             final User user,
@@ -20,10 +21,21 @@ public class PageContext {
             final PageMode pageMode,
             final HTMLPageAsset page) {
 
+        this(user, pageUri, pageMode, page, false);
+    }
+
+    public PageContext(
+            final User user,
+            final String pageUri,
+            final PageMode pageMode,
+            final HTMLPageAsset page,
+            final boolean graphQL) {
+
         this.user = user;
         this.pageUri = pageUri;
         this.pageMode = pageMode;
         this.page = page;
+        this.graphQL = graphQL;
     }
 
 
@@ -41,5 +53,9 @@ public class PageContext {
 
     public PageMode getPageMode() {
         return pageMode;
+    }
+
+    public boolean isGraphQL() {
+        return graphQL;
     }
 }

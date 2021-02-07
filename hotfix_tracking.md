@@ -85,3 +85,5 @@ This maintenance release includes the following code fixes:
 40. https://github.com/dotCMS/core/issues/19458	: [Content] : Tag field from user returns different data compared to system Tag field
 
 41. https://github.com/dotCMS/core/issues/19452	: URL maps which match the URL map pattern and content values fail with 404 on customer system
+
+42. https://github.com/dotCMS/core/issues/19449 : GraphQL failing to retrieve image info
