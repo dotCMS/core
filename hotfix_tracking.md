@@ -89,3 +89,5 @@ This maintenance release includes the following code fixes:
 42. https://github.com/dotCMS/core/issues/19449 : GraphQL failing to retrieve image info
 
 43. https://github.com/dotCMS/core/issues/19337	: Content Search screen not filtering on "select" fields - 5.2x+ - reproducable in demo
+
+44. https://github.com/dotCMS/core/issues/19098	: With SAML enabled, explicit logout takes you to the native login page, instead of re-authing through SAML
