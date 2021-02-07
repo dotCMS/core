@@ -11,6 +11,7 @@ import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherAPIImplTest;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
@@ -19,6 +20,7 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageDataGen;
@@ -516,6 +518,7 @@ public class DependencyBundlerTest {
 
     private static Set<Object> addLanguageVariablesDependencies(Collection<Object> dependencies) throws DotDataException, DotSecurityException {
         final Set<Object> languagesVariableDependencies = getLanguagesVariableDependencies();
+        Logger.info(PublisherAPIImplTest.class,"languagesVariableDependencies " + languagesVariableDependencies);
         final Set<Object> allDependencies = new HashSet<>();
         allDependencies.addAll(languagesVariableDependencies);
         allDependencies.addAll(dependencies);
@@ -589,9 +592,22 @@ public class DependencyBundlerTest {
             final BundleDataGen.MetaData metaData = BundleDataGen.howAddInBundle.get(clazz);
             final int count = metaData.collection.apply(config).size();
 
-            assertEquals(String.format("Expected %d not %d to %s: %s", expectedCount, count, clazz.getSimpleName(),
+            assertEquals(String.format("Expected %d not %d to %s", expectedCount, count,
                     metaData.collection.apply(config).stream()
-                            .map(object -> ContentType.class.isAssignableFrom(object.getClass()) ? ((ContentType)object).name() : object.toString() + " " + object.getClass().getSimpleName())
+                            .map(object -> {
+                                try {
+                                    final VersionInfo versionInfo = APILocator.getVersionableAPI().getVersionInfo((String) object);
+
+                                    if (versionInfo != null) {
+                                        final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(versionInfo.getWorkingInode());
+                                        return contentType.name();
+                                    } else {
+                                        return object;
+                                    }
+                                }catch (Exception e) {
+                                    return object;
+                                }
+                            })
                             .collect(joining(","))),
                     expectedCount, count);
         }
@@ -607,6 +623,9 @@ public class DependencyBundlerTest {
                 final Collection<Object> dependenciesToAssert,
                 final FilterDescriptor filterDescriptor)  {
             this.assetsToAddInBundle = assetsToAddInBundle;
+
+            final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+            this.assetsToAddInBundle.add(contentType);
             this.filterDescriptor = filterDescriptor;
 
             try {

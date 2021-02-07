@@ -31,6 +31,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
@@ -410,11 +411,21 @@ public class PublisherAPIImplTest {
         long numberFilesExpected = filesExpected.size() + 1;
         final int numberFiles = files.size();
 
-        final String filesExpectedPath = filesExpected.stream().map(file -> file.getAbsolutePath()).collect(Collectors.joining(""));
-        final String filesPath = files.stream().map(file -> file.getAbsolutePath()).collect(Collectors.joining(""));
+        final List<String> filesExpectedPath = filesExpected.stream().map(file -> file.getAbsolutePath()).collect(Collectors.toList());
+        final List<String> filePaths = files.stream().map(file -> file.getAbsolutePath()).collect(Collectors.toList());
 
-        assertEquals(String.format("Expected %d but get %d in %s\nExpected %s\nExisting %s\n",
-                    numberFilesExpected, numberFiles, bundleRoot, filesExpectedPath, filesPath),
+        List<String> differences = null ;
+
+        if (numberFilesExpected > numberFiles){
+            differences = new ArrayList<>(filesExpectedPath);
+            differences.removeAll(filePaths);
+        } else if (numberFilesExpected < numberFiles) {
+            differences = new ArrayList<>(filePaths);
+            differences.removeAll(filesExpectedPath);
+        }
+
+        assertEquals(String.format("Expected %d but get %d in %s\nExpected %s\nExisting %s\ndifference %s\n",
+                    numberFilesExpected, numberFiles, bundleRoot, filesExpectedPath, filePaths, differences),
                 numberFilesExpected, numberFiles);
     }
 
@@ -491,6 +502,7 @@ public class PublisherAPIImplTest {
             dependencies.add(language);
         }
 
+        Logger.info(PublisherAPIImplTest.class,"languageVariables " + languageVariables);
         if (!languageVariables.isEmpty()) {
             final ContentType languageVariableContentType =
                     APILocator.getContentTypeAPI(systemUser).find(LanguageVariableAPI.LANGUAGEVARIABLE);
