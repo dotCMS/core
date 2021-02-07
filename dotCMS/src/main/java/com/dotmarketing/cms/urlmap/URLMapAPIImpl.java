@@ -1,5 +1,13 @@
 package com.dotmarketing.cms.urlmap;
 
+import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.Field;
+import io.vavr.control.Try;
+
+import java.util.*;
+
+import org.jetbrains.annotations.NotNull;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -12,36 +20,20 @@ import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
-import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.CMSUrlUtil;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.StructureUtil;
-import com.dotmarketing.portlets.structure.factories.StructureFactory;
-import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.TreeSet;
-import org.apache.lucene.queryparser.classic.QueryParser;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * {@link URLMapAPI} implementation
@@ -213,16 +205,29 @@ public class URLMapAPIImpl implements URLMapAPI {
         final StringBuilder query = new StringBuilder();
         final List<RegExMatch> groups = matches.getMatches().get(0).getGroups();
         final List<String> fieldMatches = matches.getPatternChange().getFieldMatches();
-
         int counter = 0;
+
+        final Map<String, Field> fieldMap = structure.fieldMap();
+
         for (final RegExMatch regExMatch : groups) {
 
             String value = regExMatch.getMatch();
             if (value.endsWith("/")) {
                 value = value.substring(0, value.length() - 1);
             }
-            query.append('+').append(structure.variable()).append('.')
-                    .append(fieldMatches.get(counter)).append("_dotRaw").append(':')
+            query.append('+')
+                    .append(structure.variable()).append('.');
+
+            final String variableName = fieldMatches.get(counter);
+            final Field field = fieldMap.get(variableName);
+
+            if (field.dataType().equals(DataTypes.INTEGER) || field.dataType().equals(DataTypes.FLOAT)){
+                query.append(variableName);
+            } else {
+                query.append(variableName).append("_dotRaw");
+            }
+
+            query.append(':')
                     .append(ESUtils.escapeExcludingSlashIncludingSpace(value)).append(' ');
             counter++;
         }

@@ -80,3 +80,5 @@ This release includes the following code fixes:
 37. https://github.com/dotCMS/core/issues/19513	: Fix possible NPE in MimeTypeUtils
 
 38. https://github.com/dotCMS/core/issues/19486	: Wrong defaults
+
+39. https://github.com/dotCMS/core/issues/19452	: URL maps which match the URL map pattern and content values fail with 404 on customer system
