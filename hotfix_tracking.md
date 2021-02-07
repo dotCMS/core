@@ -77,4 +77,6 @@ This release includes the following code fixes:
 
 36. https://github.com/dotCMS/core/issues/19555	: Deleting a user is not replacing the owner on identifier table
 
-37. https://github.com/dotCMS/core/issues/19513	: Fix possible NPE in MimeTypeUtils 
+37. https://github.com/dotCMS/core/issues/19513	: Fix possible NPE in MimeTypeUtils
+
+38. https://github.com/dotCMS/core/issues/19486	: Wrong defaults
