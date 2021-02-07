@@ -88,3 +88,5 @@ This release includes the following code fixes:
 41. https://github.com/dotCMS/core/issues/18927	: Remove unneeded icu4j
 
 42. https://github.com/dotCMS/core/issues/18605	: ReindexThread always runs - never stops
+
+43. https://github.com/dotCMS/core/issues/18505	: JSONTool does not return sub arrays
