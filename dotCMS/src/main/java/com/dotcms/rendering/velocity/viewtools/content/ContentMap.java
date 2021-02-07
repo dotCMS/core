@@ -37,12 +37,7 @@ import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.builder.ToStringBuilder;
@@ -337,18 +332,45 @@ public class ContentMap {
 		final ContentletRelationshipRecords records = relationships.getRelationshipsRecords().get(0);
 		if(records.getRecords().isEmpty()) {
 		    return null;
-		}
-		else if (records.doesAllowOnlyOne()){
-			return new ContentMap(records.getRecords().get(0),user,
-					EDIT_OR_PREVIEW_MODE, host, context);
+		} else if (records.doesAllowOnlyOne()){
+			return new ContentMap(records.getRecords().get(0),user, EDIT_OR_PREVIEW_MODE, host, context);
 		} else{
-			return perAPI.filterCollection(records.getRecords(),
-					PermissionAPI.PERMISSION_USE, true, user).stream()
-					.map(contentlet -> new ContentMap((Contentlet) contentlet, user,
-							EDIT_OR_PREVIEW_MODE, host, context)).collect(Collectors.toList());
+			final List<Contentlet> contents = records.getRecords().stream()
+					.filter(contentlet -> needLiveVersion(contentlet))
+					.map(relatedContent -> EDIT_OR_PREVIEW_MODE ? relatedContent : getLiveVersion(relatedContent))
+					.filter(Objects::nonNull)
+					.collect(Collectors.toList());
+
+			return perAPI.filterCollection(contents, PermissionAPI.PERMISSION_USE, true, user).stream()
+					.map(contentlet -> new ContentMap(contentlet, user, EDIT_OR_PREVIEW_MODE, host, context))
+					.collect(Collectors.toList());
 		}
 
 
+	}
+
+	private Contentlet getLiveVersion(final Contentlet relatedContent) {
+		try {
+			if (relatedContent.isLive()) {
+				return relatedContent;
+			} else {
+				try {
+					final List<Contentlet> contentlets = APILocator.getContentletAPI()
+							.findContentletsByIdentifiers(new String[]{relatedContent.getIdentifier()}, true, relatedContent.getLanguageId(), user, user.isFrontendUser());
+
+					return contentlets != null && !contentlets.isEmpty() ? contentlets.get(0) : null;
+				} catch (DotDataException| DotSecurityException e) {
+					throw new RuntimeException(e);
+				}
+			}
+		} catch (DotDataException | DotSecurityException e) {
+			return null;
+		}
+	}
+
+	private boolean needLiveVersion(final Contentlet contentlet) {
+		return Try.of(() -> EDIT_OR_PREVIEW_MODE || !EDIT_OR_PREVIEW_MODE && contentlet.hasLiveVersion())
+				.getOrElse(false);
 	}
 
 	/**

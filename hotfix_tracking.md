@@ -91,3 +91,5 @@ This maintenance release includes the following code fixes:
 43. https://github.com/dotCMS/core/issues/19337	: Content Search screen not filtering on "select" fields - 5.2x+ - reproducable in demo
 
 44. https://github.com/dotCMS/core/issues/19098	: With SAML enabled, explicit logout takes you to the native login page, instead of re-authing through SAML
+
+45. https://github.com/dotCMS/core/issues/19044	: Unpublished related content appearing in Preview Mode / Live mode & Are published when Pushing to S3 - 5.3x

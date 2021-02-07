@@ -340,7 +340,7 @@ public class PageRenderUtil implements Serializable {
 
     private boolean isLive(final HttpServletRequest request) {
 
-        return request != null && request.getSession(false) != null && request.getSession().getAttribute("tm_date") != null ?
+        return request != null && request.getSession(false) != null && request.getSession(false).getAttribute("tm_date") != null ?
                 false :
                 mode.showLive;
     }
