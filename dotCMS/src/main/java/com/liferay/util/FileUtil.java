@@ -154,7 +154,7 @@ public class FileUtil {
         
         if (source.length() == 0) {
             Logger.warn(FileUtil.class, source.getAbsolutePath() + " is empty");
-            if (!Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false) && !(source.getAbsolutePath()
+            if (!Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", true) && !(source.getAbsolutePath()
                 .endsWith(metaDataPath) || source.getAbsolutePath().contains(languagePropertyPath))) {
                 throw new IOException("Source file is 0 length, failing " + source);
             }

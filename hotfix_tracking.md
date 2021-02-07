@@ -90,3 +90,5 @@ This release includes the following code fixes:
 42. https://github.com/dotCMS/core/issues/18605	: ReindexThread always runs - never stops
 
 43. https://github.com/dotCMS/core/issues/18505	: JSONTool does not return sub arrays
+
+44. https://github.com/dotCMS/core/issues/18051	: PP a vtl file with no content throws an NPE
