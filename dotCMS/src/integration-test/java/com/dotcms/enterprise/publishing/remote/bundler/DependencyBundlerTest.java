@@ -591,7 +591,7 @@ public class DependencyBundlerTest {
 
             assertEquals(String.format("Expected %d not %d to %s: %s", expectedCount, count, clazz.getSimpleName(),
                     metaData.collection.apply(config).stream()
-                            .map(object -> ContentType.class.isInstance(object) ? ((ContentType)object).name() : object.toString())
+                            .map(object -> ContentType.class.isAssignableFrom(object.getClass()) ? ((ContentType)object).name() : object.toString())
                             .collect(joining(","))),
                     expectedCount, count);
         }

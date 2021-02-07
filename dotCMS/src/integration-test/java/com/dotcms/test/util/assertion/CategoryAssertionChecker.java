@@ -46,7 +46,8 @@ public class CategoryAssertionChecker implements AssertionChecker<Category> {
         return list(
                 "<iDate>.*</iDate>",
                 "<modDate>.*</modDate>",
-                "<iDate class=\"sql-timestamp\">.*</iDate>"
+                "<iDate class=\"sql-timestamp\">.*</iDate>",
+                "<modDate class=\"sql-timestamp\">.*</modDate>"
         );
     }
 }

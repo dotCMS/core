@@ -14,10 +14,7 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 
 import java.io.File;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.list;
@@ -36,6 +33,10 @@ public class ContentTypeAssertionChecker implements AssertionChecker<ContentType
 
             final List<WorkflowScheme> workflowSchemes = APILocator.getWorkflowAPI().findSchemesForContentType(contentType);
 
+            final List<WorkflowScheme> schemas = new ArrayList<>();
+            schemas.addAll(workflowSchemes);
+            Collections.reverse(schemas);
+
             Map<String, Object> arguments = map(
                     "content_type_name", contentType.name(),
                     "content_type_description", contentType.description(),
@@ -44,8 +45,8 @@ public class ContentTypeAssertionChecker implements AssertionChecker<ContentType
                     "content_type_idate", String.valueOf(contentType.iDate().getTime()),
                     "content_type_mod_date", String.valueOf(contentType.modDate().getTime()),
                     "host", host.getIdentifier(),
-                    "workflows_ids", workflowSchemes.stream().map(WorkflowScheme::getId).collect(Collectors.toList()),
-                    "workflows_names", workflowSchemes.stream().map(WorkflowScheme::getName).collect(Collectors.toList()),
+                    "workflows_ids", schemas.stream().map(WorkflowScheme::getId).collect(Collectors.toList()),
+                    "workflows_names", schemas.stream().map(WorkflowScheme::getName).collect(Collectors.toList()),
                     "folder_id", contentType.folder()
             );
 
@@ -111,8 +112,8 @@ public class ContentTypeAssertionChecker implements AssertionChecker<ContentType
     @Override
     public Collection<String> getRegExToRemove(File file) {
         return list(
-            "\"workflowSchemaIds\":[.*]",
-            "\"workflowSchemaNames\":[.*]"
+            "\\\"workflowSchemaIds\\\":\\[.*\\]",
+            "\\\"workflowSchemaNames\\\":\\[.*\\]"
         );
     }
 }
