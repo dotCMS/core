@@ -81,3 +81,5 @@ This maintenance release includes the following code fixes:
 38. https://github.com/dotCMS/core/issues/19489 : If a field is marked unique, we should es map it as keyword
 
 39. https://github.com/dotCMS/core/issues/19486	: Wrong defaults
+
+40. https://github.com/dotCMS/core/issues/19458	: [Content] : Tag field from user returns different data compared to system Tag field
