@@ -84,3 +84,5 @@ This release includes the following code fixes:
 39. https://github.com/dotCMS/core/issues/19452	: URL maps which match the URL map pattern and content values fail with 404 on customer system
 
 40. https://github.com/dotCMS/core/issues/19337	: Content Search screen not filtering on "select" fields - 5.2x+ - reproducable in demo
+
+41. https://github.com/dotCMS/core/issues/18927	: Remove unneeded icu4j
