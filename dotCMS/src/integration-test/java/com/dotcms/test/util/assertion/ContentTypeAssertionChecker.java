@@ -14,10 +14,13 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 
 import java.io.File;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 
 /**
@@ -103,5 +106,13 @@ public class ContentTypeAssertionChecker implements AssertionChecker<ContentType
     public boolean checkFileContent(ContentType contentType) {
         return !contentType.name().equals("Host") && !contentType.name().equals("File Asset") &&
                 !ImmutableKeyValueContentType.class.isInstance(contentType);
+    }
+
+    @Override
+    public Collection<String> getRegExToRemove(File file) {
+        return list(
+            "\"workflowSchemaIds\":[.*]",
+            "\"workflowSchemaNames\":[.*]"
+        );
     }
 }

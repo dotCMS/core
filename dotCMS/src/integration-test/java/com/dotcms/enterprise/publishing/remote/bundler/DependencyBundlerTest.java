@@ -56,6 +56,7 @@ import java.util.stream.Collectors;
 
 import static com.dotcms.publishing.PublisherAPIImplTest.getLanguagesVariableDependencies;
 import static com.dotcms.util.CollectionsUtils.*;
+import static java.util.stream.Collectors.*;
 import static org.jgroups.util.Util.assertEquals;
 import static org.jgroups.util.Util.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -589,7 +590,9 @@ public class DependencyBundlerTest {
             final int count = metaData.collection.apply(config).size();
 
             assertEquals(String.format("Expected %d not %d to %s: %s", expectedCount, count, clazz.getSimpleName(),
-                    metaData.collection.apply(config).stream().map(object -> object.toString()).collect(Collectors.joining())),
+                    metaData.collection.apply(config).stream()
+                            .map(object -> ContentType.class.isInstance(object) ? ((ContentType)object).name() : object.toString())
+                            .collect(joining(","))),
                     expectedCount, count);
         }
     }
@@ -622,9 +625,17 @@ public class DependencyBundlerTest {
 
         @Override
         public String toString() {
+            final String dependencies = dependenciesToAssert.stream()
+                    .map(dependecy -> dependecy.getClass().getSimpleName())
+                    .collect(joining(","));
+
+            final String assets = assetsToAddInBundle.stream()
+                    .map(dependecy -> dependecy.getClass().getSimpleName())
+                    .collect(joining(","));
+
             return "TestData{" +
-                    "assetsToAddInBundle=" + assetsToAddInBundle.getClass() +
-                    ", dependenciesToAssert=" + dependenciesToAssert.stream().map(Object::getClass) +
+                    "assetsToAddInBundle=" + assets +
+                    ", dependenciesToAssert=" +  dependencies +
                     ", filterDescriptor=" + filterDescriptor.getFilters() +
                     '}';
         }

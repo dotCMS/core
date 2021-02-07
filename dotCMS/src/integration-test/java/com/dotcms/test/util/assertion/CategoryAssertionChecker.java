@@ -45,7 +45,8 @@ public class CategoryAssertionChecker implements AssertionChecker<Category> {
     public Collection<String> getRegExToRemove(File file) {
         return list(
                 "<iDate>.*</iDate>",
-                "<modDate>.*</modDate>"
+                "<modDate>.*</modDate>",
+                "<iDate class=\"sql-timestamp\">.*</iDate>"
         );
     }
 }
