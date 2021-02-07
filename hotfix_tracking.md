@@ -92,3 +92,5 @@ This release includes the following code fixes:
 43. https://github.com/dotCMS/core/issues/18505	: JSONTool does not return sub arrays
 
 44. https://github.com/dotCMS/core/issues/18051	: PP a vtl file with no content throws an NPE
+
+45. https://github.com/dotCMS/core/pull/19005 : reduce-default-settings-for-es-concurrent-request (no related ticket, just a direct PR)
