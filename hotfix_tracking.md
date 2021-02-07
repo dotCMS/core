@@ -77,3 +77,5 @@ This maintenance release includes the following code fixes:
 36. https://github.com/dotCMS/core/issues/19498	: Add Resolved VanityUrl as request attribute
 
 37. https://github.com/dotCMS/core/issues/19497	: PP Sometimes fails because of file-based containers
+
+38. https://github.com/dotCMS/core/issues/19489 : If a field is marked unique, we should es map it as keyword
