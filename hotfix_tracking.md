@@ -86,3 +86,5 @@ This release includes the following code fixes:
 40. https://github.com/dotCMS/core/issues/19337	: Content Search screen not filtering on "select" fields - 5.2x+ - reproducable in demo
 
 41. https://github.com/dotCMS/core/issues/18927	: Remove unneeded icu4j
+
+42. https://github.com/dotCMS/core/issues/18605	: ReindexThread always runs - never stops
