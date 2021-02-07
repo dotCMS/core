@@ -410,8 +410,8 @@ public class PublisherAPIImplTest {
         long numberFilesExpected = filesExpected.size() + 1;
         final int numberFiles = files.size();
 
-        final String filesExpectedPath = filesExpected.stream().map(file -> file.getAbsolutePath()).collect(Collectors.joining());
-        final String filesPath = files.stream().map(file -> file.getAbsolutePath()).collect(Collectors.joining());
+        final String filesExpectedPath = filesExpected.stream().map(file -> file.getAbsolutePath()).collect(Collectors.joining(""));
+        final String filesPath = files.stream().map(file -> file.getAbsolutePath()).collect(Collectors.joining(""));
 
         assertEquals(String.format("Expected %d but get %d in %s\nExpected %s\nExisting %s\n",
                     numberFilesExpected, numberFiles, bundleRoot, filesExpectedPath, filesPath),

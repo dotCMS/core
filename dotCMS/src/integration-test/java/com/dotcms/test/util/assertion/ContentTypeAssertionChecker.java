@@ -112,8 +112,8 @@ public class ContentTypeAssertionChecker implements AssertionChecker<ContentType
     @Override
     public Collection<String> getRegExToRemove(File file) {
         return list(
-            "\\\"workflowSchemaIds\\\":\\[.*\\]",
-            "\\\"workflowSchemaNames\\\":\\[.*\\]"
+            ",\\\"workflowSchemaIds\\\":\\[.*\\],",
+            ",\\\"workflowSchemaNames\\\":\\[.*\\],"
         );
     }
 }
