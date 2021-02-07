@@ -95,3 +95,5 @@ This maintenance release includes the following code fixes:
 45. https://github.com/dotCMS/core/issues/19044	: Unpublished related content appearing in Preview Mode / Live mode & Are published when Pushing to S3 - 5.3x
 
 46. https://github.com/dotCMS/core/issues/18605	: ReindexThread always runs - never stops
+
+47. https://github.com/dotCMS/core/issues/18505	: JSONTool does not return sub arrays
