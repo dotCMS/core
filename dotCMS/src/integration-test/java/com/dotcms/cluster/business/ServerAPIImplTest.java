@@ -3,6 +3,7 @@ package com.dotcms.cluster.business;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -21,16 +22,15 @@ import io.vavr.control.Try;
 public class ServerAPIImplTest {
 
     final static List<Server> fakeServers= new ArrayList<>();
+    static ServerAPI serverApi;
 
     
     @BeforeClass
     public static void prepare() throws Exception {
-        final ServerAPI serverApi = APILocator.getServerAPI();
-        final List<Server> aliveServers = serverApi.getAliveServers();
-        
-        
         // Setting web app environment
         IntegrationTestInitService.getInstance().init();
+
+        serverApi = APILocator.getServerAPI();
 
         for (int i = 0; i < 6; i++) {
             final Server server = Server.builder()
@@ -65,7 +65,7 @@ public class ServerAPIImplTest {
     }
     
     /**
-     * delete the fake licenses and seervers
+     * delete the fake licenses and servers
      * @throws Exception
      */
     @AfterClass
@@ -73,7 +73,7 @@ public class ServerAPIImplTest {
         DotConnect dc = new DotConnect();
         dc.setSQL("delete from sitelic where license like 'FAKE_LICENSE:%'").loadResult();
         fakeServers.forEach(server->{      
-           Try.run(()-> APILocator.getServerAPI().removeServerFromClusterTable(server.getServerId()));
+           Try.run(()-> serverApi.removeServerFromClusterTable(server.getServerId()));
         });
         
     }
@@ -86,32 +86,22 @@ public class ServerAPIImplTest {
      */
     @Test
     public void testGetOldestServerReturnsProperServer() throws Exception{
-        final ServerAPI serverApi = APILocator.getServerAPI();
-        
         // we get the alive servers ordered by startup_time asc
+        serverApi.getReindexingServers().clear();// clean the list of servers so it gets all the created ones
         final List<Server> aliveServers = serverApi.getAliveServers();
         final String oldestServerId = serverApi.getOldestServer();
-        
-        
+
         assertTrue("We have 6 servers", aliveServers.size()==6);
-        
 
         // the oldest server is the first alive server ordered by startup_time asc
-        assertEquals(aliveServers.get(0).serverId, oldestServerId);
+        assertEquals(oldestServerId, aliveServers.get(0).serverId);
         
-        Server oldestServer = serverApi.getServer(oldestServerId);
-        
-        
-        // make sure our equals methods work
-        assertEquals(aliveServers.get(0), oldestServer);
-        
-        
-        
+        final Server oldestServer = serverApi.getServer(oldestServerId);
+        assertEquals(oldestServer, aliveServers.get(0));
     }
 
     @Test
     public void testGetServerStartTime() {
-        final ServerAPI serverApi = APILocator.getServerAPI();
         assertNotNull(serverApi.getServerStartTime());
     }
 
