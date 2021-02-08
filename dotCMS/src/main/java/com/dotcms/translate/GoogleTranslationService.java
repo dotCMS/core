@@ -1,5 +1,14 @@
 package com.dotcms.translate;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import org.apache.commons.lang.StringEscapeUtils;
 import com.dotcms.rendering.velocity.viewtools.JSONTool;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
@@ -9,49 +18,41 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableMap;
+import com.liferay.util.StringPool;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import org.apache.commons.lang.StringEscapeUtils;
 
 public class GoogleTranslationService extends AbstractTranslationService {
 
     private JSONTool jsonTool;
-    public static final String BASE_URL = "https://www.googleapis.com/language/translate/v2";
+    public static final String BASE_URL = "https://translation.googleapis.com/language/translate/v2";
     private String serviceUrl = Config.getStringProperty("GOOGLE_TRANSLATE_SERVICE_BASE_URL",
         BASE_URL);
     private String apiKey;
     private List<ServiceParameter> params;
+    public static final String API_KEY_VAR = "apiKey";
+    public static final String GOOGLE_TRANSLATE_SERVICE_API_KEY_PROPERTY = "GOOGLE_TRANSLATE_SERVICE_API_KEY";
 
     public GoogleTranslationService() {
-        this(Config.getStringProperty("GOOGLE_TRANSLATE_SERVICE_API_KEY", ""), new JSONTool(), new ApiProvider());
+        this(Config.getStringProperty(GOOGLE_TRANSLATE_SERVICE_API_KEY_PROPERTY, StringPool.BLANK), new JSONTool(), new ApiProvider());
     }
 
     public GoogleTranslationService(String apiKey, JSONTool jsonTool, ApiProvider apiProvider) {
         this.apiKey = apiKey;
         this.jsonTool = jsonTool;
         this.apiProvider = apiProvider;
-        this.params = Collections.singletonList(new ServiceParameter("apiKey", "Service API Key", apiKey));
+        this.params = Collections.singletonList(new ServiceParameter(API_KEY_VAR, "Service API Key", apiKey));
     }
 
     @VisibleForTesting
     protected GoogleTranslationService(JSONTool jsonTool) {
-        this(Config.getStringProperty("GOOGLE_TRANSLATE_SERVICE_API_KEY", ""), jsonTool, new ApiProvider());
+        this(Config.getStringProperty(GOOGLE_TRANSLATE_SERVICE_API_KEY_PROPERTY, StringPool.BLANK), jsonTool, new ApiProvider());
     }
 
     @VisibleForTesting
     protected GoogleTranslationService(ApiProvider apiProvider) {
-        this(Config.getStringProperty("GOOGLE_TRANSLATE_SERVICE_API_KEY", ""), new JSONTool(), apiProvider);
+        this(Config.getStringProperty(GOOGLE_TRANSLATE_SERVICE_API_KEY_PROPERTY, StringPool.BLANK), new JSONTool(), apiProvider);
     }
 
     private static class Holder {
@@ -90,14 +91,15 @@ public class GoogleTranslationService extends AbstractTranslationService {
         
 
         try {
-            Logger.info(this.getClass(), "translating:" + restURL);
-            JSONObject json = (JSONObject) jsonTool.post(restURL.toString(), 15000,ImmutableMap.of(), new JSONObject(params).toString());
+            Logger.debug(this.getClass(), "translating:" + restURL + "params: " + params.toString());
+            Map<String,Object> json = (Map<String,Object>) jsonTool.post(restURL.toString(), 15000,ImmutableMap.of(), new JSONObject(params).toString());
 
-            json = json.getJSONObject("data");
-            JSONArray arr = json.getJSONArray("translations");
+            json = (Map<String,Object>)json.get("data");
 
-            for (int i = 0; i < arr.length(); i++) {
-                String translatedText = (String) arr.getJSONObject(i).get("translatedText");
+            List<Map<String,Object>> arr = (List<Map<String,Object>>)json.get("translations");
+
+            for (Map<String,Object> m : arr) {
+                String translatedText = (String) m.get("translatedText");
                 ret.add(StringEscapeUtils.unescapeHtml(translatedText));
             }
 
@@ -113,15 +115,15 @@ public class GoogleTranslationService extends AbstractTranslationService {
     }
 
     @Override
-    public void setServiceParameters(List<ServiceParameter> params) {
+    public void setServiceParameters(final List<ServiceParameter> params) {
         this.params = params;
         Map<String, ServiceParameter> paramsMap = params.stream().collect(
             Collectors.toMap(ServiceParameter::getKey, Function.identity()));
-        String apiKeyValue = paramsMap.get("apiKey").getValue();
+        String apiKeyValue = paramsMap.get(API_KEY_VAR).getValue();
 
         this.apiKey = !Strings.isNullOrEmpty(apiKeyValue)
             ?apiKeyValue
-            :Config.getStringProperty("GOOGLE_TRANSLATE_SERVICE_API_KEY", "");
+            :Config.getStringProperty(GOOGLE_TRANSLATE_SERVICE_API_KEY_PROPERTY, StringPool.BLANK);
     }
 
 }
