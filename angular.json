@@ -28,6 +28,11 @@
                                 "glob": "**/*",
                                 "input": "./node_modules/ngx-monaco-editor/assets/monaco",
                                 "output": "./assets/monaco/"
+                            },
+                            {
+                                "glob": "index.jsp",
+                                "input": "src/tomcat",
+                                "output": "./"
                             }
                         ],
                         "styles": [
