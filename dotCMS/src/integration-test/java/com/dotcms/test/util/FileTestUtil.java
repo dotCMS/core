@@ -244,7 +244,7 @@ public class FileTestUtil {
             fileContent = removeContent(fileContent, toRemove);
 
             final String difference = StringUtils.difference(fileContentExpected, fileContent);
-            assertEquals(String.format("Fail for %s:\nAsset -> %s \ndifference -> %s\nexpected -> %s real -> %s\n",
+            assertEquals(String.format("Fail for %s:\nAsset -> %s \ndifference -> %s\nexpected -> %s\nreal -> %s\n",
                     asset.getClass().getSimpleName(), asset.toString(), difference, fileContentExpected, fileContent),
                     fileContentExpected, fileContent);
         }

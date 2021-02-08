@@ -40,14 +40,4 @@ public class CategoryAssertionChecker implements AssertionChecker<Category> {
             throw new RuntimeException(e);
         }
     }
-
-    @Override
-    public Collection<String> getRegExToRemove(File file) {
-        return list(
-                "<iDate>.*</iDate>",
-                "<modDate>.*</modDate>",
-                "<iDate class=\"sql-timestamp\">.*</iDate>",
-                "<modDate class=\"sql-timestamp\">.*</modDate>"
-        );
-    }
 }
