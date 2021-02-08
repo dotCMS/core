@@ -97,3 +97,5 @@ This maintenance release includes the following code fixes:
 46. https://github.com/dotCMS/core/issues/18605	: ReindexThread always runs - never stops
 
 47. https://github.com/dotCMS/core/issues/18505	: JSONTool does not return sub arrays
+
+48. https://github.com/dotCMS/core/issues/19890	: Custom Page Layout is not sending in Push PublishCustom Page Layout is not sending in Push Publish
