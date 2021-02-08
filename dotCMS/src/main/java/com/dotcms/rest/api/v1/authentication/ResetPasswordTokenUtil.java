@@ -17,7 +17,7 @@ public class ResetPasswordTokenUtil {
      * Check if a token is a valid token.
      * there are two reasons why a token could be:
      * <ul>
-     *     <li>The token has a wrong syntax, the token have to match the follor regular expression:
+     *     <li>The token has a wrong syntax, the token have to match the follow regular expression:
      *     <b>^[a-zA-Z0-9]+:[0-9]+$</b></li>
      *     <li>The token expired, the token has a expiration time of 20 minutes by default but it could be
      *     overwrite setting the RECOVER_PASSWORD_TOKEN_TTL_MINS properties</li>
@@ -55,7 +55,7 @@ public class ResetPasswordTokenUtil {
      */
     public static String createToken(){
         return RandomStringUtils.randomAlphanumeric( Config.getIntProperty( "RECOVER_PASSWORD_TOKEN_LENGTH", 30 ) )
-                + new Date().getTime() + StringPool.COLON + new Date().getTime();
+                + StringPool.COLON + new Date().getTime();
     }
 
 }
