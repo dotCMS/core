@@ -65,7 +65,7 @@ public class ResetPasswordResourceIntegrationTest{
                 .subject(DOTCMS_ORG_1).modificationDate(new Date()).expiresDate(100000).build();
 
         when(jsonWebTokenService.parseToken(eq("token1"))).thenReturn(jwtBean);
-        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
+        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil);
         Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
 
         RestUtilTest.verifyErrorResponse(response,  Response.Status.BAD_REQUEST.getStatusCode(), "please-enter-a-valid-login");
@@ -82,7 +82,7 @@ public class ResetPasswordResourceIntegrationTest{
                 .expiresDate(100000).build();
         when(jsonWebTokenService.parseToken(eq("token1"))).thenReturn(jwtBean);
         
-        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
+        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil);
         Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
         RestUtilTest.verifyErrorResponse(response,  Response.Status.BAD_REQUEST.getStatusCode(), "reset-password-token-invalid");
     }
@@ -96,7 +96,7 @@ public class ResetPasswordResourceIntegrationTest{
                 subject(DOTCMS_ORG_1).modificationDate(new Date()).expiresDate(100000).build();
 
         when(jsonWebTokenService.parseToken(eq("token1"))).thenReturn(jwtBean);
-        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
+        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil);
         Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
 
         RestUtilTest.verifyErrorResponse(response,  Response.Status.UNAUTHORIZED.getStatusCode(), "reset-password-token-expired");

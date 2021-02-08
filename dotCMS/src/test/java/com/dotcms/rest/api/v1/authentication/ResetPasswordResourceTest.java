@@ -86,7 +86,7 @@ public class ResetPasswordResourceTest extends UnitTestBase {
         when(mResponseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
                 "reset-password-invalid-password")).thenCallRealMethod();
 
-        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, mResponseUtil, jsonWebTokenService);
+        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, mResponseUtil);
         Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
         RestUtilTest.verifyErrorResponse(response,  Response.Status.BAD_REQUEST.getStatusCode(), "reset-password-invalid-password");
     }
@@ -95,7 +95,7 @@ public class ResetPasswordResourceTest extends UnitTestBase {
     public void testOk() {
         UserManager userManager = mock( UserManager.class );
         final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
-        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
+        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil);
         final UserToken jwtBean = new UserToken(UUID.randomUUID().toString(), "dotcms.org.1", "dummy_cluster_id",
                 new Date(), 100000);
         when(jsonWebTokenService.parseToken(eq("token1"))).thenReturn(jwtBean);
