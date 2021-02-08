@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.authentication;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import java.util.Calendar;
 import java.util.Date;
 import org.apache.commons.lang.RandomStringUtils;
@@ -45,7 +46,7 @@ public class ResetPasswordTokenUtil {
     /**
      * Create a token to be used in the user reset password process.
      *
-     * The token has the follow sintax: <Random alphanumeric characters>:<currently timestamp>
+     * The token has the follow syntax: <Random alphanumeric characters>:<currently timestamp>
      *
      * The <b>Random alphanumeric characters</b> part has a default length of 30 characters but a different
      * value could be define setting the RECOVER_PASSWORD_TOKEN_LENGTH properties.
@@ -54,7 +55,7 @@ public class ResetPasswordTokenUtil {
      */
     public static String createToken(){
         return RandomStringUtils.randomAlphanumeric( Config.getIntProperty( "RECOVER_PASSWORD_TOKEN_LENGTH", 30 ) )
-                + new Date().getTime();
+                + new Date().getTime() + StringPool.COLON + new Date().getTime();
     }
 
 }

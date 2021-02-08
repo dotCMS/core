@@ -372,7 +372,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
         // we use the ICQ field to store the token:timestamp of the
         // password reset request we put in the email
         // the timestamp is used to set an expiration on the token
-        final String token = ResetPasswordTokenUtil.createToken() + StringPool.COLON + new Date().getTime();
+        final String token = ResetPasswordTokenUtil.createToken();
         user.setIcqId(token);
 
         UserUtil.update(user);
