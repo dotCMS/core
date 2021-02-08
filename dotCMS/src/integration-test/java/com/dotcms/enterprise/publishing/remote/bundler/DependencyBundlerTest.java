@@ -118,6 +118,11 @@ public class DependencyBundlerTest {
         all.addAll(createWorkflowTestCase());
         all.addAll(createLanguageTestCase());
         all.addAll(createRuleTestCase());
+
+        final List<ContentType> contentTypes = APILocator.getContentTypeAPI(APILocator.systemUser(), false).findAll();
+        final String contestTypesAll = contentTypes.stream().map(contentType -> contentType.id() + " " + contentType.name()).collect(Collectors.joining(","));
+        System.out.println("contestTypesAll = " + contestTypesAll);
+
         return all.toArray();
     }
 
@@ -592,22 +597,9 @@ public class DependencyBundlerTest {
             final BundleDataGen.MetaData metaData = BundleDataGen.howAddInBundle.get(clazz);
             final int count = metaData.collection.apply(config).size();
 
-            assertEquals(String.format("Expected %d not %d to %s", expectedCount, count,
+            assertEquals(String.format("Expected %d not %d to %s: ", expectedCount, count, clazz.getSimpleName(),
                     metaData.collection.apply(config).stream()
-                            .map(object -> {
-                                try {
-                                    final VersionInfo versionInfo = APILocator.getVersionableAPI().getVersionInfo((String) object);
-
-                                    if (versionInfo != null) {
-                                        final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(versionInfo.getWorkingInode());
-                                        return contentType.name();
-                                    } else {
-                                        return object;
-                                    }
-                                }catch (Exception e) {
-                                    return object;
-                                }
-                            })
+                            .map(object -> object.toString())
                             .collect(joining(","))),
                     expectedCount, count);
         }

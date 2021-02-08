@@ -11,6 +11,7 @@ import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -20,11 +21,14 @@ import com.dotmarketing.util.FileUtil;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import io.vavr.API;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.*;
 import static org.jgroups.util.Util.assertEquals;
@@ -77,10 +81,10 @@ public class ContentTypeBundlerTest {
                 .nextPersisted();
 
         return new TestCase[]{
-                new TestCase(contentType),
-                new TestCase(contentTypeWithFolder),
-                new TestCase(contentTypeWithWorkflow),
-                new TestCase(contentTypeWithField, "/bundlers-test/content_types/content_types_with_fields.contentType.json"),
+                //new TestCase(contentType),
+                //new TestCase(contentTypeWithFolder),
+                //new TestCase(contentTypeWithWorkflow),
+                //new TestCase(contentTypeWithField, "/bundlers-test/content_types/content_types_with_fields.contentType.json"),
                 new TestCase(contentTypeWithAllDependencies, "/bundlers-test/content_types/content_types_with_fields.contentType.json")
         };
     }
