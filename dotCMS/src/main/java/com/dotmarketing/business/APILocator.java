@@ -70,6 +70,7 @@ import com.dotcms.util.FileWatcherAPIImpl;
 import com.dotcms.util.ReflectionUtils;
 import com.dotcms.util.SecurityLoggerServiceAPI;
 import com.dotcms.util.SecurityLoggerServiceAPIFactory;
+import com.dotcms.uuid.shorty.LegacyShortyIdAPIImpl;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.uuid.shorty.ShortyIdAPIImpl;
 import com.dotcms.vanityurl.business.VanityUrlAPI;
@@ -1184,7 +1185,7 @@ enum APIIndex
     		case ES_SEARCH_API: return new ESSearchProxy();
     		case RULES_API: return new RulesAPIProxy();
     		case VISITOR_API: return new VisitorAPIImpl();
-    		case SHORTY_ID_API: return new ShortyIdAPIImpl();
+    		case SHORTY_ID_API: return Config.getBooleanProperty("dotshortyapi_use_legacy", false)? new LegacyShortyIdAPIImpl(): new ShortyIdAPIImpl();
     		case SYSTEM_EVENTS_API: return SystemEventsFactory.getInstance().getSystemEventsAPI();
     		case WEB_SOCKET_CONTAINER_API:return WebSocketContainerAPIFactory.getInstance().getWebSocketContainerAPI();
     		case COMPANY_API: return CompanyAPIFactory.getInstance().getCompanyAPI();
