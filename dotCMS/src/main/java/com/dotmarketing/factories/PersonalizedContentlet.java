@@ -22,6 +22,12 @@ public class PersonalizedContentlet implements Serializable{
         this.treeOrder = treeOrder;
     }
 
+    public PersonalizedContentlet(final String contentletId, final String personalization) {
+        this.contentletId    = contentletId;
+        this.personalization = personalization;
+        this.treeOrder = 0;
+    }
+
     public String getContentletId() {
         return contentletId;
     }
