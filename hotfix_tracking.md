@@ -101,3 +101,5 @@ This maintenance release includes the following code fixes:
 48. https://github.com/dotCMS/core/issues/19890	: Custom Page Layout is not sending in Push PublishCustom Page Layout is not sending in Push Publish
 
 49. https://github.com/dotCMS/core/issues/19910	: Google Translate Sub-action is sending error with even with valid translation key
+
+50. https://github.com/dotCMS/core/issues/19832	: [core] : Legacy IDs are not compatible with Shorty API
