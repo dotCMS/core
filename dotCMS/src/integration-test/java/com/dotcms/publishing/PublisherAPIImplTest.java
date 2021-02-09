@@ -561,16 +561,6 @@ public class PublisherAPIImplTest {
             this.fileExpectedPath = fileExpectedPath;
             this.addLanguageVariableDependencies = addLanguageVariableDependencies;
 
-            //todo: uncomment when it merge into the performance branch
-            /*try {
-                final ContentType hostContentType
-                        = APILocator.getContentTypeAPI(APILocator.systemUser()).find("host");
-
-                this.expectedInBundle.add(hostContentType);
-            } catch (DotSecurityException | DotDataException e) {
-                throw new RuntimeException(e);
-            }*/
-
 
         }
     }
