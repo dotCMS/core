@@ -39,10 +39,22 @@ public class Task201102UpdateColumnSitelicTable implements StartupTask {
             return;
         }
 
+        try {
+            DbConnectionFactory.getConnection().setAutoCommit(true);
+        } catch (SQLException e) {
+            throw new DotDataException(e.getMessage(), e);
+        }
+
         final String columnLiteral = DbConnectionFactory.isMsSql() ? "" : "COLUMN";
         new DotConnect()
                 .setSQL(String.format("ALTER TABLE sitelic ADD %s startup_time %s", columnLiteral, type.get()))
                 .loadObjectResults();
+
+        try {
+            DbConnectionFactory.getConnection().setAutoCommit(false);
+        } catch (SQLException e) {
+            throw new DotDataException(e.getMessage(), e);
+        }
     }
 
     private static Optional<String> getColumnType() {
