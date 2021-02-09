@@ -39,8 +39,9 @@ public class Task201102UpdateColumnSitelicTable implements StartupTask {
             return;
         }
 
+        final String columnLiteral = DbConnectionFactory.isMsSql() ? "" : "COLUMN";
         new DotConnect()
-                .setSQL(String.format("ALTER TABLE sitelic ADD COLUMN startup_time %s", type.get()))
+                .setSQL(String.format("ALTER TABLE sitelic ADD %s startup_time %s", columnLiteral, type.get()))
                 .loadObjectResults();
     }
 
