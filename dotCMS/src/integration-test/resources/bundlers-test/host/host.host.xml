@@ -16,7 +16,7 @@
                     <segmentMask>15</segmentMask>
                 </default>
                 <string>owner</string>
-                <string>system</string>
+                <string>__owner__</string>
                 <string>identifier</string>
                 <string>__host_id__</string>
                 <string>nullProperties</string>
@@ -148,7 +148,7 @@
         <assetType>contentlet</assetType>
         <parentPath>/</parentPath>
         <hostId>SYSTEM_HOST</hostId>
-        <owner>system</owner>
+        <owner>__owner__</owner>
         <createDate class="sql-timestamp">__created_date__</createDate>
         <assetSubType>Host</assetSubType>
     </id>

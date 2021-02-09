@@ -7,6 +7,7 @@ import com.dotmarketing.portlets.categories.model.Category;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.list;
@@ -39,5 +40,15 @@ public class CategoryAssertionChecker implements AssertionChecker<Category> {
         } catch (DotSecurityException | DotDataException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public Collection<String> getRegExToRemove(File file) {
+        return list(
+                "<iDate>.*</iDate>",
+                "<modDate>.*</modDate>",
+                "<iDate class=\"sql-timestamp\">.*</iDate>",
+                "<modDate class=\"sql-timestamp\">.*</modDate>"
+        );
     }
 }

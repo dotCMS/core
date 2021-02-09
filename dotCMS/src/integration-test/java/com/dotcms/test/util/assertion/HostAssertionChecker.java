@@ -7,6 +7,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 
@@ -16,13 +17,14 @@ import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotmarketing.beans.Host.HOST_NAME_KEY;
 
 /**
  * {@link AssertionChecker} concrete class for {@link Host}
  */
-public class HostAssertionChecker implements AssertionChecker<Host> {
+public class HostAssertionChecker implements AssertionChecker<Contentlet> {
     @Override
-    public Map<String, Object> getFileArguments(final Host host, File file) {
+    public Map<String, Object> getFileArguments(final Contentlet host, File file) {
         final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
         final ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI()
                 .getContentletVersionInfo(host.getIdentifier(), defaultLanguage.getId()).get();
@@ -36,7 +38,7 @@ public class HostAssertionChecker implements AssertionChecker<Host> {
                     "host_live_inode", contentletVersionInfo.getLiveInode() != null ? contentletVersionInfo.getLiveInode() : "null",
                     "host_working_inode", contentletVersionInfo.getWorkingInode(),
                     "host_lang", host.getLanguageId(),
-                    "host_name", host.getHostname(),
+                    "host_name", host.getStringProperty(HOST_NAME_KEY),
                     "host_inode", host.getInode(),
                     "asset_name", identifier.getAssetName()
 
@@ -53,7 +55,7 @@ public class HostAssertionChecker implements AssertionChecker<Host> {
     }
 
     @Override
-    public File getFileInner(final Host host, final File bundleRoot) {
+    public File getFileInner(final Contentlet host, final File bundleRoot) {
         try {
             return FileBundlerTestUtil.getHostFilePath(host, bundleRoot);
         } catch (DotSecurityException | DotDataException e) {
@@ -69,7 +71,9 @@ public class HostAssertionChecker implements AssertionChecker<Host> {
                 "<string>modDate</string><sql-timestamp>.*</sql-timestamp>",
                 "<string>modDate</string><date>.*</date>",
                 "<liveInode>null</liveInode>",
-                "<lockedBy>system</lockedBy>"
+                "<lockedBy>system</lockedBy>",
+                "<concurrent-hash-map>.*</concurrent-hash-map>",
+                "<owner>.*</owner>"
         );
     }
 }

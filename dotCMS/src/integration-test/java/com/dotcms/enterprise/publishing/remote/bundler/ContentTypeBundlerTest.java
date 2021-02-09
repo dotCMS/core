@@ -81,10 +81,10 @@ public class ContentTypeBundlerTest {
                 .nextPersisted();
 
         return new TestCase[]{
-                //new TestCase(contentType),
-                //new TestCase(contentTypeWithFolder),
-                //new TestCase(contentTypeWithWorkflow),
-                //new TestCase(contentTypeWithField, "/bundlers-test/content_types/content_types_with_fields.contentType.json"),
+                new TestCase(contentType),
+                new TestCase(contentTypeWithFolder),
+                new TestCase(contentTypeWithWorkflow),
+                new TestCase(contentTypeWithField, "/bundlers-test/content_types/content_types_with_fields.contentType.json"),
                 new TestCase(contentTypeWithAllDependencies, "/bundlers-test/content_types/content_types_with_fields.contentType.json")
         };
     }

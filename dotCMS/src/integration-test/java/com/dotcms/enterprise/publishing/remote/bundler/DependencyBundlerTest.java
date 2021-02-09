@@ -3,7 +3,6 @@ package com.dotcms.enterprise.publishing.remote.bundler;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.*;
-import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
@@ -11,50 +10,37 @@ import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherAPIImplTest;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageDataGen;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.rules.RuleDataGen;
-import com.dotmarketing.portlets.rules.model.Condition;
-import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.FileUtil;
-import com.dotmarketing.util.Logger;
-import com.google.common.collect.ImmutableMap;
-import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.dotcms.publishing.PublisherAPIImplTest.getLanguagesVariableDependencies;
 import static com.dotcms.util.CollectionsUtils.*;
@@ -118,10 +104,6 @@ public class DependencyBundlerTest {
         all.addAll(createWorkflowTestCase());
         all.addAll(createLanguageTestCase());
         all.addAll(createRuleTestCase());
-
-        final List<ContentType> contentTypes = APILocator.getContentTypeAPI(APILocator.systemUser(), false).findAll();
-        final String contestTypesAll = contentTypes.stream().map(contentType -> contentType.id() + " " + contentType.name()).collect(Collectors.joining(","));
-        System.out.println("contestTypesAll = " + contestTypesAll);
 
         return all.toArray();
     }
@@ -461,7 +443,7 @@ public class DependencyBundlerTest {
         final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
 
         return list(
-                new TestData(list(contentType), list(host, systemWorkflowScheme, systemFolder), filterDescriptorAllDependencies),
+                new TestData(list(contentType), list(host, systemWorkflowScheme, systemFolder), filterDescriptorAllDependencies)/*,
                 new TestData(list(contentType), list(), filterDescriptorNotDependencies),
                 new TestData(list(contentType), list(), filterDescriptorNotRelationship),
                 new TestData(list(contentType), list(), filterDescriptorNotDependenciesRelationship),
@@ -484,7 +466,7 @@ public class DependencyBundlerTest {
                 new TestData(list(contentTypeParent), list(host, systemWorkflowScheme, contentTypeChild, systemFolder), filterDescriptorAllDependencies),
                 new TestData(list(contentTypeParent), list(), filterDescriptorNotDependencies),
                 new TestData(list(contentTypeParent), list(), filterDescriptorNotRelationship),
-                new TestData(list(contentTypeParent), list(), filterDescriptorNotDependenciesRelationship)
+                new TestData(list(contentTypeParent), list(), filterDescriptorNotDependenciesRelationship)*/
         );
     }
 
@@ -507,6 +489,12 @@ public class DependencyBundlerTest {
     public void addAssetInBundle(final TestData testData)
             throws IOException, DotBundleException, DotDataException, DotSecurityException {
 
+        final Set<Object> languagesVariableDependencies = getLanguagesVariableDependencies(
+                true, false, false);
+
+        if (filterDescriptorAllDependencies == testData.filterDescriptor) {
+            testData.dependenciesToAssert.addAll(languagesVariableDependencies);
+        }
 
         final PushPublisherConfig config = new PushPublisherConfig();
         new BundleDataGen()
@@ -516,33 +504,9 @@ public class DependencyBundlerTest {
                 .nextPersisted();
 
         bundler.setConfig(config);
-        bundler.generate(bundleRoot, status);
+                bundler.generate(bundleRoot, status);
 
-        assertAll(config, testData.dependenciesToAssert);
-    }
-
-    private static Set<Object> addLanguageVariablesDependencies(Collection<Object> dependencies) throws DotDataException, DotSecurityException {
-        final Set<Object> languagesVariableDependencies = getLanguagesVariableDependencies();
-        Logger.info(PublisherAPIImplTest.class,"languagesVariableDependencies " + languagesVariableDependencies);
-        final Set<Object> allDependencies = new HashSet<>();
-        allDependencies.addAll(languagesVariableDependencies);
-        allDependencies.addAll(dependencies);
-        return allDependencies;
-    }
-
-    private static Set<Object> addLanguageVariables(final Collection<Object> dependencies) throws DotSecurityException, DotDataException {
-
-        final List<Contentlet> languageVariables = PublisherAPIImplTest.getLanguageVariables();
-
-        final Set<Object> allDependencies = new HashSet<>();
-
-        for (final Contentlet languageVariable : languageVariables) {
-            final Language language = APILocator.getLanguageAPI().getLanguage(languageVariable.getLanguageId());
-            allDependencies.add(language);
-        }
-
-        allDependencies.addAll(dependencies);
-        return allDependencies;
+        assertAll(config, testData.dependenciesToAssert, testData.filterDescriptor);
     }
 
     @Test
@@ -551,9 +515,6 @@ public class DependencyBundlerTest {
 
         try {
             final PushPublisherConfig config = new PushPublisherConfig();
-
-            final String langVarsQuery = "+contentType:" + LanguageVariableAPI.LANGUAGEVARIABLE;
-            final User systemUser = APILocator.systemUser();
 
             PublisherAPIImplTest.createLanguageVariableIfNeeded();
 
@@ -566,8 +527,9 @@ public class DependencyBundlerTest {
             bundler.setConfig(config);
             bundler.generate(bundleRoot, status);
 
-            final Collection<Object> dependencies = getLanguagesVariableDependencies();
-            assertAll(config, dependencies);
+            final Collection<Object> dependencies = getLanguagesVariableDependencies(
+                    true, false, false);
+            assertAll(config, dependencies, filterDescriptor);
         } finally {
             if (contentlet != null) {
                 ContentletDataGen.archive(contentlet);
@@ -577,11 +539,13 @@ public class DependencyBundlerTest {
 
     }
 
-    private void assertAll(final PushPublisherConfig config, final Collection<Object> dependenciesToAssert) {
+    private void assertAll(final PushPublisherConfig config, final Collection<Object> dependenciesToAssert, final FilterDescriptor filterDescriptor) {
         AssignableFromMap<Integer> counts = new AssignableFromMap<>();
 
         for (Object asset : dependenciesToAssert) {
-            final BundleDataGen.MetaData metaData = BundleDataGen.howAddInBundle.get(asset.getClass());
+
+            Class assetClass = (Contentlet.class == asset.getClass()) && ((Contentlet) asset).isHost() ? Host.class : asset.getClass();
+            final BundleDataGen.MetaData metaData = BundleDataGen.howAddInBundle.get(assetClass);
 
             final String assetId = metaData.dataToAdd.apply(asset);
            assertTrue(String.format("Not Contain %s in %s", assetId, asset.getClass()),
@@ -591,17 +555,19 @@ public class DependencyBundlerTest {
             counts.addOrUpdate(key, 1, (Integer value) -> value + 1);
         }
 
-       for (Class clazz : BundleDataGen.howAddInBundle.keySet()) {
-            final Integer expectedCount = counts.get(clazz, 0);
+        if (filterDescriptorAllDependencies == filterDescriptor) {
+            for (Class clazz : BundleDataGen.howAddInBundle.keySet()) {
+                final Integer expectedCount = counts.get(clazz, 0);
 
-            final BundleDataGen.MetaData metaData = BundleDataGen.howAddInBundle.get(clazz);
-            final int count = metaData.collection.apply(config).size();
+                final BundleDataGen.MetaData metaData = BundleDataGen.howAddInBundle.get(clazz);
+                final int count = metaData.collection.apply(config).size();
 
-            assertEquals(String.format("Expected %d not %d to %s: ", expectedCount, count, clazz.getSimpleName(),
-                    metaData.collection.apply(config).stream()
-                            .map(object -> object.toString())
-                            .collect(joining(","))),
-                    expectedCount, count);
+                assertEquals(String.format("Expected %d not %d to %s: ", expectedCount, count, clazz.getSimpleName(),
+                        metaData.collection.apply(config).stream()
+                                .map(object -> object.toString())
+                                .collect(joining(","))),
+                        expectedCount, count);
+            }
         }
     }
 
@@ -615,22 +581,10 @@ public class DependencyBundlerTest {
                 final Collection<Object> dependenciesToAssert,
                 final FilterDescriptor filterDescriptor)  {
             this.assetsToAddInBundle = assetsToAddInBundle;
-
-            final ContentType contentType = new ContentTypeDataGen().nextPersisted();
-            this.assetsToAddInBundle.add(contentType);
             this.filterDescriptor = filterDescriptor;
 
-            try {
-                if (filterDescriptorAllDependencies == filterDescriptor) {
-                    this.dependenciesToAssert = addLanguageVariablesDependencies(dependenciesToAssert);
-                } else {
-                    this.dependenciesToAssert = new HashSet<>();
-                    dependenciesToAssert.addAll(dependenciesToAssert);
-                }
-            }catch (DotDataException | DotSecurityException e) {
-                throw new RuntimeException(e);
-            }
-
+            this.dependenciesToAssert = new HashSet<>();
+            this.dependenciesToAssert.addAll(dependenciesToAssert);
             this.dependenciesToAssert.addAll(assetsToAddInBundle);
         }
 
@@ -644,11 +598,9 @@ public class DependencyBundlerTest {
                     .map(dependecy -> dependecy.getClass().getSimpleName())
                     .collect(joining(","));
 
-            return "TestData{" +
-                    "assetsToAddInBundle=" + assets +
-                    ", dependenciesToAssert=" +  dependencies +
-                    ", filterDescriptor=" + filterDescriptor.getFilters() +
-                    '}';
+            return "[assetsToAddInBundle=" + assets + "], " +
+                    "[dependenciesToAssert=" +  dependencies + "], " +
+                    "filterDescriptor=" + filterDescriptor.getFilters();
         }
     }
 }

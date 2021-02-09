@@ -47,7 +47,7 @@ public class BundleDataGen extends AbstractDataGen<Bundle> {
 
         howAddInBundle.put(Host.class, new MetaData(
                         (PushPublisherConfig config) -> config.getHostSet(),
-                        (Object asset) -> ((Host) asset).getIdentifier(),
+                        (Object asset) -> Host.class.isInstance(asset) ? ((Host) asset).getIdentifier() : ((Contentlet) asset).getIdentifier(),
                         PusheableAsset.SITE
                 )
         );

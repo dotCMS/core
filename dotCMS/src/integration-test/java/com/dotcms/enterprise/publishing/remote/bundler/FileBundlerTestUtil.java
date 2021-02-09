@@ -78,33 +78,20 @@ public class FileBundlerTestUtil {
         return contentletVersionInfo.isPresent();
     }
 
-    public static File getHostFilePath(final Host host, final File bundleRoot) throws DotSecurityException, DotDataException {
+    public static File getHostFilePath(final Contentlet host, final File bundleRoot) throws DotSecurityException, DotDataException {
 
-        String inode = getLiveInode(host);
+        final String uri = APILocator.getIdentifierAPI().find(host).getURI().replace("/", File.separator);
 
         final Host parentHost = APILocator.getHostAPI().find(host.getHost(), APILocator.systemUser(), false);
-        String assetName = File.separator + "content." + inode + ".host.xml";
 
         final String liveWorking = host.isLive() ? "live" : "working";
 
         String hostFilePath = bundleRoot.getPath() + File.separator
                 + liveWorking + File.separator
                 + parentHost.getHostname() + File.separator
-                + host.getLanguageId() + assetName;
+                + host.getLanguageId() + uri + ".host.xml";
 
         return new File(hostFilePath);
-    }
-
-    private static String getLiveInode(Host host) throws DotDataException, DotSecurityException {
-        String inode = host.getInode();
-
-        if (!host.isLive()) {
-            final ContentletVersionInfo contentletVersionInfo =
-                    APILocator.getVersionableAPI().getContentletVersionInfo(host.getIdentifier(), 1).get();
-
-            inode = contentletVersionInfo.getLiveInode() != null ? contentletVersionInfo.getLiveInode() : host.getInode();
-        }
-        return inode;
     }
 
     public static File getFolderFilePath(final Folder folder, final File bundleRoot)
@@ -186,12 +173,15 @@ public class FileBundlerTestUtil {
 
     public static File getContentletPath(final Contentlet contentlet, final File bundleRoot) throws DotSecurityException, DotDataException {
 
-        final int countOrder = getCountOrder(bundleRoot, contentlet.getInode());
         final String liveWorking = contentlet.isLive() ? "live" : "working";
         final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
-        final Host host = getHost(contentlet.getIdentifier());
 
-        final String assetName = contentlet.isFileAsset() ? contentlet.getInode() : "content." + contentlet.getInode();
+
+        String assetName = contentlet.isFileAsset() ? contentlet.getInode() : identifier.getURI().replace("/", File.separator);
+        assetName = assetName.indexOf("content.") != -1 ? assetName.substring(assetName.indexOf("content.")) : assetName;
+
+        final int countOrder = getCountOrder(bundleRoot, assetName, contentlet.isLive());
+        final Host host = getHost(contentlet.getIdentifier());
 
         String contentletFilePath = bundleRoot.getPath() + File.separator
                 + liveWorking + File.separator
@@ -201,16 +191,18 @@ public class FileBundlerTestUtil {
         return new File(contentletFilePath);
     }
 
-    private static int getCountOrder(final File bundleRoot, final String inode) {
-        final List<String> filesName = FileUtil.listFilesRecursively(bundleRoot)
+    private static int getCountOrder(final File bundleRoot, final String inode, final boolean live) {
+        final List<File> files = FileUtil.listFilesRecursively(bundleRoot)
                 .stream()
                 .filter(file -> file.getName().endsWith(".content.xml"))
-                .map(file -> file.getName())
                 .collect(Collectors.toList());
 
-        for (final String fileName : filesName) {
-            if (fileName.contains(String.format("%s.content.xml", inode))) {
-                return fileName.charAt(0) - 48;
+        final String liveWorking = live ? "live" : "working";
+
+        for (final File file : files) {
+            if (file.getName().contains(String.format("%s.content.xml", inode)) &&
+                    file.getAbsolutePath().contains(liveWorking)) {
+                return file.getName().charAt(0) - 48;
             }
         }
 

@@ -220,7 +220,14 @@ public class FileTestUtil {
             final Object asset,
             final Collection<String> expectedFilesPath) throws IOException {
 
-        final AssertionChecker assertionChecker = assertions.get(asset.getClass());
+        AssertionChecker assertionChecker = null;
+
+        if (Contentlet.class == asset.getClass()) {
+            assertionChecker = ((Contentlet) asset).isHost() ? assertions.get(Host.class) : assertions.get(asset.getClass());
+        } else {
+            assertionChecker = assertions.get(asset.getClass());
+        }
+
         final Collection<File> files = assertionChecker.getFile(asset, bundleRoot);
 
         for (final File file : files) {

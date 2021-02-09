@@ -3,11 +3,9 @@ package com.dotcms.publishing;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.*;
-import com.dotcms.enterprise.publishing.remote.bundler.ContainerBundler;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
-import com.dotcms.repackage.com.google.common.collect.Sets;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -18,6 +16,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -38,8 +37,7 @@ import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import org.jetbrains.annotations.NotNull;
-import org.junit.After;
+import org.jetbrains.annotations.Nullable;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -57,7 +55,6 @@ import static org.jgroups.util.Util.assertEquals;
 public class PublisherAPIImplTest {
 
     private static Contentlet languageVariableCreated;
-    private static Set<Object> languageVariableDependencies;
 
     public static class PushPublisherMock extends PushPublisher {
         @Override
@@ -96,8 +93,6 @@ public class PublisherAPIImplTest {
                     .host(host)
                     .nextPersisted();
         }
-
-        languageVariableDependencies = getLanguagesVariableDependencies();
     }
 
 
@@ -131,14 +126,11 @@ public class PublisherAPIImplTest {
                 PushPublisherMock.class
         );
 
-        createLanguageVariableIfNeeded();
-        addLanguageVariableDependencies(assets);
-
         final List<TestCase> cases = new ArrayList<>();
 
         for (final Class<? extends Publisher> publisher : publishers) {
             for (TestAsset asset : assets) {
-                cases.add(new TestCase(publisher, set(asset)));
+                cases.add(new TestCase(publisher, asset));
             }
         }
 
@@ -355,14 +347,12 @@ public class PublisherAPIImplTest {
     @UseDataProvider("publishers")
     public void publish(final TestCase testCase) throws DotPublishingException, DotSecurityException, IOException, DotDataException {
         final Class<? extends Publisher> publisher = testCase.publisher;
-        final Set<TestAsset> testAssets = testCase.assets;
-        final Set<Object> assetsToAddInBundle = new HashSet<>();
-        final Set<Object> dependencies = new HashSet<>();
+        final TestAsset testAsset = testCase.asset;
+        final Collection<Object> dependencies = new HashSet<>();
+        dependencies.addAll(testAsset.expectedInBundle);
 
-        for (final TestAsset testAsset : testAssets) {
-            assetsToAddInBundle.add(testAsset.asset);
-            dependencies.addAll(testAsset.expectedInBundle);
-        }
+        createLanguageVariableIfNeeded();
+        addLanguageVariableDependencies(dependencies, testCase.asset.addLanguageVariableDependencies);
 
         final FilterDescriptor filterDescriptor = new FileDescriptorDataGen().nextPersisted();
 
@@ -376,7 +366,7 @@ public class PublisherAPIImplTest {
 
         new BundleDataGen()
                 .pushPublisherConfig(config)
-                .addAssets(list(assetsToAddInBundle))
+                .addAssets(list(testAsset.asset))
                 .filter(filterDescriptor)
                 .nextPersisted();
 
@@ -385,11 +375,9 @@ public class PublisherAPIImplTest {
         final File bundleRoot = BundlerUtil.getBundleRoot(config);
 
         final Collection<File> filesExpected = new HashSet<>();
-
-        for (final TestAsset testAsset : testAssets) {
-            final Collection<File> files = FileTestUtil.assertBundleFile(bundleRoot, testAsset.asset, testAsset.fileExpectedPath);
-            filesExpected.addAll(files);
-        }
+        filesExpected.addAll(
+                FileTestUtil.assertBundleFile(bundleRoot, testAsset.asset, testAsset.fileExpectedPath)
+        );
 
         for (Object assetToAssert : dependencies) {
             final Collection<File> files = FileTestUtil.assertBundleFile(bundleRoot, assetToAssert);
@@ -408,12 +396,21 @@ public class PublisherAPIImplTest {
                 .collect(Collectors.toList());
 
         //All the dependencies plus, the asset and the bundle xml
-        long numberFilesExpected = filesExpected.size() + 1;
+        int numberFilesExpected = filesExpected.size() + 1;
         final int numberFiles = files.size();
 
         final List<String> filesExpectedPath = filesExpected.stream().map(file -> file.getAbsolutePath()).collect(Collectors.toList());
         final List<String> filePaths = files.stream().map(file -> file.getAbsolutePath()).collect(Collectors.toList());
 
+        List<String> differences = getDifferences(numberFilesExpected, numberFiles, filesExpectedPath, filePaths);
+
+        assertEquals(String.format("Expected %d but get %d in %s\nExpected %s\nExisting %s\ndifference %s\n",
+                    numberFilesExpected, numberFiles, bundleRoot, filesExpectedPath, filePaths, differences),
+                numberFilesExpected, numberFiles);
+    }
+
+    @Nullable
+    private List<String> getDifferences(long numberFilesExpected, int numberFiles, List<String> filesExpectedPath, List<String> filePaths) {
         List<String> differences = null ;
 
         if (numberFilesExpected > numberFiles){
@@ -423,22 +420,19 @@ public class PublisherAPIImplTest {
             differences = new ArrayList<>(filePaths);
             differences.removeAll(filesExpectedPath);
         }
-
-        assertEquals(String.format("Expected %d but get %d in %s\nExpected %s\nExisting %s\ndifference %s\n",
-                    numberFilesExpected, numberFiles, bundleRoot, filesExpectedPath, filePaths, differences),
-                numberFilesExpected, numberFiles);
+        return differences;
     }
 
     private static class TestCase {
         Class<? extends Publisher> publisher;
-        Set<TestAsset> assets;
+        TestAsset asset;
 
         public TestCase(
                 final Class<? extends Publisher> publisher,
-                Set<TestAsset> assets) {
+                TestAsset asset) {
 
             this.publisher = publisher;
-            this.assets = assets;
+            this.asset = asset;
         }
     }
 
@@ -450,60 +444,70 @@ public class PublisherAPIImplTest {
         return langVariables;
     }
 
-    private static void addLanguageVariableDependencies(final Collection<TestAsset> assets) throws DotSecurityException, DotDataException {
+    private static void addLanguageVariableDependencies(final Collection<Object> dependecies, boolean addLanguageVariableDependencies)
+            throws DotDataException, DotSecurityException {
 
-        for (final TestAsset asset : assets) {
-            List<Object> languageVariablesDependencies = null;
+        final Host systemHost = APILocator.getHostAPI().findSystemHost();
+        final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
 
-            if (asset.addLanguageVariableAsDependencies) {
-                final Host systemHost = APILocator.getHostAPI().findSystemHost();
-                final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
+        List<Object> languageVariablesDependencies = getLanguagesVariableDependencies(
+                addLanguageVariableDependencies, true, true).stream()
+                    .filter(dependency -> {
+                        if (Contentlet.class.isInstance(dependency)){
+                            return !((Contentlet) dependency).getIdentifier().equals(systemHost.getIdentifier());
+                        } else  if (Folder.class.isInstance(dependency)){
+                            return !((Folder) dependency).getIdentifier().equals(systemFolder.getIdentifier());
+                        } else {
+                            return true;
+                        }
+                    })
+                    .collect(Collectors.toList());
 
-                languageVariablesDependencies = languageVariableDependencies.stream()
-                        .filter(dependency -> {
-                            if (Host.class.isInstance(dependency)){
-                                return !((Host) dependency).getIdentifier().equals(systemHost.getIdentifier());
-                            } else  if (Folder.class.isInstance(dependency)){
-                                return !((Folder) dependency).getIdentifier().equals(systemFolder.getIdentifier());
-                            } else {
-                                return true;
-                            }
-                        })
-                        .collect(Collectors.toList());
-
-            } else {
-                final Host systemHost = APILocator.getHostAPI().findSystemHost();
-
-                languageVariablesDependencies = languageVariableDependencies.stream()
-                        .filter(dependency -> Host.class.isInstance(dependency))
-                        .map(dependency -> (Host) dependency)
-                        .filter(host -> !host.getIdentifier().equals(systemHost.getIdentifier()))
-                        .collect(Collectors.toList());
-            }
-
-            if (languageVariableDependencies != null){
-                asset.expectedInBundle.addAll(languageVariablesDependencies);
-            }
+        if (!languageVariablesDependencies.isEmpty()){
+            dependecies.addAll(languageVariablesDependencies);
         }
     }
 
 
-    public static Set<Object> getLanguagesVariableDependencies() throws DotDataException, DotSecurityException {
+    public static Set<Object> getLanguagesVariableDependencies(
+            boolean addLanguageVariableDependencies,
+            boolean addRulesDependencies,
+            boolean addLiveAndWorking)
+            throws DotDataException, DotSecurityException {
+
         final User systemUser = APILocator.systemUser();
         final List<Contentlet> languageVariables = getLanguageVariables();
         Set<Object> dependencies = new HashSet<>();
 
         for (final Contentlet langVariable : languageVariables) {
+
             final Host host = APILocator.getHostAPI().find(langVariable.getHost(), systemUser, false);
 
-            final Language language = APILocator.getLanguageAPI().getLanguage(langVariable.getLanguageId());
-            dependencies.add(langVariable);
-            dependencies.add(host);
-            dependencies.add(language);
+            if (addLiveAndWorking) {
+                addContentletDependencies(dependencies, host);
+            } else {
+                dependencies.add(host);
+            }
+
+            if (addRulesDependencies) {
+                List<Rule> ruleList = APILocator.getRulesAPI().getAllRulesByParent(host, systemUser, false);
+                dependencies.addAll(ruleList);
+            }
+
+            if (addLanguageVariableDependencies) {
+                final Language language = APILocator.getLanguageAPI().getLanguage(langVariable.getLanguageId());
+                dependencies.add(language);
+
+                if (addLiveAndWorking) {
+                    addContentletDependencies(dependencies, langVariable);
+                } else {
+                    dependencies.add(langVariable);
+                }
+            }
         }
 
         Logger.info(PublisherAPIImplTest.class,"languageVariables " + languageVariables);
-        if (!languageVariables.isEmpty()) {
+        if (!languageVariables.isEmpty() && addLanguageVariableDependencies) {
             final ContentType languageVariableContentType =
                     APILocator.getContentTypeAPI(systemUser).find(LanguageVariableAPI.LANGUAGEVARIABLE);
 
@@ -522,22 +526,40 @@ public class PublisherAPIImplTest {
         return dependencies;
     }
 
+    private static void addContentletDependencies(final Set<Object> dependencies, final Contentlet contentlet)
+            throws DotDataException, DotSecurityException {
+
+        final User systemUser = APILocator.systemUser();
+
+        final ContentletVersionInfo contentletVersionInfo
+                = APILocator.getVersionableAPI().getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId()).get();
+
+        final Contentlet workingContentlet =
+                APILocator.getContentletAPI().find(contentletVersionInfo.getWorkingInode(), systemUser, false);
+        dependencies.add(workingContentlet);
+
+        if (contentletVersionInfo.getLiveInode() != null && !contentletVersionInfo.getWorkingInode().equals(contentletVersionInfo.getLiveInode())){
+            final Contentlet liveContentlet =
+                    APILocator.getContentletAPI().find(contentletVersionInfo.getLiveInode(), systemUser, false);
+            dependencies.add(liveContentlet);
+        }
+    }
+
     private static class TestAsset {
         Object asset;
         Set<Object> expectedInBundle;
         String fileExpectedPath;
-        boolean addLanguageVariableAsDependencies;
+        boolean addLanguageVariableDependencies = true;
 
-        public TestAsset(Object asset, Set<Object> expectedInBundle, String fileExpectedPath){
+        public TestAsset(Object asset, Set<Object> expectedInBundle, String fileExpectedPath) {
             this(asset, expectedInBundle, fileExpectedPath, true);
         }
 
-        public TestAsset(Object asset, Set<Object> expectedInBundle, String fileExpectedPath,
-                         boolean addLanguageVariableAsDependencies) {
+        public TestAsset(Object asset, Set<Object> expectedInBundle, String fileExpectedPath, boolean addLanguageVariableDependencies) {
             this.asset = asset;
             this.expectedInBundle = expectedInBundle;
             this.fileExpectedPath = fileExpectedPath;
-            this.addLanguageVariableAsDependencies = addLanguageVariableAsDependencies;
+            this.addLanguageVariableDependencies = addLanguageVariableDependencies;
 
             //todo: uncomment when it merge into the performance branch
             /*try {
