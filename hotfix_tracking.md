@@ -103,3 +103,5 @@ This maintenance release includes the following code fixes:
 49. https://github.com/dotCMS/core/issues/19910	: Google Translate Sub-action is sending error with even with valid translation key
 
 50. https://github.com/dotCMS/core/issues/19832	: [core] : Legacy IDs are not compatible with Shorty API
+
+51. https://github.com/dotCMS/core/issues/19927	: Adding more log to the JsonTOOL
