@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.rest.api.v1.system.permission.PermissionHelper;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;

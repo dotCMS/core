@@ -1,5 +1,6 @@
-package com.dotmarketing.business.helper;
+package com.dotcms.rest.api.v1.system.permission;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -8,6 +9,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -37,7 +39,7 @@ public class PermissionHelper {
     }
 
     public static PermissionHelper getInstance() {
-        return PermissionHelper.PermissionSingletonHelper.INSTANCE;
+        return PermissionSingletonHelper.INSTANCE;
     }
 
     /**
@@ -55,6 +57,7 @@ public class PermissionHelper {
      * @return Map with the permissions allowed by permission type: Map<PermissionableType's name,
      * Map<`canRead/canWrite`, Boolean>>
      */
+    @CloseDBIfOpened
     public Map<String, Map<String, Boolean>> getPermissionsByPermissionType(final User user,
             final List<Integer> permissions, final List<String> permissionableTypes)
             throws DotDataException {
@@ -95,5 +98,18 @@ public class PermissionHelper {
         }
 
         return Collections.unmodifiableMap(result);
+    }
+
+    public int fromStringToPermissionInt (final String permissionName) {
+
+        switch (permissionName.toLowerCase()) {
+
+            case "read":  // it is a switch b/c in the future can be more than 2
+                return PermissionAPI.PERMISSION_READ;
+            case "write":  // it is a switch b/c in the future can be more than 2
+                return PermissionAPI.PERMISSION_WRITE;
+        }
+
+        throw new IllegalArgumentException("Can not recognize the permission name: " + permissionName);
     }
 }
