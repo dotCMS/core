@@ -56,7 +56,7 @@ public class PermissionResource {
     }
 
     /**
-     * Load a map indexed by permissionable types (optional all if not passed any) and permissions (READ, WRITE)
+     * Load a map of permission type indexed by permissionable types (optional all if not passed any) and permissions (READ, WRITE)
      * @param request     {@link HttpServletRequest}
      * @param response    {@link HttpServletResponse}
      * @param userid      {@link String}
@@ -66,26 +66,32 @@ public class PermissionResource {
      * @throws DotDataException
      */
     @GET
-    @Path("/_permissionsbypermissiontype/userid/{userid}")
+    @Path("/_bypermissiontype")
     @JSONP
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response getPermissionsByPermissionType(final @Context HttpServletRequest request,
                                                    final @Context HttpServletResponse response,
-                                                   final @PathParam("userid") String userid,
-                                                   final @QueryParam("permission") String permissions,
+                                                   final @QueryParam("userid")         String userid,
+                                                   final @QueryParam("permission")     String permissions,
                                                    final @QueryParam("permissiontype") String permissionableTypes)
             throws DotDataException, DotSecurityException {
 
-        new WebResource.InitBuilder(webResource)
+        final User userInvoker = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
-                .rejectWhenNoUser(true).init();
+                .rejectWhenNoUser(true).init().getUser();
 
         Logger.debug(this, ()-> "GetPermissionsByPermissionType, permission: " +
                 permissions + "permissiontype: " + permissionableTypes);
+
+        //
+        if (!userInvoker.getUserId().equals(userid) && !userInvoker.isAdmin()) {
+
+            throw new DotSecurityException("Only admin user can retrieve other users permissions");
+        }
 
         final User user = this.userAPI.loadUserById(userid);
 
