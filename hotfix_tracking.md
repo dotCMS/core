@@ -93,7 +93,7 @@ This release includes the following code fixes:
 
 44. https://github.com/dotCMS/core/issues/18051	: PP a vtl file with no content throws an NPE
 
-45. https://github.com/dotCMS/core/pull/19005 : reduce-default-settings-for-es-concurrent-request (no related ticket, just a direct PR)
+45. https://github.com/dotCMS/core/issues/19940 : [core] : Adjusting default ES settings for concurrent requests
 
 46. https://github.com/dotCMS/core/issues/19890	: Custom Page Layout is not sending in Push PublishCustom Page Layout is not sending in Push Publish
 
