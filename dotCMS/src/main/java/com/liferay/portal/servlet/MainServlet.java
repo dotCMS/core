@@ -127,12 +127,17 @@ public class MainServlet extends ActionServlet {
           clusterInitializeTask.executeUpgrade();
         }
 
-        // Calling reindex
-        doReindex();
       } catch (Exception e1) {
         throw new DotRuntimeException(e1);
       } finally {
         DbConnectionFactory.closeSilently();
+      }
+
+      try {
+        // Calling reindex
+        doReindex();
+      } catch (Exception e) {
+        throw new DotRuntimeException(e);
       }
 
       // Update license with server start time
