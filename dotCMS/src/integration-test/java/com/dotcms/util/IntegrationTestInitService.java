@@ -7,6 +7,7 @@ import com.dotcms.repackage.org.apache.struts.config.ModuleConfigFactory;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.db.DotCMSInitDb;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.SystemProperties;
@@ -45,6 +46,9 @@ public class IntegrationTestInitService {
 
                 //Running the always run startup tasks
                 StartupTasksUtil.getInstance().init();
+
+                // initialize if needed
+                DotCMSInitDb.initializeIfNeeded();
 
                 //For these tests fire the reindex immediately
                 Config.setProperty("ASYNC_REINDEX_COMMIT_LISTENERS", false);
