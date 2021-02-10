@@ -137,6 +137,7 @@ public class MainServlet extends ActionServlet {
         // Calling reindex
         doReindex();
       } catch (Exception e) {
+        Logger.error(getClass(), "Error trying to start reindex thread when starting up", e);
         throw new DotRuntimeException(e);
       }
 
