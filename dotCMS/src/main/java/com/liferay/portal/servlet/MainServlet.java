@@ -20,6 +20,10 @@
 package com.liferay.portal.servlet;
 
 import com.dotcms.enterprise.license.LicenseManager;
+import com.dotmarketing.common.reindex.ReindexThread;
+import com.dotmarketing.db.DotCMSInitDb;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.startup.runalways.Task00030ClusterInitialize;
 import java.io.File;
 import java.io.IOException;
@@ -40,6 +44,7 @@ import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.beanutils.SuppressPropertiesBeanIntrospector;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.felix.framework.OSGIUtil;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
@@ -111,10 +116,6 @@ public class MainServlet extends ActionServlet {
       
       // Make sure elasticseach is up
       new ESIndexAPI().waitUtilIndexReady();
-      
-      
-
-
 
       // Checking for execute upgrades
       try {
@@ -131,6 +132,9 @@ public class MainServlet extends ActionServlet {
       } finally {
         DbConnectionFactory.closeSilently();
       }
+
+      // Calling reindex
+      doReindex();
 
       // Update license with server start time
       LicenseManager.getInstance().updateServerStartTime();
@@ -245,6 +249,34 @@ public class MainServlet extends ActionServlet {
 
       // Init other dotCMS services.
       DotInitializationService.getInstance().initialize();
+    }
+  }
+
+  private void doReindex() throws DotDataException, InterruptedException {
+    ReindexThread.startThread();
+
+    final ContentletAPI conAPI = APILocator.getContentletAPI();
+    Logger.info(DotCMSInitDb.class, "Building Initial Index");
+
+
+    // Initializing felix
+    OSGIUtil.getInstance().initializeFramework();
+
+    // Reindexing the recently added content
+    conAPI.refreshAllContent();
+    long recordsToIndex = APILocator.getReindexQueueAPI().recordsInQueue();
+    Logger.info(DotCMSInitDb.class, "Records left to index : " + recordsToIndex);
+
+    int counter = 0;
+
+    while (recordsToIndex > 0) {
+      Thread.sleep(2000);
+      recordsToIndex = APILocator.getReindexQueueAPI().recordsInQueue();
+      Logger.info(DotCMSInitDb.class, "Records left to index : " + recordsToIndex);
+      // ten minutes
+      if(++counter>30000) {
+        break;
+      }
     }
   }
 
