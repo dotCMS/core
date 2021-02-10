@@ -18,28 +18,6 @@ public interface FileStorageAPI {
 
     int SIZE                       = 1024;
     int DEFAULT_META_DATA_MAX_SIZE = 5;
-    //These can be retrieved or calculated without Tika
-    String TITLE_META_KEY         = "title";
-    String PATH_META_KEY          = "path";
-    String LENGTH_META_KEY        = "length";
-    String SIZE_META_KEY          = "fileSize";
-    String CONTENT_TYPE_META_KEY  = "contentType";
-    String MOD_DATE_META_KEY      = "modDate";
-    String SHA256_META_KEY        = "sha256";
-    String IS_IMAGE_META_KEY      = "isImage";
-    String WIDTH_META_KEY         = "width";
-    String HEIGHT_META_KEY        = "height";
-
-
-    Set<String> BASIC_METADATA_FIELDS = ImmutableSet
-            .of(
-                    TITLE_META_KEY, PATH_META_KEY,
-                    LENGTH_META_KEY, SIZE_META_KEY,
-                    CONTENT_TYPE_META_KEY, MOD_DATE_META_KEY,
-                    SHA256_META_KEY, IS_IMAGE_META_KEY,
-                    WIDTH_META_KEY, HEIGHT_META_KEY
-            );
-
 
     /**
      * Returns the default configured max length
@@ -110,4 +88,13 @@ public interface FileStorageAPI {
      */
     boolean removeMetaData(final RequestMetadata requestMetaData) throws DotDataException;
 
+
+    /**
+     * Saves additional custom attributes into the metadata storage
+     * @param requestMetaData
+     * @param customAttributes
+     * @throws DotDataException
+     */
+    void putCustomMetadataAttributes(final RequestMetadata requestMetaData,
+            final Map<String, Serializable> customAttributes) throws DotDataException;
 }

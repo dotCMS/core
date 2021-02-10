@@ -5,7 +5,7 @@ import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.INDEX_D
 import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.TEXT;
 import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.WRITE_METADATA_ON_REINDEX;
 import static com.dotcms.datagen.TestDataUtils.getCommentsLikeContentType;
-import static com.dotcms.datagen.TestDataUtils.getMultipleBinariesContent;
+import static com.dotcms.datagen.TestDataUtils.getMultipleImageBinariesContent;
 import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
 import static com.dotcms.datagen.TestDataUtils.relateContentTypes;
 import static com.dotcms.util.CollectionsUtils.list;
@@ -64,7 +64,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
-import com.google.common.collect.Sets;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
@@ -76,7 +75,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -440,7 +438,7 @@ public class ESMappingAPITest {
 
             final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl();
             final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-            final Contentlet multipleBinariesContent = getMultipleBinariesContent(true, langId,
+            final Contentlet multipleBinariesContent = getMultipleImageBinariesContent(true, langId,
                     null);
 
             final Set<String> excludedDotRawFields = Stream

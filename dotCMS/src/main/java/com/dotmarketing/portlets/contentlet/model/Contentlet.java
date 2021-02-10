@@ -256,7 +256,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public Contentlet(final Contentlet contentlet) {
 		this(contentlet.getMap());
 		this.setIndexPolicy(contentlet.getIndexPolicy());
-		this.contentletMetadata = ImmutableMap.copyOf(contentlet.contentletMetadata);
+		if(null != contentlet.contentletMetadata) {
+		   this.contentletMetadata = ImmutableMap.copyOf(contentlet.contentletMetadata);
+		}
 	}
 
   /**

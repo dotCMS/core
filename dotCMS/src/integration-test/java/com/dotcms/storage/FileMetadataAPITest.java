@@ -4,6 +4,7 @@ import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_1;
 import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_2;
 import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_3;
 import static com.dotcms.datagen.TestDataUtils.getFileAssetContent;
+import static com.dotcms.datagen.TestDataUtils.getMultipleImageBinariesContent;
 import static com.dotcms.datagen.TestDataUtils.getMultipleBinariesContent;
 import static com.dotcms.datagen.TestDataUtils.removeAnyMetadata;
 import static com.dotcms.storage.StoragePersistenceProvider.DEFAULT_STORAGE_TYPE;
@@ -23,7 +24,9 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
@@ -33,6 +36,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import org.apache.commons.io.FilenameUtils;
@@ -45,7 +50,7 @@ public class FileMetadataAPITest {
 
     private static final String WRITE_METADATA_ON_REINDEX = ESMappingAPIImpl.WRITE_METADATA_ON_REINDEX;
     private static final String FILE_ASSET = FileAssetAPI.BINARY_FIELD;
-    private static FileMetadataAPI contentletMetadataAPI;
+    private static FileMetadataAPI fileMetadataAPI;
 
     /**
      * if we have a code that requires some environment initialization required to run prior to our dataProvider Methods the @BeforeClass annotation won't do
@@ -55,9 +60,9 @@ public class FileMetadataAPITest {
      * @throws Exception
      */
     public static void prepareIfNecessary() throws Exception {
-       if(contentletMetadataAPI == null){
+       if(fileMetadataAPI == null){
          IntegrationTestInitService.getInstance().init();
-         contentletMetadataAPI = APILocator.getFileMetadataAPI();
+         fileMetadataAPI = APILocator.getFileMetadataAPI();
        }
     }
 
@@ -79,7 +84,7 @@ public class FileMetadataAPITest {
             final File file = (File) testCase.fileAssetContent.get(FILE_ASSET);
             removeAnyMetadata(file);
 
-            final ContentletMetadata metadata = contentletMetadataAPI
+            final ContentletMetadata metadata = fileMetadataAPI
                     .generateContentletMetadata(testCase.fileAssetContent);
 
             assertNotNull(metadata);
@@ -90,7 +95,7 @@ public class FileMetadataAPITest {
             validateBasicStrict(metadata.getBasicMetadataMap().get(FILE_ASSET));
             validateFull(metadata.getFullMetadataMap().get(FILE_ASSET), testCase.testFile);
 
-            final Map<String, Set<String>> metadataInfo = contentletMetadataAPI.removeMetadata(testCase.fileAssetContent);
+            final Map<String, Set<String>> metadataInfo = fileMetadataAPI.removeMetadata(testCase.fileAssetContent);
             assertFalse(metadataInfo.isEmpty());
             //Verify the metadata got removed successfully
             final StoragePersistenceAPI storage = StoragePersistenceProvider.INSTANCE.get().getStorage(testCase.storageType);
@@ -240,11 +245,11 @@ public class FileMetadataAPITest {
             Config.setProperty(DEFAULT_STORAGE_TYPE, storageType.name());
 
             //Multiple binary fields
-            final Contentlet multipleBinariesContent = getMultipleBinariesContent(true, langId, null);
+            final Contentlet multipleBinariesContent = getMultipleImageBinariesContent(true, langId, null);
 
             //Multiple binary fields
             //since the index operation performs this very same operation here the method generateContentletMetadata should retrieve the existing metadata.
-            final ContentletMetadata multiBinaryMetadata = contentletMetadataAPI
+            final ContentletMetadata multiBinaryMetadata = fileMetadataAPI
                     .generateContentletMetadata(multipleBinariesContent);
             assertNotNull(multiBinaryMetadata);
 
@@ -271,7 +276,7 @@ public class FileMetadataAPITest {
             final Map<String, Serializable> fileAsset3BasicMeta = basicMetadataMap.get(FILE_ASSET_3);
             assertNull(fileAsset3BasicMeta);
 
-            final Map<String, Set<String>> metadataInfo = contentletMetadataAPI.removeMetadata(multipleBinariesContent);
+            final Map<String, Set<String>> metadataInfo = fileMetadataAPI.removeMetadata(multipleBinariesContent);
             assertFalse(metadataInfo.isEmpty());
             //Verify the metadata got removed successfully
             final StoragePersistenceAPI storage = StoragePersistenceProvider.INSTANCE.get().getStorage(storageType);
@@ -299,9 +304,9 @@ public class FileMetadataAPITest {
     @Test
     public void Test_Get_First_Indexed_Binary_Field() {
         final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-        final Contentlet multipleBinariesContent = getMultipleBinariesContent(true, langId, null);
+        final Contentlet multipleBinariesContent = getMultipleImageBinariesContent(true, langId, null);
 
-        final FileMetadataAPIImpl impl = (FileMetadataAPIImpl) contentletMetadataAPI;
+        final FileMetadataAPIImpl impl = (FileMetadataAPIImpl) fileMetadataAPI;
         final Tuple2<SortedSet<String>, SortedSet<String>> binaryFields = impl
                 .findBinaryFields(multipleBinariesContent);
 
@@ -343,21 +348,21 @@ public class FileMetadataAPITest {
             final File file = (File) fileAssetContent.get(fileAssetField);
             removeAnyMetadata(file);
 
-            Map<String, Serializable> fileAssetMD = contentletMetadataAPI
+            Map<String, Serializable> fileAssetMD = fileMetadataAPI
                     .getFullMetadataNoCache(fileAssetContent, fileAssetField);
             //Expect no metadata it hasn't been generated
             assertNull(fileAssetMD);
 
-            final ContentletMetadata metadata = contentletMetadataAPI
+            final ContentletMetadata metadata = fileMetadataAPI
                     .generateContentletMetadata(fileAssetContent);
             assertNotNull(metadata);
 
-            fileAssetMD = contentletMetadataAPI
+            fileAssetMD = fileMetadataAPI
                     .getFullMetadataNoCache(fileAssetContent, fileAssetField);
             assertFalse(fileAssetMD.isEmpty());
 
             //This might seem a little unnecessary but by doing this we verify the fields in the resulting map are the ones allowed to be preset in the metadata generation
-            final FileMetadataAPIImpl impl = (FileMetadataAPIImpl) contentletMetadataAPI;
+            final FileMetadataAPIImpl impl = (FileMetadataAPIImpl) fileMetadataAPI;
 
             final Map<String, Field> fieldMap = fileAssetContent.getContentType().fieldMap();
 
@@ -399,17 +404,17 @@ public class FileMetadataAPITest {
             final File file = (File) fileAssetContent.get(fileAssetField);
             removeAnyMetadata(file);
 
-            Map<String, Serializable> fileAssetMD = contentletMetadataAPI
+            Map<String, Serializable> fileAssetMD = fileMetadataAPI
                     .getFullMetadataNoCache(fileAssetContent, fileAssetField);
             //Expect no metadata it hasn't been generated
             assertNull(fileAssetMD);
 
-            fileAssetMD = contentletMetadataAPI
+            fileAssetMD = fileMetadataAPI
                     .getFullMetadataNoCacheForceGenerate(fileAssetContent, fileAssetField);
             assertFalse(fileAssetMD.isEmpty());
 
             //This might seem a little unnecessary but by doing this we verify the fields in the resulting map are the ones allowed to be preset in the metadata generation
-            final FileMetadataAPIImpl impl = (FileMetadataAPIImpl) contentletMetadataAPI;
+            final FileMetadataAPIImpl impl = (FileMetadataAPIImpl) fileMetadataAPI;
 
             final Map<String, Field> fieldMap = fileAssetContent.getContentType().fieldMap();
 
@@ -452,16 +457,16 @@ public class FileMetadataAPITest {
             final File file = (File) fileAssetContent.get(fileAssetField);
             removeAnyMetadata(file);
 
-            Map<String, Serializable> fileAssetMD = contentletMetadataAPI
+            Map<String, Serializable> fileAssetMD = fileMetadataAPI
                     .getMetadata(fileAssetContent, fileAssetField);
             //Expect no metadata it has not been generated
             assertNull(fileAssetMD);
 
-            final ContentletMetadata metadata = contentletMetadataAPI
+            final ContentletMetadata metadata = fileMetadataAPI
                     .generateContentletMetadata(fileAssetContent);
             assertNotNull(metadata);
 
-            final Map<String,Serializable> metadataMap = contentletMetadataAPI
+            final Map<String,Serializable> metadataMap = fileMetadataAPI
                     .getMetadata(fileAssetContent,fileAssetField);
             assertNotNull(metadataMap);
 
@@ -502,12 +507,12 @@ public class FileMetadataAPITest {
             final File file = (File) fileAssetContent.get(fileAssetField);
             removeAnyMetadata(file);
 
-            Map<String, Serializable> fileAssetMD = contentletMetadataAPI
+            Map<String, Serializable> fileAssetMD = fileMetadataAPI
                     .getMetadata(fileAssetContent, fileAssetField);
             //Expect no metadata it has not been generated
             assertNull(fileAssetMD);
 
-            final Map<String,Serializable> metadataMap = contentletMetadataAPI
+            final Map<String,Serializable> metadataMap = fileMetadataAPI
                     .getMetadataForceGenerate(fileAssetContent, fileAssetField);
             assertNotNull(metadataMap);
 
@@ -522,6 +527,59 @@ public class FileMetadataAPITest {
             Config.setProperty(WRITE_METADATA_ON_REINDEX, defaultValue);
         }
     }
+
+
+    @Test
+    @UseDataProvider("getStorageType")
+    public void Test_Add_Custom_Attributes_FileAssets(final StorageType storageType)
+            throws IOException, DotDataException {
+        final String stringProperty = Config.getStringProperty(DEFAULT_STORAGE_TYPE);
+        //disconnect the MD generation on indexing so we can test directly here.
+        final boolean defaultValue = Config.getBooleanProperty(WRITE_METADATA_ON_REINDEX, true);
+        try {
+            Config.setProperty(WRITE_METADATA_ON_REINDEX, false);
+            Config.setProperty(DEFAULT_STORAGE_TYPE, storageType.name());
+            final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+            final Contentlet multipleBinariesContent = getMultipleBinariesContent(true, langId,
+                    null);
+            final ContentletMetadata metadata = fileMetadataAPI
+                    .generateContentletMetadata(multipleBinariesContent);
+
+            assertFalse(metadata.getFullMetadataMap().isEmpty());
+            assertFalse(metadata.getBasicMetadataMap().isEmpty());
+
+
+            final String customAttribute1 = "focalPoint";
+            final String value = "67.4,6.77";
+
+
+            for (final String fieldName : metadata.getBasicMetadataMap().keySet()) {
+                final Map<String, Map<String,Serializable>> customAttributes = ImmutableMap.of(fieldName, ImmutableMap.of(customAttribute1, value));
+                fileMetadataAPI.putCustomMetadataAttributes(multipleBinariesContent, customAttributes);
+                Logger.info(FileMetadataAPITest.class, "setting up attribute: "+fieldName);
+            }
+
+
+            for (final String fieldName : metadata.getBasicMetadataMap().keySet()) {
+
+                final Map<String, Serializable> meta = fileMetadataAPI
+                      .getMetadata(multipleBinariesContent, fieldName);
+                assertEquals(meta.get("custom::"+customAttribute1), value);
+
+                final Map<String, Serializable> metaNoCache = fileMetadataAPI
+                        .getFullMetadataNoCache(multipleBinariesContent, fieldName);
+
+                System.out.println(metaNoCache);
+
+            }
+
+            
+        } finally {
+            Config.setProperty(DEFAULT_STORAGE_TYPE, stringProperty);
+            Config.setProperty(WRITE_METADATA_ON_REINDEX, defaultValue);
+        }
+    }
+
 
     @DataProvider
     public static Object[] getStorageType() throws Exception {

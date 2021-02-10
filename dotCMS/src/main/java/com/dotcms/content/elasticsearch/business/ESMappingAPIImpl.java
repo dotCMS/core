@@ -4,6 +4,8 @@ import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATI
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.PERSONA_KEY_TAG;
 import static com.dotcms.contenttype.model.field.LegacyFieldTypes.CUSTOM_FIELD;
 import static com.dotcms.contenttype.model.type.PersonaContentType.PERSONA_KEY_TAG_FIELD_VAR;
+import static com.dotcms.storage.BasicMetadataFields.IS_IMAGE_META_KEY;
+import static com.dotcms.storage.BasicMetadataFields.SHA256_META_KEY;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
@@ -118,8 +120,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
     //Default fields to exclude from meta-data dotRaw generation
 	static final String[] defaultExcludedDotRawMetadataFields = {
 	        FileAssetAPI.CONTENT_FIELD,
-			FileStorageAPI.IS_IMAGE_META_KEY,
-			FileStorageAPI.SHA256_META_KEY
+			IS_IMAGE_META_KEY.key(),
+			SHA256_META_KEY.key()
 	};
 
 	// if you want to limit the size of the field `metadata.content`
@@ -807,6 +809,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					.addAll(tikaUtils.getConfiguredMetadataFields());
 
 			tikaUtils.filterMetadataFields(keyValueMap, allowedFields);
+
             final String keyValuePrefix = FileAssetAPI.META_DATA_FIELD.toLowerCase();
             keyValueMap.forEach((k, v) -> contentletMap.put(keyValuePrefix + PERIOD + k, v));
 		} else {

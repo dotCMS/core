@@ -41,7 +41,7 @@ public class RequestMetadata {
         this.cache                   = builder.cache;
         this.cacheKeySupplier        = builder.cacheKeySupplier;
         this.storageKey              = builder.storageKey;
-        this.projectionMapForCache = builder.wrapMetadataMapForCache;
+        this.projectionMapForCache = builder.projectionMapForCache;
     }
 
     public StorageKey getStorageKey() {
@@ -88,7 +88,7 @@ public class RequestMetadata {
          * In case the metadata is retrieved from the storage instead of the cache,
          * you can wrap the metadata recovery from the storage in order to add, mod or remove values
          */
-        private Function<Map<String, Serializable>, Map<String, Serializable>> wrapMetadataMapForCache = map-> map;
+        private Function<Map<String, Serializable>, Map<String, Serializable>> projectionMapForCache = map-> map;
 
         public Builder cache(final boolean cache) {
 
@@ -109,9 +109,9 @@ public class RequestMetadata {
             return this;
         }
 
-        public Builder wrapMetadataMapForCache(final Function<Map<String, Serializable>, Map<String, Serializable>> wrapMetadataMapForCache) {
+        public Builder projectionMapForCache(final Function<Map<String, Serializable>, Map<String, Serializable>> projectionMapForCache) {
 
-            this.wrapMetadataMapForCache = wrapMetadataMapForCache;
+            this.projectionMapForCache = projectionMapForCache;
             return this;
         }
 

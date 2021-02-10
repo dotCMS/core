@@ -1,5 +1,7 @@
 package com.dotcms.storage;
 
+import static com.dotcms.storage.BasicMetadataFields.*;
+
 import com.dotcms.util.MimeTypeUtils;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
@@ -18,8 +20,10 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * Default implementation
@@ -101,30 +105,30 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
         if (this.validBinary(binary)) {
 
-            mapBuilder.put(TITLE_META_KEY, binary.getName());
-            final String relPath = binary.getAbsolutePath()
+            mapBuilder.put(TITLE_META_KEY.key(), binary.getName());
+            final String relativePath = binary.getAbsolutePath()
                     .replace(ConfigUtils.getAbsoluteAssetsRootPath(),
                             StringPool.BLANK);
 
-            mapBuilder.put(PATH_META_KEY, relPath);
+            mapBuilder.put(PATH_META_KEY.key(), relativePath);
 
-            if (metaDataKeyFilter.test(LENGTH_META_KEY)) {
-                mapBuilder.put(LENGTH_META_KEY, binary.length());
+            if (metaDataKeyFilter.test(LENGTH_META_KEY.key())) {
+                mapBuilder.put(LENGTH_META_KEY.key(), binary.length());
             }
 
-            if (metaDataKeyFilter.test(SIZE_META_KEY)) {
-                mapBuilder.put(SIZE_META_KEY, binary.length());
+            if (metaDataKeyFilter.test(SIZE_META_KEY.key())) {
+                mapBuilder.put(SIZE_META_KEY.key(), binary.length());
             }
 
-            if (metaDataKeyFilter.test(CONTENT_TYPE_META_KEY)) {
-                mapBuilder.put(CONTENT_TYPE_META_KEY, MimeTypeUtils.getMimeType(binary));
+            if (metaDataKeyFilter.test(CONTENT_TYPE_META_KEY.key())) {
+                mapBuilder.put(CONTENT_TYPE_META_KEY.key(), MimeTypeUtils.getMimeType(binary));
             }
 
-            mapBuilder.put(MOD_DATE_META_KEY, binary.lastModified());
-            mapBuilder.put(SHA256_META_KEY,
+            mapBuilder.put(MOD_DATE_META_KEY.key(), binary.lastModified());
+            mapBuilder.put(SHA256_META_KEY.key(),
                     Try.of(() -> FileUtil.sha256toUnixHash(binary)).getOrElse("unknown"));
 
-            mapBuilder.put(IS_IMAGE_META_KEY, UtilMethods.isImage(relPath));
+            mapBuilder.put(IS_IMAGE_META_KEY.key(), UtilMethods.isImage(relativePath));
 
         }
 
@@ -362,6 +366,46 @@ public class FileStorageAPIImpl implements FileStorageAPI {
            deleteSucceeded = storage.deleteObject(storageKey.getGroup(), storageKey.getPath());
         }
         return deleteSucceeded;
+    }
+
+
+    /**
+     * {@inheritDoc}
+     * @param requestMetaData
+     * @param customAttributes
+     * @throws DotDataException
+     */
+    @Override
+    public void putCustomMetadataAttributes(
+            final RequestMetadata requestMetaData,
+            final Map<String, Serializable> customAttributes) throws DotDataException {
+
+        final Map<String, Serializable> prefixedCustomAttributes = customAttributes.entrySet().stream()
+                .collect(Collectors.toMap(o -> "custom::" + o.getKey(), Entry::getValue));
+
+        final StorageKey storageKey = requestMetaData.getStorageKey();
+        final StoragePersistenceAPI storage = persistenceProvider.getStorage(storageKey.getStorage());
+
+        this.checkBucket(storageKey, storage);
+        if (storage.existsObject(storageKey.getGroup(), storageKey.getPath())) {
+
+            final Map<String, Serializable> retrievedMetadata = retrieveMetadata(storageKey, storage);
+            if(null != retrievedMetadata){
+                final Map<String,Serializable> newMetadataMap = new HashMap<>(retrievedMetadata);
+                newMetadataMap.putAll(prefixedCustomAttributes);
+                storeMetadata(storageKey, storage, newMetadataMap);
+                if(null != requestMetaData.getCacheKeySupplier()){
+                    final String cacheKey = requestMetaData.getCacheKeySupplier().get();
+                    putIntoCache(cacheKey, newMetadataMap);
+                }
+            }
+
+        } else {
+            Logger.info(FileStorageAPIImpl.class, String.format(
+                    "Unable to set custom attribute for the given group: `%s` and path: `%s` ",
+                    storageKey.getGroup(), storageKey.getPath()));
+        }
+
     }
 
 }

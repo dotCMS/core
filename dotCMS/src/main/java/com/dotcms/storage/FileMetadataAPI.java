@@ -30,7 +30,7 @@ public interface FileMetadataAPI {
      * @param fullBinaryFieldNameSet  {@link SortedSet} fields to generate full metadata
      * @return ContentletMetadata
      */
-    ContentletMetadata  generateContentletMetadata (Contentlet contentlet, SortedSet<String> basicBinaryFieldNameSet, SortedSet<String> fullBinaryFieldNameSet)
+    ContentletMetadata generateContentletMetadata (Contentlet contentlet, SortedSet<String> basicBinaryFieldNameSet, SortedSet<String> fullBinaryFieldNameSet)
             throws IOException, DotDataException;
 
     /**
@@ -39,7 +39,7 @@ public interface FileMetadataAPI {
      * @param contentlet {@link Contentlet}
      * @return ContentletMetadata
      */
-    ContentletMetadata  generateContentletMetadata (Contentlet contentlet)
+    ContentletMetadata generateContentletMetadata (Contentlet contentlet)
             throws IOException, DotDataException;
 
     /**
@@ -76,7 +76,7 @@ public interface FileMetadataAPI {
      * @param fieldVariableName  {@link String}
      * @return Map
      */
-    public Map<String, Serializable> getMetadataForceGenerate(final Contentlet contentlet, final String fieldVariableName)
+     Map<String, Serializable> getMetadataForceGenerate(final Contentlet contentlet, final String fieldVariableName)
             throws DotDataException;
 
     /**
@@ -115,7 +115,8 @@ public interface FileMetadataAPI {
     Map<String, Set<String>> removeMetadata(Contentlet contentlet);
 
     /**
-     *
+     * Given a binary file this will rely on the metadata generator to read the file and get the full md associated
+     * As a fallback we can also pass the contentlet in case of read md failure
      * @param binary
      * @param fallbackContentlet
      * @return
@@ -124,4 +125,15 @@ public interface FileMetadataAPI {
     Map<String, Serializable> getFullMetadataNoCache(File binary, Supplier<Contentlet> fallbackContentlet)
             throws DotDataException;
 
+
+    /**
+     * This is meant to put custom attributes into the metadata storage associated with the first indexed binary
+     * They're associated with the first indexed-binary since that's pretty much all we store for the full-metadata
+     * They're also reflected in the basic cached metadata
+     * @param contentlet the contentlet we want to associate the md with
+     * @param customAttributesByField the additional attributes organized by binary field
+     * @throws DotDataException
+     */
+    void putCustomMetadataAttributes(final Contentlet contentlet,
+            final Map<String, Map<String, Serializable>> customAttributesByField) throws DotDataException;
 }

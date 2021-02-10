@@ -1,8 +1,6 @@
 package com.dotcms.storage;
 
-import static com.dotcms.storage.FileStorageAPI.BASIC_METADATA_FIELDS;
 import static com.dotmarketing.util.UtilMethods.isSet;
-
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
@@ -12,11 +10,9 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.business.MetadataCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
-import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap.Builder;
@@ -27,10 +23,7 @@ import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Serializable;
-import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -95,7 +88,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
         Logger.debug(this, ()-> "Generating the metadata for contentlet, id = " + contentlet.getIdentifier());
 
         // Full MD is stored in disc (FS or DB)
-        this.generateFullMetadata (contentlet, fullBinaryFieldNameSet, fullMetadataBuilder, fieldMap, alwaysRegenerateMetadata);
+        this.generateFullMetadata(contentlet, fullBinaryFieldNameSet, fullMetadataBuilder, fieldMap, alwaysRegenerateMetadata);
         //Basic MD lives only in cache
         this.generateBasicMetadata(contentlet, basicBinaryFieldNameSet, fullBinaryFieldNameSet, basicMetadataBuilder, fieldMap, alwaysRegenerateMetadata);
 
@@ -148,6 +141,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
                                     .full(false)
                                     .override(alwaysRegenerateMetadata)
                                     .store(true)
+                                    .cache(true)
                                     .cache(()-> contentlet.getInode() + StringPool.COLON + basicBinaryFieldName)
                                     .metaDataKeyFilter(metadataKey -> metadataFields.isEmpty()
                                             || metadataFields.contains(metadataKey))
@@ -188,8 +182,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
 
 
         final StorageType storageType = StoragePersistenceProvider.getStorageType();
-        final String metadataBucketName = Config.getStringProperty(METADATA_GROUP_NAME,
-                DOT_METADATA);
+        final String metadataBucketName = Config.getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);
         for (final String fullBinaryFieldName : fullBinaryFieldNameSet) {
             final File file           = contentlet.getBinary(fullBinaryFieldName);
             final String metadataPath = this.getFileName(contentlet, fullBinaryFieldName);
@@ -331,7 +324,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
 
         Map<String, Serializable> metadataMap = fileStorageAPI.retrieveMetaData(
                 new RequestMetadata.Builder()
-                        .wrapMetadataMapForCache(this::filterNonCacheableMetadataFields)
+                        .projectionMapForCache(this::filterNonCacheableMetadataFields)
                         .cache(() -> contentlet.getInode() + StringPool.COLON + fieldVariableName)
                         .storageKey(new StorageKey.Builder().group(metadataBucketName)
                                 .path(metadataPath).storage(storageType).build())
@@ -414,8 +407,8 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @return
      */
     private Map<String, Serializable> filterNonCacheableMetadataFields(final Map<String, Serializable> originalMap) {
-
-        return originalMap.entrySet().stream().filter(entry -> BASIC_METADATA_FIELDS
+        final Set<String> basicMetadataFieldsSet = BasicMetadataFields.keySet();
+        return originalMap.entrySet().stream().filter(entry -> basicMetadataFieldsSet
                 .contains(entry.getKey())).collect(
                 Collectors.toMap(Entry::getKey, Entry::getValue));
     }
@@ -515,6 +508,40 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
               metaData = getFullMetadataNoCache(fallbackContentlet.get(),firstIndexedBinary);
         }
         return metaData;
+    }
+
+
+    /**
+     *
+     * @param contentlet the contentlet we want to associate the md with
+     * @param customAttributesByField
+     * @throws DotDataException
+     */
+    public void putCustomMetadataAttributes(final Contentlet contentlet,
+            final Map<String, Map<String,Serializable>> customAttributesByField) throws DotDataException {
+
+        final StorageType storageType = StoragePersistenceProvider.getStorageType();
+        final String metadataBucketName = Config
+                .getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);
+
+       customAttributesByField.forEach((fieldName, customAttributes) -> {
+
+           final String metadataPath = this.getFileName(contentlet, fieldName);
+           try {
+               fileStorageAPI.putCustomMetadataAttributes(new RequestMetadata.Builder()
+                       .cache(false) //Do not retrieve from cache
+                       .cache(() -> contentlet.getInode() + StringPool.COLON
+                               + fieldName) //but use this key to invalidate cache
+                       .storageKey(
+                               new StorageKey.Builder().group(metadataBucketName)
+                                       .path(metadataPath)
+                                       .storage(storageType).build())
+                       .build(), customAttributes);
+           }catch (Exception e){
+               Logger.error(FileMetadataAPIImpl.class, "Error saving custom attributes", e);
+           }
+       });
+
     }
 
 }

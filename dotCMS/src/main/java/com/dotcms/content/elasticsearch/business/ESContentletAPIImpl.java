@@ -2255,8 +2255,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         this.deleteBinaryFiles(contentletsVersion, null);
         this.deleteElementFromPublishQueueTable(contentlets);
+        this.destroyMetadata(contentlets);
 
         return noErrors;
+    }
+
+    /**
+     * at destroying/deleting time this will take care of removing all metadata entries
+     * @param contentlets
+     */
+    private void destroyMetadata(final List<Contentlet> contentlets){
+        for (final Contentlet contentlet:contentlets){
+            fileMetadataAPI.removeMetadata(contentlet);
+            Logger.debug(ESContentletAPIImpl.class,String.format("metadata removed for %s",contentlet.getIdentifier()));
+        }
+        Logger.debug(ESContentletAPIImpl.class,String.format("Done removing metadata for %d elements.",contentlets.size()));
     }
 
     private void forceUnpublishArchiveOnDestroy(final User user, final Contentlet contentlet)
@@ -4818,8 +4831,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         + File.separator + oldInode);
             }
 
-            // List of files that we need to delete after iterate over all the fields.
-            Set<File> fileListToDelete = Sets.newHashSet();
 
             // loop over the new field values
             // if we have a new temp file or a deleted file
@@ -4835,18 +4846,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                     final File binaryFieldFolder = new File(newDir.getAbsolutePath() + File.separator + velocityVarNm);
 
-                    //TODO: 6. When saving a contentlet that has previous versions, we should copy the metadata???
-                    final File metadata=(contentType instanceof FileAssetContentType) ? APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode()) : null;
+                    final File metadata=(contentType instanceof FileAssetContentType) ?
+                        APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode()) : null;
                     
 
                     // if the user has removed this  file via the ui
                     if (incomingFile == null  || incomingFile.getAbsolutePath().contains("-removed-")){
                         FileUtil.deltree(binaryFieldFolder);
                         contentlet.setBinary(velocityVarNm, null);
-                        //TODO: Remove this block commented
-                        //if(metadata!=null && metadata.exists()) {
-                          //  metadata.delete();
-                        //}
+                        if(metadata!=null && metadata.exists()){
+                            metadata.delete();
+                        }
                         //For removed files we should cleanup any existing metadata.
                         if(contentlet.isFileAsset()){
                            fileMetadataAPI.removeMetadata(contentlet);
@@ -4887,12 +4897,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             }
                             // We want to copy (not move) cause the same file could be in
                             // another field and we don't want to delete it in the first time.
-
                             final boolean contentVersionHardLink = Config
                                     .getBooleanProperty("CONTENT_VERSION_HARD_LINK", true);
                             FileUtil.copyFile(incomingFile, newFile, contentVersionHardLink, validateEmptyFile);
 
-                            //TODO:
                             // delete old content metadata if exists
                             if(metadata!=null && metadata.exists()){
                                 metadata.delete();
@@ -4913,7 +4921,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                     }
                                     metadata.getParentFile().mkdirs();
                                     FileUtil.copyFile(oldMeta, metadata);
-
                                 }
                             }
                         }
@@ -4924,12 +4931,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 } catch (IOException e) {
                     throw new DotContentletValidationException("Error occurred while processing the file:" + e.getMessage(),e);
                 }
-            }
-
-            // These are the incomingFiles that were copied to a new location
-            // (cause new content inode) and now we need to delete to avoid duplicates.
-            for (File fileToDelete : fileListToDelete) {
-                fileToDelete.delete();
             }
 
             // lets update identifier's syspubdate & sysexpiredate
@@ -5022,8 +5023,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             final Identifier contIdent = APILocator.getIdentifierAPI().find(contentlet);
             if(contentlet.isFileAsset()){
-               final boolean legacyParseFileAssetMetadata = Config.getBooleanProperty("legacy.fileAsset.metadata", false);
-               if(legacyParseFileAssetMetadata){
+
+               final boolean parseLegacyFileAssetMetadata = Config.getBooleanProperty("legacy.fileAsset.metadata", false);
+               if(parseLegacyFileAssetMetadata){
                     //Parse file META-DATA
                     final File binFile =  getBinaryFile(contentlet.getInode(), FileAssetAPI.BINARY_FIELD, user);
                     if(binFile != null){
@@ -5047,6 +5049,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     // clear possible CSS cache
                     CacheLocator.getCSSCache().remove(contIdent.getHostId(), contIdent.getURI(), true);
                     CacheLocator.getCSSCache().remove(contIdent.getHostId(), contIdent.getURI(), false);
+
                }
             }
 
