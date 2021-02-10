@@ -1,15 +1,10 @@
 package com.dotmarketing.db;
 
 import java.io.File;
-import org.apache.felix.framework.OSGIUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.common.reindex.ReindexThread;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ImportStarterUtil;
 import com.dotmarketing.util.Logger;
@@ -83,31 +78,5 @@ public class DotCMSInitDb {
 		
 
         MaintenanceUtil.flushCache();
-        ReindexThread.startThread();
-
-        ContentletAPI conAPI = APILocator.getContentletAPI();
-        Logger.info(DotCMSInitDb.class, "Building Initial Index");
-
-
-        // Initializing felix
-        OSGIUtil.getInstance().initializeFramework();
-
-        // Reindexing the recently added content
-        conAPI.refreshAllContent();
-        long recordsToIndex = APILocator.getReindexQueueAPI().recordsInQueue();
-        Logger.info(DotCMSInitDb.class, "Records left to index : " + recordsToIndex);
-
-        int counter = 0;
-
-        while (recordsToIndex > 0) {
-            Thread.sleep(2000);
-            recordsToIndex = APILocator.getReindexQueueAPI().recordsInQueue();
-            Logger.info(DotCMSInitDb.class, "Records left to index : " + recordsToIndex);
-            // ten minutes
-            if(++counter>30000) {
-                break;
-            }
-        }
-		
 	}
 }
