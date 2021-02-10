@@ -133,8 +133,14 @@ public class MainServlet extends ActionServlet {
         DbConnectionFactory.closeSilently();
       }
 
-      // initialize if needed
-      DotCMSInitDb.initializeIfNeeded();
+      // initialize DB components
+      DotCMSInitDb.initOsgi();
+      try {
+        DotCMSInitDb.runInitialReindex();
+      } catch (Exception e) {
+        Logger.error(getClass(), "Could not run initial reindex", e);
+        throw new DotRuntimeException(e);
+      }
 
       // Update license with server start time
       LicenseManager.getInstance().updateServerStartTime();
@@ -249,34 +255,6 @@ public class MainServlet extends ActionServlet {
 
       // Init other dotCMS services.
       DotInitializationService.getInstance().initialize();
-    }
-  }
-
-  private void doReindex() throws DotDataException, InterruptedException {
-    ReindexThread.startThread();
-
-    final ContentletAPI conAPI = APILocator.getContentletAPI();
-    Logger.info(DotCMSInitDb.class, "Building Initial Index");
-
-
-    // Initializing felix
-    OSGIUtil.getInstance().initializeFramework();
-
-    // Reindexing the recently added content
-    conAPI.refreshAllContent();
-    long recordsToIndex = APILocator.getReindexQueueAPI().recordsInQueue();
-    Logger.info(DotCMSInitDb.class, "Records left to index : " + recordsToIndex);
-
-    int counter = 0;
-
-    while (recordsToIndex > 0) {
-      Thread.sleep(2000);
-      recordsToIndex = APILocator.getReindexQueueAPI().recordsInQueue();
-      Logger.info(DotCMSInitDb.class, "Records left to index : " + recordsToIndex);
-      // ten minutes
-      if(++counter>30000) {
-        break;
-      }
     }
   }
 

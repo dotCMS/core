@@ -2,7 +2,6 @@ package com.dotmarketing.db;
 
 import java.io.File;
 
-import io.vavr.CheckedRunnable;
 import org.apache.felix.framework.OSGIUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -31,27 +30,9 @@ public class DotCMSInitDb {
 
     @CloseDBIfOpened
     public static void InitializeDb() {
-        initializeWith(DotCMSInitDb::loadStarterSite);
-    }
-
-    /**
-     * Initializes components for specific contexts (e.g. {@link com.liferay.portal.servlet.MainServlet}
-     * and test init classes like IntegrationTestInitService).
-     */
-    @CloseDBIfOpened
-    public static void initializeIfNeeded() {
-        initializeWith(DotCMSInitDb::partialInitialize);
-    }
-
-    /**
-     * Initializes with a provided block of code contained in a {@link CheckedRunnable}.
-     *
-     * @param initRunnable initialize logic
-     */
-    private static void initializeWith(final CheckedRunnable initRunnable) {
         if (!isConfigured()) {
             Logger.info(DotCMSInitDb.class, "There are no inodes - initializing db with starter site");
-            Try.run(initRunnable).getOrElseThrow(DotRuntimeException::new);
+            Try.run(DotCMSInitDb::loadStarterSite).getOrElseThrow(DotRuntimeException::new);
         } else {
             Logger.info(DotCMSInitDb.class, "inodes exist, skipping initialization of db");
         }
@@ -89,8 +70,11 @@ public class DotCMSInitDb {
 	    // loads starter
 	    loadStarter();
 
-	    // rest of the components to load/init
-        partialInitialize();
+        // Init OSGI
+        initOsgi();
+
+        // Reindex
+        runInitialReindex();
 	}
 
     /**
@@ -98,7 +82,7 @@ public class DotCMSInitDb {
      *
      * @throws Exception
      */
-    private static void loadStarter() throws Exception {
+    public static void loadStarter() throws Exception {
 	    // load starter zip file
         loadStarterSiteData();
         // save
@@ -108,7 +92,7 @@ public class DotCMSInitDb {
     /**
      * Initializes Felix (OSGI) framework.
      */
-    private static void initOsgi() {
+    public static void initOsgi() {
         // Initializing felix
         OSGIUtil.getInstance().initializeFramework();
     }
@@ -119,7 +103,7 @@ public class DotCMSInitDb {
      * @throws DotDataException
      * @throws InterruptedException
      */
-    private static void startReindex() throws DotDataException, InterruptedException {
+    public static void runInitialReindex() throws DotDataException, InterruptedException {
         MaintenanceUtil.flushCache();
         ReindexThread.startThread();
 
@@ -142,17 +126,5 @@ public class DotCMSInitDb {
                 break;
             }
         }
-    }
-
-    /**
-     * Partially initializes components for specific contexts (e.g. {@link com.liferay.portal.servlet.MainServlet}
-     * and test init classes like IntegrationTestInitService).
-     */
-    private static void partialInitialize() throws InterruptedException, DotDataException {
-        // Init OSGI
-        initOsgi();
-
-        // Reindex
-        startReindex();
     }
 }

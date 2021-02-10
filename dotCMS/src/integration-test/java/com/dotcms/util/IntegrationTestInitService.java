@@ -47,8 +47,9 @@ public class IntegrationTestInitService {
                 //Running the always run startup tasks
                 StartupTasksUtil.getInstance().init();
 
-                // initialize if needed
-                DotCMSInitDb.initializeIfNeeded();
+                // initialize DB components
+                DotCMSInitDb.initOsgi();
+                DotCMSInitDb.runInitialReindex();
 
                 //For these tests fire the reindex immediately
                 Config.setProperty("ASYNC_REINDEX_COMMIT_LISTENERS", false);
