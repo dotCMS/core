@@ -1,6 +1,7 @@
 package com.dotmarketing.db;
 
 import java.io.File;
+
 import org.apache.felix.framework.OSGIUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -22,36 +23,26 @@ public class DotCMSInitDb {
 
 	@CloseDBIfOpened
 	private static boolean isConfigured () {
-
 		return new DotConnect()
                 .setSQL("select count(*) as test from inode")
                 .getInt("test")>0;
-
 	}
 
     @CloseDBIfOpened
     public static void InitializeDb() {
-
         if (!isConfigured()) {
-
             Logger.info(DotCMSInitDb.class, "There are no inodes - initializing db with starter site");
-
-    
-            
-            Try.run(() -> loadStarterSite()).getOrElseThrow(e->new DotRuntimeException(e));
-
-
+            Try.run(DotCMSInitDb::loadStarterSite).getOrElseThrow(DotRuntimeException::new);
         } else {
             Logger.info(DotCMSInitDb.class, "inodes exist, skipping initialization of db");
         }
     }
 
-    
     @WrapInTransaction
     private static void loadStarterSiteData() throws Exception{
         String starter = Config.getStringProperty("STARTER_DATA_LOAD", null);
         File starterZip = null;
-        
+
         if(UtilMethods.isSet(starter)){
 
             // First we try using the real path
@@ -62,35 +53,62 @@ public class DotCMSInitDb {
                 starterZip = new File(starter);
             }
         }
-        
+
         if(starterZip==null || (starterZip!=null && !starterZip.exists())){
             String starterSitePath = "/starter.zip";
             String zipPath = FileUtil.getRealPath(starterSitePath);
-            starterZip = new File(zipPath); 
+            starterZip = new File(zipPath);
          }
-        
+
         ImportStarterUtil ieu = new ImportStarterUtil(starterZip);
 
         ieu.doImport();
-
     }
-    @CloseDBIfOpened
-	private static void loadStarterSite() throws Exception{
-		
-	    loadStarterSiteData() ;
-	    
-		DbConnectionFactory.closeAndCommit();
-		
 
+    @CloseDBIfOpened
+	private static void loadStarterSite() throws Exception {
+	    // loads starter
+	    loadStarter();
+
+        // Init OSGI
+        initOsgi();
+
+        // Reindex
+        runInitialReindex();
+	}
+
+    /**
+     * Loads starter file.
+     *
+     * @throws Exception
+     */
+    public static void loadStarter() throws Exception {
+	    // load starter zip file
+        loadStarterSiteData();
+        // save
+        DbConnectionFactory.closeAndCommit();
+    }
+
+    /**
+     * Initializes Felix (OSGI) framework.
+     */
+    public static void initOsgi() {
+        // Initializing felix
+        OSGIUtil.getInstance().initializeFramework();
+    }
+
+    /**
+     * Starts Reindex thread.
+     *
+     * @throws DotDataException
+     * @throws InterruptedException
+     */
+    public static void runInitialReindex() throws DotDataException, InterruptedException {
         MaintenanceUtil.flushCache();
         ReindexThread.startThread();
 
         ContentletAPI conAPI = APILocator.getContentletAPI();
         Logger.info(DotCMSInitDb.class, "Building Initial Index");
-
-
-        // Initializing felix
-        OSGIUtil.getInstance().initializeFramework();
 
         // Reindexing the recently added content
         conAPI.refreshAllContent();
@@ -108,6 +126,5 @@ public class DotCMSInitDb {
                 break;
             }
         }
-		
-	}
+    }
 }
