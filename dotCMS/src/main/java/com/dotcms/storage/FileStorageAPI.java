@@ -3,11 +3,9 @@ package com.dotcms.storage;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 
-import com.google.common.collect.ImmutableSet;
 import java.io.File;
 import java.io.Serializable;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Predicate;
 
 /**
@@ -91,10 +89,10 @@ public interface FileStorageAPI {
 
     /**
      * Saves additional custom attributes into the metadata storage
-     * @param requestMetaData
+     * @param configuration
      * @param customAttributes
      * @throws DotDataException
      */
-    void putCustomMetadataAttributes(final RequestMetadata requestMetaData,
+    void putCustomMetadataAttributes(final GenerateMetadataConfig configuration,
             final Map<String, Serializable> customAttributes) throws DotDataException;
 }

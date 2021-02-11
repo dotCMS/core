@@ -1,7 +1,8 @@
 package com.dotcms.storage;
 
-import static com.dotcms.storage.BasicMetadataFields.*;
+import static com.dotcms.storage.model.BasicMetadataFields.*;
 
+import com.dotcms.storage.model.Metadata;
 import com.dotcms.util.MimeTypeUtils;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
@@ -371,19 +372,19 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
     /**
      * {@inheritDoc}
-     * @param requestMetaData
+     * @param configuration
      * @param customAttributes
      * @throws DotDataException
      */
     @Override
     public void putCustomMetadataAttributes(
-            final RequestMetadata requestMetaData,
+            final GenerateMetadataConfig configuration,
             final Map<String, Serializable> customAttributes) throws DotDataException {
 
         final Map<String, Serializable> prefixedCustomAttributes = customAttributes.entrySet().stream()
-                .collect(Collectors.toMap(o -> "custom::" + o.getKey(), Entry::getValue));
+                .collect(Collectors.toMap(o -> Metadata.CUSTOM_PROP_PREFIX + o.getKey(), Entry::getValue));
 
-        final StorageKey storageKey = requestMetaData.getStorageKey();
+        final StorageKey storageKey = configuration.getStorageKey();
         final StoragePersistenceAPI storage = persistenceProvider.getStorage(storageKey.getStorage());
 
         this.checkBucket(storageKey, storage);
@@ -393,9 +394,13 @@ public class FileStorageAPIImpl implements FileStorageAPI {
             if(null != retrievedMetadata){
                 final Map<String,Serializable> newMetadataMap = new HashMap<>(retrievedMetadata);
                 newMetadataMap.putAll(prefixedCustomAttributes);
-                storeMetadata(storageKey, storage, newMetadataMap);
-                if(null != requestMetaData.getCacheKeySupplier()){
-                    final String cacheKey = requestMetaData.getCacheKeySupplier().get();
+
+                checkOverride(storage, configuration);
+                if(configuration.isStore()) {
+                   storeMetadata(storageKey, storage, newMetadataMap);
+                }
+                if(null != configuration.getCacheKeySupplier()){
+                    final String cacheKey = configuration.getCacheKeySupplier().get();
                     putIntoCache(cacheKey, newMetadataMap);
                 }
             }

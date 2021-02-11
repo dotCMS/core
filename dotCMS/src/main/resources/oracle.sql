@@ -2549,7 +2549,6 @@ CREATE TABLE storage (
     path       varchar(255) NOT NULL,
     group_name varchar(255) NOT NULL,
     hash       varchar(64) NOT NULL,
-    metadata   NCLOB NOT NULL,
     mod_date   TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     PRIMARY KEY (path, group_name),
     FOREIGN KEY (group_name) REFERENCES storage_group (group_name)

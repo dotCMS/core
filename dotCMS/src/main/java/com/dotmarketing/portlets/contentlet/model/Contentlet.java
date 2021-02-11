@@ -14,6 +14,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.storage.model.Metadata;
 import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.MimeTypeUtils;
@@ -1254,14 +1255,14 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 			return false;
 	}
 
-	private Map<String, Map<String, Serializable>> contentletMetadata;
+	private Map<String, Metadata> contentletMetadata;
 
     /**
      * computes lazily all binary fields metadata
      * @return
      */
 	@JsonIgnore
-	public Optional<Map<String, Map<String, Serializable>>> getLazyMetadata() {
+	public Optional<Map<String, Metadata>> getLazyMetadata() {
 		if(null == contentletMetadata){
 			contentletMetadata = APILocator.getFileMetadataAPI().collectFieldsMetadata(this);
 		}
@@ -1276,7 +1277,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	@Deprecated
 	@JsonIgnore
-	public Map<String, Serializable> getBinaryMetadata (final Field field) throws DotDataException {
+	public Metadata getBinaryMetadata (final Field field) throws DotDataException {
 
 		return this.getBinaryMetadata(field.getVelocityVarName());
 	}
@@ -1287,7 +1288,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @return Map
 	 */
 	@JsonIgnore
-	public Map<String, Serializable> getBinaryMetadata (final com.dotcms.contenttype.model.field.Field field)
+	public Metadata getBinaryMetadata (final com.dotcms.contenttype.model.field.Field field)
 			throws DotDataException {
 
 		return this.getBinaryMetadata(field.variable());
@@ -1299,7 +1300,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @return Map
 	 */
 	@JsonIgnore
-	public Map<String, Serializable> getBinaryMetadata (final String fieldVariableName)
+	public Metadata getBinaryMetadata (final String fieldVariableName)
 			throws DotDataException {
 
 		return APILocator.getFileMetadataAPI().getMetadata(this, fieldVariableName);
@@ -1323,16 +1324,16 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 			//if the metaData attribute is requested from a fileAsset that's is pretty straight forward
 			// we simply return the the MD associated with the field `fileAsset`
 			if (isFileAsset()) {
-				final Map<String, Serializable> fileAssetMetadata = Try
+				final Metadata fileAssetMetadata = Try
 						.of(() -> getBinaryMetadata(FileAssetAPI.BINARY_FIELD)).getOrNull();
 				if (null != fileAssetMetadata) {
 					return fileAssetMetadata;
 				}
 			}
 			//if the CT isn't a fileAsset and has several binaries we'll get the MD from the first indexed one.
-			final Optional<Map<String, Map<String, Serializable>>> optional = getLazyMetadata();
+			final Optional<Map<String, Metadata>> optional = getLazyMetadata();
 			if (optional.isPresent()) {
-				final Map<String, Map<String, Serializable>> binaryFieldsMetadata = optional.get();
+				final Map<String, Metadata> binaryFieldsMetadata = optional.get();
 				if (!binaryFieldsMetadata.isEmpty()) {
 					final String firstIndexedBinary = binaryFieldsMetadata.keySet().iterator()
 							.next();

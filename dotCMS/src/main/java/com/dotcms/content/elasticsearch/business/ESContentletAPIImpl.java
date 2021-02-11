@@ -5022,6 +5022,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             final Identifier contIdent = APILocator.getIdentifierAPI().find(contentlet);
+            /*
             if(contentlet.isFileAsset()){
 
                final boolean parseLegacyFileAssetMetadata = Config.getBooleanProperty("legacy.fileAsset.metadata", false);
@@ -5051,7 +5052,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     CacheLocator.getCSSCache().remove(contIdent.getHostId(), contIdent.getURI(), false);
 
                }
-            }
+            }*/
 
             // both file & page as content might trigger a menu cache flush
             if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET

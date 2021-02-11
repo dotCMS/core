@@ -1,6 +1,6 @@
 package com.dotcms.storage;
 
-import static com.dotcms.storage.BasicMetadataFields.SHA256_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.SHA256_META_KEY;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.util.CloseUtils;
@@ -34,7 +34,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
-import java.io.StringWriter;
 import java.nio.file.Files;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
@@ -458,13 +457,11 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
         final String groupNameLC = groupName.toLowerCase();
         final String pathLC = path.toLowerCase();
         try {
-            final StringWriter metaDataJsonWriter = new StringWriter();
-            this.objectMapper.writeValue(metaDataJsonWriter, extraMeta);
             new DotConnect().executeUpdate(connection,
-                    "INSERT INTO storage(hash, path, group_name, metadata) VALUES (?, ?, ?, ?)",
-                    objectHash, pathLC, groupNameLC, metaDataJsonWriter.toString());
+                    "INSERT INTO storage(hash, path, group_name) VALUES (?, ?, ?)",
+                    objectHash, pathLC, groupNameLC);
             return true;
-        } catch (DotDataException | IOException e) {
+        } catch (DotDataException e) {
             Logger.error(DataBaseStoragePersistenceAPIImpl.class, e.getMessage(), e);
             throw new DotDataException(e);
         }
@@ -493,11 +490,9 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
             }
 
             final String objectHash = objectHashBuilder.buildUnixHash();
-            final StringWriter metaDataJsonWriter = new StringWriter();
-            this.objectMapper.writeValue(metaDataJsonWriter, extraMeta);
             new DotConnect().executeUpdate(connection,
-                    "INSERT INTO storage(hash, path, group_name, metadata) VALUES (?, ?, ?, ?)",
-                    objectHash, pathLC, groupNameLC, metaDataJsonWriter.toString());
+                    "INSERT INTO storage(hash, path, group_name) VALUES (?, ?, ?)",
+                    objectHash, pathLC, groupNameLC);
 
             int order = 1;
             for (final String chunkHash : chunkHashes) {

@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.fileassets.business;
 
+import com.dotcms.storage.model.Metadata;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -55,9 +56,9 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	 * @return
 	 */
 	public Map<String, Serializable> getMetaDataMap(){
-		final Optional<Map<String, Map<String, Serializable>>> optionalMetadata = super.getLazyMetadata();
+		final Optional<Map<String, Metadata>> optionalMetadata = super.getLazyMetadata();
 		if(optionalMetadata.isPresent()){
-		   return optionalMetadata.get().get(FileAssetAPI.BINARY_FIELD);
+		   return optionalMetadata.get().get(FileAssetAPI.BINARY_FIELD).getFieldsMeta();
 		}
 		return ImmutableMap.of();
 	}

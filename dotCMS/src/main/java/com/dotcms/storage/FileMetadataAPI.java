@@ -1,6 +1,8 @@
 package com.dotcms.storage;
 
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.storage.model.ContentletMetadata;
+import com.dotcms.storage.model.Metadata;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
@@ -20,20 +22,6 @@ import java.util.function.Supplier;
 public interface FileMetadataAPI {
 
     /**
-     * Returns the full and basic metadata for the binaries passed in the parameters.
-     * Keep in mind that the full metadata won't be stored on the cache, but it will be stored in the selected persistence media
-     * so full metadata for the fullBinaryFieldNameSet will stores on the cache the basic metadata instead of the full one (but the file system will keep the full one)
-     *
-     * Note: if the basicBinaryFieldNameSet has field which is also include on the fullBinaryFieldNameSet, it will be skipped.
-     * @param contentlet Contentlet
-     * @param basicBinaryFieldNameSet {@link SortedSet} fields to generate basic metadata
-     * @param fullBinaryFieldNameSet  {@link SortedSet} fields to generate full metadata
-     * @return ContentletMetadata
-     */
-    ContentletMetadata generateContentletMetadata (Contentlet contentlet, SortedSet<String> basicBinaryFieldNameSet, SortedSet<String> fullBinaryFieldNameSet)
-            throws IOException, DotDataException;
-
-    /**
      * This generation use an strategy to make the choice of which binary fields will be included on the generation of the full or basic metadata.
      * By default it takes the first indexable binary for full and all the rest will be used on the the basic.
      * @param contentlet {@link Contentlet}
@@ -48,7 +36,7 @@ public interface FileMetadataAPI {
      * @param field       {@link Field}
      * @return Map
      */
-    Map<String, Serializable> getMetadata(Contentlet contentlet, Field field) throws DotDataException;
+    Metadata getMetadata(Contentlet contentlet, Field field) throws DotDataException;
 
     /**
      * Retrieves the basic metadata projection for the contentlet
@@ -58,7 +46,7 @@ public interface FileMetadataAPI {
      * @return
      * @throws DotDataException
      */
-    Map<String, Serializable> getMetadata(final Contentlet contentlet, final Field field, final boolean forceGenerate) throws DotDataException;
+    Metadata getMetadata(final Contentlet contentlet, final Field field, final boolean forceGenerate) throws DotDataException;
 
     /**
      * Retrieves the basic metadata for the contentlet (a projection over the full MD)
@@ -66,7 +54,7 @@ public interface FileMetadataAPI {
      * @param fieldVariableName  {@link String}
      * @return Map
      */
-    Map<String, Serializable> getMetadata(Contentlet contentlet, String fieldVariableName)
+    Metadata getMetadata(Contentlet contentlet, String fieldVariableName)
             throws DotDataException;
 
     /**
@@ -76,7 +64,7 @@ public interface FileMetadataAPI {
      * @param fieldVariableName  {@link String}
      * @return Map
      */
-     Map<String, Serializable> getMetadataForceGenerate(final Contentlet contentlet, final String fieldVariableName)
+     Metadata getMetadataForceGenerate(final Contentlet contentlet, final String fieldVariableName)
             throws DotDataException;
 
     /**
@@ -86,7 +74,7 @@ public interface FileMetadataAPI {
      * @param fieldVariableName  {@link String}
      * @return Map
      */
-    Map<String, Serializable> getFullMetadataNoCache(Contentlet contentlet, String fieldVariableName)
+    Metadata getFullMetadataNoCache(Contentlet contentlet, String fieldVariableName)
             throws DotDataException;
 
     /**
@@ -97,7 +85,7 @@ public interface FileMetadataAPI {
      * @return
      * @throws DotDataException
      */
-    Map<String, Serializable> getFullMetadataNoCacheForceGenerate(final Contentlet contentlet,
+    Metadata getFullMetadataNoCacheForceGenerate(final Contentlet contentlet,
             final String fieldVariableName) throws DotDataException;
 
     /**
@@ -105,7 +93,7 @@ public interface FileMetadataAPI {
      * @param contentlet {@link Contentlet}
      * @return Map
      */
-    Map<String, Map<String, Serializable>> collectFieldsMetadata(Contentlet contentlet);
+    Map<String, Metadata> collectFieldsMetadata(Contentlet contentlet);
 
     /**
      * Removes metadata for a given Contentlet
@@ -122,7 +110,7 @@ public interface FileMetadataAPI {
      * @return
      * @throws DotDataException
      */
-    Map<String, Serializable> getFullMetadataNoCache(File binary, Supplier<Contentlet> fallbackContentlet)
+    Metadata getFullMetadataNoCache(File binary, Supplier<Contentlet> fallbackContentlet)
             throws DotDataException;
 
 

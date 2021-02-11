@@ -4,8 +4,8 @@ import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATI
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.PERSONA_KEY_TAG;
 import static com.dotcms.contenttype.model.field.LegacyFieldTypes.CUSTOM_FIELD;
 import static com.dotcms.contenttype.model.type.PersonaContentType.PERSONA_KEY_TAG_FIELD_VAR;
-import static com.dotcms.storage.BasicMetadataFields.IS_IMAGE_META_KEY;
-import static com.dotcms.storage.BasicMetadataFields.SHA256_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.IS_IMAGE_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.SHA256_META_KEY;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
@@ -23,9 +23,9 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.storage.ContentletMetadata;
+import com.dotcms.storage.model.ContentletMetadata;
 import com.dotcms.storage.FileMetadataAPI;
-import com.dotcms.storage.FileStorageAPI;
+import com.dotcms.storage.model.Metadata;
 import com.dotcms.tika.TikaUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
@@ -395,7 +395,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				if (contentlet.isLive() || contentlet.isWorking()) {
 					final ContentletMetadata metadata = fileMetadataAPI
 							.generateContentletMetadata(contentlet);
-					final Map<String, Map<String, Serializable>> fullMetadataMap = metadata
+					final Map<String, Metadata> fullMetadataMap = metadata
 							.getFullMetadataMap();
 
 					//Full metadata map is expected to have one single entry with everything
@@ -407,7 +407,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 											EXCLUDE_DOTRAW_METADATA_FIELDS,
 											defaultExcludedDotRawMetadataFields));
 
-							metadataValues.forEach((metadataKey, metadataValue) -> {
+							metadataValues.getFieldsMeta().forEach((metadataKey, metadataValue) -> {
 
 								final String contentData =
 										metadataValue != null ? metadataValue.toString() : BLANK;
@@ -787,7 +787,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 								   final Object valueObj,
 								   final boolean fileMetadata) throws DotDataException, DotSecurityException {
 		@SuppressWarnings("unchecked")
-		final Map<String,Object> keyValueMap = valueObj instanceof Map ? new HashMap<>((Map<String,Object>)valueObj) : KeyValueFieldUtil.JSONValueToHashMap((String) valueObj);
+		final Map<String,Object> keyValueMap = keyValueMap(valueObj);
+
 		Set<String> allowedFields = new HashSet<>();
 
 		if(fileMetadata) {
@@ -818,6 +819,22 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 						ImmutableMap.of( "key", k, "value", v));
 			});
 		}
+	}
+
+	/**
+	 * value object must be resolved to an iterable map so the fields can be extracted
+	 * @param valueObj
+	 * @return
+	 */
+	private final Map<String,Object> keyValueMap(final Object valueObj){
+	    if(valueObj instanceof Map){
+	       return new HashMap<>((Map<String,Object>)valueObj);
+	    }
+		if(valueObj instanceof Metadata){
+			final Metadata metadata = (Metadata)valueObj;
+			return new HashMap<>(metadata.getFieldsMeta());
+		}
+		return KeyValueFieldUtil.JSONValueToHashMap((String) valueObj);
 	}
 
 	public String toJsonString(Map<String, Object> map) throws IOException{

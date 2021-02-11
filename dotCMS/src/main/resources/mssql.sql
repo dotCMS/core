@@ -2707,7 +2707,6 @@ create table storage (
     path       varchar(255) not null,
     group_name varchar(255) not null,
     hash       varchar(64) not null,
-    metadata   text not null,
     mod_date   datetime  NOT NULL DEFAULT GETDATE(),
     PRIMARY KEY (path, group_name),
     FOREIGN KEY (group_name) REFERENCES storage_group (group_name)

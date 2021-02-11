@@ -4,10 +4,12 @@ import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_1;
 import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_2;
 import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_3;
 import static com.dotcms.datagen.TestDataUtils.getFileAssetContent;
-import static com.dotcms.datagen.TestDataUtils.getMultipleImageBinariesContent;
 import static com.dotcms.datagen.TestDataUtils.getMultipleBinariesContent;
+import static com.dotcms.datagen.TestDataUtils.getMultipleImageBinariesContent;
 import static com.dotcms.datagen.TestDataUtils.removeAnyMetadata;
 import static com.dotcms.storage.StoragePersistenceProvider.DEFAULT_STORAGE_TYPE;
+import static com.dotcms.storage.model.BasicMetadataFields.HEIGHT_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.WIDTH_META_KEY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -18,6 +20,9 @@ import static org.junit.Assert.fail;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.datagen.TestDataUtils.TestFile;
+import com.dotcms.storage.model.BasicMetadataFields;
+import com.dotcms.storage.model.ContentletMetadata;
+import com.dotcms.storage.model.Metadata;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -31,15 +36,15 @@ import com.google.common.collect.ImmutableSet;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.stream.Collectors;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -182,13 +187,14 @@ public class FileMetadataAPITest {
      * @param metaData
      * @param testFile
      */
-    private void validateFull(final Map<String, Serializable> metaData, final TestFile testFile){
-        assertTrue(metaData.containsKey("content"));
-        assertTrue(metaData.containsKey("contentType"));
-        assertTrue(metaData.containsKey("fileSize"));
+    private void validateFull(final Metadata metaData, final TestFile testFile){
+        final Map<String, Serializable> meta = metaData.getFieldsMeta();
+        assertTrue(meta.containsKey("content"));
+        assertTrue(meta.containsKey("contentType"));
+        assertTrue(meta.containsKey("fileSize"));
         if(isSupportedImage(testFile.getFilePath())){ //svg files don't have dimensions. or Tika fails to read them.
-          assertTrue(metaData.containsKey("height"));
-          assertTrue(metaData.containsKey("width"));
+          assertTrue(meta.containsKey("height"));
+          assertTrue(meta.containsKey("width"));
         }
         //basic meta is a sub set of the full-md
         validateBasic(metaData);
@@ -198,23 +204,26 @@ public class FileMetadataAPITest {
      * validate basic layout expected in the basic md for File-Asset
      * @param metaData
      */
-    private void validateBasic(final Map<String, Serializable> metaData){
+    private void validateBasic(final Metadata metaData){
+        final Map<String, Serializable> meta = metaData.getFieldsMeta();
         basicMetadataFields.forEach(key -> {
-            assertTrue(metaData.containsKey(key));
+            assertTrue("metadata fields isn't present in: " + key, meta.containsKey(key));
         });
     }
 
-    private static Set<String> basicMetadataFields = ImmutableSet.of("sha256", "path","title","modDate","contentType", "isImage");
+    private static Set<String> basicMetadataFields = BasicMetadataFields.keySet().stream()
+            .filter(s -> !WIDTH_META_KEY.key().equals(s) && !HEIGHT_META_KEY.key().equals(s))
+            .collect(Collectors.toSet()); //Remove width and height since they are present only on images
 
     /**
      * validate basic layout expected in the basic md for File-Asset
      * But nothing else if there are additional values we fail!!
      * @param metaData
      */
-    private void validateBasicStrict(final Map<String, Serializable> metaData){
-        final int expectedFields = 7;
+    private void validateBasicStrict(final Metadata metaData){
+        final int expectedFields = basicMetadataFields.size();
         validateBasic(metaData);
-        assertEquals(String.format("we're expecting exactly `%d` entries.",expectedFields),expectedFields, metaData.size());
+        assertEquals(String.format("we're expecting exactly `%d` entries.",expectedFields),expectedFields, metaData.getFieldsMeta().size());
     }
 
     //SVG  do not have dimensions, but that's a known issue we're willing to forgive.
@@ -253,27 +262,27 @@ public class FileMetadataAPITest {
                     .generateContentletMetadata(multipleBinariesContent);
             assertNotNull(multiBinaryMetadata);
 
-            final Map<String, Map<String, Serializable>> fullMetadataMap = multiBinaryMetadata
+            final Map<String, Metadata> fullMetadataMap = multiBinaryMetadata
                     .getFullMetadataMap();
             assertNotNull(fullMetadataMap);
 
-            final Map<String, Map<String, Serializable>> basicMetadataMap = multiBinaryMetadata
+            final Map<String, Metadata> basicMetadataMap = multiBinaryMetadata
                     .getBasicMetadataMap();
             assertNotNull(basicMetadataMap);
 
             //the filed is set as the first one according to the sortOrder prop. This is the only that has to have full metadata
-            final Map<String, Serializable> fileAsset2FullMeta = fullMetadataMap.get(FILE_ASSET_2);
+            final Metadata fileAsset2FullMeta = fullMetadataMap.get(FILE_ASSET_2);
             assertNotNull(fileAsset2FullMeta);
 
             //These are all the non-null binaries
-            final Map<String, Serializable> fileAsset1BasicMeta = basicMetadataMap.get(FILE_ASSET_1);
+            final Metadata fileAsset1BasicMeta = basicMetadataMap.get(FILE_ASSET_1);
             assertNotNull(fileAsset1BasicMeta);
 
-            final Map<String, Serializable> fileAsset2BasicMeta = basicMetadataMap.get(FILE_ASSET_2);
+            final Metadata fileAsset2BasicMeta = basicMetadataMap.get(FILE_ASSET_2);
             assertNotNull(fileAsset2BasicMeta);
 
             //the filed does exist but it was not set
-            final Map<String, Serializable> fileAsset3BasicMeta = basicMetadataMap.get(FILE_ASSET_3);
+            final Metadata fileAsset3BasicMeta = basicMetadataMap.get(FILE_ASSET_3);
             assertNull(fileAsset3BasicMeta);
 
             final Map<String, Set<String>> metadataInfo = fileMetadataAPI.removeMetadata(multipleBinariesContent);
@@ -348,18 +357,18 @@ public class FileMetadataAPITest {
             final File file = (File) fileAssetContent.get(fileAssetField);
             removeAnyMetadata(file);
 
-            Map<String, Serializable> fileAssetMD = fileMetadataAPI
+            Metadata fileAssetMeta = fileMetadataAPI
                     .getFullMetadataNoCache(fileAssetContent, fileAssetField);
             //Expect no metadata it hasn't been generated
-            assertNull(fileAssetMD);
+            assertNull(fileAssetMeta);
 
             final ContentletMetadata metadata = fileMetadataAPI
                     .generateContentletMetadata(fileAssetContent);
             assertNotNull(metadata);
 
-            fileAssetMD = fileMetadataAPI
+            fileAssetMeta = fileMetadataAPI
                     .getFullMetadataNoCache(fileAssetContent, fileAssetField);
-            assertFalse(fileAssetMD.isEmpty());
+            assertFalse(fileAssetMeta.getFieldsMeta().isEmpty());
 
             //This might seem a little unnecessary but by doing this we verify the fields in the resulting map are the ones allowed to be preset in the metadata generation
             final FileMetadataAPIImpl impl = (FileMetadataAPIImpl) fileMetadataAPI;
@@ -369,7 +378,7 @@ public class FileMetadataAPITest {
             final Set<String> metadataFields = impl
                     .getMetadataFields(fieldMap.get(fileAssetField).id());
 
-            fileAssetMD.forEach((key, value) -> {
+            fileAssetMeta.getFieldsMeta().forEach((key, value) -> {
                 assertTrue(metadataFields.contains(key) || basicMetadataFields.contains(key));
             });
 
@@ -404,14 +413,14 @@ public class FileMetadataAPITest {
             final File file = (File) fileAssetContent.get(fileAssetField);
             removeAnyMetadata(file);
 
-            Map<String, Serializable> fileAssetMD = fileMetadataAPI
+            Metadata fileAssetMD = fileMetadataAPI
                     .getFullMetadataNoCache(fileAssetContent, fileAssetField);
             //Expect no metadata it hasn't been generated
             assertNull(fileAssetMD);
 
             fileAssetMD = fileMetadataAPI
                     .getFullMetadataNoCacheForceGenerate(fileAssetContent, fileAssetField);
-            assertFalse(fileAssetMD.isEmpty());
+            assertFalse(fileAssetMD.getFieldsMeta().isEmpty());
 
             //This might seem a little unnecessary but by doing this we verify the fields in the resulting map are the ones allowed to be preset in the metadata generation
             final FileMetadataAPIImpl impl = (FileMetadataAPIImpl) fileMetadataAPI;
@@ -421,7 +430,7 @@ public class FileMetadataAPITest {
             final Set<String> metadataFields = impl
                     .getMetadataFields(fieldMap.get(fileAssetField).id());
 
-            fileAssetMD.forEach((key, value) -> {
+            fileAssetMD.getFieldsMeta().forEach((key, value) -> {
                 assertTrue(metadataFields.contains(key) || basicMetadataFields.contains(key));
             });
 
@@ -457,7 +466,7 @@ public class FileMetadataAPITest {
             final File file = (File) fileAssetContent.get(fileAssetField);
             removeAnyMetadata(file);
 
-            Map<String, Serializable> fileAssetMD = fileMetadataAPI
+            Metadata fileAssetMD = fileMetadataAPI
                     .getMetadata(fileAssetContent, fileAssetField);
             //Expect no metadata it has not been generated
             assertNull(fileAssetMD);
@@ -466,8 +475,11 @@ public class FileMetadataAPITest {
                     .generateContentletMetadata(fileAssetContent);
             assertNotNull(metadata);
 
-            final Map<String,Serializable> metadataMap = fileMetadataAPI
+            final Metadata meta = fileMetadataAPI
                     .getMetadata(fileAssetContent,fileAssetField);
+            assertNotNull(meta);
+
+            final Map<String, Serializable> metadataMap = meta.getFieldsMeta();
             assertNotNull(metadataMap);
 
             assertNotNull(metadataMap.get("contentType"));
@@ -507,13 +519,16 @@ public class FileMetadataAPITest {
             final File file = (File) fileAssetContent.get(fileAssetField);
             removeAnyMetadata(file);
 
-            Map<String, Serializable> fileAssetMD = fileMetadataAPI
+            Metadata fileAssetMD = fileMetadataAPI
                     .getMetadata(fileAssetContent, fileAssetField);
             //Expect no metadata it has not been generated
             assertNull(fileAssetMD);
 
-            final Map<String,Serializable> metadataMap = fileMetadataAPI
+            final Metadata meta = fileMetadataAPI
                     .getMetadataForceGenerate(fileAssetContent, fileAssetField);
+            assertNotNull(meta);
+
+            final Map<String, Serializable> metadataMap = meta.getFieldsMeta();
             assertNotNull(metadataMap);
 
             assertNotNull(metadataMap.get("contentType"));
@@ -549,27 +564,33 @@ public class FileMetadataAPITest {
             assertFalse(metadata.getBasicMetadataMap().isEmpty());
 
 
-            final String customAttribute1 = "focalPoint";
-            final String value = "67.4,6.77";
-
+            final Tuple2 <String,String> t1 = Tuple.of("focalPoint","67.4,6.77");
+            final Tuple2 <String,String> t2 = Tuple.of("title","lol");
+            final Tuple2 <String,String> t3 = Tuple.of("foo","bar");
 
             for (final String fieldName : metadata.getBasicMetadataMap().keySet()) {
-                final Map<String, Map<String,Serializable>> customAttributes = ImmutableMap.of(fieldName, ImmutableMap.of(customAttribute1, value));
-                fileMetadataAPI.putCustomMetadataAttributes(multipleBinariesContent, customAttributes);
-                Logger.info(FileMetadataAPITest.class, "setting up attribute: "+fieldName);
+                final Map<String, Map<String, Serializable>> customAttributes = ImmutableMap
+                        .of(fieldName, ImmutableMap.of(t1._1, t1._2, t2._1, t2._2, t3._1, t3._2));
+                fileMetadataAPI
+                        .putCustomMetadataAttributes(multipleBinariesContent, customAttributes);
+                Logger.info(FileMetadataAPITest.class, "setting up attribute: " + fieldName);
             }
 
-
             for (final String fieldName : metadata.getBasicMetadataMap().keySet()) {
 
-                final Map<String, Serializable> meta = fileMetadataAPI
+                final Metadata meta = fileMetadataAPI
                       .getMetadata(multipleBinariesContent, fieldName);
-                assertEquals(meta.get("custom::"+customAttribute1), value);
 
-                final Map<String, Serializable> metaNoCache = fileMetadataAPI
+                assertEquals(meta.getCustomMeta().get(t1._1),t1._2);
+                assertEquals(meta.getCustomMeta().get(t2._1),t2._2);
+                assertEquals(meta.getCustomMeta().get(t3._1),t3._2);
+
+                final Metadata metaNoCache = fileMetadataAPI
                         .getFullMetadataNoCache(multipleBinariesContent, fieldName);
 
-                System.out.println(metaNoCache);
+                assertEquals(metaNoCache.getCustomMeta().get(t1._1),t1._2);
+                assertEquals(metaNoCache.getCustomMeta().get(t2._1),t2._2);
+                assertEquals(metaNoCache.getCustomMeta().get(t3._1),t3._2);
 
             }
 

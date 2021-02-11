@@ -1,4 +1,4 @@
-package com.dotcms.storage;
+package com.dotcms.storage.model;
 
 import com.google.common.collect.ImmutableSet.Builder;
 import java.util.Set;
