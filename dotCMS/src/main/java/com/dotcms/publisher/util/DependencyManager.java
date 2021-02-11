@@ -23,6 +23,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.PersonalizedContentlet;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
@@ -48,6 +49,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.API;
@@ -807,18 +809,28 @@ public class DependencyManager {
 
 					// Contents dependencies
 					if (!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.CONTENTLET.getType())) {
-						final List<MultiTree> treeList = APILocator.getMultiTreeAPI()
-								.getMultiTrees(workingPage, container);
 
-						for (final MultiTree multiTree : treeList) {
-							final String contentIdentifier = multiTree.getChild();
+						final Table<String, String, Set<PersonalizedContentlet>> pageMultiTrees =
+								APILocator.getMultiTreeAPI().getPageMultiTrees(workingPage, false);
+
+						final List<String> contentsId = pageMultiTrees.values().stream()
+								.flatMap(personalizedContentlets -> personalizedContentlets.stream())
+								.map(personalizedContentlet -> personalizedContentlet.getContentletId())
+								.collect(Collectors.toList());
+
+						for (final String contentIdentifier : contentsId) {
+
+							if (contentIdentifier == null) {
+								continue;
+							}
+							
 							final Identifier id = APILocator.getIdentifierAPI().find(contentIdentifier);
 							final List<Contentlet> contentList = APILocator.getContentletAPI().findAllVersions(id, false, user, false);
 
 							contentList.removeIf(c->publisherFilter.doesExcludeDependencyQueryContainsContentletId(contentIdentifier));
 
 							for (final Contentlet contentletI : contentList) {
-								contents.addOrClean(contentletI.getIdentifier(),
+								this.contents.addOrClean(contentletI.getIdentifier(),
 										contentletI.getModDate());
 								contentsSet.add(contentletI.getIdentifier());
 							

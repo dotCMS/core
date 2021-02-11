@@ -1,0 +1,38 @@
+<com.dotcms.publisher.pusher.wrapper.TemplateWrapper>
+    <templateId>
+        <id>__id__</id>
+        <assetName>__asset_name__</assetName>
+        <assetType>template</assetType>
+        <parentPath>/</parentPath>
+        <hostId>__host_id__</hostId>
+        <owner>system</owner>
+        <createDate class="sql-timestamp">2021-01-20 18:07:39.839</createDate>
+    </templateId>
+    <template>
+        <iDate>2021-01-20 18:07:39.681 UTC</iDate>
+        <type>template</type>
+        <owner>system</owner>
+        <inode>__inode__</inode>
+        <identifier>__id__</identifier>
+        <source>DB</source>
+        <title>__title__</title>
+        <friendlyName>__friendly_name__</friendlyName>
+        <modDate>2021-01-20 18:07:39.842 UTC</modDate>
+        <modUser>system</modUser>
+        <sortOrder>__sort_order__</sortOrder>
+        <showOnMenu>true</showOnMenu>
+        <body>__body__</body>
+        <drawed>__drawed__</drawed>
+        <countAddContainer>0</countAddContainer>
+        <countContainers>0</countContainers>
+    </template>
+    <vi class="com.dotmarketing.portlets.templates.model.TemplateVersionInfo">
+        <identifier>__id__</identifier>
+        <liveInode>__live_inode__</liveInode>
+        <workingInode>__working_inode__</workingInode>
+        <lockedOn>2021-01-20 18:07:39.857 UTC</lockedOn>
+        <deleted>false</deleted>
+        <versionTs>2021-01-20 18:07:39.864 UTC</versionTs>
+    </vi>
+    <operation>PUBLISH</operation>
+</com.dotcms.publisher.pusher.wrapper.TemplateWrapper>
