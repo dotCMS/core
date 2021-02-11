@@ -19,7 +19,7 @@ public class NavResultTest extends UnitTestBase {
     @Test(expected = IllegalStateException.class)
     public void getEnclosingPermissionClassName_on_null_type() throws DotDataException {
 
-        new NavResult("", "", "", 1l).getEnclosingPermissionClassName();
+        new NavResult("", "", "", 1l, null).getEnclosingPermissionClassName();
     }
 
     /**
@@ -30,7 +30,7 @@ public class NavResultTest extends UnitTestBase {
     @Test(expected = IllegalStateException.class)
     public void getEnclosingPermissionClassName_on_unknown_type() throws DotDataException {
 
-        final NavResult navResult = new NavResult("", "", "", 1l);
+        final NavResult navResult = new NavResult("", "", "", 1l, null);
         navResult.setType("unknown");
         navResult.getEnclosingPermissionClassName();
     }
@@ -43,7 +43,7 @@ public class NavResultTest extends UnitTestBase {
     @Test()
     public void getEnclosingPermissionClassName_on_htmlpage_type() throws DotDataException {
 
-        final NavResult navResult = new NavResult("", "", "", 1l);
+        final NavResult navResult = new NavResult("", "", "", 1l, null);
         navResult.setType("htmlpage");
         Assert.assertEquals(IHTMLPage.class.getCanonicalName(), navResult.getEnclosingPermissionClassName());
     }
@@ -56,7 +56,7 @@ public class NavResultTest extends UnitTestBase {
     @Test()
     public void getEnclosingPermissionClassName_on_link_type() throws DotDataException {
 
-        final NavResult navResult = new NavResult("", "", "", 1l);
+        final NavResult navResult = new NavResult("", "", "", 1l, null);
         navResult.setType("link");
         Assert.assertEquals(Link.class.getCanonicalName(), navResult.getEnclosingPermissionClassName());
     }
@@ -69,7 +69,7 @@ public class NavResultTest extends UnitTestBase {
     @Test()
     public void getEnclosingPermissionClassName_on_folder_type() throws DotDataException {
 
-        final NavResult navResult = new NavResult("", "", "", 1l);
+        final NavResult navResult = new NavResult("", "", "", 1l, null);
         navResult.setType("folder");
         Assert.assertEquals(Folder.class.getCanonicalName(), navResult.getEnclosingPermissionClassName());
     }

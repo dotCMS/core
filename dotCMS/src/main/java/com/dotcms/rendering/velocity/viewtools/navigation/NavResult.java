@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.velocity.tools.view.tools.ViewRenderTool;
 
 import com.liferay.portal.model.User;
@@ -78,6 +79,22 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
 
     
         sysuser = APILocator.systemUser();
+
+    }
+
+    @VisibleForTesting
+    protected NavResult(final String parent, final String hostId, final String folderId, final Long languageId, final User user) {
+        this.hostId = hostId;
+        this.folderId = folderId;
+        this.parent = parent;
+        this.languageId = languageId;
+
+
+        title = href = "";
+        order = 0;
+
+
+        sysuser = user;
 
     }
 
