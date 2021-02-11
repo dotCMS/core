@@ -31,7 +31,7 @@ public class NavResultTest extends UnitTestBase {
     public void getEnclosingPermissionClassName_on_unknown_type() throws DotDataException {
 
         final NavResult navResult = new NavResult("", "", "", 1l);
-        navResult.setType("unknown"); 
+        navResult.setType("unknown");
         navResult.getEnclosingPermissionClassName();
     }
 
