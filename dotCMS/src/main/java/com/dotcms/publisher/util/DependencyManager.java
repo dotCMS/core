@@ -1,5 +1,7 @@
 package com.dotcms.publisher.util;
 
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
@@ -61,6 +63,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * The main purpose of this class is to determine all possible content
@@ -341,7 +344,7 @@ public class DependencyManager {
 			}
 		}
 
-		dependencyProcessor.join();
+		waitAllFinish();
 
 		config.setHostSet(hosts);
 		config.setFolders(folders);
@@ -356,6 +359,26 @@ public class DependencyManager {
 		config.setLanguages(languages);
 		config.setRules(this.rules);
 		config.setCategories(categories);
+	}
+
+	public void waitAllFinish(){
+		Logger.debug(DependencyProcessor.class, () -> String.format("%s: Wait until all finish",
+				Thread.currentThread().getName()));
+		try{
+			while(!dependencyProcessor.isFinish()) {
+				Logger.debug(DependencyProcessor.class, () -> String.format("%s: it is not finish yet",
+						Thread.currentThread().getName()));
+				synchronized(this) {
+					wait();
+				}
+			}
+
+			Logger.debug(DependencyProcessor.class, () -> String.format("%s: it is finish",
+					Thread.currentThread().getName()));
+			dependencyProcessor.stop();
+		} catch (InterruptedException e) {
+			Logger.error(DependencyProcessor.class, e.getMessage());
+		}
 	}
 
 	/**
@@ -1351,7 +1374,10 @@ public class DependencyManager {
 		private Map<AssetTypes, Set<String>> sets;
 		private boolean finish;
 		private boolean started;
-		private List<DependencyThread> threads;
+		private List<Future> futures;
+		boolean waitingForSomethingToProcess = false;
+		private DotSubmitter submitter;
+		private DependencyProcessorThread dependencyProcessorThread;
 
 		void put(final String assetKey, final AssetTypes assetTypes) {
 			if (!started) {
@@ -1383,42 +1409,36 @@ public class DependencyManager {
 			queue = new LinkedBlockingDeque();
 			sets = new HashMap<>();
 
-			int poolSize = Config.getIntProperty("NUMBER_THREAD_TO_EXECUTE_BUNDLER", 10);
+			submitter = DotConcurrentFactory.getInstance().getSubmitter("DependencyManagerSubmitter",
+							new DotConcurrentFactory.SubmitterConfigBuilder()
+									.poolSize(Config.getIntProperty("MIN_NUMBER_THREAD_TO_EXECUTE_BUNDLER", 10))
+									.maxPoolSize(Config.getIntProperty("MAX_NUMBER_THREAD_TO_EXECUTE_BUNDLER", 40))
+									.queueCapacity(Config.getIntProperty("QUEUE_CAPACITY_TO_EXECUTE_BUNDLER", 500))
+									.build()
+					);
 
-			threads = new ArrayList<>();
-
-			for (int i = 0; i < poolSize; i++) {
-				final DependencyThread thread = new DependencyThread();
-				threads.add(thread);
-
-				Logger.debug(DependencyProcessor.class, () -> String.format("Starting %s", thread.getName()));
-				thread.start();
-			}
+			dependencyProcessorThread = new DependencyProcessorThread();
+			dependencyProcessorThread.start();
 
 			started = true;
 		}
 
-		public void join(){
-			Logger.debug(DependencyProcessor.class, () -> String.format("%s: Wait until all finish",
-					Thread.currentThread().getName()));
+		private DependencyProcessorItem next() throws InterruptedException {
+			DependencyProcessorItem dependencyProcessorItem = queue.poll();
 
-			while(!isFinish()) {
-				Logger.debug(DependencyProcessor.class, () -> String.format("%s: it is not finish yet",
+			if (dependencyProcessorItem == null) {
+				waitingForSomethingToProcess = true;
+				Logger.debug(DependencyProcessor.class, () -> String.format("%s : Notifying to main thread",
 						Thread.currentThread().getName()));
-				waitForDependencies();
-			}
 
-			Logger.debug(DependencyProcessor.class, () -> String.format("%s: it is finish",
-					Thread.currentThread().getName()));
-			this.stop();
-		}
+				notifyMainThread();
 
-		private synchronized void waitForDependencies() {
-			try {
-				wait();
-			} catch (InterruptedException e) {
-				Logger.error(DependencyProcessor.class, e.getMessage());
+				Logger.debug(DependencyProcessor.class,
+						() -> String.format("%s : Waiting for something to process", Thread.currentThread().getName()));
+				dependencyProcessorItem = queue.take();
+				waitingForSomethingToProcess = false;
 			}
+			return dependencyProcessorItem;
 		}
 
 		private synchronized void notifyMainThread() {
@@ -1426,25 +1446,16 @@ public class DependencyManager {
 		}
 
 		private boolean isFinish(){
-			return queue.isEmpty() && allThreadWaiting();
+			return queue.isEmpty() && allFutureFinish();
 		}
 
-		private boolean allThreadWaiting() {
-			for (final DependencyThread thread : threads) {
-				if (!thread.waitingForSomethingToProcess) {
-					return false;
-				}
-			}
-
-			return true;
+		private boolean allFutureFinish() {
+			return !futures.stream().anyMatch(future -> !future.isDone());
 		}
 
 		void stop(){
 			this.finish = true;
-
-			for (final Thread thread : threads) {
-				thread.interrupt();
-			}
+			dependencyProcessorThread.interrupt();
 		}
 
 		public boolean alreadyProcess(final String assetKey, final AssetTypes assetTypes) {
@@ -1452,34 +1463,25 @@ public class DependencyManager {
 			return set != null && set.contains(assetKey);
 		}
 
-		private class DependencyThread extends Thread {
-			boolean waitingForSomethingToProcess = false;
+		private class DependencyProcessorThread extends Thread {
 
 			@Override
 			public void run() {
 				while (true) {
 					try {
-						DependencyProcessorItem dependencyProcessorItem = queue.poll();
+						final DependencyProcessorItem dependencyProcessorItem = next();
 
-						if (dependencyProcessorItem == null) {
-							waitingForSomethingToProcess = true;
-							Logger.debug(DependencyProcessor.class, () -> String.format("%s : Notifying to main thread",
-									Thread.currentThread().getName()));
+						final Future<?> future = submitter.submit(() -> {
+							final AssetTypes assetTypes = dependencyProcessorItem.assetTypes;
+							Logger.debug(DependencyProcessor.class, () ->
+									String.format("%s : We have something to process - %s",
+											Thread.currentThread().getName(), assetTypes));
 
-							notifyMainThread();
+							consumerDependencies.get(assetTypes).accept(dependencyProcessorItem.assetKey);
+						});
 
-							Logger.debug(DependencyProcessor.class,
-									() -> String.format("%s : Waiting for something to process", Thread.currentThread().getName()));
-							dependencyProcessorItem = queue.take();
-							waitingForSomethingToProcess = false;
-						}
+						futures.add(future);
 
-						final AssetTypes assetTypes = dependencyProcessorItem.assetTypes;
-						Logger.debug(DependencyProcessor.class, () ->
-								String.format("%s : We have something to process - %s",
-										Thread.currentThread().getName(), assetTypes));
-
-						consumerDependencies.get(assetTypes).accept(dependencyProcessorItem.assetKey);
 					} catch (InterruptedException e) {
 						if (!finish) {
 							Logger.error(DependencyProcessor.class, e.getMessage());
@@ -1487,7 +1489,7 @@ public class DependencyManager {
 
 						break;
 					} catch (Exception e) {
-						e.printStackTrace();
+						Logger.error(DependencyProcessorThread.class, e);
 					}
 				}
 			}
