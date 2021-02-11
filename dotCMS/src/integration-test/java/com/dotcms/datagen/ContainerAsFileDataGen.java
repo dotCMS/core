@@ -10,6 +10,7 @@ import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
@@ -133,7 +134,8 @@ public class ContainerAsFileDataGen extends AbstractDataGen<FileAssetContainer> 
             final Contentlet container = new FileAssetDataGen(containerFolder, file)
                     .host(host)
                     .setProperty("title", Constants.CONTAINER_META_INFO_FILE_NAME)
-                    .setProperty("fileName", Constants.CONTAINER_META_INFO_FILE_NAME).nextPersisted();
+                    .setProperty("fileName", Constants.CONTAINER_META_INFO_FILE_NAME)
+                    .nextPersisted();
 
             metaData = APILocator.getFileAssetAPI().fromContentlet(container);
             return toFileAssetContainer(object, containerFolder, metaData, structures);
