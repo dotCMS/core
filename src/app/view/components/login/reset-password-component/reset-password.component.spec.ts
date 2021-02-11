@@ -17,6 +17,7 @@ import { MockDotLoginPageStateService } from '@components/login/dot-login-page-r
 import { MockDotRouterService } from '@tests/dot-router-service.mock';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { throwError } from 'rxjs';
 
 const messageServiceMock = new MockDotMessageService({
     required: 'Required'
@@ -58,7 +59,6 @@ describe('ResetPasswordComponent', () => {
         loginService = TestBed.inject(LoginService);
         dotRouterService = TestBed.inject(DotRouterService);
         spyOn(activatedRoute.snapshot.paramMap, 'get').and.returnValue('test@test.com');
-        spyOn(loginService, 'changePassword').and.callThrough();
         fixture.detectChanges();
 
         changePasswordButton = de.query(By.css('button[type="submit"]'));
@@ -80,6 +80,7 @@ describe('ResetPasswordComponent', () => {
     });
 
     it('should display message if passwords do not match', () => {
+        spyOn(loginService, 'changePassword').and.callThrough();
         component.resetPasswordForm.setValue({
             password: 'test',
             confirmPassword: 'test2'
@@ -93,6 +94,7 @@ describe('ResetPasswordComponent', () => {
     });
 
     it('should call the change password service and redirect to loging page', () => {
+        spyOn(loginService, 'changePassword').and.callThrough();
         component.resetPasswordForm.setValue({
             password: 'test',
             confirmPassword: 'test'
@@ -106,12 +108,28 @@ describe('ResetPasswordComponent', () => {
         });
     });
 
+    it('should show error message form the service', () => {
+        spyOn(loginService, 'changePassword').and.returnValue(
+            throwError({ error: { errors: [{ message: 'error message' }] } })
+        );
+        component.resetPasswordForm.setValue({
+            password: 'test',
+            confirmPassword: 'test'
+        });
+        changePasswordButton.triggerEventHandler('click', {});
+        fixture.detectChanges();
+        const errorMessage = de.query(By.css('[data-testId="errorMessage"]')).nativeElement
+            .innerText;
+
+        expect(errorMessage).toEqual('error message');
+    });
+
     it('should show error message for required form fields', () => {
         component.resetPasswordForm.get('password').markAsDirty();
         component.resetPasswordForm.get('confirmPassword').markAsDirty();
         fixture.detectChanges();
 
-        const errorMessages = de.queryAll(By.css('.p-invalid'));
+        const errorMessages = de.queryAll(By.css('dot-field-validation-message .p-invalid'));
         expect(errorMessages.length).toBe(2);
     });
 });

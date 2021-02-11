@@ -92,8 +92,8 @@ export class ResetPasswordComponent implements OnInit {
                             }
                         });
                     },
-                    (error) => {
-                        this.message = error.errorsMessages;
+                    (response) => {
+                        this.message = response.error?.errors[0]?.message;
                     }
                 );
         } else {
