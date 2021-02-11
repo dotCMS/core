@@ -26,15 +26,15 @@ export class MockDotRouterService {
         this._currentSavedURL = url;
     }
 
-    get previousSavedURL(): string {
-        return this._previousSavedURL;
+    get storedRedirectUrl(): string {
+        return this._storedRedirectUrl;
     }
 
-    set previousSavedURL(url: string) {
-        this._previousSavedURL = url;
+    set storedRedirectUrl(url: string) {
+        this._storedRedirectUrl = url;
     }
 
-    _previousSavedURL = '';
+    _storedRedirectUrl = '';
     _currentSavedURL = '';
     replaceQueryParams = jasmine.createSpy('replaceQueryParams');
     getPortletId = jasmine.createSpy('getPortletId').and.returnValue('test');

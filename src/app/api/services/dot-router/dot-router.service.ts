@@ -6,21 +6,25 @@ import { Subject } from 'rxjs';
 import { DotAppsSites } from '@shared/models/dot-apps/dot-apps.model';
 import { NavigationExtras } from '@angular/router';
 import { LOGOUT_URL } from 'dotcms-js';
+import { filter } from 'rxjs/operators';
 
 @Injectable()
 export class DotRouterService {
     portletReload$ = new Subject();
+    private _storedRedirectUrl: string;
     private _routeHistory: PortletNav = { url: '' };
     private CUSTOM_PORTLET_ID_PREFIX = 'c_';
 
     constructor(private router: Router, private route: ActivatedRoute) {
         this._routeHistory.url = this.router.url;
-        this.router.events.subscribe((event: Event) => {
-            if (event instanceof NavigationEnd) {
-                this._routeHistory.previousUrl = this._routeHistory.url;
-                this._routeHistory.url = event.url;
-            }
-        });
+        this.router.events
+            .pipe(filter((event: Event) => event instanceof NavigationEnd))
+            .subscribe((event: NavigationEnd) => {
+                this.routeHistory = {
+                    url: event.url,
+                    previousUrl: this._routeHistory.url
+                };
+            });
     }
 
     get currentSavedURL(): string {
@@ -34,12 +38,20 @@ export class DotRouterService {
         };
     }
 
-    get previousSavedURL(): string {
-        return this._routeHistory.previousUrl;
+    set storedRedirectUrl(url: string) {
+        this._storedRedirectUrl = url;
     }
 
-    set previousSavedURL(url: string) {
-        this._routeHistory.previousUrl = url;
+    get storedRedirectUrl(): string {
+        return this._storedRedirectUrl;
+    }
+
+    get routeHistory(): PortletNav {
+        return this._routeHistory;
+    }
+
+    set routeHistory(value: PortletNav) {
+        this._routeHistory = value;
     }
 
     get queryParams(): Params {
@@ -54,7 +66,7 @@ export class DotRouterService {
      * @memberof DotRouterService
      */
     goToPreviousUrl(): void {
-        this.router.navigate([this.previousSavedURL]);
+        this.router.navigate([this.routeHistory.previousUrl]);
     }
 
     /**
@@ -104,7 +116,7 @@ export class DotRouterService {
     }
 
     /**
-     * Go to first porlet unless userEditPageRedirect is passed or previousSavedURL is set
+     * Go to first porlet unless userEditPageRedirect is passed or storedRedirectUrl is set
      *
      * @param string [userEditPageRedirect]
      * @returns Promise<boolean>
@@ -309,9 +321,9 @@ export class DotRouterService {
     }
 
     private redirectMain(): Promise<boolean> {
-        if (this._routeHistory.previousUrl) {
-            return this.router.navigate([this.previousSavedURL]).then((ok: boolean) => {
-                this._routeHistory.url = null;
+        if (this.storedRedirectUrl) {
+            return this.router.navigate([this.storedRedirectUrl]).then((ok: boolean) => {
+                this.storedRedirectUrl = null;
                 return ok;
             });
         } else {

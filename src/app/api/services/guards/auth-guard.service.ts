@@ -17,7 +17,7 @@ export class AuthGuardService implements CanActivate {
             map((isLogin) => {
                 if (!isLogin) {
                     this.dotRouterService.goToLogin();
-                    this.dotRouterService.previousSavedURL = state.url;
+                    this.dotRouterService.storedRedirectUrl = state.url;
                 }
                 return isLogin;
             })
