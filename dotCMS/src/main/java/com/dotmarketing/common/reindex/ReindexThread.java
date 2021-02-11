@@ -210,20 +210,20 @@ public class ReindexThread {
         
         if (!workingRecords.isEmpty()) {
           // if this is a reindex record
-          if (indexAPI.isInFullReindex()
-              || Try.of(()-> workingRecords.values().stream().findFirst().get().getPriority() >= ReindexQueueFactory.Priority.STRUCTURE.dbValue()).getOrElse(false) ) {
-              if (bulkProcessor == null || rebuildBulkIndexer.get()) {
+//          if (indexAPI.isInFullReindex()
+//              || Try.of(()-> workingRecords.values().stream().findFirst().get().getPriority() >= ReindexQueueFactory.Priority.STRUCTURE.dbValue()).getOrElse(false) ) {
+//              if (bulkProcessor == null || rebuildBulkIndexer.get()) {
                   closeBulkProcessor(bulkProcessor);
                   bulkProcessorListener = new BulkProcessorListener();
                   bulkProcessor = indexAPI.createBulkProcessor(bulkProcessorListener);
-              }
+//              }
               bulkProcessorListener.workingRecords.putAll(workingRecords);
               indexAPI.appendToBulkProcessor(bulkProcessor, workingRecords.values());
               contentletsIndexed += bulkProcessorListener.getContentletsIndexed();
               // otherwise, reindex normally
-          } else if (!ESReadOnlyMonitor.getInstance().isIndexOrClusterReadOnly()){
-              reindexWithBulkRequest(workingRecords);
-          }
+//          } else if (!ESReadOnlyMonitor.getInstance().isIndexOrClusterReadOnly()){
+//              reindexWithBulkRequest(workingRecords);
+//          }
         } 
       } catch (Exception ex) {
         Logger.error(this, "ReindexThread Exception", ex);
