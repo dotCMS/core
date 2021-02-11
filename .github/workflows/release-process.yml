@@ -1,8 +1,7 @@
 name: release-process-automation
 on:
   release:
-    types:
-      - published
+    types: [published]
 jobs:
   release-process:
     name: Release Process Automation
@@ -28,11 +27,6 @@ jobs:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "${GITHUB_CONTEXT}"
         if: env.DEBUG == 'true'
-      - name: Get commit message
-        id: get-commit-message
-        uses: dotcms/get-commit-message@master
-        with:
-          accessToken: ${{ secrets.GITHUB_TOKEN }}
       - name: Set Common Vars
         run: |
           BRANCH=$(basename "${{ github.ref }}")
