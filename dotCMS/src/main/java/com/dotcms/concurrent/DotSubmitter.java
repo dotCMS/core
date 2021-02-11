@@ -1,6 +1,7 @@
 package com.dotcms.concurrent;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
@@ -101,4 +102,13 @@ public interface DotSubmitter extends Executor, Serializable {
     public boolean isAborting();
 
 
+    default void waitForAll(final Collection<Future<Void>> futures) {
+        for(final Future future : futures) {
+            try {
+                future.get();
+            } catch(Exception e) {
+                continue;
+            }
+        }
+    }
 } // E:O:F:DotExecutor.

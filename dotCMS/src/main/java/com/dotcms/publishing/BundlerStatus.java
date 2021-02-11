@@ -47,7 +47,7 @@ public class BundlerStatus {
 		count = count + 1;
 	}
 
-	public void addCountThreadSafe() {
+	public synchronized void addCountThreadSafe() {
 		addCount();
 	}
 
