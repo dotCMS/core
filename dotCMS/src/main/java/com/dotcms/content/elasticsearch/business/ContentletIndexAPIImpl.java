@@ -566,7 +566,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     public void putToIndex(final BulkRequest bulkRequest,
             final ActionListener<BulkResponse> listener) {
         if (bulkRequest != null && bulkRequest.numberOfActions() > 0) {
-            bulkRequest.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+//            bulkRequest.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
 
             if (listener != null) {
                 RestHighLevelClientProvider.getInstance()
