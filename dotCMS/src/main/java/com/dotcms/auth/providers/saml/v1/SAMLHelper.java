@@ -29,6 +29,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDGenerator;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.Encryptor;
@@ -43,6 +44,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import static com.dotmarketing.util.UtilMethods.isSet;
 
@@ -196,7 +198,8 @@ public class SAMLHelper {
                 DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_CMS_VALUE.equalsIgnoreCase(buildRolesProperty);
     }
 
-    private static interface RoleStrategy {
+    // just to encapsulates the role strategies
+    interface RoleStrategy {
 
         void apply (final User user, final Attributes attributesBean, final IdentityProviderConfiguration identityProviderConfiguration);
     }
@@ -205,7 +208,14 @@ public class SAMLHelper {
 
         try {
 
-           // this.handleRoles(user, attributesBean, identityProviderConfiguration, buildRolesStrategy);
+            Logger.debug(this, ()-> "Running ALL roles strategy, will keep dotCMS roles and add IDP roles, plus SAML User Role and extra roles if any'" + user.getUserId() + "'...");
+
+            // Add SAML User role
+            this.addRole(user, DotSamlConstants.DOTCMS_SAML_USER_ROLE, true, true);
+            Logger.debug(this, ()->"Default SAML User role has been assigned");
+            this.addRolesExtra(user, identityProviderConfiguration);
+
+            this.addRolesFromIDP(user, attributesBean, identityProviderConfiguration);
         } catch (DotDataException e) {
 
             Logger.error(this, "Error adding roles to user '" + user.getUserId() + "': " + e.getMessage(), e);
@@ -213,66 +223,76 @@ public class SAMLHelper {
         }
     }
 
-    private void addRoles(final User user, final Attributes attributesBean, final IdentityProviderConfiguration identityProviderConfiguration) {
+    private void applyIdpRoleStrategy (final User user, final Attributes attributesBean, final IdentityProviderConfiguration identityProviderConfiguration) {
 
-        final String buildRolesStrategy = this.getBuildRoles(identityProviderConfiguration);
+        try {
 
-        Logger.debug(this, ()-> "Using the build roles Strategy: " + buildRolesStrategy);
+            Logger.debug(this, ()-> "Running IDP roles strategy, will remove all roles and add only IDP roles, plus SAML User Role and extra roles if any'" + user.getUserId() + "'...");
 
-        if (!DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_NONE_VALUE.equalsIgnoreCase(buildRolesStrategy)) {
-            try {
-                // remove previous roles
-                if (!DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_STATIC_ADD_VALUE.equalsIgnoreCase(buildRolesStrategy)) {
+            Logger.debug(this, ()-> "Removing ALL existing roles from user '" + user.getUserId() + "'...");
+            this.roleAPI.removeAllRolesFromUser(user);
 
-                    Logger.debug(this, ()-> "Removing ALL existing roles from user '" + user.getUserId() + "'...");
-                    this.roleAPI.removeAllRolesFromUser(user);
-                } else {
+            // Add SAML User role
+            this.addRole(user, DotSamlConstants.DOTCMS_SAML_USER_ROLE, true, true);
+            Logger.debug(this, ()->"Default SAML User role has been assigned");
+            this.addRolesExtra(user, identityProviderConfiguration);
 
-                    Logger.debug(this, ()-> "The buildRoles strategy is: 'staticadd'. It won't remove any existing dotCMS role");
-                }
+            this.addRolesFromIDP(user, attributesBean, identityProviderConfiguration);
+        } catch (DotDataException e) {
 
-                this.handleRoles(user, attributesBean, identityProviderConfiguration, buildRolesStrategy);
-            } catch (DotDataException e) {
-
-                Logger.error(this, "Error adding roles to user '" + user.getUserId() + "': " + e.getMessage(), e);
-                throw new DotSamlException(e.getMessage(), e);
-            }
-        } else {
-
-            Logger.info(this, ()->"The build roles strategy is 'none'. No user roles were added/changed.");
+            Logger.error(this, "Error adding roles to user '" + user.getUserId() + "': " + e.getMessage(), e);
+            throw new DotSamlException(e.getMessage(), e);
         }
     }
 
-    private void handleRoles(final User user, final Attributes attributesBean,
-                             final IdentityProviderConfiguration identityProviderConfiguration,
-                             final String buildRolesStrategy) throws DotDataException {
+    private void applyCMSRoleStrategy (final User user, final Attributes attributesBean, final IdentityProviderConfiguration identityProviderConfiguration) {
 
-        this.addRolesFromIDP(user, attributesBean, identityProviderConfiguration, buildRolesStrategy);
+        try {
 
-        // Add SAML User role
-        this.addRole(user, DotSamlConstants.DOTCMS_SAML_USER_ROLE, true, true);
-        Logger.debug(this, ()->"Default SAML User role has been assigned");
+            Logger.debug(this, ()-> "Running CMS roles strategy, will keep all CMS roles and ignore any IDP roles, plus SAML User Role and extra roles if any'" + user.getUserId() + "'...");
+            // Add SAML User role
+            this.addRole(user, DotSamlConstants.DOTCMS_SAML_USER_ROLE, true, true);
+            Logger.debug(this, ()->"Default SAML User role has been assigned");
+            this.addRolesExtra(user, identityProviderConfiguration);
+        } catch (DotDataException e) {
 
-        // the only strategy that does not include the saml user role is the "idp"
-        if (!DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_IDP_VALUE.equalsIgnoreCase(buildRolesStrategy)) {
-            // Add DOTCMS_SAML_OPTIONAL_USER_ROLE
-            if (DotSamlProxyFactory.getInstance().samlConfigurationService().getConfigAsString(identityProviderConfiguration,
-                    SamlName.DOTCMS_SAML_OPTIONAL_USER_ROLE) != null) {
+            Logger.error(this, "Error adding roles to user '" + user.getUserId() + "': " + e.getMessage(), e);
+            throw new DotSamlException(e.getMessage(), e);
+        }
+    }
 
-                final String [] rolesExtra = DotSamlProxyFactory.getInstance().samlConfigurationService().getConfigAsString(identityProviderConfiguration,
-                        SamlName.DOTCMS_SAML_OPTIONAL_USER_ROLE).split(",");
+    private void applyDoNothingRoleStrategy (final User user, final Attributes attributesBean, final IdentityProviderConfiguration identityProviderConfiguration) {
 
-                for (final String roleExtra : rolesExtra){
+        Logger.info(this, "Not SAML Role Strategy applied");
+    }
 
-                    this.addRole(user, roleExtra, false, false);
-                    Logger.debug(this, () -> "Optional user role: " +
-                            DotSamlProxyFactory.getInstance().samlConfigurationService().getConfigAsString(identityProviderConfiguration,
-                                    SamlName.DOTCMS_SAML_OPTIONAL_USER_ROLE) + " has been assigned");
-                }
+    private final  Map<String, RoleStrategy> roleStrategyMap = new ImmutableMap.Builder<String, RoleStrategy>()
+            .put(DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_ALL_VALUE, this::applyAllRoleStrategy)
+            .put(DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_IDP_VALUE, this::applyIdpRoleStrategy)
+            .put(DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_CMS_VALUE, this::applyCMSRoleStrategy).build();
+
+    private void addRoles(final User user, final Attributes attributesBean, final IdentityProviderConfiguration identityProviderConfiguration) {
+
+        final String buildRolesStrategy = this.getBuildRoles(identityProviderConfiguration); // done
+
+        Logger.debug(this, ()-> "Using the build roles Strategy: " + buildRolesStrategy);
+
+        this.roleStrategyMap.getOrDefault(buildRolesStrategy, this::applyDoNothingRoleStrategy).apply(user, attributesBean, identityProviderConfiguration);
+    }
+
+    private void addRolesExtra(final User user, final IdentityProviderConfiguration identityProviderConfiguration) throws DotDataException {
+
+        if (DotSamlProxyFactory.getInstance().samlConfigurationService().getConfigAsString(identityProviderConfiguration,
+                SamlName.DOTCMS_SAML_OPTIONAL_USER_ROLE) != null) {
+
+            final String [] rolesExtra = DotSamlProxyFactory.getInstance().samlConfigurationService().getConfigAsString(identityProviderConfiguration,
+                    SamlName.DOTCMS_SAML_OPTIONAL_USER_ROLE).split(",");
+
+            for (final String roleExtra : rolesExtra) {
+
+                this.addRole(user, roleExtra, false, false);
+                Logger.debug(this, () -> "Extra user role: " + roleExtra + " has been assigned");
             }
-        } else {
-
-            Logger.info(this, "The build roles strategy is 'idp'. No saml_user_role has been added");
         }
     }
 
@@ -306,15 +326,12 @@ public class SAMLHelper {
         return RegEX.contains(uftRole, rolePattern);
     }
 
-    private void addRolesFromIDP(final User user, final Attributes attributesBean, final IdentityProviderConfiguration identityProviderConfiguration,
-                                 final String buildRolesStrategy) throws DotDataException {
+    private void addRolesFromIDP(final User user, final Attributes attributesBean,
+                                 final IdentityProviderConfiguration identityProviderConfiguration) throws DotDataException {
 
-        final boolean includeIDPRoles = DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_ALL_VALUE.equalsIgnoreCase(buildRolesStrategy)
-                || DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_IDP_VALUE.equalsIgnoreCase(buildRolesStrategy);
+        Logger.debug(this, ()-> "Including roles from IdP ");
 
-        Logger.debug(this, ()-> "Including roles from IdP '" + includeIDPRoles + "' for the build roles Strategy: " + buildRolesStrategy);
-
-        if (includeIDPRoles && attributesBean.isAddRoles() && null != attributesBean.getRoles()) {
+        if (attributesBean.isAddRoles() && null != attributesBean.getRoles()) {
 
             final List<String> roleList = this.samlAuthenticationService.getValues(attributesBean.getRoles());
             if (null != roleList && roleList.size() > 0) {
@@ -346,13 +363,8 @@ public class SAMLHelper {
                     this.addRole(user, removeRolePrefix, role);
                 }
             }
-
-            return;
         }
-
-        Logger.info(this, "Roles have been ignore by the build roles strategy: " + buildRolesStrategy
-                + ", or roles have been not set from the IdP");
-    }
+    } // addRolesFromIDP.
 
     private void addRole(final User user, final String removeRolePrefix, final String roleObject)
             throws DotDataException {
