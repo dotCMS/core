@@ -31,7 +31,7 @@ jobs:
         run: |
           BRANCH=$(basename "${{ github.ref }}")
 
-          if [[ ${BRANCH} =~ ^release-.* ]]; then
+          if [[ ${BRANCH} =~ ^release-.*|^v[0-9]+.[0-9]+$ && ${{ env.TEST_RUN }} != true ]]; then
             IS_RELEASE='true'
           else
             IS_RELEASE='false'
@@ -47,10 +47,10 @@ jobs:
       - name: Build DotCMS Release Docker Image
         run: |
           dotcicd/library/pipeline.sh buildRelease
-#        if: env.TEST_RUN == 'true'
-      - name: Run DotCMS Release Docker Image
-        run: |
-          dotcicd/library/pipeline.sh runRelease
+        if: env.TEST_RUN == 'true'
+#      - name: Run DotCMS Release Docker Image
+#        run: |
+#          dotcicd/library/pipeline.sh runRelease
       - name: Publish Docker Multiarch Image
         run: |
           dotcicd/library/pipeline.sh publishDockerImage ${{ env.GITHUB_USER }} ${{ secrets.USER_TOKEN }} ${{ env.BRANCH }} ${{ env.IS_RELEASE }} ${{ secrets.DOCKER_USERNAME }} ${{ secrets.DOCKER_TOKEN }}
