@@ -495,7 +495,7 @@ dependencies {
 
     compile 'com.jayway.jsonpath:json-path:2.4.0'
     compile 'com.sun.activation:javax.activation:1.2.0'
-    compile 'jakarta.xml.bind:jakarta.xml.bind-api:2.3.2'
+//    compile 'jakarta.xml.bind:jakarta.xml.bind-api:2.3.2'
     compile 'com.sun.xml.ws:jaxws-ri:2.3.3'
 
     //https://www.oracle.com/database/technologies/appdev/jdbc-downloads.html
