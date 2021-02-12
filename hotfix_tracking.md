@@ -66,42 +66,40 @@ This maintenance release includes the following code fixes:
 
 31. https://github.com/dotCMS/core/issues/19564	: 301 and 302 Vanity URL redirects do not pass querystrings
 
-32. https://github.com/dotCMS/core/issues/19555	: Deleting a user is not replacing the owner on identifier table
+32. https://github.com/dotCMS/core/issues/19547	: Network Tab not reporting on Nodes
 
-33. https://github.com/dotCMS/core/issues/19547	: Network Tab not reporting on Nodes
+33. https://github.com/dotCMS/core/issues/19536	: CSV Importer should use _dotraw for text key and unique fields
 
-34. https://github.com/dotCMS/core/issues/19536	: CSV Importer should use _dotraw for text key and unique fields
+34. https://github.com/dotCMS/core/issues/19513	: Fix possible NPE in MimeTypeUtils
 
-35. https://github.com/dotCMS/core/issues/19513	: Fix possible NPE in MimeTypeUtils
+35. https://github.com/dotCMS/core/issues/19498	: Add Resolved VanityUrl as request attribute
 
-36. https://github.com/dotCMS/core/issues/19498	: Add Resolved VanityUrl as request attribute
+36. https://github.com/dotCMS/core/issues/19497	: PP Sometimes fails because of file-based containers
 
-37. https://github.com/dotCMS/core/issues/19497	: PP Sometimes fails because of file-based containers
+37. https://github.com/dotCMS/core/issues/19489 : If a field is marked unique, we should es map it as keyword
 
-38. https://github.com/dotCMS/core/issues/19489 : If a field is marked unique, we should es map it as keyword
+38. https://github.com/dotCMS/core/issues/19486	: Wrong defaults
 
-39. https://github.com/dotCMS/core/issues/19486	: Wrong defaults
+39. https://github.com/dotCMS/core/issues/19458	: [Content] : Tag field from user returns different data compared to system Tag field
 
-40. https://github.com/dotCMS/core/issues/19458	: [Content] : Tag field from user returns different data compared to system Tag field
+40. https://github.com/dotCMS/core/issues/19452	: URL maps which match the URL map pattern and content values fail with 404 on customer system
 
-41. https://github.com/dotCMS/core/issues/19452	: URL maps which match the URL map pattern and content values fail with 404 on customer system
+41. https://github.com/dotCMS/core/issues/19449 : GraphQL failing to retrieve image info
 
-42. https://github.com/dotCMS/core/issues/19449 : GraphQL failing to retrieve image info
+42. https://github.com/dotCMS/core/issues/19337	: Content Search screen not filtering on "select" fields - 5.2x+ - reproducable in demo
 
-43. https://github.com/dotCMS/core/issues/19337	: Content Search screen not filtering on "select" fields - 5.2x+ - reproducable in demo
+43. https://github.com/dotCMS/core/issues/19098	: With SAML enabled, explicit logout takes you to the native login page, instead of re-authing through SAML
 
-44. https://github.com/dotCMS/core/issues/19098	: With SAML enabled, explicit logout takes you to the native login page, instead of re-authing through SAML
+44. https://github.com/dotCMS/core/issues/19044	: Unpublished related content appearing in Preview Mode / Live mode & Are published when Pushing to S3 - 5.3x
 
-45. https://github.com/dotCMS/core/issues/19044	: Unpublished related content appearing in Preview Mode / Live mode & Are published when Pushing to S3 - 5.3x
+45. https://github.com/dotCMS/core/issues/18605	: ReindexThread always runs - never stops
 
-46. https://github.com/dotCMS/core/issues/18605	: ReindexThread always runs - never stops
+46. https://github.com/dotCMS/core/issues/18505	: JSONTool does not return sub arrays
 
-47. https://github.com/dotCMS/core/issues/18505	: JSONTool does not return sub arrays
+47. https://github.com/dotCMS/core/issues/19890	: Custom Page Layout is not sending in Push PublishCustom Page Layout is not sending in Push Publish
 
-48. https://github.com/dotCMS/core/issues/19890	: Custom Page Layout is not sending in Push PublishCustom Page Layout is not sending in Push Publish
+48. https://github.com/dotCMS/core/issues/19910	: Google Translate Sub-action is sending error with even with valid translation key
 
-49. https://github.com/dotCMS/core/issues/19910	: Google Translate Sub-action is sending error with even with valid translation key
+49. https://github.com/dotCMS/core/issues/19832	: [core] : Legacy IDs are not compatible with Shorty API
 
-50. https://github.com/dotCMS/core/issues/19832	: [core] : Legacy IDs are not compatible with Shorty API
-
-51. https://github.com/dotCMS/core/issues/19927	: Adding more log to the JsonTOOL
+50. https://github.com/dotCMS/core/issues/19927	: Adding more log to the JsonTOOL

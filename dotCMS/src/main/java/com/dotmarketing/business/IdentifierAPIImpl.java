@@ -179,11 +179,4 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 		return identifierFactory.getAssetTypeFromDB(identifier);
 	}
 
-	@Override
-	@WrapInTransaction
-	public void updateUserReferences(final String userId, final String replacementUserId)
-			throws DotDataException, DotSecurityException {
-		identifierFactory.updateUserReferences(userId,replacementUserId);
-	}
-
 }
