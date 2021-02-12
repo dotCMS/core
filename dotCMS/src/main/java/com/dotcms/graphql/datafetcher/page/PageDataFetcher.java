@@ -1,6 +1,7 @@
 package com.dotcms.graphql.datafetcher.page;
 
 import com.dotcms.graphql.DotGraphQLContext;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
@@ -46,11 +47,15 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
             final String pageModeAsString = environment.getArgument("pageMode")
                     != null ? environment.getArgument("pageMode") : PageMode.LIVE.name();
             final boolean fireRules = environment.getArgument("fireRules");
+            final String persona = environment.getArgument("persona");
+            final String site = environment.getArgument("site");
 
             context.addParam("url", url);
             context.addParam("languageId", languageId);
             context.addParam("pageMode", pageModeAsString);
             context.addParam("fireRules", fireRules);
+            context.addParam("persona", persona);
+            context.addParam("site", site);
 
             final PageMode mode = PageMode.get(pageModeAsString);
             PageMode.setPageMode(request, mode);
@@ -58,6 +63,14 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
             // we need to set the language to the request
             if(UtilMethods.isSet(languageId)) {
                 request.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, languageId);
+            }
+
+            if(UtilMethods.isSet(persona)) {
+                request.setAttribute(WebKeys.CMS_PERSONA_PARAMETER, persona);
+            }
+
+            if(UtilMethods.isSet(site)) {
+                request.setAttribute(Host.HOST_VELOCITY_VAR_NAME, site);
             }
 
             final PageContext pageContext = PageContextBuilder.builder()

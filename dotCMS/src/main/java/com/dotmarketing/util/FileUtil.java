@@ -39,6 +39,11 @@ public class FileUtil {
 		return createTemporaryFile(prefix, null);
 	}
 
+	public static File createTemporaryDirectory(final String prefix) throws IOException {
+		final Path tempDirectory = Files.createTempDirectory(prefix);
+		return tempDirectory.toFile();
+	}
+
 	/**
 	 * Creates a temporary file with unique name
 	 * @param prefix String name
@@ -297,7 +302,6 @@ public class FileUtil {
 
 		return sha256Builder.buildUnixHash();
 	} // sha256toUnixHash.
-
 }
 
 final class PNGFileNameFilter implements FilenameFilter {
