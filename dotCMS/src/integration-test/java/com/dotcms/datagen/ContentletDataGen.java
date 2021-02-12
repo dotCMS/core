@@ -154,8 +154,8 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
             contentlet.setProperty(element.getKey(), element.getValue());
         }
 
-        contentlet.setIndexPolicy(null != policy?policy:IndexPolicy.WAIT_FOR);
-        contentlet.setIndexPolicyDependencies(null != policy?policy:IndexPolicy.WAIT_FOR);
+        contentlet.setIndexPolicy(null != policy?policy:IndexPolicy.FORCE);
+        contentlet.setIndexPolicyDependencies(null != policy?policy:IndexPolicy.FORCE);
         if(skipValidation){
             contentlet.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
         }
