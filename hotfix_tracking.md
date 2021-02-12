@@ -103,3 +103,5 @@ This maintenance release includes the following code fixes:
 49. https://github.com/dotCMS/core/issues/19832	: [core] : Legacy IDs are not compatible with Shorty API
 
 50. https://github.com/dotCMS/core/issues/19927	: Adding more log to the JsonTOOL
+
+51. https://github.com/dotCMS/core/issues/19319	: Allow shutdown from backend of dotCMS
