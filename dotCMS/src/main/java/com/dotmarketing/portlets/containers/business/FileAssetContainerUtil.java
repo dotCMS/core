@@ -519,7 +519,11 @@ public class FileAssetContainerUtil {
         }
     }
 
-    private String getFullPath(final Host host, final String containerPath) {
-        return builder(HOST_INDICATOR, host.getHostname(), containerPath).toString();
+    public String getFullPath(final Host host, final String containerPath) {
+        return getFullPath(host.getHostname(), containerPath);
+    }
+
+    public String getFullPath(final String hostName, final String containerPath) {
+        return builder(HOST_INDICATOR, hostName, containerPath).toString();
     }
 }

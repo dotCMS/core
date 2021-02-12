@@ -17,6 +17,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -24,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableSet;
 
 /**
  * Class that represents the javascript parameter for edit the drawed template.
@@ -187,6 +189,36 @@ public class TemplateLayout implements Serializable {
                 .anyMatch(containerUUID ->
                         containerUUID.getIdentifier().equals(identifier) && isTheSameUUID(containerUUID.getUUID(), uuid)
                 );
+    }
+
+    @JsonIgnore
+    public Set<String> getContainersIdentifierOrPath() {
+
+        return this.getContainersUUID()
+                .stream()
+                .map(ContainerUUID::getIdentifier)
+                .collect(Collectors.toSet());
+    }
+
+    @JsonIgnore
+    public Set<ContainerUUID> getContainersUUID() {
+
+        final Set<ContainerUUID> bodyContainers = body.getRows().stream()
+                .flatMap(row -> row.getColumns().stream())
+                .flatMap(column -> column.getContainers().stream())
+                .collect(Collectors.toSet());
+
+        if (null != this.getSidebar()) {
+            final List<ContainerUUID> sideBarContainers = this.getSidebar().getContainers();
+            return ImmutableSet.<ContainerUUID> builder()
+                    .addAll(sideBarContainers)
+                    .addAll(bodyContainers)
+                    .build();
+        } else {
+            return ImmutableSet.<ContainerUUID> builder()
+                    .addAll(bodyContainers)
+                    .build();
+        }
     }
 
     private boolean isTheSameUUID(final String uuid1, final String uuid2) {
