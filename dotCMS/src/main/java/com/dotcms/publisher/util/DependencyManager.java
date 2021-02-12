@@ -369,7 +369,7 @@ public class DependencyManager {
 				Logger.debug(DependencyProcessor.class, () -> String.format("%s: it is not finish yet",
 						Thread.currentThread().getName()));
 				synchronized(this) {
-					wait();
+					wait(TimeUnit.MINUTES.toMillis(30));
 				}
 			}
 
