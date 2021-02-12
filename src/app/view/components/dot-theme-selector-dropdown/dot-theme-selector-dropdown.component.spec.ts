@@ -1,14 +1,7 @@
-import { DebugElement, forwardRef, Input } from '@angular/core';
+import { DebugElement } from '@angular/core';
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import {
-    ControlValueAccessor,
-    FormBuilder,
-    FormGroup,
-    FormsModule,
-    NG_VALUE_ACCESSOR,
-    ReactiveFormsModule
-} from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { of } from 'rxjs';
 
 import { SiteService } from 'dotcms-js';
@@ -21,36 +14,23 @@ import { mockDotThemes } from '@tests/dot-themes.mock';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { SearchableDropdownComponent } from '@components/_common/searchable-dropdown/component/searchable-dropdown.component';
+import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
+import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 const messageServiceMock = new MockDotMessageService({
     'dot.common.select.themes': 'Select Themes',
     'Last-Updated': 'Last updated'
 });
+
 @Component({
-    selector: 'dot-searchable-dropdown',
-    template: ``,
-    providers: [
-        {
-            multi: true,
-            provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => TestSearchableComponent)
-        }
-    ]
+    selector: 'dot-site-selector',
+    template: `<select>
+        <option>Fake site selector</option>
+    </select>`
 })
-class TestSearchableComponent implements ControlValueAccessor {
-    @Input() placeholder;
-    @Input() data;
-    @Input() rows;
-    @Input() externalItemListTemplate;
-    @Input() totalRecords = [...mockDotThemes].length;
-
-    toggleOverlayPanel = jasmine.createSpy();
-
-    propagateChange = (_: any) => {};
-    writeValue(): void {}
-    registerOnChange(): void {}
-    registerOnTouched(): void {}
-}
+class MockDotSiteSelectorComponent {}
 
 @Component({
     selector: 'dot-fake-form',
@@ -90,14 +70,16 @@ class TestHostEmtpyComponent {
 
 describe('DotThemeSelectorDropdownComponent', () => {
     let paginationService: PaginatorService;
+    let de: DebugElement;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             declarations: [
                 DotThemeSelectorDropdownComponent,
-                TestSearchableComponent,
+                SearchableDropdownComponent,
                 TestHostFilledComponent,
-                TestHostEmtpyComponent
+                TestHostEmtpyComponent,
+                MockDotSiteSelectorComponent
             ],
             providers: [
                 {
@@ -107,10 +89,26 @@ describe('DotThemeSelectorDropdownComponent', () => {
                 {
                     provide: PaginatorService,
                     useValue: {
+                        param: '',
                         url: '',
                         paginationPerPage: '',
-                        totalRecords: mockDotThemes.length,
+                        total: '',
 
+                        set searchParam(value) {
+                            this.param = value;
+                        },
+
+                        get searchParam() {
+                            return this.param;
+                        },
+
+                        set totalRecords(value) {
+                            this.total = value;
+                        },
+
+                        get totalRecords() {
+                            return this.total || mockDotThemes.length;
+                        },
                         setExtraParams() {},
                         getWithOffset() {
                             return of([...mockDotThemes]);
@@ -124,6 +122,11 @@ describe('DotThemeSelectorDropdownComponent', () => {
                             return of({
                                 identifier: '123'
                             });
+                        },
+                        getSiteById() {
+                            return of({
+                                identifier: '123'
+                            });
                         }
                     }
                 },
@@ -134,7 +137,14 @@ describe('DotThemeSelectorDropdownComponent', () => {
                     }
                 }
             ],
-            imports: [FormsModule, DotMessagePipeModule, ReactiveFormsModule]
+            imports: [
+                FormsModule,
+                DotMessagePipeModule,
+                ReactiveFormsModule,
+                SearchableDropDownModule,
+                DotIconModule,
+                BrowserAnimationsModule
+            ]
         }).compileComponents();
     });
 
@@ -144,6 +154,8 @@ describe('DotThemeSelectorDropdownComponent', () => {
 
         beforeEach(() => {
             fixture = TestBed.createComponent(DotThemeSelectorDropdownComponent);
+
+            de = fixture.debugElement;
             paginationService = TestBed.inject(PaginatorService);
             component = fixture.componentInstance;
             spyOn(component, 'propagateChange');
@@ -151,30 +163,40 @@ describe('DotThemeSelectorDropdownComponent', () => {
         });
 
         describe('html', () => {
-            it('should pass themes', () => {
-                const searchable = fixture.debugElement.query(By.css('dot-searchable-dropdown'))
-                    .componentInstance;
-                expect(searchable.data).toEqual(mockDotThemes);
+            it('should set themes if theme selector is open', () => {
+                component.onShow();
+                expect(component.totalRecords).toEqual(3);
+                expect(component.themes).toEqual(mockDotThemes);
             });
 
-            it('shoud set the right attributes', () => {
-                const element = fixture.debugElement.query(By.css('dot-searchable-dropdown'));
-                const instance = element.componentInstance;
+            it('should set the right attributes', () => {
+                const element = de.query(By.css('dot-searchable-dropdown'));
 
-                expect(instance.totalRecords).toBe(3);
+                const instance = element.componentInstance;
                 expect(instance.placeholder).toBe('Select Themes');
-                expect(instance.rows).toBe(5);
-                expect(instance.data).toEqual([...mockDotThemes]);
-                expect(element.attributes.overlayWidth).toBe('350px');
+                expect(element.attributes.overlayWidth).toBe('490px');
                 expect(element.attributes.labelPropertyName).toBe('name');
                 expect(element.attributes.valuePropertyName).toBe('name');
+
+                component.onShow();
+                fixture.detectChanges();
+                expect(instance.rows).toBe(5);
+            });
+
+            it('should reset values onHide', () => {
+                spyOn(paginationService, 'getWithOffset').and.returnValue(of(mockDotThemes));
+                component.onHide();
+
+                expect(paginationService.getWithOffset).toHaveBeenCalledWith(0);
+                expect(component.totalRecords).toBe(3);
+                expect(paginationService.searchParam).toBe('');
             });
         });
 
         describe('events', () => {
             it('should call filterChange with right values', () => {
                 paginationService.totalRecords = 5;
-                const searchable = fixture.debugElement.query(By.css('dot-searchable-dropdown'));
+                const searchable = de.query(By.css('dot-searchable-dropdown'));
                 const arr = [mockDotThemes[1], mockDotThemes[4]];
                 spyOn(paginationService, 'getWithOffset').and.returnValue(of([...arr]));
                 searchable.triggerEventHandler('filterChange', 'test');
@@ -185,14 +207,51 @@ describe('DotThemeSelectorDropdownComponent', () => {
                 expect(paginationService.totalRecords).toEqual(5);
             });
 
-            it('should do something with change', () => {
-                const searchable = fixture.debugElement.query(By.css('dot-searchable-dropdown'));
+            it('should set value propagate change and toggle the overlay', () => {
+                const searchable = de.query(By.css('dot-searchable-dropdown'));
+                spyOn(searchable.componentInstance, 'toggleOverlayPanel');
                 const value = mockDotThemes[0];
 
                 searchable.triggerEventHandler('change', { ...value });
                 expect(component.value).toEqual(value);
                 expect(component.propagateChange).toHaveBeenCalledWith(value.identifier);
                 expect(searchable.componentInstance.toggleOverlayPanel).toHaveBeenCalledTimes(1);
+            });
+        });
+
+        describe('filters', () => {
+            beforeEach(() => {
+                spyOn(paginationService, 'setExtraParams');
+                spyOn(paginationService, 'getWithOffset').and.returnValue(of([mockDotThemes[2]]));
+                spyOnProperty(paginationService, 'totalRecords').and.returnValue(1);
+
+                const searchableButton = de.query(By.css('dot-searchable-dropdown button'));
+                searchableButton.nativeElement.click();
+                fixture.detectChanges();
+            });
+
+            it('should update themes, totalRecords and call setExtraParams when site selector change', () => {
+                const siteSelector = de.query(By.css('dot-site-selector'));
+                siteSelector.triggerEventHandler('change', {
+                    identifier: '123'
+                });
+
+                expect(paginationService.setExtraParams).toHaveBeenCalledWith('hostId', '123');
+                expect(component.themes).toEqual([mockDotThemes[2]]);
+                expect(component.totalRecords).toBe(1);
+            });
+
+            it('should update themes, totalRecords and call setExtraParams when search input change', async () => {
+                const input = de.query(By.css('[data-testId="searchInput"]')).nativeElement;
+                input.value = 'hello';
+                const event = new KeyboardEvent('keyup');
+                input.dispatchEvent(event);
+
+                await fixture.whenStable();
+
+                expect(paginationService.searchParam).toBe('hello');
+                expect(component.themes).toEqual([mockDotThemes[2]]);
+                expect(component.totalRecords).toBe(1);
             });
         });
     });

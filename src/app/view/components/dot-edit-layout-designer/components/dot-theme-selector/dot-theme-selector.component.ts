@@ -56,6 +56,7 @@ export class DotThemeSelectorComponent implements OnInit, OnDestroy {
     dialogActions: DotDialogActions;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
+    private SEARCH_PARAM = 'searchParam';
 
     constructor(
         private dotMessageService: DotMessageService,
@@ -79,6 +80,7 @@ export class DotThemeSelectorComponent implements OnInit, OnDestroy {
         };
         this.paginatorService.url = 'v1/themes';
         this.paginatorService.setExtraParams('hostId', this.siteService.currentSite.identifier);
+        this.paginatorService.deleteExtraParams(this.SEARCH_PARAM);
         this.paginatorService.paginationPerPage = 8;
         this.current = this.value;
 
@@ -120,8 +122,7 @@ export class DotThemeSelectorComponent implements OnInit, OnDestroy {
     siteChange(site: Site): void {
         this.searchInput.nativeElement.value = null;
         this.paginatorService.setExtraParams('hostId', site.identifier);
-        this.paginatorService.setExtraParams('searchParam', '');
-        this.paginate({ first: 0 });
+        this.filterThemes('');
     }
 
     /**
@@ -160,7 +161,7 @@ export class DotThemeSelectorComponent implements OnInit, OnDestroy {
     }
 
     private filterThemes(searchCriteria?: string): void {
-        this.paginatorService.setExtraParams('searchParam', searchCriteria);
+        this.paginatorService.setExtraParams(this.SEARCH_PARAM, searchCriteria);
         this.paginate({ first: 0 });
     }
 }

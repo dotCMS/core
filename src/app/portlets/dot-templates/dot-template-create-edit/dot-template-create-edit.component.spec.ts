@@ -4,7 +4,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { BehaviorSubject, of } from 'rxjs';
+import { BehaviorSubject, of, Subject } from 'rxjs';
 
 import { DialogService } from 'primeng/dynamicdialog';
 import { ButtonModule } from 'primeng/button';
@@ -25,8 +25,12 @@ import { DotTempFileUploadService } from '@services/dot-temp-file-upload/dot-tem
 import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 import { PaginatorService } from '@services/paginator';
 import { mockDotThemes } from '@tests/dot-themes.mock';
-import { SiteService } from 'dotcms-js';
+import { CoreWebService, SiteService } from 'dotcms-js';
 import { DotThemesService } from '@services/dot-themes/dot-themes.service';
+import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { mockSites } from '@tests/site-service.mock';
 
 @Component({
     selector: 'dot-api-link',
@@ -92,16 +96,15 @@ async function makeFormValid(fixture) {
 
     title.dispatchEvent(event);
 
-    const theme: HTMLInputElement = document.querySelector(
+    const themeButton: any = document.querySelector(
         '[data-testid="templatePropsThemeField"] button'
     );
 
-    theme.click();
-
     await fixture.whenRenderingDone();
-
+    themeButton.click();
+    fixture.detectChanges();
+    await fixture.whenRenderingDone();
     const item: HTMLElement = document.querySelector('.theme-selector__data-list-item');
-
     item.click();
 }
 
@@ -111,6 +114,7 @@ describe('DotTemplateCreateEditComponent', () => {
     let component: DotTemplateCreateEditComponent;
     let dialogService: DialogService;
     let store: DotTemplateStore;
+    const switchSiteSubject = new Subject();
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
@@ -128,10 +132,20 @@ describe('DotTemplateCreateEditComponent', () => {
                 BrowserAnimationsModule,
                 DotFormDialogModule,
                 DotTemplatePropsModule,
-                ButtonModule
+                ButtonModule,
+                HttpClientTestingModule
             ],
             providers: [
                 DialogService,
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                {
+                    provide: DotEventsService,
+                    useValue: {
+                        listen() {
+                            return of([]);
+                        }
+                    }
+                },
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
@@ -200,6 +214,15 @@ describe('DotTemplateCreateEditComponent', () => {
                 {
                     provide: SiteService,
                     useValue: {
+                        refreshSites$: of({}),
+                        get switchSite$() {
+                            return switchSiteSubject.asObservable();
+                        },
+                        getSiteById() {
+                            return of({
+                                identifier: '123'
+                            });
+                        },
                         getCurrentSite() {
                             return of({
                                 identifier: '123'
@@ -264,7 +287,7 @@ describe('DotTemplateCreateEditComponent', () => {
             it('should open create dialog', async () => {
                 expect(dialogService.open).toHaveBeenCalledWith(jasmine.any(Function), {
                     header: 'Create new template',
-                    width: '30rem',
+                    width: '40rem',
                     closable: false,
                     closeOnEscape: false,
                     data: {
@@ -283,8 +306,7 @@ describe('DotTemplateCreateEditComponent', () => {
                             theme: '',
                             image: ''
                         },
-                        onSave: jasmine.any(Function),
-                        onCancel: jasmine.any(Function)
+                        onSave: jasmine.any(Function)
                     }
                 });
             });
@@ -305,6 +327,7 @@ describe('DotTemplateCreateEditComponent', () => {
                 const button: HTMLButtonElement = document.querySelector(
                     '[data-testid="dotFormDialogSave"]'
                 );
+
                 button.click();
 
                 expect(store.createTemplate).toHaveBeenCalledWith({
@@ -350,7 +373,7 @@ describe('DotTemplateCreateEditComponent', () => {
             it('should open create dialog', async () => {
                 expect(dialogService.open).toHaveBeenCalledWith(jasmine.any(Function), {
                     header: 'Create new template',
-                    width: '30rem',
+                    width: '40rem',
                     closable: false,
                     closeOnEscape: false,
                     data: {
@@ -361,8 +384,7 @@ describe('DotTemplateCreateEditComponent', () => {
                             friendlyName: '',
                             image: ''
                         },
-                        onSave: jasmine.any(Function),
-                        onCancel: jasmine.any(Function)
+                        onSave: jasmine.any(Function)
                     }
                 });
             });
@@ -494,6 +516,12 @@ describe('DotTemplateCreateEditComponent', () => {
                     });
 
                     expect(store.goToEditTemplate).toHaveBeenCalledWith('1', '2');
+                });
+
+                it('should go to listing if page site changes', () => {
+                    switchSiteSubject.next(mockSites[0]); // setting the site
+                    switchSiteSubject.next(mockSites[1]); // switching the site
+                    expect(store.goToTemplateList).toHaveBeenCalledTimes(1);
                 });
             });
 

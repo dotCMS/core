@@ -71,6 +71,7 @@ export class DotListingDataTableComponent implements OnInit {
     items: any[];
     selected: any[];
     filter;
+    isContentFiltered = false;
     dateColumns: DataTableColumn[];
     loading = true;
     contextMenuItems: MenuItem[];
@@ -199,6 +200,14 @@ export class DotListingDataTableComponent implements OnInit {
         if (rows.length > 1) {
             rows[1].focus();
         }
+    }
+
+    /**
+     * Check if display results are filtered.
+     * @memberof ListingDataTableComponent
+     */
+    handleFilter(): void {
+        this.isContentFiltered = this.dataTable.filters.hasOwnProperty('global');
     }
 
     private formatData(items: any[]): any[] {

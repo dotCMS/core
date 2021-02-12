@@ -24,8 +24,33 @@
     </span>
 </ng-template>
 
+<ng-template #externalFilterTemplate>
+    <div class="theme-selector__filters">
+        <dot-site-selector
+            #siteSelector
+            width="12.8rem"
+            [id]="id"
+            (change)="siteChange($event)"
+        ></dot-site-selector>
+        <div class="searchable-dropdown__search-section">
+            <dot-icon class="searchable-dropdown__search-icon" name="search"></dot-icon>
+            <input
+                data-testId="searchInput"
+                #searchInput
+                pInputText
+                [placeholder]="'search' | dm"
+                type="text"
+                class="searchable-dropdown__search-inputfield"
+                (click)="$event.stopPropagation()"
+            />
+        </div>
+    </div>
+</ng-template>
+
 <dot-searchable-dropdown
     #searchableDropdown
+    (hide)="onHide()"
+    (show)="onShow()"
     [(ngModel)]="value"
     (filterChange)="handleFilterChange($event)"
     (change)="onChange($event)"
@@ -35,8 +60,9 @@
     (pageChange)="handlePageChange($event)"
     [rows]="paginatorService.paginationPerPage"
     labelPropertyName="name"
-    overlayWidth="350px"
+    overlayWidth="490px"
     valuePropertyName="name"
     [externalItemListTemplate]="externalItemListTemplate"
+    [externalFilterTemplate]="externalFilterTemplate"
 >
 </dot-searchable-dropdown>

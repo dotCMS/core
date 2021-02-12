@@ -10,6 +10,9 @@ const routes: Routes = [
         component: DotTemplateListComponent,
         resolve: {
             dotTemplateListResolverData: DotTemplateListResolver
+        },
+        data: {
+            reuseRoute: false
         }
     },
     {

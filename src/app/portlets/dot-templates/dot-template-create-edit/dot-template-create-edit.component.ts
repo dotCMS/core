@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { filter, takeUntil } from 'rxjs/operators';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -11,6 +11,8 @@ import { DotTemplate } from '@shared/models/dot-edit-layout-designer/dot-templat
 import { DotTemplatePropsComponent } from './dot-template-props/dot-template-props.component';
 import { DotTemplateItem, DotTemplateState, DotTemplateStore } from './store/dot-template.store';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DynamicDialogRef } from 'primeng/dynamicdialog/dynamicdialog-ref';
+import { Site, SiteService } from 'dotcms-js';
 
 @Component({
     selector: 'dot-template-create-edit',
@@ -29,7 +31,8 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
         private store: DotTemplateStore,
         private fb: FormBuilder,
         private dialogService: DialogService,
-        private dotMessageService: DotMessageService
+        private dotMessageService: DotMessageService,
+        private dotSiteService: SiteService
     ) {}
 
     ngOnInit() {
@@ -46,6 +49,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
                 this.createTemplate();
             }
         });
+        this.setSwitchSiteListener();
     }
 
     ngOnDestroy(): void {
@@ -114,19 +118,21 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
     }
 
     private createTemplate(): void {
-        this.dialogService.open(DotTemplatePropsComponent, {
+        const ref: DynamicDialogRef = this.dialogService.open(DotTemplatePropsComponent, {
             header: this.dotMessageService.get('templates.create.title'),
-            width: '30rem',
+            width: '40rem',
             closable: false,
             closeOnEscape: false,
             data: {
                 template: this.form.value,
                 onSave: (value: DotTemplateItem) => {
                     this.store.createTemplate(value);
-                },
-                onCancel: () => {
-                    this.store.goToTemplateList();
                 }
+            }
+        });
+        ref.onClose.pipe(takeUntil(this.destroy$)).subscribe((goToListing: boolean) => {
+            if (goToListing || goToListing === undefined) {
+                this.cancelTemplate();
             }
         });
     }
@@ -171,5 +177,31 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
             friendlyName: template.friendlyName,
             image: template.image
         };
+    }
+
+    private setSwitchSiteListener(): void {
+        /**
+         * When the portlet reload (from the browser reload button), the site service emits
+         * the switchSite$ because the `currentSite` was undefined and the loads the site, that trigger
+         * an unwanted reload.
+         *
+         * This extra work in the filter is to prevent that extra reload.
+         *
+         */
+        let currentHost = this.dotSiteService.currentSite?.hostname || null;
+        this.dotSiteService.switchSite$
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((site: Site) => {
+                    if (currentHost === null) {
+                        currentHost = site?.hostname;
+                        return false;
+                    }
+                    return true;
+                })
+            )
+            .subscribe(() => {
+                this.store.goToTemplateList();
+            });
     }
 }

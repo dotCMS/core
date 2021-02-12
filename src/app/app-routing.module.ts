@@ -27,6 +27,9 @@ const PORTLETS_ANGULAR = [
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         path: 'content-types-angular',
+        data: {
+            reuseRoute: false
+        },
         loadChildren: () =>
             import('@portlets/dot-content-types/dot-content-types.module').then(
                 (m) => m.DotContentTypesModule
@@ -185,7 +188,8 @@ const appRoutes: Routes = [
     exports: [RouterModule],
     imports: [
         RouterModule.forRoot(appRoutes, {
-            useHash: true
+            useHash: true,
+            onSameUrlNavigation: 'reload'
         })
     ],
     providers: [{ provide: RouteReuseStrategy, useClass: DotCustomReuseStrategyService }]

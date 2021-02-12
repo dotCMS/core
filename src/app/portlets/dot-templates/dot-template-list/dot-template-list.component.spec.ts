@@ -12,8 +12,8 @@ import {
     DotEventsSocket,
     DotEventsSocketURL,
     DotPushPublishDialogService,
-    LoggerService,
     LoginService,
+    SiteService,
     StringUtils
 } from 'dotcms-js';
 import { DotTemplatesService } from '@services/dot-templates/dot-templates.service';
@@ -46,6 +46,7 @@ import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module
 import { DotContentState } from 'dotcms-models';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { mockSites } from '@tests/site-service.mock';
 
 const templatesMock: DotTemplate[] = [
     {
@@ -232,6 +233,7 @@ describe('DotTemplateListComponent', () => {
     const messageServiceMock = new MockDotMessageService(messages);
 
     const dialogRefClose = new Subject();
+    const switchSiteSubject = new Subject();
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
@@ -251,7 +253,18 @@ describe('DotTemplateListComponent', () => {
                         goToEditTemplate: jasmine.createSpy()
                     }
                 },
-                LoggerService,
+                {
+                    provide: SiteService,
+                    useValue: {
+                        get currentSite() {
+                            return undefined;
+                        },
+
+                        get switchSite$() {
+                            return switchSiteSubject.asObservable();
+                        }
+                    }
+                },
                 StringUtils,
                 DotTemplatesService,
                 DotHttpErrorManagerService,
@@ -311,6 +324,13 @@ describe('DotTemplateListComponent', () => {
                 onClose: dialogRefClose
             });
         }));
+
+        it('should reload portlet only when the site change', () => {
+            switchSiteSubject.next(mockSites[0]); // setting the site
+            switchSiteSubject.next(mockSites[1]); // switching the site
+            expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('templates');
+            expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
+        });
 
         it('should set attributes of dotListingDataTable', () => {
             expect(dotListingDataTable.columns).toEqual(columnsMock);

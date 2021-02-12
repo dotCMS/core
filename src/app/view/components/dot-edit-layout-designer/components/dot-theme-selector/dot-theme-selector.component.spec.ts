@@ -1,9 +1,8 @@
 import { of } from 'rxjs';
-import { ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { DotThemeSelectorComponent } from './dot-theme-selector.component';
 import { DebugElement } from '@angular/core';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { DotThemesService } from '@services/dot-themes/dot-themes.service';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
 import { By } from '@angular/platform-browser';
@@ -11,12 +10,16 @@ import { mockDotThemes } from '../../../../../test/dot-themes.mock';
 import { DataViewModule } from 'primeng/dataview';
 import { DotSiteSelectorModule } from '@components/_common/dot-site-selector/dot-site-selector.module';
 import { mockSites, SiteServiceMock } from '../../../../../test/site-service.mock';
-import { SiteService } from 'dotcms-js';
+import { CoreWebService, SiteService } from 'dotcms-js';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { PaginatorService } from '@services/paginator/paginator.service';
 import { DotThemesServiceMock } from '../../../../../test/dot-themes-service.mock';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 describe('DotThemeSelectorComponent', () => {
     let component: DotThemeSelectorComponent;
@@ -33,14 +36,16 @@ describe('DotThemeSelectorComponent', () => {
     let paginatorService: PaginatorService;
 
     beforeEach(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [DotThemeSelectorComponent],
             imports: [
                 DataViewModule,
                 DotSiteSelectorModule,
                 BrowserAnimationsModule,
                 DotDialogModule,
-                DotIconModule
+                DotIconModule,
+                DotMessagePipeModule,
+                HttpClientTestingModule
             ],
             providers: [
                 {
@@ -52,16 +57,18 @@ describe('DotThemeSelectorComponent', () => {
                     useValue: messageServiceMock
                 },
                 { provide: SiteService, useValue: siteServiceMock },
-                PaginatorService
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                PaginatorService,
+                DotEventsService
             ]
         });
 
-        fixture = DOTTestBed.createComponent(DotThemeSelectorComponent);
+        fixture = TestBed.createComponent(DotThemeSelectorComponent);
         component = fixture.componentInstance;
         de = fixture.debugElement;
         dialog = de.query(By.css('dot-dialog')).componentInstance;
         component.value = { ...mockDotThemes[0] };
-        paginatorService = de.injector.get(PaginatorService);
+        paginatorService = TestBed.inject(PaginatorService);
     });
 
     afterEach(() => {
@@ -120,7 +127,9 @@ describe('DotThemeSelectorComponent', () => {
 
     describe('On Init', () => {
         it('should set url, the page size and hostid for the pagination service', () => {
+            paginatorService.searchParam = 'test';
             spyOn(paginatorService, 'setExtraParams');
+            spyOn(paginatorService, 'deleteExtraParams');
             fixture.detectChanges();
             expect(paginatorService.paginationPerPage).toBe(8);
             expect(paginatorService.url).toBe('v1/themes');
@@ -128,6 +137,7 @@ describe('DotThemeSelectorComponent', () => {
                 'hostId',
                 '123-xyz-567-xxl'
             );
+            expect(paginatorService.deleteExtraParams).toHaveBeenCalledWith('searchParam');
         });
 
         it('should set the current theme variable based on the Input value', () => {
@@ -170,12 +180,16 @@ describe('DotThemeSelectorComponent', () => {
 
         it('should set pagination, call endpoint and clear search field on site change ', () => {
             spyOn(component, 'paginate');
+            spyOn(paginatorService, 'setExtraParams');
             component.siteChange(mockSites[0]);
             fixture.detectChanges();
 
             expect(component.searchInput.nativeElement.value).toBe('');
-            expect(paginatorService.extraParams.get('hostId')).toBe(mockSites[0].identifier);
-            expect(paginatorService.extraParams.get('searchParam')).toBe('');
+            expect(paginatorService.setExtraParams).toHaveBeenCalledWith(
+                'hostId',
+                mockSites[0].identifier
+            );
+            expect(paginatorService.setExtraParams).toHaveBeenCalledWith('searchParam', '');
             expect(component.paginate).toHaveBeenCalledWith({ first: 0 });
         });
 

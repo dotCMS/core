@@ -27,6 +27,7 @@ import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { FormsModule } from '@angular/forms';
+import { ContextMenuModule } from 'primeng/contextmenu';
 
 @Component({
     selector: 'dot-empty-state',
@@ -91,7 +92,8 @@ describe('DotListingDataTableComponent', () => {
 
     beforeEach(() => {
         const messageServiceMock = new MockDotMessageService({
-            'global-search': 'Global Serach'
+            'global-search': 'Global Serach',
+            'No-Results-Found': 'No Results Found'
         });
 
         TestBed.configureTestingModule({
@@ -116,7 +118,8 @@ describe('DotListingDataTableComponent', () => {
                 DotIconButtonModule,
                 HttpClientTestingModule,
                 DotPipesModule,
-                FormsModule
+                FormsModule,
+                ContextMenuModule
             ],
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
@@ -449,13 +452,25 @@ describe('DotListingDataTableComponent', () => {
         });
     });
 
-    it('renders the dot empty state component if items array is empty', fakeAsync(() => {
+    it('should renders the dot empty state component if items array is empty', fakeAsync(() => {
         setRequestSpy([]);
         hostFixture.detectChanges();
         tick(1);
         hostFixture.detectChanges();
-        const empty = de.query(By.css('dot-empty-state'));
-        expect(empty.nativeElement.innerText).toBe('Im empty');
+        const emptyState = de.query(By.css('dot-empty-state'));
+        expect(emptyState.nativeElement.innerText).toBe('Im empty');
+    }));
+
+    it('should show no results message if filtered content is empty', fakeAsync(() => {
+        setRequestSpy([]);
+        hostFixture.detectChanges();
+        tick(1);
+        comp.globalSearch.nativeElement.value = 'test';
+        comp.globalSearch.nativeElement.dispatchEvent(new Event('input'));
+        tick(de.componentInstance.filterDelay + 1);
+        hostFixture.detectChanges();
+        const noResults = de.query(By.css('[data-testid="listing-datatable__empty"]'));
+        expect(noResults.nativeElement.innerText).toEqual('No Results Found');
     }));
 
     function setRequestSpy(response: any): void {

@@ -1,8 +1,9 @@
 <dot-searchable-dropdown
+    data-testId="searchableDropdown"
     (change)="containerChange($event)"
     (filterChange)="handleFilterChange($event)"
     (pageChange)="handlePageChange($event)"
-    [data]="currentContainers"
+    [data]="currentContainers | async"
     [pageLinkSize]="5"
     [rows]="paginationService.paginationPerPage"
     [totalRecords]="paginationService.totalRecords"
@@ -10,7 +11,7 @@
     placeholder="{{ 'editpage.container.add.label' | dm }}"
     persistentPlaceholder="true"
     width="172px"
-    overlayWidth="300px"
+    overlayWidth="440px"
     [class]="innerClass"
     [multiple]="true"
 >

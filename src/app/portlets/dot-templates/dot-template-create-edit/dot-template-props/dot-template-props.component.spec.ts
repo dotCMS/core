@@ -20,14 +20,11 @@ import { By } from '@angular/platform-browser';
     styleUrls: []
 })
 export class DotFormDialogMockComponent {
-    @Input()
-    saveButtonDisabled: boolean;
+    @Input() saveButtonDisabled: boolean;
 
-    @Output()
-    save = new EventEmitter();
+    @Output() save = new EventEmitter();
 
-    @Output()
-    cancel = new EventEmitter();
+    @Output() cancel = new EventEmitter();
 }
 
 @Component({
@@ -252,15 +249,13 @@ describe('DotTemplatePropsComponent', () => {
             dialog.triggerEventHandler('save', {});
 
             expect(dialogConfig.data.onSave).toHaveBeenCalledTimes(1);
-            expect(dialogRef.close).toHaveBeenCalledTimes(1);
+            expect(dialogRef.close).toHaveBeenCalledOnceWith(false);
         });
 
-        it('should call save from config', () => {
+        it('should call cancel from config', () => {
             const dialog = de.query(By.css('[data-testId="dialogForm"]'));
             dialog.triggerEventHandler('cancel', {});
-
-            expect(dialogConfig.data.onCancel).toHaveBeenCalledTimes(1);
-            expect(dialogRef.close).toHaveBeenCalledTimes(1);
+            expect(dialogRef.close).toHaveBeenCalledOnceWith(true);
         });
     });
 });

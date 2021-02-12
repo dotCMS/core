@@ -4,6 +4,7 @@ export interface DotTheme {
     title: string;
     inode: string;
     themeThumbnail: string;
+    hostId: string;
     host: {
         hostName: string;
         inode: string;

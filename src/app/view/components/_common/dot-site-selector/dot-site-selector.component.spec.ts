@@ -223,7 +223,7 @@ describe('SiteSelectorComponent', () => {
         fixture.detectChanges();
         await fixture.whenStable();
 
-        comp.currentSite.subscribe((res) => {
+        comp.currentSite$.subscribe((res) => {
             expect(res).toEqual(mockSites[0]);
         });
     });
@@ -232,7 +232,7 @@ describe('SiteSelectorComponent', () => {
         fixture.detectChanges();
         siteServiceMock.setFakeCurrentSite(sites[1]);
 
-        comp.currentSite.subscribe((site) => {
+        comp.currentSite$.subscribe((site) => {
             expect(site).toEqual(sites[1]);
         });
     });

@@ -4,6 +4,7 @@
 :host ::ng-deep .p-tabview-panels {
     overflow: hidden;
     flex-grow: 1;
+    flex-basis: 0;
 }
 
 :host {
