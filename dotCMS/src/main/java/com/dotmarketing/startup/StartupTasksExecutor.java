@@ -180,7 +180,6 @@ public class StartupTasksExecutor {
         String name = null;
 
 
-        ReindexThread.pause();
         for (Class<?> c : TaskLocatorUtil.getStartupRunOnceTaskClasses()) {
             name = c.getCanonicalName();
             name = name.substring(name.lastIndexOf(".") + 1);
