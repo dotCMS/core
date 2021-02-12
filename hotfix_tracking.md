@@ -75,30 +75,28 @@ This release includes the following code fixes:
 
 35. https://github.com/dotCMS/core/issues/19566 : [logging] : General logging improvements
 
-36. https://github.com/dotCMS/core/issues/19555	: Deleting a user is not replacing the owner on identifier table
+36. https://github.com/dotCMS/core/issues/19513	: Fix possible NPE in MimeTypeUtils
 
-37. https://github.com/dotCMS/core/issues/19513	: Fix possible NPE in MimeTypeUtils
+37. https://github.com/dotCMS/core/issues/19486	: Wrong defaults
 
-38. https://github.com/dotCMS/core/issues/19486	: Wrong defaults
+38. https://github.com/dotCMS/core/issues/19452	: URL maps which match the URL map pattern and content values fail with 404 on customer system
 
-39. https://github.com/dotCMS/core/issues/19452	: URL maps which match the URL map pattern and content values fail with 404 on customer system
+39. https://github.com/dotCMS/core/issues/19337	: Content Search screen not filtering on "select" fields - 5.2x+ - reproducable in demo
 
-40. https://github.com/dotCMS/core/issues/19337	: Content Search screen not filtering on "select" fields - 5.2x+ - reproducable in demo
+40. https://github.com/dotCMS/core/issues/18927	: Remove unneeded icu4j
 
-41. https://github.com/dotCMS/core/issues/18927	: Remove unneeded icu4j
+41. https://github.com/dotCMS/core/issues/18605	: ReindexThread always runs - never stops
 
-42. https://github.com/dotCMS/core/issues/18605	: ReindexThread always runs - never stops
+42. https://github.com/dotCMS/core/issues/18505	: JSONTool does not return sub arrays
 
-43. https://github.com/dotCMS/core/issues/18505	: JSONTool does not return sub arrays
+43. https://github.com/dotCMS/core/issues/18051	: PP a vtl file with no content throws an NPE
 
-44. https://github.com/dotCMS/core/issues/18051	: PP a vtl file with no content throws an NPE
+44. https://github.com/dotCMS/core/issues/19940 : [core] : Adjusting default ES settings for concurrent requests
 
-45. https://github.com/dotCMS/core/issues/19940 : [core] : Adjusting default ES settings for concurrent requests
+45. https://github.com/dotCMS/core/issues/19890	: Custom Page Layout is not sending in Push PublishCustom Page Layout is not sending in Push Publish
 
-46. https://github.com/dotCMS/core/issues/19890	: Custom Page Layout is not sending in Push PublishCustom Page Layout is not sending in Push Publish
+46. https://github.com/dotCMS/core/issues/19910	: Google Translate Sub-action is sending error with even with valid translation key
 
-47. https://github.com/dotCMS/core/issues/19910	: Google Translate Sub-action is sending error with even with valid translation key
+47. https://github.com/dotCMS/core/issues/19832	: [core] : Legacy IDs are not compatible with Shorty API
 
-48. https://github.com/dotCMS/core/issues/19832	: [core] : Legacy IDs are not compatible with Shorty API
-
-49. https://github.com/dotCMS/core/issues/19927	: Adding more log to the JsonTOOL
+48. https://github.com/dotCMS/core/issues/19927	: Adding more log to the JsonTOOL
