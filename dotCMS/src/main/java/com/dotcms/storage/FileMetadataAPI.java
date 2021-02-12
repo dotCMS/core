@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.function.Supplier;
@@ -93,7 +94,7 @@ public interface FileMetadataAPI {
      * @param contentlet {@link Contentlet}
      * @return Map
      */
-    Map<String, Metadata> collectFieldsMetadata(Contentlet contentlet);
+    Optional<Map<String, Metadata>> collectFieldsMetadata(Contentlet contentlet);
 
     /**
      * Removes metadata for a given Contentlet

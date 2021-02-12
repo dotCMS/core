@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Supplier;
@@ -469,7 +470,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @param contentlet
      * @return
      */
-    public Map<String, Metadata> collectFieldsMetadata(final Contentlet contentlet) {
+    public Optional<Map<String, Metadata>> collectFieldsMetadata(final Contentlet contentlet) {
 
         final Builder<String, Metadata> builder = new Builder<>(Ordering.natural());
         final Tuple2<SortedSet<String>, SortedSet<String>> binaryFields = findBinaryFields(contentlet);
@@ -486,7 +487,12 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
             Logger.error(FileMetadataAPIImpl.class, e);
         }
 
-        return builder.build();
+        Optional<Map<String, Metadata>> collected = Optional.empty();
+        final SortedMap<String, Metadata> sortedMap = builder.build();
+        if(!sortedMap.isEmpty()){
+           collected = Optional.of(sortedMap);
+        }
+        return collected;
     }
 
     /**

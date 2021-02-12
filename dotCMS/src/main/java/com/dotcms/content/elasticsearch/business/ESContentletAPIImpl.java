@@ -4846,17 +4846,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                     final File binaryFieldFolder = new File(newDir.getAbsolutePath() + File.separator + velocityVarNm);
 
-                    final File metadata=(contentType instanceof FileAssetContentType) ?
-                        APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode()) : null;
+                    final File metadata=(contentType instanceof FileAssetContentType) ? APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode()) : null;
                     
 
-                    // if the user has removed this  file via the ui
+                    // if the user has removed this file via ui
                     if (incomingFile == null  || incomingFile.getAbsolutePath().contains("-removed-")){
                         FileUtil.deltree(binaryFieldFolder);
                         contentlet.setBinary(velocityVarNm, null);
-                        if(metadata!=null && metadata.exists()){
-                            metadata.delete();
-                        }
+
+                        //if(metadata!=null && metadata.exists()){
+                        //    metadata.delete();
+                        //}
                         //For removed files we should cleanup any existing metadata.
                         if(contentlet.isFileAsset()){
                            fileMetadataAPI.removeMetadata(contentlet);
@@ -5022,37 +5022,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             final Identifier contIdent = APILocator.getIdentifierAPI().find(contentlet);
-            /*
-            if(contentlet.isFileAsset()){
 
-               final boolean parseLegacyFileAssetMetadata = Config.getBooleanProperty("legacy.fileAsset.metadata", false);
-               if(parseLegacyFileAssetMetadata){
-                    //Parse file META-DATA
-                    final File binFile =  getBinaryFile(contentlet.getInode(), FileAssetAPI.BINARY_FIELD, user);
-                    if(binFile != null){
-                        contentlet.setProperty(FileAssetAPI.FILE_NAME_FIELD, binFile.getName());
-                        if(!UtilMethods.isSet(contentlet.getStringProperty(FileAssetAPI.DESCRIPTION))){
-                            String desc = UtilMethods.getFileName(binFile.getName());
-                            contentlet.setProperty(FileAssetAPI.DESCRIPTION, desc);
-                        }
-                        //This remains here for backwards compatibility
-                        final Map<String, String> metaMap = APILocator.getFileAssetAPI().getMetaDataMap(contentlet, binFile);
-
-                        if(metaMap != null) {
-                            final Gson gson = new GsonBuilder().disableHtmlEscaping().create();
-                            contentlet.setProperty(FileAssetAPI.META_DATA_FIELD, gson.toJson(metaMap));
-                            contentlet = contentFactory.save(contentlet);
-                            contentlet.setIndexPolicy(indexPolicy);
-                            contentlet.setIndexPolicyDependencies(indexPolicyDependencies);
-                        }
-                    }
-
-                    // clear possible CSS cache
-                    CacheLocator.getCSSCache().remove(contIdent.getHostId(), contIdent.getURI(), true);
-                    CacheLocator.getCSSCache().remove(contIdent.getHostId(), contIdent.getURI(), false);
-
-               }
-            }*/
 
             // both file & page as content might trigger a menu cache flush
             if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET

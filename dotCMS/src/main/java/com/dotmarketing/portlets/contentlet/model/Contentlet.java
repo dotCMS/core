@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.model;
 
 import static com.dotmarketing.portlets.contentlet.business.MetadataCache.EMPTY_METADATA_MAP;
+import static com.dotmarketing.util.UtilMethods.isSet;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -257,7 +258,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public Contentlet(final Contentlet contentlet) {
 		this(contentlet.getMap());
 		this.setIndexPolicy(contentlet.getIndexPolicy());
-		if(null != contentlet.contentletMetadata) {
+		if(isSet(contentlet.contentletMetadata)) {
 		   this.contentletMetadata = ImmutableMap.copyOf(contentlet.contentletMetadata);
 		}
 	}
@@ -287,7 +288,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     public final String getTitle(){
     	try {
 
-    		if (UtilMethods.isSet(this.map.get(TITTLE_KEY))) {
+    		if (isSet(this.map.get(TITTLE_KEY))) {
 
     			return map.get(TITTLE_KEY).toString();
 			}
@@ -299,7 +300,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 			String title = fieldWithSuspectTitleFound.isPresent() &&  map.get(fieldWithSuspectTitleFound.get().variable())!=null?
 				map.get(fieldWithSuspectTitleFound.get().variable()).toString(): null;
 
-			if (!UtilMethods.isSet(title)) {
+			if (!isSet(title)) {
 				title = this.buildName();
 			}
 
@@ -329,7 +330,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 		// if already set previously
 		String returnValue = (String) this.map.get(Contentlet.DOT_NAME_KEY);
-		if(UtilMethods.isSet(returnValue)){
+		if(isSet(returnValue)){
 			return returnValue;
 		}
 
@@ -359,9 +360,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		}
 
 		// if not found text but found binary
-		returnValue = !UtilMethods.isSet(returnValue) && UtilMethods.isSet(binaryValue)? binaryValue:returnValue;
+		returnValue = !isSet(returnValue) && isSet(binaryValue)? binaryValue:returnValue;
 
-		if(UtilMethods.isSet(returnValue)) {
+		if(isSet(returnValue)) {
 
 			this.setStringProperty(Contentlet.DOT_NAME_KEY, returnValue.length() > 250 ?
 					returnValue.substring(0, 250) : returnValue);
@@ -369,7 +370,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		}
 
 		/// if not found listed, so try to see by type (file asset or dotasset)
-		if (UtilMethods.isSet(this.getIdentifier())) {
+		if (isSet(this.getIdentifier())) {
 
 			if (this.isFileAsset()) {
 				try {
@@ -388,7 +389,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 						final String transientNameKey = DotAssetContentType.ASSET_FIELD_VAR + "name";
 						final String dotAssetName     = this.getStringProperty(transientNameKey);
 						String assetName              = dotAssetName;
-						if (!UtilMethods.isSet(dotAssetName) && null != this.getBinary(DotAssetContentType.ASSET_FIELD_VAR)) {
+						if (!isSet(dotAssetName) && null != this.getBinary(DotAssetContentType.ASSET_FIELD_VAR)) {
 							assetName = this.getBinary(DotAssetContentType.ASSET_FIELD_VAR).getName();
 							this.setStringProperty(transientNameKey, assetName);
 						}
@@ -412,7 +413,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	private Optional<com.dotcms.contenttype.model.field.Field> getFieldWithVarStartingWithTitleWord() {
 		return this.getContentType().fields().stream()
-				.filter(field -> UtilMethods.isSet(field.variable())
+				.filter(field -> isSet(field.variable())
 						&& field.variable().startsWith(TITTLE_KEY)).findAny();
 	}
 
@@ -471,7 +472,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      * @return
      */
     public String getContentTypeId() {
-      return UtilMethods.isSet(map.get(STRUCTURE_INODE_KEY)) ?( String)  map.get(STRUCTURE_INODE_KEY) : null;
+      return isSet(map.get(STRUCTURE_INODE_KEY)) ?( String)  map.get(STRUCTURE_INODE_KEY) : null;
     }
 
     /**
@@ -1041,7 +1042,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
                         returnVal=f.variable();
                         break;
                     }
-                    else if( f instanceof ImageField && UtilMethods.isSet(get(f.variable()))) {
+                    else if( f instanceof ImageField && isSet(get(f.variable()))) {
                         returnVal=f.variable();
                         break;
                     }
@@ -1264,7 +1265,10 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	@JsonIgnore
 	public Optional<Map<String, Metadata>> getLazyMetadata() {
 		if(null == contentletMetadata){
-			contentletMetadata = APILocator.getFileMetadataAPI().collectFieldsMetadata(this);
+		   final Optional<Map<String, Metadata>> optional = APILocator.getFileMetadataAPI().collectFieldsMetadata(this);
+           optional.ifPresent(metadata -> {
+               contentletMetadata = metadata;
+           });
 		}
 		return Optional.ofNullable(contentletMetadata);
 	}
@@ -1508,7 +1512,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 		final List<TagInode> foundTagInodes = APILocator.getTagAPI().getTagInodesByInode(this.getInode());
 		return foundTagInodes != null && !foundTagInodes.isEmpty()?
-				foundTagInodes.stream().anyMatch(foundTagInode -> UtilMethods.isSet(this.getStringProperty(foundTagInode.getFieldVarName()))):
+				foundTagInodes.stream().anyMatch(foundTagInode -> isSet(this.getStringProperty(foundTagInode.getFieldVarName()))):
 				false;
 	}
 
@@ -1519,7 +1523,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     @CloseDBIfOpened
 	public void setTags() throws DotDataException {
 
-		if (!this.loadedTags && UtilMethods.isSet(getContentTypeId())) {
+		if (!this.loadedTags && isSet(getContentTypeId())) {
 
 			final boolean hasTagFields = this.getContentType().fields().stream().anyMatch(TagField.class::isInstance);
 
@@ -1527,7 +1531,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 				final HashMap<String, StringBuilder> contentletTagsMap = new HashMap<>();
 				final List<TagInode> foundTagInodes = APILocator.getTagAPI().getTagInodesByInode(this.getInode());
-				if (UtilMethods.isSet(foundTagInodes)) {
+				if (isSet(foundTagInodes)) {
 
 					for (final TagInode foundTagInode : foundTagInodes) {
 
@@ -1537,7 +1541,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 						if (!map.containsKey(fieldVarName)) {
 							StringBuilder contentletTagsBuilder = new StringBuilder();
 
-							if (UtilMethods.isSet(fieldVarName)) {
+							if (isSet(fieldVarName)) {
 								//Getting the related tag object
 								Tag relatedTag = APILocator.getTagAPI().getTagByTagId(foundTagInode.getTagId());
 
@@ -1776,7 +1780,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 	@JsonIgnore
 	public boolean validateMe() {
-		return !UtilMethods.isSet(map.get(Contentlet.DONT_VALIDATE_ME));
+		return !isSet(map.get(Contentlet.DONT_VALIDATE_ME));
 	}
 
 	/**

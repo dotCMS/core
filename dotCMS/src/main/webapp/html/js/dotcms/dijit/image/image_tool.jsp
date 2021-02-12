@@ -1,3 +1,6 @@
+<%@page import="com.dotmarketing.image.focalpoint.FocalPoint"%>
+<%@page import="com.dotmarketing.image.focalpoint.FocalPointAPIImpl"%>
+<%@page import="java.util.Optional"%>
 <%@page import="com.liferay.portal.model.User"%>
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
@@ -18,6 +21,8 @@
 	String fieldName = (UtilMethods.isSet(request.getParameter("fieldName"))) ? request.getParameter("fieldName") : "fileAsset";
 	String baseImage =  "/contentAsset/image/" + id + "/" + fieldName + "/" ;
 
+    Optional<FocalPoint> focalPoint =APILocator.getFocalPointAPI().readFocalPoint(id, fieldName);
+    String fpStr = focalPoint.isPresent() ? focalPoint.toString() :".0,.0";
 	String hostId = null;
 	if (request.getParameter("host_id") != null) {
 		hostId = request.getParameter("host_id");
@@ -93,8 +98,10 @@
 		
 		dojo.ready(
 			function(){
-			  
+
+			    imageEditor.modFocalPointStr("<%=fpStr%>");
 				imageEditor.initIframe();
+
 			}
 		);
 	
@@ -103,7 +110,7 @@
 </head>
 <body class="dmundra"  >
 <!--  top button bar -->
-	<div class="imageToolContainer">
+    <div class="imageToolContainer">
 <div class="imageToolButtonBar">
 	<table style="width:100%;margin:0px">
 		<tr>
@@ -174,6 +181,8 @@
 
 
 
+
+
 <!--  image viewport -->
 <div id="imageViewPort" class="loader">
 	<img id="me" src="<%=baseImage%>">
@@ -230,7 +239,10 @@
 
             </td>
          </tr>
-
+         <tr>
+            <td class="leftCol"><%=LanguageUtil.get(pageContext, "image.editor.focal.point")%> :</td>
+            <td class="rightCol"><span id="focalPointValueSpan"></span></td>
+         </tr>
 
         
         <tr><td colspan=2><hr style="height:1px; border:none;  background-color:silver; "></td></tr>
@@ -412,7 +424,7 @@
 						onchange="imageEditor.changeHSB()"
 						intermediateChanges="true"
 						class="colorSlider"
-	s					scrollOnFocus=false
+						scrollOnFocus=false
 							id="brightSlider"> 
 						<div dojoType="dijit.form.HorizontalRule" container="bottomDecoration" count=5 style="height:5px;"></div>
 						<ol dojoType="dijit.form.HorizontalRuleLabels" container="bottomDecoration" style="height:1em;font-size:75%;color:gray;">

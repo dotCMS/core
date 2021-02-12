@@ -1,85 +1,97 @@
 package com.dotmarketing.image.focalpoint;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
+import com.dotcms.storage.FileMetadataAPI;
+import com.dotcms.storage.model.Metadata;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.google.common.annotations.VisibleForTesting;
+import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
+import com.werken.xpath.impl.Op;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 import com.liferay.util.StringPool;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.io.IOUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Logger;
 import io.vavr.control.Try;
 
 public class FocalPointAPIImpl implements FocalPointAPI {
 
-    private final static String FOCALPOINT_EXTENSION = ".dotfp";
-
     private final FocalPointCache cache;
-    private final FileAssetAPI    fileAssetAPI;
     private final Pattern         fpPattern = Pattern.compile(StringPool.COMMA);
+    private final FileMetadataAPI fileMetadataAPI;
+    private final ContentletAPI contentletAPI;
+    private final Supplier<User> currentUserSupplier;
 
     public FocalPointAPIImpl() {
-        this(APILocator.getFileAssetAPI(), new FocalPointCache());
-
+        this(APILocator.getFileMetadataAPI(),
+                APILocator.getContentletAPI(), CacheLocator.getFocalPointCache(),
+                () -> {
+                    final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+                    if (null != request) {
+                        return PortalUtil.getUser(request);
+                    }
+                    return null;
+                });
     }
 
-    public FocalPointAPIImpl(final FileAssetAPI fileAssetAPI, final FocalPointCache cache) {
-        this.fileAssetAPI = fileAssetAPI;
+    @VisibleForTesting
+    FocalPointAPIImpl(final FileMetadataAPI fileMetadataAPI, final ContentletAPI contentletAPI, final FocalPointCache cache, final Supplier<User> currentUserSupplier) {
+        this.fileMetadataAPI = fileMetadataAPI;
+        this.contentletAPI = contentletAPI;
         this.cache = cache;
-    }
-
-
-    private File getFPFile(final String inode, final String fieldVar) {
-        File assetOpt = fileAssetAPI.getContentMetadataFile(inode);
-        return new File(assetOpt.getParent(), fieldVar + FOCALPOINT_EXTENSION);
+        this.currentUserSupplier = currentUserSupplier;
     }
 
     @Override
     public void writeFocalPoint(final String inode, final String fieldVar, final FocalPoint focalPoint) {
 
-        final File dotFP = getFPFile(inode, fieldVar);
-        dotFP.getParentFile().mkdirs();
+        final Optional<Contentlet> contentlet = findContentlet(inode);
+        contentlet.ifPresent(contentlet1 ->{
+           writeFocalPoint(contentlet1, fieldVar, focalPoint);
+           cache.add(inode, fieldVar, focalPoint);
+        });
 
-        if (focalPoint.x == 0 && focalPoint.y == 0) {
-            Logger.info(this.getClass(), "Deleteing focalpoint:" + focalPoint);
-            dotFP.delete();
-            if (cache != null) {
-                cache.remove(inode, fieldVar);
-            }
-            return;
-        }
+    }
 
-        try (OutputStream out = Files.newOutputStream(dotFP.toPath())) {
-            Logger.info(this.getClass(), "Writing focalpoint:" + focalPoint + " to " + dotFP);
-            IOUtils.write(focalPoint.x + "," + focalPoint.y, out, Charset.defaultCharset());
-        } catch (IOException e) {
+
+    private void writeFocalPoint(final Contentlet contentlet, final String fieldVar, final FocalPoint focalPoint) {
+        try {
+            fileMetadataAPI.putCustomMetadataAttributes(contentlet, ImmutableMap.of(fieldVar, ImmutableMap.of("focalPoint", focalPoint.toString())));
+        } catch (DotDataException e) {
             throw new DotRuntimeException(e);
-        }
-
-        if (cache != null) {
-            cache.add(inode, fieldVar, focalPoint);
         }
 
     }
 
-    private Optional<FocalPoint> readFocalPoint(final File dotFP) {
+    private Optional<FocalPoint> readFocalPoint(final Contentlet contentlet, final String fieldVar) {
 
-        try (InputStream input = Files.newInputStream(dotFP.toPath())) {
-
-            final String value = IOUtils.toString(input, Charset.defaultCharset());
-            return parseFocalPoint(value);
-        } catch (Exception e) {
-            Logger.debug(this.getClass(), e.getMessage(), e);
-        }
-
+       try {
+           final Metadata metadata = fileMetadataAPI.getMetadata(contentlet, fieldVar);
+           return parseFocalPoint(
+                   (String) metadata.getCustomMeta().get("focalPoint"));
+       }catch (Exception e){
+          Logger.error (FocalPointAPIImpl.class,"Error retrieving focal point from custom metadata", e);
+       }
         return Optional.empty();
     }
 
@@ -87,7 +99,6 @@ public class FocalPointAPIImpl implements FocalPointAPI {
     public Optional<FocalPoint> parseFocalPoint(final String forcalPoint) {
 
         try {
-
             final String[] value = this.fpPattern.split(forcalPoint);
             return Optional.of(new FocalPoint(Float.valueOf(value[0]), Float.valueOf(value[1])));
         } catch (Exception e) {
@@ -99,13 +110,30 @@ public class FocalPointAPIImpl implements FocalPointAPI {
     @Override
     public Optional<FocalPoint> readFocalPoint(final String inode, final String fieldVar) {
 
-        final Optional<FocalPoint> retVal = cache != null ? cache.get(inode, fieldVar) : Optional.empty();
-        if (retVal.isPresent()) {
-            return retVal;
+        Optional<FocalPoint> focalPoint = cache.get(inode, fieldVar);
+        if (focalPoint.isPresent()) {
+            return focalPoint;
         }
 
-        final File file = getFPFile(inode, fieldVar);
-        return readFocalPoint(file);
+        final Optional<Tag> focalPointTag = Try.of(()->APILocator.getTagAPI().getTagsByInode(inode).stream().filter(t->t.getTagName().startsWith("fp:"+fieldVar+":")).findAny()).getOrElse(Optional.empty());
+
+        if(focalPointTag.isPresent()) {
+            focalPoint = Try.of(()->new FocalPoint(focalPointTag.get().getTagName().replace("fp:", ""))).toJavaOptional();
+            if (focalPoint.isPresent()) {
+                cache.add(inode, fieldVar, focalPoint.get());
+                return focalPoint;
+            }
+        }
+
+        final Optional<Contentlet> optional = findContentlet(inode);
+        if(optional.isPresent()){
+            final Optional<FocalPoint> focalPointOptional = readFocalPoint(optional.get(), fieldVar);
+            focalPoint.ifPresent(point -> cache.add(inode, fieldVar, point));
+            return focalPointOptional;
+        }
+
+        return Optional.empty();
+
     }
 
 
@@ -114,4 +142,10 @@ public class FocalPointAPIImpl implements FocalPointAPI {
 
         return Try.of(() -> parseFocalPoint(parameters.get("fp")[0])).getOrElse(Optional.empty());
     }
+
+
+    private Optional<Contentlet> findContentlet(final String inode){
+      return Optional.ofNullable(Try.of(()->contentletAPI.find(inode, currentUserSupplier.get(), false)).getOrNull());
+    }
+
 }
