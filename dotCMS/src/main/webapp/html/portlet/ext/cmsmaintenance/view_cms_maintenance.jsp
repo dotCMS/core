@@ -157,6 +157,24 @@ function flushIndiciesCacheCallback(data) {
     showDotCMSSystemMessage(message);
 }
 
+function doShutdownDotcms(){
+
+
+    if(!dijit.byId("agreeToShutdown").checked){
+        alert("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Please agree with the disclaimer"))%>")
+        return;
+    }
+
+    if(!confirm("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "shutdown.dotcms.confirmation"))%>")){
+        return;
+    }
+
+    fetch('/api/v1/maintenance/_shutdown', {method:'DELETE'} )
+        .then(response => response.json())
+.then(()=>alert('shutdown started'));
+
+}
+
 function checkFixAsset()
 {
 	CMSMaintenanceAjax.getFixAssetsProgress(fixAssetsCallback);
@@ -1678,6 +1696,34 @@ dd.leftdl {
             </table>
 
             <div style="height:20px">&nbsp;</div>
+
+
+            <table class="listingTable">
+                <tr>
+                    <th><%= LanguageUtil.get(pageContext,"shutdown.dotcms.button") %></th>
+                </tr>
+                <tr>
+                    <td align="center" class="warning">
+                    <div style="margin:auto;width:55%;padding:50px;text-align: justify;line-height:1.5">
+                        <%= LanguageUtil.get(pageContext,"shutdown.dotcms.disclaimer") %>
+
+                    </div>
+
+                    <div style="margin:auto;width:50%;background-color:pink;padding:50px;border-radius:20px;">
+
+                    <input dojoType="dijit.form.CheckBox" type="checkbox" id="agreeToShutdown" name="agreeToShutdown" value="true"><label for="agreeToShutdown" style="padding-left:5px;padding-right:15px;"><%= LanguageUtil.get(pageContext,"shutdown.dotcms.consent") %></label>
+
+                         <button dojoType="dijit.form.Button" onClick="doShutdownDotcms();"  id="doShutdownDotcms">
+                            <%= LanguageUtil.get(pageContext,"shutdown.dotcms.button") %>
+                         </button>
+
+                      </div>
+                    </td>
+                </tr>
+
+            </table>
+
+
             <%
             	  List<Host> hosts = new ArrayList<Host>();
             	try{
