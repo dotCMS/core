@@ -403,6 +403,8 @@ public class FileStorageAPIImpl implements FileStorageAPI {
                     final String cacheKey = configuration.getCacheKeySupplier().get();
                     putIntoCache(cacheKey, newMetadataMap);
                 }
+            } else {
+                Logger.info(FileStorageAPIImpl.class, String.format("Unable to locate object: `%s` ",storageKey));
             }
 
         } else {
@@ -410,6 +412,29 @@ public class FileStorageAPIImpl implements FileStorageAPI {
                     "Unable to set custom attribute for the given group: `%s` and path: `%s` ",
                     storageKey.getGroup(), storageKey.getPath()));
         }
+
+    }
+
+    /**
+     * {@inheritDoc}
+     * @param configuration
+     * @param metadata
+     * @throws DotDataException
+     */
+    public boolean setMetadata(final GenerateMetadataConfig configuration,
+            final Map<String, Serializable> metadata) throws DotDataException{
+        final StorageKey storageKey = configuration.getStorageKey();
+        final StoragePersistenceAPI storage = persistenceProvider.getStorage(storageKey.getStorage());
+
+        checkBucket(storageKey, storage);
+        checkOverride(storage, configuration);
+        storeMetadata(storageKey, storage, metadata);
+
+        if(null != configuration.getCacheKeySupplier()){
+            final String cacheKey = configuration.getCacheKeySupplier().get();
+            putIntoCache(cacheKey, metadata);
+        }
+        return storage.existsObject(storageKey.getGroup(), storageKey.getPath());
 
     }
 

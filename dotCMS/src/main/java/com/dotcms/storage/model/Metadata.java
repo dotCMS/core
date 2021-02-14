@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableMap;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class Metadata implements Serializable {
@@ -39,5 +40,34 @@ public class Metadata implements Serializable {
 
     public Map<String, Serializable> getCustomMeta() {
         return customMeta;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Metadata metadata = (Metadata) o;
+        return Objects.equals(fieldName, metadata.fieldName) &&
+                Objects.equals(fieldsMeta, metadata.fieldsMeta) &&
+                Objects.equals(customMeta, metadata.customMeta);
+    }
+
+    @Override
+    public int hashCode() {
+
+        return Objects.hash(fieldName, fieldsMeta, customMeta);
+    }
+
+    @Override
+    public String toString() {
+        return "Metadata{" +
+                "fieldName='" + fieldName + '\'' +
+                ", fieldsMeta=" + fieldsMeta +
+                ", customMeta=" + customMeta +
+                '}';
     }
 }

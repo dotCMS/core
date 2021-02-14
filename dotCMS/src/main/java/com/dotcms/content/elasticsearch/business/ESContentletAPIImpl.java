@@ -4923,6 +4923,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                     FileUtil.copyFile(oldMeta, metadata);
                                 }
                             }
+
+                            if(workingContentlet != contentlet){
+                               fileMetadataAPI.copyMetadata(workingContentlet, contentlet);
+                            }
                         }
                         contentlet.setBinary(velocityVarNm, newFile);
                     }

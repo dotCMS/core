@@ -125,4 +125,13 @@ public interface FileMetadataAPI {
      */
     void putCustomMetadataAttributes(final Contentlet contentlet,
             final Map<String, Map<String, Serializable>> customAttributesByField) throws DotDataException;
+
+    /**
+     * Given a source contentlet this will grab all current meta and copy it into the destination contentlet
+     * assuming both are of the same CT
+     * @param source
+     * @param destination
+     */
+    void copyMetadata(Contentlet source, Contentlet destination) throws DotDataException;
+
 }

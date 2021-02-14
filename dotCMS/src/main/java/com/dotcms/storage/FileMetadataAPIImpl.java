@@ -41,6 +41,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Default implementation
@@ -507,8 +508,11 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
                 .getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);
         final Tuple2<SortedSet<String>, SortedSet<String>> binaryFields = findBinaryFields(
                 contentlet);
+        final Set<String> fields = Stream
+                .concat(binaryFields._1.stream(), binaryFields._2.stream())
+                .collect(Collectors.toSet());
         try {
-            for (final String basicMetaFieldName : binaryFields._1()) {
+            for (final String basicMetaFieldName : fields) {
                 final String metadataPath = getFileName(contentlet, basicMetaFieldName);
                 if (this.fileStorageAPI.removeMetaData(
                         new RequestMetadata.Builder()
@@ -580,6 +584,62 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
            }
        });
 
+    }
+
+
+    /**
+     *
+     * @param source
+     * @param destination
+     * @throws DotDataException
+     */
+    public void copyMetadata(final Contentlet source, final Contentlet destination)
+            throws DotDataException {
+        if (source.getContentType().baseType().equals(destination.getContentType().baseType())) {
+
+            final StorageType storageType = StoragePersistenceProvider.getStorageType();
+            final String metadataBucketName = Config
+                    .getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);
+
+            final Tuple2<SortedSet<String>, SortedSet<String>> binaryFields = findBinaryFields(
+                    source);
+
+            final Set<String> fieldVarNames = Stream
+                    .concat(binaryFields._1.stream(), binaryFields._2.stream())
+                    .collect(Collectors.toSet());
+
+            for (final String fieldVarName : fieldVarNames) {
+
+                final String sourceMetadataPath = this.getFileName(source, fieldVarName);
+                source.getLazyMetadata().ifPresent(stringMetadataMap -> System.out.println(sourceMetadataPath));
+                final Map<String, Serializable> metadataMap = fileStorageAPI.retrieveMetaData(
+                        new RequestMetadata.Builder()
+                                .cache(false)
+                                .storageKey(
+                                        new StorageKey.Builder().group(metadataBucketName)
+                                                .path(sourceMetadataPath)
+                                                .storage(storageType).build())
+                                .build()
+                );
+
+                if (null != metadataMap) {
+
+                    final String destMetadataPath = this.getFileName(destination, fieldVarName);
+
+                    fileStorageAPI.setMetadata(new GenerateMetadataConfig.Builder()
+
+                            .cache(() -> destination.getInode() + StringPool.COLON
+                                    + fieldVarName)
+                            .store(true)
+                            .override(true)
+                            .storageKey(
+                                    new StorageKey.Builder().group(metadataBucketName)
+                                            .path(destMetadataPath)
+                                            .storage(storageType).build())
+                            .build(), metadataMap);
+                }
+            }
+        }
     }
 
 }

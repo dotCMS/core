@@ -5,25 +5,21 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.TestDataUtils.TestFile;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.liferay.portal.model.User;
+import com.dotmarketing.util.UUIDGenerator;
+import com.google.common.collect.ImmutableMap;
 import java.io.File;
 import java.net.URL;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Supplier;
 import org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
-import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImpl;
-import com.dotmarketing.util.UUIDGenerator;
-import com.google.common.collect.ImmutableMap;
 
 public class FocalPointAPITest {
 
@@ -34,7 +30,7 @@ public class FocalPointAPITest {
     @BeforeClass
     public static void setup() throws Exception {
         IntegrationTestInitService.getInstance().init();
-        focalPointAPI = new FocalPointAPIImpl(APILocator.getFileAssetAPI(),
+        focalPointAPI = new FocalPointAPIImpl(
                 APILocator.getFileMetadataAPI(),
                 APILocator.getContentletAPI(), CacheLocator.getFocalPointCache(),
                 APILocator::systemUser);

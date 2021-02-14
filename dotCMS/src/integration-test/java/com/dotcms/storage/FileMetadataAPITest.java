@@ -25,6 +25,7 @@ import com.dotcms.storage.model.ContentletMetadata;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -595,6 +596,71 @@ public class FileMetadataAPITest {
             }
 
             
+        } finally {
+            Config.setProperty(DEFAULT_STORAGE_TYPE, stringProperty);
+            Config.setProperty(WRITE_METADATA_ON_REINDEX, defaultValue);
+        }
+    }
+
+    @Test
+    @UseDataProvider("getStorageType")
+    public void Get_Metadata_Then_Clear_Cache_Then_Expect_Same_Behavior(
+            final StorageType storageType) throws IOException, DotDataException {
+        final String stringProperty = Config.getStringProperty(DEFAULT_STORAGE_TYPE);
+        //disconnect the MD generation on indexing so we can test directly here.
+        final boolean defaultValue = Config.getBooleanProperty(WRITE_METADATA_ON_REINDEX, true);
+        try {
+            Config.setProperty(WRITE_METADATA_ON_REINDEX, false);
+            Config.setProperty(DEFAULT_STORAGE_TYPE, storageType.name());
+            final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+            final Contentlet contentlet = getMultipleBinariesContent(true, langId, null);
+
+            final ContentletMetadata metadata = fileMetadataAPI
+                    .generateContentletMetadata(contentlet);
+
+            assertNotNull("must have metadata", metadata);
+            assertFalse("Expect metadata ", contentlet.getLazyMetadata().isPresent());
+
+            final Map<String, Metadata> metadataMap1 = contentlet.getLazyMetadata().get();
+            CacheLocator.getMetadataCache().clearCache();
+            final Map<String, Metadata> metadataMap2 = contentlet.getLazyMetadata().get();
+
+            assertEquals("The metadata must match.", metadataMap1, metadataMap2);
+
+        } finally {
+            Config.setProperty(DEFAULT_STORAGE_TYPE, stringProperty);
+            Config.setProperty(WRITE_METADATA_ON_REINDEX, defaultValue);
+        }
+    }
+
+    @Test
+    @UseDataProvider("getStorageType")
+    public void Test_Copy_Metadata(final StorageType storageType)
+            throws IOException, DotDataException {
+        final String stringProperty = Config.getStringProperty(DEFAULT_STORAGE_TYPE);
+        //disconnect the MD generation on indexing so we can test directly here.
+        final boolean defaultValue = Config.getBooleanProperty(WRITE_METADATA_ON_REINDEX, true);
+        try {
+            Config.setProperty(WRITE_METADATA_ON_REINDEX, false);
+            Config.setProperty(DEFAULT_STORAGE_TYPE, storageType.name());
+            final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+            final Contentlet source = getMultipleBinariesContent(true, langId, null);
+
+            final ContentletMetadata metadata = fileMetadataAPI
+                    .generateContentletMetadata(source);
+
+            assertTrue("Expect metadata since we just generated it.",source.getLazyMetadata().isPresent());
+
+            final Contentlet dest = getMultipleBinariesContent(true, langId, null);
+
+            assertFalse("Expect no metadata ",dest.getLazyMetadata().isPresent());
+
+            fileMetadataAPI.copyMetadata(source, dest);
+
+            assertTrue("Expect metadata ",dest.getLazyMetadata().isPresent());
+
+            assertEquals("The metadata must match.",source.getLazyMetadata().get(),dest.getLazyMetadata().get());
+
         } finally {
             Config.setProperty(DEFAULT_STORAGE_TYPE, stringProperty);
             Config.setProperty(WRITE_METADATA_ON_REINDEX, defaultValue);
