@@ -48,6 +48,7 @@ $number-link-icon-size: 2.28rem;
     .dot-starter-top-main__section {
         background-color: $white;
         box-shadow: $md-shadow-4;
+        counter-reset: css-counter 0;
         flex-grow: 1;
         margin-left: $spacing-1;
         margin-bottom: $spacing-4;
@@ -77,11 +78,16 @@ $number-link-icon-size: 2.28rem;
             background-color: $brand-primary;
             border-radius: 50%;
             color: $white;
+            counter-increment: css-counter 1;
             display: inline-flex;
             font-size: $md-icon-size-normal;
             height: $number-link-icon-size;
             justify-content: center;
             width: $number-link-icon-size;
+
+            &::before {
+                content: counter(css-counter);
+            }
         }
     }
 

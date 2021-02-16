@@ -8,7 +8,7 @@ const routes: Routes = [
         component: DotStarterComponent,
         path: '',
         resolve: {
-            username: DotStarterResolver
+            userData: DotStarterResolver
         }
     }
 ];

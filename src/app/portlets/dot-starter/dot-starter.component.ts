@@ -1,7 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { pluck, take } from 'rxjs/operators';
 import { DotToolGroupService } from '@services/dot-tool-group/dot-tool-group.service';
+import {
+    DotCurrentUser,
+    DotPermissionsType,
+    PermissionsType
+} from '@models/dot-current-user/dot-current-user';
+import { Observable } from 'rxjs';
+import { pluck, take, map } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-starter',
@@ -9,14 +15,43 @@ import { DotToolGroupService } from '@services/dot-tool-group/dot-tool-group.ser
     styleUrls: ['./dot-starter.component.scss']
 })
 export class DotStarterComponent implements OnInit {
+    userData$: Observable<{
+        username: string;
+        showCreateContentLink: boolean;
+        showCreateDataModelLink: boolean;
+        showCreatePageLink: boolean;
+        showCreateTemplateLink: boolean;
+    }>;
     username: string;
+    showCreateContentLink: boolean;
+    showCreateDataModelLink: boolean;
+    showCreatePageLink: boolean;
+    showCreateTemplateLink: boolean;
 
     constructor(private route: ActivatedRoute, private dotToolGroupService: DotToolGroupService) {}
 
     ngOnInit() {
-        this.route.data.pipe(pluck('username'), take(1)).subscribe((username: string) => {
-            this.username = username;
-        });
+        this.userData$ = this.route.data.pipe(
+            pluck('userData'),
+            take(1),
+            map(
+                ({
+                    user,
+                    permissions
+                }: {
+                    user: DotCurrentUser;
+                    permissions: DotPermissionsType;
+                }) => {
+                    return {
+                        username: user.givenName,
+                        showCreateContentLink: permissions[PermissionsType.CONTENTLETS].canWrite,
+                        showCreateDataModelLink: permissions[PermissionsType.STRUCTURES].canWrite,
+                        showCreatePageLink: permissions[PermissionsType.HTMLPAGES].canWrite,
+                        showCreateTemplateLink: permissions[PermissionsType.TEMPLATES].canWrite
+                    };
+                }
+            )
+        );
     }
 
     /**

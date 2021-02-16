@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { CoreWebService } from 'dotcms-js';
 import { DotLocalstorageService } from '@services/dot-localstorage/dot-localstorage.service';
 import { FormatDateService } from '@services/format-date-service';
+import { formatMessage } from '@shared/dot-utils';
 
 @Injectable({
     providedIn: 'root'
@@ -49,7 +50,7 @@ export class DotMessageService {
     get(key: string, ...args: string[]): string {
         return this.messageMap[key]
             ? args.length
-                ? this.formatMessage(this.messageMap[key], args)
+                ? formatMessage(this.messageMap[key], args)
                 : this.messageMap[key]
             : key;
     }
@@ -95,12 +96,5 @@ export class DotMessageService {
 
     private geti18nURL(lang: string): string {
         return `/api/v2/languages/${lang ? lang : 'default'}/keys`;
-    }
-
-    // Replace {n} in the string with the strings in the args array
-    private formatMessage(message: string, args: string[]): string {
-        return message.replace(/{(\d+)}/g, (match, number) => {
-            return typeof args[number] !== 'undefined' ? args[number] : match;
-        });
     }
 }
