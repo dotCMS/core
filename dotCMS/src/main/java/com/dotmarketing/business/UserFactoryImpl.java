@@ -255,6 +255,7 @@ public class UserFactoryImpl implements UserFactory {
             try {
                 final User oldUser = loadUserById(user.getUserId());
                 if (UtilMethods.isSet(oldUser)) {
+                    uc.remove(user.getUserId());
                     return updateUser(user, oldUser);
                 }
             }catch(NoSuchUserException e){
