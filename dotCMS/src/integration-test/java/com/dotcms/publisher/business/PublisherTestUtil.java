@@ -424,7 +424,7 @@ public class PublisherTestUtil {
     public static boolean existsFolder(final String bundlePath, final Folder folder) {
 
         final File folderTestPath   = new File(bundlePath, "/ROOT/" + folder.getName());
-        final File folderIdTestPath = new File(bundlePath, "/ROOT/" + folder.getIdentifier() + ".folder.xml");
+        final File folderIdTestPath = new File(bundlePath, "/ROOT/" + folder.getIdentifier() + ".folder.folder.xml");
 
         return folderTestPath.exists() && folderIdTestPath.exists();
     }

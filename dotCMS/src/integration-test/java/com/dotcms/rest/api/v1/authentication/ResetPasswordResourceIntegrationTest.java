@@ -1,128 +1,143 @@
 package com.dotcms.rest.api.v1.authentication;
 
-import com.dotcms.auth.providers.jwt.beans.UserToken;
-import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
-import com.dotcms.rest.RestUtilTest;
+import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.UserDataGen;
+import com.dotcms.mock.request.MockAttributeRequest;
+import com.dotcms.mock.request.MockHeaderRequest;
+import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockSessionRequest;
+import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.NoSuchUserException;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.UUIDGenerator;
-import com.liferay.portal.ejb.CompanyPool;
-import com.liferay.portal.ejb.UserManager;
-import com.liferay.portal.model.Company;
+import com.dotmarketing.util.Config;
+import com.liferay.portal.ejb.UserUtil;
 import com.liferay.portal.model.User;
-import org.junit.AfterClass;
-import org.junit.Before;
+import com.liferay.util.StringPool;
+import java.util.Calendar;
+import java.util.Date;
+import javax.ws.rs.core.Response.Status;
+import org.apache.commons.lang.RandomStringUtils;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
-import java.util.Date;
-
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class ResetPasswordResourceIntegrationTest{
 
-    private static final String DOTCMS_ORG_1 = "dotcms.org.1";
-    HttpServletRequest request;
-    ResponseUtil responseUtil;
-    ResetPasswordForm  resetPasswordForm;
-    
+    static ResetPasswordResource resource;
+
     @BeforeClass
 	public static void prepare() throws Exception{
 		//Setting web app environment
         IntegrationTestInitService.getInstance().init();
-        final Company company = new Company() {
 
-            @Override
-            public String getAuthType() {
-
-                return Company.AUTH_TYPE_ID;
-            }
-        };
-        CompanyPool.put(RestUtilTest.DEFAULT_COMPANY, company);
+        resource = new ResetPasswordResource();
 	}
 
-    @Before
-    public void initTest(){
-        request = RestUtilTest.getMockHttpRequest();
-        RestUtilTest.initMockContext();
-        responseUtil = ResponseUtil.INSTANCE;
-        resetPasswordForm = this.getForm();
+    private HttpServletRequest getHttpRequest() {
+        final MockHeaderRequest request = new MockHeaderRequest(
+                new MockSessionRequest(
+                        new MockAttributeRequest(new MockHttpRequest("localhost", "/").request())
+                                .request())
+                        .request());
+
+        return request;
     }
 
-    @Test
-    public void testNoSuchUserException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException,  DotDataException {
-        UserManager userManager = getUserManagerThrowingException( new NoSuchUserException("") );
-        final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
-        final UserToken jwtBean = new UserToken.Builder().id(UUIDGenerator.generateUuid())
-                .subject(DOTCMS_ORG_1).modificationDate(new Date()).expiresDate(100000).build();
-
-        when(jsonWebTokenService.parseToken(eq("token1"))).thenReturn(jwtBean);
-        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
-        Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
-
-        RestUtilTest.verifyErrorResponse(response,  Response.Status.BAD_REQUEST.getStatusCode(), "please-enter-a-valid-login");
-    }
-
-    @Test
-    public void testTokenInvalidException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException, DotDataException {
-        UserManager userManager = getUserManagerThrowingException( new DotInvalidTokenException("") );
-        final User user = APILocator.getUserAPI().loadUserById(DOTCMS_ORG_1);
-        final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
-        final UserToken jwtBean = new UserToken.Builder().id(user.getRememberMeToken())
-                .subject(DOTCMS_ORG_1)
-                .modificationDate(new Date())
-                .expiresDate(100000).build();
-        when(jsonWebTokenService.parseToken(eq("token1"))).thenReturn(jwtBean);
-        
-        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
-        Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
-        RestUtilTest.verifyErrorResponse(response,  Response.Status.BAD_REQUEST.getStatusCode(), "reset-password-token-invalid");
-    }
-
-    @Test
-    public void testTokenExpiredException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException, DotDataException {
-        UserManager userManager = getUserManagerThrowingException( new DotInvalidTokenException("", true) );
-        final User user = APILocator.getUserAPI().loadUserById(DOTCMS_ORG_1);
-        final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
-        final UserToken jwtBean = new UserToken.Builder().id(user.getRememberMeToken()).
-                subject(DOTCMS_ORG_1).modificationDate(new Date()).expiresDate(100000).build();
-
-        when(jsonWebTokenService.parseToken(eq("token1"))).thenReturn(jwtBean);
-        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
-        Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
-
-        RestUtilTest.verifyErrorResponse(response,  Response.Status.UNAUTHORIZED.getStatusCode(), "reset-password-token-expired");
-    }
-
-    private UserManager getUserManagerThrowingException(Exception e)
-            throws NoSuchUserException, DotSecurityException, DotInvalidTokenException {
-        UserManager userManager = mock( UserManager.class );
-        doThrow( e ).when( userManager ).resetPassword(DOTCMS_ORG_1,
-                "token2", resetPasswordForm.getPassword());
-        return userManager;
-    }
-
-    private ResetPasswordForm getForm(){
-        final String password = "admin";
-        final String token = "token1+++token2";
-
+    private ResetPasswordForm getResetPasswordForm(final String newPassword, final String token){
         return new ResetPasswordForm.Builder()
-                .password(password)
+                .password(newPassword)
                 .token(token)
                 .build();
     }
-    
-    @AfterClass
-    public static void cleanUp(){
-    	CompanyPool.remove(RestUtilTest.DEFAULT_COMPANY);
+
+    /**
+     * Method to test: {@link ResetPasswordResource#resetPassword(HttpServletRequest, ResetPasswordForm)}
+     * Given Scenario: Create an user and a token, associate the token to the user (icqId field),
+     *                  call the resource.
+     * ExpectedResult: 200, password changed successfully.
+     */
+	@Test
+    public void test_resetPassword_success() throws Exception{
+        User newUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
+        final String oldPassword = newUser.getPassword();
+        final String token = ResetPasswordTokenUtil.createToken();
+        newUser.setIcqId(token);
+        UserUtil.update(newUser);
+
+        //Call Resource
+        final Response responseResource = resource.resetPassword(getHttpRequest(),getResetPasswordForm("n3wPa$$w0rD",token));
+        //Check that the response is 200, OK
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+        //Check password has changed
+        Assert.assertNotEquals(oldPassword, APILocator.getUserAPI().loadUserById(newUser.getUserId()).getPassword());
     }
+
+    /**
+     * Method to test: {@link ResetPasswordResource#resetPassword(HttpServletRequest, ResetPasswordForm)}
+     * Given Scenario: Create a token, but no associate the token to any user (icqId field),
+     *                  call the resource.
+     * ExpectedResult: 400, token invalid since it's no associated to any user.
+     */
+    @Test
+    public void test_resetPassword_tokenNotBelongAnyUser_badRequest() {
+        final String token = ResetPasswordTokenUtil.createToken();
+
+        //Call Resource
+        final Response responseResource = resource.resetPassword(getHttpRequest(),getResetPasswordForm("n3wPa$$w0rD",token));
+        //Check that the response is 400
+        Assert.assertEquals(Status.BAD_REQUEST.getStatusCode(),responseResource.getStatus());
+        final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+        Assert.assertEquals("reset-password-token-invalid",responseEntityView.getErrors().get(0).getErrorCode());
+    }
+
+    /**
+     * Method to test: {@link ResetPasswordResource#resetPassword(HttpServletRequest, ResetPasswordForm)}
+     * Given Scenario: Create an user and a token (but the token is two hours old), associate the token to the user (icqId field),
+     *                  call the resource.
+     * ExpectedResult: 401, token expired.
+     */
+    @Test
+    public void testEXPIREDTOKEN() throws Exception{
+        final User newUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
+        final Calendar timeTwoHoursAgo = Calendar.getInstance();
+        timeTwoHoursAgo.setTime(new Date());
+        timeTwoHoursAgo.add(Calendar.HOUR,-2);
+        final String token = RandomStringUtils
+                .randomAlphanumeric( Config.getIntProperty( "RECOVER_PASSWORD_TOKEN_LENGTH", 30 ) )
+                + StringPool.COLON + timeTwoHoursAgo.getTimeInMillis();
+        newUser.setIcqId(token);
+        UserUtil.update(newUser);
+
+        //Call Resource
+        final Response responseResource = resource.resetPassword(getHttpRequest(),getResetPasswordForm("n3wPa$$w0rD",token));
+        //Check that the response is 401
+        Assert.assertEquals(Status.UNAUTHORIZED.getStatusCode(),responseResource.getStatus());
+        final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+        Assert.assertEquals("reset-password-token-expired",responseEntityView.getErrors().get(0).getErrorCode());
+    }
+
+    /**
+     * Method to test: {@link ResetPasswordResource#resetPassword(HttpServletRequest, ResetPasswordForm)}
+     * Given Scenario: Create an user and a token, associate the token to the user (icqId field),
+     *                  call the resource.
+     * ExpectedResult: 400, password does not meet requirements.
+     */
+    @Test
+    public void testINVALIDPASSWORD() throws Exception{
+        User newUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
+        final String token = ResetPasswordTokenUtil.createToken();
+        newUser.setIcqId(token);
+        UserUtil.update(newUser);
+
+        //Call Resource
+        final Response responseResource = resource.resetPassword(getHttpRequest(),getResetPasswordForm("admin",token));
+        //Check that the response is 400
+        Assert.assertEquals(Status.BAD_REQUEST.getStatusCode(),responseResource.getStatus());
+        final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+        Assert.assertEquals("reset-password-invalid-password",responseEntityView.getErrors().get(0).getErrorCode());
+    }
+
 
 }

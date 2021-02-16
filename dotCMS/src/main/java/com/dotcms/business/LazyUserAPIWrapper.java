@@ -1,5 +1,6 @@
 package com.dotcms.business;
 
+import com.dotcms.rest.api.v1.authentication.DotInvalidTokenException;
 import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -9,6 +10,7 @@ import com.liferay.portal.model.User;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * This is just a lazy user api for the {@link UserAPI}
@@ -130,6 +132,11 @@ public class LazyUserAPIWrapper implements UserAPI {
     @Override
     public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous, boolean includeDefault, String roleId) throws DotDataException {
         return this.getUserAPI().getCountUsersByNameOrEmailOrUserID(filter, includeAnonymous, includeDefault, roleId);
+    }
+
+    @Override
+    public Optional<String> getUserIdByIcqId(final String icqId) throws DotInvalidTokenException {
+        return this.getUserAPI().getUserIdByIcqId(icqId);
     }
 
     @Override

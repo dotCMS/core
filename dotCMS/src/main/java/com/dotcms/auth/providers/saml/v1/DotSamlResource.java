@@ -11,6 +11,7 @@ import com.dotcms.saml.SamlAuthenticationService;
 import com.dotcms.saml.DotSamlException;
 import com.dotcms.saml.SamlConfigurationService;
 import com.dotcms.saml.SamlName;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
@@ -36,6 +37,7 @@ import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -56,13 +58,7 @@ public class DotSamlResource implements Serializable {
 	private final IdentityProviderConfigurationFactory identityProviderConfigurationFactory;
 	private final WebResource						   webResource;
 
-	public static final List<String> dotsamlPathSegments = new ArrayList<String>() {
-		{
-			add("login");
-			add("logout");
-			add("metadata");
-		}
-	};
+	public static final List<String> dotsamlPathSegments = Arrays.asList("login", "logout", "metadata");
 
 
 	public DotSamlResource() {
@@ -70,7 +66,7 @@ public class DotSamlResource implements Serializable {
 		this.samlConfigurationService			  = DotSamlProxyFactory.getInstance().samlConfigurationService();
 		this.samlAuthenticationService            = DotSamlProxyFactory.getInstance().samlAuthenticationService();
 		this.identityProviderConfigurationFactory = DotSamlProxyFactory.getInstance().identityProviderConfigurationFactory();
-		this.samlHelper                           = new SAMLHelper(this.samlAuthenticationService);
+		this.samlHelper                           = new SAMLHelper(this.samlAuthenticationService, APILocator.getCompanyAPI());
 		this.webResource						  = new WebResource();
 	}
 

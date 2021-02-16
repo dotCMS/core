@@ -23,8 +23,9 @@ function getTemplateCallBack(data) {
     
     var imageEl=dojo.byId("templateThumbnailHolder");
     if (isInodeSet(imageInode)) {
-    	imageEl.src = "/dA/" + imageInode + "/250h/250w";
+    	imageEl.src = "/dA/" + imageInode + "/250w";
         imageEl.style.border = '1px solid #B6CBEB';
+        imageEl.style.marginTop = '1rem';
     }
     else {
         imageEl.src  = "/html/images/shim.gif";
