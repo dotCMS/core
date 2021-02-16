@@ -44,6 +44,7 @@ import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.storage.StoragePersistenceAPITest;
 import com.dotcms.security.apps.AppsCacheImplTest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
+import com.dotmarketing.business.helper.PermissionHelperTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.osgi.GenericBundleActivatorTest;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
@@ -373,6 +374,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v1.versionable.VersionableResourceTest.class,
         GenericBundleActivatorTest.class,
         SAMLHelperTest.class,
+        PermissionHelperTest.class,
         ResetPasswordTokenUtilTest.class,
         ContainerBundlerTest.class,
         ContentTypeBundlerTest.class,
