@@ -119,14 +119,13 @@ public class UserFactoryImpl implements UserFactory {
         dotConnect.addParam(companyId);
         dotConnect.addParam(email.trim().toLowerCase());
 
-        return TransformerLocator.createUserTransformer(dotConnect.loadObjectResults()).findFirst();
+        return UtilMethods.isSet(dotConnect.loadObjectResults()) ? TransformerLocator
+                .createUserTransformer(dotConnect.loadObjectResults()).findFirst() : null;
 
     }
 
     @Override
     public List<User> findAllUsers(final String companyId, final int begin, final int end) throws DotDataException {
-
-        //TODO: verify if companyId is required
         final DotConnect dotConnect = new DotConnect();
         dotConnect.setSQL("select * from user_ where companyid = ? and delete_in_progress = ? order by firstname, lastname");
         dotConnect.addParam(companyId);
