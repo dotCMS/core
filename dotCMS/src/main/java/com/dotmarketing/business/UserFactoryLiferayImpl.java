@@ -458,15 +458,6 @@ public class UserFactoryLiferayImpl extends UserFactoryLiferay {
 	}
 
 	@Override
-	protected String getUserIdByIcqId(final String icqId) {
-		final String sql = "select userid from user_ where icqid = ?";
-		DotConnect dotConnect = new DotConnect();
-		dotConnect.setSQL(sql);
-		dotConnect.addParam(icqId);
-		return dotConnect.getString("userid");
-	}
-
-	@Override
 	public List<User> getUsersByNameOrEmailOrUserID(String filter, int page, int pageSize) throws DotDataException {
 		return getUsersByNameOrEmailOrUserID(filter, page, pageSize, true);
 	}

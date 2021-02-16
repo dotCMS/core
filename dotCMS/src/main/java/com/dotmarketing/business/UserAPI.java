@@ -440,6 +440,7 @@ public interface UserAPI {
 	 * @param icqId icqId to search for
 	 * @return userId that the icqId is associated
 	 */
-	public Optional<String> getUserIdByIcqId(final String icqId) throws DotInvalidTokenException;
+	public Optional<String> getUserIdByIcqId(final String icqId)
+            throws DotInvalidTokenException, DotDataException;
 
 }

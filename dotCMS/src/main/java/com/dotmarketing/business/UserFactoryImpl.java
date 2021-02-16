@@ -669,6 +669,31 @@ public class UserFactoryImpl implements UserFactory {
     }
 
     @Override
+    public String getUserIdByIcqId(final String icqId) throws DotDataException {
+
+        final DotConnect dotConnect = new DotConnect();
+        //Build the sql query
+        final StringBuffer
+                query =
+                new StringBuffer(
+                        "SELECT user_.userId FROM user_ WHERE icqid = ? ");
+
+        dotConnect.setSQL(query.toString());
+
+        //Add the required params
+        dotConnect.addParam(icqId);
+
+
+        final List<Map<String, Object>> results = dotConnect.loadResults();
+
+        if(results.isEmpty()) {
+            throw new NoSuchUserException("No user found for icqid: " + icqId);
+        }else {
+            return (String) results.get(0).get("userid");
+        }
+    }
+
+    @Override
     public void delete(final User userToDelete) throws DotDataException {
         uc.remove(userToDelete.getUserId());
         final DotConnect dotConnect = new DotConnect();

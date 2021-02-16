@@ -216,7 +216,7 @@ public interface UserFactory {
 	 * @param icqId icqId to search for
 	 * @return userId that the icqId is associated
 	 */
-  protected abstract String getUserIdByIcqId(final String icqId);
+	String getUserIdByIcqId(final String icqId) throws DotDataException;
 
 
 }

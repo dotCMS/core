@@ -135,7 +135,8 @@ public class LazyUserAPIWrapper implements UserAPI {
     }
 
     @Override
-    public Optional<String> getUserIdByIcqId(final String icqId) throws DotInvalidTokenException {
+    public Optional<String> getUserIdByIcqId(final String icqId)
+            throws DotInvalidTokenException, DotDataException {
         return this.getUserAPI().getUserIdByIcqId(icqId);
     }
 

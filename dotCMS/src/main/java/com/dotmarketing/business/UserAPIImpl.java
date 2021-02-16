@@ -358,7 +358,8 @@ public class UserAPIImpl implements UserAPI {
 
     @CloseDBIfOpened
     @Override
-    public Optional<String> getUserIdByIcqId(final String icqId) throws DotInvalidTokenException {
+    public Optional<String> getUserIdByIcqId(final String icqId)
+            throws DotInvalidTokenException, DotDataException {
         if(!UtilMethods.isSet(icqId)){
             throw new DotInvalidTokenException("icqId is not set");
         }
