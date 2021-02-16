@@ -1,5 +1,11 @@
-import { waitForAsync, ComponentFixture, fakeAsync, tick, async } from '@angular/core/testing';
-import { DOTTestBed } from '@tests/dot-test-bed';
+import {
+    waitForAsync,
+    ComponentFixture,
+    fakeAsync,
+    tick,
+    async,
+    TestBed
+} from '@angular/core/testing';
 import { DebugElement, Component, Input, Output, EventEmitter, Injectable } from '@angular/core';
 import { ContentTypeFieldsDropZoneComponent } from '.';
 import { By } from '@angular/platform-browser';
@@ -10,7 +16,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { LoginService, DotEventsSocket } from 'dotcms-js';
+import { LoginService, DotEventsSocket, CoreWebService } from 'dotcms-js';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { Observable, Subject } from 'rxjs';
@@ -38,6 +44,10 @@ import {
 } from '@tests/dot-content-types.mock';
 
 import cleanUpDialog from '@tests/clean-up-dialog';
+import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { TabViewModule } from 'primeng/tabview';
 
 const COLUMN_BREAK_FIELD = FieldUtil.createColumnBreak();
 
@@ -145,7 +155,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         waitForAsync(() => {
             dragDropService = new TestFieldDragDropService();
 
-            DOTTestBed.configureTestingModule({
+            TestBed.configureTestingModule({
                 declarations: [
                     ContentTypeFieldsDropZoneComponent,
                     TestContentTypeFieldsPropertiesFormComponent,
@@ -170,7 +180,10 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                     DragulaModule,
                     TableModule,
                     DotFieldValidationMessageModule,
-                    ReactiveFormsModule
+                    ReactiveFormsModule,
+                    HttpClientTestingModule,
+                    DotMessagePipeModule,
+                    TabViewModule
                 ],
                 providers: [
                     { provide: Router, useValue: mockRouter },
@@ -180,16 +193,18 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                         provide: DotLoadingIndicatorService,
                         useValue: dotLoadingIndicatorServiceMock
                     },
+                    { provide: CoreWebService, useClass: CoreWebServiceMock },
                     DotEventsSocket,
                     LoginService,
                     FormatDateService,
                     FieldService,
                     FieldPropertyService,
-                    DragulaService
+                    DragulaService,
+                    DotEventsService
                 ]
             });
 
-            fixture = DOTTestBed.createComponent(ContentTypeFieldsDropZoneComponent);
+            fixture = TestBed.createComponent(ContentTypeFieldsDropZoneComponent);
             comp = fixture.componentInstance;
             de = fixture.debugElement;
         })
@@ -228,7 +243,6 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         expect(comp.displayDialog).toBe(false);
         expect(comp.hideButtons).toBe(false);
         expect(comp.currentField).toBe(null);
-        expect(comp.dialogActiveTab).toBe(null);
         expect(comp.setDialogOkButtonState).toHaveBeenCalledWith(false);
     });
 
@@ -367,7 +381,7 @@ describe('Load fields and drag and drop', () => {
         waitForAsync(() => {
             testFieldDragDropService = new TestFieldDragDropService();
 
-            DOTTestBed.configureTestingModule({
+            TestBed.configureTestingModule({
                 declarations: [
                     ContentTypeFieldsDropZoneComponent,
                     TestContentTypeFieldsRowComponent,
@@ -393,7 +407,10 @@ describe('Load fields and drag and drop', () => {
                     DotIconButtonModule,
                     TableModule,
                     ContentTypeFieldsAddRowModule,
-                    DotDialogModule
+                    DotDialogModule,
+                    HttpClientTestingModule,
+                    DotMessagePipeModule,
+                    TabViewModule
                 ],
                 providers: [
                     DragulaService,
@@ -408,11 +425,13 @@ describe('Load fields and drag and drop', () => {
                     {
                         provide: DotLoadingIndicatorService,
                         useValue: dotLoadingIndicatorServiceMock
-                    }
+                    },
+                    { provide: CoreWebService, useClass: CoreWebServiceMock },
+                    DotEventsService
                 ]
             });
 
-            fixture = DOTTestBed.createComponent(TestHostComponent);
+            fixture = TestBed.createComponent(TestHostComponent);
             hostComp = fixture.componentInstance;
             hostDe = fixture.debugElement;
             de = hostDe.query(By.css('dot-content-type-fields-drop-zone'));
@@ -697,11 +716,7 @@ describe('Load fields and drag and drop', () => {
 
         const newlyField = fakeFields[2].columns[0].fields[0];
         delete newlyField.id;
-
         fixture.detectChanges();
-
-        spyOn(comp.propertiesForm, 'destroy');
-
         // select the fields[8] as the current field
         testFieldDragDropService._fieldDropFromSource.next({
             item: newlyField
@@ -750,7 +765,6 @@ describe('Load fields and drag and drop', () => {
         };
         comp.displayDialog = true;
         fixture.detectChanges();
-
         const tabLinks = de.queryAll(By.css('.p-tabview-nav li'));
         expect(tabLinks[1].nativeElement.classList.contains('p-disabled')).toBe(false);
     });
