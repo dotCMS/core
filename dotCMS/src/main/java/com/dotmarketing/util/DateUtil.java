@@ -1,10 +1,12 @@
 package com.dotmarketing.util;
 
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.util.StringPool;
+import io.vavr.Lazy;
 import org.apache.commons.lang.StringUtils;
 
 import java.text.DateFormat;
@@ -66,6 +68,8 @@ public class DateUtil {
 
 	private static Map<String, DateTimeFormatter> formatterMap = new ConcurrentHashMap<>();
 
+	// note: this is being cache locally by the company should be cache an api level.
+	private static Lazy<TimeZone> companyTimeZone = Lazy.of(()-> APILocator.getCompanyAPI().getDefaultCompany().getTimeZone());
 
 	/**
 	 * This method allows you to add to a java.util.Date returning a Date
@@ -187,16 +191,47 @@ public class DateUtil {
 	 */
 	public static Date convertDate(final String date,
 								   final String[] formats) throws java.text.ParseException {
+		return convertDate(date, companyTimeZone.get(), formats);
+	}
+
+	/**
+	 * This method try to parse a string into a Date object using an array with
+	 * the valid formats
+	 *
+	 * @param date
+	 *            - the string to be parsed
+	 * @param timeZone
+	 * 			  - time zone
+	 * @param formats
+	 *            - the valid format to parse the string
+	 * @return return the Date object that represent the string
+	 * @throws java.text.ParseException
+	 */
+	public static Date convertDate(final String date,
+								   final TimeZone timeZone,
+								   final String... formats
+								   ) throws java.text.ParseException {
 		Date ret = null;
-		for (String pattern : formats) { // todo: usually the formaters are cached and thread-safe
+		for (final String pattern : formats) { // todo: usually the formaters are cached and thread-safe
+
 			try {
-				ret = new SimpleDateFormat(pattern).parse(date);
+
+				final SimpleDateFormat format = new SimpleDateFormat(pattern);
+				if (null != timeZone) {
+					format.setTimeZone(timeZone);
+				}
+
+				ret = format.parse(date);
 				break;
 			} catch (java.text.ParseException e) {
+				// quiet
+				e.printStackTrace();
 			}
 		}
-		if (ret == null)
+
+		if (ret == null) {
 			throw new java.text.ParseException(date, 0);
+		}
 
 		return ret;
 	}
