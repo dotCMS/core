@@ -8,10 +8,8 @@ import com.dotcms.contenttype.transform.contenttype.ContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.*;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
-import com.dotcms.publishing.BundlerStatus;
-import com.dotcms.publishing.DotBundleException;
-import com.dotcms.publishing.FilterDescriptor;
-import com.dotcms.publishing.PublisherAPIImplTest;
+import com.dotcms.publisher.util.DependencyManager;
+import com.dotcms.publishing.*;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -37,6 +35,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.FileUtil;
+import com.dotmarketing.util.Logger;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -74,19 +73,19 @@ public class DependencyBundlerTest {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
 
-        filterDescriptorAllDependencies = new FileDescriptorDataGen().nextPersisted();
+        filterDescriptorAllDependencies = new FileDescriptorDataGen().next();
         filterDescriptorNotDependencies = new FileDescriptorDataGen()
                 .dependencies(false)
-                .nextPersisted();
+                .next();
 
         filterDescriptorNotRelationship = new FileDescriptorDataGen()
                 .relationships(false)
-                .nextPersisted();
+                .next();
 
         filterDescriptorNotDependenciesRelationship = new FileDescriptorDataGen()
                 .relationships(false)
                 .dependencies(false)
-                .nextPersisted();
+                .next();
     }
 
     @Before
@@ -498,33 +497,32 @@ public class DependencyBundlerTest {
 
         final Contentlet htmlPageAsset = new HTMLPageDataGen(host, template).host(host).languageId(defaultLanguage.getId()).nextPersisted();
         final ContentType htmlPageAssetContentType = htmlPageAsset.getContentType();
-        final Host systemHost = APILocator.getHostAPI().findSystemHost();
 
         return list(
-                new TestData(contentlet, list(host, contentType, systemHost, language), filterDescriptorAllDependencies),
+                new TestData(contentlet, list(host, contentType, language), filterDescriptorAllDependencies),
                 new TestData(contentlet, list(), filterDescriptorNotDependencies),
                 new TestData(contentlet, list(), filterDescriptorNotRelationship),
                 new TestData(contentlet, list(), filterDescriptorNotDependenciesRelationship),
 
-                new TestData(contentletWithFolder, list(host, contentType, systemHost, language, folder),
+                new TestData(contentletWithFolder, list(host, contentType, language, folder),
                         filterDescriptorAllDependencies),
                 new TestData(contentletWithFolder, list(), filterDescriptorNotDependencies),
                 new TestData(contentletWithFolder, list(), filterDescriptorNotRelationship),
                 new TestData(contentletWithFolder, list(), filterDescriptorNotDependenciesRelationship),
 
                 new TestData(contentletWithRelationship,
-                        list(host, contentTypeParent, systemHost, language, contentletChild, contentTypeChild, languageChild),
+                        list(host, contentTypeParent, language, contentletChild, contentTypeChild, languageChild),
                         filterDescriptorAllDependencies),
                 new TestData(contentletWithRelationship, list(), filterDescriptorNotDependencies),
                 new TestData(contentletWithRelationship, list(), filterDescriptorNotRelationship),
                 new TestData(contentletWithRelationship, list(), filterDescriptorNotDependenciesRelationship),
 
-                new TestData(contentWithCategory, list(host, contentTypeWithCategory, systemHost, language, category), filterDescriptorAllDependencies),
+                new TestData(contentWithCategory, list(host, contentTypeWithCategory, language, category), filterDescriptorAllDependencies),
                 new TestData(contentWithCategory, list(), filterDescriptorNotDependencies),
                 new TestData(contentWithCategory, list(), filterDescriptorNotRelationship),
                 new TestData(contentWithCategory, list(), filterDescriptorNotDependenciesRelationship),
 
-                new TestData(htmlPageAsset, list(host, defaultHost, contentTypeToPage, systemHost, defaultLanguage,
+                new TestData(htmlPageAsset, list(host, defaultHost, contentTypeToPage, defaultLanguage,
                         container, template, htmlPageAssetContentType), filterDescriptorAllDependencies),
                 new TestData(htmlPageAsset, list(), filterDescriptorNotDependencies),
                 new TestData(htmlPageAsset, list(), filterDescriptorNotRelationship),
@@ -768,6 +766,7 @@ public class DependencyBundlerTest {
         final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
         final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
 
+        Logger.info(DependencyManager.class, "Container " + containerWithoutContentType.getIdentifier() + " host" + host.getIdentifier());
         return list(
                 new TestData(containerWithoutContentType, list(host), filterDescriptorAllDependencies),
                 new TestData(containerWithoutContentType, list(), filterDescriptorNotDependencies),
@@ -912,24 +911,31 @@ public class DependencyBundlerTest {
     public void addAssetInBundle(final TestData testData)
             throws IOException, DotBundleException, DotDataException, DotSecurityException {
 
-        final Set<Object> languagesVariableDependencies = getLanguagesVariableDependencies(
-                true, false, false);
-
-        if (filterDescriptorAllDependencies == testData.filterDescriptor) {
-            testData.dependenciesToAssert.addAll(languagesVariableDependencies);
-        }
+        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
+        APILocator.getPublisherAPI().addFilterDescriptor(testData.filterDescriptor);
 
         final PushPublisherConfig config = new PushPublisherConfig();
+
         new BundleDataGen()
                 .pushPublisherConfig(config)
                 .addAssets(set(testData.assetsToAddInBundle))
                 .filter(testData.filterDescriptor)
                 .nextPersisted();
 
-        bundler.setConfig(config);
-                bundler.generate(bundleRoot, status);
+        final Set<Object> languagesVariableDependencies = getLanguagesVariableDependencies(
+                true, false, false);
 
-        assertAll(config, testData.dependenciesToAssert, testData.filterDescriptor);
+        final Set<Object> dependencies = new HashSet<>();
+
+        if (filterDescriptorAllDependencies == testData.filterDescriptor) {
+            dependencies.addAll(testData.dependenciesToAssert);
+            dependencies.addAll(languagesVariableDependencies);
+        }
+
+        bundler.setConfig(config);
+        bundler.generate(bundleRoot, status);
+
+        assertAll(config, dependencies, testData.filterDescriptor);
     }
 
     @Test
@@ -978,7 +984,7 @@ public class DependencyBundlerTest {
             counts.addOrUpdate(key, 1, (Integer value) -> value + 1);
         }
 
-        if (filterDescriptorAllDependencies == filterDescriptor) {
+        /*if (filterDescriptorAllDependencies == filterDescriptor) {
             for (Class clazz : BundleDataGen.howAddInBundle.keySet()) {
                 final Integer expectedCount = counts.get(clazz, 0);
 
@@ -991,7 +997,7 @@ public class DependencyBundlerTest {
                                 .collect(joining(","))),
                         expectedCount, count);
             }
-        }
+        }*/
     }
 
     private static class TestData {

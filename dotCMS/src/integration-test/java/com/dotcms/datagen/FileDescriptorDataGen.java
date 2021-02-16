@@ -2,6 +2,7 @@ package com.dotcms.datagen;
 
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publishing.FilterDescriptor;
+import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.google.common.collect.ImmutableMap;
@@ -66,6 +67,7 @@ public class FileDescriptorDataGen extends AbstractDataGen<FilterDescriptor> {
 
     @Override
     public FilterDescriptor persist(FilterDescriptor filterDescriptor) {
+        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
         APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor);
         return APILocator.getPublisherAPI().getFilterDescriptorByKey(filterDescriptor.getKey());
     }

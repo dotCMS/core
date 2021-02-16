@@ -148,7 +148,6 @@ public class DependencyManager {
 			try {
 				processContentDependency(contentId);
 			} catch (DotBundleException e) {
-				//todo: This Exception should be rethrow by the setDependencies method
 				Logger.error(DependencyManager.class, e.getMessage());
 			}
 		});
@@ -177,6 +176,7 @@ public class DependencyManager {
 	public void setDependencies() throws DotSecurityException, DotDataException, DotBundleException {
 		this.publisherFilter = APILocator.getPublisherAPI().createPublisherFilter(config.getId());
 
+		Logger.info(DependencyManager.class, "publisherFilter.isDependencies() " + publisherFilter.isDependencies());
 		if(publisherFilter.isDependencies()){
 			dependencyProcessor.start();
 		}
@@ -201,7 +201,7 @@ public class DependencyManager {
 						Logger.warn(getClass(), "Structure id: "+ (asset.getAsset() != null ? asset.getAsset() : "N/A") +" does NOT have working or live version, not Pushed");
 					} else {
 						contentTypes.add(asset.getAsset(), st.getModDate(),true);
-						dependencyProcessor.put(asset.getAsset(), AssetTypes.CONTENTS);
+						dependencyProcessor.put(asset.getAsset(), AssetTypes.CONTENT_TYPE);
 					}
 
 				} catch (Exception e) {
@@ -886,6 +886,7 @@ public class DependencyManager {
 			// Host Dependency
 			if(!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.SITE.getType())) {
 				final Host host = APILocator.getContainerAPI().getParentHost(containerById, user, false);
+
 				hosts.addOrClean(APILocator.getContainerAPI().getParentHost(containerById, user, false)
 						.getIdentifier(), host.getModDate());
 			}
@@ -1359,7 +1360,7 @@ public class DependencyManager {
 			}
 
 			if (!this.alreadyProcess(assetKey, assetTypes)) {
-				Logger.debug(DependencyProcessor.class, () -> String.format("%s: Putting %s in %s",
+				Logger.info(DependencyProcessor.class, () -> String.format("%s: Putting %s in %s",
 						Thread.currentThread().getName(), assetKey, assetTypes));
 
 				queue.add(new DependencyProcessorItem(assetKey, assetTypes));
@@ -1426,7 +1427,8 @@ public class DependencyManager {
 		}
 
 		private boolean isFinish(){
-			return queue.isEmpty() && allThreadWaiting();
+			Logger.info(DependencyManager.class, "isFinish " + (queue == null || (queue.isEmpty() && allThreadWaiting())));
+			return queue == null || (queue.isEmpty() && allThreadWaiting());
 		}
 
 		private boolean allThreadWaiting() {
@@ -1442,8 +1444,10 @@ public class DependencyManager {
 		void stop(){
 			this.finish = true;
 
-			for (final Thread thread : threads) {
-				thread.interrupt();
+			if (threads != null) {
+				for (final Thread thread : threads) {
+					thread.interrupt();
+				}
 			}
 		}
 
@@ -1463,19 +1467,19 @@ public class DependencyManager {
 
 						if (dependencyProcessorItem == null) {
 							waitingForSomethingToProcess = true;
-							Logger.debug(DependencyProcessor.class, () -> String.format("%s : Notifying to main thread",
+							Logger.info(DependencyProcessor.class, () -> String.format("%s : Notifying to main thread",
 									Thread.currentThread().getName()));
 
 							notifyMainThread();
 
-							Logger.debug(DependencyProcessor.class,
+							Logger.info(DependencyProcessor.class,
 									() -> String.format("%s : Waiting for something to process", Thread.currentThread().getName()));
 							dependencyProcessorItem = queue.take();
 							waitingForSomethingToProcess = false;
 						}
 
 						final AssetTypes assetTypes = dependencyProcessorItem.assetTypes;
-						Logger.debug(DependencyProcessor.class, () ->
+						Logger.info(DependencyProcessor.class, () ->
 								String.format("%s : We have something to process - %s",
 										Thread.currentThread().getName(), assetTypes));
 
