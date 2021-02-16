@@ -65,13 +65,14 @@ describe('ResetPasswordComponent', () => {
     });
 
     it('should load form labels correctly', () => {
-        const header: DebugElement = de.query(By.css('h3'));
-        const labels: DebugElement[] = de.queryAll(By.css('.p-field label'));
-        const button: DebugElement = de.query(By.css('button'));
+        const header: DebugElement = de.query(By.css('[data-testId="header"]'));
+        const enterLabel: DebugElement = de.query(By.css('[data-testId="enterLabel"]'));
+        const confirmLabel: DebugElement = de.query(By.css('[data-testId="confirmLabel"]'));
+        const button: DebugElement = de.query(By.css('[data-testId="submitButton"]'));
 
         expect(header.nativeElement.innerHTML).toEqual('Password Reset');
-        expect(labels[0].nativeElement.innerHTML).toContain('Enter Password');
-        expect(labels[1].nativeElement.innerHTML).toContain('Confirm Password');
+        expect(enterLabel.nativeElement.innerHTML).toContain('Enter Password');
+        expect(confirmLabel.nativeElement.innerHTML).toContain('Confirm Password');
         expect(button.nativeElement.innerHTML).toContain('Change Password');
     });
 
@@ -87,9 +88,9 @@ describe('ResetPasswordComponent', () => {
         });
         changePasswordButton.triggerEventHandler('click', {});
         fixture.detectChanges();
-        const errorMessage = de.queryAll(By.css('.error-message'));
+        const errorMessage = de.query(By.css('[data-testid="errorMessage"]'));
 
-        expect(errorMessage.length).toBe(1);
+        expect(errorMessage.nativeElement.innerText).toBe('password do not match');
         expect(loginService.changePassword).not.toHaveBeenCalled();
     });
 

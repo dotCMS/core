@@ -9,7 +9,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
 import { RouterTestingModule } from '@angular/router/testing';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
@@ -56,17 +56,16 @@ describe('ForgotPasswordComponent', () => {
         de = fixture.debugElement;
         loginService = de.injector.get(LoginService);
         dotRouterService = de.injector.get(DotRouterService);
-        spyOn(loginService, 'recoverPassword').and.returnValue(of({}));
 
         fixture.detectChanges();
-        requestPasswordButton = de.query(By.css('button[type="submit"]'));
+        requestPasswordButton = de.query(By.css('[data-testid="submitButton"]'));
     });
 
     it('should load form labels correctly', () => {
-        const header: DebugElement = de.query(By.css('h3'));
-        const inputLabel: DebugElement = de.query(By.css('.p-field label'));
-        const cancelButton: DebugElement = de.query(By.css('button'));
-        const submitButton: DebugElement = de.query(By.css('button[type="submit"]'));
+        const header: DebugElement = de.query(By.css('[data-testId="header"]'));
+        const inputLabel: DebugElement = de.query(By.css('[data-testId="usernameLabel"]'));
+        const cancelButton: DebugElement = de.query(By.css('[data-testId="cancelButton"]'));
+        const submitButton: DebugElement = de.query(By.css('[data-testId="submitButton"]'));
 
         expect(header.nativeElement.innerHTML).toEqual('Forgot Password');
         expect(inputLabel.nativeElement.innerHTML).toEqual('Email Address');
@@ -80,6 +79,7 @@ describe('ForgotPasswordComponent', () => {
 
     it('should do the request password correctly and redirect to login', () => {
         component.forgotPasswordForm.setValue({ login: 'test' });
+        spyOn(loginService, 'recoverPassword').and.returnValue(of({}));
         spyOn(window, 'confirm').and.returnValue(true);
         fixture.detectChanges();
 
@@ -99,15 +99,38 @@ describe('ForgotPasswordComponent', () => {
         component.forgotPasswordForm.get('login').markAsDirty();
         fixture.detectChanges();
 
-        const errorMessages = de.queryAll(By.css('.error-message'));
+        const errorMessages = de.queryAll(By.css('dot-field-validation-message .p-invalid'));
         expect(errorMessages.length).toBe(1);
     });
 
-    it('should show messages', () => {
-        component.message = 'Unknown Error';
+    it('should show error message', () => {
+        spyOn(window, 'confirm').and.returnValue(true);
+        spyOn(loginService, 'recoverPassword').and.returnValue(
+            throwError({ error: { errors: [{ message: 'error message' }] } })
+        );
+        const input: HTMLInputElement = de.query(By.css('[data-testid="input"]')).nativeElement;
+        input.value = 'test';
+
+        requestPasswordButton.triggerEventHandler('click', {});
         fixture.detectChanges();
-        const messageElemnt = de.query(By.css('.error-message'));
-        expect(messageElemnt).not.toBeNull();
+        const errorMessage = de.query(By.css('[data-testId="errorMessage"]')).nativeElement
+            .innerText;
+        expect(errorMessage).toEqual('error message');
+    });
+
+    it('should show go to login if submit is success', () => {
+        spyOn(window, 'confirm').and.returnValue(true);
+        spyOn(loginService, 'recoverPassword').and.returnValue(of({}));
+        component.forgotPasswordForm.setValue({ login: 'test@test.com' });
+        fixture.detectChanges();
+        requestPasswordButton.triggerEventHandler('click', {});
+
+        expect(dotRouterService.goToLogin).toHaveBeenCalledWith({
+            queryParams: {
+                resetEmailSent: true,
+                resetEmail: 'test@test.com'
+            }
+        });
     });
 
     it('should call goToLogin when cancel button is clicked', () => {

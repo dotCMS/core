@@ -59,7 +59,8 @@ export const mockLoginFormResponse = {
         'change-password': 'Change Password',
         'welcome-login': 'Welcome!',
         Logout: 'Logout',
-        'message.successfully.logout': 'You are logout successfully, click the button to login'
+        'message.successfully.logout': 'You are logout successfully, click the button to login',
+        'reset-password-confirmation-do-not-match': 'password do not match'
     },
     permissions: []
 };

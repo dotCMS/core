@@ -4,7 +4,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Observable } from 'rxjs';
 import { take, tap } from 'rxjs/operators';
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
-import { LoginService, ResponseView } from 'dotcms-js';
+import { LoginService } from 'dotcms-js';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { NavigationExtras } from '@angular/router';
 
@@ -62,12 +62,8 @@ export class ForgotPasswordComponent implements OnInit {
                             }
                         });
                     },
-                    (resp: ResponseView) => {
-                        if (!resp.existError('a-new-password-has-been-sent-to-x')) {
-                            this.message = resp.errorsMessages;
-                        } else {
-                            this.goToLogin();
-                        }
+                    (response) => {
+                        this.message = response.error?.errors[0]?.message;
                     }
                 );
         }
