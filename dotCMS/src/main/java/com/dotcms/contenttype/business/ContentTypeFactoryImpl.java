@@ -545,11 +545,6 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     if (limit == 0)
       throw new DotDataException("limit param must be more than 0");
     limit = (limit < 0) ? 10000 : limit;
-
-    search = LicenseManager.getInstance().isCommunity()
-                    ? search + " and structuretype <> " + BaseContentType.FORM.getType() + " and structuretype <> " + BaseContentType.PERSONA.getType()
-                    : search;
-
     // our legacy code passes in raw sql conditions and so we need to detect
     // and handle those
     SearchCondition searchCondition = new SearchCondition(search);
@@ -576,11 +571,6 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
   private int dbCount(String search, int baseType) throws DotDataException {
     int bottom = (baseType == 0) ? 0 : baseType;
     int top = (baseType == 0) ? 100000 : baseType;
-
-    search = LicenseManager.getInstance().isCommunity()
-                    ? search + " and structuretype <> " + BaseContentType.FORM.getType() +" and structuretype <> " + BaseContentType.PERSONA.getType()
-                    : search;
-
 
     SearchCondition searchCondition = new SearchCondition(search);
 
