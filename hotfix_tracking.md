@@ -105,3 +105,5 @@ This maintenance release includes the following code fixes:
 50. https://github.com/dotCMS/core/issues/19927	: Adding more log to the JsonTOOL
 
 51. https://github.com/dotCMS/core/issues/19319	: Allow shutdown from backend of dotCMS
+
+52. https://github.com/dotCMS/core/issues/19620	: Push Publish Batch Button selects all assets
