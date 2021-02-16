@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.velocity.tools.view.tools.ViewRenderTool;
 
 import com.liferay.portal.model.User;
@@ -78,6 +79,22 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
 
     
         sysuser = APILocator.systemUser();
+
+    }
+
+    @VisibleForTesting
+    protected NavResult(final String parent, final String hostId, final String folderId, final Long languageId, final User user) {
+        this.hostId = hostId;
+        this.folderId = folderId;
+        this.parent = parent;
+        this.languageId = languageId;
+
+
+        title = href = "";
+        order = 0;
+
+
+        sysuser = user;
 
     }
 
@@ -364,13 +381,23 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
     }
 
     public String getEnclosingPermissionClassName() {
-        if (type.equals("htmlpage"))
+
+        // we can not use the this.type b/c the nav could be wrapping, so the getType will use the wrapper instead of the var
+        final  String internalType = this.getType();
+
+        if ("htmlpage".equals(internalType)) {
             return IHTMLPage.class.getCanonicalName();
-        if (type.equals("link"))
+        }
+
+        if ("link".equals(internalType)) {
             return Link.class.getCanonicalName();
-        if (type.equals("folder"))
+        }
+
+        if ("folder".equals(internalType)) {
             return Folder.class.getCanonicalName();
-        throw new IllegalStateException("unknow internal type " + type); // we shouldn't reach this
+        }
+
+        throw new IllegalStateException("unknown internal type " + type); // we shouldn't reach this
                                                                          // point
     }
 
