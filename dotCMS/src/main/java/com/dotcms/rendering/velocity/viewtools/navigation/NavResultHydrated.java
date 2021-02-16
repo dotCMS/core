@@ -32,6 +32,7 @@ public final class NavResultHydrated extends NavResult{
         super(navResult.getUnhydratedNavResult());
         this.navResult = navResult.getUnhydratedNavResult();
         this.context = context;
+        this.setType(navResult.getType());
     }
     @Override
     @JSONIgnore

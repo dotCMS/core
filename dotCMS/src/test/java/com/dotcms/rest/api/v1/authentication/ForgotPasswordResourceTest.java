@@ -62,19 +62,6 @@ public class ForgotPasswordResourceTest extends UnitTestBase {
     }
 
     @Test
-    public void testWrongParameter() throws JSONException{
-
-        try {
-            final ForgotPasswordForm forgotPasswordForm =
-                    new ForgotPasswordForm.Builder().userId("").build();
-
-            fail ("Should throw a ValidationException");
-        } catch (Exception e) {
-            // quiet
-        }
-    }
-
-    @Test
     public void testNoSuchUserExceptionExposingNoData() throws Exception {
 
         final HttpServletRequest request  = mock(HttpServletRequest.class);

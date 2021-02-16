@@ -1,6 +1,7 @@
 package com.dotmarketing.business;
 
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.cms.factories.PublicAddressFactory;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
@@ -454,6 +455,15 @@ public class UserFactoryLiferayImpl extends UserFactoryLiferay {
     }
     
 		return dotConnect.getInt("count");
+	}
+
+	@Override
+	protected String getUserIdByIcqId(final String icqId) {
+		final String sql = "select userid from user_ where icqid = ?";
+		DotConnect dotConnect = new DotConnect();
+		dotConnect.setSQL(sql);
+		dotConnect.addParam(icqId);
+		return dotConnect.getString("userid");
 	}
 
 	@Override
