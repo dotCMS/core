@@ -4,12 +4,17 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+
+import static com.dotcms.util.CollectionsUtils.list;
 
 public class FieldRelationshipDataGen extends AbstractDataGen<Relationship>  {
 
@@ -17,7 +22,6 @@ public class FieldRelationshipDataGen extends AbstractDataGen<Relationship>  {
     private ContentType child;
     private WebKeys.Relationship.RELATIONSHIP_CARDINALITY cardinality = WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY;
     private boolean parentRequired = false;
-
 
     public FieldRelationshipDataGen parent(ContentType parent) {
         this.parent = parent;
