@@ -225,7 +225,7 @@ public class DateUtil {
 				break;
 			} catch (java.text.ParseException e) {
 				// quiet
-				e.printStackTrace();
+				//e.printStackTrace();
 			}
 		}
 
