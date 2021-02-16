@@ -24,7 +24,7 @@ public class FolderCacheImpl extends FolderCache {
 		
 		// Folder by Inode
 		final String inode = folder.getInode();
-		if (Folder.SYSTEM_FOLDER.equals(inode)) {
+		if (Folder.SYSTEM_FOLDER.equals(inode) && !Host.SYSTEM_HOST.equals(folder.getHostId())) {
 		    // For SYSTEM_FOLDER, always make sure that it points to SYSTEM_HOST
             Logger.error(this, String.format("Host ID for SYSTEM_FOLDER must always be SYSTEM_HOST. Value '%s' was " +
                     "set.", folder.getHostId()));
