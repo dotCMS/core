@@ -233,16 +233,6 @@ public class CalendarReminderAPIImpl implements CalendarReminderAPI {
 			APILocator.getUserAPI().save(user, APILocator.getUserAPI().getSystemUser(), false);
 			// ### END CREATE USER ###
 
-			// ### CREATE USER_PROXY ###
-			UserProxy userProxy = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(user
-					.getUserId(),APILocator.getUserAPI().getSystemUser(), false);
-			userProxy.setPrefix("");
-			userProxy.setTitle("");
-			userProxy.setOrganization("");
-			userProxy.setUserId(user.getUserId());
-			com.dotmarketing.business.APILocator.getUserProxyAPI().saveUserProxy(userProxy,APILocator.getUserAPI().getSystemUser(), false);
-			// ### END CRETE USER_PROXY ###
-
 			Role defaultRole = com.dotmarketing.business.APILocator.getRoleAPI().loadRoleByKey(Role.DOTCMS_FRONT_END_USER);
 			String roleId = defaultRole.getId();
 			if (InodeUtils.isSet(roleId)) {

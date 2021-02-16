@@ -140,7 +140,7 @@ public class TagAPITest extends IntegrationTestBase {
 
 		String tagName = "testapi"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss");
 		Tag createdTag = tagAPI.saveTag(tagName, testUser.getUserId(), defaultHostId, false);
-		tagAPI.addUserTagInode(createdTag, APILocator.getUserProxyAPI().getUserProxy(testUser.getUserId(), APILocator.getUserAPI().getSystemUser(), false).getInode());
+		tagAPI.addUserTagInode(createdTag, testUser.getUserId());
 
 		tags = tagAPI.getTagsForUserByUserId(testUser.getUserId());
 		assertNotNull(tags);
@@ -154,11 +154,11 @@ public class TagAPITest extends IntegrationTestBase {
 	 */
 	@Test
 	public void getTagsForUserByUserInode() throws Exception{
-		UserProxy userProxy = APILocator.getUserProxyAPI().getUserProxy(testUser.getUserId(),systemUser, false);
-		String tagName = "testapi2" + UtilMethods.dateToHTMLDate(new Date(), "MMddyyyyHHmmss");
-		tagAPI.addUserTag(tagName, testUser.getUserId(), userProxy.getInode());
 
-		List<Tag> tags =  tagAPI.getTagsForUserByUserInode(userProxy.getInode());    
+		String tagName = "testapi2" + UtilMethods.dateToHTMLDate(new Date(), "MMddyyyyHHmmss");
+		tagAPI.addUserTag(tagName, testUser.getUserId(), testUser.getUserId());
+
+		List<Tag> tags =  tagAPI.getTagsForUserByUserInode(testUser.getUserId());    
 		assertTrue(tags.size() > 1);
 		boolean hasUserInodeTags=false;
 		for(Tag tag : tags){
@@ -252,9 +252,9 @@ public class TagAPITest extends IntegrationTestBase {
 	 */
 	@Test
 	public void addTag() throws Exception {
-		UserProxy userProxy = APILocator.getUserProxyAPI().getUserProxy(testUser.getUserId(),systemUser, false);
+		
 		String tagName = "testapi6" + UtilMethods.dateToHTMLDate(new Date(), "MMddyyyyHHmmss");
-		tagAPI.addUserTag(tagName, testUser.getUserId(), userProxy.getInode());
+		tagAPI.addUserTag(tagName, testUser.getUserId(), testUser.getUserId());
 
 		Tag tag = tagAPI.getTagByNameAndHost(tagName, hostAPI.findSystemHost().getIdentifier());
 		assertNotNull(tag);

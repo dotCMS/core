@@ -1,0 +1,23 @@
+<com.dotcms.publisher.pusher.wrapper.WorkflowWrapper>
+    <scheme>
+        <id>__id__</id>
+        <creationDate>2021-01-19 16:47:27.322 UTC</creationDate>
+        <name>__name__</name>
+        <description>__description__</description>
+        <archived>false</archived>
+        <mandatory>false</mandatory>
+        <defaultScheme>false</defaultScheme>
+        <modDate class="sql-timestamp">2021-01-19 16:47:26.445</modDate>
+    </scheme>
+    <steps/>
+    <actions/>
+    <actionRoles/>
+    <actionNextAssignRolekeyMap/>
+    <actionClasses/>
+    <actionClassParams/>
+    <operation>PUBLISH</operation>
+    <actionStepsListMap/>
+    <systemActionMappings class="com.google.common.collect.RegularImmutableList" resolves-to="com.google.common.collect.ImmutableList$SerializedForm">
+        <elements/>
+    </systemActionMappings>
+</com.dotcms.publisher.pusher.wrapper.WorkflowWrapper>

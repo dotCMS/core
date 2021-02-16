@@ -338,5 +338,13 @@ public abstract class UserFactory {
     return 0;
   }
 
+	/**
+	 * Get the userId by the icqId
+	 *
+	 * @param icqId icqId to search for
+	 * @return userId that the icqId is associated
+	 */
+  protected abstract String getUserIdByIcqId(final String icqId);
+
 
 }
