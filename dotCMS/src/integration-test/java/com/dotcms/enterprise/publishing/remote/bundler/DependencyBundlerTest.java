@@ -53,6 +53,7 @@ import static com.dotcms.util.CollectionsUtils.*;
 import static java.util.stream.Collectors.*;
 import static org.jgroups.util.Util.assertEquals;
 import static org.jgroups.util.Util.assertTrue;
+import static org.mockito.Matchers.booleanThat;
 import static org.mockito.Mockito.mock;
 
 @RunWith(DataProviderRunner.class)
@@ -111,7 +112,6 @@ public class DependencyBundlerTest {
         all.addAll(createLanguageTestCase());
         all.addAll(createRuleTestCase());
         all.addAll(createContentTestCase());
-
         all.addAll(createContentTypeWithThirdPartyTestCase());
         all.addAll(createTemplateWithThirdPartyTestCase());
         all.addAll(createContainerWithThirdPartyTestCase());
@@ -148,7 +148,9 @@ public class DependencyBundlerTest {
                 .setProperty(contentType.variable(), list(contentletChild))
                 .nextPersisted();
 
-        final List<Object> dependencies = list(host, language, contentType, contentletChild, contentTypeChild);
+        final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
+
+        final List<Object> dependencies = list(host, language, contentType, contentletChild, systemFolder, contentTypeChild);
         dependencies.addAll(contentTypeWithDependencies.dependenciesToAssert);
 
         final TestData folderWithDependencies = createFolderWithDependencies();
@@ -230,7 +232,8 @@ public class DependencyBundlerTest {
 
         final ContentType folderContentType = new StructureTransformer(folderStructure).from();
 
-        final List<Object> dependencies = list(host, folderContentType);
+        final Host systemHost = APILocator.getHostAPI().findSystemHost();
+        final List<Object> dependencies = list(host, folderContentType, systemHost);
         dependencies.addAll(contentTypeWithDependencies.dependenciesToAssert);
 
         return list(
@@ -323,9 +326,13 @@ public class DependencyBundlerTest {
                 .folder(contentTypeFolder)
                 .nextPersisted();
 
+        final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
+        final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
+
         return list(
-                new TestData(contentType, list(host), filterDescriptorAllDependencies),
-                new TestData(contentTypeWithFolder, list(folderHost, contentTypeFolder), filterDescriptorAllDependencies)
+                new TestData(contentType, list(host, systemWorkflowScheme, systemFolder), filterDescriptorAllDependencies),
+                new TestData(contentTypeWithFolder, list(folderHost, contentTypeFolder, systemWorkflowScheme),
+                        filterDescriptorAllDependencies)
         );
     }
 
@@ -498,32 +505,38 @@ public class DependencyBundlerTest {
         final Contentlet htmlPageAsset = new HTMLPageDataGen(host, template).host(host).languageId(defaultLanguage.getId()).nextPersisted();
         final ContentType htmlPageAssetContentType = htmlPageAsset.getContentType();
 
+        final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
+
+        final Host systemHost = APILocator.systemHost();
+        final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
         return list(
-                new TestData(contentlet, list(host, contentType, language), filterDescriptorAllDependencies),
+                new TestData(contentlet, list(host, contentType, language, systemFolder, systemWorkflowScheme), filterDescriptorAllDependencies),
                 new TestData(contentlet, list(), filterDescriptorNotDependencies),
                 new TestData(contentlet, list(), filterDescriptorNotRelationship),
                 new TestData(contentlet, list(), filterDescriptorNotDependenciesRelationship),
 
-                new TestData(contentletWithFolder, list(host, contentType, language, folder),
+                new TestData(contentletWithFolder, list(host, contentType, language, folder, systemWorkflowScheme, systemFolder),
                         filterDescriptorAllDependencies),
                 new TestData(contentletWithFolder, list(), filterDescriptorNotDependencies),
                 new TestData(contentletWithFolder, list(), filterDescriptorNotRelationship),
                 new TestData(contentletWithFolder, list(), filterDescriptorNotDependenciesRelationship),
 
                 new TestData(contentletWithRelationship,
-                        list(host, contentTypeParent, language, contentletChild, contentTypeChild, languageChild),
-                        filterDescriptorAllDependencies),
+                        list(host, contentTypeParent, language, contentletChild, contentTypeChild, languageChild,
+                                systemFolder, systemWorkflowScheme), filterDescriptorAllDependencies),
                 new TestData(contentletWithRelationship, list(), filterDescriptorNotDependencies),
                 new TestData(contentletWithRelationship, list(), filterDescriptorNotRelationship),
                 new TestData(contentletWithRelationship, list(), filterDescriptorNotDependenciesRelationship),
 
-                new TestData(contentWithCategory, list(host, contentTypeWithCategory, language, category), filterDescriptorAllDependencies),
+                new TestData(contentWithCategory, list(host, contentTypeWithCategory, language, category, systemFolder, systemWorkflowScheme),
+                        filterDescriptorAllDependencies),
                 new TestData(contentWithCategory, list(), filterDescriptorNotDependencies),
                 new TestData(contentWithCategory, list(), filterDescriptorNotRelationship),
                 new TestData(contentWithCategory, list(), filterDescriptorNotDependenciesRelationship),
 
                 new TestData(htmlPageAsset, list(host, defaultHost, contentTypeToPage, defaultLanguage,
-                        container, template, htmlPageAssetContentType), filterDescriptorAllDependencies),
+                        container, template, htmlPageAssetContentType, systemFolder, systemWorkflowScheme, systemHost),
+                        filterDescriptorAllDependencies),
                 new TestData(htmlPageAsset, list(), filterDescriptorNotDependencies),
                 new TestData(htmlPageAsset, list(), filterDescriptorNotRelationship),
                 new TestData(htmlPageAsset, list(), filterDescriptorNotDependenciesRelationship)
@@ -977,18 +990,20 @@ public class DependencyBundlerTest {
             final BundleDataGen.MetaData metaData = BundleDataGen.howAddInBundle.get(assetClass);
 
             final String assetId = metaData.dataToAdd.apply(asset);
-           assertTrue(String.format("Not Contain %s in %s", assetId, asset.getClass()),
+            assertTrue(String.format("Not Contain %s in %s", assetId, asset.getClass()),
                     metaData.collection.apply(config).contains(assetId));
 
             final Class key = BundleDataGen.howAddInBundle.getKey(asset.getClass());
             counts.addOrUpdate(key, 1, (Integer value) -> value + 1);
         }
 
-        /*if (filterDescriptorAllDependencies == filterDescriptor) {
+        if (filterDescriptorAllDependencies == filterDescriptor) {
             for (Class clazz : BundleDataGen.howAddInBundle.keySet()) {
-                final Integer expectedCount = counts.get(clazz, 0);
+                final boolean justExactlyClass = Host.class == clazz || Folder.class == clazz;
 
-                final BundleDataGen.MetaData metaData = BundleDataGen.howAddInBundle.get(clazz);
+                final Integer expectedCount = counts.get(clazz, 0, justExactlyClass);
+
+                final BundleDataGen.MetaData metaData = BundleDataGen.howAddInBundle.get(clazz, null, justExactlyClass);
                 final int count = metaData.collection.apply(config).size();
 
                 assertEquals(String.format("Expected %d not %d to %s: ", expectedCount, count, clazz.getSimpleName(),
@@ -997,7 +1012,7 @@ public class DependencyBundlerTest {
                                 .collect(joining(","))),
                         expectedCount, count);
             }
-        }*/
+        }
     }
 
     private static class TestData {

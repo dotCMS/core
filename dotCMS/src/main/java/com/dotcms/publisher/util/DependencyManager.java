@@ -12,7 +12,6 @@ import com.dotcms.publishing.PublisherFilter;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotIdentifierStateException;
@@ -28,10 +27,8 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -52,7 +49,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import io.vavr.API;
 import io.vavr.control.Try;
 import java.util.*;
 import java.util.concurrent.*;
@@ -176,7 +172,7 @@ public class DependencyManager {
 	public void setDependencies() throws DotSecurityException, DotDataException, DotBundleException {
 		this.publisherFilter = APILocator.getPublisherAPI().createPublisherFilter(config.getId());
 
-		Logger.info(DependencyManager.class, "publisherFilter.isDependencies() " + publisherFilter.isDependencies());
+		Logger.debug(DependencyManager.class, "publisherFilter.isDependencies() " + publisherFilter.isDependencies());
 		if(publisherFilter.isDependencies()){
 			dependencyProcessor.start();
 		}
@@ -185,11 +181,11 @@ public class DependencyManager {
 
 		List<PublishQueueElement> assets = config.getAssets();
 
-		Logger.info(this,publisherFilter.toString());
+		Logger.debug(this,publisherFilter.toString());
 		for (PublishQueueElement asset : assets) {
 			//Check if the asset.Type is in the excludeClasses filter, if it is, the asset is not added to the bundle
 			if(publisherFilter.doesExcludeClassesContainsType(asset.getType())){
-				Logger.info(getClass(),"Asset Id: " + asset.getAsset() +  " will not be added to the bundle since it's type: " + asset.getType() + " must be excluded according to the filter");
+				Logger.debug(getClass(),"Asset Id: " + asset.getAsset() +  " will not be added to the bundle since it's type: " + asset.getType() + " must be excluded according to the filter");
 				continue;
 			}
 
@@ -341,7 +337,7 @@ public class DependencyManager {
 			}
 		}
 
-		dependencyProcessor.join();
+		dependencyProcessor.waitUntilFinish();
 
 		config.setHostSet(hosts);
 		config.setFolders(folders);
@@ -375,14 +371,12 @@ public class DependencyManager {
 						.findFolderByPath(ident.getParentPath(), ident.getHostId(), user,
 								false);
 				folders.addOrClean(folder.getInode(), folder.getModDate());
-				dependencyProcessor.put(folder.getInode(), AssetTypes.FOLDER);
 			}
 
 			// Host Dependencies
 			if(!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.SITE.getType())) {
 				final Host host = APILocator.getHostAPI().find(ident.getHostId(), user, false);
 				hosts.addOrClean(host.getIdentifier(), host.getModDate());
-				dependencyProcessor.put(host.getIdentifier(), AssetTypes.HOST);
 			}
 
 			// Content Dependencies
@@ -553,17 +547,10 @@ public class DependencyManager {
 	private void setFolderListDependencies(final Folder folder)
 			throws DotIdentifierStateException, DotDataException, DotSecurityException {
 
-		// Add folder even if empty
-		if(!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.FOLDER.getType())) {
-			folders.addOrClean(folder.getInode(), folder.getModDate());
-			dependencyProcessor.put(folder.getInode(), AssetTypes.FOLDER);
-		}
-
 		// Host dependency
 		if(!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.SITE.getType())) {
 			final Host host = APILocator.getHostAPI().find(folder.getHostId(), user, false);
 			hosts.addOrClean(folder.getHostId(), host.getModDate());
-			dependencyProcessor.put(folder.getHostId(), AssetTypes.HOST);
 		}
 
 		// Content dependencies
@@ -654,7 +641,6 @@ public class DependencyManager {
 			if (!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.SITE.getType())) {
 				final Host host = APILocator.getHostAPI().find(identifier.getHostId(), user, false);
 				hosts.addOrClean(identifier.getHostId(), host.getModDate());
-				dependencyProcessor.put(identifier.getHostId(), AssetTypes.HOST);
 			}
 
 			// Folder dependencies
@@ -662,7 +648,6 @@ public class DependencyManager {
 				final Folder folder = folderAPI
 						.findFolderByPath(identifier.getParentPath(), identifier.getHostId(), user, false);
 				folders.addOrClean(folder.getInode(), folder.getModDate());
-				dependencyProcessor.put(folder.getInode(), AssetTypes.FOLDER);
 			}
 
 			// looking for working version (must exists)
@@ -1168,7 +1153,6 @@ public class DependencyManager {
 					languages.addOrClean(Long.toString(contentletWithDependenciesToProcess.getLanguageId()),
 							new Date()); // will be included only when hasn't been sent ever
 				}
-
 				try {
 					if (Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_ALL_FOLDER_PAGES", false)
 							&& contentletWithDependenciesToProcess.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) {
@@ -1221,7 +1205,6 @@ public class DependencyManager {
 					final Structure structure = CacheLocator.getContentTypeCache()
 							.getStructureByInode(listKeyValueLang.get(0).getContentTypeId());
 					contentTypes.addOrClean(structure.getIdentifier(), structure.getModDate());
-					dependencyProcessor.put(structure.getIdentifier(), AssetTypes.CONTENT_TYPE);
 				}
 				if(!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.CONTENTLET.getType())) {
 					for (final Contentlet keyValue : listKeyValueLang) {// add the language variable
@@ -1266,14 +1249,12 @@ public class DependencyManager {
 					if(!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.SITE.getType())) {
 						final Host host = hostAPI.find(rule.getParent(), this.user, false);
 						this.hosts.addOrClean(host.getIdentifier(), host.getModDate());
-						dependencyProcessor.put(host.getIdentifier(), AssetTypes.HOST);
 					}
 				}
 				// If the parent of the rule is a Content Page...
 				else if (parent.isHTMLPage()) {
 					if(!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.CONTENTLET.getType()) && !publisherFilter.doesExcludeDependencyQueryContainsContentletId(parent.getIdentifier())) {
 						this.contents.addOrClean(parent.getIdentifier(), parent.getModDate());
-						dependencyProcessor.put(parent.getIdentifier(), AssetTypes.CONTENTS);
 					}
 				} else {
 					throw new DotDataException("The parent ID [" + parent.getIdentifier() + "] is a non-valid parent.");
@@ -1354,17 +1335,17 @@ public class DependencyManager {
 		private boolean started;
 		private List<DependencyThread> threads;
 
-		void put(final String assetKey, final AssetTypes assetTypes) {
+		void put(final String assetKey, final AssetTypes assetType) {
 			if (!started) {
 				return;
 			}
 
-			if (!this.alreadyProcess(assetKey, assetTypes)) {
-				Logger.info(DependencyProcessor.class, () -> String.format("%s: Putting %s in %s",
-						Thread.currentThread().getName(), assetKey, assetTypes));
+			if (!this.alreadyProcess(assetKey, assetType)) {
+				Logger.debug(DependencyProcessor.class, () -> String.format("%s: Putting %s in %s",
+						Thread.currentThread().getName(), assetKey, assetType));
 
-				queue.add(new DependencyProcessorItem(assetKey, assetTypes));
-				addSet(assetKey, assetTypes);
+				queue.add(new DependencyProcessorItem(assetKey, assetType));
+				addSet(assetKey, assetType);
 			}
 		}
 
@@ -1380,7 +1361,7 @@ public class DependencyManager {
 		}
 
 		void start(){
-			Logger.info(DependencyProcessor.class, "starting");
+			Logger.debug(DependencyProcessor.class, "starting");
 			queue = new LinkedBlockingDeque();
 			sets = new HashMap<>();
 
@@ -1399,7 +1380,7 @@ public class DependencyManager {
 			started = true;
 		}
 
-		public void join(){
+		public void waitUntilFinish(){
 			Logger.debug(DependencyProcessor.class, () -> String.format("%s: Wait until all finish",
 					Thread.currentThread().getName()));
 
@@ -1427,7 +1408,6 @@ public class DependencyManager {
 		}
 
 		private boolean isFinish(){
-			Logger.info(DependencyManager.class, "isFinish " + (queue == null || (queue.isEmpty() && allThreadWaiting())));
 			return queue == null || (queue.isEmpty() && allThreadWaiting());
 		}
 
@@ -1467,21 +1447,21 @@ public class DependencyManager {
 
 						if (dependencyProcessorItem == null) {
 							waitingForSomethingToProcess = true;
-							Logger.info(DependencyProcessor.class, () -> String.format("%s : Notifying to main thread",
+							Logger.debug(DependencyProcessor.class, () -> String.format("%s : Notifying to main thread",
 									Thread.currentThread().getName()));
 
 							notifyMainThread();
 
-							Logger.info(DependencyProcessor.class,
+							Logger.debug(DependencyProcessor.class,
 									() -> String.format("%s : Waiting for something to process", Thread.currentThread().getName()));
 							dependencyProcessorItem = queue.take();
 							waitingForSomethingToProcess = false;
 						}
 
 						final AssetTypes assetTypes = dependencyProcessorItem.assetTypes;
-						Logger.info(DependencyProcessor.class, () ->
-								String.format("%s : We have something to process - %s",
-										Thread.currentThread().getName(), assetTypes));
+						Logger.debug(DependencyProcessor.class,
+								String.format("%s : We have something to process - %s %s",
+										Thread.currentThread().getName(), dependencyProcessorItem.assetKey, assetTypes));
 
 						consumerDependencies.get(assetTypes).accept(dependencyProcessorItem.assetKey);
 					} catch (InterruptedException e) {
@@ -1491,7 +1471,7 @@ public class DependencyManager {
 
 						break;
 					} catch (Exception e) {
-						e.printStackTrace();
+						Logger.error(DependencyThread.class, e);
 					}
 				}
 			}

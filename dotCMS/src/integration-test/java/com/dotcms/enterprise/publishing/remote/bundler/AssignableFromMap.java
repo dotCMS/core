@@ -28,8 +28,17 @@ public class AssignableFromMap<T> {
     }
 
     public T get(final Class clazzToFind, final T defaultValue) {
+        return get(clazzToFind, null, false);
+    }
+
+    public T get(final Class clazzToFind, final T defaultValue, final boolean justExactlyClass) {
         try {
             final Class key = getKey(clazzToFind);
+
+            if (justExactlyClass && key != clazzToFind) {
+                return defaultValue;
+            }
+
             return this.map.get(key);
         }catch (NotFoundException e) {
             if (defaultValue == null) {
