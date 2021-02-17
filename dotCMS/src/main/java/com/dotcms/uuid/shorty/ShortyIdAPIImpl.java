@@ -48,7 +48,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
 
 
   long dbHits = 0;
-  public static final int MINIMUM_SHORTY_ID_LENGTH =
+  public static int MINIMUM_SHORTY_ID_LENGTH =
       Config.getIntProperty("MINIMUM_SHORTY_ID_LENGTH", 10);
 
   @Override

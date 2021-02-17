@@ -9,26 +9,29 @@ import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.LinkDataGen;
 import com.dotcms.datagen.RelationshipDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import io.vavr.Tuple2;
 import org.apache.commons.lang.RandomStringUtils;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -39,8 +42,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Integration tests for the Shorty ID API class.
@@ -48,22 +54,19 @@ import static org.junit.Assert.assertEquals;
  * @author 
  * @since Oct 10, 2016
  */
+@RunWith(DataProviderRunner.class)
 public class LegacyShortyIdApiTest {
 
     static List<String> fourOhFours = new ArrayList<>();
-
-    /**
-     * | fc193c82-8c32-4abe-ba8a-49522328c93e | containers | | ff9d9f72-3650-4bca-9e0f-6ce18150d51e
-     * | contentlet | | ffa0b494-cbb2-4634-b747-8795b5995d74 | folder | |
-     * 1aeb328b-57b5-46e8-9eec-2cb2b4c24953 | htmlpage | | b12f30da-0f0c-4376-88a0-a17d1ffe39f9 |
-     * links | | fdb3f906-e9c4-46c4-b7e4-148201271d04 | template | |
-     * fba1b937-5c06-40a0-94c6-a830425d3875 | identifer |
-     **/
+    static ShortyIdAPI shortyIdAPI;
+    static List<String[]> expectedIds = null;
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
     	IntegrationTestInitService.getInstance().init();
-        APILocator.getBundleAPI();
+
+        shortyIdAPI = new LegacyShortyIdAPIImpl();
+        getExpectedUUIDs();
 
         for (int i = 0; i < 10; i++) {
             fourOhFours.add(RandomStringUtils.randomAlphanumeric(ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH));
@@ -71,22 +74,13 @@ public class LegacyShortyIdApiTest {
 
 
     }
-
-    protected List<String[]> expectedIdsFromStarter = null;
-    protected List<String[]> expectedIds = null;
     
-    final String GET_INODE = "SELECT inode FROM inode WHERE type = ? AND inode <> 'SYSTEM_FOLDER'";
-	final String GET_ID_CONTAINERS = "SELECT identifier FROM dot_containers";
-    final String GET_ID_CONTENTLETS = "SELECT identifier FROM contentlet WHERE identifier <> 'SYSTEM_HOST'";
-	final String GET_ID_LINKS = "SELECT identifier FROM links";
-	final String GET_ID_TEMPLATES = "SELECT identifier FROM template";
-	final String GET_ID_FOLDERS = "SELECT identifier FROM folder";
-    
-    @Before
-    public void setUp() throws Exception {
-    	getExpectedIds();
-    	getExpectedIdsFromStarter();
-    }
+    final static String GET_INODE = "SELECT inode FROM inode WHERE type = ? AND inode <> 'SYSTEM_FOLDER'";
+	final static String GET_ID_CONTAINERS = "SELECT identifier FROM dot_containers";
+    final static String GET_ID_CONTENTLETS = "SELECT identifier FROM contentlet WHERE identifier <> 'SYSTEM_HOST'";
+	final static String GET_ID_LINKS = "SELECT identifier FROM links";
+	final static String GET_ID_TEMPLATES = "SELECT identifier FROM template";
+	final static String GET_ID_FOLDERS = "SELECT identifier FROM folder";
 
     /**
 	 * This utility method reads actual data from the DB in order to get valid
@@ -95,24 +89,25 @@ public class LegacyShortyIdApiTest {
 	 * @throws DotDataException
 	 *             An error occurred when reading the test data.
 	 */
-    private void getExpectedIds() throws DotDataException, DotSecurityException {
-
-        final ContentType contentGenericType = APILocator.getContentTypeAPI(APILocator.systemUser())
-                .find("webPageContent");
+    private static void getExpectedUUIDs() throws DotDataException, DotSecurityException {
 
 		final DotConnect dc = new DotConnect();
 		Builder<String[]> builder = ImmutableList.<String[]>builder();
 
+		//Create 2 Containers, and save the inode and the identifier of them
         new ContainerDataGen().nextPersisted();
         new ContainerDataGen().nextPersisted();
-		dc.setSQL(GET_INODE, 2);
-		dc.addParam("containers");
-		List<Map<String, Object>> res = dc.loadObjectResults();
-		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "containers" });
+        dc.setSQL(GET_INODE, 2);
+        dc.addParam("containers");
+        List<Map<String, Object>> res = dc.loadObjectResults();
+        builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "containers" });
 		dc.setSQL(GET_ID_CONTAINERS, 2);
 		res = dc.loadObjectResults();
 		builder.add(new String[] { res.get(1).get("identifier").toString(), "identifier", "containers" });
 
+        //Create 2 Contentlets, and save the inode and the identifier of them
+        final ContentType contentGenericType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                .find("webPageContent");
         new ContentletDataGen(contentGenericType.id())
                 .setProperty("title", "TestContent")
                 .setProperty("body", "TestBody").nextPersisted();
@@ -123,33 +118,48 @@ public class LegacyShortyIdApiTest {
 		res = dc.loadObjectResults();
         builder.add(new String[] { res.get(1).get("identifier").toString(), "identifier", "contentlet" });
 
+        dc.setSQL(GET_INODE, 2);
+        dc.addParam("contentlet");
+        res = dc.loadObjectResults();
+        builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "contentlet" });
+
+        //Create 2 Folders, and save the inode and the identifier of them
         new FolderDataGen().nextPersisted();
         new FolderDataGen().nextPersisted();
 		dc.setSQL(GET_ID_FOLDERS, 2);
 		res = dc.loadObjectResults();
         builder.add(new String[] { res.get(1).get("identifier").toString(), "identifier", "folder" });
 
+        dc.setSQL(GET_INODE, 2);
+        dc.addParam("folder");
+        res = dc.loadObjectResults();
+        builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "folder" });
+
+        //Create 2 Links, and save the inode and the identifier of them
         new LinkDataGen().nextPersisted();
         new LinkDataGen().nextPersisted();
 		dc.setSQL(GET_ID_LINKS, 2);
 		res = dc.loadObjectResults();
 		builder.add(new String[] { res.get(1).get("identifier").toString(), "identifier", "links" });
 
+        dc.setSQL(GET_INODE, 2);
+        dc.addParam("links");
+        res = dc.loadObjectResults();
+        builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "links" });
+
+        //Create 2 Templates, and save the inode and the identifier of them
         new TemplateDataGen().nextPersisted();
         new TemplateDataGen().nextPersisted();
 		dc.setSQL(GET_ID_TEMPLATES, 2);
 		res = dc.loadObjectResults();
 		builder.add(new String[] { res.get(1).get("identifier").toString(), "identifier", "template" });
-		
-		dc.setSQL(GET_INODE, 2);
-		dc.addParam("contentlet");
-		res = dc.loadObjectResults();
-		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "contentlet" });
+
 		dc.setSQL(GET_INODE, 2);
 		dc.addParam("template");
 		res = dc.loadObjectResults();
 		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "template" });
 
+        //Create 2 Categories, and save the inode of them
         new CategoryDataGen().nextPersisted();
         new CategoryDataGen().nextPersisted();
 		dc.setSQL(GET_INODE, 2);
@@ -157,6 +167,7 @@ public class LegacyShortyIdApiTest {
 		res = dc.loadObjectResults();
 		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "category" });
 
+        //Create 2 Fields in a new Content Type, and save the inode of them
         final ContentType contentType = new ContentTypeDataGen().nextPersisted();
         new FieldDataGen().contentTypeId(contentType.id()).nextPersisted();
         new FieldDataGen().contentTypeId(contentType.id()).nextPersisted();
@@ -165,408 +176,202 @@ public class LegacyShortyIdApiTest {
 		res = dc.loadObjectResults();
 		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "field" });
 
-        new FolderDataGen().nextPersisted();
-        new FolderDataGen().nextPersisted();
-		dc.setSQL(GET_INODE, 2);
-		dc.addParam("folder");
-		res = dc.loadObjectResults();
-		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "folder" });
-		dc.setSQL(GET_INODE, 2);
-		dc.addParam("links");
-		res = dc.loadObjectResults();
-		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "links" });
-
+        //Create 2 Relationships, and save the inode of them
         new RelationshipDataGen(true).nextPersisted();
         new RelationshipDataGen(true).nextPersisted();
 		dc.setSQL(GET_INODE, 2);
 		dc.addParam("relationship");
 		res = dc.loadObjectResults();
 		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "relationship" });
-		this.expectedIds = builder.build();
+		expectedIds = builder.build();
 	}
 
-	/**
-	 * This utility method reads actual data from the DB in order to get valid
-	 * information for testing purposes.
-	 * 
-	 * @throws DotDataException
-	 *             An error occurred when reading the test data.
-	 */
-    private void getExpectedIdsFromStarter() throws DotDataException, DotSecurityException {
+	@DataProvider
+    public static Object[] dataProviderStringToShortify(){
+        return new Tuple2[]{
+                //String To Shorty, expected
+                new Tuple2("",""),
+                new Tuple2("1234","1234"),
+                new Tuple2("12345","12345"),
+                new Tuple2("12345-6","123456"),
+                new Tuple2("12345-67","1234567"),
+                new Tuple2("12345-678","12345678"),
+                new Tuple2("12345-6789","123456789"),
+                new Tuple2("12345-6789-0","1234567890"),
+                new Tuple2("12345-6789-01","1234567890"),
+                new Tuple2("12345-6789-012","1234567890"),
+                new Tuple2("12345-6789-011-12","1234567890"),
 
-        final ContentType contentGenericType = APILocator.getContentTypeAPI(APILocator.systemUser())
-                .find("webPageContent");
-
-		final DotConnect dc = new DotConnect();
-		Builder<String[]> builder = ImmutableList.<String[]>builder();
-
-        new ContainerDataGen().nextPersisted();
-        new ContainerDataGen().nextPersisted();
-		dc.setSQL(GET_INODE, 1);
-		dc.addParam("containers");
-		List<Map<String, Object>> res = dc.loadObjectResults();
-		builder.add(new String[] { res.get(0).get("inode").toString(), "inode", "containers" });
-		dc.setSQL(GET_ID_CONTAINERS, 1);
-		res = dc.loadObjectResults();
-		builder.add(new String[] { res.get(0).get("identifier").toString(), "identifier", "containers" });
-
-        new ContentletDataGen(contentGenericType.id())
-                .setProperty("title", "TestContent")
-                .setProperty("body", "TestBody").nextPersisted();
-        new ContentletDataGen(contentGenericType.id())
-                .setProperty("title", "TestContent")
-                .setProperty("body", "TestBody").nextPersisted();
-        dc.setSQL(GET_ID_CONTENTLETS, 2);
-		res = dc.loadObjectResults();
-		builder.add(new String[] { res.get(0).get("identifier").toString(), "identifier", "contentlet" });
-		builder.add(new String[] { res.get(1).get("identifier").toString(), "identifier", "contentlet" });
-
-		dc.setSQL(GET_INODE, 2);
-		dc.addParam("contentlet");
-		res = dc.loadObjectResults();
-		builder.add(new String[] { res.get(0).get("inode").toString(), "inode", "contentlet" });
-		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "contentlet" });
-
-        new FolderDataGen().nextPersisted();
-        new FolderDataGen().nextPersisted();
-        dc.setSQL(GET_INODE, 2);
-		dc.addParam("folder");
-		res = dc.loadObjectResults();
-		builder.add(new String[] { res.get(0).get("inode").toString(), "inode", "folder" });
-		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "folder" });
-
-        new LinkDataGen().nextPersisted();
-        new LinkDataGen().nextPersisted();
-		dc.setSQL(GET_INODE, 1);
-		dc.addParam("links");
-		res = dc.loadObjectResults();
-		builder.add(new String[] { res.get(0).get("inode").toString(), "inode", "links" });
-		dc.setSQL(GET_ID_LINKS, 1);
-		res = dc.loadObjectResults();
-		builder.add(new String[] { res.get(0).get("identifier").toString(), "identifier", "links" });
-
-        new TemplateDataGen().nextPersisted();
-        new TemplateDataGen().nextPersisted();
-		dc.setSQL(GET_ID_TEMPLATES, 1);
-		res = dc.loadObjectResults();
-		builder.add(new String[] { res.get(0).get("identifier").toString(), "identifier", "template" });
-		dc.setSQL(GET_INODE, 1);
-		dc.addParam("template");
-		res = dc.loadObjectResults();
-		builder.add(new String[] { res.get(0).get("inode").toString(), "inode", "template" });
-		this.expectedIdsFromStarter = builder.build();
-	}
-
-    @Test
-    public void testShortify() {
-
-        final ShortyIdAPI shortyIdAPI = new LegacyShortyIdAPIImpl();
-	    final String nullString = null;
-        Assert.assertEquals(shortyIdAPI.shortify(nullString), nullString);
-
-        final String emptyString = "";
-        Assert.assertEquals(shortyIdAPI.shortify(emptyString), emptyString);
-
-        final String emptyString2 = "            ";
-        Assert.assertEquals(shortyIdAPI.shortify(emptyString2), emptyString2);
-
-        final String shortId4 = "1234";
-        Assert.assertEquals(shortyIdAPI.shortify(shortId4), shortId4);
-
-        final String shortId5 = "12345";
-        Assert.assertEquals(shortyIdAPI.shortify(shortId5), shortId5);
-
-        final String shortId6 = "12345-6";
-        Assert.assertEquals(shortyIdAPI.shortify(shortId6), "123456");
-
-        final String shortId7 = "12345-67";
-        Assert.assertEquals(shortyIdAPI.shortify(shortId7), "1234567");
-
-        final String shortId10 = "12345-6789-0";
-        Assert.assertEquals(shortyIdAPI.shortify(shortId10), "1234567890");
-
-        final String shortId12 = "12345-6789-012";
-        Assert.assertEquals(shortyIdAPI.shortify(shortId12), "1234567890");
-
-        final String shortId14 = "12345-6789-012-11";
-        Assert.assertEquals(shortyIdAPI.shortify(shortId14), "1234567890");
+        };
     }
 
-	@Test
+    /**
+     * Method to test: {@link ShortyIdAPI#shortify(String)}
+     * Given Scenario: Shortify the String (will trim the - and leave it at 10 char)
+     * ExpectedResult: success all shortify
+     */
+    @Test
+    @UseDataProvider("dataProviderStringToShortify")
+    public void test_shortify(final Tuple2<String,String> testCase) {
+        Assert.assertEquals(shortyIdAPI.shortify(testCase._1), testCase._2);
+    }
+
+    /**
+     * Given Scenario: For each of datatypes in the expectedUUIDs, shortify the UUID and then
+     *                  get {@link ShortyId} using the uuid-shorty as key.
+     * ExpectedResult: should get the same object(full uuid, type and subType), regardless using the uuid shorty
+     */
+    @Test
     public void testShortyLookup() {
-        ShortyId shorty = null;
-        ShortType shortType = null;
-        ShortType shortSubType = null;
-        String[] val = null;
-        ShortyIdAPI api = new LegacyShortyIdAPIImpl();
-        String key = null;
-        // run 10 times
-        for (int i = 0; i < 10; i++) {
-            try {
-                for (String[] values : expectedIdsFromStarter) {
-                    val = values;
-                    key = api.shortify(val[0]);
-                    shortType = ShortType.fromString(val[1]);
-                    shortSubType = ShortType.fromString(val[2]);
-                    Optional<ShortyId> opt = api.getShorty(key);
-                    shorty = opt.get();
+        for (final String[] values : expectedIds) {
+            final String[] val = values;
+            final String uuidShorty = shortyIdAPI.shortify(val[0]);
+            final ShortType shortType = ShortType.fromString(val[1]);
+            final ShortType shortSubType = ShortType.fromString(val[2]);
+            final Optional<ShortyId> opt = shortyIdAPI.getShorty(uuidShorty);
 
-                    System.out.println(val[0] + " == " + shorty.longId);
-                    System.out.println(shortType + " == " + shorty.type);
-                    System.out.println(shortSubType + " == " + shorty.subType);
+            assertTrue(opt.isPresent());
 
-                    assert (shorty.longId.equals(val[0]));
-                    assert (shortType == shorty.type);
-                    assert (shortSubType == shorty.subType);
-                }
-            } catch (Throwable t) {
-
-                System.out.println("val[0]:" + val[0]);
-                System.out.println("val[1]:" + val[1]);
-                System.out.println("val[2]:" + val[2]);
-
-
-                System.out.println("bad shorty:" + key);
-                System.out.println("looking shortType:" + shortType);
-                System.out.println("looking shortSubType:" + shortSubType);
-                throw t;
-            }
+            final ShortyId shorty = opt.get();
+            assertEquals(val[0], shorty.longId);
+            assertEquals(shortType, shorty.type);
+            assertEquals(shortSubType, shorty.subType);
         }
     }
 
+    /**
+     * Given Scenario: For each of datatypes in the expectedUUIDs, shortify the UUID and then
+     *                  call getShorty using the uuid-shorty as key (do this a few times), after the first
+     *                  time should be calling the cache instead of the DB, check the dbHits value it shouldn't
+     *                  change.
+     * ExpectedResult: DBhits should be the same for the first time than for the 4th time, since should be
+     *                  using cache.
+     */
     @Test
     public void testShortyCache() {
-        ShortyIdAPI api = new LegacyShortyIdAPIImpl();
-
-        String[] val = null;
-
-        // load cache
-        for (String[] values : expectedIds) {
-            val = values;
-            String key = api.shortify(val[0]);
-            Optional<ShortyId> opt = api.getShorty(key);
+        // Call get to load Cache
+        for (final String[] values : expectedIds) {
+            final String key = shortyIdAPI.shortify(values[0]);
+            shortyIdAPI.getShorty(key);
         }
 
-        long dbQueries = api.getDbHits();
+        //Get Hits to the DB
+        final long dbHits = shortyIdAPI.getDbHits();
 
-        for (int i = 0; i < 10; i++) {
-
-            for (String[] values : expectedIds) {
-                val = values;
-                String key = api.shortify(val[0]);
-                Optional<ShortyId> opt = api.getShorty(key);
+        //Hit the getShorty a few more times, to check if is hitting cache or DB
+        for (int i = 0; i < 3; i++) {
+            for (final String[] values : expectedIds) {
+                final String key = shortyIdAPI.shortify(values[0]);
+                shortyIdAPI.getShorty(key);
             }
         }
 
-        // test that we are loading from cache
-        long dbQueries2 = api.getDbHits();
-        assert (dbQueries2 == dbQueries);
+        //Get Hits to the DB
+        final long dbHits2 = shortyIdAPI.getDbHits();
 
-        CacheLocator.getCacheAdministrator().flushAll();
-
-        // load cache
-        for (String[] values : expectedIds) {
-            val = values;
-            String key = api.shortify(val[0]);
-            Optional<ShortyId> opt = api.getShorty(key);
-        }
-
-        long dbQueries3 = api.getDbHits();
-        assert (dbQueries3 == dbQueries2 + expectedIds.size());
+        //Check that the amount of hits to the DB has not increase, since it should be hitting the cache
+        assertEquals(dbHits,dbHits2);
     }
 
+    @DataProvider
+    public static Object[] dataProviderValidShorty(){
+        return new Tuple2[]{
+                //String to check if is valid, is valid?
+                new Tuple2("asdd-1234-asdasda-asda",true),
+                new Tuple2("asd87-234-214",true),
+                new Tuple2("asd87-234:-251",false),
+                new Tuple2("asd87-234;-251",false),
+                new Tuple2("asd87-234\"-251",false),
+                new Tuple2("asd87-234*-251",false),
+                new Tuple2("asd87_232_251",false),
+                new Tuple2(null,false),
+                new Tuple2("asd81",false)
+        };
+    }
+
+    /**
+     * Given Scenario: Check that the UUID are valid to shorties
+     * ExpectedResult: Some characters are not valid in shorties.
+     */
     @Test
-    public void testValidShorty() {
-
-        String[] invalids = new String[] {"!", ":", ";", "\"", "'", "*", "_", null};
-        ShortyIdAPI api = new LegacyShortyIdAPIImpl();
-        int runs = 10;
-
-        for (String x : invalids) {
+    @UseDataProvider("dataProviderValidShorty")
+    public void testValidShorty(final Tuple2<String,Boolean> testCase) {
             try {
-                api.validShorty(x);
-                assert (false);
+                shortyIdAPI.validShorty(testCase._1);
+                assertTrue(testCase._2);
             } catch (Exception e) {
                 if (e instanceof ShortyException) {
-                    assert (true);
+                    assertFalse(testCase._2);
                 } else {
-                    assert (false);
+                    assertFalse("Another exception was thrown: " + e.getMessage() , true);
                 }
-
             }
-        }
-
-        for (int i = 0; i < runs; i++) {
-            String x = RandomStringUtils.randomAlphanumeric(ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH);
-            try {
-                api.validShorty(x);
-                assert (true);
-            } catch (Exception e) {
-                assert (false);
-            }
-        }
     }
 
+    /**
+     * Given Scenario: Check that is calling the Cache for 404 Shorties
+     * ExpectedResult: DBhits should be the same for the first time than for the 4th time, since should be
+     *                  using cache.
+     */
     @Test
     public void test404Cache() {
-        ShortyIdAPI api = new LegacyShortyIdAPIImpl();
-
-        // load cache
-        for (String key : fourOhFours) {
-            Optional<ShortyId> opt = api.getShorty(key);
+        // Call get to load Cache
+        for (final String key : fourOhFours) {
+            shortyIdAPI.getShorty(key);
         }
 
-        long dbQueries = api.getDbHits();
+        //Get Hits to the DB
+        final long dbHits = shortyIdAPI.getDbHits();
 
-        for (int i = 0; i < 10; i++) {
-
-            for (String key : fourOhFours) {
-                Optional<ShortyId> opt = api.getShorty(key);
+        //Hit the getShorty a few more times, to check if is hitting cache or DB
+        for (int i = 0; i < 3; i++) {
+            for (final String key : fourOhFours) {
+                shortyIdAPI.getShorty(key);
             }
         }
 
-        // test that we are loading from cache
-        long dbQueries2 = api.getDbHits();
-        assert (dbQueries2 == dbQueries);
+        //Get Hits to the DB
+        final long dbHits2 = shortyIdAPI.getDbHits();
 
-        CacheLocator.getCacheAdministrator().flushAll();
-
-        for (String key : fourOhFours) {
-            Optional<ShortyId> opt = api.getShorty(key);
-        }
-
-        long dbQueries3 = api.getDbHits();
-        assert (dbQueries3 == dbQueries2 + fourOhFours.size());
+        //Check that the amount of hits to the DB has not increase, since it should be hitting the cache
+        assertEquals(dbHits,dbHits2);
     }
 
+    /**
+     * Given Scenario: Hit the getShorty to get 404 cache with an UUID that not belong to any content, link the UUID
+     *                  to a content and hit again the getShorty method with the same UUID.
+     * ExpectedResult: the first time we hit we should get an empty value, after linking the UUID we should the ShortyId
+     */
     @Test
-    public void testIdentifier404CacheInvalidation() throws Exception{
-        
-        
-        String uuid = UUIDGenerator.generateUuid();
-        String testUuid = uuid.replace("-","");
-        ShortyIdAPI api = new LegacyShortyIdAPIImpl();
-        assert(!api.getShorty(uuid).isPresent());
-        assert(!api.getShorty(testUuid).isPresent());
-        
-        for(int i=testUuid.length();i>ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH;i--) {
-            String test=testUuid.substring(0, i);
-            assert(!api.getShorty(test).isPresent());
-        }
-        
-        
-        
+    public void test404CacheInvalidation() throws Exception{
 
-        ContentType type = new ContentTypeDataGen().nextPersisted();
-        Contentlet con = new ContentletDataGen(type.id()).next();
-        con.setInode(UUIDGenerator.generateUuid());
-        Host host =APILocator.systemHost();
-        Identifier id = APILocator.getIdentifierAPI().createNew(con, host, uuid);
-        
-        
-        assert(api.getShorty(uuid).isPresent());
-        assert(api.getShorty(testUuid).isPresent());
-        
-        for(int i=testUuid.length();i>ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH;i--) {
-            String test=testUuid.substring(0, i);
-            assert(api.getShorty(test).isPresent());
-        }
-        
+        final String uuid = UUIDGenerator.generateUuid();
+        final String uuidShorty = shortyIdAPI.shortify(uuid);
+        assertFalse(shortyIdAPI.getShorty(uuid).isPresent());
+        assertFalse(shortyIdAPI.getShorty(uuidShorty).isPresent());
+
+        final Contentlet contentlet = TestDataUtils.getGenericContentContent(false,
+                APILocator.getLanguageAPI().getDefaultLanguage().getId());
+        APILocator.getIdentifierAPI().createNew(contentlet, new SiteDataGen().nextPersisted(), uuid);
+
+        assertTrue(shortyIdAPI.getShorty(uuid).isPresent());
+        assertTrue(shortyIdAPI.getShorty(uuidShorty).isPresent());
+
     }
-    
+
+    /**
+     * Given Scenario: Modify the MINIMUM_SHORTY_ID_LENGTH property to create a longer Shorty
+     * ExpectedResult: shorty with the length of the MINIMUM_SHORTY_ID_LENGTH should be created.
+     */
     @Test
-    public void testContentlet404CacheInvalidation() throws Exception{
-        
-        
-        String uuid = UUIDGenerator.generateUuid();
-        String testUuid = uuid.replace("-","");
-        ShortyIdAPI api = new LegacyShortyIdAPIImpl();
-        assert(!api.getShorty(uuid).isPresent());
-        assert(!api.getShorty(testUuid).isPresent());
-        
-        for(int i=testUuid.length();i>ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH;i--) {
-            String test=testUuid.substring(0, i);
-            assert(!api.getShorty(test).isPresent());
-        }
-        
-        
-        
+    public void test_shortify_modify_MINIMUM_SHORTY_ID_LENGTH_success() {
 
-        ContentType type = new ContentTypeDataGen().nextPersisted();
-        Contentlet con = new ContentletDataGen(type.id()).next();
-        con.setInode(uuid);
-        con.setProperty(Contentlet.DONT_VALIDATE_ME, true);
-        con = APILocator.getContentletAPI().checkin(con, APILocator.systemUser(), false);
+        final String uuid = UUIDGenerator.generateUuid();
+        final int defaultMINIMUM_SHORTY_ID_LENGTH = ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH;
 
-        assert(con.getInode().equals(uuid));
-        assert(api.getShorty(uuid).isPresent());
-        assert(api.getShorty(testUuid).isPresent());
-        
-        for(int i=testUuid.length();i>ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH;i--) {
-            String test=testUuid.substring(0, i);
-            assert(api.getShorty(test).isPresent());
-        }
-        
+        ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH = 15;
+        String uuidShorty = shortyIdAPI.shortify(uuid);
+        assertTrue("Length: " + uuidShorty.length(),uuidShorty.length()==15);
+        ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH = defaultMINIMUM_SHORTY_ID_LENGTH;
     }
-    
-    
-    
-    @Test
-    public void testUuidIfy() {
-
-        ShortyIdAPI api = new LegacyShortyIdAPIImpl();
-        for (String x : fourOhFours) {
-            String y = api.uuidIfy(x);
-            assert (y.indexOf('-') == 8);
-        }
-
-        for (String[] x : expectedIds) {
-            String noDashes = x[0].replaceAll("-", "");
-            String y = api.uuidIfy(noDashes);
-            assert (x[0].equals(y));
-        }
-    }
-
-    @Test
-    public void testLongerShorties() {
-
-        ShortyIdAPI api = new LegacyShortyIdAPIImpl();
-        for (String[] expected : expectedIdsFromStarter) {
-            String noDashes = expected[0].replaceAll("-", "");
-            for ( int i = ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH; i < 30; i++ ) {
-                String key = noDashes.substring(0, i);
-                Optional<ShortyId> opt = api.getShorty(key);
-                try {
-                    assert (opt.isPresent());
-                } catch (Throwable t) {
-                    System.out.println("key is empty:" + key);
-                    throw t;
-                }
-            }
-        }
-    }
-    
-    @Test
-    public void testTempShorties() throws DotSecurityException, IOException {
-
-        ShortyIdAPI api = new LegacyShortyIdAPIImpl();
-        User systemUser = APILocator.systemUser();
-        String testingFileName = "TESTING.PNG";
-        final HttpServletRequest request = new MockHttpRequest("localhost", "/api/v1/tempResource").request();
-        request.setAttribute(WebKeys.USER,systemUser);
-        DotTempFile temp =  APILocator.getTempFileAPI().createEmptyTempFile(testingFileName,request);
-
-        new FileOutputStream(temp.file).close();
-        assertEquals(temp.id, api.shortify(temp.id));
-        
-        
-        ShortyId shorty = api.getShorty(temp.id).get();
-        assertEquals(temp.id, shorty.longId);
-        assertEquals(temp.id, shorty.shortId);
-        assert(ShortType.TEMP_FILE == shorty.type);
-        assert(ShortType.TEMP_FILE == shorty.subType);
-    }
-    
-    
-
 }
