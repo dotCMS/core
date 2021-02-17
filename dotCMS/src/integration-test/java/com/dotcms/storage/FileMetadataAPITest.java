@@ -8,8 +8,6 @@ import static com.dotcms.datagen.TestDataUtils.getMultipleBinariesContent;
 import static com.dotcms.datagen.TestDataUtils.getMultipleImageBinariesContent;
 import static com.dotcms.datagen.TestDataUtils.removeAnyMetadata;
 import static com.dotcms.storage.StoragePersistenceProvider.DEFAULT_STORAGE_TYPE;
-import static com.dotcms.storage.model.BasicMetadataFields.HEIGHT_META_KEY;
-import static com.dotcms.storage.model.BasicMetadataFields.WIDTH_META_KEY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -48,7 +46,6 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
-import java.util.stream.Collectors;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -69,7 +66,7 @@ public class FileMetadataAPITest {
      * I know.. it Sucks.
      * @throws Exception
      */
-    public static void prepareIfNecessary() throws Exception {
+    private static void prepareIfNecessary() throws Exception {
        if(fileMetadataAPI == null){
          IntegrationTestInitService.getInstance().init();
          fileMetadataAPI = APILocator.getFileMetadataAPI();
@@ -233,7 +230,7 @@ public class FileMetadataAPITest {
      */
     private void validateBasicStrict(final Metadata meta) {
         final Boolean isImage = (Boolean) meta.getFieldsMeta().get("isImage");
-        //We must account that width and height are only available for images
+        //We must account that width and height are only available for images so minus two
         final int expectedFieldsNumber = !isImage ? basicMetadataFields.size() -2 : basicMetadataFields.size();
         validateBasic(meta);
 
@@ -242,25 +239,13 @@ public class FileMetadataAPITest {
                         meta), expectedFieldsNumber, meta.getFieldsMeta().size());
     }
 
-    //SVG does not have dimensions, but that's a known issue we're willing to forgive.
-    private static Set<String> imageExt = ImmutableSet.of("jpg", "png", "gif");
-
-    /**
-     * Custom `isImage` method. this custom version skips svg files. So we can forgive them from getting us dimensions
-     * @param fileName
-     * @return
-     */
-    private boolean isSupportedImage(final String fileName) {
-        final String assetNameExt = UtilMethods.getFileExtension(fileName).toLowerCase();
-        return imageExt.contains(assetNameExt);
-    }
-
     /**
      * Given scenario: We have an instance of a content-type that has different fields of type binary
      * this time we test that the first field gets the generated full-MD generated while the rest only get the basic one.
      * Expected Results:
      * @throws IOException
      */
+
     
     @Test
     @UseDataProvider("getStorageType")
@@ -327,6 +312,7 @@ public class FileMetadataAPITest {
      * Expected Results: After calling findBinaryFields I should get a tuple with one file
      * candidate for the full MD generation and the rest in the second component of the tuple
      */
+
     
     @Test
     public void Test_Get_First_Indexed_Binary_Field() {
@@ -357,7 +343,6 @@ public class FileMetadataAPITest {
      * @param storageType
      * @throws IOException
      */
-    
     @Test
     @UseDataProvider("getStorageType")
     public void Test_Get_Metadata_No_Cache(final StorageType storageType) throws IOException, DotDataException {
@@ -414,7 +399,6 @@ public class FileMetadataAPITest {
      * @param storageType
      * @throws IOException
      */
-    
     @Test
     @UseDataProvider("getStorageType")
     public void Test_Get_Metadata_No_Cache_Force_Generate(final StorageType storageType) throws IOException, DotDataException {
@@ -468,7 +452,6 @@ public class FileMetadataAPITest {
      * @param storageType
      * @throws IOException
      */
-    
     @Test
     @UseDataProvider("getStorageType")
     public void Test_GetMetadata(final StorageType storageType) throws IOException, DotDataException {
@@ -522,7 +505,6 @@ public class FileMetadataAPITest {
      * @param storageType
      * @throws IOException
      */
-    
     @Test
     @UseDataProvider("getStorageType")
     public void Test_GetMetadata_ForceGenerate(final StorageType storageType) throws IOException, DotDataException {
@@ -565,7 +547,14 @@ public class FileMetadataAPITest {
         }
     }
 
-    
+    /**
+     * Method to test: {@link FileMetadataAPIImpl#putCustomMetadataAttributes(Contentlet, Map)}
+     * Given scenario: We create a new piece of content then we generate MD the we add custom attributes and then
+     * Expected Result: The customs metadata attributes must be available through calling getMetadata
+     * or getFullMetadataNoCache (if it was added to the first indexed binary)
+     * @param storageType
+     * @throws IOException
+     */
     @Test
     @UseDataProvider("getStorageType")
     public void Test_Add_Custom_Attributes_FileAssets(final StorageType storageType)
@@ -584,7 +573,6 @@ public class FileMetadataAPITest {
 
             assertFalse(metadata.getFullMetadataMap().isEmpty());
             assertFalse(metadata.getBasicMetadataMap().isEmpty());
-
 
             final Tuple2 <String,String> t1 = Tuple.of("focalPoint","67.4,6.77");
             final Tuple2 <String,String> t2 = Tuple.of("title","lol");
@@ -623,6 +611,13 @@ public class FileMetadataAPITest {
         }
     }
 
+    /**
+     * Method to test: {@link FileMetadataAPIImpl#collectFieldsMetadata(Contentlet)}
+     * Given scenario: We create a new piece of content then we generate Metadata for it the we call the method in question then we clea cache and then we call the method again
+     * Expected Result: MD should always be the same
+     * @param storageType
+     * @throws IOException
+     */
     @Test
     @UseDataProvider("getStorageType")
     public void Get_Metadata_Then_Clear_Cache_Then_Expect_Same_Behavior(
@@ -651,7 +646,7 @@ public class FileMetadataAPITest {
 
             assertTrue("Expect metadata ", optional2.isPresent());
 
-            assertEq(optional1.get(), optional2.get());
+            assertEqualsMeta(optional1.get(), optional2.get());
 
             assertEquals("The metadata must match.", optional1.get(), optional2.get());
 
@@ -661,14 +656,13 @@ public class FileMetadataAPITest {
         }
     }
 
-    private void assertEq(Map<String, Metadata>  map1, Map<String, Metadata>  map2 ){
+    private void assertEqualsMeta(Map<String, Metadata>  map1, Map<String, Metadata>  map2 ){
         assertEquals(map1.size() , map2.size());
         for (Entry<String, Metadata> entry1 : map1.entrySet()) {
              final Metadata m1 = entry1.getValue();
              final Metadata m2 = map2.get(entry1.getKey());
              assertEquals(m1, m2);
         }
-
     }
 
     
@@ -699,7 +693,7 @@ public class FileMetadataAPITest {
 
             assertTrue("Expect metadata ",dest.getLazyMetadata().isPresent());
 
-            assertEq(source.getLazyMetadata().get(), dest.getLazyMetadata().get());
+            assertEqualsMeta(source.getLazyMetadata().get(), dest.getLazyMetadata().get());
 
         } finally {
             Config.setProperty(DEFAULT_STORAGE_TYPE, stringProperty);

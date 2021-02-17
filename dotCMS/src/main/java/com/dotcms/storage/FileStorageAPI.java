@@ -71,21 +71,21 @@ public interface FileStorageAPI {
 
     /**
      * Saves additional custom attributes into the metadata storage
-     * @param configuration
+     * @param requestMetadata
      * @param customAttributes
      * @throws DotDataException
      */
-    void putCustomMetadataAttributes(final GenerateMetadataConfig configuration,
+    void putCustomMetadataAttributes(final RequestMetadata requestMetadata,
             final Map<String, Serializable> customAttributes) throws DotDataException;
 
 
     /**
      * Saves additional custom attributes into the metadata storage
-     * @param configuration
+     * @param requestMetadata
      * @param metadata
      * @throws DotDataException
      */
-    boolean setMetadata(final GenerateMetadataConfig configuration,
+    boolean setMetadata(RequestMetadata requestMetadata,
             final Map<String, Serializable> metadata) throws DotDataException;
 
 }

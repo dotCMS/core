@@ -303,9 +303,18 @@ public class FileStorageAPIImpl implements FileStorageAPI {
      */
     private void checkOverride(final StoragePersistenceAPI storage,
             final GenerateMetadataConfig generateMetaDataConfiguration) throws DotDataException {
+            checkOverride(storage, generateMetaDataConfiguration.getStorageKey(), generateMetaDataConfiguration.isOverride());
+    }
 
-        final StorageKey storageKey = generateMetaDataConfiguration.getStorageKey();
-        if (generateMetaDataConfiguration.isOverride() && storage
+    /**
+     * if the given configuration states we must override the previously existing file will be deleted before re-generating.
+     * @param storage
+     * @param storageKey
+     * @param override
+     */
+    private void checkOverride(final StoragePersistenceAPI storage, final StorageKey storageKey, final boolean override) throws DotDataException {
+
+        if (override && storage
                 .existsObject(storageKey.getGroup(), storageKey.getPath())) {
 
             try {
@@ -318,7 +327,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
                                 storageKey.getPath(), e.getMessage()), e);
             }
         }
-    } // checkOverride.
+    }
 
     /**
      * {@inheritDoc}
@@ -381,19 +390,19 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
     /**
      * {@inheritDoc}
-     * @param configuration
+     * @param requestMetadata
      * @param customAttributes
      * @throws DotDataException
      */
     @Override
     public void putCustomMetadataAttributes(
-            final GenerateMetadataConfig configuration,
+            final RequestMetadata requestMetadata,
             final Map<String, Serializable> customAttributes) throws DotDataException {
 
         final Map<String, Serializable> prefixedCustomAttributes = customAttributes.entrySet().stream()
                 .collect(Collectors.toMap(o -> Metadata.CUSTOM_PROP_PREFIX + o.getKey(), Entry::getValue));
 
-        final StorageKey storageKey = configuration.getStorageKey();
+        final StorageKey storageKey = requestMetadata.getStorageKey();
         final StoragePersistenceAPI storage = persistenceProvider.getStorage(storageKey.getStorage());
 
         this.checkBucket(storageKey, storage);
@@ -404,12 +413,11 @@ public class FileStorageAPIImpl implements FileStorageAPI {
                 final Map<String,Serializable> newMetadataMap = new HashMap<>(retrievedMetadata);
                 newMetadataMap.putAll(prefixedCustomAttributes);
 
-                checkOverride(storage, configuration);
-                if(configuration.isStore()) {
-                   storeMetadata(storageKey, storage, newMetadataMap);
-                }
-                if(null != configuration.getCacheKeySupplier()){
-                    final String cacheKey = configuration.getCacheKeySupplier().get();
+                checkOverride(storage, requestMetadata.getStorageKey(), true);
+                storeMetadata(storageKey, storage, newMetadataMap);
+
+                if(null != requestMetadata.getCacheKeySupplier()){
+                    final String cacheKey = requestMetadata.getCacheKeySupplier().get();
                     putIntoCache(cacheKey, newMetadataMap);
                 }
             } else {
@@ -426,22 +434,30 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
     /**
      * {@inheritDoc}
-     * @param configuration
+     * @param requestMetadata
      * @param metadata
      * @throws DotDataException
      */
-    public boolean setMetadata(final GenerateMetadataConfig configuration,
-            final Map<String, Serializable> metadata) throws DotDataException{
-        final StorageKey storageKey = configuration.getStorageKey();
-        final StoragePersistenceAPI storage = persistenceProvider.getStorage(storageKey.getStorage());
+    public boolean setMetadata(final RequestMetadata requestMetadata,
+            final Map<String, Serializable> metadata) throws DotDataException {
+        final StorageKey storageKey = requestMetadata.getStorageKey();
+        final StoragePersistenceAPI storage = persistenceProvider
+                .getStorage(storageKey.getStorage());
 
         checkBucket(storageKey, storage);
-        checkOverride(storage, configuration);
+        checkOverride(storage, requestMetadata.getStorageKey(), true);
         storeMetadata(storageKey, storage, metadata);
 
-        if(null != configuration.getCacheKeySupplier()){
-            final String cacheKey = configuration.getCacheKeySupplier().get();
-            putIntoCache(cacheKey, metadata);
+        if (null != requestMetadata.getCacheKeySupplier()) {
+            final String cacheKey = requestMetadata.getCacheKeySupplier().get();
+            //need to apply filter here before we store into cache?
+            if (null != requestMetadata.getProjectionMapForCache()) {
+                final Map<String, Serializable> projection = requestMetadata
+                        .getProjectionMapForCache().apply(metadata);
+                putIntoCache(cacheKey, projection);
+            } else {
+                putIntoCache(cacheKey, metadata);
+            }
         }
         return storage.existsObject(storageKey.getGroup(), storageKey.getPath());
 

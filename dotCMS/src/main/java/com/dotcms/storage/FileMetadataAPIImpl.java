@@ -570,19 +570,17 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
 
        customAttributesByField.forEach((fieldName, customAttributes) -> {
 
-           final String metadataPath = this.getFileName(contentlet, fieldName);
+           final String metadataPath = getFileName(contentlet, fieldName);
            try {
-               fileStorageAPI.putCustomMetadataAttributes(new GenerateMetadataConfig.Builder()
-                       .cache(false) //Do not retrieve from cache
-                       .cache(() -> contentlet.getInode() + StringPool.COLON
-                               + fieldName) //but use this key to invalidate cache
-                       .store(true)
-                       .override(true)
-                       .storageKey(
-                               new StorageKey.Builder().group(metadataBucketName)
-                                       .path(metadataPath)
-                                       .storage(storageType).build())
-                       .build(), customAttributes);
+                fileStorageAPI.putCustomMetadataAttributes((new RequestMetadata.Builder()
+                        .cache(() -> contentlet.getInode() + StringPool.COLON + fieldName)
+                        .projectionMapForCache(this::filterNonCacheableMetadataFields)
+                        .storageKey(
+                                new StorageKey.Builder().group(metadataBucketName)
+                                        .path(metadataPath)
+                                        .storage(storageType).build())
+                        .build()), customAttributes);
+
            }catch (Exception e){
                Logger.error(FileMetadataAPIImpl.class, "Error saving custom attributes", e);
            }
@@ -599,51 +597,49 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      */
     public void copyMetadata(final Contentlet source, final Contentlet destination)
             throws DotDataException {
-        if (source.getContentType().baseType().equals(destination.getContentType().baseType())) {
+        if (!source.getContentType().baseType().equals(destination.getContentType().baseType())) {
+            throw new DotDataException("Source and destination contentlet are not the same type.");
+        }
+        final StorageType storageType = StoragePersistenceProvider.getStorageType();
+        final String metadataBucketName = Config
+                .getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);
 
-            final StorageType storageType = StoragePersistenceProvider.getStorageType();
-            final String metadataBucketName = Config
-                    .getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);
+        final Tuple2<SortedSet<String>, SortedSet<String>> binaryFields = findBinaryFields(
+                source);
 
-            final Tuple2<SortedSet<String>, SortedSet<String>> binaryFields = findBinaryFields(
-                    source);
+        final Set<String> binaryFieldNames = Stream
+                .concat(binaryFields._1.stream(), binaryFields._2.stream())
+                .collect(Collectors.toSet());
 
-            final Set<String> fieldVarNames = Stream
-                    .concat(binaryFields._1.stream(), binaryFields._2.stream())
-                    .collect(Collectors.toSet());
+        for (final String binaryFieldName : binaryFieldNames) {
 
-            for (final String fieldVarName : fieldVarNames) {
-
-                final String sourceMetadataPath = this.getFileName(source, fieldVarName);
-                final Map<String, Serializable> metadataMap = fileStorageAPI.retrieveMetaData(
-                        new RequestMetadata.Builder()
-                                .cache(false)
-                                .storageKey(
-                                        new StorageKey.Builder().group(metadataBucketName)
-                                                .path(sourceMetadataPath)
-                                                .storage(storageType).build())
-                                .build()
-                );
-
-                if (null != metadataMap) {
-
-                    final String destMetadataPath = this.getFileName(destination, fieldVarName);
-
-                    fileStorageAPI.setMetadata(new GenerateMetadataConfig.Builder()
-
-                            .cache(() -> destination.getInode() + StringPool.COLON
-                                    + fieldVarName)
-                            .store(true)
-                            .override(true)
+            final String sourceMetadataPath = getFileName(source, binaryFieldName);
+            final Map<String, Serializable> metadataMap = fileStorageAPI.retrieveMetaData(
+                    new RequestMetadata.Builder()
+                            .cache(false)
                             .storageKey(
                                     new StorageKey.Builder().group(metadataBucketName)
-                                            .path(destMetadataPath)
+                                            .path(sourceMetadataPath)
                                             .storage(storageType).build())
-                            .build(), metadataMap);
-                }
-            }
+                            .build()
+            );
 
+            if (null != metadataMap) {
+
+                final String destMetadataPath = getFileName(destination, binaryFieldName);
+
+                fileStorageAPI.setMetadata(new RequestMetadata.Builder()
+                        .cache(() -> destination.getInode() + StringPool.COLON + binaryFieldName)
+                        .projectionMapForCache(this::filterNonCacheableMetadataFields)
+                        .storageKey(
+                                new StorageKey.Builder().group(metadataBucketName)
+                                        .path(destMetadataPath)
+                                        .storage(storageType).build())
+                        .build(), metadataMap);
+
+            }
         }
+
     }
 
 }

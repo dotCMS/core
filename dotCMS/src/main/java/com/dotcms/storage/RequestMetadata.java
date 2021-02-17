@@ -15,7 +15,7 @@ public class RequestMetadata {
     /**
      * Provides the key for the storage
      */
-    private final StorageKey    storageKey;
+    private final StorageKey  storageKey;
 
     /**
      * If true, means the medatada output will be stores in the memory cache.
