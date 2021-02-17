@@ -687,7 +687,7 @@ public class UserFactoryImpl implements UserFactory {
         final List<Map<String, Object>> results = dotConnect.loadResults();
 
         if(results.isEmpty()) {
-            throw new NoSuchUserException("No user found for icqid: " + icqId);
+            return null;
         }else {
             return (String) results.get(0).get("userid");
         }
