@@ -880,6 +880,7 @@ public class UserAjax {
                 additionalUserInfo.put("var" + i, additionalVars[i - 1]);
             }
 
+            user.setAdditionalInfo(additionalUserInfo);
 			uAPI.save(user, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
 	
 
