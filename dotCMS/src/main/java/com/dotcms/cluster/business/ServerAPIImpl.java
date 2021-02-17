@@ -149,44 +149,18 @@ public class ServerAPIImpl implements ServerAPI {
         }
     }
 
-    private static String villageElder = null;
-    
+
     @Override
     public String getOldestServer() throws DotDataException, IOException {
-        return getOldestServer(getAliveServers().stream().map(s -> s.serverId).collect(Collectors.toList()));
+        
+        
+        
+        return getReindexingServers().stream().findFirst().get();
         
     }
-    @VisibleForTesting
-    @Override
-    public String getOldestServer(final List<String> serverIds) throws DotDataException, IOException {
-
-        if (serverIds.contains(villageElder)) {
-            return villageElder;
-        }
-
-        File realPath = new File(APILocator.getFileAssetAPI().getRealAssetsRootPath() + java.io.File.separator + "server");
-
-        final List<File> heartbeats = FileUtil.listFilesRecursively(realPath, new FileFilter() {
-            @Override
-            public boolean accept(File pathname) {
-                return pathname.isDirectory() && serverIds.contains(pathname.getName());
-            }
-        });
-
-        heartbeats.sort(new Comparator<File>() {
-            @Override
-            public int compare(File file1, File file2) {
-                return file1.lastModified() < file2.lastModified() ? -1 : 1;
-            }
-        });
-        if (heartbeats.isEmpty()) {
-            return readServerId();
-        }
+    
 
 
-        return villageElder = heartbeats.get(0).getName();
-
-    }
 
     @VisibleForTesting
     @Override

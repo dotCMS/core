@@ -27,6 +27,7 @@ import com.liferay.portal.model.User;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -86,6 +87,7 @@ public class LicenseResource {
                 obj.put("level",  LicenseManager.getInstance().getLevelName(lic.dotLicense.level));
                 obj.put("id", lic.dotLicense.serial);
                 obj.put("licenseType", lic.dotLicense.licenseType);
+                obj.put("startupTime", (lic.startupTime==0) ? "n/a" : new Date(lic.startupTime));
                 if(lic.lastPing.after(cal.getTime())){
                     obj.put("lastPingStr", DateUtil.prettyDateSince(lic.lastPing));
                 }
