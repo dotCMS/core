@@ -105,6 +105,9 @@ public class DependencyManager {
 
 	private PushPublisherConfig config;
 
+	private final List<Exception> errors = Collections.synchronizedList(new ArrayList<>());
+
+
 	/**
 	 * Initializes the list of dependencies that this manager needs to satisfy,
 	 * based on the {@link PushPublisherConfig} specified for the bundle.
@@ -145,6 +148,7 @@ public class DependencyManager {
 				processContentDependency(contentId);
 			} catch (DotBundleException e) {
 				Logger.error(DependencyManager.class, e.getMessage());
+				errors.add(e);
 			}
 		});
 		consumerDependencies.put(AssetTypes.RULES, (ruleId) -> setRuleDependencies(ruleId));
@@ -338,6 +342,12 @@ public class DependencyManager {
 		}
 
 		dependencyProcessor.waitUntilFinish();
+
+		if (!errors.isEmpty()) {
+			final String messages =
+					errors.stream().map(exception -> exception.getMessage()).collect(Collectors.joining(","));
+			throw new DotBundleException(messages);
+		}
 
 		config.setHostSet(hosts);
 		config.setFolders(folders);
