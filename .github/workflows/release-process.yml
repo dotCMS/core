@@ -30,7 +30,7 @@ jobs:
         run: |
           BRANCH=$(basename "${{ github.ref }}")
 
-          if [[ ${BRANCH} =~ ^release-.*|^v[0-9]{2}.[0-9]{2}$|^v[0-9]{2}.[0-9]{2}.[0-9]{1,2}$ ]]; then
+          if [[ ${BRANCH} =~ ^release-.*|^v[0-9]{2}.[0-9]{2}$|^v[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$ ]]; then
             IS_RELEASE='true'
           else
             IS_RELEASE='false'
