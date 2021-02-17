@@ -39,9 +39,21 @@ public class Task201102UpdateColumnSitelicTable implements StartupTask {
             return;
         }
 
+        try {
+            DbConnectionFactory.getConnection().setAutoCommit(true);
+        } catch (SQLException e) {
+            throw new DotDataException(e.getMessage(), e);
+        }
+
         new DotConnect()
-                .setSQL(String.format("ALTER TABLE sitelic ADD COLUMN startup_time %s", type.get()))
+                .setSQL(String.format("ALTER TABLE sitelic ADD startup_time %s", type.get()))
                 .loadObjectResults();
+
+        try {
+            DbConnectionFactory.getConnection().setAutoCommit(false);
+        } catch (SQLException e) {
+            throw new DotDataException(e.getMessage(), e);
+        }
     }
 
     private static Optional<String> getColumnType() {

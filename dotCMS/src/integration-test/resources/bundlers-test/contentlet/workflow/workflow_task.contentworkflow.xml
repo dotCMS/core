@@ -1,0 +1,18 @@
+<com.dotcms.publisher.pusher.wrapper.PushContentWorkflowWrapper>
+    <task>
+        <id>__id__</id>
+        <creationDate>2021-01-25 16:41:59.681 UTC</creationDate>
+        <modDate>2021-01-25 16:41:59.681 UTC</modDate>
+        <createdBy>system</createdBy>
+        <assignedTo>__SYSTEM_USER_ROLE__</assignedTo>
+        <title>__title__</title>
+        <description>__description__</description>
+        <status>__status__</status>
+        <webasset>__webasset__</webasset>
+        <languageId>__language_id__</languageId>
+    </task>
+    <history class="com.google.common.collect.RegularImmutableList" resolves-to="com.google.common.collect.ImmutableList$SerializedForm">
+        <elements/>
+    </history>
+    <comments class="com.google.common.collect.RegularImmutableList" reference="../history"/>
+</com.dotcms.publisher.pusher.wrapper.PushContentWorkflowWrapper>

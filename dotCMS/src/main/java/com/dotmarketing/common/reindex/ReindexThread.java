@@ -296,6 +296,17 @@ public class ReindexThread {
     }
 
     /**
+     * Gets the running thread if any, and cancels it.
+     */
+
+    public static void cancelThread(){
+        if (instance != null && instance.threadRunning != null) {
+            instance.threadRunning.cancel(true);
+            instance = null;
+        }
+    }
+
+    /**
      * This instance is intended to already be started. It will try to restart the thread if instance is
      * null.
      */
