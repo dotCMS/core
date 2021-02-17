@@ -301,6 +301,7 @@ public class ReindexThread {
 
     public static void cancelThread(){
         if (instance != null && instance.threadRunning != null) {
+            instance.state(ThreadState.STOPPED);
             instance.threadRunning.cancel(true);
             instance = null;
         }
