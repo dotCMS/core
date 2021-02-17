@@ -90,15 +90,14 @@ public class FileStorageAPIImpl implements FileStorageAPI {
     }
 
     /**
-     * {@inheritDoc}
+     * Gets the basic metadata from the binary, this method does not any stores but could do a filter anything
      * Stand alone Tika-independent metadata
      * We can get it without having to call tika
      * @param binary {@link File} file to get the information
      * @param metaDataKeyFilter  {@link Predicate} filter the meta data key for the map result generation
      * @return
      */
-    @Override
-    public Map<String, Serializable> generateBasicMetaData(final File binary,
+    private Map<String, Serializable> generateBasicMetaData(final File binary,
             final Predicate<String> metaDataKeyFilter) {
 
         final ImmutableSortedMap.Builder<String, Serializable> mapBuilder =
@@ -129,7 +128,16 @@ public class FileStorageAPIImpl implements FileStorageAPI {
             mapBuilder.put(SHA256_META_KEY.key(),
                     Try.of(() -> FileUtil.sha256toUnixHash(binary)).getOrElse("unknown"));
 
-            mapBuilder.put(IS_IMAGE_META_KEY.key(), UtilMethods.isImage(relativePath));
+            final boolean isImage = UtilMethods.isImage(relativePath);
+            mapBuilder.put(IS_IMAGE_META_KEY.key(), isImage);
+            //These are added here to even things when comparing
+            //typically these values are added by tika except for svg file so that creates some sort of inconsistency
+            //we add them for image types with a default value of zero that gets replaced by the values provided by tika
+            //if tika fails to tell us the dimension we are keeping a default 0
+            if(isImage){
+               mapBuilder.put(WIDTH_META_KEY.key(), 0);
+               mapBuilder.put(HEIGHT_META_KEY.key(), 0);
+            }
 
         }
 
@@ -137,14 +145,13 @@ public class FileStorageAPIImpl implements FileStorageAPI {
     }
 
     /**
-     * {@inheritDoc}
+     * Gets the full metadata from the binary, this could involved a more expensive process such as Tika, this method does not any stores but could do a filter anything
      * @param binary  {@link File} file to get the information
      * @param metaDataKeyFilter  {@link Predicate} filter for the map result generation
      * @param maxLength {@link Long} max length is used when parse the content, how many bytes do you want to parse.
-     * @return
+     * @return Map with the metadata
      */
-    @Override
-    public Map<String, Serializable> generateFullMetaData(final File binary,
+    private Map<String, Serializable> generateFullMetaData(final File binary,
             final Predicate<String> metaDataKeyFilter,
             final long maxLength) {
 
@@ -163,6 +170,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
             //do not replace any existing value already calculated by tika
             final Map<String, Serializable> patchMap = generateBasicMetaData(binary, metaDataKeyFilter);
             patchMap.forEach(metadataMap::putIfAbsent);
+
 
         } catch (Exception e) {
 
@@ -363,6 +371,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         final StoragePersistenceAPI storage = persistenceProvider
                 .getStorage(storageKey.getStorage());
         this.checkBucket(storageKey, storage);
+        //TODO: need to verify if there other references pointing to the object
         if (storage.existsObject(storageKey.getGroup(), storageKey.getPath())) {
            deleteSucceeded = storage.deleteObject(storageKey.getGroup(), storageKey.getPath());
         }

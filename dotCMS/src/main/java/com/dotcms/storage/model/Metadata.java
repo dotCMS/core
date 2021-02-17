@@ -1,7 +1,9 @@
 package com.dotcms.storage.model;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSortedMap;
 import java.io.Serializable;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -22,12 +24,13 @@ public class Metadata implements Serializable {
 
         this.fieldName = fieldName;
         final Map<String, Serializable> meta = fieldsMeta == null ? ImmutableMap.of(): fieldsMeta;
-        this.fieldsMeta = ImmutableMap.copyOf(meta);
-        this.customMeta = ImmutableMap.copyOf(meta.entrySet().stream()
+        this.fieldsMeta = new ImmutableSortedMap.Builder<String, Serializable>(Comparator.naturalOrder()).putAll(meta).build();
+
+        this.customMeta = new ImmutableSortedMap.Builder<String, Serializable>(Comparator.naturalOrder()).putAll(meta.entrySet().stream()
                 .filter(entry -> entry.getKey().startsWith(CUSTOM_PROP_PREFIX))
                 .collect(Collectors.toMap(o ->
-                    o.getKey().substring(CUSTOM_PROP_PREFIX.length()
-                ), Entry::getValue)));
+                        o.getKey().substring(CUSTOM_PROP_PREFIX.length()
+                        ), Entry::getValue))).build();
     }
 
     public String getFieldName() {
@@ -42,6 +45,10 @@ public class Metadata implements Serializable {
         return customMeta;
     }
 
+    public Map<String, Serializable> toMap() {
+        return new ImmutableSortedMap.Builder<String, Serializable>(Comparator.naturalOrder()).putAll(fieldsMeta).putAll(customMeta).build();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -50,10 +57,10 @@ public class Metadata implements Serializable {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        Metadata metadata = (Metadata) o;
+        final Metadata metadata = (Metadata) o;
         return Objects.equals(fieldName, metadata.fieldName) &&
-                Objects.equals(fieldsMeta, metadata.fieldsMeta) &&
-                Objects.equals(customMeta, metadata.customMeta);
+                fieldsMeta.hashCode() == metadata.fieldsMeta.hashCode() &&
+                customMeta.hashCode() == metadata.customMeta.hashCode();
     }
 
     @Override

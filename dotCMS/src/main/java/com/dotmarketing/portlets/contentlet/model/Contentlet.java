@@ -761,7 +761,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		try{
 			return map.get(fieldVarName)!=null?(Boolean)map.get(fieldVarName):false;
 		}catch (Exception e) {
-			 throw new DotRuntimeException("Unable to retrive field value", e);
+			 throw new DotRuntimeException("Unable to retrieve field value", e);
 		}
 	}
 

@@ -42,12 +42,16 @@ import io.vavr.Tuple2;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -78,6 +82,7 @@ public class FileMetadataAPITest {
      * Expected Results: we should get full and basic md for every type. Basic metadata must be included within the fm
      * @throws IOException
      */
+    
     @Test
     @UseDataProvider("getFileAssetMetadataTestCases")
     public void Test_Generate_Metadata_From_FileAssets(final TestCase testCase) throws IOException, DotDataException {
@@ -193,7 +198,7 @@ public class FileMetadataAPITest {
         assertTrue(meta.containsKey("content"));
         assertTrue(meta.containsKey("contentType"));
         assertTrue(meta.containsKey("fileSize"));
-        if(isSupportedImage(testFile.getFilePath())){ //svg files don't have dimensions. or Tika fails to read them.
+        if((Boolean) meta.get("isImage")){
           assertTrue(meta.containsKey("height"));
           assertTrue(meta.containsKey("width"));
         }
@@ -208,26 +213,36 @@ public class FileMetadataAPITest {
     private void validateBasic(final Metadata metaData){
         final Map<String, Serializable> meta = metaData.getFieldsMeta();
         basicMetadataFields.forEach(key -> {
-            assertTrue("metadata fields isn't present in: " + key, meta.containsKey(key));
+
+            if (key.equals("width") || key.equals("height") && !(Boolean)meta.get("isImage")) {
+                // we don't expect
+                Logger.info(FileMetadataAPI.class,"We're not supposed to have width or height in a non-image type of file");
+            } else {
+                assertTrue(String.format("expected metadata key `%s` isn't present in fields:: %s", key, meta) , meta.containsKey(key));
+            }
+
         });
     }
 
-    private static Set<String> basicMetadataFields = BasicMetadataFields.keySet().stream()
-            .filter(s -> !WIDTH_META_KEY.key().equals(s) && !HEIGHT_META_KEY.key().equals(s))
-            .collect(Collectors.toSet()); //Remove width and height since they are present only on images
+    private static Set<String> basicMetadataFields = new HashSet<>(BasicMetadataFields.keySet()); //Remove width and height since they are present only on images
 
     /**
      * validate basic layout expected in the basic md for File-Asset
      * But nothing else if there are additional values we fail!!
-     * @param metaData
+     * @param meta
      */
-    private void validateBasicStrict(final Metadata metaData){
-        final int expectedFields = basicMetadataFields.size();
-        validateBasic(metaData);
-        assertEquals(String.format("we're expecting exactly `%d` entries.",expectedFields),expectedFields, metaData.getFieldsMeta().size());
+    private void validateBasicStrict(final Metadata meta) {
+        final Boolean isImage = (Boolean) meta.getFieldsMeta().get("isImage");
+        //We must account that width and height are only available for images
+        final int expectedFieldsNumber = !isImage ? basicMetadataFields.size() -2 : basicMetadataFields.size();
+        validateBasic(meta);
+
+        assertEquals(
+                String.format("we're expecting exactly `%d` entries in `%s`", expectedFieldsNumber,
+                        meta), expectedFieldsNumber, meta.getFieldsMeta().size());
     }
 
-    //SVG  do not have dimensions, but that's a known issue we're willing to forgive.
+    //SVG does not have dimensions, but that's a known issue we're willing to forgive.
     private static Set<String> imageExt = ImmutableSet.of("jpg", "png", "gif");
 
     /**
@@ -246,6 +261,7 @@ public class FileMetadataAPITest {
      * Expected Results:
      * @throws IOException
      */
+    
     @Test
     @UseDataProvider("getStorageType")
     public void Test_Generate_Metadata_From_ContentType_With_Multiple_Binary_Fields(final StorageType storageType) throws IOException, DotDataException {
@@ -311,6 +327,7 @@ public class FileMetadataAPITest {
      * Expected Results: After calling findBinaryFields I should get a tuple with one file
      * candidate for the full MD generation and the rest in the second component of the tuple
      */
+    
     @Test
     public void Test_Get_First_Indexed_Binary_Field() {
         final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
@@ -340,6 +357,7 @@ public class FileMetadataAPITest {
      * @param storageType
      * @throws IOException
      */
+    
     @Test
     @UseDataProvider("getStorageType")
     public void Test_Get_Metadata_No_Cache(final StorageType storageType) throws IOException, DotDataException {
@@ -396,6 +414,7 @@ public class FileMetadataAPITest {
      * @param storageType
      * @throws IOException
      */
+    
     @Test
     @UseDataProvider("getStorageType")
     public void Test_Get_Metadata_No_Cache_Force_Generate(final StorageType storageType) throws IOException, DotDataException {
@@ -449,6 +468,7 @@ public class FileMetadataAPITest {
      * @param storageType
      * @throws IOException
      */
+    
     @Test
     @UseDataProvider("getStorageType")
     public void Test_GetMetadata(final StorageType storageType) throws IOException, DotDataException {
@@ -502,6 +522,7 @@ public class FileMetadataAPITest {
      * @param storageType
      * @throws IOException
      */
+    
     @Test
     @UseDataProvider("getStorageType")
     public void Test_GetMetadata_ForceGenerate(final StorageType storageType) throws IOException, DotDataException {
@@ -544,7 +565,7 @@ public class FileMetadataAPITest {
         }
     }
 
-
+    
     @Test
     @UseDataProvider("getStorageType")
     public void Test_Add_Custom_Attributes_FileAssets(final StorageType storageType)
@@ -619,13 +640,20 @@ public class FileMetadataAPITest {
                     .generateContentletMetadata(contentlet);
 
             assertNotNull("must have metadata", metadata);
-            assertFalse("Expect metadata ", contentlet.getLazyMetadata().isPresent());
+            final Optional<Map<String, Metadata>> optional1 = fileMetadataAPI
+                    .collectFieldsMetadata(contentlet);
+            assertTrue("Expect metadata ", optional1.isPresent());
 
-            final Map<String, Metadata> metadataMap1 = contentlet.getLazyMetadata().get();
             CacheLocator.getMetadataCache().clearCache();
-            final Map<String, Metadata> metadataMap2 = contentlet.getLazyMetadata().get();
 
-            assertEquals("The metadata must match.", metadataMap1, metadataMap2);
+            final Optional<Map<String, Metadata>> optional2 = fileMetadataAPI
+                    .collectFieldsMetadata(contentlet);
+
+            assertTrue("Expect metadata ", optional2.isPresent());
+
+            assertEq(optional1.get(), optional2.get());
+
+            assertEquals("The metadata must match.", optional1.get(), optional2.get());
 
         } finally {
             Config.setProperty(DEFAULT_STORAGE_TYPE, stringProperty);
@@ -633,6 +661,17 @@ public class FileMetadataAPITest {
         }
     }
 
+    private void assertEq(Map<String, Metadata>  map1, Map<String, Metadata>  map2 ){
+        assertEquals(map1.size() , map2.size());
+        for (Entry<String, Metadata> entry1 : map1.entrySet()) {
+             final Metadata m1 = entry1.getValue();
+             final Metadata m2 = map2.get(entry1.getKey());
+             assertEquals(m1, m2);
+        }
+
+    }
+
+    
     @Test
     @UseDataProvider("getStorageType")
     public void Test_Copy_Metadata(final StorageType storageType)
@@ -648,6 +687,7 @@ public class FileMetadataAPITest {
 
             final ContentletMetadata metadata = fileMetadataAPI
                     .generateContentletMetadata(source);
+            assertNotNull("must have metadata", metadata);
 
             assertTrue("Expect metadata since we just generated it.",source.getLazyMetadata().isPresent());
 
@@ -659,7 +699,7 @@ public class FileMetadataAPITest {
 
             assertTrue("Expect metadata ",dest.getLazyMetadata().isPresent());
 
-            assertEquals("The metadata must match.",source.getLazyMetadata().get(),dest.getLazyMetadata().get());
+            assertEq(source.getLazyMetadata().get(), dest.getLazyMetadata().get());
 
         } finally {
             Config.setProperty(DEFAULT_STORAGE_TYPE, stringProperty);

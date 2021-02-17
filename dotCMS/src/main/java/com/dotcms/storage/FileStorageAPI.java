@@ -41,24 +41,6 @@ public interface FileStorageAPI {
      */
     Map<String, Serializable> generateRawFullMetaData(final File binary, final long maxLength);
 
-
-    /**
-     * Gets the basic metadata from the binary, this method does not any stores but could do a filter anything
-     * @param binary {@link File} file to get the information
-     * @param metaDataKeyFilter  {@link Predicate} filter the meta data key for the map result generation
-     * @return Map with the metadata
-     */
-    Map<String, Serializable> generateBasicMetaData(final File binary, Predicate<String> metaDataKeyFilter) ;
-
-    /**
-     * Gets the full metadata from the binary, this could involved a more expensive process such as Tika, this method does not any stores but could do a filter anything
-     * @param binary  {@link File} file to get the information
-     * @param metaDataKeyFilter  {@link Predicate} filter for the map result generation
-     * @param maxLength {@link Long} max length is used when parse the content, how many bytes do you want to parse.
-     * @return Map with the metadata
-     */
-    Map<String, Serializable> generateFullMetaData(final File binary, Predicate<String> metaDataKeyFilter, final long maxLength);
-
     /**
      * Based on the configuration generates the metadata, this configuration is more specific could select between
      * full|basic metadata, stores or not in the File System (even reuse or overrides it), stores or not in the cache, etc.

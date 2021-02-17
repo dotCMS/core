@@ -39,6 +39,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -112,7 +113,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
                 fullBinaryFieldNameSet, fieldMap, alwaysRegenerateMetadata);
         //Basic MD is also stored in disc but it also lives in cache
         final Map<String, Metadata> basicMetadata = generateBasicMetadata(contentlet,
-                basicBinaryFieldNameSet, fullBinaryFieldNameSet, fieldMap, alwaysRegenerateMetadata);
+                basicBinaryFieldNameSet, fullMetadata, fieldMap, alwaysRegenerateMetadata);
 
         return new ContentletMetadata(fullMetadata, basicMetadata);
     }
@@ -121,20 +122,20 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * Basic metadata generation entry point.
      * @param contentlet
      * @param basicBinaryFieldNameSet
-     * @param fullBinaryFieldNameSet
+     * @param fullMetadata
      * @param fieldMap
      * @param alwaysRegenerateMetadata
      * @throws IOException
      */
     private Map<String, Metadata> generateBasicMetadata(final Contentlet contentlet,
                                        final Set<String> basicBinaryFieldNameSet,
-                                       final Set<String> fullBinaryFieldNameSet,
+                                       final Map<String, Metadata> fullMetadata,
                                        final Map<String, Field> fieldMap,
                                        final boolean alwaysRegenerateMetadata)
             throws IOException, DotDataException {
 
-        final ImmutableMap.Builder<String, Metadata> builder = new ImmutableMap.Builder<>();
 
+        final ImmutableMap.Builder<String, Metadata> builder = new ImmutableMap.Builder<>();
         final StorageType storageType = StoragePersistenceProvider.getStorageType();
         Map<String, Serializable> metadataMap;
         final String metadataBucketName = Config.getStringProperty(METADATA_GROUP_NAME, DEFAULT_METADATA_GROUP_NAME);
@@ -147,16 +148,19 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
 
                 // if already included on the full, the file was already generated, just need to add the basic to the cache.
                 final Set<String> metadataFields = this.getMetadataFields(fieldMap.get(binaryFieldName).id());
+                final Predicate<String> filterBasicMetadataKey = metadataKey -> metadataFields.isEmpty() || metadataFields.contains(metadataKey);
 
-                if (fullBinaryFieldNameSet.contains(binaryFieldName)) {
+                if (fullMetadata.containsKey(binaryFieldName)) {
+
+                    final Metadata metadata = fullMetadata.get(binaryFieldName);
 
                     // if it is included on the full keys, we only have to store the meta in the cache.
-                    metadataMap = this.fileStorageAPI.generateBasicMetaData(file,
-                            metadataKey -> metadataFields.isEmpty() || metadataFields
-                                    .contains(metadataKey));
-                    metadataCache.addMetadataMap(contentlet.getInode() + StringPool.COLON + binaryFieldName, metadataMap);
-                } else {
+                    //metadataMap = this.fileStorageAPI.generateBasicMetaData(file, filterBasicMetadataKey);
 
+                    metadataMap = filterNonCacheableMetadataFields(metadata.toMap());
+                    metadataCache.addMetadataMap(contentlet.getInode() + StringPool.COLON + binaryFieldName, metadataMap);
+
+                } else {
 
                     metadataMap = this.fileStorageAPI.generateMetaData(file,
                             new GenerateMetadataConfig.Builder()
@@ -165,8 +169,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
                                     .store(true)
                                     .cache(true)
                                     .cache(()-> contentlet.getInode() + StringPool.COLON + binaryFieldName)
-                                    .metaDataKeyFilter(metadataKey -> metadataFields.isEmpty()
-                                            || metadataFields.contains(metadataKey))
+                                    .metaDataKeyFilter(filterBasicMetadataKey)
                                     .storageKey(new StorageKey.Builder().group(metadataBucketName).path(metadataPath).storage(storageType).build())
                                     .build()
                     );
@@ -245,6 +248,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
         Logger.info(FileMetadataAPIImpl.class,
                 () -> String.format(" `%s` has these fields: `%s` ", fieldIdentifier, String
                         .join(",", metadataFields)));
+
         return metadataFields;
     }
 
@@ -437,7 +441,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
     private Map<String, Serializable> filterNonCacheableMetadataFields(final Map<String, Serializable> originalMap) {
         final Set<String> basicMetadataFieldsSet = BasicMetadataFields.keySet();
         return originalMap.entrySet().stream().filter(entry -> basicMetadataFieldsSet
-                .contains(entry.getKey())).collect(
+                .contains(entry.getKey()) || entry.getKey().startsWith(Metadata.CUSTOM_PROP_PREFIX) ).collect(
                 Collectors.toMap(Entry::getKey, Entry::getValue));
     }
 
@@ -611,7 +615,6 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
             for (final String fieldVarName : fieldVarNames) {
 
                 final String sourceMetadataPath = this.getFileName(source, fieldVarName);
-                source.getLazyMetadata().ifPresent(stringMetadataMap -> System.out.println(sourceMetadataPath));
                 final Map<String, Serializable> metadataMap = fileStorageAPI.retrieveMetaData(
                         new RequestMetadata.Builder()
                                 .cache(false)
@@ -639,6 +642,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
                             .build(), metadataMap);
                 }
             }
+
         }
     }
 

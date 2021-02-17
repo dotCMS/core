@@ -593,7 +593,7 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
             }
 
         } catch (Exception e) {
-            Logger.error(DataBaseStoragePersistenceAPIImpl.class, e.getMessage(), e);
+            Logger.error(DataBaseStoragePersistenceAPIImpl.class, String.format("error pulling file for group `%s`, and path `%s`", groupName, pathLC), e);
             throw new DotDataException(e);
         }
 
@@ -624,12 +624,14 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
                     fileJoiner.flush();
                     fileHashBuilder.append(bytes);
                 } else {
-                    throw new DotCorruptedDataException("The chunks hash is not valid");
+                    throw new DotCorruptedDataException(" Checksum hash verification failure. The chunk is not valid");
                 }
             }
 
             if (!hashId.equals(fileHashBuilder.buildUnixHash())) {
-                throw new DotCorruptedDataException("The file hash is not valid");
+                throw new DotCorruptedDataException(String.format(
+                        "The file hash `%s` isn't valid. it doesn't match the records in `storage_data/storage_data` or they don't exist. ",
+                        hashId));
             }
         } catch (Exception e) {
             throw new DotDataException(e.getMessage(), e);

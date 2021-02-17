@@ -392,8 +392,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			}
 
 			if (Config.getBooleanProperty(WRITE_METADATA_ON_REINDEX, true)) {
-			    //contentlet.get("skipMetadata")
+
 				if (contentlet.isLive() || contentlet.isWorking()) {
+
 					final ContentletMetadata metadata = fileMetadataAPI
 							.generateContentletMetadata(contentlet);
 					final Map<String, Metadata> fullMetadataMap = metadata
