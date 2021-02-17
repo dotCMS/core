@@ -20,6 +20,7 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.PersonalizedContentlet;
@@ -1478,6 +1479,8 @@ public class DependencyManager {
 						if (!finish) {
 							Logger.error(DependencyProcessor.class, e.getMessage());
 						}
+
+						DbConnectionFactory.closeSilently();
 
 						break;
 					} catch (Exception e) {
