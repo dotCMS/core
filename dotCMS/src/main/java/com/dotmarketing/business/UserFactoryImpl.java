@@ -1,6 +1,7 @@
 package com.dotmarketing.business;
 
 
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
@@ -10,6 +11,8 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PropsUtil;
@@ -27,6 +30,9 @@ import org.apache.logging.log4j.util.Strings;
 public class UserFactoryImpl implements UserFactory {
 
     private UserCache uc;
+
+    private static final ObjectMapper mapper = DotObjectMapperProvider.getInstance()
+            .getDefaultObjectMapper();
 
     /**
      * Default class constructor.
@@ -280,11 +286,18 @@ public class UserFactoryImpl implements UserFactory {
                 .append("lastlogindate, lastloginip, failedloginattempts, agreedtotermsofuse, active_, ")
                 .append("delete_in_progress, delete_date, additional_info) ")
                 .append("VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ")
-                .append("?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                .append("?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ")
+                .append(DbConnectionFactory.isPostgres()? "? ::jsonb)": "?)");;
 
         dotConnect.setSQL(query.toString());
         dotConnect.addParam(user.getUserId().trim().toLowerCase());
-        setDotConnectParamsForSave(dotConnect, user);
+
+        try {
+            setDotConnectParamsForSave(dotConnect, user);
+        } catch (JsonProcessingException e) {
+            throw new DotDataException(e.getMessage(), e);
+        }
+
         dotConnect.loadResult();
         return user;
     }
@@ -315,17 +328,26 @@ public class UserFactoryImpl implements UserFactory {
                 .append("greeting=?, resolution=?, refreshrate=?, layoutids=?, comments=?, ")
                 .append("logindate=?, loginip=?, lastlogindate=?, lastloginip=?, ")
                 .append("failedloginattempts=?, agreedtotermsofuse=?, active_=?, ")
-                .append("delete_in_progress=?, delete_date=?, additional_info=? ")
+                .append("delete_in_progress=?, delete_date=?, ")
+                .append(DbConnectionFactory.isPostgres()? "additional_info=? ::jsonb ": "additional_info=? ")
                 .append("where userid = ?");
 
         dotConnect.setSQL(query.toString());
-        setDotConnectParamsForSave(dotConnect, user);
+
+        try {
+            setDotConnectParamsForSave(dotConnect, user);
+        } catch (JsonProcessingException e) {
+            throw new DotDataException(e.getMessage(), e);
+        }
+
         dotConnect.addParam(user.getUserId().trim().toLowerCase());
         dotConnect.loadResult();
         return user;
     }
 
-    private void setDotConnectParamsForSave(final DotConnect dotConnect, final User user){
+    private void setDotConnectParamsForSave(final DotConnect dotConnect, final User user)
+            throws JsonProcessingException {
+
         dotConnect.addParam(user.getCompanyId()).addParam(user.getCreateDate())
                 .addParam(user.getModificationDate()).addParam(user.getPassword()).addParam(user.getPasswordEncrypted())
                 .addParam(user.getPasswordExpirationDate()).addParam(user.getPasswordReset())
@@ -342,7 +364,7 @@ public class UserFactoryImpl implements UserFactory {
                 .addParam(user.getLoginIP()).addParam(user.getLastLoginDate()).addParam(user.getLastLoginIP())
                 .addParam(user.getFailedLoginAttempts()).addParam(user.getAgreedToTermsOfUse())
                 .addParam(user.getActive()).addParam(user.getDeleteInProgress()).addParam(user.getDeleteDate())
-                .addParam(user.getAdditionalInfo());
+                .addParam(mapper.writeValueAsString(user.getAdditionalInfo()));
     }
 
     @Override

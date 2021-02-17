@@ -1,7 +1,7 @@
 package com.dotmarketing.business.transform;
 
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.transform.DBTransformer;
-import com.dotmarketing.beans.Tree;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
@@ -12,9 +12,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
+import org.postgresql.util.PGobject;
 
 public class UserTransformer implements DBTransformer<User> {
     final List<User> list;
+
+    private static final ObjectMapper mapper = DotObjectMapperProvider.getInstance()
+            .getDefaultObjectMapper();
 
 
     public UserTransformer(List<Map<String, Object>> initList){
@@ -127,8 +131,10 @@ public class UserTransformer implements DBTransformer<User> {
         user.setDeleteDate((Date) map.get("delete_date"));
 
         if (null != map.get("additional_info")) {
-            user.setAdditionalInfo(Try.of(() -> new ObjectMapper()
-                    .readValue((String) map.get("additional_info"), HashMap.class))
+            user.setAdditionalInfo(Try.of(() -> mapper
+                    .readValue(DbConnectionFactory.isPostgres() ? ((PGobject) map
+                            .get("additional_info")).getValue()
+                            : (String) map.get("additional_info"), HashMap.class))
                     .getOrElse(new HashMap<String, String>()));
         }
         return user;

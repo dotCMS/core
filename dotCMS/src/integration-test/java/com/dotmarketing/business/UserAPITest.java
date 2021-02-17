@@ -1183,4 +1183,54 @@ public class UserAPITest extends IntegrationTestBase {
 		final Optional<String> userId = userAPI.getUserIdByIcqId(icqId);
 		assertFalse(userId.isPresent());
 	}
+
+    /**
+     * Method to test: {@link UserAPI#save(User, User, boolean)}
+     * Given Scenario: A new user is saved with its additional info
+     * ExpectedResult: The new user is persisted with its additional info
+     *
+     */
+	@Test
+	public void test_saveNewUser_withAdditionalInfo() throws DotDataException, DotSecurityException {
+
+        final User newUser = new UserDataGen().firstName("backendUser" + System.currentTimeMillis())
+                .additionalInfo("suffix", "MySuffix")
+                .additionalInfo("title", "MyTitle")
+                .additionalInfo("facebookId", "MyFacebookId").nextPersisted();
+
+        final User savedUser = userAPI.loadUserById(newUser.getUserId());
+
+        assertNotNull(savedUser.getAdditionalInfo());
+        assertEquals("MySuffix", savedUser.getAdditionalInfo().get("suffix"));
+        assertEquals("MyTitle", savedUser.getAdditionalInfo().get("title"));
+        assertEquals("MyFacebookId", savedUser.getAdditionalInfo().get("facebookId"));
+    }
+
+    /**
+     * Method to test: {@link UserAPI#save(User, User, boolean)}
+     * Given Scenario: The additional info of an existing user is modified
+     * ExpectedResult: The user's additional info is updated in DB correctly
+     *
+     */
+    @Test
+    public void test_updateUser_withAdditionalInfo() throws DotDataException, DotSecurityException {
+
+        final User newUser = new UserDataGen().firstName("backendUser" + System.currentTimeMillis())
+                .additionalInfo("suffix", "MySuffix")
+                .additionalInfo("title", "MyTitle")
+                .additionalInfo("facebookId", "MyFacebookId").nextPersisted();
+
+        newUser.getAdditionalInfo().put("suffix", "EditedSuffix");
+        newUser.getAdditionalInfo().put("twitterId", "MyTwitterId");
+        
+        userAPI.save(newUser, systemUser, false);
+
+        final User savedUser = userAPI.loadUserById(newUser.getUserId());
+
+        assertNotNull(savedUser.getAdditionalInfo());
+        assertEquals("EditedSuffix", savedUser.getAdditionalInfo().get("suffix"));
+        assertEquals("MyTitle", savedUser.getAdditionalInfo().get("title"));
+        assertEquals("MyFacebookId", savedUser.getAdditionalInfo().get("facebookId"));
+        assertEquals("MyTwitterId", savedUser.getAdditionalInfo().get("twitterId"));
+    }
 }
