@@ -1341,8 +1341,8 @@ public class DependencyManager {
 
 	private class DependencyProcessor {
 		private BlockingQueue<DependencyProcessorItem> queue;
-		private Map<AssetTypes, Set<String>> sets;
-		private boolean finish;
+		private Map<AssetTypes, Set<String>> assetsAlreadyProcessed;
+		private boolean finished;
 		private boolean started;
 		private List<DependencyThread> threads;
 
@@ -1361,11 +1361,11 @@ public class DependencyManager {
 		}
 
 		private void addSet(final String assetKey, final AssetTypes assetTypes) {
-			Set<String> set = sets.get(assetTypes);
+			Set<String> set = assetsAlreadyProcessed.get(assetTypes);
 
 			if (set == null) {
 				set = new HashSet<>();
-				sets.put(assetTypes, set);
+				assetsAlreadyProcessed.put(assetTypes, set);
 			}
 
 			set.add(assetKey);
@@ -1374,7 +1374,7 @@ public class DependencyManager {
 		void start(){
 			Logger.debug(DependencyProcessor.class, "starting");
 			queue = new LinkedBlockingDeque();
-			sets = new HashMap<>();
+			assetsAlreadyProcessed = new HashMap<>();
 
 			int poolSize = Config.getIntProperty("NUMBER_THREAD_TO_EXECUTE_BUNDLER", 10);
 
@@ -1433,7 +1433,7 @@ public class DependencyManager {
 		}
 
 		void stop(){
-			this.finish = true;
+			this.finished = true;
 
 			if (threads != null) {
 				for (final Thread thread : threads) {
@@ -1443,7 +1443,7 @@ public class DependencyManager {
 		}
 
 		public boolean alreadyProcess(final String assetKey, final AssetTypes assetTypes) {
-			final Set<String> set = sets.get(assetTypes);
+			final Set<String> set = assetsAlreadyProcessed.get(assetTypes);
 			return set != null && set.contains(assetKey);
 		}
 
@@ -1476,10 +1476,11 @@ public class DependencyManager {
 
 						consumerDependencies.get(assetTypes).accept(dependencyProcessorItem.assetKey);
 					} catch (InterruptedException e) {
-						if (!finish) {
+						if (!finished) {
 							Logger.error(DependencyProcessor.class, e.getMessage());
 						}
 
+						//todo: Remove when JAspect is running in test
 						DbConnectionFactory.closeSilently();
 
 						break;
