@@ -1,7 +1,6 @@
 package com.dotcms.tika;
 
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.osgi.OSGIConstants;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
@@ -20,10 +19,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.liferay.util.FileUtil;
-import io.vavr.control.Try;
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
-import org.apache.felix.framework.OSGIUtil;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,6 +36,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Predicate;
 import java.util.zip.GZIPOutputStream;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
+import org.apache.felix.framework.OSGIUtil;
 
 public class TikaUtils {
 
@@ -498,7 +495,7 @@ public class TikaUtils {
      * Reads INDEX_METADATA_FIELDS from configuration
      * @return
      */
-    public Set<String> getConfiguredMetadataFields(){
+    public static Set<String> getConfiguredMetadataFields(){
         final String configFields=Config.getStringProperty("INDEX_METADATA_FIELDS", null);
 
         if (UtilMethods.isSet(configFields)) {
@@ -514,7 +511,7 @@ public class TikaUtils {
      * @param metaMap
      * @param configFieldsSet
      */
-    public void filterMetadataFields(final Map<String, ? extends Object> metaMap, final Set<String> configFieldsSet){
+    public static void filterMetadataFields(final Map<String, ?> metaMap, final Set<String> configFieldsSet){
 
         if (UtilMethods.isSet(metaMap) && UtilMethods.isSet(configFieldsSet)) {
             metaMap.entrySet()
@@ -529,7 +526,7 @@ public class TikaUtils {
      * @param configFieldsSet
      * @return
      */
-    private boolean checkIfFieldMatches(final String key, final Set<String> configFieldsSet){
+    private static boolean checkIfFieldMatches(final String key, final Set<String> configFieldsSet){
         final Predicate<String> condition = e -> key.matches(e);
         return configFieldsSet.stream().anyMatch(condition);
     }

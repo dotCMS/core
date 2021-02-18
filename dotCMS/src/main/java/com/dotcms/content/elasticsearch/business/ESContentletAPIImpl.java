@@ -4846,89 +4846,66 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                     final File binaryFieldFolder = new File(newDir.getAbsolutePath() + File.separator + velocityVarNm);
 
-                    final File metadata=(contentType instanceof FileAssetContentType) ? APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode()) : null;
-                    
 
                     // if the user has removed this file via ui
                     if (incomingFile == null  || incomingFile.getAbsolutePath().contains("-removed-")){
                         FileUtil.deltree(binaryFieldFolder);
                         contentlet.setBinary(velocityVarNm, null);
 
-                        //if(metadata!=null && metadata.exists()){
-                        //    metadata.delete();
-                        //}
                         //For removed files we should cleanup any existing metadata.
                         if(contentlet.isFileAsset()){
                            fileMetadataAPI.removeMetadata(contentlet);
                         }
-                        continue;
-                    }
 
-                    // if we have an incoming file
-                    else if (incomingFile.exists() ){
-                        //The physical file name is preserved across versions.
-                        //No need to update the name. We will only reference the file through the logical asset-name
-                        final String oldFileName  = incomingFile.getName();
+                    } else { // if we have an incoming file
+                        if (incomingFile.exists() ){
+                            //The physical file name is preserved across versions.
+                            //No need to update the name. We will only reference the file through the logical asset-name
+                            final String oldFileName  = incomingFile.getName();
 
-                        File oldFile = null;
-                        if(UtilMethods.isSet(oldInode)) {
-                            //get old file
-                            oldFile = new File(oldDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator +  oldFileName);
+                            File oldFile = null;
+                            if(UtilMethods.isSet(oldInode)) {
+                                //get old file
+                                oldFile = new File(oldDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator +  oldFileName);
 
-                            // do we have an inline edited file, if so use that
-                            File editedFile = new File(tmpDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator + WebKeys.TEMP_FILE_PREFIX + oldFileName);
-                            if(editedFile.exists()){
-                                incomingFile = editedFile;
-                            }
-                        }
-
-                        //The file name must be preserved so it remains the same across versions.
-                        final File newFile = new File(newDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator +  oldFileName);
-                        binaryFieldFolder.mkdirs();
-
-                        // we move files that have been newly uploaded or edited
-                        if(oldFile==null || !oldFile.equals(incomingFile)){
-                            if(!createNewVersion){
-                                // If we're calling a checkinWithoutVersioning method,
-                                // then folder needs to be cleaned up in order to add the new file in it.
-                                // Otherwise we will have the old file and incoming file at the same time
-                                FileUtil.deltree(binaryFieldFolder);
-                                binaryFieldFolder.mkdirs();
-                            }
-                            // We want to copy (not move) cause the same file could be in
-                            // another field and we don't want to delete it in the first time.
-                            final boolean contentVersionHardLink = Config
-                                    .getBooleanProperty("CONTENT_VERSION_HARD_LINK", true);
-                            FileUtil.copyFile(incomingFile, newFile, contentVersionHardLink, validateEmptyFile);
-
-                            // delete old content metadata if exists
-                            if(metadata!=null && metadata.exists()){
-                                metadata.delete();
-                            }
-
-                        } else if (oldFile.exists()) {
-                            // otherwise, we copy the files as hardlinks
-                            final boolean contentVersionHardLink = Config
-                                    .getBooleanProperty("CONTENT_VERSION_HARD_LINK", true);
-                            FileUtil.copyFile(incomingFile, newFile, contentVersionHardLink, validateEmptyFile);
-
-                            // try to get the content metadata from the old version
-                            if (metadata != null) {
-                                File oldMeta = APILocator.getFileAssetAPI().getContentMetadataFile(oldInode);
-                                if (oldMeta.exists() && !oldMeta.equals(metadata)) {
-                                    if (metadata.exists()) {// unlikely to happen. deleting just in case
-                                        metadata.delete();
-                                    }
-                                    metadata.getParentFile().mkdirs();
-                                    FileUtil.copyFile(oldMeta, metadata);
+                                // do we have an inline edited file, if so use that
+                                File editedFile = new File(tmpDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator + WebKeys.TEMP_FILE_PREFIX + oldFileName);
+                                if(editedFile.exists()){
+                                    incomingFile = editedFile;
                                 }
                             }
 
-                            if(workingContentlet != contentlet){
-                               fileMetadataAPI.copyMetadata(workingContentlet, contentlet);
+                            //The file name must be preserved so it remains the same across versions.
+                            final File newFile = new File(newDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator +  oldFileName);
+                            binaryFieldFolder.mkdirs();
+
+                            // we move files that have been newly uploaded or edited
+                            if(oldFile==null || !oldFile.equals(incomingFile)){
+                                if(!createNewVersion){
+                                    // If we're calling a checkinWithoutVersioning method,
+                                    // then folder needs to be cleaned up in order to add the new file in it.
+                                    // Otherwise we will have the old file and incoming file at the same time
+                                    FileUtil.deltree(binaryFieldFolder);
+                                    binaryFieldFolder.mkdirs();
+                                }
+                                // We want to copy (not move) cause the same file could be in
+                                // another field and we don't want to delete it in the first time.
+                                final boolean contentVersionHardLink = Config
+                                        .getBooleanProperty("CONTENT_VERSION_HARD_LINK", true);
+                                FileUtil.copyFile(incomingFile, newFile, contentVersionHardLink, validateEmptyFile);
+
+                            } else if (oldFile.exists()) {
+                                // otherwise, we copy the files as hardlinks
+                                final boolean contentVersionHardLink = Config
+                                        .getBooleanProperty("CONTENT_VERSION_HARD_LINK", true);
+                                FileUtil.copyFile(incomingFile, newFile, contentVersionHardLink, validateEmptyFile);
+
+                                if(workingContentlet != contentlet){
+                                   fileMetadataAPI.copyMetadata(workingContentlet, contentlet);
+                                }
                             }
+                            contentlet.setBinary(velocityVarNm, newFile);
                         }
-                        contentlet.setBinary(velocityVarNm, newFile);
                     }
                 } catch (FileNotFoundException e) {
                     throw new DotContentletValidationException("Error occurred while processing the file:" + e.getMessage(),e);

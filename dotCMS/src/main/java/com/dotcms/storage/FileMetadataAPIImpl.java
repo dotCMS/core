@@ -1,6 +1,7 @@
 package com.dotcms.storage;
 
 import static com.dotmarketing.util.UtilMethods.isSet;
+
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
@@ -28,7 +29,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -257,19 +257,6 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
                         .join(",", metadataFields)));
 
         return metadataFields;
-    }
-
-    /**
-     * Reads INDEX_METADATA_FIELDS for  pre-configured metadata fields
-     * @return
-     */
-    static Set<String> getConfiguredMetadataFields(){
-
-        final String configFields = Config.getStringProperty("INDEX_METADATA_FIELDS", null);
-
-        return isSet(configFields)?
-            new HashSet<>(Arrays.asList( configFields.split(StringPool.COMMA))):
-            Collections.emptySet();
     }
 
     /**

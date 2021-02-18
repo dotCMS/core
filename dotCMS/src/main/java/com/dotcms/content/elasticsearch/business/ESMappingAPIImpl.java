@@ -23,10 +23,9 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.storage.model.ContentletMetadata;
 import com.dotcms.storage.FileMetadataAPI;
+import com.dotcms.storage.model.ContentletMetadata;
 import com.dotcms.storage.model.Metadata;
-import com.dotcms.tika.TikaUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -69,7 +68,6 @@ import com.google.common.collect.Sets;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import java.io.IOException;
-import java.io.Serializable;
 import java.io.StringWriter;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -613,7 +611,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		StringBuilder keyNameBuilder;
 		String keyName;
 		String keyNameText;
-		final TikaUtils tikaUtils = new TikaUtils();
 
 		for (final Field field : fields) {
 
@@ -709,7 +706,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 									&& structure.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET;
 					if(LicenseUtil.getLevel()>= LicenseLevel.STANDARD.level) {
 
-						this.loadKeyValueField(contentletMap, keyName, tikaUtils, field, valueObj, fileMetadata);
+						this.loadKeyValueField(contentletMap, keyName, field, valueObj, fileMetadata);
 					}
 				} else if(field.getFieldType().equals(Field.FieldType.TAG.toString())) {
 
@@ -784,7 +781,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 	private void loadKeyValueField(final Map<String, Object> contentletMap,
 								   final String keyName,
-								   final TikaUtils tikaUtils,
 								   final Field field,
 								   final Object valueObj,
 								   final boolean fileMetadata) throws DotDataException, DotSecurityException {
@@ -809,9 +805,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			}
 
 			allowedFields
-					.addAll(tikaUtils.getConfiguredMetadataFields());
+					.addAll(fileMetadataAPI.getConfiguredMetadataFields());
 
-			tikaUtils.filterMetadataFields(keyValueMap, allowedFields);
+			fileMetadataAPI.filterMetadataFields(keyValueMap, allowedFields);
 
             final String keyValuePrefix = FileAssetAPI.META_DATA_FIELD.toLowerCase();
             keyValueMap.forEach((k, v) -> contentletMap.put(keyValuePrefix + PERIOD + k, v));

@@ -1,14 +1,23 @@
 package com.dotcms.storage;
 
+import static com.dotmarketing.util.UtilMethods.isSet;
+
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.storage.model.ContentletMetadata;
 import com.dotcms.storage.model.Metadata;
+import com.dotcms.tika.TikaUtils;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.StringPool;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -21,6 +30,22 @@ import java.util.function.Supplier;
  * @author jsanca
  */
 public interface FileMetadataAPI {
+
+    /**
+     * Reads INDEX_METADATA_FIELDS for  pre-configured metadata fields
+     * @return
+     */
+    default Set<String> getConfiguredMetadataFields(){
+        return TikaUtils.getConfiguredMetadataFields();
+    }
+
+    /**
+     * Filters fields from a map given a set of fields to be kept
+     * @param metaMap
+     */
+    default void filterMetadataFields(final Map<String, ?> metaMap, final Set<String> configFieldsSet){
+        TikaUtils.filterMetadataFields(metaMap, configFieldsSet);
+    }
 
     /**
      * This generation use an strategy to make the choice of which binary fields will be included on the generation of the full or basic metadata.
