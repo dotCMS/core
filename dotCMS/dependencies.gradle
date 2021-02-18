@@ -17,8 +17,8 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.axiom-impl', version:'1.2.5_2'
     compile group: 'com.dotcms.lib', name: 'dot.bsf', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.bsh', version:'2.0b4_3'
-    compile 'net.bytebuddy:byte-buddy:1.6.12'
-    compile 'net.bytebuddy:byte-buddy-agent:1.6.12'
+    compile 'net.bytebuddy:byte-buddy:1.9.0'
+    compile 'net.bytebuddy:byte-buddy-agent:1.9.0'
     compile group: 'com.dotcms.lib', name: 'dot.cactus.integration.ant', version:'1.8.0_3'
     compile group: 'com.dotcms.lib', name: 'dot.cargo-ant', version:'0.9_2'
     compile group: 'com.dotcms.lib', name: 'dot.cargo-core-uberjar', version:'0.9_2'
@@ -397,7 +397,7 @@ dependencies {
     compile group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.56'
     compile group: 'org.bouncycastle', name: 'bcpkix-jdk15on', version: '1.56'
 
-    compile group: 'com.beust', name: 'jcommander', version: '1.48'
+//    compile group: 'com.beust', name: 'jcommander', version: '1.48'
 
     /**
      * Order matters here: JUNIT must come after hamcrest.
@@ -495,7 +495,7 @@ dependencies {
 
     compile 'com.jayway.jsonpath:json-path:2.4.0'
     compile 'com.sun.activation:javax.activation:1.2.0'
-    compile 'jakarta.xml.bind:jakarta.xml.bind-api:2.3.2'
+    compile 'jakarta.xml.bind:jakarta.xml.bind-api:2.3.3'
     compile 'com.sun.xml.ws:jaxws-ri:2.3.3'
 
     //https://www.oracle.com/database/technologies/appdev/jdbc-downloads.html
