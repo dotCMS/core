@@ -1,10 +1,6 @@
 package com.dotcms.enterprise.publishing.remote.bundler;
 
-import com.dotcms.contenttype.model.field.CategoryField;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.transform.contenttype.ContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.*;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
@@ -28,7 +24,6 @@ import com.dotmarketing.portlets.rules.RuleDataGen;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
@@ -45,7 +40,6 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.*;
 
 import static com.dotcms.publishing.PublisherAPIImplTest.getLanguagesVariableDependencies;
@@ -53,7 +47,6 @@ import static com.dotcms.util.CollectionsUtils.*;
 import static java.util.stream.Collectors.*;
 import static org.jgroups.util.Util.assertEquals;
 import static org.jgroups.util.Util.assertTrue;
-import static org.mockito.Matchers.booleanThat;
 import static org.mockito.Mockito.mock;
 
 @RunWith(DataProviderRunner.class)
@@ -74,16 +67,16 @@ public class DependencyBundlerTest {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
 
-        filterDescriptorAllDependencies = new FileDescriptorDataGen().next();
-        filterDescriptorNotDependencies = new FileDescriptorDataGen()
+        filterDescriptorAllDependencies = new FilterDescriptorDataGen().next();
+        filterDescriptorNotDependencies = new FilterDescriptorDataGen()
                 .dependencies(false)
                 .next();
 
-        filterDescriptorNotRelationship = new FileDescriptorDataGen()
+        filterDescriptorNotRelationship = new FilterDescriptorDataGen()
                 .relationships(false)
                 .next();
 
-        filterDescriptorNotDependenciesRelationship = new FileDescriptorDataGen()
+        filterDescriptorNotDependenciesRelationship = new FilterDescriptorDataGen()
                 .relationships(false)
                 .dependencies(false)
                 .next();
@@ -468,9 +461,8 @@ public class DependencyBundlerTest {
                 .parent(contentTypeParent)
                 .nextPersisted();
 
-        final Language languageChild = new LanguageDataGen().nextPersisted();
         final Contentlet contentletChild =  new ContentletDataGen(contentTypeChild.id())
-                .languageId(languageChild.getId())
+                .languageId(language.getId())
                 .host(host)
                 .nextPersisted();
 
@@ -522,7 +514,7 @@ public class DependencyBundlerTest {
                 new TestData(contentletWithFolder, list(), filterDescriptorNotDependenciesRelationship),
 
                 new TestData(contentletWithRelationship,
-                        list(host, contentTypeParent, language, contentletChild, contentTypeChild, languageChild,
+                        list(host, contentTypeParent, language, contentletChild, contentTypeChild,
                                 systemFolder, systemWorkflowScheme), filterDescriptorAllDependencies),
                 new TestData(contentletWithRelationship, list(), filterDescriptorNotDependencies),
                 new TestData(contentletWithRelationship, list(), filterDescriptorNotRelationship),
@@ -960,7 +952,7 @@ public class DependencyBundlerTest {
 
             PublisherAPIImplTest.createLanguageVariableIfNeeded();
 
-            final FilterDescriptor filterDescriptor = new FileDescriptorDataGen().nextPersisted();
+            final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
             new BundleDataGen()
                     .pushPublisherConfig(config)
                     .filter(filterDescriptor)
@@ -985,12 +977,11 @@ public class DependencyBundlerTest {
         AssignableFromMap<Integer> counts = new AssignableFromMap<>();
 
         for (Object asset : dependenciesToAssert) {
-
-            Class assetClass = (Contentlet.class == asset.getClass()) && ((Contentlet) asset).isHost() ? Host.class : asset.getClass();
-            final BundleDataGen.MetaData metaData = BundleDataGen.howAddInBundle.get(assetClass);
+            final boolean justExactlyClass = Host.class == asset.getClass() || Folder.class == asset.getClass();
+            final BundleDataGen.MetaData metaData = BundleDataGen.howAddInBundle.get(asset.getClass(), null, justExactlyClass);
 
             final String assetId = metaData.dataToAdd.apply(asset);
-            assertTrue(String.format("Not Contain %s in %s", assetId, asset.getClass()),
+            assertTrue(String.format("Not Contain %s in %s Class %s", assetId, metaData.collection.apply(config), asset.getClass()),
                     metaData.collection.apply(config).contains(assetId));
 
             final Class key = BundleDataGen.howAddInBundle.getKey(asset.getClass());

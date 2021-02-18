@@ -97,7 +97,7 @@ public class TemplateBundlerTest {
         final TemplateBundler bundler = new TemplateBundler();
         final File bundleRoot = FileUtil.createTemporaryDirectory("TemplateBundlerTest_addTemplateInBundle_");
 
-        final FilterDescriptor filterDescriptor = new FileDescriptorDataGen().nextPersisted();
+        final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
 
         final PushPublisherConfig config = new PushPublisherConfig();
         config.setTemplates(set(template.getIdentifier()));
