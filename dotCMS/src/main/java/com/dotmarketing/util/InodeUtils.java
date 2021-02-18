@@ -105,8 +105,6 @@ public class InodeUtils {
 
 		else if (type.equals("template")) {
 			return Template.class;
-		} else if (type.equals("user_proxy")) {
-			return UserProxy.class;
 		} else if (type.equals("structure")) {
 			return Structure.class;
 		} else if (type.equals("workflow_task")) {

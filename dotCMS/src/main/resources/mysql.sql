@@ -1302,54 +1302,6 @@ create table links (
    identifier varchar(36),
    primary key (inode)
 );
-create table user_proxy (
-   inode varchar(36) not null,
-   user_id varchar(255),
-   prefix varchar(255),
-   suffix varchar(255),
-   title varchar(255),
-   school varchar(255),
-   how_heard varchar(255),
-   company varchar(255),
-   long_lived_cookie varchar(255),
-   website varchar(255),
-   graduation_year integer,
-   organization varchar(255),
-   mail_subscription tinyint(1),
-   var1 varchar(255),
-   var2 varchar(255),
-   var3 varchar(255),
-   var4 varchar(255),
-   var5 varchar(255),
-   var6 varchar(255),
-   var7 varchar(255),
-   var8 varchar(255),
-   var9 varchar(255),
-   var10 varchar(255),
-   var11 varchar(255),
-   var12 varchar(255),
-   var13 varchar(255),
-   var14 varchar(255),
-   var15 varchar(255),
-   var16 varchar(255),
-   var17 varchar(255),
-   var18 varchar(255),
-   var19 varchar(255),
-   var20 varchar(255),
-   var21 varchar(255),
-   var22 varchar(255),
-   var23 varchar(255),
-   var24 varchar(255),
-   var25 varchar(255),
-   last_result integer,
-   last_message varchar(255),
-   no_click_tracking tinyint(1),
-   cquestionid varchar(255),
-   cqanswer varchar(255),
-   chapter_officer varchar(255),
-   primary key (inode),
-   unique (user_id)
-);
 create table chain_state_parameter (
    id bigint not null auto_increment,
    chain_state_id bigint not null,
@@ -1610,7 +1562,6 @@ alter table analytic_summary_referer add index fk5bc0f3e2ed30e054 (summary_id), 
 alter table dot_containers add index fk8a844125fb51eb (inode), add constraint fk8a844125fb51eb foreign key (inode) references inode (inode);
 alter table communication add index fkc24acfd65fb51eb (inode), add constraint fkc24acfd65fb51eb foreign key (inode) references inode (inode);
 alter table links add index fk6234fb95fb51eb (inode), add constraint fk6234fb95fb51eb foreign key (inode) references inode (inode);
-alter table user_proxy add index fk7327d4fa5fb51eb (inode), add constraint fk7327d4fa5fb51eb foreign key (inode) references inode (inode);
 create index idx_field_1 on field (structure_inode);
 alter table field add index fk5cea0fa5fb51eb (inode), add constraint fk5cea0fa5fb51eb foreign key (inode) references inode (inode);
 create index idx_relationship_1 on relationship (parent_structure_inode);
