@@ -1,7 +1,6 @@
 package com.dotcms.rest.api.v1.authentication;
 
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.util.UtilMethods;
 import java.util.Locale;
 
 import java.util.Optional;
@@ -14,6 +13,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.annotation.InitRequestRequired;
@@ -91,7 +91,7 @@ public class ResetPasswordResource {
             	SecurityLogger.logInfo(ResetPasswordResource.class,
             			"Error resetting password. "
             	        + this.responseUtil.getFormattedMessage(null,"reset-password-token-expired"));
-                res = this.responseUtil.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, null,
+                res = this.responseUtil.getErrorResponse(request, Status.FORBIDDEN, locale, null,
                         "reset-password-token-expired");
             }else{
             	SecurityLogger.logInfo(ResetPasswordResource.class,

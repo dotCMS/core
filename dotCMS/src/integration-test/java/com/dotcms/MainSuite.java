@@ -44,6 +44,7 @@ import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.storage.StoragePersistenceAPITest;
 import com.dotcms.security.apps.AppsCacheImplTest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
+import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
 import com.dotmarketing.business.helper.PermissionHelperTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.osgi.GenericBundleActivatorTest;
@@ -75,6 +76,7 @@ import com.dotmarketing.startup.runalways.Task00050LoadAppsSecretsTest;
 import com.dotmarketing.startup.runonce.Task201013AddNewColumnsToIdentifierTableTest;
 import com.dotmarketing.startup.runonce.Task201014UpdateColumnsValuesInIdentifierTableTest;
 import com.dotmarketing.startup.runonce.Task201102UpdateColumnSitelicTableTest;
+import com.dotmarketing.startup.runonce.Task210218RemoveUserProxyTableTest;
 import com.dotmarketing.startup.runonce.Task210218RemoveUserProxyTableTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
@@ -387,6 +389,7 @@ import org.junit.runners.Suite.SuiteClasses;
         TemplateBundlerTest.class,
         WorkflowBundlerTest.class,
         PublisherAPIImplTest.class,
+        LegacyShortyIdApiTest.class,
         Task210218RemoveUserProxyTableTest.class
 })
 public class MainSuite {
