@@ -46,8 +46,9 @@ public class ContainerDataGen extends AbstractDataGen<Container> {
     private static final String type = "containers";
 
     private Map<ContentType, String> contentTypes = new HashMap<>();
+    private boolean noContentTypes = false;
 
-	/**
+    /**
 	 * Sets friendlyName property to the ContainerDataGen instance. This will be
 	 * used when a new {@link Container} instance is created
 	 * 
@@ -122,6 +123,7 @@ public class ContainerDataGen extends AbstractDataGen<Container> {
      */
     public ContainerDataGen clearContentTypes() {
         contentTypes.clear();
+        noContentTypes = true;
         return this;
     }
 
@@ -236,7 +238,7 @@ public class ContainerDataGen extends AbstractDataGen<Container> {
 
         try {
 
-            if (contentTypes.isEmpty()) {
+            if (contentTypes.isEmpty() && !noContentTypes) {
                 ContentType pageContentType = APILocator.getContentTypeAPI(APILocator.systemUser())
                         .find("htmlpageasset");
                 withContentType(pageContentType, "Sample Code" + System.currentTimeMillis());

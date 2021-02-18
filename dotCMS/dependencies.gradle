@@ -413,7 +413,7 @@ dependencies {
     }
     testCompile "org.powermock:powermock-module-junit4:1.6.5"
     testCompile group: 'com.google.guava', name: 'guava', version: '19.0'
-    testCompile group: 'org.apache.tomcat', name: 'tomcat-jdbc', version: '8.5.32'
+    testCompile group: 'org.apache.tomcat', name: 'tomcat-jdbc', version: '9.0.41'
 
     /**
      * Order matters here: OSGI-Core must come after felix.
