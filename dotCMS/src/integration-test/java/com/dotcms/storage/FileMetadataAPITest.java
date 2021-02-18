@@ -29,9 +29,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -48,7 +46,6 @@ import java.util.Set;
 import java.util.SortedSet;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -312,8 +309,6 @@ public class FileMetadataAPITest {
      * Expected Results: After calling findBinaryFields I should get a tuple with one file
      * candidate for the full MD generation and the rest in the second component of the tuple
      */
-
-    
     @Test
     public void Test_Get_First_Indexed_Binary_Field() {
         final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
@@ -701,8 +696,63 @@ public class FileMetadataAPITest {
         }
     }
 
+    @Test
+    @UseDataProvider("getStorageType")
+    public void Test_Generate_Metadata_Should_Not_Override_Custom_Attributes(final StorageType storageType)
+            throws IOException, DotDataException {
 
-    @DataProvider
+        final String stringProperty = Config.getStringProperty(DEFAULT_STORAGE_TYPE);
+        //disconnect the MD generation on indexing so we can test directly here.
+        final boolean defaultValue = Config.getBooleanProperty(WRITE_METADATA_ON_REINDEX, true);
+        try {
+            Config.setProperty(WRITE_METADATA_ON_REINDEX, false);
+            Config.setProperty(DEFAULT_STORAGE_TYPE, storageType.name());
+            final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+            final Contentlet source = getMultipleBinariesContent(true, langId, null);
+
+            final ContentletMetadata metadata = fileMetadataAPI
+                    .generateContentletMetadata(source);
+            assertNotNull("must have metadata", metadata);
+
+            fileMetadataAPI.putCustomMetadataAttributes(source, ImmutableMap
+                    .of("fileAsset1", ImmutableMap.of("foo", "bar", "bar","foo"),
+                        "fileAsset2", ImmutableMap.of("foo", "bar", "bar","foo"))
+                     );
+
+            CacheLocator.getMetadataCache().clearCache();
+
+            assertTrue("Expect metadata ",source.getLazyMetadata().isPresent());
+
+            final Map<String, Metadata> metadataMap = source.getLazyMetadata().get();
+
+            final Metadata fileAsset1Meta = metadataMap.get("fileAsset1");
+            validateCustomMetadata(fileAsset1Meta.getCustomMeta());
+
+            final Metadata fileAsset2Meta = metadataMap.get("fileAsset2");
+            validateCustomMetadata(fileAsset2Meta.getCustomMeta());
+
+            final ContentletMetadata regeneratedMetadata = fileMetadataAPI
+                    .generateContentletMetadata(source);
+
+            //fileAsset2 is the first binary indexed in our contentlet so  we only expect that one on the full-md
+            validateCustomMetadata(regeneratedMetadata.getFullMetadataMap().get(FILE_ASSET_2).getCustomMeta());
+            //basic metadata is expected to be generated for the two binaries
+            validateCustomMetadata(regeneratedMetadata.getBasicMetadataMap().get(FILE_ASSET_1).getCustomMeta());
+            validateCustomMetadata(regeneratedMetadata.getBasicMetadataMap().get(FILE_ASSET_2).getCustomMeta());
+
+        } finally {
+            Config.setProperty(DEFAULT_STORAGE_TYPE, stringProperty);
+            Config.setProperty(WRITE_METADATA_ON_REINDEX, defaultValue);
+        }
+
+    }
+
+    private void validateCustomMetadata(final Map<String, Serializable> customMeta){
+        assertEquals(customMeta.get("foo"),"bar");
+        assertEquals(customMeta.get("bar"),"foo");
+    }
+
+        @DataProvider
     public static Object[] getStorageType() throws Exception {
         prepareIfNecessary();
         return new Object[]{

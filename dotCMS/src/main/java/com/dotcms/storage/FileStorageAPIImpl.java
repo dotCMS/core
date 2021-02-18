@@ -173,8 +173,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
 
         } catch (Exception e) {
-
-            Logger.error(this, e.getMessage(), e);
+            Logger.error(FileStorageAPIImpl.class, "Exception generating full metadata", e);
             return Collections.emptyMap();
         }
 
@@ -191,7 +190,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
     public Map<String, Serializable> generateMetaData(final File binary,
             final GenerateMetadataConfig configuration) throws DotDataException {
 
-        final Map<String, Serializable> metadataMap;
+         Map<String, Serializable> metadataMap;
         final StorageKey storageKey = configuration.getStorageKey();
         final StoragePersistenceAPI storage = persistenceProvider.getStorage(storageKey.getStorage());
 
@@ -206,20 +205,31 @@ public class FileStorageAPIImpl implements FileStorageAPI {
                         configuration.isFull() ? "full-metadata" : "basic-metadata"));
                 final long maxLength = configuration.getMaxLength();
                 metadataMap = configuration.isFull() ?
-                        this.generateFullMetaData(binary,
+                        generateFullMetaData(binary,
                                 configuration.getMetaDataKeyFilter(), maxLength) :
-                        this.generateBasicMetaData(binary,
+                        generateBasicMetaData(binary,
                                 configuration.getMetaDataKeyFilter());
 
                 if (configuration.isStore()) {
-                    this.storeMetadata(storageKey, storage, metadataMap);
+
+                    if(null != configuration.getMergeWithMetadata()){
+
+                        final Map<String, Serializable> patchMap = configuration.getMergeWithMetadata().getCustomMeta();
+                        if(!patchMap.isEmpty()){
+                            //This is necessary since metadataMap is immutable.
+                            metadataMap = new HashMap<>(metadataMap);
+                            patchMap.forEach(metadataMap::putIfAbsent);
+                        }
+                    }
+
+                    storeMetadata(storageKey, storage, metadataMap);
                 }
 
             } else {
                throw new IllegalArgumentException(String.format("the binary `%s` isn't accessible ", binary != null ? binary.getName() : "unknown"));
             }
         } else {
-            metadataMap = this.retrieveMetadata(storageKey, storage);
+            metadataMap = retrieveMetadata(storageKey, storage);
         }
 
         if (configuration.isCache()) {

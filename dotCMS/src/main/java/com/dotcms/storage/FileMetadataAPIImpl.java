@@ -201,15 +201,21 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
             throws IOException, DotDataException {
 
         final ImmutableMap.Builder<String, Metadata> builder  = new ImmutableMap.Builder<>();
+        final Optional<Map<String, Metadata>> lazyMetadata = contentlet.getLazyMetadata();
 
         final StorageType storageType = StoragePersistenceProvider.getStorageType();
         final String metadataBucketName = Config.getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);
         for (final String binaryFieldName : fullBinaryFieldNameSet) {
-            final File file           = contentlet.getBinary(binaryFieldName);
-            final String metadataPath = this.getFileName(contentlet, binaryFieldName);
+            final File file = contentlet.getBinary(binaryFieldName);
+            final String metadataPath = getFileName(contentlet, binaryFieldName);
             if (null != file && file.exists() && file.canRead()) {
-                final Set<String> metadataFields = this.getMetadataFields(fieldMap.get(binaryFieldName).id());
-                final Map<String, Serializable> metadataMap = this.fileStorageAPI.generateMetaData(file,
+
+                final Metadata mergeWithMetadata = lazyMetadata
+                        .map(stringMetadataMap -> stringMetadataMap.get(binaryFieldName))
+                        .orElse(null);
+
+                final Set<String> metadataFields = getMetadataFields(fieldMap.get(binaryFieldName).id());
+                final Map<String, Serializable> metadataMap = fileStorageAPI.generateMetaData(file,
                         new GenerateMetadataConfig.Builder()
                             .full(true)
                             .override(alwaysRegenerateMetadata)
@@ -218,6 +224,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
                             .metaDataKeyFilter(metadataKey -> metadataFields.isEmpty()
                                     || metadataFields.contains(metadataKey))
                             .storageKey(new StorageKey.Builder().group(metadataBucketName).path(metadataPath).storage(storageType).build())
+                            .mergeWithMetadata(mergeWithMetadata)
                             .build()
                         );
 
