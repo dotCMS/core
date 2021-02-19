@@ -3,6 +3,7 @@
 package com.dotmarketing.startup.runonce;
 
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -43,7 +44,12 @@ public class Task04355SystemEventAddServerIdColumn extends AbstractJDBCStartupTa
 
     @Override
     public boolean forceRun() {
-        return Boolean.TRUE;
+        try {
+            return !new DotDatabaseMetaData().hasColumn("system_event", "server_id");
+        } catch (SQLException e) {
+            Logger.error(this, e.getMessage(),e);
+            return false;
+        }
     }
 
     @Override
