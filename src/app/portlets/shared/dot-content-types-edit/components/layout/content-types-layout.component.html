@@ -34,22 +34,20 @@
         class="content-type__properties"
         header="{{ 'contenttypes.tab.fields.header' | dm }}"
     >
-        <div class="content-type__fields-layout" id="content-type-form-layout">
-            <div class="content-type__fields-main" id="content-type-form-main">
-                <ng-content></ng-content>
-            </div>
-            <div class="content-type__fields-sidebar">
-                <p-splitButton
-                    icon="pi pi-plus"
-                    label="{{ 'contenttypes.content.row' | dm }}"
-                    (onClick)="fireAddRowEvent()"
-                    [model]="actions"
-                >
-                </p-splitButton>
-                <dot-content-types-fields-list
-                    [baseType]="contentType.baseType"
-                ></dot-content-types-fields-list>
-            </div>
+        <dot-portlet-box class="content-type__fields-main">
+            <ng-content></ng-content>
+        </dot-portlet-box>
+        <div class="content-type__fields-sidebar">
+            <p-splitButton
+                icon="pi pi-plus"
+                label="{{ 'contenttypes.content.row' | dm }}"
+                (onClick)="fireAddRowEvent()"
+                [model]="actions"
+            >
+            </p-splitButton>
+            <dot-content-types-fields-list
+                [baseType]="contentType.baseType"
+            ></dot-content-types-fields-list>
         </div>
     </p-tabPanel>
     <p-tabPanel
@@ -59,7 +57,9 @@
         [cache]="false"
     >
         <ng-template pTemplate="content">
-            <dot-iframe [src]="relationshipURL"></dot-iframe>
+            <dot-portlet-box>
+                <dot-iframe [src]="relationshipURL"></dot-iframe>
+            </dot-portlet-box>
         </ng-template>
     </p-tabPanel>
     <p-tabPanel
@@ -69,7 +69,9 @@
         [cache]="false"
     >
         <ng-template pTemplate="content">
-            <dot-iframe [src]="permissionURL"></dot-iframe>
+            <dot-portlet-box>
+                <dot-iframe [src]="permissionURL"></dot-iframe>
+            </dot-portlet-box>
         </ng-template>
     </p-tabPanel>
     <p-tabPanel
@@ -79,7 +81,9 @@
         [cache]="false"
     >
         <ng-template pTemplate="content">
-            <dot-iframe [src]="pushHistoryURL"></dot-iframe>
+            <dot-portlet-box>
+                <dot-iframe [src]="pushHistoryURL"></dot-iframe>
+            </dot-portlet-box>
         </ng-template>
     </p-tabPanel>
 </p-tabView>
