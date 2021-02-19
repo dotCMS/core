@@ -975,17 +975,22 @@ public class DependencyBundlerTest {
 
     private void assertAll(final PushPublisherConfig config, final Collection<Object> dependenciesToAssert, final FilterDescriptor filterDescriptor) {
         AssignableFromMap<Integer> counts = new AssignableFromMap<>();
+        Set<String> alreadyCounts = new HashSet<>();
 
         for (Object asset : dependenciesToAssert) {
             final boolean justExactlyClass = Host.class == asset.getClass() || Folder.class == asset.getClass();
             final BundleDataGen.MetaData metaData = BundleDataGen.howAddInBundle.get(asset.getClass(), null, justExactlyClass);
 
             final String assetId = metaData.dataToAdd.apply(asset);
-            assertTrue(String.format("Not Contain %s in %s Class %s", assetId, metaData.collection.apply(config), asset.getClass()),
-                    metaData.collection.apply(config).contains(assetId));
 
-            final Class key = BundleDataGen.howAddInBundle.getKey(asset.getClass());
-            counts.addOrUpdate(key, 1, (Integer value) -> value + 1);
+            if (!alreadyCounts.contains(assetId)) {
+                assertTrue(String.format("Not Contain %s in %s Class %s", assetId, metaData.collection.apply(config), asset.getClass()),
+                        metaData.collection.apply(config).contains(assetId));
+
+                final Class key = BundleDataGen.howAddInBundle.getKey(asset.getClass());
+                counts.addOrUpdate(key, 1, (Integer value) -> value + 1);
+                alreadyCounts.add(assetId);
+            }
         }
 
         if (filterDescriptorAllDependencies == filterDescriptor) {

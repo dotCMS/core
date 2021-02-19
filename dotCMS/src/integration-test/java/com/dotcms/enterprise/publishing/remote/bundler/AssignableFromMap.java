@@ -35,7 +35,7 @@ public class AssignableFromMap<T> {
         try {
             final Class key = getKey(clazzToFind);
 
-            if (justExactlyClass && key != clazzToFind) {
+            if (justExactlyClass && !key.equals(clazzToFind)) {
                 return defaultValue;
             }
 
@@ -91,5 +91,10 @@ public class AssignableFromMap<T> {
 
         newValue = (oldValue == null) ? startValue : updateFunction.apply(oldValue);
         map.put(aClass, newValue);
+    }
+
+    @Override
+    public String toString() {
+        return map.toString();
     }
 }
