@@ -113,7 +113,7 @@ public class ResetPasswordResourceIntegrationTest{
         //Call Resource
         final Response responseResource = resource.resetPassword(getHttpRequest(),getResetPasswordForm("n3wPa$$w0rD",token));
         //Check that the response is 401
-        Assert.assertEquals(Status.UNAUTHORIZED.getStatusCode(),responseResource.getStatus());
+        Assert.assertEquals(Status.FORBIDDEN.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         Assert.assertEquals("reset-password-token-expired",responseEntityView.getErrors().get(0).getErrorCode());
     }
