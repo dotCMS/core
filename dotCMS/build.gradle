@@ -156,10 +156,10 @@ dependencies {
     felix (group: 'org.osgi', name: 'org.osgi.compendium', version: '4.3.1') {
         transitive = false
     }
-    felix(group: 'org.apache.tika', name: 'tika-core', version: '1.17') {
+    felix(group: 'org.apache.tika', name: 'tika-core', version: '1.19') {
         transitive = false
     }
-    felix(group: 'org.apache.tika', name: 'tika-bundle', version: '1.17') {
+    felix(group: 'org.apache.tika', name: 'tika-bundle', version: '1.19') {
         transitive = false
     }
 
