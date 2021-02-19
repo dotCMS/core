@@ -153,6 +153,15 @@ public class DependencyManager {
 			}
 		});
 		consumerDependencies.put(AssetTypes.RULES, (ruleId) -> setRuleDependencies(ruleId));
+		consumerDependencies.put(AssetTypes.LANGUAGES, (langId) -> {
+			try {
+				processLanguage(langId);
+			} catch (DotBundleException e) {
+				Logger.error(DependencyManager.class, e.getMessage());
+				errors.add(e);
+			}
+		});
+
 
 		dependencyProcessor = new DependencyProcessor();
 
@@ -182,7 +191,7 @@ public class DependencyManager {
 			dependencyProcessor.start();
 		}
 
-		setLanguageDependency();
+		setLanguageVariables();
 
 		List<PublishQueueElement> assets = config.getAssets();
 
@@ -313,6 +322,7 @@ public class DependencyManager {
 							+ " is not present in the database, not Pushed");
 				} else {
 					languages.add(asset.getAsset());
+					dependencyProcessor.put(asset.getAsset(), AssetTypes.LANGUAGES);
 				}
 			} else if (asset.getType().equals(PusheableAsset.RULE.getType())) {
 				Rule rule = APILocator.getRulesAPI()
@@ -329,9 +339,13 @@ public class DependencyManager {
 			}
 		}
 
+		Logger.info(DependencyManager.class, "config.getLuceneQueries() " + config.getLuceneQueries());
 		if(UtilMethods.isSet(config.getLuceneQueries())){
 			List<String> contentIds = PublisherUtil.getContentIds( config.getLuceneQueries());
+			Logger.info(DependencyManager.class, "contentIds before remove " + contentIds);
 			contentIds.removeIf(c->publisherFilter.doesExcludeQueryContainsContentletId(c));
+
+			Logger.info(DependencyManager.class, "contentIds after remove " + contentIds);
 			for(String id : contentIds){
 				final Identifier ident = APILocator.getIdentifierAPI().find(id);
 				final List<Contentlet> contentlets = APILocator.getContentletAPI().findAllVersions(ident, false, user, false);
@@ -1163,6 +1177,8 @@ public class DependencyManager {
 				if(!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.LANGUAGE.getType())) {
 					languages.addOrClean(Long.toString(contentletWithDependenciesToProcess.getLanguageId()),
 							new Date()); // will be included only when hasn't been sent ever
+					dependencyProcessor.put(String.valueOf(contentletWithDependenciesToProcess.getLanguageId()),
+							AssetTypes.LANGUAGES);
 				}
 				try {
 					if (Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_ALL_FOLDER_PAGES", false)
@@ -1205,23 +1221,27 @@ public class DependencyManager {
 					}
 				}
 			}
+		} catch (Exception e) {
+			throw new DotBundleException(this.getClass().getName() + " : " + "generate()"
+					+ e.getMessage() + ": Unable to pull content", e);
+		}
+	}
 
-			//This is for adding the new language variables (as content)
-			for (final String lang : languages) {
-				final String keyValueQuery = "+contentType:" + LanguageVariableAPI.LANGUAGEVARIABLE + " +languageId:" + lang;
-				final List<Contentlet> listKeyValueLang = APILocator.getContentletAPI()
-						.search(keyValueQuery,0, -1, StringPool.BLANK, user, false);// search for language variables
-				// if there is any language variable and we accept to push content type, add the content type
-				if (!listKeyValueLang.isEmpty() && !publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.CONTENT_TYPE.getType())) {
-					final Structure structure = CacheLocator.getContentTypeCache()
-							.getStructureByInode(listKeyValueLang.get(0).getContentTypeId());
-					contentTypes.addOrClean(structure.getIdentifier(), structure.getModDate());
-				}
-				if(!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.CONTENTLET.getType())) {
-					for (final Contentlet keyValue : listKeyValueLang) {// add the language variable
-						if(!publisherFilter.doesExcludeDependencyQueryContainsContentletId(keyValue.getIdentifier())) {
-							contents.addOrClean(keyValue.getIdentifier(), keyValue.getModDate());
-						}
+	private void processLanguage(String lang) throws DotBundleException {
+		try{
+			final String keyValueQuery = "+contentType:" + LanguageVariableAPI.LANGUAGEVARIABLE + " +languageId:" + lang;
+			final List<Contentlet> listKeyValueLang = APILocator.getContentletAPI()
+					.search(keyValueQuery,0, -1, StringPool.BLANK, user, false);// search for language variables
+			// if there is any language variable and we accept to push content type, add the content type
+			if (!listKeyValueLang.isEmpty() && !publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.CONTENT_TYPE.getType())) {
+				final Structure structure = CacheLocator.getContentTypeCache()
+						.getStructureByInode(listKeyValueLang.get(0).getContentTypeId());
+				contentTypes.addOrClean(structure.getIdentifier(), structure.getModDate());
+			}
+			if(!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.CONTENTLET.getType())) {
+				for (final Contentlet keyValue : listKeyValueLang) {// add the language variable
+					if(!publisherFilter.doesExcludeDependencyQueryContainsContentletId(keyValue.getIdentifier())) {
+						contents.addOrClean(keyValue.getIdentifier(), keyValue.getModDate());
 					}
 				}
 			}
@@ -1280,7 +1300,7 @@ public class DependencyManager {
 		}
 	}
 
-	private void setLanguageDependency() {
+	private void setLanguageVariables() {
 		final ContentletAPI contentletAPI = APILocator.getContentletAPI();
 		final Date date = new Date();
 		try{
@@ -1298,7 +1318,6 @@ public class DependencyManager {
 					languages.addOrClean(Long.toString(langVar.getLanguageId()), date);
 				}
 			}
-
 		}catch (Exception e){
 			Logger.error(this, e.getMessage(),e);
 		}
@@ -1347,12 +1366,18 @@ public class DependencyManager {
 		private List<DependencyThread> threads;
 
 		void put(final String assetKey, final AssetTypes assetType) {
+			Logger.info(DependencyProcessor.class, () -> String.format("%s: Not started %s in %s %b",
+					Thread.currentThread().getName(), assetKey, assetType, !this.alreadyProcess(assetKey, assetType)));
+
 			if (!started) {
 				return;
 			}
 
+			Logger.info(DependencyProcessor.class, () -> String.format("%s: Should %s in %s %b",
+					Thread.currentThread().getName(), assetKey, assetType, !this.alreadyProcess(assetKey, assetType)));
+
 			if (!this.alreadyProcess(assetKey, assetType)) {
-				Logger.debug(DependencyProcessor.class, () -> String.format("%s: Putting %s in %s",
+				Logger.info(DependencyProcessor.class, () -> String.format("%s: Putting %s in %s",
 						Thread.currentThread().getName(), assetKey, assetType));
 
 				queue.add(new DependencyProcessorItem(assetKey, assetType));
@@ -1360,7 +1385,7 @@ public class DependencyManager {
 			}
 		}
 
-		private void addSet(final String assetKey, final AssetTypes assetTypes) {
+		private synchronized void addSet(final String assetKey, final AssetTypes assetTypes) {
 			Set<String> set = assetsAlreadyProcessed.get(assetTypes);
 
 			if (set == null) {
@@ -1442,7 +1467,7 @@ public class DependencyManager {
 			}
 		}
 
-		public boolean alreadyProcess(final String assetKey, final AssetTypes assetTypes) {
+		public synchronized boolean alreadyProcess(final String assetKey, final AssetTypes assetTypes) {
 			final Set<String> set = assetsAlreadyProcessed.get(assetTypes);
 			return set != null && set.contains(assetKey);
 		}
@@ -1458,19 +1483,19 @@ public class DependencyManager {
 
 						if (dependencyProcessorItem == null) {
 							waitingForSomethingToProcess = true;
-							Logger.debug(DependencyProcessor.class, () -> String.format("%s : Notifying to main thread",
+							Logger.info(DependencyProcessor.class, () -> String.format("%s : Notifying to main thread",
 									Thread.currentThread().getName()));
 
 							notifyMainThread();
 
-							Logger.debug(DependencyProcessor.class,
+							Logger.info(DependencyProcessor.class,
 									() -> String.format("%s : Waiting for something to process", Thread.currentThread().getName()));
 							dependencyProcessorItem = queue.take();
 							waitingForSomethingToProcess = false;
 						}
 
 						final AssetTypes assetTypes = dependencyProcessorItem.assetTypes;
-						Logger.debug(DependencyProcessor.class,
+						Logger.info(DependencyProcessor.class,
 								String.format("%s : We have something to process - %s %s",
 										Thread.currentThread().getName(), dependencyProcessorItem.assetKey, assetTypes));
 
