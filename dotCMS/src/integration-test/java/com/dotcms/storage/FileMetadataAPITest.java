@@ -83,7 +83,8 @@ public class FileMetadataAPITest {
     }
 
     @DataProvider
-    public static Object[] getFileAssetMetadataTestCases() {
+    public static Object[] getFileAssetMetadataTestCases() throws Exception {
+        IntegrationTestInitService.getInstance().init();
         final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
         return new Object[]{
                 new TestCase(langId, StorageType.FILE_SYSTEM, TestFile.JPG,
