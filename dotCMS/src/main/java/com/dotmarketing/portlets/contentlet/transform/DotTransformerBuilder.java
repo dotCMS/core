@@ -8,12 +8,14 @@ import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformO
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.IDENTIFIER_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.COMMON_PROPS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CONSTANTS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.KEY_VALUE_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_PROPS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LOAD_META;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.USE_ALIAS;
 import static com.dotmarketing.util.UtilMethods.isNotSet;
+
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -33,8 +35,8 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * This Class is the entry point to realize any transformation it facilitates instantiating the
- * Transformer
+ * This Class is the entry point to realize any transformation
+ * it facilitates instantiating the Transformer
  */
 public class DotTransformerBuilder {
 
@@ -46,29 +48,26 @@ public class DotTransformerBuilder {
 
     /**
      * Use to submit all contentlets
-     * 
      * @param contentlets
      * @return
      */
-    public DotTransformerBuilder content(final List<Contentlet> contentlets) {
+    public DotTransformerBuilder content(final List<Contentlet> contentlets){
         this.contentlets.addAll(contentlets);
         return this;
     }
 
     /**
      * Use to submit all contentlets. One single entry can me set conveniently
-     * 
      * @param contentlets
      * @return
      */
-    public DotTransformerBuilder content(final Contentlet... contentlets) {
+    public DotTransformerBuilder content(final Contentlet... contentlets){
         this.contentlets.addAll(Arrays.asList(contentlets));
         return this;
     }
 
     /***
      * If a user is required this must be used to set it
-     * 
      * @param user
      * @return
      */
@@ -79,21 +78,19 @@ public class DotTransformerBuilder {
 
     /**
      * Use to replace the BinaryToMapTransformer
-     * 
      * @return
      */
-    DotTransformerBuilder binaryToMapTransformer() {
-        optionsHolder.clear();
-        optionsHolder.add(BINARIES_VIEW);
-        return this;
+    DotTransformerBuilder binaryToMapTransformer(){
+       optionsHolder.clear();
+       optionsHolder.add(BINARIES_VIEW);
+       return this;
     }
 
     /**
      * Use to replace the LanguageToMapTransformer
-     * 
      * @return
      */
-    DotTransformerBuilder languageToMapTransformer() {
+    DotTransformerBuilder languageToMapTransformer(){
         optionsHolder.clear();
         optionsHolder.add(LANGUAGE_VIEW);
         return this;
@@ -101,10 +98,9 @@ public class DotTransformerBuilder {
 
     /**
      * Use it to replace IdentifierToMapTransformer
-     * 
      * @return
      */
-    DotTransformerBuilder identifierToMapTransformer() {
+    DotTransformerBuilder identifierToMapTransformer(){
         optionsHolder.clear();
         optionsHolder.add(IDENTIFIER_VIEW);
         return this;
@@ -112,32 +108,51 @@ public class DotTransformerBuilder {
 
     /**
      * Use to replace CategoryToMapTransformer
-     * 
      * @return
      */
-    public DotTransformerBuilder categoryToMapTransformer() {
+    public DotTransformerBuilder categoryToMapTransformer(){
         optionsHolder.clear();
         optionsHolder.addAll(EnumSet.of(CATEGORIES_VIEW));
         return this;
     }
 
     /**
-     * Fine tuned to be used for FileAssets on BrowserAPI
-     * 
+     * KeyValue to Map Transformer
      * @return
      */
-    public DotTransformerBuilder webAssetOptions() {
+    public DotTransformerBuilder keyValueToMapTransformer(){
         optionsHolder.clear();
-        optionsHolder.addAll(EnumSet.of(COMMON_PROPS, VERSION_INFO, LOAD_META, USE_ALIAS, LANGUAGE_PROPS));
+        optionsHolder.addAll(EnumSet.of(KEY_VALUE_VIEW));
+        return this;
+    }
+
+    /**
+     * Url Content Map to Map Transformer
+     * @return
+     */
+    public DotTransformerBuilder urlContentMapTransformer(){
+        optionsHolder.clear();
+        optionsHolder.addAll(DotContentletTransformerImpl.defaultOptions);
+        optionsHolder.add(KEY_VALUE_VIEW);
+        return this;
+    }
+
+    /**
+     * Fine tuned to be used for FileAssets on BrowserAPI
+     * @return
+     */
+    public DotTransformerBuilder webAssetOptions(){
+        optionsHolder.clear();
+        optionsHolder.addAll(
+                EnumSet.of(COMMON_PROPS, VERSION_INFO, LOAD_META, USE_ALIAS, LANGUAGE_PROPS));
         return this;
     }
 
     /**
      * Fine tuned to be used for DotAssets on BrowserAPI
-     * 
      * @return
      */
-    public DotTransformerBuilder dotAssetOptions() {
+    public DotTransformerBuilder dotAssetOptions(){
         optionsHolder.clear();
         optionsHolder.addAll(EnumSet.of(COMMON_PROPS, VERSION_INFO, USE_ALIAS, LANGUAGE_PROPS));
         return this;
@@ -145,27 +160,24 @@ public class DotTransformerBuilder {
 
     /**
      * Fine Tuned to be consumed from ContentResource
-     * 
      * @return
      */
-    public DotTransformerBuilder contentResourceOptions(final boolean allCategoriesInfo) {
+    public DotTransformerBuilder contentResourceOptions(final boolean allCategoriesInfo){
         optionsHolder.clear();
         optionsHolder.addAll(EnumSet.of(COMMON_PROPS, CONSTANTS, VERSION_INFO, LOAD_META, BINARIES, CATEGORIES_NAME));
-        if (allCategoriesInfo) {
-            optionsHolder.remove(CATEGORIES_NAME);
-            optionsHolder.add(CATEGORIES_INFO);
+        if(allCategoriesInfo){
+          optionsHolder.remove(CATEGORIES_NAME);
+          optionsHolder.add(CATEGORIES_INFO);
         }
         return this;
     }
 
 
     /**
-     * This one does not transform binaries. But still leaves them for use. Meaning the resulting map
-     * will still have binaries
-     * 
+     * This one does not transform binaries. But still leaves them for use. Meaning the resulting map will still have binaries
      * @return
      */
-    public DotTransformerBuilder graphQLDataFetchOptions() {
+    public DotTransformerBuilder graphQLDataFetchOptions(){
         optionsHolder.clear();
         optionsHolder.addAll(EnumSet.of(COMMON_PROPS, CONSTANTS, VERSION_INFO, CATEGORIES_NAME));
         return this;
@@ -173,10 +185,9 @@ public class DotTransformerBuilder {
 
     /**
      * Dont know where? to go land here.
-     * 
      * @return
      */
-    public DotTransformerBuilder defaultOptions() {
+    public DotTransformerBuilder defaultOptions(){
         optionsHolder.clear();
         optionsHolder.addAll(DotContentletTransformerImpl.defaultOptions);
         return this;
@@ -184,7 +195,6 @@ public class DotTransformerBuilder {
 
     /**
      * Once every option has been selected get the instance here
-     * 
      * @return
      */
     public DotContentletTransformer build() {
@@ -194,10 +204,11 @@ public class DotTransformerBuilder {
             resolver = new StrategyResolverImpl();
         } else {
             try {
-                resolver = ((Class<StrategyResolver>) Class.forName(providerClassName)).newInstance();
+                resolver = ((Class<StrategyResolver>) Class.forName(providerClassName))
+                        .newInstance();
             } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
-                final String message = String.format(
-                                "Failure instantiating custom StrategyResolver for the given className `%s`",
+                final String message = String
+                        .format("Failure instantiating custom StrategyResolver for the given className `%s`",
                                 providerClassName);
                 Logger.error(DotTransformerBuilder.class, message, e);
                 throw new DotRuntimeException(message, e);
@@ -212,24 +223,21 @@ public class DotTransformerBuilder {
         }
         return new DotContentletTransformerImpl(contentlets, resolver, EnumSet.copyOf(optionsHolder), user);
     }
-
-
-    /**
-     * loads the strategyResolver but once
-     */
+    
+    
     final static Lazy<String> strategyResolver = Lazy.of(() -> {
         return Config.getStringProperty("TRANSFORMER_PROVIDER_STRATEGY_CLASS", null);
     });
-
-
+    
     /**
-     * The strategies resolver is a key part of the mechanism This allows to provide a custom one.
-     * 
+     * The strategies resolver is a key part of the mechanism
+     * This allows to provide a custom one.
      * @return
      */
     private String getStrategyResolverProvider() {
-
         return strategyResolver.get();
     }
 
+    
+    
 }
