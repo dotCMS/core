@@ -223,8 +223,7 @@ public class DotTransformerBuilder {
         }
         return new DotContentletTransformerImpl(contentlets, resolver, EnumSet.copyOf(optionsHolder), user);
     }
-    
-    
+
     final static Lazy<String> strategyResolver = Lazy.of(() -> {
         return Config.getStringProperty("TRANSFORMER_PROVIDER_STRATEGY_CLASS", null);
     });
@@ -238,6 +237,4 @@ public class DotTransformerBuilder {
         return strategyResolver.get();
     }
 
-    
-    
 }
