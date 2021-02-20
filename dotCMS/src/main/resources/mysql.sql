@@ -177,7 +177,7 @@ create table User_ (
 	active_ tinyint,
 	delete_in_progress BOOLEAN DEFAULT FALSE,
 	delete_date DATETIME,
-    additional_info BLOB NULL
+    additional_info text NULL
 );
 
 create table UserTracker (

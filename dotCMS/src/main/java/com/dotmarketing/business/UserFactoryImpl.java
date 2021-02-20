@@ -276,7 +276,7 @@ public class UserFactoryImpl implements UserFactory {
 
         final StringBuilder query = new StringBuilder();
 
-        query.append("INSERT INTO user_(")
+        query.append("INSERT INTO user_ (")
                 .append("userid, companyid, createdate, mod_date, password_, passwordencrypted, ")
                 .append("passwordexpirationdate, passwordreset, firstname, middlename, lastname, ")
                 .append("nickname, male, birthday, emailaddress, smsid, aimid, icqid, msnid, ymid, ")
@@ -364,7 +364,7 @@ public class UserFactoryImpl implements UserFactory {
                 .addParam(user.getLoginIP()).addParam(user.getLastLoginDate()).addParam(user.getLastLoginIP())
                 .addParam(user.getFailedLoginAttempts()).addParam(user.getAgreedToTermsOfUse())
                 .addParam(user.getActive()).addParam(user.getDeleteInProgress()).addParam(user.getDeleteDate())
-                .addParam(mapper.writeValueAsString(user.getAdditionalInfo()));
+                .addParam(user.getAdditionalInfo()!=null ? mapper.writeValueAsString(user.getAdditionalInfo()): "");
     }
 
     @Override

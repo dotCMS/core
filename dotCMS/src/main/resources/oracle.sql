@@ -177,7 +177,7 @@ create table User_ (
 	active_ number(1, 0),
 	delete_in_progress number(1,0) default 0,
 	delete_date DATE,
-	additional_info BLOB NULL
+	additional_info NCLOB NULL
 );
 
 create table UserTracker (

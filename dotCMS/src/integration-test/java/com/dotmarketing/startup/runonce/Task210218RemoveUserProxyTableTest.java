@@ -15,6 +15,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -23,8 +24,8 @@ public class Task210218RemoveUserProxyTableTest {
 
     private static UserAPI userAPI;
 
-    private static final String USER_PROXY_CREATE_SCRIPT_MSSQL = "if not exists (select * from sysobjects where name='user_proxy' and xtype='U')"
-            + " CREATE TABLE user_proxy (\n"
+    private static final String USER_PROXY_CREATE_SCRIPT_MSSQL = "if not exists (select * from sysobjects where name='USER_PROXY' and xtype='U')"
+            + " CREATE TABLE USER_PROXY (\n"
             + "   inode NVARCHAR(36) not null,\n"
             + "   user_id NVARCHAR(255) null,\n"
             + "   prefix NVARCHAR(255) null,\n"
@@ -74,7 +75,7 @@ public class Task210218RemoveUserProxyTableTest {
             + ");\n"
             + "go";
 
-    private static final String USER_PROXY_CREATE_SCRIPT_MYSQL = "CREATE TABLE IF NOT EXISTS user_proxy (\n"
+    private static final String USER_PROXY_CREATE_SCRIPT_MYSQL = "CREATE TABLE IF NOT EXISTS USER_PROXY (\n"
             + "   inode varchar(36) not null,\n"
             + "   user_id varchar(255),\n"
             + "   prefix varchar(255),\n"
@@ -123,7 +124,7 @@ public class Task210218RemoveUserProxyTableTest {
             + "   unique (user_id)\n"
             + ");";
 
-    private static final String USER_PROXY_CREATE_SCRIPT_POSTGRES = "CREATE TABLE IF NOT EXISTS user_proxy (\n"
+    private static final String USER_PROXY_CREATE_SCRIPT_POSTGRES = "CREATE TABLE IF NOT EXISTS USER_PROXY (\n"
             + "   inode varchar(36) not null,\n"
             + "   user_id varchar(255),\n"
             + "   prefix varchar(255),\n"
@@ -172,7 +173,7 @@ public class Task210218RemoveUserProxyTableTest {
             + "   unique (user_id)\n"
             + ");";
 
-    private static final String USER_PROXY_CREATE_SCRIPT_ORACLE = "CREATE TABLE IF NOT EXISTS user_proxy (\n"
+    private static final String USER_PROXY_CREATE_SCRIPT_ORACLE = "CREATE TABLE USER_PROXY (\n"
             + "   inode varchar2(36) not null,\n"
             + "   user_id varchar2(255),\n"
             + "   prefix varchar2(255),\n"
@@ -219,7 +220,7 @@ public class Task210218RemoveUserProxyTableTest {
             + "   chapter_officer varchar2(255),\n"
             + "   primary key (inode),\n"
             + "   unique (user_id)\n"
-            + ");";
+            + ")";
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -229,8 +230,8 @@ public class Task210218RemoveUserProxyTableTest {
         createUserProxyTable();
     }
 
-    private static void createUserProxyTable() throws SQLException {
-        final DotConnect dotConnect = new DotConnect();
+    private static void createUserProxyTable() throws SQLException, DotDataException {
+        DotConnect dotConnect = new DotConnect();
 
         if (DbConnectionFactory.isPostgres()) {
             dotConnect.executeStatement(USER_PROXY_CREATE_SCRIPT_POSTGRES);
@@ -239,7 +240,13 @@ public class Task210218RemoveUserProxyTableTest {
         } else if (DbConnectionFactory.isMsSql()) {
             dotConnect.executeStatement(USER_PROXY_CREATE_SCRIPT_MSSQL);
         } else {
-            dotConnect.executeStatement(USER_PROXY_CREATE_SCRIPT_ORACLE);
+
+            dotConnect.setSQL("SELECT COUNT(*) as exist FROM user_tables WHERE table_name='USER_PROXY'");
+            BigDecimal existTable = (BigDecimal)dotConnect.loadObjectResults().get(0).get("exist");
+            if(existTable.longValue() == 0) {
+                dotConnect = new DotConnect();
+                dotConnect.executeStatement(USER_PROXY_CREATE_SCRIPT_ORACLE);
+            }
         }
     }
 
@@ -258,7 +265,7 @@ public class Task210218RemoveUserProxyTableTest {
                 .firstName("backendUser" + System.currentTimeMillis()).nextPersisted();
 
         new DotConnect()
-                .setSQL("insert into user_proxy (inode, user_id, prefix, suffix, title, var1, var2) values (?, ?, ?, ?, ?, ?, ?)")
+                .setSQL("insert into USER_PROXY (inode, user_id, prefix, suffix, title, var1, var2) values (?, ?, ?, ?, ?, ?, ?)")
                 .addParam(UUIDGenerator.generateUuid())
                 .addParam(userWithAdditionalInfo.getUserId())
                 .addParam("MyPrefix")
