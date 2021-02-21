@@ -282,6 +282,17 @@ public class CollectionsUtils implements Serializable {
     } // set
 
     /**
+     * Get a new {@link TreeSet} with the elements
+     * @param elements T
+     * @param <T>
+     * @return Set
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> Set<T> treeSet (final T... elements) {
+        return new TreeSet<>(Arrays.asList(elements));
+    } // set
+
+    /**
      * Get a new set
      * @param tCollection {@link Collection}
      * @param <T>

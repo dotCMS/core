@@ -3,6 +3,7 @@ package com.dotmarketing.util;
 import com.dotcms.util.CloseUtils;
 import com.liferay.util.Encryptor;
 import com.liferay.util.HashBuilder;
+import io.vavr.control.Try;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import java.io.BufferedInputStream;
@@ -13,6 +14,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URL;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -264,6 +266,53 @@ public class FileUtil {
             }
         };
     }
+
+	/**
+	 * Get Files from the class loader
+	 * @param filePaths {@link String} array of class loader file paths
+	 * @return File array (null in an index if can not load)
+	 */
+	public static File[] getFilesFromClassLoader(String... filePaths) {
+
+		final File[] files = new File[filePaths.length];
+
+		for(int i = 0; i< filePaths.length; ++i) {
+
+			int index = i;
+			try {
+				files[i] = getFileFromClassLoader(filePaths[index]);
+			} catch (Exception e) {
+
+				Logger.error(FileUtil.class, e.getMessage(), e);
+				files[i] = null;
+			}
+		}
+
+		return files;
+	}
+
+	/**
+	 * Get a file from the class loader
+	 * @param propertyFile {@link String}
+	 * @return File
+	 */
+	public static File getFileFromClassLoader (final String propertyFile) {
+
+		return getFileFromClassLoader(propertyFile, Thread.currentThread().getContextClassLoader());
+	}
+
+	/**
+	 * Get a file from the class loader
+	 * @param propertyFile {@link String}
+	 * @param classLoader  {@link ClassLoader}
+	 * @return File
+	 */
+	public static File getFileFromClassLoader (final String propertyFile, final ClassLoader classLoader) {
+
+		final URL fileUrl = classLoader.getResource(propertyFile);
+		return new File(fileUrl.getPath());
+	}
+
 
 	/**
 	 * Figure out the sha256 of the file content, assumes that the file exists and can be read

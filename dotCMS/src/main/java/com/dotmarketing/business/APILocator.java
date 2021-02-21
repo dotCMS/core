@@ -12,6 +12,7 @@ import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.cms.login.LoginServiceAPIFactory;
 import com.dotcms.company.CompanyAPI;
 import com.dotcms.company.CompanyAPIFactory;
+import com.dotcms.config.ConfigAPI;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
@@ -217,6 +218,10 @@ public class APILocator extends Locator<APIIndex>{
 			}
 		}
 	} // destroy.
+
+	public static ConfigAPI getConfigAPI() {
+		return null; // todo: return here the implementation
+	}
 
     /**
      * Creates a single instance of the {@link SecurityLoggerServiceAPI} class.
