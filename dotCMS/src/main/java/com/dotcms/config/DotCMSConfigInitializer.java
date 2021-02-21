@@ -3,14 +3,13 @@ package com.dotcms.config;
 import com.dotcms.util.Cleanable;
 import com.dotcms.util.ServletContextAware;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.util.Config;
+import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import io.vavr.control.Try;
 import org.apache.commons.lang3.mutable.MutableInt;
 
 import javax.servlet.ServletContext;
 import java.io.File;
-import java.net.URL;
 import java.util.Iterator;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -27,7 +26,7 @@ public class DotCMSConfigInitializer {
 
     public static final  String DOT_MARKETING_CONFIG_PROPERTY_FILE  = "dotmarketing-config.properties";
     public static final  String DOTCMS_CONFIG_CLUSTER_PROPERTY_FILE = "dotcms-config-cluster.properties";
-    private static final File [] dotCMSConfigFiles = getFiles(DOT_MARKETING_CONFIG_PROPERTY_FILE, DOTCMS_CONFIG_CLUSTER_PROPERTY_FILE);
+    private static final File [] dotCMSConfigFiles = FileUtil.getFilesFromClassLoader(DOT_MARKETING_CONFIG_PROPERTY_FILE, DOTCMS_CONFIG_CLUSTER_PROPERTY_FILE);
     private static final AtomicBoolean isInit = new AtomicBoolean(false);
 
     // todo: a set of Initializers that can be add programatically by OSGI.
@@ -41,7 +40,7 @@ public class DotCMSConfigInitializer {
     public static void init (final ServletContext context) {
 
         if (!isInit.get()) {
-            reload(context);
+            internalReload(context);
             // todo: add here the watchers for the dotcms config properties
             isInit.set(true);
         }
@@ -53,11 +52,30 @@ public class DotCMSConfigInitializer {
      */
     public static void reload (final ServletContext context) {
 
+        if (isInit.get()) {
+            internalReload(context);
+        } else {
+
+            throw new RuntimeException("Could not reload dotCMS configuration, before has to be init");
+        }
+    }
+
+    private static void internalReload (final ServletContext context) {
+
         Cleanable.class.cast(APILocator.getConfigAPI()).clear();
-        merge(context);
+        internalMerge(context);
     }
 
     public static void merge (final ServletContext context) {
+
+        if (isInit.get()) {
+            internalMerge(context);
+        } else {
+
+            throw new RuntimeException("Could not merge dotCMS configuration, before has to be init");
+        }
+    }
+    public static void internalMerge (final ServletContext context) {
 
         ServletContextAware.class.cast(APILocator.getConfigAPI()).setServletContext(context);
         final MutableInt suggestedOrder = new MutableInt(0);
@@ -85,7 +103,7 @@ public class DotCMSConfigInitializer {
     private static Set<ConfigurationProvider> getInternalInitializers(final MutableInt suggestedOrder) {
 
         return treeSet(
-                new FilePropertiesConfigurationProvider().suggestOrder(suggestedOrder.getAndIncrement()),
+                new FilePropertiesConfigurationProvider(dotCMSConfigFiles).suggestOrder(suggestedOrder.getAndIncrement()),
                 new EnvConfigurationProvider().suggestOrder(suggestedOrder.getAndIncrement())
                 );
     } // getInternalInitializers.
@@ -111,27 +129,5 @@ public class DotCMSConfigInitializer {
         }
 
         return initializerSet;
-    }
-
-    public static File[] getFiles(String... filePaths) {
-
-        final File[] files = new File[filePaths.length];
-
-        for(int i = 0; i< filePaths.length; ++i) {
-
-            int index = i;
-            files[i] = Try.of(()-> getFile(filePaths[index])).getOrNull();
-        }
-
-        return files;
-    }
-
-    private static File getFile (final String propertyFile) {
-
-        final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        Logger.info(Config.class, "Initializing properties: " + propertyFile);
-
-        final URL fileUrl = classLoader.getResource(propertyFile);
-        return new File(fileUrl.getPath());
     }
 }
