@@ -130,25 +130,7 @@ public class CachedVanityUrl implements Serializable, Comparable<CachedVanityUrl
         final Tuple2<String,String> rewritten = processForward(uriIn);
         final String rewrite = rewritten._1;
         final String queryString = rewritten._2;
-
-
-        // if the vanity is a redirect
-        if (this.response==301 || this.response==302 ) {
-            response.setStatus(this.response);
-            response.setHeader("Location", rewrite);
-            return new VanityUrlResult(rewrite, queryString, true);
-        }
-        
-        // if the vanity is a proxy request
-        if (this.response==200 && UtilMethods.isSet(rewrite) && rewrite.contains("//")) {
-            
-            final String proxyUrl  = rewrite + (queryString!=null ? "?" + queryString : "");
-            
-            Try.run(()-> new CircuitBreakerUrl(proxyUrl).doOut(response)).onFailure(DotRuntimeException::new);
-            return new VanityUrlResult(rewrite, queryString, true);
-        }
-
-        return new VanityUrlResult(rewrite, queryString, false);
+        return new VanityUrlResult(rewrite, queryString, this.response);
     }
 
     @Override
