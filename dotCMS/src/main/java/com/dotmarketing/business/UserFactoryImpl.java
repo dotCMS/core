@@ -364,7 +364,7 @@ public class UserFactoryImpl implements UserFactory {
                 .addParam(user.getLoginIP()).addParam(user.getLastLoginDate()).addParam(user.getLastLoginIP())
                 .addParam(user.getFailedLoginAttempts()).addParam(user.getAgreedToTermsOfUse())
                 .addParam(user.getActive()).addParam(user.getDeleteInProgress()).addParam(user.getDeleteDate())
-                .addParam(user.getAdditionalInfo()!=null ? mapper.writeValueAsString(user.getAdditionalInfo()): "");
+                .addParam(user.getAdditionalInfo()!=null ? mapper.writeValueAsString(user.getAdditionalInfo()): "{}");
     }
 
     @Override
