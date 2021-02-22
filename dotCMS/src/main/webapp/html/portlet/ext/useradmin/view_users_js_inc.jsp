@@ -1197,31 +1197,33 @@
 	//User additional info
     function loadUserAdditionalInfo(user) {
 		 if(user!=null && user.additionalInfo!= null){
-            dijit.byId('userActive').attr('value', user.active?'on':false);
-            dijit.byId('prefix').attr('value', user.additionalInfo.prefix);
-            dijit.byId('suffix').attr('value', user.additionalInfo.suffix);
-            dijit.byId('title').attr('value', user.additionalInfo.title);
-            dijit.byId('company').attr('value', user.additionalInfo.company);
-            dijit.byId('website').attr('value', user.additionalInfo.website);
-
-            for (var i = 1; i <= additionalVariablesCount; i++) {
-                var value = user.additionalInfo['var' + i];
-                if(value) {
-                    dijit.byId('var' + i).attr('value', value);
-                }
-            }
-         }else{
-             dijit.byId('userActive').attr('value', true);
-             dijit.byId('prefix').attr('value', '');
-             dijit.byId('suffix').attr('value', '');
-             dijit.byId('title').attr('value', '');
-             dijit.byId('company').attr('value', '');
-             dijit.byId('website').attr('value', '');
+             dijit.byId('userActive').attr('value', user.active?'on':false);
+             dijit.byId('prefix').attr('value', user.additionalInfo.prefix?user.additionalInfo.prefix:'');
+             dijit.byId('suffix').attr('value', user.additionalInfo.suffix?user.additionalInfo.suffix:'');
+             dijit.byId('title').attr('value', user.additionalInfo.title?user.additionalInfo.title:'');
+             dijit.byId('company').attr('value', user.additionalInfo.company?user.additionalInfo.company:'');
+             dijit.byId('website').attr('value', user.additionalInfo.website?user.additionalInfo.website:'');
 
              for (var i = 1; i <= additionalVariablesCount; i++) {
-                dijit.byId('var' + i).attr('value', '');
-            }
-        }
+                 var value = user.additionalInfo['var' + i];
+                 if(value) {
+                     dijit.byId('var' + i).attr('value', value);
+                 } else {
+                     dijit.byId('var' + i).attr('value', '');
+                 }
+             }
+          }else{
+              dijit.byId('userActive').attr('value', true);
+              dijit.byId('prefix').attr('value', '');
+              dijit.byId('suffix').attr('value', '');
+              dijit.byId('title').attr('value', '');
+              dijit.byId('company').attr('value', '');
+              dijit.byId('website').attr('value', '');
+
+              for (var i = 1; i <= additionalVariablesCount; i++) {
+                 dijit.byId('var' + i).attr('value', '');
+             }
+         }
 	}
 
 	
