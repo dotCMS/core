@@ -771,7 +771,6 @@ public class DependencyBundlerTest {
         final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
         final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
 
-        Logger.info(DependencyManager.class, "Container " + containerWithoutContentType.getIdentifier() + " host" + host.getIdentifier());
         return list(
                 new TestData(containerWithoutContentType, list(host), filterDescriptorAllDependencies),
                 new TestData(containerWithoutContentType, list(), filterDescriptorNotDependencies),

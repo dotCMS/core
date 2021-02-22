@@ -339,13 +339,10 @@ public class DependencyManager {
 			}
 		}
 
-		Logger.info(DependencyManager.class, "config.getLuceneQueries() " + config.getLuceneQueries());
 		if(UtilMethods.isSet(config.getLuceneQueries())){
 			List<String> contentIds = PublisherUtil.getContentIds( config.getLuceneQueries());
-			Logger.info(DependencyManager.class, "contentIds before remove " + contentIds);
 			contentIds.removeIf(c->publisherFilter.doesExcludeQueryContainsContentletId(c));
 
-			Logger.info(DependencyManager.class, "contentIds after remove " + contentIds);
 			for(String id : contentIds){
 				final Identifier ident = APILocator.getIdentifierAPI().find(id);
 				final List<Contentlet> contentlets = APILocator.getContentletAPI().findAllVersions(ident, false, user, false);
@@ -1366,18 +1363,12 @@ public class DependencyManager {
 		private List<DependencyThread> threads;
 
 		void put(final String assetKey, final AssetTypes assetType) {
-			Logger.info(DependencyProcessor.class, () -> String.format("%s: Not started %s in %s %b",
-					Thread.currentThread().getName(), assetKey, assetType, !this.alreadyProcess(assetKey, assetType)));
-
 			if (!started) {
 				return;
 			}
 
-			Logger.info(DependencyProcessor.class, () -> String.format("%s: Should %s in %s %b",
-					Thread.currentThread().getName(), assetKey, assetType, !this.alreadyProcess(assetKey, assetType)));
-
-			if (!this.alreadyProcess(assetKey, assetType)) {
-				Logger.info(DependencyProcessor.class, () -> String.format("%s: Putting %s in %s",
+			if (assetsAlreadyProcessed != null && !this.alreadyProcess(assetKey, assetType)) {
+				Logger.debug(DependencyProcessor.class, () -> String.format("%s: Putting %s in %s",
 						Thread.currentThread().getName(), assetKey, assetType));
 
 				queue.add(new DependencyProcessorItem(assetKey, assetType));
@@ -1483,19 +1474,19 @@ public class DependencyManager {
 
 						if (dependencyProcessorItem == null) {
 							waitingForSomethingToProcess = true;
-							Logger.info(DependencyProcessor.class, () -> String.format("%s : Notifying to main thread",
+							Logger.debug(DependencyProcessor.class, () -> String.format("%s : Notifying to main thread",
 									Thread.currentThread().getName()));
 
 							notifyMainThread();
 
-							Logger.info(DependencyProcessor.class,
+							Logger.debug(DependencyProcessor.class,
 									() -> String.format("%s : Waiting for something to process", Thread.currentThread().getName()));
 							dependencyProcessorItem = queue.take();
 							waitingForSomethingToProcess = false;
 						}
 
 						final AssetTypes assetTypes = dependencyProcessorItem.assetTypes;
-						Logger.info(DependencyProcessor.class,
+						Logger.debug(DependencyProcessor.class,
 								String.format("%s : We have something to process - %s %s",
 										Thread.currentThread().getName(), dependencyProcessorItem.assetKey, assetTypes));
 
