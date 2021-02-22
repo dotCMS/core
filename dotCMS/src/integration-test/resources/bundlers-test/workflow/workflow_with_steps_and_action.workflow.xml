@@ -26,7 +26,6 @@
             <id>__action_id__</id>
             <name>__action_name__</name>
             <schemeId>__id__</schemeId>
-            <condition></condition>
             <nextStep>__step_id__</nextStep>
             <nextAssign>654b0931-1027-41f7-ad4d-173115ed8ec1</nextAssign>
             <icon>workflowIcon</icon>
