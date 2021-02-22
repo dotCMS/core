@@ -416,7 +416,7 @@ public class DateUtilTest extends UnitTestBase {
         if (timeZone.getRawOffset() != date1.getTimezoneOffset()) {
             assertNotEquals("If the date is not in the same time zone, hour should be diff",
                     11, date1.getHours());
-            assertEquals("If the date is not in the same time zone, hour should be diff",
+            assertEquals("If the date is in the same time zone, hour should be the same",
                     11, date1.toInstant().atZone(timeZone.toZoneId()).getHour());
 
             final GregorianCalendar calendar = new GregorianCalendar();
@@ -448,7 +448,7 @@ public class DateUtilTest extends UnitTestBase {
         if (timeZone.getRawOffset() != date1.getTimezoneOffset()) {
             assertNotEquals("If the date is not in the same time zone, hour should be diff",
                     11, date1.getHours());
-            assertEquals("If the date is not in the same time zone, hour should be diff",
+            assertEquals("If the date is in the same time zone, hour should be same",
                     11, date1.toInstant().atZone(timeZone.toZoneId()).getHour());
 
             final GregorianCalendar calendar = new GregorianCalendar();
