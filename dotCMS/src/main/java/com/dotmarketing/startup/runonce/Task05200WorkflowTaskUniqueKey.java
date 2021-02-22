@@ -112,14 +112,10 @@ public class Task05200WorkflowTaskUniqueKey implements StartupTask {
 
             }
 
-            try {
                 dotConnect.executeStatement(ADD_CONSTRAINT_SQL, connection);
-            } catch (SQLException e) {
-                throw new DotDataException(e.getMessage(), e);
-            }
 
         } catch (SQLException e) {
-            throw new DotDataException(e.getMessage(), e);
+            throw new DotDataException("Error occurred while applying wf constraint ", e.getMessage(), e);
         }
     }
 
