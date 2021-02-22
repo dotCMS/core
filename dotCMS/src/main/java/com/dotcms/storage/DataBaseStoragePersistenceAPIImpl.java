@@ -20,7 +20,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.util.Encryptor;
@@ -61,7 +60,6 @@ import org.apache.commons.lang3.mutable.MutableObject;
 public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI {
 
     private static final String DATABASE_STORAGE_JDBC_POOL_NAME = "DATABASE_STORAGE_JDBC_POOL_NAME";
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
      * custom external connection provider method in case we want to store stuff outside our db
@@ -301,7 +299,7 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
      * @param path {   @link String} object path
      */
     @Override
-    public boolean deleteObject(final String groupName, final String path) throws DotDataException {
+    public boolean deleteObjectAndReferences(final String groupName, final String path) throws DotDataException {
         final String groupNameLC = groupName.toLowerCase();
         final String pathLC = path.toLowerCase();
         return wrapInTransaction(() -> {
@@ -313,9 +311,12 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
                         .setSQL("SELECT hash FROM storage WHERE group_name = ? AND path = ? ")
                         .addParam(groupNameLC).addParam(pathLC).loadObjectResults(connection);
 
-                if (!results.isEmpty()) {
+                if (!results.isEmpty()){
                     final String hash = (String) results.get(0).get("hash");
-                    deleteObjects(ImmutableSet.of(hash), dotConnect, connection);
+                    //Verify this binary isn't referenced in other contexts before dropping it.
+                    //if(!hasFurtherReferences(hash, groupNameLC, pathLC, connection)){
+                       deleteObjects(ImmutableSet.of(hash), dotConnect, connection);
+                    //}
                 }
                 final int count = dotConnect
                         .executeUpdate(connection,
@@ -325,6 +326,25 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
             }
         });
     }
+
+    /**
+     *
+     * @param hash
+     * @param groupNameLC
+     * @param objectPathLC
+     * @param connection
+     * @return
+     * @throws DotDataException
+     */
+    private boolean hasFurtherReferences(final String hash, final String groupNameLC, final String objectPathLC, final Connection connection)
+            throws DotDataException {
+        final List<Map<String, Object>> result = new DotConnect()
+                .setSQL("SELECT count(*) as x FROM storage WHERE hash = ? AND (group_name <> ? AND path <> ?) ")
+                .addParam(hash).addParam(groupNameLC).addParam(objectPathLC)
+                .loadObjectResults(connection);
+        return ((Number) result.get(0).get("x")).intValue() > 0;
+    }
+
 
     /**
      * object reference removal
@@ -381,7 +401,7 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
         // 2. see if the sha-256 exists
         // 2.1 if exists only insert on the reference
         // 2.2 if does not exists, insert a new one
-        final Map<String, Serializable> metaData = processMetadata(file, extraMeta);
+        final Map<String, Serializable> metaData = rehashIfNeeded(file, extraMeta);
         final String fileHash = (String) metaData.get(SHA256_META_KEY.key());
 
         return wrapInTransaction(
@@ -423,16 +443,24 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
         return exists.getValue();
     }
 
-    private Map<String, Serializable> processMetadata(final File file,
+    /**
+     * if the param `hashObject` is set then the file it self is decomposed into a sha254 representation
+     * so the entries in storage_data table point to the metadata-file bytes and not to the binary owning the meta-data.
+     * @param file
+     * @param extraMeta
+     * @return
+     */
+    private Map<String, Serializable> rehashIfNeeded(final File file,
             final Map<String, Serializable> extraMeta) {
 
         if(UtilMethods.isSet(extraMeta)) {
             //This is here to correct a behavior where we were using the sha256 of the binary file to store the medata
             //So when we were recovering the Metadata file from db again we would end-up getting the binary
             //So this instructs the Api to regenerate the sha256 with the temp file which has the Metadata written to it.
-            if (Try.of(() -> (Boolean) extraMeta.get("hashObject")).getOrElse(false)) {
-                extraMeta.put(SHA256_META_KEY.key(),
-                        Try.of(() -> FileUtil.sha256toUnixHash(file)).getOrElse("unknown"));
+            if (Try.of(() -> (Boolean) extraMeta.get(HASH_OBJECT)).getOrElse(false)) {
+                //WE're saving the prior hash value (as hasRef) and replacing it with the new object hash.
+                extraMeta.put(HASH_REF, extraMeta.put(SHA256_META_KEY.key(),
+                        Try.of(() -> FileUtil.sha256toUnixHash(file)).getOrElse("unknown")));
             }
 
             if (extraMeta.containsKey(SHA256_META_KEY.key())) {
@@ -456,10 +484,11 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
             final Map<String, Serializable> extraMeta, final String objectHash, final Connection connection) throws DotDataException {
         final String groupNameLC = groupName.toLowerCase();
         final String pathLC = path.toLowerCase();
+        final String hashRef = (String)extraMeta.get(HASH_REF);
         try {
             new DotConnect().executeUpdate(connection,
-                    "INSERT INTO storage(hash, path, group_name) VALUES (?, ?, ?)",
-                    objectHash, pathLC, groupNameLC);
+                    "INSERT INTO storage(hash, path, group_name, hash_ref) VALUES (?, ?, ?, ?)",
+                    objectHash, pathLC, groupNameLC, hashRef);
             return true;
         } catch (DotDataException e) {
             Logger.error(DataBaseStoragePersistenceAPIImpl.class, e.getMessage(), e);
@@ -471,6 +500,7 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
             final Map<String, Serializable> extraMeta, final Connection connection ) {
         final String groupNameLC = groupName.toLowerCase();
         final String pathLC = path.toLowerCase();
+        final String hashRef = (String)extraMeta.get(HASH_REF);
         try (final FileByteSplitter fileSplitter = new FileByteSplitter(file)) {
 
             final HashBuilder objectHashBuilder = Encryptor.Hashing.sha256();
@@ -491,8 +521,8 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
 
             final String objectHash = objectHashBuilder.buildUnixHash();
             new DotConnect().executeUpdate(connection,
-                    "INSERT INTO storage(hash, path, group_name) VALUES (?, ?, ?)",
-                    objectHash, pathLC, groupNameLC);
+                    "INSERT INTO storage(hash, path, group_name, hash_ref) VALUES (?, ?, ?, ?)",
+                    objectHash, pathLC, groupNameLC, hashRef);
 
             int order = 1;
             for (final String chunkHash : chunkHashes) {

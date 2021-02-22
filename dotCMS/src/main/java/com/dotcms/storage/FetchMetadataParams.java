@@ -10,7 +10,7 @@ import java.util.function.Supplier;
  * it could be by cache or file system
  * @author jsanca
  */
-public class RequestMetadata {
+public class FetchMetadataParams {
 
     /**
      * Provides the key for the storage
@@ -37,7 +37,7 @@ public class RequestMetadata {
      * Builder based constructor
      * @param builder
      */
-    private RequestMetadata(final Builder builder) {
+    private FetchMetadataParams(final Builder builder) {
         this.cache                   = builder.cache;
         this.cacheKeySupplier        = builder.cacheKeySupplier;
         this.storageKey              = builder.storageKey;
@@ -115,8 +115,8 @@ public class RequestMetadata {
             return this;
         }
 
-        public RequestMetadata build() {
-            return new RequestMetadata(this);
+        public FetchMetadataParams build() {
+            return new FetchMetadataParams(this);
         }
     }
 }

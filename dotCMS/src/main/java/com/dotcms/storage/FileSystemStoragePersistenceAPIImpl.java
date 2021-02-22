@@ -143,7 +143,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
      * @param path   {   @link String} object path
      * @return
      */
-    public boolean deleteObject(final String groupName, final String path) throws DotDataException {
+    public boolean deleteObjectAndReferences(final String groupName, final String path) throws DotDataException {
         return new File(this.groups.get(groupName.toLowerCase()), path.toLowerCase()).delete();
     }
 

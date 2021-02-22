@@ -6,7 +6,6 @@ import com.dotmarketing.util.Config;
 import java.io.File;
 import java.io.Serializable;
 import java.util.Map;
-import java.util.function.Predicate;
 
 /**
  * This class is in charge of resolve File (on diff repositories), metadata, etc.
@@ -54,10 +53,10 @@ public interface FileStorageAPI {
 
     /**
      * Retrieve the metadata
-     * @param requestMetaData {@link RequestMetadata}
+     * @param requestMetaData {@link FetchMetadataParams}
      * @return  Map with the metadata
      */
-    Map<String, Serializable> retrieveMetaData(final RequestMetadata requestMetaData) throws DotDataException;
+    Map<String, Serializable> retrieveMetaData(final FetchMetadataParams requestMetaData) throws DotDataException;
 
 
     /**
@@ -66,7 +65,7 @@ public interface FileStorageAPI {
      * @return a set with the different keyPaths removed
      * @throws DotDataException
      */
-    boolean removeMetaData(final RequestMetadata requestMetaData) throws DotDataException;
+    boolean removeMetaData(final FetchMetadataParams requestMetaData) throws DotDataException;
 
 
     /**
@@ -75,7 +74,7 @@ public interface FileStorageAPI {
      * @param customAttributes
      * @throws DotDataException
      */
-    void putCustomMetadataAttributes(final RequestMetadata requestMetadata,
+    void putCustomMetadataAttributes(final FetchMetadataParams requestMetadata,
             final Map<String, Serializable> customAttributes) throws DotDataException;
 
 
@@ -85,7 +84,7 @@ public interface FileStorageAPI {
      * @param metadata
      * @throws DotDataException
      */
-    boolean setMetadata(RequestMetadata requestMetadata,
+    boolean setMetadata(FetchMetadataParams requestMetadata,
             final Map<String, Serializable> metadata) throws DotDataException;
 
 }

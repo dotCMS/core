@@ -1,5 +1,6 @@
 package com.dotcms.storage;
 
+import static com.dotcms.storage.StoragePersistenceAPI.HASH_OBJECT;
 import static com.dotcms.storage.model.BasicMetadataFields.*;
 
 import com.dotcms.storage.model.Metadata;
@@ -288,11 +289,12 @@ public class FileStorageAPIImpl implements FileStorageAPI {
     private void storeMetadata(final StorageKey storageKey, final StoragePersistenceAPI storage,
             final Map<String, Serializable> metadataMap) throws DotDataException {
 
-            final Map <String, Serializable> paramsMap = new HashMap<>(metadataMap);
-            paramsMap.put("hashObject", true);
+        final Map<String, Serializable> paramsMap = new HashMap<>(metadataMap);
+        paramsMap.put(HASH_OBJECT, true);
+
         storage.pushObject(storageKey.getGroup(), storageKey.getPath(),
-                    this.objectWriterDelegate, (Serializable) metadataMap, paramsMap);
-            Logger.info(this, "Metadata wrote on: " + storageKey.getPath());
+                this.objectWriterDelegate, (Serializable) metadataMap, paramsMap);
+        Logger.info(this, "Metadata wrote on: " + storageKey.getPath());
 
     }
 
@@ -329,7 +331,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
             try {
 
-                storage.deleteObject(storageKey.getGroup(), storageKey.getPath());
+                storage.deleteObjectAndReferences(storageKey.getGroup(), storageKey.getPath());
             } catch (Exception e) {
 
                 Logger.error(this.getClass(),
@@ -341,11 +343,11 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
     /**
      * {@inheritDoc}
-     * @param requestMetaData {@link RequestMetadata}
+     * @param requestMetaData {@link FetchMetadataParams}
      * @return
      */
     @Override
-    public Map<String, Serializable> retrieveMetaData(final RequestMetadata requestMetaData)
+    public Map<String, Serializable> retrieveMetaData(final FetchMetadataParams requestMetaData)
             throws DotDataException {
 
         if (requestMetaData.isCache()) {
@@ -380,19 +382,18 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
     /***
      * {@inheritDoc}
-     * @param requestMetaData {@link RequestMetadata}
+     * @param requestMetaData {@link FetchMetadataParams}
      * @return
      * @throws DotDataException
      */
-    public boolean removeMetaData(final RequestMetadata requestMetaData) throws DotDataException{
+    public boolean removeMetaData(final FetchMetadataParams requestMetaData) throws DotDataException{
         boolean deleteSucceeded = false;
         final StorageKey storageKey = requestMetaData.getStorageKey();
         final StoragePersistenceAPI storage = persistenceProvider
                 .getStorage(storageKey.getStorage());
         this.checkBucket(storageKey, storage);
-        //TODO: need to verify if there other references pointing to the object
         if (storage.existsObject(storageKey.getGroup(), storageKey.getPath())) {
-           deleteSucceeded = storage.deleteObject(storageKey.getGroup(), storageKey.getPath());
+           deleteSucceeded = storage.deleteObjectAndReferences(storageKey.getGroup(), storageKey.getPath());
         }
         return deleteSucceeded;
     }
@@ -406,7 +407,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
      */
     @Override
     public void putCustomMetadataAttributes(
-            final RequestMetadata requestMetadata,
+            final FetchMetadataParams requestMetadata,
             final Map<String, Serializable> customAttributes) throws DotDataException {
 
         final Map<String, Serializable> prefixedCustomAttributes = customAttributes.entrySet().stream()
@@ -448,7 +449,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
      * @param metadata
      * @throws DotDataException
      */
-    public boolean setMetadata(final RequestMetadata requestMetadata,
+    public boolean setMetadata(final FetchMetadataParams requestMetadata,
             final Map<String, Serializable> metadata) throws DotDataException {
         final StorageKey storageKey = requestMetadata.getStorageKey();
         final StoragePersistenceAPI storage = persistenceProvider

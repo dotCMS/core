@@ -2503,10 +2503,11 @@ create table storage_group (
 );
 
 create table storage (
-    path        varchar(255) not null,
+    path       varchar(255) not null,
     group_name varchar(255) not null,
     hash       varchar(64) not null,
     mod_date   timestamp without time zone NOT NULL DEFAULT CURRENT_DATE,
+    hash_ref   varchar(64),
     PRIMARY KEY (path, group_name),
     FOREIGN KEY (group_name) REFERENCES storage_group (group_name)
 );

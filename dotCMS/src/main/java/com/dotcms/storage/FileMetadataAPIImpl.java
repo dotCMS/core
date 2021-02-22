@@ -340,7 +340,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
         final String metadataPath       = this.getFileName(contentlet, fieldVariableName);
 
         Map<String, Serializable> metadataMap = fileStorageAPI.retrieveMetaData(
-                new RequestMetadata.Builder()
+                new FetchMetadataParams.Builder()
                         .projectionMapForCache(this::filterNonCacheableMetadataFields)
                         .cache(() -> contentlet.getInode() + StringPool.COLON + fieldVariableName)
                         .storageKey(new StorageKey.Builder().group(metadataBucketName)
@@ -404,7 +404,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
         final String metadataPath = this.getFileName(contentlet, fieldVariableName);
 
         Map<String, Serializable> metadataMap = fileStorageAPI.retrieveMetaData(
-                new RequestMetadata.Builder()
+                new FetchMetadataParams.Builder()
                         .cache(false)
                         .storageKey(
                                 new StorageKey.Builder().group(metadataBucketName)
@@ -513,7 +513,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
             for (final String basicMetaFieldName : fields) {
                 final String metadataPath = getFileName(contentlet, basicMetaFieldName);
                 if (this.fileStorageAPI.removeMetaData(
-                        new RequestMetadata.Builder()
+                        new FetchMetadataParams.Builder()
                                 .storageKey(new StorageKey.Builder().group(metadataBucketName)
                                         .path(metadataPath).storage(storageType).build()).build()
                 )) {
@@ -566,7 +566,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
 
            final String metadataPath = getFileName(contentlet, fieldName);
            try {
-                fileStorageAPI.putCustomMetadataAttributes((new RequestMetadata.Builder()
+                fileStorageAPI.putCustomMetadataAttributes((new FetchMetadataParams.Builder()
                         .cache(() -> contentlet.getInode() + StringPool.COLON + fieldName)
                         .projectionMapForCache(this::filterNonCacheableMetadataFields)
                         .storageKey(
@@ -609,7 +609,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
 
             final String sourceMetadataPath = getFileName(source, binaryFieldName);
             final Map<String, Serializable> metadataMap = fileStorageAPI.retrieveMetaData(
-                    new RequestMetadata.Builder()
+                    new FetchMetadataParams.Builder()
                             .cache(false)
                             .storageKey(
                                     new StorageKey.Builder().group(metadataBucketName)
@@ -622,7 +622,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
 
                 final String destMetadataPath = getFileName(destination, binaryFieldName);
 
-                fileStorageAPI.setMetadata(new RequestMetadata.Builder()
+                fileStorageAPI.setMetadata(new FetchMetadataParams.Builder()
                         .cache(() -> destination.getInode() + StringPool.COLON + binaryFieldName)
                         .projectionMapForCache(this::filterNonCacheableMetadataFields)
                         .storageKey(

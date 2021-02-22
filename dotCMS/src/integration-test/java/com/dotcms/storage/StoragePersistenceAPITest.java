@@ -6,6 +6,7 @@ import static junit.framework.Assert.assertNotSame;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertNull;
 import static junit.framework.TestCase.assertTrue;
 
 import com.dotcms.datagen.TestDataUtils.TestFile;
@@ -181,7 +182,7 @@ public class StoragePersistenceAPITest {
     public void Test_Attempt_Push_Same_Binary_Twice(final TestCase testCase)
             throws DotDataException {
         final StoragePersistenceAPI storage = persistenceProvider.getStorage(testCase.storageType);
-        storage.deleteObject(testCase.groupName, testCase.path);
+        storage.deleteObjectAndReferences(testCase.groupName, testCase.path);
         assertTrue(storage.createGroup(testCase.groupName));
         final Object object = storage
                 .pushFile(testCase.groupName, testCase.path, testCase.file, ImmutableMap.of());
@@ -276,6 +277,33 @@ public class StoragePersistenceAPITest {
                      Encryptor.Hashing.sha256().append(Files.readAllBytes(pullFile.toPath())).buildUnixHash());
 
     }
+
+    @Test
+    @UseDataProvider("getLargeFileTestCases")
+    public void Test_Push_Large_File_Then_Delete_Object(final TestCase testCase)
+            throws IOException, NoSuchAlgorithmException, DotDataException {
+
+        final StoragePersistenceAPI storage = persistenceProvider.getStorage(testCase.storageType);
+        if (!storage.existsGroup(testCase.groupName)) {
+            assertTrue(storage.createGroup(testCase.groupName));
+        }
+
+        storage.deleteObjectAndReferences(testCase.groupName, testCase.path);
+
+        storage.pushFile(testCase.groupName, testCase.path, testCase.file, ImmutableMap.of());
+
+        storage.pushFile(testCase.groupName, testCase.path + "-makes-path-different", testCase.file, ImmutableMap.of());
+
+        //storage.deleteObjectAndReferences()
+
+        final File pullFile = storage.pullFile(testCase.groupName, testCase.path);
+        assertNull(pullFile);
+
+
+
+
+    }
+
 
     private static final Random random = new Random();
 

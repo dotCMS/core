@@ -76,7 +76,7 @@ public class FileMetadataAPITest {
      * Expected Results: we should get full and basic md for every type. Basic metadata must be included within the fm
      * @throws IOException
      */
-    
+
     @Test
     @UseDataProvider("getFileAssetMetadataTestCases")
     public void Test_Generate_Metadata_From_FileAssets(final TestCase testCase) throws IOException, DotDataException {
@@ -243,7 +243,7 @@ public class FileMetadataAPITest {
      * @throws IOException
      */
 
-    
+
     @Test
     @UseDataProvider("getStorageType")
     public void Test_Generate_Metadata_From_ContentType_With_Multiple_Binary_Fields(final StorageType storageType) throws IOException, DotDataException {
@@ -660,7 +660,7 @@ public class FileMetadataAPITest {
         }
     }
 
-    
+
     @Test
     @UseDataProvider("getStorageType")
     public void Test_Copy_Metadata(final StorageType storageType)

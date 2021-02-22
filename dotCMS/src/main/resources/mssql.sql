@@ -2708,6 +2708,7 @@ create table storage (
     group_name varchar(255) not null,
     hash       varchar(64) not null,
     mod_date   datetime  NOT NULL DEFAULT GETDATE(),
+    hash_ref   varchar(64),
     PRIMARY KEY (path, group_name),
     FOREIGN KEY (group_name) REFERENCES storage_group (group_name)
 );
