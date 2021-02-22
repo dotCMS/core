@@ -2,7 +2,13 @@ package com.dotmarketing.factories;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 
+import com.dotcms.api.system.event.message.MessageSeverity;
+import com.dotcms.api.system.event.message.MessageType;
+import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.content.elasticsearch.business.ESReadOnlyMonitor;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.rendering.velocity.services.PageLoader;
@@ -12,11 +18,9 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.WebAsset;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Treeable;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.menubuilders.RefreshMenus;
@@ -39,9 +43,14 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 
@@ -52,6 +61,16 @@ import com.liferay.portal.util.PortalUtil;
 public class PublishFactory {	
 
 	private static PermissionAPI permissionAPI  = APILocator.getPermissionAPI();
+	private static SystemMessageEventUtil systemMessageEventUtil;
+
+	static {
+		systemMessageEventUtil = SystemMessageEventUtil.getInstance();
+	}
+
+	@VisibleForTesting
+	public static void setSystemMessageEventUtil(final SystemMessageEventUtil systemMessageEventUtil) {
+		PublishFactory.systemMessageEventUtil = systemMessageEventUtil;
+	}
 
 	/**
 	 * @param permissionAPIRef the permissionAPI to set
@@ -313,21 +332,29 @@ public class PublishFactory {
         Logger.debug(PublishFactory.class, "*****I'm an HTML Page -- Publishing");
 
         ContentletAPI contentletAPI = APILocator.getContentletAPI();
+		final List<Contentlet> futureContentlets = new ArrayList<>();
+		final List<Contentlet> expiredContentlets = new ArrayList<>();
 
         //Publishing related pieces of content
         for ( Object asset : relatedNotPublished ) {
             if ( asset instanceof Contentlet ) {
                 Logger.debug( PublishFactory.class, "*****I'm an HTML Page -- Publishing my Contentlet Child=" + ((Contentlet) asset).getInode() );
                 try {
-                    Contentlet contentlet = (Contentlet) asset;
-
                     contentletAPI.publish( (Contentlet) asset, user, false );
                     new ContentletLoader().invalidate(asset);
 
                 } catch ( DotSecurityException e ) {
                     //User has no permission to publish the content in the page so we just skip it
                     Logger.debug( PublishFactory.class, "publish html page: User has no permission to publish the content inode = " + ((Contentlet) asset).getInode() + " in the page, skipping it." );
-                }
+                } catch (DotRuntimeException e) {
+					final Throwable rootCause = ExceptionUtil.getRootCause(e);
+
+					if (FutureContentletPublishStateException.class.equals(rootCause.getClass())) {
+						futureContentlets.add(((FutureContentletPublishStateException) rootCause).getContentlet());
+					} else if (ExpiredContentletPublishStateException.class.equals(rootCause.getClass())) {
+						expiredContentlets.add(((ExpiredContentletPublishStateException) rootCause).getContentlet());
+					}
+				}
             } else if ( asset instanceof Template ) {
                 Logger.debug( PublishFactory.class, "*****I'm an HTML Page -- Publishing Template =" + ((Template) asset).getInode() );
                 publishAsset( (Template) asset, user, respectFrontendRoles, false );
@@ -341,6 +368,22 @@ public class PublishFactory {
 
         //Remove from block cache.
         CacheLocator.getBlockPageCache().remove(htmlPage);
+
+        if (!futureContentlets.isEmpty()) {
+			final String listContentlets = futureContentlets.stream()
+					.map(contentlet -> String.format("<li>%s</li>", contentlet.getTitle()))
+					.collect(Collectors.joining());
+
+        	sendMessage("publish.page.future.fields.error", String.format("<ul>%s</ul>", listContentlets));
+		}
+
+		if (!expiredContentlets.isEmpty()) {
+			final String listContentlets = expiredContentlets.stream()
+					.map(contentlet -> String.format("<li>%s</li>", contentlet.getTitle()))
+					.collect(Collectors.joining());
+
+			sendMessage("publish.page.expired.fields.error", String.format("<ul>%s</ul>", listContentlets));
+		}
 
         return true;
     }
@@ -529,4 +572,26 @@ public class PublishFactory {
         return relatedAssets;
     }
 
+	private static void sendMessage(final String messageKey, String... arguments) {
+		try {
+
+			final String  message = LanguageUtil.get(messageKey, arguments);
+
+			final Role adminRole = APILocator.getRoleAPI().loadCMSAdminRole();
+			final List<String> usersId = APILocator.getRoleAPI().findUsersForRole(adminRole)
+					.stream()
+					.map(user -> user.getUserId())
+					.collect(Collectors.toList());
+
+			final SystemMessageBuilder messageBuilder = new SystemMessageBuilder()
+					.setMessage(message)
+					.setSeverity(MessageSeverity.ERROR)
+					.setType(MessageType.SIMPLE_MESSAGE)
+					.setLife(TimeUnit.SECONDS.toMillis(5));
+
+			systemMessageEventUtil.pushMessage(messageBuilder.create(), usersId);
+		} catch (final  LanguageException | DotDataException | DotSecurityException e) {
+			Logger.warn(ESReadOnlyMonitor.class, () -> e.getMessage());
+		}
+	}
 }
