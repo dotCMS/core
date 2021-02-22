@@ -70,13 +70,14 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
             final String orderBy, final OrderDirection direction,
             final Map<String, Object> extraParams) throws PaginationException {
         try {
-            //get all sites. Even though this comes from the index. it is permissions driven.
+            //get all sites. system_host is lower cased here.
             final List<String> allSitesIdentifiers = getHostIdentifiers(user, filter);
 
             final long totalCount = allSitesIdentifiers.size();
 
-            //This values are fed from the outside through the serviceIntegrationAPI.
-            final Set<String> sitesWithConfigurations = configuredSitesSupplier.get();
+            //This values are fed from the outside through the appsAPI.
+            final Set<String> sitesWithConfigurations = configuredSitesSupplier.get().stream()
+                    .map(String::toLowerCase).collect(Collectors.toSet());
             final LinkedHashSet<String> allSites = new LinkedHashSet<>(allSitesIdentifiers);
 
             //By doing this we remove from the configured-sites collection whatever sites didn't match the search.
@@ -158,7 +159,6 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
      * So it is very performant.
      * The results are returned by default in order Ascendant order by site name.
      * This is very important cause any comparator applied must respect that.
-     * The identifier SYSTEM_HOST is returned in lower case by the index. If that ever changes this will be broken.
      * @param user logged-in user
      * @param filter a string to match against the title.
      * @return
@@ -168,7 +168,7 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
     private List<String> getHostIdentifiers(final User user, final String filter)
             throws DotDataException, DotSecurityException {
         Stream<Host> hostStream = Stream.concat(
-                Stream.of(APILocator.systemHost()),
+                Stream.of(hostAPI.findSystemHost()),
                 hostAPI.findAllFromCache(user, false).stream()
                         .filter(host -> Try.of(() -> !host.isArchived()).getOrElse(false))
                 );
@@ -179,8 +179,9 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
         }
         return hostStream.filter(host -> Try.of(() -> permissionAPI
                 .doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user))
-                .getOrElse(false)).sorted(Comparator.comparing(Host::getHostname)).map(
-                Contentlet::getIdentifier).filter(Objects::nonNull).collect(Collectors.toList());
+                .getOrElse(false)).sorted(Comparator.comparing(Host::getHostname))
+                .map(Contentlet::getIdentifier).filter(Objects::nonNull).map(String::toLowerCase)
+                .collect(Collectors.toList());
 
     }
 

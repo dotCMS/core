@@ -9,7 +9,7 @@
 
 
 <%
-	boolean hideBringBack = (boolean)request.getAttribute("hideBringBack");
+	boolean hideBringBack = request.getAttribute("hideBringBack") !=null ? (boolean)request.getAttribute("hideBringBack") : false;
 	Contentlet cver = null;
 	boolean isContentlet = false;
  	Versionable v = (Versionable)request.getAttribute(com.dotmarketing.util.WebKeys.VERSIONS_INODE_EDIT);

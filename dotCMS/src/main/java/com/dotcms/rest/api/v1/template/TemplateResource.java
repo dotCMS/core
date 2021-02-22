@@ -39,6 +39,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 
@@ -159,8 +160,9 @@ public class TemplateResource {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
         final User user = initData.getUser();
+        final Lazy<String> lazyCurrentHost = Lazy.of(() -> Try.of(() -> Host.class.cast(httpRequest.getSession().getAttribute(WebKeys.CURRENT_HOST)).getIdentifier()).getOrNull());
         final Optional<String> checkedHostId = Optional.ofNullable(Try.of(()-> APILocator.getHostAPI()
-                .find(hostId, user, false).getIdentifier()).getOrNull());
+                .find(hostId, user, false).getIdentifier()).getOrElse(lazyCurrentHost.get()));
 
         Logger.debug(this, ()-> "Getting the List of templates");
 
