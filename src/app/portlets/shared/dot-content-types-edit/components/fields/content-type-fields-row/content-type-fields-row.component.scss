@@ -1,6 +1,7 @@
 @use "variables" as *;
 
 :host {
+    border-radius: $border-radius;
     display: block;
     margin-bottom: $spacing-3;
     padding: 0 $spacing-3 $spacing-3;
