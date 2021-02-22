@@ -193,7 +193,7 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.xpp3-min', version:'1.1.4c_2'
     compile group: 'com.dotcms.lib', name: 'dot.slf4j-api', version:'1.7.12_2'
     compile group: 'com.dotcms.lib', name: 'dot.slf4j-jcl', version:'1.7.12_2'
-    compile (group: 'xerces', name: 'xercesImpl', version: '2.11.0'){
+    compile (group: 'xerces', name: 'xercesImpl', version: '2.12.0'){
         transitive = false
         exclude(module: 'javax.xml.parsers')
     }
