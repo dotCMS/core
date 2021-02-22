@@ -69,8 +69,10 @@ public class WorkflowSchemeAssertionChecker implements AssertionChecker<Workflow
                 "<modDate class=\"sql-timestamp\">.*</modDate>",
                 "<creationDate>.*</creationDate>",
                 "<modDate class=\"sql-timestamp\">.*</modDate>",
+                "<modDate>.*</modDate>",
                 "<nextAssign>.*</nextAssign>",
-                "<com.dotmarketing.portlets.workflows.model.WorkflowState>.*</com.dotmarketing.portlets.workflows.model.WorkflowState>"
+                "<com.dotmarketing.portlets.workflows.model.WorkflowState>.*</com.dotmarketing.portlets.workflows.model.WorkflowState>",
+                "<condition></condition>"
         );
     }
 
