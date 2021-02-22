@@ -3,7 +3,9 @@ package com.dotcms.rest.api.v1.contenttype;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.FieldDiffCommand;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
@@ -18,6 +20,7 @@ import com.dotcms.rest.annotation.PermissionsUtil;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.diff.DiffResult;
 import com.dotcms.util.pagination.ContentTypesPaginator;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.workflow.form.WorkflowSystemActionForm;
@@ -246,6 +249,11 @@ public class ContentTypeResource implements Serializable {
 		final List<SystemActionWorkflowActionMapping> systemActionWorkflowActionMappings = new ArrayList<>();
 		final ContentType contentTypeSaved = contentTypeAPI.save(contentType);
 		this.workflowHelper.saveSchemesByContentType(contentTypeSaved.id(), user, workflowsIds);
+
+		if (!isNew) {
+			this.handleFields(contentType, user, contentTypeAPI);
+		}
+
 		if (UtilMethods.isSet(systemActionMappings)) {
 
 			for (final Tuple2<WorkflowAPI.SystemAction,String> tuple2 : systemActionMappings) {
@@ -280,6 +288,37 @@ public class ContentTypeResource implements Serializable {
 		}
 
 		return Tuple.of(contentTypeSaved, systemActionWorkflowActionMappings);
+	}
+
+	/**
+	 * We need to handle in this way b/c when the content type exists the fields are not being updated
+	 * @param newContentType
+	 * @param user
+	 * @param contentTypeAPI
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	private void handleFields(final ContentType newContentType, final User user, final ContentTypeAPI contentTypeAPI) throws DotDataException, DotSecurityException {
+
+		final ContentType currentContentType = contentTypeAPI.find(newContentType.variable());
+
+		final DiffResult<String, Field> diffResult = new FieldDiffCommand().applyDiff(currentContentType.fieldMap(), newContentType.fieldMap());
+
+		if (!diffResult.getToDelete().isEmpty()) {
+
+			APILocator.getContentTypeFieldAPI().deleteFields(diffResult.getToDelete().
+					values().stream().map(Field::id).collect(Collectors.toList()), user);
+		}
+
+		if (!diffResult.getToAdd().isEmpty()) {
+
+			APILocator.getContentTypeFieldAPI().saveFields(new ArrayList<>(diffResult.getToAdd().values()), user);
+		}
+
+		if (!diffResult.getToUpdate().isEmpty()) {
+
+			APILocator.getContentTypeFieldAPI().saveFields(new ArrayList<>(diffResult.getToAdd().values()), user);
+		}
 	}
 
 	@DELETE
