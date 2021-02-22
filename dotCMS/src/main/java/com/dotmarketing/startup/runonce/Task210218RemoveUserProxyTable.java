@@ -75,7 +75,7 @@ public class Task210218RemoveUserProxyTable implements StartupTask {
     public boolean forceRun() {
         try {
             return new DotDatabaseMetaData().tableExists(
-                    DbConnectionFactory.getConnection(), "USER_PROXY");
+                    DbConnectionFactory.getConnection(), DbConnectionFactory.isOracle()? "USER_PROXY": "user_proxy");
         } catch (SQLException e) {
 
             return Boolean.FALSE;

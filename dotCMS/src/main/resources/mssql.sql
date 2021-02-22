@@ -179,7 +179,7 @@ create table User_ (
     active_ bit,
     delete_in_progress TINYINT DEFAULT 0,
     delete_date DATETIME NULL,
-    additional_info VARBINARY(MAX) NULL
+    additional_info NVARCHAR(MAX) NULL
 );
 
 create table UserTracker (
