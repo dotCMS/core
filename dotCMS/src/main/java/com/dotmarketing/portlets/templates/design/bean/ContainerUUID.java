@@ -16,7 +16,7 @@ public class ContainerUUID implements Serializable{
     public static final String UUID_DEFAULT_VALUE = "-1";
 
     private final String identifier;
-    private String uuid;
+    private final String uuid;
 
 
     public ContainerUUID(final @JsonProperty("identifier") String containerIdentifier,
@@ -41,9 +41,5 @@ public class ContainerUUID implements Serializable{
         } catch (JsonProcessingException e) {
             return super.toString();
         }
-    }
-
-    public void setUuid(final String uuid){
-        this.uuid = uuid;
     }
 }

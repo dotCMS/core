@@ -2,8 +2,6 @@ package com.dotcms.rest.api.v1.template;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.HashMap;
-import java.util.Map;
 
 public class TemplateLayoutView {
 
@@ -51,38 +49,5 @@ public class TemplateLayoutView {
 
     public SidebarView getSidebar() {
         return sidebar;
-    }
-
-    /**
-     * This method iterates over each container in the template and assign a UUID according the
-     * amount of times the container is present in the template.
-     * This is for the users can have 2 diff templates with diff design but the same containers
-     * so they can change the template without losing the content.
-     *
-     * TemplateLayoutView with the updated UUID for each container.
-     */
-    protected void updateUUIDOfContainers(){
-        final Map<String,Integer> UUIDByContainermap = new HashMap<>();
-        this.getBody().getRows().forEach(
-                row -> row.getColumns().stream().forEach(
-                        column -> column.getContainers().stream().forEach(
-                                containerUUID -> {
-                                    final String containerID = containerUUID.getIdentifier();
-                                    int value = UUIDByContainermap.getOrDefault(containerID,0);
-                                    UUIDByContainermap.put(containerID,++value);
-                                    containerUUID.setUuid(UUIDByContainermap.get(containerID).toString());
-                                }
-                        )));
-
-        if(this.getSidebar()!=null) {
-            this.getSidebar().getContainers().stream().forEach(
-                    containerUUID -> {
-                        final String containerID = containerUUID.getIdentifier();
-                        int value = UUIDByContainermap.getOrDefault(containerID, 0);
-                        UUIDByContainermap.put(containerID, ++value);
-                        containerUUID.setUuid(UUIDByContainermap.get(containerID).toString());
-                    }
-            );
-        }
     }
 }
