@@ -44,6 +44,7 @@
                 [formFieldData]="currentField"
                 (saveField)="saveFieldsHandler($event)"
                 (valid)="setDialogOkButtonState($event)"
+                [contentType]="contentType"
                 #fieldPropertiesForm
             >
             </dot-content-type-fields-properties-form>

@@ -70,6 +70,7 @@ import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { RadioButtonModule } from 'primeng/radiobutton';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { TabViewModule } from 'primeng/tabview';
+import { DotRelationshipTreeModule } from '@components/dot-relationship-tree/dot-relationship-tree.module';
 import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
 
 @NgModule({
@@ -147,6 +148,7 @@ import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot
         SiteSelectorFieldModule,
         SplitButtonModule,
         TabViewModule,
+        DotRelationshipTreeModule,
         DotPortletBoxModule
     ],
     providers: [
