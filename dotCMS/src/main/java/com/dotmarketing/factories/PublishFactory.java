@@ -332,8 +332,8 @@ public class PublishFactory {
         Logger.debug(PublishFactory.class, "*****I'm an HTML Page -- Publishing");
 
         ContentletAPI contentletAPI = APILocator.getContentletAPI();
-		final List<Contentlet> futureContentlets = new ArrayList<>();
-		final List<Contentlet> expiredContentlets = new ArrayList<>();
+		final Set<Contentlet> futureContentlets = new HashSet<>();
+		final Set<Contentlet> expiredContentlets = new HashSet<>();
 
         //Publishing related pieces of content
         for ( Object asset : relatedNotPublished ) {
