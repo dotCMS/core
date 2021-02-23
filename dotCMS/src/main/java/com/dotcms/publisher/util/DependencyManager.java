@@ -1440,7 +1440,7 @@ public class DependencyManager {
 
 		private boolean allThreadWaiting() {
 			for (final DependencyThread thread : threads) {
-				if (!thread.waitingForSomethingToProcess) {
+				if (!thread.getWaitingState()) {
 					return false;
 				}
 			}
@@ -1473,7 +1473,7 @@ public class DependencyManager {
 						DependencyProcessorItem dependencyProcessorItem = queue.poll();
 
 						if (dependencyProcessorItem == null) {
-							waitingForSomethingToProcess = true;
+							setWaitingState(true);
 							Logger.debug(DependencyProcessor.class, () -> String.format("%s : Notifying to main thread",
 									Thread.currentThread().getName()));
 
@@ -1482,7 +1482,7 @@ public class DependencyManager {
 							Logger.debug(DependencyProcessor.class,
 									() -> String.format("%s : Waiting for something to process", Thread.currentThread().getName()));
 							dependencyProcessorItem = queue.take();
-							waitingForSomethingToProcess = false;
+							setWaitingState(false);
 						}
 
 						final AssetTypes assetTypes = dependencyProcessorItem.assetTypes;
@@ -1504,6 +1504,14 @@ public class DependencyManager {
 						Logger.error(DependencyThread.class, e);
 					}
 				}
+			}
+
+			private synchronized void setWaitingState(boolean value) {
+				waitingForSomethingToProcess = value;
+			}
+
+			private synchronized boolean getWaitingState() {
+				return waitingForSomethingToProcess;
 			}
 		}
 	}
