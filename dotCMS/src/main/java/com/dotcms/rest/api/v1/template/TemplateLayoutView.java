@@ -59,9 +59,9 @@ public class TemplateLayoutView {
      * This is for the users can have 2 diff templates with diff design but the same containers
      * so they can change the template without losing the content.
      *
-     * @return TemplateLayoutView with the updated UUID for each container.
+     * TemplateLayoutView with the updated UUID for each container.
      */
-    protected TemplateLayoutView updateUUIDOfContainers(){
+    protected void updateUUIDOfContainers(){
         final Map<String,Integer> UUIDByContainermap = new HashMap<>();
         this.getBody().getRows().forEach(
                 row -> row.getColumns().stream().forEach(
@@ -84,7 +84,5 @@ public class TemplateLayoutView {
                     }
             );
         }
-
-        return this;
     }
 }
