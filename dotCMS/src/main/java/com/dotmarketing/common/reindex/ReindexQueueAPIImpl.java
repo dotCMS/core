@@ -7,10 +7,12 @@ import java.sql.Connection;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotConcurrentFactory.SubmitterConfigBuilder;
 import com.dotcms.content.elasticsearch.business.ESReadOnlyMonitor;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Host;
@@ -34,7 +36,7 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
 
     private final ReindexQueueFactory reindexQueueFactory;
     private final ESReadOnlyMonitor esReadOnlyMonitor;
-
+    private final ExecutorService executorService;
     public ReindexQueueAPIImpl() {
         this(FactoryLocator.getReindexQueueFactory(), ESReadOnlyMonitor.getInstance());
     }
@@ -43,6 +45,7 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
     public ReindexQueueAPIImpl(final ReindexQueueFactory reindexQueueFactory, final ESReadOnlyMonitor esReadOnlyMonitor) {
         this.reindexQueueFactory = reindexQueueFactory;
         this.esReadOnlyMonitor = esReadOnlyMonitor;
+        this.executorService = Executors.newSingleThreadExecutor();
     }
 
     @Override
@@ -240,17 +243,27 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
         reindexQueueFactory.deleteReindexEntry(identiferToDelete);
     }
 
+
+    
+    
     @Override
     @WrapInTransaction
     public void markAsFailed(final ReindexEntry idx, final String cause) throws DotDataException {
         reindexQueueFactory.markAsFailed(idx, UtilMethods.shortenString(cause, 300));
 
-        DotConcurrentFactory.getInstance()
-                .getSubmitter()
-                .submit(() -> {
-                    final String message = "Reindex failed for :" + idx + " because " + cause;
-                    esReadOnlyMonitor.start(message);
-                });
+
+        executorService.execute(() -> {
+            final String message = "Reindex failed for :" + idx + " because " + cause;
+            try {
+                esReadOnlyMonitor.start(message);
+            } catch (Throwable throwable) {
+                Logger.warnAndDebug(this.getClass(), throwable.getMessage(), throwable);
+
+            }
+
+        });
+
+
     }
 
 }
