@@ -1,0 +1,10 @@
+<com.dotcms.publisher.pusher.wrapper.LanguageWrapper>
+    <language>
+        <id>__id__</id>
+        <languageCode>__code__</languageCode>
+        <countryCode>__country_code__</countryCode>
+        <language>__language__</language>
+        <country>__country__</country>
+    </language>
+    <operation>PUBLISH</operation>
+</com.dotcms.publisher.pusher.wrapper.LanguageWrapper>

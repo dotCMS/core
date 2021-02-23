@@ -46,6 +46,10 @@ public enum PageAPIGraphQLFieldsProvider implements GraphQLFieldsProvider {
                         .type(GraphQLBoolean)
                         .defaultValue(false)
                         .build())
+                .argument(GraphQLArgument.newArgument()
+                        .name("site")
+                        .type(GraphQLString)
+                        .build())
                 .type(PageAPIGraphQLTypesProvider.INSTANCE.getTypesMap().get(DOT_PAGE))
                 .dataFetcher(new PageDataFetcher()).build());
     }
