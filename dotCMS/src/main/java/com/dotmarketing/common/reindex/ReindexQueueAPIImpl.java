@@ -251,17 +251,17 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
     public void markAsFailed(final ReindexEntry idx, final String cause) throws DotDataException {
         reindexQueueFactory.markAsFailed(idx, UtilMethods.shortenString(cause, 300));
 
-
-        executorService.execute(() -> {
-            final String message = "Reindex failed for :" + idx + " because " + cause;
-            try {
-                esReadOnlyMonitor.start(message);
-            } catch (Throwable throwable) {
-                Logger.warnAndDebug(this.getClass(), throwable.getMessage(), throwable);
-
-            }
-
-        });
+        if(!esReadOnlyMonitor.isIndexOrClusterReadOnly()) {
+            executorService.execute(() -> {
+                final String message = "Reindex failed for :" + idx + " because " + cause;
+                try {
+                    esReadOnlyMonitor.start(message);
+                } catch (Throwable throwable) {
+                    Logger.warnAndDebug(this.getClass(), throwable.getMessage(), throwable);
+    
+                }
+            });
+        }
 
 
     }

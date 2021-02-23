@@ -84,15 +84,15 @@ public class ESReadOnlyMonitor {
      * @return false if a ESReadOnlyMonitor was started before
      */
     public boolean start(){
-
-        if (timeToWaitAfterWriteModeSet == TIME_TO_WAIT_AFTER_WRITE_MODE_SET_NOTY_VALUE) {
-            loadTimeToWaitAfterWriteModeSet();
-        }
-
-        final boolean clusterInReadOnlyMode = ElasticsearchUtil.isClusterInReadOnlyMode();
-        final boolean eitherLiveOrWorkingIndicesReadOnly = ElasticsearchUtil.isEitherLiveOrWorkingIndicesReadOnly();
-
         if (started.compareAndSet(false, true)) {
+            if (timeToWaitAfterWriteModeSet == TIME_TO_WAIT_AFTER_WRITE_MODE_SET_NOTY_VALUE) {
+                loadTimeToWaitAfterWriteModeSet();
+            }
+            
+            final boolean clusterInReadOnlyMode = ElasticsearchUtil.isClusterInReadOnlyMode();
+            final boolean eitherLiveOrWorkingIndicesReadOnly = ElasticsearchUtil.isEitherLiveOrWorkingIndicesReadOnly();
+
+        
             if (clusterInReadOnlyMode) {
                 this.readOnlyMessageKey = "es.cluster.read.only.message";
                 sendReadOnlyMessage();
@@ -106,9 +106,10 @@ public class ESReadOnlyMonitor {
             }
 
             return this.started.get();
-        } else {
-            return false;
-        }
+        } 
+        
+        return false;
+        
     }
 
     private void loadTimeToWaitAfterWriteModeSet() {
