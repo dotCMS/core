@@ -313,10 +313,46 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
 
                 if (!results.isEmpty()){
                     final String hash = (String) results.get(0).get("hash");
-                    //Verify this binary isn't referenced in other contexts before dropping it.
-                    //if(!hasFurtherReferences(hash, groupNameLC, pathLC, connection)){
-                       deleteObjects(ImmutableSet.of(hash), dotConnect, connection);
-                    //}
+                    deleteObjects(ImmutableSet.of(hash), dotConnect, connection);
+                }
+                final int count = dotConnect
+                        .executeUpdate(connection,
+                                "DELETE FROM storage WHERE group_name = ? AND path = ?",
+                                groupNameLC, pathLC);
+                return count > 0;
+            }
+        });
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @param groupName
+     * @param path
+     * @return
+     * @throws DotDataException
+     */
+    @Override
+    public boolean deleteObjectReference(final String groupName, final String path) throws DotDataException {
+        final String groupNameLC = groupName.toLowerCase();
+        final String pathLC = path.toLowerCase();
+        return wrapInTransaction(() -> {
+            try (Connection connection = getConnection()) {
+
+                final DotConnect dotConnect = new DotConnect();
+
+                final List<Map<String, Object>> results = dotConnect
+                        .setSQL("SELECT hash FROM storage WHERE group_name = ? AND path = ? ")
+                        .addParam(groupNameLC).addParam(pathLC).loadObjectResults(connection);
+
+                if (!results.isEmpty()){
+                    final String hash = (String) results.get(0).get("hash");
+
+                    //This basically tells me if there other entries besides this ones
+                    // pointing to the stored data. If so we do not delete them.
+                    if(!hasFurtherReferences(hash, groupNameLC, pathLC, connection)){
+                        deleteObjects(ImmutableSet.of(hash), dotConnect, connection);
+                    }
                 }
                 final int count = dotConnect
                         .executeUpdate(connection,
@@ -339,7 +375,7 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
     private boolean hasFurtherReferences(final String hash, final String groupNameLC, final String objectPathLC, final Connection connection)
             throws DotDataException {
         final List<Map<String, Object>> result = new DotConnect()
-                .setSQL("SELECT count(*) as x FROM storage WHERE hash = ? AND (group_name <> ? AND path <> ?) ")
+                .setSQL("SELECT count(*) as x FROM storage WHERE hash = ? AND (group_name <> ? OR path <> ?) ")
                 .addParam(hash).addParam(groupNameLC).addParam(objectPathLC)
                 .loadObjectResults(connection);
         return ((Number) result.get(0).get("x")).intValue() > 0;
@@ -349,22 +385,29 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
     /**
      * object reference removal
      *
-     * @param hashSet object hash id
+     * @param storageHashSet object hash id
      * @param dotConnect DotConnect
      * @param connection external connection
      * @return count of all removed objects
      */
-    private int deleteObjects(final Set<String> hashSet, final DotConnect dotConnect,
+    private int deleteObjects(final Set<String> storageHashSet, final DotConnect dotConnect,
             final Connection connection)
             throws DotDataException {
         int count = 0;
-        for (final String hash : hashSet) {
-            //We could seriously benefit from a batch update here. The only problem is our current impl does not take an external connection
-            count += dotConnect.executeUpdate(connection,
-                    "DELETE FROM storage_x_data WHERE data_hash = ?", hash);
+        for (final String storageHash : storageHashSet) {
+
+            final Set<String> dataIdHashSet = dotConnect
+                    .setSQL("SELECT data_hash FROM storage_x_data WHERE storage_hash = ?")
+                    .addParam(storageHash).loadObjectResults().stream().map(r -> (String) r.get("data_hash"))
+                    .collect(Collectors.toSet());
 
             count += dotConnect.executeUpdate(connection,
-                    "DELETE FROM storage_data WHERE hash_id = ?", hash);
+                    "DELETE FROM storage_x_data WHERE storage_hash = ?", storageHash);
+
+            for (final String hashId : dataIdHashSet) {
+                count += dotConnect.executeUpdate(connection,
+                        "DELETE FROM storage_data WHERE hash_id = ?", hashId);
+            }
 
         }
         return count;
@@ -426,14 +469,14 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
     }
 
     /**
-     * Selects directly on storage-data since hash is the primary key there.
+     * Selects directly on storage_x_data since hash is the primary key there.
      */
     private boolean existsHash(final String fileHash, final Connection connection) throws DotDataException {
         final MutableBoolean exists = new MutableBoolean(false);
             final Number results = Try
                     .of(() -> {
                                 final List<Map<String, Object>> result = new DotConnect()
-                                        .setSQL("SELECT count(*) as x FROM storage_data WHERE hash_id = ?")
+                                        .setSQL("SELECT count(*) as x FROM storage_x_data WHERE storage_hash = ?")
                                         .addParam(fileHash)
                                         .loadObjectResults(connection);
                                 return (Number) result.get(0).get("x");

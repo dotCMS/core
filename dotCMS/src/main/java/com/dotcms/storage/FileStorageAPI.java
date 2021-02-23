@@ -60,13 +60,20 @@ public interface FileStorageAPI {
 
 
     /**
-     * Delete metadata
+     * Deletes all related metadata for the given contentlet
      * @param requestMetaData
      * @return a set with the different keyPaths removed
      * @throws DotDataException
      */
     boolean removeMetaData(final FetchMetadataParams requestMetaData) throws DotDataException;
 
+    /**
+     * Deletes only current version (inode) metadata for the given contentlet
+     * @param requestMetaData
+     * @return a set with the different keyPaths removed
+     * @throws DotDataException
+     */
+    boolean removeVersionMetaData(final FetchMetadataParams requestMetaData) throws DotDataException;
 
     /**
      * Saves additional custom attributes into the metadata storage

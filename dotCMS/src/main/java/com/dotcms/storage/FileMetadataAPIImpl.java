@@ -527,6 +527,39 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
     }
 
     /**
+     * Given a contentlet this will iterate over all the binary fields it has and remove the associated metadata per the current version (inode)
+     * Meaning all other versions of the conentlet will get to keep their own metadata
+     * @param contentlet
+     * @return
+     */
+    public Map<String, Set<String>> removeVersionMetadata(final Contentlet contentlet){
+        final Map<String,Set<String>> removedMetaPaths = new HashMap<>();
+        final StorageType storageType = StoragePersistenceProvider.getStorageType();
+        final String metadataBucketName = Config
+                .getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);
+        final Tuple2<SortedSet<String>, SortedSet<String>> binaryFields = findBinaryFields(
+                contentlet);
+        final Set<String> fields = Stream
+                .concat(binaryFields._1.stream(), binaryFields._2.stream())
+                .collect(Collectors.toSet());
+        try {
+            for (final String basicMetaFieldName : fields) {
+                final String metadataPath = getFileName(contentlet, basicMetaFieldName);
+                if (this.fileStorageAPI.removeVersionMetaData(
+                        new FetchMetadataParams.Builder()
+                                .storageKey(new StorageKey.Builder().group(metadataBucketName)
+                                        .path(metadataPath).storage(storageType).build()).build()
+                )) {
+                    removedMetaPaths.computeIfAbsent(metadataBucketName, k -> new HashSet<>()).add(metadataPath);
+                }
+            }
+        } catch (DotDataException e) {
+            Logger.error(FileMetadataAPIImpl.class, e);
+        }
+        return removedMetaPaths;
+    }
+
+    /**
      *
      * @param binary
      * @param fallbackContentlet

@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 
 public class Metadata implements Serializable {
 
-    public static final String CUSTOM_PROP_PREFIX = "custom::";
+    public static final String CUSTOM_PROP_PREFIX = "dot::";
 
     private final String fieldName;
 

@@ -26,8 +26,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.security.NoSuchAlgorithmException;
 import java.util.Random;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.RandomStringUtils;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -90,10 +92,11 @@ public class StoragePersistenceAPITest {
     @UseDataProvider("getMixedStorageTestCases")
     public void Test_Storage_Push_File_Then_Recover_Then_Remove_Group(final TestCase testCase)
             throws DotDataException {
+
+        int count;
         final StoragePersistenceAPI storage = persistenceProvider.getStorage(testCase.storageType);
         final String groupName = testCase.groupName;
         final String path = testCase.path;
-
         try {
             assertFalse(storage.existsGroup(groupName));
             assertTrue(storage.createGroup(groupName));
@@ -111,11 +114,12 @@ public class StoragePersistenceAPITest {
             assertNotSame(pushFile, pullFile);
             assertEquals(pullFile.length(), pushFile.length());
         } finally {
-            final int count = storage.deleteGroup(groupName);
-            assertEquals(1, count);
-            assertFalse(storage.existsGroup(groupName));
-            assertFalse(storage.existsObject(groupName, path));
+            count = storage.deleteGroup(groupName);
         }
+
+        assertEquals(1, count);
+        assertFalse(storage.existsGroup(groupName));
+        assertFalse(storage.existsObject(groupName, path));
 
     }
 
@@ -129,7 +133,7 @@ public class StoragePersistenceAPITest {
                 ConfigTestHelper.getUrlToTestResource(TEST_IMAGE_JPG).toURI());
 
         return new Object[]{
-
+              
                 new TestCase(StorageType.FILE_SYSTEM,
                         groupName, textFilePath, tempFile
                 ),
@@ -216,10 +220,50 @@ public class StoragePersistenceAPITest {
     }
 
     /**
+     * Given Scenario:
+     * Expected Result:
+     * @param testCase
+     * @throws IOException
+     * @throws DotDataException
+     */
+    @Test
+    @UseDataProvider("getLargeFileTestCases")
+    public void Test_Delete_Object_Version(final TestCase testCase)
+            throws IOException, DotDataException {
+
+        final StoragePersistenceAPI storage = persistenceProvider.getStorage(testCase.storageType);
+        if (!storage.existsGroup(testCase.groupName)) {
+            assertTrue(storage.createGroup(testCase.groupName));
+        }
+
+        //Same binary pushed twice under a different name should be saved just once and two references should have been created
+        storage.pushFile(testCase.groupName, testCase.path, testCase.file, ImmutableMap.of());
+
+        final String v2 =  testCase.path + "-" + random.nextLong();
+
+        storage.pushFile(testCase.groupName, v2, testCase.file, ImmutableMap.of());
+
+        final File pullFile1 = storage.pullFile(testCase.groupName, testCase.path);
+        assertNotNull(pullFile1);
+
+        final File pullFile2 = storage.pullFile(testCase.groupName, v2);
+        assertNotNull(pullFile2);
+
+        assertTrue(FileUtils.contentEquals(pullFile1,pullFile2));
+
+        storage.deleteObjectReference(testCase.groupName, testCase.path);
+
+        final File pullFile3 = storage.pullFile(testCase.groupName, v2);
+        assertNotNull(pullFile3);
+
+    }
+
+    /**
      * Given scenario: We want corroborate that we're able to recover files and verify the existence of a group regardless of casing.
      * Expected Results: Regardless of casing we should be able to retrieve and find objects
      * @param testCase
      */
+    
     @Test
     @UseDataProvider("getRandomTestCases")
     public void Test_Pull_File_Different_Casing(final TestCase testCase) throws DotDataException {
@@ -257,6 +301,7 @@ public class StoragePersistenceAPITest {
      * @throws IOException
      * @throws NoSuchAlgorithmException
      */
+    
     @Test
     @UseDataProvider("getLargeFileTestCases")
     public void Test_Push_Large_File(final TestCase testCase)
@@ -278,32 +323,6 @@ public class StoragePersistenceAPITest {
 
     }
 
-    @Test
-    @UseDataProvider("getLargeFileTestCases")
-    public void Test_Push_Large_File_Then_Delete_Object(final TestCase testCase)
-            throws IOException, NoSuchAlgorithmException, DotDataException {
-
-        final StoragePersistenceAPI storage = persistenceProvider.getStorage(testCase.storageType);
-        if (!storage.existsGroup(testCase.groupName)) {
-            assertTrue(storage.createGroup(testCase.groupName));
-        }
-
-        storage.deleteObjectAndReferences(testCase.groupName, testCase.path);
-
-        storage.pushFile(testCase.groupName, testCase.path, testCase.file, ImmutableMap.of());
-
-        storage.pushFile(testCase.groupName, testCase.path + "-makes-path-different", testCase.file, ImmutableMap.of());
-
-        //storage.deleteObjectAndReferences()
-
-        final File pullFile = storage.pullFile(testCase.groupName, testCase.path);
-        assertNull(pullFile);
-
-
-
-
-    }
-
 
     private static final Random random = new Random();
 
@@ -321,7 +340,7 @@ public class StoragePersistenceAPITest {
         }
 
         return new Object[]{
-                new TestCase(StorageType.FILE_SYSTEM, groupName, path, temp),
+              //  new TestCase(StorageType.FILE_SYSTEM, groupName, path, temp),
                 new TestCase(StorageType.DB, groupName, path, temp)
         };
     }

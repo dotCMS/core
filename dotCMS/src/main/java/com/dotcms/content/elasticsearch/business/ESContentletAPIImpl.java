@@ -2735,7 +2735,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
         CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
 
         deleteBinaryFiles(contentlets,null);
-        //TODO: Delete metadata version Here.
+
+        fileMetadataAPI.removeVersionMetadata(contentlet);
+
     }
 
     @WrapInTransaction

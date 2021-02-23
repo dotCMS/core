@@ -43,7 +43,7 @@ public interface FileMetadataAPI {
      * Filters fields from a map given a set of fields to be kept
      * @param metaMap
      */
-    default void filterMetadataFields(final Map<String, ?> metaMap, final Set<String> configFieldsSet){
+    default void filterMetadataFields(Map<String, ?> metaMap, Set<String> configFieldsSet){
         TikaUtils.filterMetadataFields(metaMap, configFieldsSet);
     }
 
@@ -72,7 +72,7 @@ public interface FileMetadataAPI {
      * @return
      * @throws DotDataException
      */
-    Metadata getMetadata(final Contentlet contentlet, final Field field, final boolean forceGenerate) throws DotDataException;
+    Metadata getMetadata(Contentlet contentlet, Field field, boolean forceGenerate) throws DotDataException;
 
     /**
      * Retrieves the basic metadata for the contentlet (a projection over the full MD)
@@ -90,7 +90,7 @@ public interface FileMetadataAPI {
      * @param fieldVariableName  {@link String}
      * @return Map
      */
-     Metadata getMetadataForceGenerate(final Contentlet contentlet, final String fieldVariableName)
+     Metadata getMetadataForceGenerate(Contentlet contentlet, String fieldVariableName)
             throws DotDataException;
 
     /**
@@ -111,8 +111,8 @@ public interface FileMetadataAPI {
      * @return
      * @throws DotDataException
      */
-    Metadata getFullMetadataNoCacheForceGenerate(final Contentlet contentlet,
-            final String fieldVariableName) throws DotDataException;
+    Metadata getFullMetadataNoCacheForceGenerate(Contentlet contentlet,
+            String fieldVariableName) throws DotDataException;
 
     /**
      * Compiles all metadata for the contentlet returning a natural ordered map.
@@ -122,11 +122,18 @@ public interface FileMetadataAPI {
     Optional<Map<String, Metadata>> collectFieldsMetadata(Contentlet contentlet);
 
     /**
-     * Removes metadata for a given Contentlet
+     * Removes All metadata for a given Contentlet
      * @param contentlet
      * @return @{@link Map} with the info of the entries removed
      */
     Map<String, Set<String>> removeMetadata(Contentlet contentlet);
+
+    /**
+     * Removes metadata for a given Contentlet inode. Meaning all other versions of the contentlet will get to keep their md.
+     * @param contentlet
+     * @return @{@link Map} with the info of the entries removed
+     */
+    Map<String, Set<String>> removeVersionMetadata(Contentlet contentlet);
 
     /**
      * Given a binary file this will rely on the metadata generator to read the file and get the full md associated
@@ -148,7 +155,7 @@ public interface FileMetadataAPI {
      * @param customAttributesByField the additional attributes organized by binary field
      * @throws DotDataException
      */
-    void putCustomMetadataAttributes(final Contentlet contentlet,
+    void putCustomMetadataAttributes(Contentlet contentlet,
             final Map<String, Map<String, Serializable>> customAttributesByField) throws DotDataException;
 
     /**

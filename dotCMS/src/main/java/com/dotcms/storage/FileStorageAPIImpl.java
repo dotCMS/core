@@ -294,7 +294,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
         storage.pushObject(storageKey.getGroup(), storageKey.getPath(),
                 this.objectWriterDelegate, (Serializable) metadataMap, paramsMap);
-        Logger.info(this, "Metadata wrote on: " + storageKey.getPath());
+        Logger.info(this, "Metadata written to: " + storageKey.getPath());
 
     }
 
@@ -398,6 +398,23 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         return deleteSucceeded;
     }
 
+    /***
+     * {@inheritDoc}
+     * @param requestMetaData {@link FetchMetadataParams}
+     * @return
+     * @throws DotDataException
+     */
+    public boolean removeVersionMetaData(final FetchMetadataParams requestMetaData) throws DotDataException{
+        boolean deleteSucceeded = false;
+        final StorageKey storageKey = requestMetaData.getStorageKey();
+        final StoragePersistenceAPI storage = persistenceProvider
+                .getStorage(storageKey.getStorage());
+        this.checkBucket(storageKey, storage);
+        if (storage.existsObject(storageKey.getGroup(), storageKey.getPath())) {
+            deleteSucceeded = storage.deleteObjectReference(storageKey.getGroup(), storageKey.getPath());
+        }
+        return deleteSucceeded;
+    }
 
     /**
      * {@inheritDoc}
