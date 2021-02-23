@@ -129,6 +129,10 @@ public class FactoryLocator extends Locator<FactoryIndex>{
     }
 
 
+    public static UserProxyFactory getUserProxyFactory(){
+    	return (UserProxyFactory) getInstance(FactoryIndex.USER_PROXY_FACTORY);
+    }
+
 
     public static RoleFactory getRoleFactory(){
     	return (RoleFactory) getInstance(FactoryIndex.ROLE_FACTORY);
@@ -313,6 +317,7 @@ enum FactoryIndex
             case TEMPLATE_FACTORY: return new TemplateFactoryImpl();
             case HOST_VARIABLE_FACTORY: return new HostVariableFactoryImpl();
             case LAYOUT_FACTORY : return new LayoutFactoryImpl();
+            case USER_PROXY_FACTORY: return new UserProxyFactoryImpl() {};
             case ROLE_FACTORY : return new RoleFactoryImpl();
             case MENULINK_FACTORY : return new MenuLinkFactoryImpl();
             case CONTAINER_FACTORY : return new ContainerFactoryImpl();

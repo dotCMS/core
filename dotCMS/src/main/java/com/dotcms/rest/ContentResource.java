@@ -890,9 +890,7 @@ public class ContentResource {
             if (addedRelationships.contains(relationship)) {
                 continue;
             }
-            if (!relationship.getParentStructureInode().equals(relationship.getChildStructureInode())) {
-                addedRelationships.add(relationship);
-            }
+            addedRelationships.add(relationship);
 
             final boolean isChildField = relationshipAPI.isChildField(relationship, field);
 
@@ -1165,9 +1163,7 @@ public class ContentResource {
             if (addedRelationships.contains(relationship)){
                 continue;
             }
-            if (!relationship.getParentStructureInode().equals(relationship.getChildStructureInode())) {
-                addedRelationships.add(relationship);
-            }
+            addedRelationships.add(relationship);
 
             final boolean isChildField = relationshipAPI.isChildField(relationship, field);
 

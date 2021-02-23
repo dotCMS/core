@@ -156,7 +156,7 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
      * @return TemplateDataGen with host property set
      */
     public TemplateDataGen host(Host host) {
-        super.host = host;
+        this.host = host;
         return this;
     }
     public TemplateDataGen site(Host site) {
@@ -296,7 +296,7 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
         }
 
         try {
-            final Template savedTemplate = save(template, host);
+            final Template savedTemplate = save(template);
             APILocator.getVersionableAPI().setLive(savedTemplate);
 
             return savedTemplate;
@@ -305,13 +305,8 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
         }
     }
 
-    public static Template save(final Template template, final Host host) throws DotDataException, DotSecurityException {
-        return templateAPI.saveTemplate(template, host, user, false);
-    }
-
     public static Template save(final Template template) throws DotDataException, DotSecurityException {
-        final Host defaultHost = APILocator.getHostAPI().findDefaultHost(user, false);
-        return templateAPI.saveTemplate(template, defaultHost, user, false);
+        return templateAPI.saveTemplate(template, host, user, false);
     }
 
     @WrapInTransaction

@@ -22,6 +22,7 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -30,7 +31,6 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -153,12 +153,12 @@ public class GoogleTranslationServiceTest extends UnitTestBase {
     @Test
     public void testTranslateStrings() throws Exception {
         String jsonStr = read(getClass().getResourceAsStream("/spanishMultiTranslation.json"));
-        Map<String,Object> map = (Map<String,Object>) new JSONTool().generate(jsonStr);
+        JSONObject jsonObject = new JSONObject(jsonStr);
 
         JSONTool jsonTool = Mockito.mock(JSONTool.class);
         when(jsonTool
                 .post(Mockito.anyString(), Mockito.anyInt(), Mockito.anyMap(), Mockito.anyString()))
-                .thenReturn(map);
+                .thenReturn(jsonObject);
 
         TranslationService service = new GoogleTranslationService("key", jsonTool, new ApiProvider());
         List<String> toTranslate = Arrays.asList("This is a test in English", "Latest News",
@@ -174,12 +174,12 @@ public class GoogleTranslationServiceTest extends UnitTestBase {
     @Test
     public void testTranslateStrings_NullItems() throws Exception {
         String jsonStr = read(getClass().getResourceAsStream("/spanishMultiTranslation.json"));
-        Map<String,Object> map = (Map<String,Object>) new JSONTool().generate(jsonStr);
+        JSONObject jsonObject = new JSONObject(jsonStr);
 
         JSONTool jsonTool = Mockito.mock(JSONTool.class);
         when(jsonTool
                 .post(Mockito.anyString(), Mockito.anyInt(), Mockito.anyMap(), Mockito.anyString()))
-                .thenReturn(map);
+                .thenReturn(jsonObject);
 
         TranslationService service = new GoogleTranslationService("key", jsonTool, new ApiProvider());
         List<String> toTranslate = Arrays.asList("This is a test in English", null,
@@ -193,12 +193,12 @@ public class GoogleTranslationServiceTest extends UnitTestBase {
     @Test
     public void testTranslateString() throws Exception {
         String jsonStr = read(getClass().getResourceAsStream("/spanishSingleTranslation.json"));
-        Map<String,Object> map = (Map<String,Object>) new JSONTool().generate(jsonStr);
+        JSONObject jsonObject = new JSONObject(jsonStr);
 
         JSONTool jsonTool = Mockito.mock(JSONTool.class);
         when(jsonTool
                 .post(Mockito.anyString(), Mockito.anyInt(), Mockito.anyMap(), Mockito.anyString()))
-                .thenReturn(map);
+                .thenReturn(jsonObject);
 
         GoogleTranslationService service = new GoogleTranslationService("key", jsonTool, new ApiProvider());
         String translated = service.translateString("This is a test in English", english, spanish);
@@ -208,11 +208,10 @@ public class GoogleTranslationServiceTest extends UnitTestBase {
 
     @Test(expected = TranslationException.class)
     public void testTranslateString_BadJSON() throws Exception {
-        Map<String,Object> map = (Map<String,Object>) new JSONTool().generate("{invalid:invalid}");
-
+        JSONObject jsonObject = new JSONObject("{invalid:invalid}");
 
         JSONTool jsonTool = Mockito.mock(JSONTool.class);
-        when(jsonTool.fetch(Mockito.anyString())).thenReturn(map);
+        when(jsonTool.fetch(Mockito.anyString())).thenReturn(jsonObject);
 
         GoogleTranslationService service = new GoogleTranslationService("key", null, new ApiProvider());
         service.translateString("whatever", english, spanish);

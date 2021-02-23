@@ -5,12 +5,8 @@ import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UUIDUtil;
-import com.dotmarketing.util.UtilMethods;
-import org.apache.commons.lang3.math.NumberUtils;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.*;
 
 import java.util.List;
 import java.util.Map;
@@ -18,12 +14,6 @@ import java.util.Optional;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
-/**
- * Implementation class for the {@link ShortyIdAPI}.
- *
- * @author Will Ezell
- * @since Sep 20, 2016
- */
 public class ShortyIdAPIImpl implements ShortyIdAPI {
 
   public long getDbHits() {
@@ -48,7 +38,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
 
 
   long dbHits = 0;
-  public static int MINIMUM_SHORTY_ID_LENGTH =
+  public static final int MINIMUM_SHORTY_ID_LENGTH =
       Config.getIntProperty("MINIMUM_SHORTY_ID_LENGTH", 10);
 
   @Override
@@ -60,12 +50,12 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
   @Override
   public Optional<ShortyId> getShorty(final String shortStr, final ShortyInputType shortyType) {
 
-
+    
     try {
       if(shortStr.startsWith(TempFileAPI.TEMP_RESOURCE_PREFIX) && APILocator.getTempFileAPI().isTempResource(shortStr)) {
-        return Optional.of(new ShortyId(shortStr, shortStr, ShortType.TEMP_FILE, ShortType.TEMP_FILE));
+          return Optional.of(new ShortyId(shortStr, shortStr, ShortType.TEMP_FILE, ShortType.TEMP_FILE));
       }
-
+      
       validShorty(shortStr);
       ShortyId shortyId = null;
       final Optional<ShortyId> opt = new ShortyIdCache().get(shortStr);
@@ -81,11 +71,12 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
       return shortyId.type == ShortType.CACHE_MISS ? Optional.empty() : Optional.of(shortyId);
     } catch (ShortyException se) {
 
-      Logger.warn(this.getClass(), String.format("An error occurred when getting shorty value for '%s' of type " +
-              "'%s': %s", shortStr, shortyType, se.getMessage()));
+      Logger.warn(this.getClass(), se.getMessage());
       return Optional.empty();
     }
   }
+
+
 
   @Override
   public ShortyId noShorty(String shorty) {
@@ -118,6 +109,36 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
     }
   }
 
+  /*
+   * ShortyId viaIndex(final String shorty) {
+   * 
+   * 
+   * ContentletAPI capi = APILocator.getContentletAPI(); ContentletSearch con = null; ShortyId
+   * shortyId = new ShortyId(shorty, "CACHE_MISS", ShortType.CACHE_MISS);
+   * 
+   * // if we have a shorty, use the index
+   * 
+   * StringBuilder query = new StringBuilder("+(identifier:").append(shorty).append("* inode:")
+   * .append(shorty).append("*) ");
+   * 
+   * 
+   * query.append("+working:true ");
+   * 
+   * List<ContentletSearch> cons; try { cons = capi.searchIndex(query.toString(), 1, 0, "score",
+   * APILocator.getUserAPI().getSystemUser(), false); if (cons.size() > 0) { con = cons.get(0);
+   * ShortType type = (con.getIdentifier().startsWith(shorty)) ? ShortType.IDENTIFIER :
+   * ShortType.CONTENTLET; String id = (con.getIdentifier().startsWith(shorty)) ?
+   * con.getIdentifier() : con.getInode(); shortyId = new ShortyId(shorty, id, type); } } catch
+   * (Exception e) { // we should not add to the cache if something went wrong throw new
+   * ShortyException("somthing went wrong in the index", e); }
+   * 
+   * return shortyId; }
+   */
+
+  String unUidIfy(String shorty) {
+    return UUIDUtil.unUidIfy(shorty);
+  }
+
   public String uuidIfy(String shorty) {
     return UUIDUtil.uuidIfy(shorty);
   }
@@ -129,7 +150,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
   }
 
   @CloseDBIfOpened
-  protected ShortyId viaDbEquals(final String shorty, final ShortyInputType shortyType) {
+  private ShortyId viaDbEquals(final String shorty, final ShortyInputType shortyType) {
     this.dbHits++;
     final DotConnect db = new DotConnect();
     this.dbEqualsStrategyMap.get(shortyType).apply(db, shorty);
@@ -148,7 +169,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
   }
 
   @CloseDBIfOpened
-  protected ShortyId viaDbLike(final String shorty, final ShortyInputType shortyType) {
+  private ShortyId viaDbLike(final String shorty, final ShortyInputType shortyType) {
     this.dbHits++;
     final DotConnect db = new DotConnect();
     final String uuid = uuidIfy(shorty);
@@ -162,6 +183,11 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
 
   }
 
+  
+  
+  
+  
+  
   private ShortyId transformMap(final String shorty, final List<Map<String, Object>> results) {
     if (results == null || results.size() < 1) {
       return noShorty(shorty);
@@ -174,6 +200,16 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
       return new ShortyId(shorty, id, ShortType.fromString(type), ShortType.fromString(subType));
     }
 
+  }
+
+  public String shortUri(Contentlet c) {
+
+    return null;
+  }
+
+  public String shortInodeUri(Contentlet c) {
+
+    return null;
   }
 
   @Override
@@ -198,5 +234,4 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
       }
     }
   } // validShorty.
-
 }

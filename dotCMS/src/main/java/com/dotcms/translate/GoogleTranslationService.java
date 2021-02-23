@@ -1,14 +1,5 @@
 package com.dotcms.translate;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import org.apache.commons.lang.StringEscapeUtils;
 import com.dotcms.rendering.velocity.viewtools.JSONTool;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
@@ -24,10 +15,22 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableMap;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import org.apache.commons.lang.StringEscapeUtils;
 
 
 public class GoogleTranslationService extends AbstractTranslationService {
@@ -100,14 +103,13 @@ public class GoogleTranslationService extends AbstractTranslationService {
 
         try {
             Logger.debug(this.getClass(), "translating:" + restURL + "params: " + params.toString());
-            Map<String,Object> json = (Map<String,Object>) jsonTool.post(restURL.toString(), 15000,ImmutableMap.of(), new JSONObject(params).toString());
+            JSONObject json = (JSONObject) jsonTool.post(restURL.toString(), 15000,ImmutableMap.of(), new JSONObject(params).toString());
 
-            json = (Map<String,Object>)json.get("data");
-            
-            List<Map<String,Object>> arr = (List<Map<String,Object>>)json.get("translations");
+            json = json.getJSONObject("data");
+            JSONArray arr = json.getJSONArray("translations");
 
-            for (Map<String,Object> m : arr) {
-                String translatedText = (String) m.get("translatedText");
+            for (int i = 0; i < arr.length(); i++) {
+                String translatedText = (String) arr.getJSONObject(i).get("translatedText");
                 ret.add(StringEscapeUtils.unescapeHtml(translatedText));
             }
 

@@ -2,11 +2,10 @@ package com.dotmarketing.business;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.notifications.bean.Notification;
-import com.dotcms.rest.api.v1.authentication.DotInvalidTokenException;
-import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.TimeUtil;
 import com.dotmarketing.beans.*;
@@ -49,9 +48,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.UserTestUtil;
-import com.liferay.portal.ejb.UserUtil;
 import com.liferay.portal.model.User;
-import java.util.Optional;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -1127,60 +1124,5 @@ public class UserAPITest extends IntegrationTestBase {
 		final Role userRole = newUser.getUserRole();
 
 		assertNull(userRole);
-	}
-
-	/**
-	 * Method to test: {@link UserAPI#getUserIdByIcqId(String)}
-	 * Given Scenario: Create a new user and set it the icqId (token when forgot password).
-	 * 					Find the userId associated to the icqId.
-	 * ExpectedResult: UserId of the created user.
-	 *
-	 */
-	@Test
-	public void test_getUserIdByIcqId_success() throws Exception{
-		final User newUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
-		final String icqId = ResetPasswordTokenUtil.createToken();
-		newUser.setIcqId(icqId);
-		UserUtil.update(newUser);
-
-		final Optional<String> userId = userAPI.getUserIdByIcqId(icqId);
-		assertTrue(userId.isPresent());
-		assertEquals(newUser.getUserId(),userId.get());
-	}
-
-	/**
-	 * Method to test: {@link UserAPI#getUserIdByIcqId(String)}
-	 * Given Scenario: Try to get the userId of an empty icqId
-	 * ExpectedResult: DotInvalidTokenException
-	 *
-	 */
-	@Test(expected = DotInvalidTokenException.class)
-	public void test_getUserIdByIcqId_icqIdEmpty_throwDotInvalidTokenException() throws Exception{
-		userAPI.getUserIdByIcqId("");
-	}
-
-	/**
-	 * Method to test: {@link UserAPI#getUserIdByIcqId(String)}
-	 * Given Scenario: Try to get the userId of a null icqId
-	 * ExpectedResult: DotInvalidTokenException
-	 *
-	 */
-	@Test(expected = DotInvalidTokenException.class)
-	public void test_getUserIdByIcqId_icqIdNull_throwDotInvalidTokenException() throws Exception{
-		userAPI.getUserIdByIcqId(null);
-	}
-
-	/**
-	 * Method to test: {@link UserAPI#getUserIdByIcqId(String)}
-	 * Given Scenario: Find the userId associated to the icqId.
-	 * ExpectedResult: UserId is not present since the icqId was not associated to any user.
-	 *
-	 */
-	@Test
-	public void test_getUserIdByIcqId_icqIdDoesNotBelongToAnyUser_returnEmptyOptional() throws Exception{
-		final String icqId = ResetPasswordTokenUtil.createToken();
-
-		final Optional<String> userId = userAPI.getUserIdByIcqId(icqId);
-		assertFalse(userId.isPresent());
 	}
 }

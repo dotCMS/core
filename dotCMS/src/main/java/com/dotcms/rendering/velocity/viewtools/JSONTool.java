@@ -268,14 +268,10 @@ public class JSONTool extends ImportSupport implements ViewTool {
     final DotObjectMapperProvider mapper = DotObjectMapperProvider.getInstance();
 
     try {
-
-      Logger.debug(this.getClass(), ()->"Json RESPONSE: " + s);
-
       return s.startsWith("[") && s.endsWith("]")?
               mapper.getDefaultObjectMapper().readValue(s, LIST_MAP_CLASS):
               mapper.getDefaultObjectMapper().readValue(s, MAP_CLASS);
     } catch (Exception e) {
-      Logger.error(this.getClass(), "Error on parsing the String: " + s + ", message: " + e.getMessage());
       Logger.warnAndDebug(this.getClass(), e);
       return null;
     }

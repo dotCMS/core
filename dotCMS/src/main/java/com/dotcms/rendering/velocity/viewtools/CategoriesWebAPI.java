@@ -571,7 +571,29 @@ public class CategoriesWebAPI implements ViewTool {
 		}
 	}
 
-
+	@SuppressWarnings("unchecked")
+	public List<Category> getCategoriesByUser(User user) {
+		try {
+			HttpSession session = request.getSession();
+			List<Category> catsUser = (List<Category>) session.getAttribute(WebKeys.LOGGED_IN_USER_CATS);
+			if (!UtilMethods.isSet(catsUser) || catsUser.size() == 0) {
+				UserProxy up = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(user,
+						APILocator.getUserAPI().getSystemUser(), false);
+				catsUser = categoryAPI.getChildren(up, user, true);
+				request.getSession().setAttribute(WebKeys.LOGGED_IN_USER_CATS, catsUser);
+			}
+			return catsUser;
+		} catch (DotSecurityException se) {
+			Logger.info(this, "The logged in user cannot access the categories");
+			return null;
+		} catch (DotDataException de) {
+			Logger.error(this, "An error happening while trying to retrieve categories : ", de);
+			return null;
+		} catch (Exception e) {
+			Logger.error(this, "An unknown error happening while trying to retrieve categories : ", e);
+			return null;
+		}
+	}
 
 	public List<Category> filterCategoriesByUserPermissions(List<Object> catInodes) {
 		List<Category> result = new ArrayList<Category>(30);

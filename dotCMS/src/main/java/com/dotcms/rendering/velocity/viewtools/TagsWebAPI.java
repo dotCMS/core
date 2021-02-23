@@ -31,8 +31,14 @@ public class TagsWebAPI implements ViewTool {
 	public List getTagsByUser(User user) throws DotDataException {
 		List tagsUser = (List) request.getSession().getAttribute(WebKeys.LOGGED_IN_USER_TAGS);
 		if (!UtilMethods.isSet(tagsUser) || tagsUser.size() == 0) {
-
-			tagsUser = APILocator.getTagAPI().getTagInodesByInode(String.valueOf(user.getUserId()));
+			UserProxy up;
+			try {
+				up = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(user.getUserId(),APILocator.getUserAPI().getSystemUser(), false);
+			} catch (Exception e) {
+				Logger.error(this, e.getMessage(), e);
+				return new ArrayList();
+			}	
+			tagsUser = APILocator.getTagAPI().getTagInodesByInode(String.valueOf(up.getInode()));
 			request.getSession().setAttribute(WebKeys.LOGGED_IN_USER_TAGS, tagsUser);
 		}
 		return tagsUser;

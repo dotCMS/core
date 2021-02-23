@@ -25,8 +25,6 @@ import java.util.Date;
 
 public class BundlerUtil {
 
-    static XStream xmlSerializer = null;
-
 	/**
 	 * does bundle exist
 	 * @param config
@@ -139,12 +137,10 @@ public class BundlerUtil {
      */
     public static void objectToXML ( Object obj, File f, boolean removeFirst ) {
 
-        if (xmlSerializer == null) {
-            xmlSerializer = new XStream(new DomDriver("UTF-8"));
-        }
-
         if ( removeFirst && f.exists() )
             f.delete();
+
+        XStream xstream = new XStream( new DomDriver("UTF-8") );
 
         try {
             if ( !f.exists() ){
@@ -158,7 +154,7 @@ public class BundlerUtil {
             
             try(OutputStreamWriter writer = new OutputStreamWriter(Files.newOutputStream(f.toPath()), "UTF-8")){
                 HierarchicalStreamWriter xmlWriter = new DotPrettyPrintWriter(writer);
-                xmlSerializer.marshal(obj, xmlWriter);
+                xstream.marshal(obj, xmlWriter);
             }
 
         } catch ( FileNotFoundException e ) {

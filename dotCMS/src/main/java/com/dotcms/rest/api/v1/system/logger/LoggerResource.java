@@ -140,6 +140,6 @@ public class LoggerResource {
             return new LoggerView(log4jLogger.getName(), log4jLogger.getLevel().name());
         }
 
-        return new LoggerView("unknown", "unknown");
+        return new LoggerView("unkown", "unkown");
     }
 }

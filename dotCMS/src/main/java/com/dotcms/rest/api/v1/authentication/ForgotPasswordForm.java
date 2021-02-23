@@ -10,6 +10,7 @@ import com.dotcms.rest.api.Validated;
 public class ForgotPasswordForm extends Validated {
 
     @NotNull
+    @Length(min = 2, max = 100)
     private final String userId;
 
     public String getUserId() {

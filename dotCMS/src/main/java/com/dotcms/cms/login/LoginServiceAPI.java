@@ -1,14 +1,17 @@
 package com.dotcms.cms.login;
 
-import static com.dotcms.util.FunctionUtils.ifTrue;
-import java.io.Serializable;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import com.dotmarketing.cms.login.factories.LoginFactory;
+import com.dotmarketing.cms.login.struts.LoginForm;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.io.Serializable;
+
+import static com.dotcms.util.FunctionUtils.ifTrue;
 
 /**
  * Encapsulates the login services This class is just a wrapper to encapsulate
@@ -77,7 +80,20 @@ public interface LoginServiceAPI extends Serializable {
      */
     HttpSession preventSessionFixation(final HttpServletRequest request);
 
+	/**
+	 * Basically a call of a {@link LoginFactory#doLogin(LoginForm, HttpServletRequest, HttpServletResponse)}
+	 * @param form {@link LoginForm}
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws NoSuchUserException
+	 */
+    default boolean doLogin(final LoginForm form,
+                            final HttpServletRequest request,
+                            final HttpServletResponse response) throws NoSuchUserException {
 
+        return LoginFactory.doLogin(form, request, response);
+    }
 
     /**
      * Do the remember me, usually a cookie approach with a specific strategy such as JWT

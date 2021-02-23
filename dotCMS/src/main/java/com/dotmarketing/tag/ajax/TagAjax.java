@@ -69,8 +69,8 @@ public class TagAjax {
 	    				hostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
 	    				host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(),true);
 	    			}
-					tagAPI.addUserTagInode(createdTag,userId
-							);
+					tagAPI.addUserTagInode(createdTag,
+							APILocator.getUserProxyAPI().getUserProxy(userId, APILocator.getUserAPI().getSystemUser(), false).getInode());
 
 	    			if(host!=null && host.getIdentifier()!=null && host.getIdentifier().equals(Host.SYSTEM_HOST))
 	    				tagStorageForHost = Host.SYSTEM_HOST;
@@ -260,11 +260,14 @@ public class TagAjax {
 				Logger.warn(this, "Requested Tag [" + tagNameOrId + "] for deletion was not found");
 			} else {
 
+				//Retrieve the user
+				UserProxy user = APILocator.getUserProxyAPI().getUserProxy(userId, APILocator.getUserAPI().getSystemUser(), false);
+
                 /*
 				Removes the relationship between a tag and an inode.
                  NOTE: if the tag does not have more relationships the Tag itself will be remove it.
                  */
-				APILocator.getTagAPI().removeTagRelationAndTagWhenPossible(tag.getTagId(), userId, null);
+				APILocator.getTagAPI().removeTagRelationAndTagWhenPossible(tag.getTagId(), user.getInode(), null);
 			}
 
 			List<Tag> tags = APILocator.getTagAPI().getTagsForUserByUserId(userId);

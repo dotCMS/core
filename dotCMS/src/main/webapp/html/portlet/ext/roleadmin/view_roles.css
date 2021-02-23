@@ -1,152 +1,79 @@
-.dijitContentPane {
-    overflow: hidden;
+.dijitContentPane{overflow:hidden;}
+
+.dijitTabListContainer-top{
+	top: 3px !important;
 }
 
-.dijitTabListContainer-top {
-    top: 3px !important;
-}
 
-#rolesTreeScrollWrapper,
-#usersGridWrapper,
-#roleLayoutsGridWrapper {
+#rolesTreeScrollWrapper, #usersGridWrapper, #roleLayoutsGridWrapper{
+
 }
 
 #loadingRolesWrapper {
-    text-align: center;
+	text-align: center;
 }
 
 #roleTabsContainer {
-    margin: 0px;
+	margin:0px;
+
 }
 
 .title {
-    font-weight: bolder;
-    float: left;
+	font-weight: bolder;
+	float: left;
 }
 
 .label {
-    text-align: left;
-    width: 40px;
-    float: left;
-    padding-right: 5px;
+	text-align: left;
+	width: 40px;
+	float: left;
+	padding-right: 5px;
 }
 
 #usersGridWrapper {
-    visibility: hidden;
+	visibility: hidden;
 }
 
 #usersGridWrapper table {
-    margin: 0;
+	margin: 0;
 }
 
 #roleUsersButtons {
-    padding-top: 20px;
+	padding-top: 20px;
 }
 
 #loadingRoleLayoutsWrapper {
+	
 }
 
 #roleLayoutsGridWrapper table {
-    margin: 0;
+	margin: 0;
 }
 
 #roleLayoutsGridWrapper {
-    visibility: hidden;
+	visibility: hidden;
 }
 
 .removePorletButton {
-    text-align: right;
+	text-align: right;
 }
 
 dd.wide {
-    margin-left: 0;
+	margin-left: 0;
 }
 
 #loadingRoleLayoutsWrapper {
-    text-align: center;
+	text-align: center;
 }
 
 #rolePermissionsAccordion .dijitLayoutContainer {
-    background: none;
-    padding: 0;
+	background: none;
+	padding: 0;
 }
 
 #addLayoutErrorMessagesList {
-    color: red;
+	color: red;
 }
 #addRoleDialog {
-    width: 400px;
-}
-
-dot-material-icon-picker {
-    color: #161616;
-}
-
-dot-material-icon-picker .dot-material-icon__select-input {
-    color: #161616;
-    height: 34px;
-    max-height: none;
-}
-
-dot-material-icon-picker
-    .dot-material-icon__select-input:hover
-    .dot-material-icon__input,
-dot-material-icon-picker
-    .dot-material-icon__select-input:hover
-    .dot-material-icon__preview,
-dot-material-icon-picker
-    .dot-material-icon__select-input:hover
-    .dot-material-icon__button {
-    border-color: var(--color-sec);
-}
-
-dot-material-icon-picker .dot-material-icon__button:hover {
-    background: rgba(var(--color-sec_rgb), 0.2);
-}
-
-dot-material-icon-picker .dot-material-icon__input,
-dot-material-icon-picker .dot-material-icon__preview {
-    border-color: #c5c5c5;
-    color: #161616;
-}
-
-dot-material-icon-picker .dot-material-icon__input {
-    padding-left: 4px;
-}
-
-dot-material-icon-picker .dot-material-icon__preview {
-    font-size: 24px;
-    padding-left: 4px;
-    width: 28px;
-}
-
-dot-material-icon-picker .dot-material-icon__button {
-    background-color: #fff;
-    border: solid 1px #c5c5c5;
-    color: #5b5b5b;
-    font-size: 24px;
-    min-width: 36px;
-}
-
-dot-material-icon-picker .dot-material-icon__list {
-    border-color: #c5c5c5;
-    top: 33px;
-}
-
-dot-material-icon-picker .dot-material-icon__option {
-    height: 36px;
-}
-
-dot-material-icon-picker .dot-material-icon__option-selected,
-dot-material-icon-picker .dot-material-icon__option:hover {
-    background-color: #fafafa;
-    color: #5b5b5b;
-}
-
-dot-material-icon-picker .dot-material-icon__option label {
-    line-height: 24px;
-}
-
-dot-material-icon-picker .dot-material-icon__option mwc-icon {
-    font-size: 24px;
+	width: 400px;
 }

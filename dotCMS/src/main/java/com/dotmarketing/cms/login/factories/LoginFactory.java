@@ -9,6 +9,7 @@ import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DuplicateUserException;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
+import com.dotmarketing.cms.login.struts.LoginForm;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portal.struts.DotCustomLoginPostAction;
@@ -38,7 +39,9 @@ public class LoginFactory {
 	public static boolean useCASLoginFilter = new Boolean (Config.getBooleanProperty("FRONTEND_CAS_FILTER_ON",false));
 	/*End of Custom Code*/
 
-
+    public static boolean doLogin(LoginForm form, HttpServletRequest request, HttpServletResponse response) throws NoSuchUserException {
+        return doLogin(form.getUserName(), form.getPassword(), form.isRememberMe(), request, response);
+    }
 
     public static boolean doCookieLogin(String encryptedId, HttpServletRequest request, HttpServletResponse response) {
 

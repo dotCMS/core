@@ -4,10 +4,6 @@ import java.util.Date;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.exception.WebAssetException;
-import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.links.model.Link.LinkType;
@@ -129,16 +125,11 @@ public class LinkDataGen extends AbstractDataGen<Link> {
     @Override
     public Link persist(final Link link) {
         try {
-            APILocator.getMenuLinkAPI().save(link, folder, APILocator.systemUser(), false);
+            APILocator.getMenuLinkAPI().save(link, folder, user, false);
             return link;
         } catch (Exception e) {
             throw new RuntimeException("Unable to persist link.", e);
         }
-    }
-
-    @WrapInTransaction
-    public static void save(final Link link) throws DotDataException, DotSecurityException {
-        APILocator.getMenuLinkAPI().save(link, APILocator.systemUser(), false);
     }
 
     /**
@@ -150,26 +141,5 @@ public class LinkDataGen extends AbstractDataGen<Link> {
     public Link nextPersisted() {
         return persist(next());
     }
-
-    public Link nextPersisted(final boolean publish) {
-        if (publish) {
-            return publish(persist(next()));
-        } else {
-            return persist(next());
-        }
-    }
-
-    @WrapInTransaction
-    public static Link publish(final Link link) {
-        try {
-            PublishFactory.publishAsset(link, APILocator.systemUser(),
-                    false, false);
-
-            return APILocator.getMenuLinkAPI().findWorkingLinkById(link.getIdentifier(), APILocator.systemUser(), false);
-        } catch (WebAssetException | DotSecurityException | DotDataException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
 
 }

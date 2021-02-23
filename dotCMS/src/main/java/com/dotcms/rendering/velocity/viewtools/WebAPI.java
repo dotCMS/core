@@ -748,6 +748,36 @@ public class WebAPI implements ViewTool {
 
 
 
+	public User getUserByLongLiveCookie() {
+
+		String _dotCMSID = "";
+		if(!UtilMethods.isSet(UtilMethods.getCookieValue(request.getCookies(),
+				com.dotmarketing.util.WebKeys.LONG_LIVED_DOTCMS_ID_COOKIE))) {
+			Cookie idCookie = CookieUtil.createCookie();
+		}
+		_dotCMSID = UtilMethods.getCookieValue(request.getCookies(),
+				com.dotmarketing.util.WebKeys.LONG_LIVED_DOTCMS_ID_COOKIE);
+		UserProxy up;
+		try {
+			up = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxyByLongLiveCookie(_dotCMSID,APILocator.getUserAPI().getSystemUser(), false);
+		} catch (Exception e) {
+			Logger.error(this, e.getMessage(), e);
+			throw new DotRuntimeException(e.getMessage(), e);
+		}
+
+		if (UtilMethods.isSet(up) &&  UtilMethods.isSet(up.getUserId())) {
+			try {
+				return APILocator.getUserAPI().loadUserById(up.getUserId(),APILocator.getUserAPI().getSystemUser(),false);
+			} catch (Exception e) {
+				Logger.error(this, e.getMessage(),e);
+				return null;
+			}
+		}
+		else {
+			return null;
+		}
+
+	}
 
 	public Object getCategoriesByNonLoggedUser() {
 

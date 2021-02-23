@@ -83,9 +83,13 @@ margin:0px auto;
             </tr>
             <tr>
                 <td style="text-align:right;vertical-align: top;padding-top:20px;"><label for="layoutDescription"><%=LanguageUtil.get(pageContext, "Icon")%>:</label>
-                <td>
-                    <input type="hidden" dojoType="dijit.form.TextBox" id="layoutDescription" />
-                    <dot-material-icon-picker  size="13px"></dot-material-icon-picker>
+                <td><input id="layoutDescription" type="text"
+                    dojoType="dijit.form.TextBox"
+                    onchange="updateIcon(this.value)" /> <i
+                    id="tabIcon" class="material-icons"
+                    style="position: absolute; top: 16px; right: 7px; overflow: hidden; width: 34px"
+                    aria-hidden="true"></i>
+                    <div class="hint-text"><%=LanguageUtil.get(pageContext, "Icon-hint")%></div>
                 </td>
             </tr>
             <tr>

@@ -112,9 +112,11 @@ public class VelocityLiveMode extends VelocityModeHandler {
             Logger.debug(this.getClass(), "Recording the ClickStream");
             if (Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", false)) {
                 if (user != null) {
-
+                    UserProxy userProxy = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(user,
+                            APILocator.getUserAPI().getSystemUser(), false);
+                    if (!userProxy.isNoclicktracking()) {
                         ClickstreamFactory.addRequest((HttpServletRequest) request, ((HttpServletResponse) response), host);
-                    
+                    }
                 } else {
                     ClickstreamFactory.addRequest((HttpServletRequest) request, ((HttpServletResponse) response), host);
                 }
