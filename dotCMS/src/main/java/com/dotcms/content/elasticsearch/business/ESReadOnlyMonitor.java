@@ -16,6 +16,8 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import io.vavr.control.Try;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -27,7 +29,7 @@ import java.util.stream.Collectors;
 public class ESReadOnlyMonitor {
 
     private final int TIME_TO_WAIT_AFTER_WRITE_MODE_SET_NOTY_VALUE = -1;
-
+    private final ExecutorService executorService =Executors.newSingleThreadExecutor();
     @VisibleForTesting
     long timeToWaitAfterWriteModeSet = TIME_TO_WAIT_AFTER_WRITE_MODE_SET_NOTY_VALUE;
 
@@ -172,9 +174,7 @@ public class ESReadOnlyMonitor {
             final ReadOnlyCheckerFunction checkFunction,
             final String writeModeMessageKey) {
 
-        DotConcurrentFactory.getInstance()
-                .getSubmitter()
-                .submit(
+        executorService.submit(
                         new MonitorRunnable(
                 this, putRequestFunction, checkFunction, writeModeMessageKey)
                 );
@@ -188,7 +188,7 @@ public class ESReadOnlyMonitor {
         );
     }
 
-    private synchronized void stop() {
+    private void stop() {
         this.started.set(false);
     }
 
