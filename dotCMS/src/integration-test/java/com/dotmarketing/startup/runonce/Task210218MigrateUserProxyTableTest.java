@@ -252,7 +252,7 @@ public class Task210218MigrateUserProxyTableTest {
     /**
      * Method to Test: {@link Task210218MigrateUserProxyTable#executeUpgrade()}
      * When: Run the Upgrade Task
-     * Should: Migrate user's additional info from user_proxy to user_ table and drop user_proxy table
+     * Should: Migrate user's additional info from user_proxy to user_ table
      * @throws DotDataException
      * @throws DotSecurityException
      */
