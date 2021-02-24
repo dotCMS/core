@@ -76,8 +76,7 @@ import com.dotmarketing.startup.runalways.Task00050LoadAppsSecretsTest;
 import com.dotmarketing.startup.runonce.Task201013AddNewColumnsToIdentifierTableTest;
 import com.dotmarketing.startup.runonce.Task201014UpdateColumnsValuesInIdentifierTableTest;
 import com.dotmarketing.startup.runonce.Task201102UpdateColumnSitelicTableTest;
-import com.dotmarketing.startup.runonce.Task210218RemoveUserProxyTableTest;
-import com.dotmarketing.startup.runonce.Task210218RemoveUserProxyTableTest;
+import com.dotmarketing.startup.runonce.Task210218MigrateUserProxyTableTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
@@ -390,7 +389,7 @@ import org.junit.runners.Suite.SuiteClasses;
         WorkflowBundlerTest.class,
         PublisherAPIImplTest.class,
         LegacyShortyIdApiTest.class,
-        Task210218RemoveUserProxyTableTest.class
+        Task210218MigrateUserProxyTableTest.class
 })
 public class MainSuite {
 
