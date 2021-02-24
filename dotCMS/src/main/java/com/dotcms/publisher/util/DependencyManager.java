@@ -1499,6 +1499,7 @@ public class DependencyManager {
 						//todo: Remove when JAspect is running in test
 						DbConnectionFactory.closeSilently();
 
+						setWaitingState(false);
 						break;
 					} catch (Exception e) {
 						Logger.error(DependencyThread.class, e);
