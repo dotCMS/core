@@ -84,6 +84,7 @@ public class ESReadOnlyMonitor {
      * @return false if a ESReadOnlyMonitor was started before
      */
     public boolean start(){
+        
         if (started.compareAndSet(false, true)) {
             if (timeToWaitAfterWriteModeSet == TIME_TO_WAIT_AFTER_WRITE_MODE_SET_NOTY_VALUE) {
                 loadTimeToWaitAfterWriteModeSet();

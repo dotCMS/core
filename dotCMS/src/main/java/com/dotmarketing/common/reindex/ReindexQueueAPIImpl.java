@@ -36,7 +36,7 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
 
     private final ReindexQueueFactory reindexQueueFactory;
     private final ESReadOnlyMonitor esReadOnlyMonitor;
-    private final ExecutorService executorService;
+
     public ReindexQueueAPIImpl() {
         this(FactoryLocator.getReindexQueueFactory(), ESReadOnlyMonitor.getInstance());
     }
@@ -45,7 +45,6 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
     public ReindexQueueAPIImpl(final ReindexQueueFactory reindexQueueFactory, final ESReadOnlyMonitor esReadOnlyMonitor) {
         this.reindexQueueFactory = reindexQueueFactory;
         this.esReadOnlyMonitor = esReadOnlyMonitor;
-        this.executorService = Executors.newSingleThreadExecutor();
     }
 
     @Override
@@ -251,16 +250,12 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
     public void markAsFailed(final ReindexEntry idx, final String cause) throws DotDataException {
         reindexQueueFactory.markAsFailed(idx, UtilMethods.shortenString(cause, 300));
 
-        if(!esReadOnlyMonitor.isIndexOrClusterReadOnly()) {
-            executorService.execute(() -> {
-                final String message = "Reindex failed for :" + idx + " because " + cause;
-                try {
-                    esReadOnlyMonitor.start(message);
-                } catch (Throwable throwable) {
-                    Logger.warnAndDebug(this.getClass(), throwable.getMessage(), throwable);
-    
-                }
-            });
+        final String message = "Reindex failed for :" + idx + " because " + cause;
+        try {
+            esReadOnlyMonitor.start(message);
+        } catch (Throwable throwable) {
+            Logger.warnAndDebug(this.getClass(), throwable.getMessage(), throwable);
+
         }
 
 

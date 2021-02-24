@@ -18,7 +18,7 @@ import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.common.settings.Settings;
-
+import org.elasticsearch.common.unit.TimeValue;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Arrays;
@@ -39,7 +39,7 @@ public final class ElasticsearchUtil {
      * @return
      */
     public static  boolean isAnyReadOnly(final String... indicesNames) throws IOException {
-        final GetSettingsRequest request = new GetSettingsRequest().indices(indicesNames);
+        final GetSettingsRequest request = new GetSettingsRequest().masterNodeTimeout(TimeValue.timeValueSeconds(15)).indices(indicesNames);
 
         Logger.debug(ElasticsearchUtil.class, () -> "Checking if current indices are read only");
 
@@ -154,7 +154,7 @@ public final class ElasticsearchUtil {
          try {
             return RestHighLevelClientProvider.getInstance()
                             .getClient().cluster()
-                            .getSettings(new ClusterGetSettingsRequest(), RequestOptions.DEFAULT);
+                            .getSettings(new ClusterGetSettingsRequest().masterNodeTimeout(TimeValue.timeValueSeconds(15)), RequestOptions.DEFAULT);
         } catch (IOException e) {
             Logger.warnAndDebug(ESIndexAPI.class, "Error getting ES cluster settings", e);
             throw new DotRuntimeException(e);
