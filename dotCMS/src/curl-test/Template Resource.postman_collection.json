@@ -5300,7 +5300,7 @@
 							"    var jsonData = pm.response.json();",
 							"    console.log(jsonData);",
 							"",
-							"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"assets.tar.gz\");",
+							"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"themes-all.tar.gz\");",
 							"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
 							"});"
 						],
@@ -5368,7 +5368,7 @@
 						}
 					]
 				},
-				"description": "Imports a Bundle that includes:\n* HTMLPage /blog/index\n* HTMLPage /blog/destinations/costa-rica\n* Contentlet [Blog] Ecotourism in Costa Rica\n* Blog Detail Page /blog/blog-detail"
+				"description": "Imports a Bundle that includes:\n* the themes folder of the demo.dotcms.com\n*"
 			},
 			"response": []
 		},
