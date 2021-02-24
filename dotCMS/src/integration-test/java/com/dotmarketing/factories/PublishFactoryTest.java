@@ -8,11 +8,17 @@ import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
+import com.dotcms.enterprise.rules.RulesAPIImpl;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.Versionable;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.rules.model.Condition;
+import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.google.common.collect.Lists;
 
 import com.dotcms.IntegrationTestBase;
@@ -35,6 +41,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -128,6 +135,12 @@ public class PublishFactoryTest extends IntegrationTestBase {
         }
     }
 
+    /***
+     * Method to Test: {@link PublishFactory#publishHTMLPage(IHTMLPage, HttpServletRequest)}
+     * When: Try to publish a page with a {@link Contentlet} with a future publish page
+     * Should: Publish the page anywhere and send a notification saying that the content is not going to show in the live version
+     * @throws Exception
+     */
     @Test
     public void testPublishHTMLPageWithContentWithFuturePublishDate() throws Exception {
         final Host host = new SiteDataGen().nextPersisted();
@@ -182,6 +195,7 @@ public class PublishFactoryTest extends IntegrationTestBase {
         final User systemUser = APILocator.systemUser();
 
         final List relatedNotPublished = new ArrayList();
+
         PublishFactory.getUnpublishedRelatedAssetsForPage(htmlPageAsset, relatedNotPublished,
                 true, systemUser, false);
 
@@ -222,6 +236,12 @@ public class PublishFactoryTest extends IntegrationTestBase {
          );
     }
 
+    /***
+     * Method to Test: {@link PublishFactory#publishHTMLPage(IHTMLPage, HttpServletRequest)}
+     * When: Try to publish a page with a {@link Contentlet} already expired
+     * Should: Publish the page anywhere and send a notification saying that the content is not going to show in the live version
+     * @throws Exception
+     */
     @Test
     public void testPublishHTMLPageWithExperiredContent() throws Exception {
         final Host host = new SiteDataGen().nextPersisted();
@@ -276,10 +296,6 @@ public class PublishFactoryTest extends IntegrationTestBase {
 
         final User systemUser = APILocator.systemUser();
 
-        final List relatedNotPublished = new ArrayList();
-        PublishFactory.getUnpublishedRelatedAssetsForPage(htmlPageAsset, relatedNotPublished,
-                true, systemUser, false);
-
         ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(
                 htmlPageAsset.getIdentifier(), htmlPageAsset.getLanguageId()).get();
 
@@ -300,6 +316,12 @@ public class PublishFactoryTest extends IntegrationTestBase {
         assertExpiredContentErrorMessage(contentlet_1, systemMessageEventUtilMock);
     }
 
+    /***
+     * Method to Test: {@link PublishFactory#publishHTMLPage(IHTMLPage, HttpServletRequest)}
+     * When: Try to publish a page with a {@link Contentlet} already expired and another {@link Contentlet} whit a future publish date
+     * Should: Publish the page anywhere and send two notification
+     * @throws Exception
+     */
     @Test
     public void testPublishHTMLPageWithExperiredAndFutureContent() throws Exception {
         final Host host = new SiteDataGen().nextPersisted();

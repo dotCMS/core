@@ -1,5 +1,6 @@
 package com.dotmarketing.factories;
 
+import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 
 import com.dotcms.api.system.event.message.MessageSeverity;
@@ -577,11 +578,7 @@ public class PublishFactory {
 
 			final String  message = LanguageUtil.get(messageKey, arguments);
 
-			final Role adminRole = APILocator.getRoleAPI().loadCMSAdminRole();
-			final List<String> usersId = APILocator.getRoleAPI().findUsersForRole(adminRole)
-					.stream()
-					.map(user -> user.getUserId())
-					.collect(Collectors.toList());
+			final User loggedInUser = APILocator.getLoginServiceAPI().getLoggedInUser();
 
 			final SystemMessageBuilder messageBuilder = new SystemMessageBuilder()
 					.setMessage(message)
@@ -589,8 +586,8 @@ public class PublishFactory {
 					.setType(MessageType.SIMPLE_MESSAGE)
 					.setLife(TimeUnit.SECONDS.toMillis(5));
 
-			systemMessageEventUtil.pushMessage(messageBuilder.create(), usersId);
-		} catch (final  LanguageException | DotDataException | DotSecurityException e) {
+			systemMessageEventUtil.pushMessage(messageBuilder.create(), list(loggedInUser.getUserId()));
+		} catch (final  LanguageException  e) {
 			Logger.warn(ESReadOnlyMonitor.class, () -> e.getMessage());
 		}
 	}
