@@ -20,7 +20,7 @@ import java.sql.SQLException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class Task210218RemoveUserProxyTableTest {
+public class Task210218MigrateUserProxyTableTest {
 
     private static UserAPI userAPI;
 
@@ -72,8 +72,7 @@ public class Task210218RemoveUserProxyTableTest {
             + "   chapter_officer NVARCHAR(255) null,\n"
             + "   primary key (inode),\n"
             + "   unique (user_id)\n"
-            + ");\n"
-            + "go";
+            + ");\n";
 
     private static final String USER_PROXY_CREATE_SCRIPT_MYSQL = "CREATE TABLE IF NOT EXISTS USER_PROXY (\n"
             + "   inode varchar(36) not null,\n"
@@ -251,7 +250,7 @@ public class Task210218RemoveUserProxyTableTest {
     }
 
     /**
-     * Method to Test: {@link Task210218RemoveUserProxyTable#executeUpgrade()}
+     * Method to Test: {@link Task210218MigrateUserProxyTable#executeUpgrade()}
      * When: Run the Upgrade Task
      * Should: Migrate user's additional info from user_proxy to user_ table and drop user_proxy table
      * @throws DotDataException
@@ -279,7 +278,7 @@ public class Task210218RemoveUserProxyTableTest {
         final User userWithoutAdditionalInfo = new UserDataGen()
                 .firstName("backendUser" + System.currentTimeMillis()).nextPersisted();
 
-        final Task210218RemoveUserProxyTable task = new Task210218RemoveUserProxyTable();
+        final Task210218MigrateUserProxyTable task = new Task210218MigrateUserProxyTable();
 
         assertTrue(task.forceRun());
         task.executeUpgrade();
@@ -294,8 +293,6 @@ public class Task210218RemoveUserProxyTableTest {
         assertEquals("MyTitle", userResult.getAdditionalInfo().get("title"));
         assertEquals("DummyVar1", userResult.getAdditionalInfo().get("var1"));
         assertEquals("DummyVar2", userResult.getAdditionalInfo().get("var2"));
-
-        assertFalse(task.forceRun());
 
     }
 

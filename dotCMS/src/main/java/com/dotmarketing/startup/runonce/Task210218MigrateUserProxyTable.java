@@ -9,15 +9,14 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Task used to migrate data from user_proxy table to user_ and drop user_proxy
+ * Task used to migrate data from user_proxy table to user_ as json objects
  */
-public class Task210218RemoveUserProxyTable implements StartupTask {
+public class Task210218MigrateUserProxyTable implements StartupTask {
 
     private static final ObjectMapper mapper = DotObjectMapperProvider.getInstance()
             .getDefaultObjectMapper();
@@ -48,24 +47,6 @@ public class Task210218RemoveUserProxyTable implements StartupTask {
                 }
 
             } catch (JsonProcessingException e) {
-                throw new DotRuntimeException(e);
-            }
-
-            //remove user_proxy table
-            try {
-
-                dotConnect = new DotConnect();
-
-                if (DbConnectionFactory.isOracle()){
-                    dotConnect.setSQL("SELECT COUNT(*) as exist FROM user_tables WHERE table_name='USER_PROXY'");
-                    BigDecimal existTable = (BigDecimal) dotConnect.loadObjectResults().get(0).get("exist");
-                    if(existTable.longValue() > 0) {
-                        new DotConnect().executeStatement("drop table USER_PROXY");
-                    }
-                } else{
-                    new DotConnect().executeStatement("drop table if exists USER_PROXY");
-                }
-            } catch (SQLException e) {
                 throw new DotRuntimeException(e);
             }
         }
