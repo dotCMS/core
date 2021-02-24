@@ -5343,7 +5343,7 @@
 						{
 							"key": "file",
 							"type": "file",
-							"src": "/Users/erickgonzalez/Documents/dotcms/core/dotCMS/src/curl-test/resources/themes-all.tar.gz"
+							"src": "resources/themes-all.tar.gz"
 						}
 					]
 				},
