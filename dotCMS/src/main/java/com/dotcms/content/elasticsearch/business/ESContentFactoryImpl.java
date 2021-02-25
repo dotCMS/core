@@ -5,6 +5,7 @@ import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATI
 import static com.dotmarketing.util.StringUtils.lowercaseStringExceptMatchingTokens;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.util.PaginatedArrayList;
 import java.io.Serializable;
@@ -1570,6 +1571,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             Logger.warn(this.getClass(), "----------------------------------------------");
             return new SearchHits(new SearchHit[] {}, new TotalHits(0, Relation.EQUAL_TO), 0);
         } catch (final Exception e) {
+            rebuildRestHighLevelClientIfNeeded(e);
             final String errorMsg = String.format("An error occurred when executing the Lucene Query [ %s ] : %s",
                             searchRequest.source().toString(), e.getMessage());
             Logger.warnAndDebug(ESContentFactoryImpl.class, errorMsg, e);
@@ -1578,6 +1580,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
             
         
         
+    }
+
+    private void rebuildRestHighLevelClientIfNeeded(Exception e) {
+        if(e.getMessage().contains("reactor status: STOPPED")) {
+            RestHighLevelClientProvider.getInstance().rebuildClient();
+        }
     }
 
     /**
@@ -1607,6 +1615,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             Logger.warn(this.getClass(), "----------------------------------------------");
             return -1L;
         } catch (final Exception e) {
+            rebuildRestHighLevelClientIfNeeded(e);
             final String errorMsg = String.format("An error occurred when executing the Lucene Query [ %s ] : %s",
                     countRequest.source().toString(), e.getMessage());
             Logger.warnAndDebug(ESContentFactoryImpl.class, errorMsg, e);
@@ -1768,6 +1777,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             Logger.warn(this.getClass(), "----------------------------------------------");
             return new PaginatedArrayList<>();
         } catch (final Exception e) {
+            rebuildRestHighLevelClientIfNeeded(e);
             final String errorMsg = String.format("An error occurred when executing the Lucene Query [ %s ] : %s",
                     searchRequest.source().toString(), e.getMessage());
             Logger.warnAndDebug(ESContentFactoryImpl.class, errorMsg, e);

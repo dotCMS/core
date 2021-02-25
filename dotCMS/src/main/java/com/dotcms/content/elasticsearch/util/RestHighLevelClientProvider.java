@@ -79,5 +79,7 @@ public abstract class RestHighLevelClientProvider {
     
     public abstract RestHighLevelClient getClient();
 
+    public abstract void rebuildClient();
+
     public abstract void setClient(final RestHighLevelClient client);
 }
