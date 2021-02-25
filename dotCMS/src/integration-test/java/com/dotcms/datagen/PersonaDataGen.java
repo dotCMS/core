@@ -113,8 +113,8 @@ public class PersonaDataGen extends ContentletDataGen {
   public Persona nextPersisted() {
     Persona persona = next();
 
-    persona.setIndexPolicy(IndexPolicy.WAIT_FOR);
-    persona.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+    persona.setIndexPolicy(IndexPolicy.FORCE);
+    persona.setIndexPolicyDependencies(IndexPolicy.FORCE);
     persona.setBoolProperty(Contentlet.IS_TEST_MODE, true);
     Contentlet contentlet = persist(persona);
     try {
