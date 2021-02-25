@@ -176,7 +176,6 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
                 .setFailureListener(new RestClient.FailureListener() {
                     public void onFailure(Node node) {
                         Logger.error(this, node.toString());
-//                        throw new IllegalStateException("break dotCMS");
                     }
                 });
 
