@@ -283,6 +283,7 @@ compileJava {
     targetCompatibility = 1.8
     sourceCompatibility = 1.8
     options.incremental = true
+    options.compilerArgs.addAll(['--release', '8'])
 }
 
 jar{
