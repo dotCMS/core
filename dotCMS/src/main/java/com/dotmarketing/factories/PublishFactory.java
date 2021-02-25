@@ -587,6 +587,8 @@ public class PublishFactory {
 					.setLife(TimeUnit.SECONDS.toMillis(5));
 
 			systemMessageEventUtil.pushMessage(messageBuilder.create(), list(loggedInUser.getUserId()));
+
+			Logger.warn(PublishFactory.class, message);
 		} catch (final  LanguageException  e) {
 			Logger.warn(ESReadOnlyMonitor.class, () -> e.getMessage());
 		}
