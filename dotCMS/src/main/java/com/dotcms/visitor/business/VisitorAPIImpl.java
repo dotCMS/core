@@ -89,9 +89,8 @@ public class VisitorAPIImpl implements VisitorAPI {
 				try {
 
 					final User user = com.liferay.portal.util.PortalUtil.getUser(request);
-					final String personaIDorTag = Objects.nonNull(request
-                            .getParameter(WebKeys.CMS_PERSONA_PARAMETER)) ? (String) request
-                            .getAttribute(WebKeys.CMS_PERSONA_PARAMETER) :
+					final String personaIDorTag = Objects.nonNull(request.getParameter(WebKeys.CMS_PERSONA_PARAMETER)) ?
+                            request.getParameter(WebKeys.CMS_PERSONA_PARAMETER) :
                             (String) request.getAttribute(WebKeys.CMS_PERSONA_PARAMETER);
 
                     final Persona persona = getPersona(pageMode, user, personaIDorTag);
