@@ -70,7 +70,7 @@ configurations.all({
 
 
 // Apply the java plugin to add support for Java.
-apply plugin: 'java'
+apply plugin: 'java', version: '6.8.3'
 apply plugin: 'aspectj'
 apply plugin: 'war'
 apply plugin: 'org.unbroken-dome.test-sets'
