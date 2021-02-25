@@ -22,6 +22,7 @@ import com.dotcms.enterprise.publishing.remote.bundler.UserBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.WorkflowBundler;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.*;
+import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.environment.bean.Environment;
@@ -198,6 +199,7 @@ public class PushPublisher extends Publisher {
 							if (DeliveryStrategy.ALL_ENDPOINTS.equals(this.config.getDeliveryStrategy())
 									|| (DeliveryStrategy.FAILED_ENDPOINTS.equals(this.config.getDeliveryStrategy())
 									&& PublishAuditStatus.Status.SUCCESS.getCode() != epDetail.getStatus()
+                                    && Status.SUCCESS_WITH_WARNINGS.getCode() != epDetail.getStatus()
 									&& PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode() != epDetail.getStatus())) {
 								endpoints.add(ep);
 							}

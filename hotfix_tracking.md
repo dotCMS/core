@@ -8,3 +8,5 @@ This maintenance release includes the following code fixes:
 2. https://github.com/dotCMS/core/issues/19564 : 301 and 302 Vanity URL redirects do not pass querystrings
 
 3. https://github.com/dotCMS/core/issues/19608 : Contentlets lose inherited permissions until cache is flushed
+
+4. https://github.com/dotCMS/core/issues/19679 : Don't let rule PP fail
