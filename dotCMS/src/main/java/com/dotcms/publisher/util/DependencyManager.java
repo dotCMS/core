@@ -24,6 +24,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.PersonalizedContentlet;
+import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
@@ -1041,7 +1042,7 @@ public class DependencyManager {
 				for (final Relationship relationship : relations) {
 					relationships.addOrClean(relationship.getInode(), relationship.getModDate());
 
-					if (!contentTypes.contains(relationship.getChildStructureInode()) && config
+					if (!dependencyProcessor.alreadyProcess(relationship.getChildStructureInode(), AssetTypes.CONTENT_TYPE) && config
 							.getOperation().equals(Operation.PUBLISH)) {
 						final Structure childStructure = CacheLocator.getContentTypeCache()
 								.getStructureByInode(relationship.getChildStructureInode());
@@ -1458,7 +1459,7 @@ public class DependencyManager {
 			}
 		}
 
-		public synchronized boolean alreadyProcess(final String assetKey, final AssetTypes assetTypes) {
+		public boolean alreadyProcess(final String assetKey, final AssetTypes assetTypes) {
 			final Set<String> set = assetsAlreadyProcessed.get(assetTypes);
 			return set != null && set.contains(assetKey);
 		}
@@ -1511,7 +1512,7 @@ public class DependencyManager {
 				waitingForSomethingToProcess = value;
 			}
 
-			private synchronized boolean getWaitingState() {
+			private boolean getWaitingState() {
 				return waitingForSomethingToProcess;
 			}
 		}
