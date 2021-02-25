@@ -459,12 +459,8 @@ dependencies {
 
     compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.2'
 
-    compile (group: 'org.apache.xmlgraphics', name: 'batik-rasterizer', version:'1.10') {
-        exclude(group: 'xml-apis')
-    }
-    compile (group: 'org.apache.xmlgraphics', name: 'batik-codec', version:'1.10') {
-        exclude(group: 'xml-apis')
-    }
+    compile group: 'org.apache.xmlgraphics', name: 'batik-rasterizer', version:'1.10'
+    compile group: 'org.apache.xmlgraphics', name: 'batik-codec', version:'1.10'
     compile (group: 'org.apache.xmlgraphics', name: 'xmlgraphics-commons', version:'1.5') {
         exclude(group: 'commons-logging')
     }
