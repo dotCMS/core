@@ -35,7 +35,6 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 
@@ -375,7 +374,7 @@ public class PublishFactory {
 					.map(contentlet -> String.format("<li>%s</li>", contentlet.getTitle()))
 					.collect(Collectors.joining());
 
-        	sendMessage("publish.page.future.fields.error", String.format("<ul>%s</ul>", listContentlets));
+        	sendMessage(user,"publish.page.future.fields.error", String.format("<ul>%s</ul>", listContentlets));
 		}
 
 		if (!expiredContentlets.isEmpty()) {
@@ -383,7 +382,7 @@ public class PublishFactory {
 					.map(contentlet -> String.format("<li>%s</li>", contentlet.getTitle()))
 					.collect(Collectors.joining());
 
-			sendMessage("publish.page.expired.fields.error", String.format("<ul>%s</ul>", listContentlets));
+			sendMessage(user,"publish.page.expired.fields.error", String.format("<ul>%s</ul>", listContentlets));
 		}
 
         return true;
@@ -573,12 +572,10 @@ public class PublishFactory {
         return relatedAssets;
     }
 
-	private static void sendMessage(final String messageKey, String... arguments) {
+	private static void sendMessage(final User user, final String messageKey, String... arguments) {
 		try {
 
 			final String  message = LanguageUtil.get(messageKey, arguments);
-
-			final User loggedInUser = APILocator.getLoginServiceAPI().getLoggedInUser();
 
 			final SystemMessageBuilder messageBuilder = new SystemMessageBuilder()
 					.setMessage(message)
@@ -586,7 +583,7 @@ public class PublishFactory {
 					.setType(MessageType.SIMPLE_MESSAGE)
 					.setLife(TimeUnit.SECONDS.toMillis(5));
 
-			systemMessageEventUtil.pushMessage(messageBuilder.create(), list(loggedInUser.getUserId()));
+			systemMessageEventUtil.pushMessage(messageBuilder.create(), list(user.getUserId()));
 
 			Logger.warn(PublishFactory.class, message);
 		} catch (final  LanguageException  e) {
