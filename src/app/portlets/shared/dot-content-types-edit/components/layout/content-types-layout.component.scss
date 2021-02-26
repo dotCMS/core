@@ -56,8 +56,12 @@ $top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-mai
     }
 
     .content-type__fields-main {
+        background-color: $gray-bg;
         display: flex;
+        flex-direction: column;
         flex-grow: 1;
+        overflow: auto;
+        padding: $spacing-3;
     }
 
     .content-type__fields-layout {

@@ -34,10 +34,10 @@
         class="content-type__properties"
         header="{{ 'contenttypes.tab.fields.header' | dm }}"
     >
-        <div class="content-type__fields-layout">
-            <dot-portlet-box class="content-type__fields-main">
+        <div class="content-type__fields-layout" id="content-type-form-layout">
+            <div class="content-type__fields-main" id="content-type-form-main">
                 <ng-content></ng-content>
-            </dot-portlet-box>
+            </div>
             <div class="content-type__fields-sidebar">
                 <p-splitButton
                     icon="pi pi-plus"

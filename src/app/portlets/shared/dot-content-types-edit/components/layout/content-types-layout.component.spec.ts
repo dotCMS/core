@@ -161,35 +161,6 @@ describe('ContentTypesLayoutComponent', () => {
         expect(fieldDragDropService.setBagOptions).toHaveBeenCalledTimes(1);
     });
 
-    it('should always have dot-portlet-box in the first tab', fakeAsync(() => {
-        fixture.componentInstance.contentType = fakeContentType;
-        fixture.detectChanges();
-
-        // We click a random tab and the first tab should always have the dot-portlet-box
-        const thirdTabLink = de.query(By.css('ul.p-tabview-nav li:nth-child(3) > a'));
-        thirdTabLink.nativeElement.click();
-        fixture.detectChanges();
-
-        fixture.whenStable().then(() => {
-            const firstTab = de.query(By.css('.content-type__properties'));
-            const firstTabPortletBox = firstTab.query(By.css('dot-portlet-box'));
-            expect(firstTabPortletBox).not.toBeNull();
-        });
-    }));
-
-    it("should have first tab's dot-portlet-box inside of content-type__fields-layout", fakeAsync(() => {
-        fixture.componentInstance.contentType = fakeContentType;
-        fixture.detectChanges();
-
-        fixture.whenStable().then(() => {
-            const firstTab = de.query(By.css('.content-type__properties'));
-            const firstTabPortletBox = firstTab.query(By.css('dot-portlet-box'));
-            expect(firstTabPortletBox.nativeElement.parentNode.classList).toContain(
-                'content-type__fields-layout'
-            );
-        });
-    }));
-
     it('should have dot-portlet-box in the second tab after it has been clicked', fakeAsync(() => {
         fixture.componentInstance.contentType = fakeContentType;
 
