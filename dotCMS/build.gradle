@@ -78,6 +78,15 @@ apply plugin: 'project-report' /*For gradle dependencies: ./gradlew htmlDependen
 apply plugin: 'idea'
 apply plugin: 'eclipse'
 
+targetCompatibility = 1.8
+sourceCompatibility = 1.8
+
+// Compile Java.
+compileJava {
+    options.incremental = true
+    options.compilerArgs.addAll(['--release', '8'])
+}
+
 eclipse {
     project {
         name = 'dotCMS'
@@ -277,14 +286,6 @@ if (project.hasProperty('jarBaseName')) {
 
 def tomcatDistBase = "$distLocation/$tomcatDistInstallLocation-$tomcatInstallVersion"
 def dotcmsDistBase = "../$tomcatDistInstallLocation-$tomcatInstallVersion"
-
-// Compile Java.
-compileJava {
-    targetCompatibility = 1.8
-    sourceCompatibility = 1.8
-    options.incremental = true
-    options.compilerArgs.addAll(['--release', '8'])
-}
 
 jar{
     exclude 'com/dotcms/enterprise/**'
