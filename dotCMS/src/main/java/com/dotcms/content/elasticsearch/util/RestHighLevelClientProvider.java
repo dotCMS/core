@@ -79,7 +79,9 @@ public abstract class RestHighLevelClientProvider {
     
     public abstract RestHighLevelClient getClient();
 
-    public abstract void rebuildClient();
+    public void rebuildClient() {
+        Logger.info(this, "Not rebuilding REST High Level Client. To rebuild, override this method");
+    };
 
     public abstract void setClient(final RestHighLevelClient client);
 }
