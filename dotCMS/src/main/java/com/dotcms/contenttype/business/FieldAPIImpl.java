@@ -649,6 +649,7 @@ public class FieldAPIImpl implements FieldAPI {
      * @throws DotDataException when SQL error happens
      */
     @Override
+    @CloseDBIfOpened
     public List<FieldVariable> loadVariables(final Field field) throws DotDataException {
         return UtilMethods.isSet(field) ? fieldFactory.loadVariables(field) : Collections.emptyList();
     }
