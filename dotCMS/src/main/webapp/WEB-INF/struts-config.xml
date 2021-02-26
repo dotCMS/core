@@ -20,7 +20,7 @@
       <form-bean name="FolderForm" type="com.dotmarketing.portlets.folders.struts.FolderForm"></form-bean>
       <form-bean name="FileUploadForm" type="com.dotmarketing.portlets.fileupload.struts.FileForm"></form-bean>
       <form-bean name="ContainerForm" type="com.dotmarketing.portlets.containers.struts.ContainerForm"></form-bean>
-      <form-bean name="TemplateForm" type="com.dotmarketing.portlets.templates.struts.TemplateForm"></form-bean>
+<!--      <form-bean name="TemplateForm" type="com.dotmarketing.portlets.templates.struts.TemplateForm"></form-bean>-->
       <form-bean name="WorkflowTaskForm" type="com.dotmarketing.portlets.workflows.struts.WorkflowTaskForm"></form-bean>
 	    <form-bean name="VirtualLinkForm" type="com.dotmarketing.portlets.virtuallinks.struts.VirtualLinkForm"></form-bean>
       <form-bean name="LanguageForm" type="com.dotmarketing.portlets.languagesmanager.struts.LanguageForm"></form-bean>
@@ -210,20 +210,20 @@
       <!-- Container  Management -->
 
       <!-- Template Management -->
-      <action path="/ext/templates/view_templates" type="com.dotmarketing.portlets.templates.action.ViewTemplatesAction">
-         <forward name="portlet.ext.templates.view_templates" path="portlet.ext.templates.view_templates" />
-         <forward name="portlet.ext.templates.view" path="portlet.ext.templates.view" />
-      </action>
-      <action path="/ext/templates/edit_template" type="com.dotmarketing.portlets.templates.action.EditTemplateAction" name="TemplateForm" scope="request" input="portlet.ext.templates.edit_template" validate="false">
-         <forward name="portlet.ext.templates.edit_template" path="portlet.ext.templates.edit_template"></forward>
-         <!-- BEGIN GRAZIANO issue-12-dnd-template -->
-         <forward name="portlet.ext.templates.design_template" path="portlet.ext.templates.design_template"></forward>
-         <!-- END GRAZIANO issue-12-dnd-template -->
-         <forward name="portlet.ext.templates.container_selector" path="portlet.ext.templates.container_selector"></forward>
-      </action>
-      <action path="/ext/templates/publish_templates" type="com.dotmarketing.portlets.templates.action.PublishTemplatesAction">
-         <forward name="portlet.ext.templates.publish_templates" path="portlet.ext.templates.publish_templates" />
-      </action>
+<!--      <action path="/ext/templates/view_templates" type="com.dotmarketing.portlets.templates.action.ViewTemplatesAction">-->
+<!--         <forward name="portlet.ext.templates.view_templates" path="portlet.ext.templates.view_templates" />-->
+<!--         <forward name="portlet.ext.templates.view" path="portlet.ext.templates.view" />-->
+<!--      </action>-->
+<!--      <action path="/ext/templates/edit_template" type="com.dotmarketing.portlets.templates.action.EditTemplateAction" name="TemplateForm" scope="request" input="portlet.ext.templates.edit_template" validate="false">-->
+<!--         <forward name="portlet.ext.templates.edit_template" path="portlet.ext.templates.edit_template"></forward>-->
+<!--         &lt;!&ndash; BEGIN GRAZIANO issue-12-dnd-template &ndash;&gt;-->
+<!--         <forward name="portlet.ext.templates.design_template" path="portlet.ext.templates.design_template"></forward>-->
+<!--         &lt;!&ndash; END GRAZIANO issue-12-dnd-template &ndash;&gt;-->
+<!--         <forward name="portlet.ext.templates.container_selector" path="portlet.ext.templates.container_selector"></forward>-->
+<!--      </action>-->
+<!--      <action path="/ext/templates/publish_templates" type="com.dotmarketing.portlets.templates.action.PublishTemplatesAction">-->
+<!--         <forward name="portlet.ext.templates.publish_templates" path="portlet.ext.templates.publish_templates" />-->
+<!--      </action>-->
       <!-- Template  Management -->
 
 
@@ -276,7 +276,7 @@
          <forward name="portlet.ext.director.unlock_contentlet" path="portlet.ext.director.unlock_contentlet"></forward>
          <forward name="portlet.ext.director.unlock_htmlpage" path="portlet.ext.director.unlock_htmlpage"></forward>
          <forward name="portlet.ext.director.unlock_container" path="portlet.ext.director.unlock_container"></forward>
-         <forward name="portlet.ext.director.unlock_template" path="portlet.ext.director.unlock_template"></forward>
+<!--         <forward name="portlet.ext.director.unlock_template" path="portlet.ext.director.unlock_template"></forward>-->
          <forward name="portlet.ext.director.unlock_link" path="portlet.ext.director.unlock_link"></forward>
          <forward name="portlet.ext.director.unlock_popup_link" path="portlet.ext.director.unlock_popup_link"></forward>
          <forward name="portlet.ext.director.unlock_file" path="portlet.ext.director.unlock_file"></forward>
