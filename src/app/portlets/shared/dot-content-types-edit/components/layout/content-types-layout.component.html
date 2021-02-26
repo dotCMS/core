@@ -34,20 +34,22 @@
         class="content-type__properties"
         header="{{ 'contenttypes.tab.fields.header' | dm }}"
     >
-        <dot-portlet-box class="content-type__fields-main">
-            <ng-content></ng-content>
-        </dot-portlet-box>
-        <div class="content-type__fields-sidebar">
-            <p-splitButton
-                icon="pi pi-plus"
-                label="{{ 'contenttypes.content.row' | dm }}"
-                (onClick)="fireAddRowEvent()"
-                [model]="actions"
-            >
-            </p-splitButton>
-            <dot-content-types-fields-list
-                [baseType]="contentType.baseType"
-            ></dot-content-types-fields-list>
+        <div class="content-type__fields-layout">
+            <dot-portlet-box class="content-type__fields-main">
+                <ng-content></ng-content>
+            </dot-portlet-box>
+            <div class="content-type__fields-sidebar">
+                <p-splitButton
+                    icon="pi pi-plus"
+                    label="{{ 'contenttypes.content.row' | dm }}"
+                    (onClick)="fireAddRowEvent()"
+                    [model]="actions"
+                >
+                </p-splitButton>
+                <dot-content-types-fields-list
+                    [baseType]="contentType.baseType"
+                ></dot-content-types-fields-list>
+            </div>
         </div>
     </p-tabPanel>
     <p-tabPanel

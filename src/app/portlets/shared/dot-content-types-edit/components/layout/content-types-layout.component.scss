@@ -60,6 +60,12 @@ $top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-mai
         flex-grow: 1;
     }
 
+    .content-type__fields-layout {
+        display: flex;
+        height: calc(100vh - #{$top-height});
+        overflow-y: hidden;
+    }
+
     .content-type__fields-sidebar {
         border-left: solid 1px $gray-bg;
         width: 200px;

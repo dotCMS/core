@@ -177,6 +177,19 @@ describe('ContentTypesLayoutComponent', () => {
         });
     }));
 
+    it("should have first tab's dot-portlet-box inside of content-type__fields-layout", fakeAsync(() => {
+        fixture.componentInstance.contentType = fakeContentType;
+        fixture.detectChanges();
+
+        fixture.whenStable().then(() => {
+            const firstTab = de.query(By.css('.content-type__properties'));
+            const firstTabPortletBox = firstTab.query(By.css('dot-portlet-box'));
+            expect(firstTabPortletBox.nativeElement.parentNode.classList).toContain(
+                'content-type__fields-layout'
+            );
+        });
+    }));
+
     it('should have dot-portlet-box in the second tab after it has been clicked', fakeAsync(() => {
         fixture.componentInstance.contentType = fakeContentType;
 
