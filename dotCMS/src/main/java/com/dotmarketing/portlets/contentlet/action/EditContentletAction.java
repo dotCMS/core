@@ -15,6 +15,7 @@ import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.ContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.notifications.bean.NotificationLevel;
@@ -1948,10 +1949,9 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 			//Add the structure to the collection if not exists.
             //In case of PERSONA AND FORM, the structure will be included only if the license is enterprise
-			if(!structures.contains(structure) &&
-                    ((!structure.isPersona() && !structure.isForm()) || (
-                        LicenseManager.getInstance().isEnterprise() && (structure.isPersona()
-                                || structure.isForm())))) {
+            if (!structures.contains(structure) &&
+                    APILocator.getContentTypeAPI(user)
+                            .isContentTypeAllowed(new StructureTransformer(structure).from())) {
                     //avoid exception if the list is immutable
                     structures = new ArrayList<>(structures);
                     structures.add(structure);

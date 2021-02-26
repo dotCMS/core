@@ -320,9 +320,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		// Getting the contentlets variables to work
 		Contentlet currentContentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
 
-        if (!LicenseManager.getInstance().isEnterprise() && (BaseContentType.FORM
-                == currentContentlet.getContentType().baseType()
-                || BaseContentType.PERSONA == currentContentlet.getContentType().baseType())) {
+        if (!APILocator.getContentTypeAPI(user).isContentTypeAllowed(currentContentlet.getContentType())) {
             SessionMessages.add(request, "message", "An enterprise license is required to perform this operation");
             throw new DotSecurityException("An enterprise license is required to perform this operation");
         }
