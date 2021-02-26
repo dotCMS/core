@@ -1421,7 +1421,7 @@ public class DependencyManager {
 
 		private synchronized void waitForDependencies() {
 			try {
-				wait();
+				wait(TimeUnit.MINUTES.toMillis(1));
 			} catch (InterruptedException e) {
 				Logger.error(DependencyProcessor.class, e.getMessage());
 			}
