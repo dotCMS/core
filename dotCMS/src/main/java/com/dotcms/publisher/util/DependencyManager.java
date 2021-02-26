@@ -1042,28 +1042,24 @@ public class DependencyManager {
 				for (final Relationship relationship : relations) {
 					relationships.addOrClean(relationship.getInode(), relationship.getModDate());
 
-					if (!dependencyProcessor.alreadyProcess(relationship.getChildStructureInode(), AssetTypes.CONTENT_TYPE) && config
-							.getOperation().equals(Operation.PUBLISH)) {
+					if (!dependencyProcessor.alreadyProcess(relationship.getChildStructureInode(), AssetTypes.CONTENT_TYPE) &&
+							config.getOperation().equals(Operation.PUBLISH)) {
 						final Structure childStructure = CacheLocator.getContentTypeCache()
 								.getStructureByInode(relationship.getChildStructureInode());
 						contentTypes
 								.addOrClean(relationship.getChildStructureInode(), childStructure.getModDate());
 
-						if (!dependencyProcessor.alreadyProcess(relationship.getChildStructureInode(), AssetTypes.CONTENT_TYPE)) {
-							dependencyProcessor.put(relationship.getChildStructureInode(), AssetTypes.CONTENT_TYPE);
-						}
+						dependencyProcessor.put(relationship.getChildStructureInode(), AssetTypes.CONTENT_TYPE);
 					}
-					if (!contentTypes.contains(relationship.getParentStructureInode()) && config
-							.getOperation().equals(Operation.PUBLISH)) {
+					if (!dependencyProcessor.alreadyProcess(relationship.getParentStructureInode(), AssetTypes.CONTENT_TYPE) &&
+							config.getOperation().equals(Operation.PUBLISH)) {
 						Structure struct = CacheLocator.getContentTypeCache()
 								.getStructureByInode(relationship.getParentStructureInode());
 
 						contentTypes.addOrClean(relationship.getParentStructureInode(),
 								struct.getModDate());
 
-						if (!dependencyProcessor.alreadyProcess(relationship.getParentStructureInode(), AssetTypes.CONTENT_TYPE)) {
-							dependencyProcessor.put(relationship.getParentStructureInode(), AssetTypes.CONTENT_TYPE);
-						}
+						dependencyProcessor.put(relationship.getParentStructureInode(), AssetTypes.CONTENT_TYPE);
 					}
 				}
 			}
