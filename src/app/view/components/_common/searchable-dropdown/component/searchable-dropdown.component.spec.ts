@@ -77,6 +77,7 @@ describe('SearchableDropdownComponent', () => {
     const NROWS = 6;
 
     let hostFixture: ComponentFixture<HostTestComponent>;
+    let hostComp: HostTestComponent;
     let de: DebugElement;
     let comp: SearchableDropdownComponent;
     const data = [];
@@ -103,6 +104,7 @@ describe('SearchableDropdownComponent', () => {
             }).compileComponents();
 
             hostFixture = TestBed.createComponent(HostTestComponent);
+            hostComp = hostFixture.componentInstance;
             de = hostFixture.debugElement.query(By.css('dot-searchable-dropdown'));
             comp = de.componentInstance;
 
@@ -120,18 +122,22 @@ describe('SearchableDropdownComponent', () => {
             rows = NROWS / 3;
             pageLinkSize = 1;
 
-            hostFixture.componentInstance.totalRecords = NROWS;
-            hostFixture.componentInstance.rows = rows;
-            hostFixture.componentInstance.pageLinkSize = pageLinkSize;
+            hostComp.totalRecords = NROWS;
+            hostComp.rows = rows;
+            hostComp.pageLinkSize = pageLinkSize;
         })
     );
 
     beforeEach(() => {
-        hostFixture.componentInstance.placeholder = 'placeholder';
+        hostComp.placeholder = 'placeholder';
         hostFixture.detectChanges();
 
         mainButton = de.query(By.css('button'));
         mainButton.nativeElement.dispatchEvent(new MouseEvent('click'));
+    });
+
+    it('should have placeholder set', () => {
+        expect(mainButton.nativeElement.innerText).toBe('placeholder');
     });
 
     it('should disabled', () => {
@@ -157,15 +163,15 @@ describe('SearchableDropdownComponent', () => {
     });
 
     it('should renderer the data', () => {
-        hostFixture.componentInstance.data = data;
-        hostFixture.componentInstance.labelPropertyName = 'name';
+        hostComp.data = data;
+        hostComp.labelPropertyName = 'name';
 
         hostFixture.detectChanges();
 
         const pdataview = de.query(By.css('p-dataview')).componentInstance;
 
         expect(
-            hostFixture.componentInstance.data.map((item) => {
+            hostComp.data.map((item) => {
                 item.label = item.name;
                 return item;
             })
@@ -173,8 +179,8 @@ describe('SearchableDropdownComponent', () => {
     });
 
     it('should render a string property in p-dataview', () => {
-        hostFixture.componentInstance.data = data;
-        hostFixture.componentInstance.labelPropertyName = 'name';
+        hostComp.data = data;
+        hostComp.labelPropertyName = 'name';
 
         hostFixture.detectChanges();
 
@@ -185,9 +191,9 @@ describe('SearchableDropdownComponent', () => {
     });
 
     it('should set CSS class, width', fakeAsync(() => {
-        hostFixture.componentInstance.data = data;
-        hostFixture.componentInstance.cssClass = 'testClass';
-        hostFixture.componentInstance.overlayWidth = '650px';
+        hostComp.data = data;
+        hostComp.cssClass = 'testClass';
+        hostComp.overlayWidth = '650px';
         hostFixture.detectChanges();
         tick();
 
@@ -205,7 +211,7 @@ describe('SearchableDropdownComponent', () => {
     });
 
     it('should display Action button', () => {
-        hostFixture.componentInstance.action = () => {};
+        hostComp.action = () => {};
 
         hostFixture.detectChanges();
         const actionBtn = de.query(By.css('.searchable-dropdown__search-action dot-icon-button'))
@@ -226,8 +232,8 @@ describe('SearchableDropdownComponent', () => {
     });
 
     it('should render a string array of properties in p-dataview', () => {
-        hostFixture.componentInstance.data = data;
-        hostFixture.componentInstance.labelPropertyName = ['name', 'parentPermissionable.hostname'];
+        hostComp.data = data;
+        hostComp.labelPropertyName = ['name', 'parentPermissionable.hostname'];
 
         hostFixture.detectChanges();
 
@@ -277,8 +283,8 @@ describe('SearchableDropdownComponent', () => {
         let dataExpected;
 
         beforeEach(() => {
-            hostFixture.componentInstance.data = data;
-            hostFixture.componentInstance.labelPropertyName = 'name';
+            hostComp.data = data;
+            hostComp.labelPropertyName = 'name';
             spyOn(comp.change, 'emit');
 
             hostFixture.detectChanges();
@@ -313,10 +319,10 @@ describe('SearchableDropdownComponent', () => {
     });
 
     it('should be valueString equals to placeholder', () => {
-        hostFixture.componentInstance.placeholder = 'testing placeholder';
+        hostComp.placeholder = 'testing placeholder';
 
         hostFixture.detectChanges();
-        expect(hostFixture.componentInstance.placeholder).toEqual(comp.valueString);
+        expect(hostComp.placeholder).toEqual(comp.valueString);
     });
 });
 
@@ -395,6 +401,7 @@ describe('SearchableDropdownComponent', () => {
     const NROWS = 6;
 
     let hostFixture: ComponentFixture<HostTestExternalTemplateComponent>;
+    let hostComp: HostTestExternalTemplateComponent;
     let de: DebugElement;
     const data = [];
     let rows: number;
@@ -420,6 +427,7 @@ describe('SearchableDropdownComponent', () => {
             }).compileComponents();
 
             hostFixture = TestBed.createComponent(HostTestExternalTemplateComponent);
+            hostComp = hostFixture.componentInstance;
             de = hostFixture.debugElement.query(By.css('dot-searchable-dropdown'));
 
             for (let i = 0; i < NROWS; i++) {
@@ -436,16 +444,16 @@ describe('SearchableDropdownComponent', () => {
             rows = 10;
             pageLinkSize = 1;
 
-            hostFixture.componentInstance.totalRecords = NROWS;
-            hostFixture.componentInstance.rows = rows;
-            hostFixture.componentInstance.pageLinkSize = pageLinkSize;
+            hostComp.totalRecords = NROWS;
+            hostComp.rows = rows;
+            hostComp.pageLinkSize = pageLinkSize;
         })
     );
 
     beforeEach(() => {
-        hostFixture.componentInstance.placeholder = 'placeholder';
-        hostFixture.componentInstance.data = data;
-        hostFixture.componentInstance.labelPropertyName = 'name';
+        hostComp.placeholder = 'placeholder';
+        hostComp.data = data;
+        hostComp.labelPropertyName = 'name';
         hostFixture.detectChanges();
 
         mainButton = de.query(By.css('.dot-persona-selector__testContainer'));
