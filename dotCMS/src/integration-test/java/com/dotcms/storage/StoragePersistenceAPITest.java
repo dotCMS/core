@@ -6,7 +6,6 @@ import static junit.framework.Assert.assertNotSame;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertNotNull;
-import static junit.framework.TestCase.assertNull;
 import static junit.framework.TestCase.assertTrue;
 
 import com.dotcms.datagen.TestDataUtils.TestFile;
@@ -29,7 +28,6 @@ import java.util.Random;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.RandomStringUtils;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -263,7 +261,6 @@ public class StoragePersistenceAPITest {
      * Expected Results: Regardless of casing we should be able to retrieve and find objects
      * @param testCase
      */
-    
     @Test
     @UseDataProvider("getRandomTestCases")
     public void Test_Pull_File_Different_Casing(final TestCase testCase) throws DotDataException {
@@ -301,7 +298,6 @@ public class StoragePersistenceAPITest {
      * @throws IOException
      * @throws NoSuchAlgorithmException
      */
-    
     @Test
     @UseDataProvider("getLargeFileTestCases")
     public void Test_Push_Large_File(final TestCase testCase)

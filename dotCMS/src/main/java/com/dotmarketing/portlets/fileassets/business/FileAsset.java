@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.fileassets.business;
 
-import com.dotcms.storage.model.Metadata;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -16,7 +15,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.awt.Dimension;
 import java.io.BufferedInputStream;
@@ -27,7 +25,6 @@ import java.io.Serializable;
 import java.nio.file.Files;
 import java.util.Date;
 import java.util.Map;
-import java.util.Optional;
 
 public class FileAsset extends Contentlet implements IFileAsset {
 
@@ -55,20 +52,17 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	 * Metadata as map getter. Use to get a compiled view including MD for all binaries
 	 * @return
 	 */
-	public Map<String, Serializable> getMetaDataMap(){
-		final Optional<Map<String, Metadata>> optionalMetadata = super.getLazyMetadata();
-		if(optionalMetadata.isPresent()){
-		   return optionalMetadata.get().get(FileAssetAPI.BINARY_FIELD).getFieldsMeta();
-		}
-		return ImmutableMap.of();
-	}
+    public Map<String, Serializable> getMetaDataMap() {
+        return Try.of(() -> super.getBinaryMetadata(FileAssetAPI.BINARY_FIELD).getFieldsMeta())
+                .getOrElse(ImmutableMap.of());
+    }
 
 	public long getLanguageId(){
 		return super.getLanguageId();
 	}
 
 	public void setMenuOrder(int sortOrder) {
-		setLongProperty(FileAssetAPI.SORT_ORDER, new Long(sortOrder));
+		setLongProperty(FileAssetAPI.SORT_ORDER, (long) sortOrder);
 
 	}
 
@@ -103,23 +97,23 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	}
 
 	public int getHeight() {
-		final Dimension fileDimension = lazyComputeDimensions.get();
-		return fileDimension == null ? 0 : fileDimension.height;
+        return computeDimensions().height;
 	}
 
 	public int getWidth() {
-		final Dimension fileDimension = lazyComputeDimensions.get();
-		return fileDimension == null ? 0 : fileDimension.width;
+		return computeDimensions().width;
 	}
 
-    //Lazy Suppliers are memoized. Meaning that this truly guarantees the computation takes place once.
-	private Lazy<Dimension> lazyComputeDimensions = Lazy.of(() -> Try.of(() -> {
-			final Map<String, Serializable> metaDataMap = getMetaDataMap();
-			final int height = Integer.parseInt(metaDataMap.get("height").toString());
-			final int width = Integer.parseInt(metaDataMap.get("width").toString());
-			return new Dimension(width, height);
-		}
-	).getOrElse(new Dimension(0, 0)));
+	private Dimension computeDimensions() {
+	   try {
+           final Map<String, Serializable> metaDataMap = getMetaDataMap();
+           final int height = Integer.parseInt(metaDataMap.get("height").toString());
+           final int width = Integer.parseInt(metaDataMap.get("width").toString());
+           return new Dimension(width, height);
+       }catch (Exception e){
+          return new Dimension(0, 0);
+       }
+    }
 
   /**
    * This gives you access to the physical file on disk.

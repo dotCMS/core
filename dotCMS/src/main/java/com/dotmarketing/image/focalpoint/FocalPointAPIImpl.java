@@ -36,15 +36,13 @@ import io.vavr.control.Try;
 
 public class FocalPointAPIImpl implements FocalPointAPI {
 
-    private final FocalPointCache cache;
     private final Pattern         fpPattern = Pattern.compile(StringPool.COMMA);
     private final FileMetadataAPI fileMetadataAPI;
     private final ContentletAPI contentletAPI;
     private final Supplier<User> currentUserSupplier;
 
     public FocalPointAPIImpl() {
-        this(APILocator.getFileMetadataAPI(),
-                APILocator.getContentletAPI(), CacheLocator.getFocalPointCache(),
+        this(APILocator.getFileMetadataAPI(), APILocator.getContentletAPI(),
                 () -> {
                     final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
                     if (null != request) {
@@ -55,10 +53,9 @@ public class FocalPointAPIImpl implements FocalPointAPI {
     }
 
     @VisibleForTesting
-    FocalPointAPIImpl(final FileMetadataAPI fileMetadataAPI, final ContentletAPI contentletAPI, final FocalPointCache cache, final Supplier<User> currentUserSupplier) {
+    FocalPointAPIImpl(final FileMetadataAPI fileMetadataAPI, final ContentletAPI contentletAPI, final Supplier<User> currentUserSupplier) {
         this.fileMetadataAPI = fileMetadataAPI;
         this.contentletAPI = contentletAPI;
-        this.cache = cache;
         this.currentUserSupplier = currentUserSupplier;
     }
 
@@ -68,7 +65,6 @@ public class FocalPointAPIImpl implements FocalPointAPI {
         final Optional<Contentlet> contentlet = findContentlet(inode);
         contentlet.ifPresent(contentlet1 ->{
            writeFocalPoint(contentlet1, fieldVar, focalPoint);
-           cache.add(inode, fieldVar, focalPoint);
         });
 
     }
@@ -76,7 +72,7 @@ public class FocalPointAPIImpl implements FocalPointAPI {
 
     private void writeFocalPoint(final Contentlet contentlet, final String fieldVar, final FocalPoint focalPoint) {
         try {
-            fileMetadataAPI.putCustomMetadataAttributes(contentlet, ImmutableMap.of(fieldVar, ImmutableMap.of("focalPoint", focalPoint.toString())));
+            fileMetadataAPI.putCustomMetadataAttributes(contentlet, ImmutableMap.of(fieldVar, ImmutableMap.of(FOCAL_POINT, focalPoint.toString())));
         } catch (DotDataException e) {
             throw new DotRuntimeException(e);
         }
@@ -88,7 +84,7 @@ public class FocalPointAPIImpl implements FocalPointAPI {
        try {
            final Metadata metadata = fileMetadataAPI.getMetadata(contentlet, fieldVar);
            return parseFocalPoint(
-                   (String) metadata.getCustomMeta().get("focalPoint"));
+                   (String) metadata.getCustomMeta().get(FOCAL_POINT));
        }catch (Exception e){
           Logger.error (FocalPointAPIImpl.class,"Error retrieving focal point from custom metadata", e);
        }
@@ -110,26 +106,10 @@ public class FocalPointAPIImpl implements FocalPointAPI {
     @Override
     public Optional<FocalPoint> readFocalPoint(final String inode, final String fieldVar) {
 
-        Optional<FocalPoint> focalPoint = cache.get(inode, fieldVar);
-        if (focalPoint.isPresent()) {
-            return focalPoint;
-        }
-
-        final Optional<Tag> focalPointTag = Try.of(()->APILocator.getTagAPI().getTagsByInode(inode).stream().filter(t->t.getTagName().startsWith("fp:"+fieldVar+":")).findAny()).getOrElse(Optional.empty());
-
-        if(focalPointTag.isPresent()) {
-            focalPoint = Try.of(()->new FocalPoint(focalPointTag.get().getTagName().replace("fp:", ""))).toJavaOptional();
-            if (focalPoint.isPresent()) {
-                cache.add(inode, fieldVar, focalPoint.get());
-                return focalPoint;
-            }
-        }
 
         final Optional<Contentlet> optional = findContentlet(inode);
         if(optional.isPresent()){
-            final Optional<FocalPoint> focalPointOptional = readFocalPoint(optional.get(), fieldVar);
-            focalPoint.ifPresent(point -> cache.add(inode, fieldVar, point));
-            return focalPointOptional;
+            return readFocalPoint(optional.get(), fieldVar);
         }
 
         return Optional.empty();

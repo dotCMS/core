@@ -578,7 +578,7 @@ public class ContentletForm extends ValidatorForm {
 			   Logger.error( this, "An error has occurred trying to get the value for the field: " + velocityVariableName );
 		   }
 
-		   final Optional<Map<String, Serializable>> optionalMetadata = loadMetadataIfAny(velocityVariableName, getInode());
+		   final Optional<Map<String, Serializable>> optionalMetadata = loadMetadata(velocityVariableName, getInode());
 		   if (optionalMetadata.isPresent()) {
 			   return ConversionUtils.toString(optionalMetadata.get());
 		   }
@@ -587,7 +587,7 @@ public class ContentletForm extends ValidatorForm {
        }
 
 
-	private Optional<Map<String, Serializable>> loadMetadataIfAny(
+	private Optional<Map<String, Serializable>> loadMetadata(
 			final String velocityVariableName,
 			final String inode)  {
 		if (InodeUtils.isSet(getInode()) && FileAssetAPI.META_DATA_FIELD
@@ -600,7 +600,7 @@ public class ContentletForm extends ValidatorForm {
 				if (null != contentlet && contentlet.isFileAsset()) {
 					return Optional.ofNullable(
 					     Try.of(()->
-							APILocator.getFileMetadataAPI().getFullMetadataNoCacheForceGenerate(contentlet,FileAssetAPI.BINARY_FIELD).getFieldsMeta()
+							APILocator.getFileMetadataAPI().getFullMetadataNoCacheForceGenerate(contentlet,FileAssetAPI.BINARY_FIELD).getMap()
 					       ).getOrNull()
 					);
 				}

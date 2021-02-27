@@ -115,11 +115,19 @@ public interface FileMetadataAPI {
             String fieldVariableName) throws DotDataException;
 
     /**
-     * Compiles all metadata for the contentlet returning a natural ordered map.
-     * @param contentlet {@link Contentlet}
-     * @return Map
+     * Look up the first indexed binary and returns such metadata
+     * @param contentlet
+     * @return
      */
-    Optional<Map<String, Metadata>> collectFieldsMetadata(Contentlet contentlet);
+    Optional<Metadata> getDefaultMetadata(Contentlet contentlet);
+
+    /**
+     * Look up the first indexed binary and returns such metadata
+     * this forces the generation of the metadata in case it doesn't exist
+     * @param contentlet
+     * @return
+     */
+    Optional<Metadata> getDefaultMetadataForceGenerate(final Contentlet contentlet);
 
     /**
      * Removes All metadata for a given Contentlet

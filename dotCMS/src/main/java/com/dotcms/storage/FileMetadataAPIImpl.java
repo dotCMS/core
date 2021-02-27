@@ -19,8 +19,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSortedMap.Builder;
-import com.google.common.collect.Ordering;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
@@ -36,7 +34,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
-import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Predicate;
@@ -106,7 +103,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
         final boolean alwaysRegenerateMetadata = Config
                 .getBooleanProperty("always.regenerate.metadata.on.reindex", false);
 
-        Logger.debug(this, ()-> "Generating the metadata for contentlet, id = " + contentlet.getIdentifier());
+        Logger.info(this, ()-> "Generating the metadata for contentlet, id = " + contentlet.getIdentifier());
 
         // Full MD is stored in disc (FS or DB)
         final Map<String, Metadata> fullMetadata = generateFullMetadata(contentlet,
@@ -157,7 +154,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
                     // if it is included on the full keys, we only have to store the meta in the cache.
                     //metadataMap = this.fileStorageAPI.generateBasicMetaData(file, filterBasicMetadataKey);
 
-                    metadataMap = filterNonCacheableMetadataFields(metadata.toMap());
+                    metadataMap = filterNonCacheableMetadataFields(metadata.getMap());
                     metadataCache.addMetadataMap(contentlet.getInode() + StringPool.COLON + binaryFieldName, metadataMap);
 
                 } else {
@@ -201,7 +198,6 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
             throws IOException, DotDataException {
 
         final ImmutableMap.Builder<String, Metadata> builder  = new ImmutableMap.Builder<>();
-        final Optional<Map<String, Metadata>> lazyMetadata = contentlet.getLazyMetadata();
 
         final StorageType storageType = StoragePersistenceProvider.getStorageType();
         final String metadataBucketName = Config.getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);
@@ -210,9 +206,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
             final String metadataPath = getFileName(contentlet, binaryFieldName);
             if (null != file && file.exists() && file.canRead()) {
 
-                final Metadata mergeWithMetadata = lazyMetadata
-                        .map(stringMetadataMap -> stringMetadataMap.get(binaryFieldName))
-                        .orElse(null);
+                final Metadata mergeWithMetadata = getMetadata(contentlet,binaryFieldName);
 
                 final Set<String> metadataFields = getMetadataFields(fieldMap.get(binaryFieldName).id());
                 final Map<String, Serializable> metadataMap = fileStorageAPI.generateMetaData(file,
@@ -269,8 +263,8 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
     public ContentletMetadata generateContentletMetadata(final Contentlet contentlet)
             throws IOException, DotDataException {
 
-        final Tuple2<SortedSet<String>, SortedSet<String>> binaryFields = this.findBinaryFields(contentlet);
-        return this.generateContentletMetadata(contentlet, binaryFields._1(), binaryFields._2());
+        final Tuple2<SortedSet<String>, SortedSet<String>> binaryFields = findBinaryFields(contentlet);
+        return generateContentletMetadata(contentlet, binaryFields._1(), binaryFields._2());
     }
 
     /**
@@ -283,7 +277,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
     public Metadata getMetadata(final Contentlet contentlet, final Field field)
             throws DotDataException {
 
-        return this.getMetadata(contentlet, field.variable(), false);
+        return getMetadata(contentlet, field.variable(), false);
     }
 
     /**
@@ -463,35 +457,43 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
         return Tuple.of(basicBinaryFieldNameSet, fullBinaryFieldNameSet);
     }
 
-
     /**
-     * This builds a View compiling all basic md
+     * {@inheritDoc}
      * @param contentlet
      * @return
      */
-    public Optional<Map<String, Metadata>> collectFieldsMetadata(final Contentlet contentlet) {
+    public Optional<Metadata> getDefaultMetadata(final Contentlet contentlet) {
+        return getDefaultMetadata(contentlet, false);
+    }
 
-        final Builder<String, Metadata> builder = new Builder<>(Ordering.natural());
-        final Tuple2<SortedSet<String>, SortedSet<String>> binaryFields = findBinaryFields(contentlet);
+    /**
+     * {@inheritDoc}
+     * @param contentlet
+     * @return
+     */
+    public Optional<Metadata> getDefaultMetadataForceGenerate(final Contentlet contentlet) {
+       return getDefaultMetadata(contentlet, true);
+    }
+
+    /**
+     * Finds the first indexed binary and returns the metadata
+     * @param contentlet
+     * @param forceGenerate if true the md will be generated in case it is still missing
+     * @return
+     */
+    private Optional<Metadata> getDefaultMetadata(final Contentlet contentlet, final boolean forceGenerate) {
+
+        final Tuple2<SortedSet<String>, SortedSet<String>> binaryFields = findBinaryFields(
+                contentlet);
+        final String first = binaryFields._1().first();
 
         try {
-            for (final String basicMetaFieldName : binaryFields._1()) {
-                final Metadata metadata = getMetadata(contentlet, basicMetaFieldName);
-                if(null != metadata){
-                    builder.put(basicMetaFieldName, metadata);
-                }
-            }
-
+            return Optional.ofNullable(getMetadata(contentlet, first, true));
         } catch (DotDataException e) {
             Logger.error(FileMetadataAPIImpl.class, e);
         }
 
-        Optional<Map<String, Metadata>> collected = Optional.empty();
-        final SortedMap<String, Metadata> sortedMap = builder.build();
-        if(!sortedMap.isEmpty()){
-           collected = Optional.of(sortedMap);
-        }
-        return collected;
+        return Optional.empty();
     }
 
     /**

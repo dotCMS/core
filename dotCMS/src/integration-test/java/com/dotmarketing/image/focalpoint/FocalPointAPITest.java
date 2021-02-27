@@ -32,7 +32,7 @@ public class FocalPointAPITest {
         IntegrationTestInitService.getInstance().init();
         focalPointAPI = new FocalPointAPIImpl(
                 APILocator.getFileMetadataAPI(),
-                APILocator.getContentletAPI(), CacheLocator.getFocalPointCache(),
+                APILocator.getContentletAPI(),
                 APILocator::systemUser);
     }
 

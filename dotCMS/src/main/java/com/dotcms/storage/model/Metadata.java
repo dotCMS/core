@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 
 public class Metadata implements Serializable {
 
-    public static final String CUSTOM_PROP_PREFIX = "dot::";
+    public static final String CUSTOM_PROP_PREFIX = "dot:";
 
     private final String fieldName;
 
@@ -23,14 +23,24 @@ public class Metadata implements Serializable {
             final Map<String, Serializable> fieldsMeta) {
 
         this.fieldName = fieldName;
-        final Map<String, Serializable> meta = fieldsMeta == null ? ImmutableMap.of(): fieldsMeta;
-        this.fieldsMeta = new ImmutableSortedMap.Builder<String, Serializable>(Comparator.naturalOrder()).putAll(meta).build();
+        if (null != fieldsMeta) {
+            Map<String, Serializable> meta = fieldsMeta;
+            this.customMeta = new ImmutableSortedMap.Builder<String, Serializable>(
+                    Comparator.naturalOrder()).putAll(meta.entrySet().stream()
+                    .filter(entry -> entry.getKey().startsWith(CUSTOM_PROP_PREFIX))
+                    .collect(Collectors.toMap(o ->
+                            o.getKey().substring(CUSTOM_PROP_PREFIX.length()
+                            ), Entry::getValue))).build();
 
-        this.customMeta = new ImmutableSortedMap.Builder<String, Serializable>(Comparator.naturalOrder()).putAll(meta.entrySet().stream()
-                .filter(entry -> entry.getKey().startsWith(CUSTOM_PROP_PREFIX))
-                .collect(Collectors.toMap(o ->
-                        o.getKey().substring(CUSTOM_PROP_PREFIX.length()
-                        ), Entry::getValue))).build();
+            meta = meta.entrySet().stream()
+                    .filter(entry -> !entry.getKey().startsWith(CUSTOM_PROP_PREFIX))
+                    .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+            this.fieldsMeta = new ImmutableSortedMap.Builder<String, Serializable>(
+                    Comparator.naturalOrder()).putAll(meta).build();
+        } else {
+            this.fieldsMeta = ImmutableMap.of();
+            this.customMeta = ImmutableMap.of();
+        }
     }
 
     public String getFieldName() {
@@ -45,7 +55,7 @@ public class Metadata implements Serializable {
         return customMeta;
     }
 
-    public Map<String, Serializable> toMap() {
+    public Map<String, Serializable> getMap() {
         return new ImmutableSortedMap.Builder<String, Serializable>(Comparator.naturalOrder()).putAll(fieldsMeta).putAll(customMeta).build();
     }
 

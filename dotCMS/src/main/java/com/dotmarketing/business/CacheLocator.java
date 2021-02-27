@@ -33,7 +33,6 @@ import com.dotmarketing.cache.FolderCacheImpl;
 import com.dotmarketing.cache.LegacyContentTypeCacheImpl;
 import com.dotmarketing.cache.MultiTreeCache;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.image.focalpoint.FocalPointCache;
 import com.dotmarketing.logConsole.model.LogMapperCache;
 import com.dotmarketing.logConsole.model.LogMapperCacheImpl;
 import com.dotmarketing.plugin.business.PluginCache;
@@ -325,14 +324,6 @@ public class CacheLocator extends Locator<CacheIndex>{
 	}
 
 	/**
-	 * This will get you an instance of the singleton FocalPointCache cache.
-	 * @return
-	 */
-	public static FocalPointCache getFocalPointCache() {
-		return (FocalPointCache) getInstance(CacheIndex.FocalPointCache);
-	}
-
-	/**
 	 * The legacy cache administrator will invalidate cache entries within a cluster
 	 * on a put where the non legacy one will not.
 	 * @return
@@ -434,8 +425,7 @@ enum CacheIndex
 	KeyValueCache("Key/Value Cache"),
 	AppsCache("Apps"),
 	GraphQLSchemaCache("GraphQLSchemaCache"),
-	Metadata("Metadata"),
-	FocalPointCache("FocalPointCache");
+	Metadata("Metadata");
 
 	Cachable create() {
 		switch(this) {
@@ -486,7 +476,6 @@ enum CacheIndex
 	      	case ESQueryCache : return new com.dotcms.content.elasticsearch.ESQueryCache();
 	      	case GraphQLSchemaCache : return new GraphQLSchemaCache();
 			case Metadata: return new MetadataCacheImpl();
-			case FocalPointCache: return new FocalPointCache();
 
 		}
 		throw new AssertionError("Unknown Cache index: " + this);

@@ -41,6 +41,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -444,7 +445,7 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
         // 2. see if the sha-256 exists
         // 2.1 if exists only insert on the reference
         // 2.2 if does not exists, insert a new one
-        final Map<String, Serializable> metaData = rehashIfNeeded(file, extraMeta);
+        final Map<String, Serializable> metaData = hashFile(file, extraMeta);
         final String fileHash = (String) metaData.get(SHA256_META_KEY.key());
 
         return wrapInTransaction(
@@ -460,18 +461,20 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
                                             path));
                             return false;
                         }
-                        return this.existsHash(fileHash, connection) ?
-                                this.pushFileReference(groupName, path, metaData, fileHash,
-                                        connection) :
+                        return existsHashReference(fileHash, connection) ?
+                                this.pushFileReference(groupName, path, metaData, fileHash, connection) :
                                 this.pushNewFile(groupName, path, file, metaData, connection);
                     }
                 });
     }
 
     /**
-     * Selects directly on storage_x_data since hash is the primary key there.
+     * Vali
+     * @param fileHash
+     * @param connection
+     * @return
      */
-    private boolean existsHash(final String fileHash, final Connection connection) throws DotDataException {
+    private boolean existsHashReference(final String fileHash, final Connection connection) {
         final MutableBoolean exists = new MutableBoolean(false);
             final Number results = Try
                     .of(() -> {
@@ -485,6 +488,70 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
             exists.setValue(results.intValue() > 0);
         return exists.getValue();
     }
+    
+    private Object pushFileReference(final String groupName, final String path,
+            final Map<String, Serializable> extraMeta, final String objectHash, final Connection connection) throws DotDataException {
+        final String groupNameLC = groupName.toLowerCase();
+        final String pathLC = path.toLowerCase();
+        final String hashRef = (String)extraMeta.get(HASH_REF);
+        try {
+            new DotConnect().executeUpdate(connection,
+                    "INSERT INTO storage(hash, path, group_name, hash_ref) VALUES (?, ?, ?, ?)",
+                    objectHash, pathLC, groupNameLC, hashRef);
+            return true;
+        } catch (DotDataException e) {
+            Logger.error(DataBaseStoragePersistenceAPIImpl.class, e.getMessage(), e);
+            throw new DotDataException(e);
+        }
+    }
+
+    private Object pushNewFile(final String groupName, final String path, final File file,
+            final Map<String, Serializable> extraMeta, final Connection connection ) {
+        final String groupNameLC = groupName.toLowerCase();
+        final String pathLC = path.toLowerCase();
+        final String hashRef = (String)extraMeta.get(HASH_REF);
+        try (final FileByteSplitter fileSplitter = new FileByteSplitter(file)) {
+
+            final HashBuilder objectHashBuilder = Encryptor.Hashing.sha256();
+            final List<String> chunkHashes = new LinkedList<>();
+
+            for (final Tuple2<byte[], Integer> bytesRead : fileSplitter) {
+
+                objectHashBuilder.append(bytesRead._1(), bytesRead._2());
+                final String chunkHash = Encryptor.Hashing.sha256().append
+                        (bytesRead._1(), bytesRead._2()).buildUnixHash();
+                chunkHashes.add(chunkHash);
+
+                    new DotConnect().executeUpdate(connection,
+                            "INSERT INTO storage_data(hash_id, data) VALUES (?, ?)",
+                            chunkHash,
+                            bytesRead._1().length == bytesRead._2() ?
+                                    bytesRead._1() : chunkBytes(bytesRead._2(), bytesRead._1()));
+
+            }
+
+            final String objectHash = objectHashBuilder.buildUnixHash();
+
+            int order = 1;
+            for (final String chunkHash : chunkHashes) {
+
+                new DotConnect().executeUpdate(connection,
+                        "INSERT INTO storage_x_data(storage_hash, data_hash, data_order) VALUES (?, ?, ?)",
+                        objectHash, chunkHash, order++);
+            }
+
+            new DotConnect().executeUpdate(connection,
+                    "INSERT INTO storage(hash, path, group_name, hash_ref) VALUES (?, ?, ?, ?)",
+                    objectHash, pathLC, groupNameLC, hashRef);
+
+
+            return true;
+        } catch (DotDataException | NoSuchAlgorithmException | IOException e) {
+            Logger.error(DataBaseStoragePersistenceAPIImpl.class, e.getMessage(), e);
+            throw new DotRuntimeException(e);
+        }
+
+    }
 
     /**
      * if the param `hashObject` is set then the file it self is decomposed into a sha254 representation
@@ -493,7 +560,7 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
      * @param extraMeta
      * @return
      */
-    private Map<String, Serializable> rehashIfNeeded(final File file,
+    private Map<String, Serializable> hashFile(final File file,
             final Map<String, Serializable> extraMeta) {
 
         if(UtilMethods.isSet(extraMeta)) {
@@ -523,72 +590,19 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
         return metaData.build();
     }
 
-    private Object pushFileReference(final String groupName, final String path,
-            final Map<String, Serializable> extraMeta, final String objectHash, final Connection connection) throws DotDataException {
-        final String groupNameLC = groupName.toLowerCase();
-        final String pathLC = path.toLowerCase();
-        final String hashRef = (String)extraMeta.get(HASH_REF);
-        try {
-            new DotConnect().executeUpdate(connection,
-                    "INSERT INTO storage(hash, path, group_name, hash_ref) VALUES (?, ?, ?, ?)",
-                    objectHash, pathLC, groupNameLC, hashRef);
-            return true;
-        } catch (DotDataException e) {
-            Logger.error(DataBaseStoragePersistenceAPIImpl.class, e.getMessage(), e);
-            throw new DotDataException(e);
-        }
-    }
-
-    private Object pushNewFile(final String groupName, final String path, final File file,
-            final Map<String, Serializable> extraMeta, final Connection connection ) {
-        final String groupNameLC = groupName.toLowerCase();
-        final String pathLC = path.toLowerCase();
-        final String hashRef = (String)extraMeta.get(HASH_REF);
-        try (final FileByteSplitter fileSplitter = new FileByteSplitter(file)) {
-
-            final HashBuilder objectHashBuilder = Encryptor.Hashing.sha256();
-            final List<String> chunkHashes = new ArrayList<>();
-
-            for (final Tuple2<byte[], Integer> bytesRead : fileSplitter) {
-
-                objectHashBuilder.append(bytesRead._1(), bytesRead._2());
-                final String chunkHash = Encryptor.Hashing.sha256().append
-                        (bytesRead._1(), bytesRead._2()).buildUnixHash();
-                chunkHashes.add(chunkHash);
-                new DotConnect().executeUpdate(connection,
-                        "INSERT INTO storage_data(hash_id, data) VALUES (?, ?)",
-                        chunkHash,
-                        bytesRead._1().length == bytesRead._2() ?
-                                bytesRead._1() : this.chunkBytes(bytesRead._2(), bytesRead._1()));
-            }
-
-            final String objectHash = objectHashBuilder.buildUnixHash();
-            new DotConnect().executeUpdate(connection,
-                    "INSERT INTO storage(hash, path, group_name, hash_ref) VALUES (?, ?, ?, ?)",
-                    objectHash, pathLC, groupNameLC, hashRef);
-
-            int order = 1;
-            for (final String chunkHash : chunkHashes) {
-
-                new DotConnect().executeUpdate(connection,
-                        "INSERT INTO storage_x_data(storage_hash, data_hash, data_order) VALUES (?, ?, ?)",
-                        objectHash, chunkHash, order++);
-            }
-
-            return true;
-        } catch (DotDataException | NoSuchAlgorithmException | IOException e) {
-            Logger.error(DataBaseStoragePersistenceAPIImpl.class, e.getMessage(), e);
-            throw new DotRuntimeException(e);
-        }
-    }
-
+    /**
+     * returns byte array chunks of certain length
+     * @param bytesLength
+     * @param bytes
+     * @return
+     */
     private byte[] chunkBytes(final int bytesLength, final byte[] bytes) {
 
-        final byte[] chunkedArray = new byte[bytesLength];
+        final byte[] chunkArray = new byte[bytesLength];
 
-        System.arraycopy(bytes, 0, chunkedArray, 0, bytesLength);
+        System.arraycopy(bytes, 0, chunkArray, 0, bytesLength);
 
-        return chunkedArray;
+        return chunkArray;
     }
 
     @Override

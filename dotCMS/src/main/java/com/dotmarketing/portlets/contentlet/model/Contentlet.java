@@ -15,8 +15,8 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
-import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.MimeTypeUtils;
 import com.dotcms.util.RelationshipUtil;
@@ -52,7 +52,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
@@ -258,9 +258,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public Contentlet(final Contentlet contentlet) {
 		this(contentlet.getMap());
 		this.setIndexPolicy(contentlet.getIndexPolicy());
-		if(isSet(contentlet.contentletMetadata)) {
-		   this.contentletMetadata = ImmutableMap.copyOf(contentlet.contentletMetadata);
-		}
+
 	}
 
   /**
@@ -1241,6 +1239,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		if(value instanceof Map){
 		   return (Map)value;
 	    }
+        if(value instanceof Metadata){
+            return (Map)((Metadata)value).getMap();
+        }
 		return com.dotmarketing.portlets.structure.model.KeyValueFieldUtil.JSONValueToHashMap((String) value);
 	}
 
@@ -1254,23 +1255,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 			return true;
 		else
 			return false;
-	}
-
-	private Map<String, Metadata> contentletMetadata;
-
-    /**
-     * computes lazily all binary fields metadata
-     * @return
-     */
-	@JsonIgnore
-	public Optional<Map<String, Metadata>> getLazyMetadata() {
-		if(null == contentletMetadata){
-		   final Optional<Map<String, Metadata>> optional = APILocator.getFileMetadataAPI().collectFieldsMetadata(this);
-           optional.ifPresent(metadata -> {
-               contentletMetadata = metadata;
-           });
-		}
-		return Optional.ofNullable(contentletMetadata);
 	}
 
 	/**
@@ -1307,7 +1291,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public Metadata getBinaryMetadata (final String fieldVariableName)
 			throws DotDataException {
 
-		return APILocator.getFileMetadataAPI().getMetadata(this, fieldVariableName);
+		return APILocator.getFileMetadataAPI().getMetadataForceGenerate(this, fieldVariableName);
 	}
 
 
@@ -1324,24 +1308,23 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		Object value = map.get(key);
 
 		if (InodeUtils.isSet(getInode()) && FileAssetAPI.META_DATA_FIELD.equals(key)) {
-
+			final FileMetadataAPI fileMetadataAPI = APILocator.getFileMetadataAPI();
 			//if the metaData attribute is requested from a fileAsset that's is pretty straight forward
 			// we simply return the the MD associated with the field `fileAsset`
 			if (isFileAsset()) {
 				final Metadata fileAssetMetadata = Try
-						.of(() -> getBinaryMetadata(FileAssetAPI.BINARY_FIELD)).getOrNull();
+						.of(() -> //Access directly the binaryField
+							getBinaryMetadata(FileAssetAPI.BINARY_FIELD)
+						).getOrNull();
 				if (null != fileAssetMetadata) {
 					return fileAssetMetadata;
 				}
-			}
-			//if the CT isn't a fileAsset and has several binaries we'll get the MD from the first indexed one.
-			final Optional<Map<String, Metadata>> optional = getLazyMetadata();
-			if (optional.isPresent()) {
-				final Map<String, Metadata> binaryFieldsMetadata = optional.get();
-				if (!binaryFieldsMetadata.isEmpty()) {
-					final String firstIndexedBinary = binaryFieldsMetadata.keySet().iterator()
-							.next();
-					return binaryFieldsMetadata.get(firstIndexedBinary);
+			} else {
+			    //Otherwise this will look the first indexed binary
+				final Optional<Metadata> defaultMetadata = fileMetadataAPI
+						.getDefaultMetadata(this);
+				if (defaultMetadata.isPresent()) {
+					return defaultMetadata.get().getFieldsMeta();
 				}
 			}
 
