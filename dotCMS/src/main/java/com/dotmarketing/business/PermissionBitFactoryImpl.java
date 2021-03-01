@@ -1682,7 +1682,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
   }
 
   
-  private Lazy<DotSubmitter> submitter = Lazy.of(()-> DotConcurrentFactory.getInstance().getSubmitter("permissionreferences", new SubmitterConfigBuilder().maxPoolSize(10).queueCapacity(10000).build()));
+  private Lazy<DotSubmitter> submitter = Lazy.of(()-> DotConcurrentFactory.getInstance().getSubmitter("permissionreferences", new SubmitterConfigBuilder().maxPoolSize(5).queueCapacity(10000).build()));
   
   
   @CloseDBIfOpened
@@ -1733,11 +1733,16 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
     
     if(Config.getBooleanProperty("PERMISSION_REFERENCES_UPDATE_ASYNC", true)) {
         submitter.get().submit( () -> {
-            deleteInsertPermission(permissionable, type, finalNewReference);
+            try {
+                upsertPermissionReferences(permissionable, type, finalNewReference);
+            }
+            catch(Exception e) {
+                Logger.warnAndDebug(this.getClass(), "Permission References failed to update for permissionable:" + permissionable + " TYPE:" + type + " finalNewReference:" + finalNewReference, e);
+            }
         });
     }
     else {
-        deleteInsertPermission(permissionable, type, finalNewReference);
+        upsertPermissionReferences(permissionable, type, finalNewReference);
     }
     
   	Logger.debug(this.getClass(), () -> "permission inherited: " + Try
@@ -1849,57 +1854,27 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	protected static final String ID = "id";
 
     @WrapInTransaction
-	private void deleteInsertPermission(Permissionable permissionable, String type,
-            Permissionable newReference)  {
+    private void upsertPermissionReferences(Permissionable permissionable, final String type,
+                    final Permissionable newReference) throws DotDataException {
 
+        if (permissionable==null || permissionable.getPermissionId() == null || newReference == null || newReference.getPermissionId() == null) {
+            throw new DotRuntimeException("Failed to insert Permission Ref.  Permissionable:" + permissionable
+                            + " Parent : " + newReference + " Type: " + type);
+        }
+        
         final String permissionId = permissionable.getPermissionId();
 
-        try{
-            Logger.debug(this.getClass(), ()-> "PERMDEBUG: " + Thread.currentThread().getName() + " - " + permissionId
-                    + " - started");
+        Logger.debug(this.getClass(),
+                        () -> "PERMDEBUG: " + Thread.currentThread().getName() + " - " + permissionId + " - started");
 
-            DotConnect dc1 = new DotConnect();
-            
-            // trying an upsert first
-            if(Config.getBooleanProperty("PERMISSION_REFERENCES_UPSERT_ONLY", true)) {
-                
-                Logger.debug(this.getClass(), ()-> "UPSERTING permission_reference = assetId:" + permissionId + " type:" + type + " reference:" + newReference.getPermissionId());
-                
-                upsertPermission(dc1, permissionId, newReference, type);
-                return;
-            }
-            
-            dc1.setSQL("SELECT inode FROM inode WHERE inode = ?");
-            dc1.addParam(permissionId);
-            List<Map<String, Object>> inodeList = dc1.loadObjectResults();
+        DotConnect dc1 = new DotConnect();
 
-            dc1.setSQL("SELECT id FROM identifier WHERE id = ?");
-            dc1.addParam(permissionId);
-            List<Map<String, Object>> identifierList = dc1.loadObjectResults();
+        Logger.debug(this.getClass(), () -> "UPSERTING permission_reference = assetId:" + permissionId + " type:" + type
+                        + " reference:" + newReference.getPermissionId());
 
-            if((inodeList != null && inodeList.size()>0) || (identifierList!=null && identifierList.size()>0)){
-                dc1.executeUpdate(DELETE_PERMISSIONABLE_REFERENCE_SQL, permissionId);
+        upsertPermission(dc1, permissionId, newReference, type);
 
-				upsertPermission(dc1, permissionId, newReference, type);
-            }
-            
-            
 
-        } catch(Exception exception){
-            if(permissionable != null && newReference != null){
-                Logger.warn(this.getClass(), "Failed to insert Permission Ref. Usually not a problem. Permissionable:" + permissionId
-                        + " Parent : " + newReference.getPermissionId() + " Type: " + type);
-            }
-            else{
-                Logger.warn(this.getClass(), "Failed to insert Permission Ref. Usually not a problem. Setting Parent Permissions to null value: Permissionable:" + permissionable + " Parent:" + newReference + " Type: " + type);
-            }
-            Logger.debug(this.getClass(), "Failed to insert Permission Ref. : " + exception.toString(), exception);
-
-            throw new DotRuntimeException(exception.getMessage(), exception);
-        } finally {
-            Logger.debug(this.getClass(), "PERMDEBUG: " + Thread.currentThread().getName() + " - " + permissionId
-                    + " - ended");
-        }
     }
 
 	/**

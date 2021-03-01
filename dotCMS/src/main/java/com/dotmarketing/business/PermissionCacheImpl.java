@@ -22,10 +22,9 @@ public class PermissionCacheImpl extends PermissionCache {
 	private DotCacheAdministrator cache;
 	
 	private String primaryGroup = "PermissionCache";
-	private String secondaryGroup = "ParentPermissionableCache";
 
 	// region's name for the cache
-    private String[] groupNames = {primaryGroup, secondaryGroup};
+    private String[] groupNames = {primaryGroup};
 
 	protected PermissionCacheImpl() {
         cache = CacheLocator.getCacheAdministrator();
@@ -66,7 +65,6 @@ public class PermissionCacheImpl extends PermissionCache {
     public void clearCache() {
         // clear the cache
         cache.flushGroup(primaryGroup);
-        cache.flushGroup(secondaryGroup);
     }
 
     /* (non-Javadoc)
@@ -79,11 +77,7 @@ public class PermissionCacheImpl extends PermissionCache {
     	}catch (Exception e) {
 			Logger.debug(this,e.getMessage(), e);
 		} 
-    	try{
-	        cache.remove(key,secondaryGroup);
-    	}catch (Exception e) {
-			Logger.debug(this,e.getMessage(), e);
-		} 
+
     }
     public String[] getGroups() {
     	return groupNames;
@@ -91,8 +85,6 @@ public class PermissionCacheImpl extends PermissionCache {
     public String getPrimaryGroup() {
     	return primaryGroup;
     }
-    public String getSecondaryGroup() {
-    	return secondaryGroup;
-    }
+
 
 }

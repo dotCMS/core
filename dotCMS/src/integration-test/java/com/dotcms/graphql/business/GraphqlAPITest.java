@@ -69,6 +69,7 @@ import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.util.StringPool;
@@ -105,6 +106,9 @@ public class GraphqlAPITest extends IntegrationTestBase {
     public static void prepare() throws Exception{
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
+        
+        Config.setProperty("GRAPHQL_SCHEMA_DEBOUNCE_DELAY_MILLIS", 0);
+        
     }
 
 

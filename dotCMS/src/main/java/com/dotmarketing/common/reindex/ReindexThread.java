@@ -295,6 +295,18 @@ public class ReindexThread {
         }
     }
 
+
+    /**
+     * Gets the running thread if any, and cancels it.
+     */
+
+    public static void cancelThread(){
+        if (instance != null && instance.threadRunning != null) {
+            instance.threadRunning.cancel(true);
+            instance = null;
+        }
+    }
+
     /**
      * This instance is intended to already be started. It will try to restart the thread if instance is
      * null.
@@ -313,6 +325,20 @@ public class ReindexThread {
                 .ofMinutes(Config.getIntProperty("REINDEX_THREAD_PAUSE_IN_MINUTES", 10))
                 .toMillis());
         getInstance().state(ThreadState.PAUSED);
+    }
+
+    /**
+     * Pauses the ReindexThread instance if not null
+     */
+
+    public static void pauseExistingInstance() {
+        if(instance!=null) {
+            Logger.debug(ReindexThread.class, "--- ReindexThread - Paused");
+            cache.get().put(REINDEX_THREAD_PAUSED, System.currentTimeMillis() + Duration
+                    .ofMinutes(Config.getIntProperty("REINDEX_THREAD_PAUSE_IN_MINUTES", 10))
+                    .toMillis());
+            instance.state(ThreadState.PAUSED);
+        }
     }
 
     public static void unpause() {

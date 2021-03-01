@@ -43,6 +43,13 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
     private List<Field> fields = new ArrayList<>();
     private Set<String> workflowIds = new HashSet<>();
     private User owner = user;
+    private List<Category> categories = new ArrayList<>();
+
+
+    public  ContentTypeDataGen addCategory(final Category category){
+        categories.add(category);
+        return this;
+    }
 
     @SuppressWarnings("unused")
     public ContentTypeDataGen baseContentType(final BaseContentType baseContentType) {
@@ -187,7 +194,20 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
             workflowIds.add(APILocator.getWorkflowAPI().findSystemWorkflowScheme().getId());
             APILocator.getWorkflowAPI()
                     .saveSchemeIdsForContentType(persistedContentType, workflowIds);
-            return persistedContentType;
+
+            final User systemUser = APILocator.systemUser();
+            for (final Category category : categories) {
+                final Field categoryField = new FieldDataGen().type(CategoryField.class)
+                        .name(category.getCategoryName())
+                        .velocityVarName(category.getKey())
+                        .values(category.getInode())
+                        .contentTypeId(persistedContentType.id())
+                        .next();
+
+                APILocator.getContentTypeFieldAPI().save(categoryField, systemUser);
+            }
+
+            return APILocator.getContentTypeAPI(APILocator.systemUser()).find(persistedContentType.variable());
         } catch (Exception e) {
             throw new RuntimeException("Unable to persist ContentType.", e);
         }

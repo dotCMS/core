@@ -17,6 +17,7 @@ public class ApiTokenForm  {
     public final int expirationSeconds;
     public final String network;
     public final Map<String,Object> claims;
+    public boolean shouldBeAdmin;
 
     private ApiTokenForm(Builder builder) {
         userId = builder.userId;
@@ -24,7 +25,8 @@ public class ApiTokenForm  {
         showRevoked = builder.showRevoked;
         network = builder.network;
         expirationSeconds = builder.expirationSeconds;
-        claims=builder.claims;
+        claims = builder.claims;
+        shouldBeAdmin = builder.shouldBeAdmin;
     }
 
     public static final class Builder {
@@ -40,6 +42,8 @@ public class ApiTokenForm  {
         public  Map<String,Object> claims = ImmutableMap.of();
         @JsonProperty
         private int expirationSeconds=-1;
+        @JsonProperty
+        private boolean shouldBeAdmin = false;
 
         public Builder userId(String userId) {
             this.userId = userId;
@@ -69,6 +73,12 @@ public class ApiTokenForm  {
             this.claims = claims;
             return this;
         }
+
+        public Builder shouldBeAdmin(boolean shouldBeAdmin) {
+            this.shouldBeAdmin = shouldBeAdmin;
+            return this;
+        }
+
         public ApiTokenForm build() {
             return new ApiTokenForm(this);
         }
