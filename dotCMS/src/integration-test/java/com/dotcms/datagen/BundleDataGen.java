@@ -42,7 +42,7 @@ public class BundleDataGen extends AbstractDataGen<Bundle> {
 
         howAddInBundle.put(ContentType.class, new MetaData(
                 (PushPublisherConfig config) -> config.getStructures(),
-                (Object asset) -> ((ContentType) asset).id(),
+                (Object asset) -> ((ContentType) asset).inode(),
                 PusheableAsset.CONTENT_TYPE
             )
         );
