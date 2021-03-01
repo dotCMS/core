@@ -5,6 +5,7 @@ import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATI
 import static com.dotmarketing.util.StringUtils.lowercaseStringExceptMatchingTokens;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.util.PaginatedArrayList;
 import java.io.Serializable;
@@ -1574,6 +1575,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
             Logger.warnAndDebug(ESContentFactoryImpl.class, e);
             throw new DotRuntimeException(e);
         } catch (final Exception e) {
+            if(ExceptionUtil.causedBy(e, IllegalStateException.class)) {
+                rebuildRestHighLevelClientIfNeeded(e);
+            }
             final String errorMsg = String.format("An error occurred when executing the Lucene Query [ %s ] : %s",
                             searchRequest.source().toString(), e.getMessage());
             Logger.warnAndDebug(ESContentFactoryImpl.class, errorMsg, e);
@@ -1621,6 +1625,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
             Logger.warnAndDebug(ESContentFactoryImpl.class, e);
             throw new DotRuntimeException(e);
         } catch (final Exception e) {
+            if(ExceptionUtil.causedBy(e, IllegalStateException.class)) {
+                rebuildRestHighLevelClientIfNeeded(e);
+            }
             final String errorMsg = String.format("An error occurred when executing the Lucene Query [ %s ] : %s",
                     countRequest.source().toString(), e.getMessage());
             Logger.warnAndDebug(ESContentFactoryImpl.class, errorMsg, e);
