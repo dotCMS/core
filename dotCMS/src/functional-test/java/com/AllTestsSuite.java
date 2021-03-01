@@ -1,5 +1,6 @@
 package com;
 
+import com.dotmarketing.cache.FolderCacheImplIntegrationTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
@@ -79,6 +80,7 @@ import com.dotmarketing.webdav.WebDavTest;
     URLMapTest.class,
     SiteSearchAjaxActionTest.class,
     WebDavTest.class,
-    JSONToolFTest.class
+    JSONToolFTest.class,
+    FolderCacheImplIntegrationTest.class
 })
 public class AllTestsSuite {}
