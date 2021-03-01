@@ -94,7 +94,6 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
                                                          final SortedSet<String> basicBinaryFieldNameSet,
                                                          final SortedSet<String> fullBinaryFieldNameSet)
             throws IOException, DotDataException {
-
         final  Map<String, Field> fieldMap = contentlet.getContentType().fieldMap();
         /*
 		Verify if it is enabled the option to always regenerate metadata files on reindex,
@@ -152,12 +151,14 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
                     final Metadata metadata = fullMetadata.get(binaryFieldName);
 
                     // if it is included on the full keys, we only have to store the meta in the cache.
-                    //metadataMap = this.fileStorageAPI.generateBasicMetaData(file, filterBasicMetadataKey);
-
                     metadataMap = filterNonCacheableMetadataFields(metadata.getMap());
                     metadataCache.addMetadataMap(contentlet.getInode() + StringPool.COLON + binaryFieldName, metadataMap);
 
                 } else {
+
+                    //get Old metadata from cache so we don't loose any custom attributes
+                    final Metadata mergeWithMetadata = getMetadata(contentlet,binaryFieldName);
+                    final String cacheKey = contentlet.getInode() + StringPool.COLON + binaryFieldName;
 
                     metadataMap = this.fileStorageAPI.generateMetaData(file,
                             new GenerateMetadataConfig.Builder()
@@ -165,9 +166,10 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
                                     .override(alwaysRegenerateMetadata)
                                     .store(true)
                                     .cache(true)
-                                    .cache(()-> contentlet.getInode() + StringPool.COLON + binaryFieldName)
+                                    .cache(()-> cacheKey)
                                     .metaDataKeyFilter(filterBasicMetadataKey)
                                     .storageKey(new StorageKey.Builder().group(metadataBucketName).path(metadataPath).storage(storageType).build())
+                                    .mergeWithMetadata(mergeWithMetadata)
                                     .build()
                     );
                 }

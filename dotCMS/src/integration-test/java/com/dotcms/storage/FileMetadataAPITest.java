@@ -8,6 +8,7 @@ import static com.dotcms.datagen.TestDataUtils.getMultipleBinariesContent;
 import static com.dotcms.datagen.TestDataUtils.getMultipleImageBinariesContent;
 import static com.dotcms.datagen.TestDataUtils.removeAnyMetadata;
 import static com.dotcms.storage.StoragePersistenceProvider.DEFAULT_STORAGE_TYPE;
+import static com.dotcms.storage.model.Metadata.CUSTOM_PROP_PREFIX;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -28,7 +29,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableMap;
 import com.tngtech.java.junit.dataprovider.DataProvider;
@@ -41,12 +41,10 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedSet;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -77,7 +75,6 @@ public class FileMetadataAPITest {
      * Expected Results: we should get full and basic md for every type. Basic metadata must be included within the fm
      * @throws IOException
      */
-
     @Test
     @UseDataProvider("getFileAssetMetadataTestCases")
     public void Test_Generate_Metadata_From_FileAssets(final TestCase testCase) throws Exception {
@@ -652,22 +649,26 @@ public class FileMetadataAPITest {
             Config.setProperty(DEFAULT_STORAGE_TYPE, storageType.name());
             final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
             final Contentlet source = getMultipleBinariesContent(true, langId, null);
+            assertNotNull(source.get(FILE_ASSET_1));
+            assertNotNull(source.get(FILE_ASSET_2));
 
             final ContentletMetadata metadata = fileMetadataAPI
                     .generateContentletMetadata(source);
             assertNotNull("must have metadata", metadata);
 
             fileMetadataAPI.putCustomMetadataAttributes(source, ImmutableMap
-                    .of("fileAsset1", ImmutableMap.of("foo", "bar", "bar","foo"),
-                        "fileAsset2", ImmutableMap.of("foo", "bar", "bar","foo"))
-                     );
+                    .of(
+                            FILE_ASSET_1, ImmutableMap.of("foo", "bar", "bar", "foo"),
+                            FILE_ASSET_2, ImmutableMap.of("foo", "bar", "bar", "foo")
+                    )
+            );
 
             CacheLocator.getMetadataCache().clearCache();
 
-            final Metadata fileAsset1Meta = source.getBinaryMetadata("fileAsset1");
+            final Metadata fileAsset1Meta = source.getBinaryMetadata(FILE_ASSET_1);
             validateCustomMetadata(fileAsset1Meta.getCustomMeta());
 
-            final Metadata fileAsset2Meta = source.getBinaryMetadata("fileAsset2");
+            final Metadata fileAsset2Meta = source.getBinaryMetadata(FILE_ASSET_2);
             validateCustomMetadata(fileAsset2Meta.getCustomMeta());
 
             final ContentletMetadata regeneratedMetadata = fileMetadataAPI
@@ -687,8 +688,8 @@ public class FileMetadataAPITest {
     }
 
     private void validateCustomMetadata(final Map<String, Serializable> customMeta){
-        assertEquals(customMeta.get("foo"),"bar");
-        assertEquals(customMeta.get("bar"),"foo");
+        assertEquals("bar", customMeta.get("foo"));
+        assertEquals("foo", customMeta.get("bar"));
     }
 
     @DataProvider
@@ -697,6 +698,39 @@ public class FileMetadataAPITest {
          StorageType.FILE_SYSTEM,
          StorageType.DB
         };
+    }
+
+    @Test
+    public void TestMetadataModel() {
+
+        final ImmutableMap<String, Serializable> inputMap = ImmutableMap.of(
+                "foo", "bar",
+                "bar", "foo",
+                CUSTOM_PROP_PREFIX + "foo", "foo",
+                CUSTOM_PROP_PREFIX + "bar", "foo",
+                "lol:lol", "lol"
+        );
+
+        final Metadata metadata = new Metadata("lol", inputMap);
+        //The view returned by this method removes the prefix
+        metadata.getCustomMeta().forEach((key, serializable) -> {
+            assertFalse(key.startsWith(CUSTOM_PROP_PREFIX));
+        });
+        //None of the main properties should contain the prefix either
+        final Map<String, Serializable> fieldsMeta = metadata.getFieldsMeta();
+
+        fieldsMeta.forEach((key, serializable) -> {
+            assertFalse(key.startsWith(CUSTOM_PROP_PREFIX));
+        });
+
+        final Map<String, Serializable> toMapView = metadata.getMap();
+
+        inputMap.forEach((key, serializable) -> {
+               final Serializable object = toMapView.get(key);
+               assertEquals(object, serializable);
+           }
+        );
+
     }
 
 }

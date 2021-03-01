@@ -17,29 +17,14 @@ public class Metadata implements Serializable {
 
     private final Map<String, Serializable> fieldsMeta;
 
-    private final Map<String, Serializable> customMeta;
-
     public Metadata(final String fieldName,
             final Map<String, Serializable> fieldsMeta) {
 
         this.fieldName = fieldName;
         if (null != fieldsMeta) {
-            Map<String, Serializable> meta = fieldsMeta;
-            this.customMeta = new ImmutableSortedMap.Builder<String, Serializable>(
-                    Comparator.naturalOrder()).putAll(meta.entrySet().stream()
-                    .filter(entry -> entry.getKey().startsWith(CUSTOM_PROP_PREFIX))
-                    .collect(Collectors.toMap(o ->
-                            o.getKey().substring(CUSTOM_PROP_PREFIX.length()
-                            ), Entry::getValue))).build();
-
-            meta = meta.entrySet().stream()
-                    .filter(entry -> !entry.getKey().startsWith(CUSTOM_PROP_PREFIX))
-                    .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
-            this.fieldsMeta = new ImmutableSortedMap.Builder<String, Serializable>(
-                    Comparator.naturalOrder()).putAll(meta).build();
+            this.fieldsMeta = fieldsMeta;
         } else {
             this.fieldsMeta = ImmutableMap.of();
-            this.customMeta = ImmutableMap.of();
         }
     }
 
@@ -48,15 +33,23 @@ public class Metadata implements Serializable {
     }
 
     public Map<String, Serializable> getFieldsMeta() {
-        return fieldsMeta;
+        return fieldsMeta.entrySet().stream()
+                .filter(entry -> !entry.getKey().startsWith(CUSTOM_PROP_PREFIX))
+                .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+
     }
 
     public Map<String, Serializable> getCustomMeta() {
-        return customMeta;
+        return new ImmutableSortedMap.Builder<String, Serializable>(
+                Comparator.naturalOrder()).putAll(fieldsMeta.entrySet().stream()
+                .filter(entry -> entry.getKey().startsWith(CUSTOM_PROP_PREFIX))
+                .collect(Collectors.toMap(o ->
+                        o.getKey().substring(CUSTOM_PROP_PREFIX.length()
+                        ), Entry::getValue))).build();
     }
 
     public Map<String, Serializable> getMap() {
-        return new ImmutableSortedMap.Builder<String, Serializable>(Comparator.naturalOrder()).putAll(fieldsMeta).putAll(customMeta).build();
+        return new ImmutableSortedMap.Builder<String, Serializable>(Comparator.naturalOrder()).putAll(fieldsMeta).build();
     }
 
     @Override
@@ -69,22 +62,21 @@ public class Metadata implements Serializable {
         }
         final Metadata metadata = (Metadata) o;
         return Objects.equals(fieldName, metadata.fieldName) &&
-                fieldsMeta.hashCode() == metadata.fieldsMeta.hashCode() &&
-                customMeta.hashCode() == metadata.customMeta.hashCode();
+                fieldsMeta.hashCode() == metadata.fieldsMeta.hashCode();
     }
 
     @Override
     public int hashCode() {
 
-        return Objects.hash(fieldName, fieldsMeta, customMeta);
+        return Objects.hash(fieldName, fieldsMeta);
     }
 
     @Override
     public String toString() {
         return "Metadata{" +
                 "fieldName='" + fieldName + '\'' +
-                ", fieldsMeta=" + fieldsMeta +
-                ", customMeta=" + customMeta +
+                ", fieldsMeta=" + getFieldsMeta() +
+                ", customMeta=" + getCustomMeta() +
                 '}';
     }
 }
