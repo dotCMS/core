@@ -93,6 +93,7 @@ import java.io.ObjectOutputStream;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -2190,7 +2191,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 	}
 
 	/**
-	 * Method to rest: {@link ContentTypeAPI#findAllRespectingLicense()}
+	 * Method to test: {@link ContentTypeAPI#findAllRespectingLicense()}
 	 * Given scenario: No EE license
 	 * Expected result: {@link EnterpriseType}s not included in returned List
 	 */
@@ -2204,7 +2205,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 	}
 
 	/**
-	 * Method to rest: {@link ContentTypeAPI#findAllRespectingLicense()}
+	 * Method to test: {@link ContentTypeAPI#findAllRespectingLicense()}
 	 * Given scenario: Valid EE license
 	 * Expected result: {@link EnterpriseType}s included in returned List
 	 */
@@ -2214,4 +2215,44 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 				.stream().noneMatch((type) -> type instanceof EnterpriseType));
 
 	}
+
+    /**
+     * Method to test: {@link ContentTypeAPI#isContentTypeAllowed(ContentType)}
+     * Given scenario: The method is tested for each {@link BaseContentType} using an enterprise license
+     * Expected result: The method should return true
+     */
+	@Test
+	public void testIsContentTypeAllowedReturnsTrue(){
+        assertTrue(Arrays.asList(BaseContentType.values()).stream()
+                .filter(type -> type != BaseContentType.ANY).allMatch(
+                        type -> {
+                            try {
+                                return APILocator.getContentTypeAPI(APILocator.systemUser())
+                                        .isContentTypeAllowed(
+                                                new ContentTypeDataGen().baseContentType(type)
+                                                        .next());
+                            } catch (Exception e) {
+                                return false;
+                            }
+                        }));
+    }
+
+    /**
+     * Method to test: {@link ContentTypeAPI#isContentTypeAllowed(ContentType)}
+     * Given scenario: The method is invoked without license using {@link BaseContentType#FORM} and {@link BaseContentType#PERSONA}
+     * Expected result: The method should return false
+     * @throws Exception
+     */
+    @Test
+    public void testIsContentTypeAllowedReturnsFalse() throws Exception {
+        runNoLicense(() -> {
+            assertFalse(APILocator.getContentTypeAPI(APILocator.systemUser())
+                    .isContentTypeAllowed(new ContentTypeDataGen()
+                            .baseContentType(BaseContentType.PERSONA).nextPersisted()));
+
+            assertFalse(APILocator.getContentTypeAPI(APILocator.systemUser())
+                    .isContentTypeAllowed(new ContentTypeDataGen()
+                            .baseContentType(BaseContentType.FORM).nextPersisted()));
+        });
+    }
 }

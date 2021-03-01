@@ -6,7 +6,6 @@ import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.event.ContentTypeDeletedEvent;
 import com.dotcms.contenttype.model.event.ContentTypeSavedEvent;
@@ -20,6 +19,7 @@ import com.dotcms.contenttype.model.type.EnterpriseType;
 import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.exception.BaseRuntimeInternationalizationException;
 import com.google.common.collect.ImmutableList;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
@@ -612,4 +612,10 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
             ContentTypeBuilder.builder(contentType).urlMapPattern(null).detailPage(null);
     save(builder.build());
   }
+
+    @Override
+    public boolean isContentTypeAllowed(ContentType contentType) {
+        return LicenseManager.getInstance().isEnterprise() || !BaseContentType
+                .getEnterpriseBaseTypes().contains(contentType.baseType());
+    }
 }
