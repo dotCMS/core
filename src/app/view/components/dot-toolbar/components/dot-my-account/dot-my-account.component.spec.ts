@@ -98,7 +98,6 @@ describe('DotMyAccountComponent', () => {
             dotMenuService = TestBed.inject(DotMenuService);
 
             comp.visible = true;
-            spyOn<any>(dotMenuService, 'isPortletInMenu').and.returnValue(of(true));
         })
     );
 
@@ -155,6 +154,7 @@ describe('DotMyAccountComponent', () => {
     });
 
     it(`should form be valid and load starter page data`, async () => {
+        spyOn<any>(dotMenuService, 'isPortletInMenu').and.returnValue(of(true));
         fixture.detectChanges();
         await fixture.whenStable();
 
@@ -226,22 +226,54 @@ describe('DotMyAccountComponent', () => {
     });
 
     it(`should call to add starter method in account service`, async () => {
+        spyOn<any>(dotMenuService, 'isPortletInMenu').and.returnValue(of(false));
         spyOn<any>(accountService, 'addStarterPage').and.returnValue(of({ entity: {} }));
+        spyOn<any>(accountService, 'updateUser').and.returnValue(
+            of({ entity: { user: mockUser() } })
+        );
         fixture.detectChanges();
-        const toggleShowStarter = de.query(By.css('[data-testid="showStarterBtn"]'));
-        toggleShowStarter.triggerEventHandler('onChange', {
-            checked: true
-        });
+        await fixture.whenStable();
+        const user = {
+            givenName: 'Admin',
+            surname: 'Admin',
+            email: 'admin@dotcms.com',
+            password: 'admin',
+            newPassword: 'newPassword',
+            confirmPassword: 'newPassword'
+        };
+        comp.form.setValue(user);
+        fixture.detectChanges();
+        de.query(
+            By.css('[data-testid="showStarterBtn"] input[type="checkbox"]')
+        ).nativeElement.click();
+        fixture.detectChanges();
+        de.query(By.css('.dialog__button-accept')).triggerEventHandler('click', {});
         expect(accountService.addStarterPage).toHaveBeenCalledTimes(1);
     });
 
     it(`should call to remove starter method in account service`, async () => {
+        spyOn<any>(dotMenuService, 'isPortletInMenu').and.returnValue(of(true));
         spyOn<any>(accountService, 'removeStarterPage').and.returnValue(of({ entity: {} }));
+        spyOn<any>(accountService, 'updateUser').and.returnValue(
+            of({ entity: { user: mockUser() } })
+        );
         fixture.detectChanges();
-        const toggleShowStarter = de.query(By.css('[data-testid="showStarterBtn"]'));
-        toggleShowStarter.triggerEventHandler('onChange', {
-            checked: false
-        });
+        await fixture.whenStable();
+        const user = {
+            givenName: 'Admin',
+            surname: 'Admin',
+            email: 'admin@dotcms.com',
+            password: 'admin',
+            newPassword: 'newPassword',
+            confirmPassword: 'newPassword'
+        };
+        comp.form.setValue(user);
+        fixture.detectChanges();
+        de.query(
+            By.css('[data-testid="showStarterBtn"] input[type="checkbox"]')
+        ).nativeElement.click();
+        fixture.detectChanges();
+        de.query(By.css('.dialog__button-accept')).triggerEventHandler('click', {});
         expect(accountService.removeStarterPage).toHaveBeenCalledTimes(1);
     });
 
