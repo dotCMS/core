@@ -1589,7 +1589,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
     private void rebuildRestHighLevelClientIfNeeded(Exception e) {
-        if(e.getMessage().contains("reactor status: STOPPED")) {
+        if(e != null && e.getMessage().contains("reactor status: STOPPED")) {
             RestHighLevelClientProvider.getInstance().rebuildClient();
         }
     }
