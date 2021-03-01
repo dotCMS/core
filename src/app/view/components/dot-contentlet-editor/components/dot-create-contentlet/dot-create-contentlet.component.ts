@@ -4,6 +4,7 @@ import { filter, pluck } from 'rxjs/operators';
 import { ActivatedRoute } from '@angular/router';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
+import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 
 /**
  * Allow user to add a contentlet to DotCMS instance
@@ -25,6 +26,7 @@ export class DotCreateContentletComponent implements OnInit {
 
     constructor(
         private dotRouterService: DotRouterService,
+        private dotIframeService: DotIframeService,
         private dotContentletEditorService: DotContentletEditorService,
         private route: ActivatedRoute
     ) {}
@@ -49,6 +51,7 @@ export class DotCreateContentletComponent implements OnInit {
         if (this.dotRouterService.currentSavedURL.includes('/c/content/new/')) {
             this.dotRouterService.goToContent();
         }
+        this.dotIframeService.reloadData(this.dotRouterService.currentPortlet.id);
         this.close.emit(event);
     }
 
