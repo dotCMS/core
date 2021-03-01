@@ -110,11 +110,11 @@ public class FolderDataGen extends AbstractDataGen<Folder> {
 
             folder.setIdentifier(newIdentifier.getId());
             APILocator.getFolderAPI().save(folder, user, false);
+
+            return APILocator.getFolderAPI().find(newIdentifier.getId(), APILocator.systemUser(), false);
         } catch (DotDataException | DotSecurityException e) {
             throw new RuntimeException("Unable to persist folder.", e);
         }
-
-        return folder;
 
     }
 
