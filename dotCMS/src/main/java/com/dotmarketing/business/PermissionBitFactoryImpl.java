@@ -1745,9 +1745,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
         upsertPermissionReferences(permissionable, type, finalNewReference);
     }
     
-  	Logger.debug(this.getClass(), () -> "permission inherited: " + Try
-			  .of(() -> type.substring(type.lastIndexOf(".") + 1)).getOrElse(type)
-			  + " : " + permissionKey + " -> " + finalNewReference);
+    Logger.debug(this.getClass(), ()-> "Permission inherited for permissionable:" + permissionable + " TYPE:" + type + " finalNewReference:" + finalNewReference);
 	
     return permissionList;
 
