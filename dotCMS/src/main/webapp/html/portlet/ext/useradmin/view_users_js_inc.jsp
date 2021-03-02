@@ -1503,7 +1503,7 @@
 			return;
 		}
 
-		UserAjax.saveUserAddittionalInfo(currentUser.id, active, prefix, suffix, title, company, website, additionalVars, saveUserAdditionalInfoCallback);
+		UserAjax.saveUserAdditionalInfo(currentUser.id, active, prefix, suffix, title, company, website, additionalVars, saveUserAdditionalInfoCallback);
 	}
 
 	function saveUserAdditionalInfoCallback(){
