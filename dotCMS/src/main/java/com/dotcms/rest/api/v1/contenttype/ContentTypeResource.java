@@ -5,7 +5,11 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldDiffCommand;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.field.ColumnField;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.LineDividerField;
+import com.dotcms.contenttype.model.field.RowField;
+import com.dotcms.contenttype.model.field.TabDividerField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
@@ -298,6 +302,7 @@ public class ContentTypeResource implements Serializable {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
+	@WrapInTransaction
 	private void handleFields(final ContentType newContentType, final User user, final ContentTypeAPI contentTypeAPI) throws DotDataException, DotSecurityException {
 
 		final ContentType currentContentType = contentTypeAPI.find(newContentType.variable());
@@ -317,9 +322,7 @@ public class ContentTypeResource implements Serializable {
 
 		if (!diffResult.getToUpdate().isEmpty()) {
 
-			for (final  Field field : diffResult.getToUpdate().values()) {
-				APILocator.getContentTypeFieldLayoutAPI().updateField(currentContentType, field, user);
-			}
+				APILocator.getContentTypeFieldAPI().saveFields(new ArrayList<>(diffResult.getToUpdate().values()), user);
 		}
 	}
 

@@ -61,7 +61,6 @@ public class FieldDiffCommand implements DiffCommand<String, Field> {
                 (field1.searchable() != field2.searchable()) ||
                 (field1.unique() != field2.unique()) ||
 
-                this.diff(field1.dbColumn(), field2.dbColumn()) ||
                 this.diff(field1.defaultValue(), field2.defaultValue()) ||
                 this.diff(field1.name(), field2.name()) ||
                 this.diff(field1.id(), field2.id()) ||
