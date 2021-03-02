@@ -11,6 +11,7 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-latest
     env:
+      DOT_CICD_BRANCH: master
       DOT_CICD_CLOUD_PROVIDER: github
       DOT_CICD_TARGET: core
       EXPORT_REPORTS: true
@@ -18,15 +19,13 @@ jobs:
       GITHUB_USER: dotcmsbuild
       GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
       PULL_REQUEST: ${{ github.event.number }}
+      DEBUG: false
     steps:
-      - name: Checkout core
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 1
       - name: GITHUB CONTEXT
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
+        if: env.DEBUG == 'true'
       - name: Get commit message
         id: get-commit-message
         uses: dotcms/get-commit-message@master
@@ -51,7 +50,7 @@ jobs:
           fi
       - name: Prepare dot-cicd
         run: |
-          chmod +x .cicd/discover.sh && .cicd/discover.sh
+          sh -c "$(curl -fsSL https://raw.githubusercontent.com/dotCMS/dot-cicd/${DOT_CICD_BRANCH}/seed/install-dot-cicd.sh)"
         if: env.jobRun == 'true'
       - name: Check Provider
         run: |
@@ -75,6 +74,7 @@ jobs:
     name: Curl Tests
     runs-on: ubuntu-latest
     env:
+      DOT_CICD_BRANCH: master
       DOT_CICD_CLOUD_PROVIDER: github
       DOT_CICD_TARGET: core
       EXPORT_REPORTS: true
@@ -82,15 +82,13 @@ jobs:
       GITHUB_USER: dotcmsbuild
       GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
       PULL_REQUEST: ${{ github.event.number }}
+      DEBUG: false
     steps:
-      - name: Checkout core
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 1
       - name: GITHUB CONTEXT
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
+        if: env.DEBUG == 'true'
       - name: Get commit message
         id: get-commit-message
         uses: dotcms/get-commit-message@master
@@ -127,7 +125,7 @@ jobs:
           fi
       - name: Prepare dot-cicd
         run: |
-          chmod +x .cicd/discover.sh && .cicd/discover.sh
+          sh -c "$(curl -fsSL https://raw.githubusercontent.com/dotCMS/dot-cicd/${DOT_CICD_BRANCH}/seed/install-dot-cicd.sh)"
         if: env.jobRun == 'true'
       - name: Check Provider
         run: |
@@ -151,7 +149,7 @@ jobs:
           databaseType: postgres
           PROVIDER_DB_USERNAME: postgres
           PROVIDER_DB_PASSWORD: postgres
-        if: (success() || failure()) && env.jobRun == 'true'
+        if: success() && env.jobRun == 'true'
   run-integration-tests-job:
     name: Integration Tests
     runs-on: ubuntu-latest
@@ -161,6 +159,7 @@ jobs:
       matrix:
         databaseType: [ postgres, mysql, oracle, mssql ]
     env:
+      DOT_CICD_BRANCH: master
       DOT_CICD_CLOUD_PROVIDER: github
       DOT_CICD_TARGET: core
       EXPORT_REPORTS: true
@@ -168,14 +167,12 @@ jobs:
       GITHUB_USER: dotcmsbuild
       GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
       PULL_REQUEST: ${{ github.event.number }}
+      DEBUG: false
     steps:
-      - name: Checkout core
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 1
       - name: GITHUB CONTEXT
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
+        if: env.DEBUG == 'true'
         run: echo "$GITHUB_CONTEXT"
       - name: Get commit message
         id: get-commit-message
@@ -250,7 +247,7 @@ jobs:
           echo "jobRun=${JOB_RUN}" >> $GITHUB_ENV
       - name: Prepare dot-cicd
         run: |
-          chmod +x .cicd/discover.sh && .cicd/discover.sh
+          sh -c "$(curl -fsSL https://raw.githubusercontent.com/dotCMS/dot-cicd/${DOT_CICD_BRANCH}/seed/install-dot-cicd.sh)"
         if: env.jobRun == 'true'
       - name: Check Provider
         run: |
@@ -271,7 +268,7 @@ jobs:
           dotcicd/library/pipeline.sh runIntegration
         env:
           databaseType: ${{ matrix.databaseType }}
-        if: (success() || failure()) && env.jobRun == 'true'
+        if: success() && env.jobRun == 'true'
   slack-notification:
     name: Notification
     runs-on: ubuntu-latest
@@ -280,6 +277,7 @@ jobs:
       GITHUB_USER: dotcmsbuild
       GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
       PULL_REQUEST: ${{ github.event.number }}
+      DEBUG: false
     if: success() || failure()
     needs: [run-unit-tests-job, run-curl-tests-job, run-integration-tests-job]
     steps:
@@ -287,6 +285,7 @@ jobs:
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
+        if: env.DEBUG == 'true'
       - name: Set Common Vars
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
