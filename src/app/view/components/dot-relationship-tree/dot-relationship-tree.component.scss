@@ -1,0 +1,97 @@
+@use "variables" as *;
+
+:host {
+    border: 1px solid $gray-light;
+    display: block;
+    border-radius: $border-radius;
+    padding: $spacing-3;
+
+    ::ng-deep {
+        .dot-tree--active {
+            position: relative;
+            &::after {
+                background: $brand-primary;
+                width: $spacing-1;
+                height: $spacing-1;
+                position: absolute;
+                content: "";
+                border-radius: 50%;
+                right: 0;
+                bottom: 0;
+            }
+        }
+    }
+}
+
+.dot-tree {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    position: relative;
+
+    & > li::after {
+        background: $gray-light;
+        width: 1px;
+        height: 1.3rem;
+        content: "•";
+        position: absolute;
+        top: 1.4rem;
+        left: 0.8rem;
+        color: $gray-light;
+        display: flex;
+        justify-content: space-evenly;
+        align-items: flex-end;
+        font-size: $font-size-x-large;
+        line-height: 1px;
+    }
+}
+.dot-tree--child {
+    position: relative;
+
+    li {
+        padding-top: 0.3rem;
+    }
+
+    & > li::after {
+        background: $gray-light;
+        width: 1.3rem;
+        height: 1px;
+        content: "";
+        position: absolute;
+        left: 0.8rem;
+        top: $spacing-3;
+    }
+}
+
+.dot-tree-query {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    h3 {
+        padding: 0;
+        margin-bottom: $spacing-1;
+        font-size: $font-size-medium;
+        font-weight: bold;
+    }
+
+    code {
+        color: $gray;
+    }
+}
+
+ul {
+    list-style: none;
+    padding-left: $spacing-5;
+
+    li {
+        span {
+            margin-left: $spacing-1;
+        }
+
+        .dot-tree__content {
+            display: flex;
+            align-items: center;
+        }
+    }
+}

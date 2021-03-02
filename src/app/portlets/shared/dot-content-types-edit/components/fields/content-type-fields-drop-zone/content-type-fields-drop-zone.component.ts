@@ -14,7 +14,8 @@ import { FieldType } from '../models';
 import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
-    DotCMSContentTypeLayoutColumn
+    DotCMSContentTypeLayoutColumn,
+    DotCMSContentType
 } from 'dotcms-models';
 import { ContentTypeFieldsPropertiesFormComponent } from '../content-type-fields-properties-form';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
@@ -53,6 +54,9 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
 
     @Input()
     layout: DotCMSContentTypeLayoutRow[];
+
+    @Input()
+    contentType: DotCMSContentType;
 
     @Output()
     saveFields = new EventEmitter<DotCMSContentTypeLayoutRow[]>();

@@ -50,6 +50,7 @@ import cleanUpDialog from '@tests/clean-up-dialog';
 class TestContentTypeFieldsDropZoneComponent {
     @Input() layout: DotCMSContentTypeLayoutRow[];
     @Input() loading: boolean;
+    @Input() contentType: DotCMSContentType;
     @Output() saveFields = new EventEmitter<DotCMSContentTypeField[]>();
     @Output() removeFields = new EventEmitter<DotCMSContentTypeField[]>();
 
@@ -457,6 +458,11 @@ describe('DotContentTypesEditComponent', () => {
             fixture.detectChanges();
             dialog = de.query(By.css('dot-dialog'));
         };
+
+        it('should have contentType set in dot-content-type-fields-drop-zone', () => {
+            const dropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
+            expect(dropZone.componentInstance.contentType.name).toBe('name');
+        });
 
         it('should set data, fields and  cache', () => {
             expect(comp.data).toBe(fakeContentType);

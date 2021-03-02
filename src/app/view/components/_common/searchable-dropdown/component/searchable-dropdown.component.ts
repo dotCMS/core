@@ -15,7 +15,8 @@ import {
     ContentChildren,
     QueryList,
     AfterContentInit,
-    AfterViewInit
+    AfterViewInit,
+    ChangeDetectorRef
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { fromEvent } from 'rxjs';
@@ -146,7 +147,7 @@ export class SearchableDropdownComponent
         'ArrowRight'
     ];
 
-    constructor() {}
+    constructor(private cd: ChangeDetectorRef) {}
 
     propagateChange = (_: any) => {};
 
@@ -339,6 +340,7 @@ export class SearchableDropdownComponent
             ? this.value[this.getValueLabelPropertyName()]
             : this.placeholder;
         this.label = this.persistentPlaceholder ? this.placeholder : this.valueString;
+        this.cd.markForCheck();
     }
 
     private setOptions(change: SimpleChanges): void {

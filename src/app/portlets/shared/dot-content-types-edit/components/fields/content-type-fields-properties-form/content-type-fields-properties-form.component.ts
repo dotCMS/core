@@ -10,7 +10,7 @@ import {
     OnDestroy
 } from '@angular/core';
 import { FormGroup, FormBuilder, AbstractControl } from '@angular/forms';
-import { DotCMSContentTypeField } from 'dotcms-models';
+import { DotCMSContentType, DotCMSContentTypeField } from 'dotcms-models';
 import { FieldPropertyService } from '../service';
 import { takeUntil } from 'rxjs/operators';
 import * as _ from 'lodash';
@@ -27,6 +27,8 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     @Output() valid: EventEmitter<boolean> = new EventEmitter();
 
     @Input() formFieldData: DotCMSContentTypeField;
+
+    @Input() contentType: DotCMSContentType;
 
     @ViewChild('properties') propertiesContainer;
 

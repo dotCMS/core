@@ -40,6 +40,7 @@ describe('DotCreateContentletComponent', () => {
     let dotCreateContentletWrapperComponent: DotContentletWrapperComponent;
     let component: DotCreateContentletComponent;
     let routeService: ActivatedRoute;
+    let dotIframeService: DotIframeService;
     let routerService;
     const dotContentletEditorServiceMock: DotContentletEditorServiceMock = new DotContentletEditorServiceMock();
 
@@ -92,8 +93,10 @@ describe('DotCreateContentletComponent', () => {
         dotCreateContentletWrapperComponent = dotCreateContentletWrapper.componentInstance;
         routeService = TestBed.inject(ActivatedRoute);
         routerService = TestBed.inject(DotRouterService);
+        dotIframeService = TestBed.inject(DotIframeService);
         spyOn(component.close, 'emit');
         spyOn(component.custom, 'emit');
+        spyOn(dotIframeService, 'reloadData');
     });
 
     it('should have dot-contentlet-wrapper', () => {
@@ -105,6 +108,7 @@ describe('DotCreateContentletComponent', () => {
         dotCreateContentletWrapper.triggerEventHandler('close', {});
         expect(component.close.emit).toHaveBeenCalledTimes(1);
         expect(routerService.goToContent).toHaveBeenCalledTimes(1);
+        expect(dotIframeService.reloadData).toHaveBeenCalledWith('123-567');
     });
 
     it('should emit custom', () => {
