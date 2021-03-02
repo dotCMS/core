@@ -110,15 +110,7 @@
     <portlet>
         <portlet-name>templates</portlet-name>
         <display-name>Templates Manager</display-name>
-        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
-        <init-param>
-            <name>view-action</name>
-            <value>/ext/templates/view_templates</value>
-        </init-param>
-
-
-        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
     </portlet>
 
     <portlet>
@@ -505,6 +497,12 @@
     <portlet>
         <portlet-name>forms</portlet-name>
         <display-name>Forms</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+    </portlet>
+    
+    <portlet>
+        <portlet-name>starter</portlet-name>
+        <display-name>Getting Started</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
     </portlet>
 

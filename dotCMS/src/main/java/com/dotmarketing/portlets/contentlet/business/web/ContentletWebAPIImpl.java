@@ -4,8 +4,10 @@ import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
@@ -317,6 +319,11 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 		// Getting the contentlets variables to work
 		Contentlet currentContentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
+
+        if (!APILocator.getContentTypeAPI(user).isContentTypeAllowed(currentContentlet.getContentType())) {
+            SessionMessages.add(request, "message", "An enterprise license is required to perform this operation");
+            throw new DotSecurityException("An enterprise license is required to perform this operation");
+        }
 		final Map<String, Object> oldContentletMap = currentContentlet.getMap();
 		//Form doesn't always contain this value upfront. And since populateContentlet sets 0 we better set it upfront
 		contentletFormData.put(Contentlet.IDENTIFIER_KEY, currentContentlet.getIdentifier());
@@ -531,7 +538,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 							!currentContentlet.getTitle().equals(oldContentletMap.get(Host.HOST_NAME_KEY))) {
 						UpdateContainersPathsJob.triggerUpdateContainersPathsJob(
 								oldContentletMap.get(Host.HOST_NAME_KEY).toString(),
-								currentContentlet.getName()
+								(String) currentContentlet.get("hostName")
 						);
 					}
 				} else {

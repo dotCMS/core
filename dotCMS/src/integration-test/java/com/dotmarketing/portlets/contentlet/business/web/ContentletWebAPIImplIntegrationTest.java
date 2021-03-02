@@ -2,14 +2,18 @@ package com.dotmarketing.portlets.contentlet.business.web;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.powermock.api.mockito.PowerMockito.when;
 
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.JsonTransformer;
 import com.dotcms.datagen.ContainerAsFileDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.PersonaDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TemplateLayoutDataGen;
@@ -26,13 +30,16 @@ import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.quartz.QuartzUtils;
+import com.dotmarketing.util.WebKeys;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.liferay.portal.model.User;
 import com.liferay.util.servlet.SessionMessages;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
@@ -41,23 +48,23 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.quartz.SchedulerException;
 
-public class ContentletWebAPIImplIntegrationTest {
+public class ContentletWebAPIImplIntegrationTest extends IntegrationTestBase {
 
     final String body =
             "<html>" +
                     "<head>" +
-                        "#dotParse('%1$s/application/themes/landing-page/html_head.vtl')" +
+                        "#dotParse('//%1$s/application/themes/landing-page/html_head.vtl')" +
                         "<link rel=\"stylesheet\" type=\"text/css\" href=\"/html/css/template/reset-fonts-grids.css\" />" +
                     "</head>" +
                     "<body>" +
                         "<div id=\"resp-template\" name=\"globalContainer\">" +
                         "<div id=\"hd-template\">" +
-                        "#dotParse('%1$s/application/themes/landing-page/header.vtl')" +
+                        "#dotParse('//%1$s/application/themes/landing-page/header.vtl')" +
                         "</div>" +
                         "<div id=\"bd-template\">" +
                             "<div id=\"yui-main-template\">" +
                                 "<div class=\"yui-b-template\" id=\"splitBody0\">" +
-                                    "#parseContainer('%1$s/application/containers/default/','1')" +
+                                    "#parseContainer('//%1$s/application/containers/default/','1')" +
                                 "</div>" +
                             "</div>" +
                         "</div>" +
@@ -113,7 +120,7 @@ public class ContentletWebAPIImplIntegrationTest {
         final Host hostFromDataBse = APILocator.getHostAPI().find(host.getIdentifier(), user, false);
         assertEquals(newHostname, hostFromDataBse.getHostname());
 
-        checkTemplate(oldVersionInode, user, host.getHostname(), newHostname);
+        checkTemplate(oldVersionInode, user, newHostname, host.getHostname());
         checkTemplate(liveVersionInode, user, newHostname, host.getHostname());
         checkTemplate(workingVersionInode, user, newHostname, host.getHostname());
 
@@ -134,6 +141,79 @@ public class ContentletWebAPIImplIntegrationTest {
                 null);
 
         assertEquals(newHostname, containerFromDataBase.getHost().getName());
+    }
+
+    /**
+     * Method to Test: {@link ContentletWebAPIImpl#saveContent(Map, boolean, boolean, User)}
+     * When: Change a Host' name and the new host name is a substring from the old ones
+     * Should: Update the container path into the template
+     *
+     * */
+    @Test
+    public void whenNewNameIsSubstring() throws Exception {
+
+        final User user = APILocator.systemUser();
+        init();
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        Container container = createContainer(user, host);
+        Template template = createTemplate(host, container);
+
+        final ContentletWebAPIImpl contentletWebAPI = new ContentletWebAPIImpl();
+        final Map<String, Object> hostMap = host.getMap();
+        final String oldHostName = host.getHostname();
+        final String newHostname = oldHostName.substring(0, (int) (oldHostName.length()/2));
+        hostMap.put("text1", newHostname);
+        hostMap.put("contentletInode", hostMap.get("inode"));
+
+        contentletWebAPI.saveContent(hostMap, false, false, user);
+        waitUntilJobIsFinish();
+
+        final Host hostFromDataBse = APILocator.getHostAPI().find(host.getIdentifier(), user, false);
+        assertEquals(newHostname, hostFromDataBse.getHostname());
+
+        final TemplateLayout templateLayout = DotTemplateTool.themeLayout(template.getInode());
+        final String drawedBodyJson = JsonTransformer.mapper.writeValueAsString(templateLayout);
+        assertFalse(drawedBodyJson.contains(String.format("//%s/", oldHostName)));
+        assertTrue(drawedBodyJson.contains(String.format("//%s/", newHostname)));
+    }
+
+
+    /**
+     * Method to Test: {@link ContentletWebAPIImpl#saveContent(Map, boolean, boolean, User)}
+     * When: Change a Host' name and the new host name contains the old one
+     * Should: Update the container path into the template
+     *
+     * */
+    @Test
+    public void whenOldNameIsSubstring() throws Exception {
+
+        final User user = APILocator.systemUser();
+        init();
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        Container container = createContainer(user, host);
+        Template template = createTemplate(host, container);
+
+        final ContentletWebAPIImpl contentletWebAPI = new ContentletWebAPIImpl();
+        final Map<String, Object> hostMap = host.getMap();
+        final String oldHostName = host.getHostname();
+        final String newHostname = oldHostName + "_new";
+        hostMap.put("text1", newHostname);
+        hostMap.put("contentletInode", hostMap.get("inode"));
+
+        contentletWebAPI.saveContent(hostMap, false, false, user);
+        waitUntilJobIsFinish();
+
+        final Host hostFromDataBse = APILocator.getHostAPI().find(host.getIdentifier(), user, false);
+        assertEquals(newHostname, hostFromDataBse.getHostname());
+
+        final TemplateLayout templateLayout = DotTemplateTool.themeLayout(template.getInode());
+        final String drawedBodyJson = JsonTransformer.mapper.writeValueAsString(templateLayout);
+        assertFalse(drawedBodyJson.contains(String.format("//%s/", oldHostName)));
+        assertTrue(drawedBodyJson.contains(String.format("//%s/", newHostname)));
     }
 
     private void checkTemplate(
@@ -163,7 +243,7 @@ public class ContentletWebAPIImplIntegrationTest {
 
         final String drawedBodyHTML = "" +
                 "<div style=\"display: none;\" title=\"container_854ad819-8381-434d-a70f-6e2330985ea4\" id=\"splitBody0_div_854ad819-8381-434d-a70f-6e2330985ea4_1572981893151\">" +
-                "#parseContainer('//%s','1572981893151')" +
+                "#parseContainer('//%s/','1572981893151')" +
                 "</div>";
 
         final User user = APILocator.systemUser();
@@ -285,6 +365,66 @@ public class ContentletWebAPIImplIntegrationTest {
 
         assertTrue(templateFromDatabase.getDrawedBody().contains(host.getHostname()));
         assertTrue(templateFromDatabase.getBody().contains(host.getHostname()));
+    }
+
+
+    /**
+     * Method to Test: {@link ContentletWebAPIImpl#saveContent(Map, boolean, boolean, User)}
+     * When: A user tries to save a persona without an enterprise license
+     * Should: Fail with an exception
+     *
+     * */
+    @Test
+    public void testSavePersonaWithoutLicenseShouldFail() throws Exception {
+        init();
+
+        final Map<String, Object> contentMap = new HashMap<>();
+
+        Persona persona = new PersonaDataGen().name("MyPersona" + System.currentTimeMillis())
+                .nextPersisted();
+
+        contentMap.put(WebKeys.CONTENTLET_EDIT, persona);
+        contentMap.put("contentletInode", persona.getInode());
+
+        runNoLicense(()-> {
+            try {
+                new ContentletWebAPIImpl()
+                        .saveContent(contentMap, false, false, APILocator.systemUser());
+
+                fail("An exception should have been thrown");
+            } catch (Exception e) {
+                assertTrue(e instanceof DotSecurityException);
+                assertEquals("An enterprise license is required to perform this operation", e.getMessage());
+            }
+
+        });
+
+
+    }
+
+    /**
+     * Method to Test: {@link ContentletWebAPIImpl#saveContent(Map, boolean, boolean, User)}
+     * When: A user tries to save a persona with an enterprise license
+     * Should: Save the persona successfully
+     *
+     * */
+    @Test
+    public void testSavePersonaWithLicenseShouldPass() throws Exception {
+        init();
+
+        final Map<String, Object> contentMap = new HashMap<>();
+        
+        Persona persona = new PersonaDataGen().name("MyPersona" + System.currentTimeMillis())
+                .nextPersisted();
+
+        contentMap.put(WebKeys.CONTENTLET_EDIT, persona);
+        contentMap.put("contentletInode", persona.getInode());
+        
+        final String result = new ContentletWebAPIImpl()
+                .saveContent(contentMap, false, false, APILocator.systemUser());
+
+        assertNotNull(result);
+        assertEquals(persona.getInode(), result);
     }
 
     private void init() {

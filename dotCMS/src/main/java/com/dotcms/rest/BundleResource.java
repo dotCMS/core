@@ -83,6 +83,7 @@ import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_
 import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_GROUPS;
 import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_SENT;
 import static com.dotcms.publisher.business.PublishAuditStatus.Status.SUCCESS;
+import static com.dotcms.publisher.business.PublishAuditStatus.Status.SUCCESS_WITH_WARNINGS;
 
 @Path("/bundle")
 public class BundleResource {
@@ -507,7 +508,7 @@ public class BundleResource {
                 final PublishAuditStatus.Status [] statuses = Config.getCustomArrayProperty("bundle.delete.all.statuses",
                         PublishAuditStatus.Status::valueOf, PublishAuditStatus.Status.class,
                         ()-> new PublishAuditStatus.Status[] {FAILED_TO_SEND_TO_ALL_GROUPS, FAILED_TO_SEND_TO_SOME_GROUPS,
-                                FAILED_TO_BUNDLE, FAILED_TO_SENT, FAILED_TO_PUBLISH, SUCCESS});
+                                FAILED_TO_BUNDLE, FAILED_TO_SENT, FAILED_TO_PUBLISH, SUCCESS, SUCCESS_WITH_WARNINGS});
 
                 final BundleDeleteResult bundleDeleteResult = this.bundleAPI.deleteAllBundles(initData.getUser(), statuses);
                 sendDeleteResultsMessage(initData, locale, bundleDeleteResult);
@@ -614,7 +615,7 @@ public class BundleResource {
 
                 final PublishAuditStatus.Status [] statuses = Config.getCustomArrayProperty("bundle.delete.success.statuses",
                         PublishAuditStatus.Status::valueOf, PublishAuditStatus.Status.class,
-                        ()-> new PublishAuditStatus.Status[] {SUCCESS});
+                        ()-> new PublishAuditStatus.Status[] {SUCCESS, SUCCESS_WITH_WARNINGS});
                 final BundleDeleteResult bundleDeleteResult = this.bundleAPI.deleteAllBundles(initData.getUser(), statuses);
                 sendDeleteResultsMessage(initData, locale, bundleDeleteResult);
             } catch (DotDataException e) {
@@ -809,7 +810,7 @@ public class BundleResource {
                         .getInstance().updateAuditTable(endpointId, endpointId, bundleFolder);
 
                 final PublisherConfig config = !previousStatus.getStatus().equals(Status.PUBLISHING_BUNDLE)?
-                        new PublishThread(bundleName, null, endpointId, previousStatus).processBundle(): null;
+                        new PushPublisherJob().processBundle(bundleName, previousStatus): null;
 
                 final String finalStatus = config != null ?
                         config.getPublishAuditStatus().getStatus().name():
@@ -872,8 +873,8 @@ public class BundleResource {
                             .getSubmitter(BUNDLE_THREAD_POOL_SUBMITTER_NAME);
                     dotSubmitter.execute(() -> {
 
-                        final PublisherConfig config = new PublishThread(bundleName, null, endpointId, previousStatus)
-                                .processBundle();
+                        final PublisherConfig config = new PushPublisherJob()
+                                .processBundle(bundleName, previousStatus);
 
                         final String finalStatus =
                                 config != null ? config.getPublishAuditStatus().getStatus().name()

@@ -17,11 +17,9 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.FileUtil;
 import org.apache.commons.io.FileUtils;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.datagen.FileAssetDataGen;
@@ -141,7 +139,7 @@ public class BrowserAPITest extends IntegrationTestBase {
 
         for (int i = 0; i < 100; ++i) {
 
-            new FileAssetDataGen(FileUtil.createTemporalFile("test", ".txt", "this is a test")).host(host)
+            new FileAssetDataGen(FileUtil.createTemporaryFile("test", ".txt", "this is a test")).host(host)
                     .folder(folder).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
         }
 
@@ -245,7 +243,7 @@ public class BrowserAPITest extends IntegrationTestBase {
 
         for (int i = 0; i < 100; ++i) {
 
-            new FileAssetDataGen(FileUtil.createTemporalFile("test", ".txt", "this is a test")).host(host)
+            new FileAssetDataGen(FileUtil.createTemporaryFile("test", ".txt", "this is a test")).host(host)
                     .folder(folder).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
         }
 

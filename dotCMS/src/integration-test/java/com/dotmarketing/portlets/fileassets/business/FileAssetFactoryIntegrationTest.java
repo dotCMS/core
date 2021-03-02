@@ -10,6 +10,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -64,7 +65,7 @@ public class FileAssetFactoryIntegrationTest extends IntegrationTestBase {
         final Contentlet fileAsset4 = createFileAsset(folder2, "text2", ".txt");
 
         this.addPermission(role, folder1, folder2, fileAsset1, fileAsset2, fileAsset3, fileAsset4);
-        final List<Contentlet> files = fileAssetFactory.findFileAssetsByFolderInDB(folder1, user, false);
+        final List<Contentlet> files = fileAssetFactory.findByDB(FileAssetSearcher.builder().folder(folder1).user(user).respectFrontendRoles(false).build());
 
         assertEquals(2, files.size());
 
@@ -97,7 +98,7 @@ public class FileAssetFactoryIntegrationTest extends IntegrationTestBase {
         createFileAsset(folder, "text2", ".txt");
 
         this.addPermission(role, folder, fileAsset1);
-        final List<Contentlet> files = fileAssetFactory.findFileAssetsByFolderInDB(folder, user, false);
+        final List<Contentlet> files = fileAssetFactory.findByDB(FileAssetSearcher.builder().folder(folder).user(user).respectFrontendRoles(false).build());
 
         assertEquals(1, files.size());
 
@@ -129,7 +130,7 @@ public class FileAssetFactoryIntegrationTest extends IntegrationTestBase {
         ContentletDataGen.publish(fileAsset2);
 
         this.addPermission(anonymousRole, folder, fileAsset1, fileAsset2);
-        final List<Contentlet> files = fileAssetFactory.findFileAssetsByFolderInDB(folder, user, true);
+        final List<Contentlet> files = fileAssetFactory.findByDB(FileAssetSearcher.builder().folder(folder).user(user).respectFrontendRoles(true).build());
 
         assertEquals(2, files.size());
 
@@ -157,7 +158,7 @@ public class FileAssetFactoryIntegrationTest extends IntegrationTestBase {
         final Folder folder = new FolderDataGen().site(host).nextPersisted();
 
         this.addPermission(role, folder);
-        final List<Contentlet> files = fileAssetFactory.findFileAssetsByFolderInDB(folder, user, false);
+        final List<Contentlet> files = fileAssetFactory.findByDB(FileAssetSearcher.builder().folder(folder).user(user).respectFrontendRoles(false).build());
 
         assertTrue(files.isEmpty());
     }
@@ -171,7 +172,7 @@ public class FileAssetFactoryIntegrationTest extends IntegrationTestBase {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    @Test(expected = DotSecurityException.class)
+    @Test(expected = DotRuntimeException.class)
     public void whenUserNotHavePermissionOverParentFolder() throws DotDataException, DotSecurityException {
         final Role backEndUserRole = APILocator.getRoleAPI().loadBackEndUserRole();
         final Role role = new RoleDataGen().nextPersisted();
@@ -180,7 +181,7 @@ public class FileAssetFactoryIntegrationTest extends IntegrationTestBase {
         final Host host = new SiteDataGen().nextPersisted();
         final Folder folder = new FolderDataGen().site(host).nextPersisted();
 
-        fileAssetFactory.findFileAssetsByFolderInDB(folder, user, false);
+        fileAssetFactory.findByDB(FileAssetSearcher.builder().folder(folder).user(user).respectFrontendRoles(false).build());
     }
 
     private Contentlet createFileAsset(

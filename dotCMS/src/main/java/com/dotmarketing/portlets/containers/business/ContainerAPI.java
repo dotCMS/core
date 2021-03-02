@@ -51,6 +51,19 @@ public interface ContainerAPI {
 	 */
 	public Container copy(Container source, Host destination, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
+	/**
+	 * Finds a container by identifier or path
+	 * In the case it is a path, will try to resolve the host by 1) the host in the path if any.
+	 * 2) the current host (if could retrieve it)
+	 * 3) the default host
+	 * @param idOrPath
+	 * @param user
+	 * @param live
+	 * @param respectFrontendRoles
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
 	public Optional<Container> findContainer(String idOrPath, User user, boolean live, boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException;
 

@@ -1,17 +1,14 @@
 package com.dotmarketing.portlets.templates.design.bean;
 
-import com.google.common.collect.ImmutableMap;
-import java.util.Map;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.liferay.util.StringUtil;
-import org.apache.commons.lang.StringUtils;
+import com.google.common.collect.ImmutableMap;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
@@ -53,6 +50,10 @@ public class TemplateLayoutColumn extends ContainerHolder implements Serializabl
         }
 
         return widthPercent;
+    }
+
+    public void setWidth(final Integer width) {
+        this.width = width;
     }
 
     public Integer getWidth () {

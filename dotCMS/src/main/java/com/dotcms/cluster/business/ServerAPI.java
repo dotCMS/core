@@ -53,14 +53,20 @@ public interface ServerAPI {
 
     void writeHeartBeatToDisk(String serverId) throws IOException;
 
-    String getOldestServer(final List<String> serverIds) throws DotDataException, IOException;
-
     String getOldestServer() throws DotDataException, IOException;
-/**
- * Returns a list of serverIds participating in a reindex
- * @return
- * @throws DotDataException
- */
+    
+    /**
+     * Returns a list of serverIds participating in a reindex
+     * @return
+     * @throws DotDataException
+     */
   List<String> getReindexingServers() throws DotDataException;
+
+	/**
+	 * Gets the servers start time
+	 *
+	 * @return milliseconds representing the date-time when the server started.
+	 */
+	long getServerStartTime();
 
 }

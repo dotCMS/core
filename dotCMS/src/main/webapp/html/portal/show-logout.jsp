@@ -5,8 +5,8 @@
 <head>
 	<link rel="shortcut icon" href="//dotcms.com/favicon.ico" type="image/x-icon">
 	<title>dotCMS : <%= LanguageUtil.get(pageContext, "Enterprise-Web-Content-Management") %></title>
-	<link rel="stylesheet" type="text/css" href="/html/css/dijit-dotcms/dotcms.css?b=master">
 	<style>
+		<jsp:include page="/html/css/dijit-dotcms/dotcms.css"></jsp:include>
 		.logout {
 			height: 100%;
 			width: 100%;

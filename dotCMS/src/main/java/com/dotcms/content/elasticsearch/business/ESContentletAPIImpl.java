@@ -13,6 +13,7 @@ import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
+import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategy;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategyResolver;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -810,9 +811,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
             } catch (DotSecurityException e) {
                 Logger.debug(this, "User has permissions to publish the content = " + contentlet.getIdentifier()
                         + " but not the related link = " + link.getIdentifier());
-                throw new DotStateException("Problem occured while publishing link");
+                throw new DotStateException("Problem occured while publishing link: " + e.getMessage(), e);
             } catch (Exception e) {
-                throw new DotStateException("Problem occured while publishing file");
+                throw new DotStateException("Problem occured while publishing file: " + e.getMessage(), e);
             }
         }
     } // publishRelatedLinks.
@@ -955,7 +956,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 isAdmin = true;
             }
         }
-        StringBuffer buffy = new StringBuffer(luceneQuery);
+        final StringBuffer buffy = new StringBuffer(luceneQuery);
 
         // Permissions in the query
         if (!isAdmin)
@@ -970,26 +971,25 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         if(limit<=MAX_LIMIT) {
-            SearchHits lc = contentFactory.indexSearch(buffy.toString(), limit, offset, sortBy);
-            PaginatedArrayList <ContentletSearch> list=new PaginatedArrayList<>();
-            list.setTotalResults(lc.getTotalHits().value);
+            final SearchHits searchHits = contentFactory.indexSearch(buffy.toString(), limit, offset, sortBy);
+            final PaginatedArrayList <ContentletSearch> list=new PaginatedArrayList<>();
+            list.setTotalResults(searchHits.getTotalHits().value);
 
-            for (SearchHit sh : lc.getHits()) {
+            for (final SearchHit searchHit : searchHits.getHits()) {
                 try{
-                    Map<String, Object> sourceMap = sh.getSourceAsMap();
-                    ContentletSearch conwrapper= new ContentletSearch();
-                    conwrapper.setId(sh.getId());
-                    conwrapper.setIndex(sh.getIndex());
-                    conwrapper.setIdentifier(sourceMap.get("identifier").toString());
-                    conwrapper.setInode(sourceMap.get("inode").toString());
-                    conwrapper.setScore(sh.getScore());
+                    final Map<String, Object> sourceMap = searchHit.getSourceAsMap();
+                    final ContentletSearch conWrapper = new ContentletSearch();
+                    conWrapper.setId(searchHit.getId());
+                    conWrapper.setIndex(searchHit.getIndex());
+                    conWrapper.setIdentifier(sourceMap.get("identifier").toString());
+                    conWrapper.setInode(sourceMap.get("inode").toString());
+                    conWrapper.setScore(searchHit.getScore());
 
-                    list.add(conwrapper);
+                    list.add(conWrapper);
                 }
                 catch(Exception e){
                     Logger.error(this,e.getMessage(),e);
                 }
-
             }
             return list;
         } else {
@@ -1191,8 +1191,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         final List<MultiTree> trees = APILocator.getMultiTreeAPI().getMultiTreesByChild(id.getId());
         for (final MultiTree tree : trees) {
-            final IHTMLPage page = loadPageByIdentifier(tree.getParent1(), false, contentlet.getLanguageId(), APILocator.getUserAPI().getSystemUser(), false);
-            final Container container = APILocator.getContainerAPI().getWorkingContainerById(tree.getParent2(), APILocator.getUserAPI().getSystemUser(), false);
+            final IHTMLPage page = APILocator.getHTMLPageAssetAPI()
+                    .findByIdLanguageFallback(tree.getParent1(), contentlet.getLanguageId(), false,
+                            APILocator.getUserAPI().getSystemUser(), false);
+            final Container container = APILocator.getContainerAPI()
+                    .getWorkingContainerById(tree.getParent2(),
+                            APILocator.getUserAPI().getSystemUser(), false);
             if (InodeUtils.isSet(page.getInode()) && InodeUtils.isSet(container.getInode())) {
                 final Map<String, Object> map = new HashMap<String, Object>();
                 map.put("page", page);
@@ -3026,7 +3030,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             reindexQueueAPI.addStructureReindexEntries(structure.getInode());
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
-            throw new DotReindexStateException("Unable to complete reindex",e);
+            throw new DotReindexStateException("Unable to complete reindex: " + e.getMessage(),e);
         }
     }
 
@@ -3043,7 +3047,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             //CacheLocator.getContentletCache().clearCache();
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
-            throw new DotReindexStateException("Unable to complete reindex",e);
+            throw new DotReindexStateException("Unable to complete reindex: " + e.getMessage(),e);
         }
 
     }
@@ -3056,7 +3060,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             //CacheLocator.getContentletCache().clearCache();
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
-            throw new DotReindexStateException("Unable to complete reindex",e);
+            throw new DotReindexStateException("Unable to complete reindex: " + e.getMessage(),e);
         }
 
     }
@@ -3108,7 +3112,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             reindexQueueAPI.refreshContentUnderHost(host);
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
-            throw new DotReindexStateException("Unable to complete reindex",e);
+            throw new DotReindexStateException("Unable to complete reindex: " + e.getMessage(),e);
         }
 
     }
@@ -3120,7 +3124,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             reindexQueueAPI.refreshContentUnderFolder(folder);
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
-            throw new DotReindexStateException("Unable to complete reindex",e);
+            throw new DotReindexStateException("Unable to complete reindex " + e.getMessage(),e);
         }
 
     }
@@ -3132,7 +3136,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             reindexQueueAPI.refreshContentUnderFolderPath(hostId, folderPath);
         } catch ( DotDataException e ) {
             Logger.error(this, e.getMessage(), e);
-            throw new DotReindexStateException("Unable to complete reindex", e);
+            throw new DotReindexStateException("Unable to complete reindex " + e.getMessage(),e);
         }
     }
 
@@ -3717,15 +3721,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
+     * Retrieves the Contentlets that are associated to a specific piece of Content through a specific Relationship
+     * field. This method is executed for Relationships that are not currently cached by dotCMS, and must be looked up
+     * from scratch.
      *
-     * @param contentlet
-     * @param relatedIds
-     * @param variableName
+     * @param contentlet   The {@link Contentlet} object whose related Contentlets will be retrieved.
+     * @param relatedIds   The data structure that will store the related Contentlets.
+     * @param variableName The Velocity Variable name of the Relationship field for the Content Type that the {@code
+     *                     contentlet} object belongs to.
      * @param pullByParent
-     * @param limit
-     * @param offset
-     * @return
-     * @throws DotDataException
+     * @param limit        Pagination parameter for the total number of results to return.
+     * @param offset       Pagination parameter for the offset.
+     *
+     * @return The list of related {@link Contentlet} objects.
+     *
+     * @throws DotDataException     An error occurred when interacting with the data source.
      * @throws DotSecurityException
      */
     @Nullable
@@ -3736,38 +3746,35 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         final User systemUser = APILocator.getUserAPI().getSystemUser();
         com.dotcms.contenttype.model.field.Field field = null;
-        List<Contentlet> relatedList;
-        List<String> uniqueIdentifiers;
         Relationship relationship;
 
         try {
             field = APILocator
                     .getContentTypeFieldAPI()
                     .byContentTypeIdAndVar(contentlet.getContentTypeId(), variableName);
-
-            relationship = relationshipAPI.getRelationshipFromField(field, systemUser);
-
-
-        }catch(NotFoundInDbException e){
-            //Search for legacy relationships
-            relationship =  relationshipAPI.byTypeValue(variableName);
+            relationship = this.relationshipAPI.getRelationshipFromField(field, systemUser);
+        } catch (final NotFoundInDbException e) {
+            // Search for legacy relationships
+            relationship = this.relationshipAPI.byTypeValue(variableName);
         }
 
-        if (relationship == null){
-            throw new DotStateException("No relationship found");
+        if (null == relationship) {
+            throw new DotStateException(String.format("Relationship field '%s' in Content Type ID '%s' was not found." +
+                    " Make sure that the relationship table points to the correct field.", variableName, contentlet
+                    .getContentTypeId()));
         }
-        relatedList = filterRelatedContent(contentlet, relationship, systemUser, false,
+        final List<Contentlet> relatedList = filterRelatedContent(contentlet, relationship, systemUser, false,
                 pullByParent, limit, offset);
 
-        //Get unique identifiers to avoid duplicates (used to save on cache and filter the final list if needed
-        uniqueIdentifiers = relatedList.stream().map(Contentlet::getIdentifier).distinct()
+        // Get unique identifiers to avoid duplicates (used to save on cache and filter the final list if needed
+        final List<String> uniqueIdentifiers = relatedList.stream().map(Contentlet::getIdentifier).distinct()
                 .collect(CollectionsUtils.toImmutableList());
 
         //Cache related content only if it is a relationship field and there is no filter
         //In case of self-relationships, we shouldn't cache any value for a particular field when pullByParent==null
         //because in this case all parents and children are returned
         if (field != null && limit == -1 && offset <= 0 &&
-                !(relationshipAPI.sameParentAndChild(relationship) && pullByParent == null)) {
+                !(this.relationshipAPI.sameParentAndChild(relationship) && pullByParent == null)) {
             if (UtilMethods.isSet(relatedList)) {
                 relatedIds.put(variableName, uniqueIdentifiers);
             } else {
@@ -5627,7 +5634,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         categoryAPI.setParents(toContentlet, categories, APILocator.systemUser(), respect);
     }
 
-    @CloseDBIfOpened
+    @WrapInTransaction
     @Override
     public void restoreVersion(Contentlet contentlet, User user,boolean respectFrontendRoles) throws DotSecurityException, DotContentletStateException, DotDataException {
         if(contentlet.getInode().equals(""))
@@ -5802,7 +5809,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 new StringBuilder(" (COPY_")
                                         .append(System.currentTimeMillis()).append(')').toString();
                         }
-                        contentlet.setStringProperty(conVariable, value != null ? (String)value : null);
+
+                        if (value instanceof CharSequence) {
+                            contentlet.setStringProperty(conVariable, value != null ? value.toString() : null);
+                        } else {
+                            contentlet.setProperty(conVariable, value);
+                        }
                     }else if(isFieldTypeBoolean(field)){
                         contentlet.setBoolProperty(conVariable, value != null ? (Boolean)value : null);
                     }else if(isFieldTypeFloat(field)){
@@ -5901,15 +5913,27 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return search(buffy.toString(), 0, -1, orderBy, user, respectFrontendRoles);
         } catch (Exception pe) {
             Logger.error(this,"Unable to search for contentlets" ,pe);
-            throw new DotContentletStateException("Unable to search for contentlets", pe);
+            throw new DotContentletStateException("Unable to search for contentlets: " + pe.getMessage(), pe);
         }
     }
 
+    private static final String[] DEFAULT_DATE_FORMATS = new String[] {
+            // time zone
+            "yyyy-MM-dd HH:mm:ss z Z", "d-MMM-yy z Z", "dd-MMM-yyyy z Z", "MM/dd/yy HH:mm:ss z Z",
+            "MM/dd/yy hh:mm:ss z Z", "MMMM dd, yyyy z Z", "M/d/y z Z", "MM/dd/yyyy z Z", "yyyy-MM-dd z Z",
+
+            "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm", "d-MMM-yy", "MMM-yy", "MMMM-yy", "d-MMM", "dd-MMM-yyyy",
+            "MM/dd/yyyy hh:mm:ss aa", "MM/dd/yyyy hh:mm aa", "MM/dd/yy HH:mm:ss", "MM/dd/yy HH:mm:ss", "MM/dd/yy HH:mm",
+            "MM/dd/yy hh:mm:ss aa", "MM/dd/yy hh:mm:ss", "MM/dd/yyyy HH:mm:ss", "MM/dd/yyyy HH:mm", "MMMM dd, yyyy",
+            "M/d/y", "M/d", "EEEE, MMMM dd, yyyy", "MM/dd/yyyy",
+            "hh:mm:ss aa", "hh:mm aa", "HH:mm:ss", "HH:mm", "yyyy-MM-dd"
+    };
+
     @Override
     public void setContentletProperty(Contentlet contentlet,Field field, Object value)throws DotContentletStateException {
-        String[] dateFormats = new String[] { "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm", "d-MMM-yy", "MMM-yy", "MMMM-yy", "d-MMM", "dd-MMM-yyyy", "MM/dd/yyyy hh:mm:ss aa", "MM/dd/yyyy hh:mm aa", "MM/dd/yy HH:mm:ss", "MM/dd/yy HH:mm:ss", "MM/dd/yy HH:mm", "MM/dd/yy hh:mm:ss aa", "MM/dd/yy hh:mm:ss",
-                "MM/dd/yyyy HH:mm:ss", "MM/dd/yyyy HH:mm", "MMMM dd, yyyy", "M/d/y", "M/d", "EEEE, MMMM dd, yyyy", "MM/dd/yyyy",
-                "hh:mm:ss aa", "hh:mm aa", "HH:mm:ss", "HH:mm", "yyyy-MM-dd"};
+
+        final String[] dateFormats = Config.getStringArrayProperty("dotcontentlet_dateformats", DEFAULT_DATE_FORMATS);
+
         if(contentlet == null){
             throw new DotContentletValidationException("The contentlet must not be null");
         }
@@ -6020,7 +6044,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 }
             }catch (IOException e) {
-                throw new DotContentletStateException("Unable to set binary file Object",e);
+                throw new DotContentletStateException("Unable to set binary file Object: " + e.getMessage(),e);
             }
         }else if(field.getFieldContentlet().startsWith("system_field")){
             if(value.getClass()==java.lang.String.class){
@@ -6035,21 +6059,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
-    private static final String[] SPECIAL_CHARS = new String[] { "+", "-", "&&", "||", "!", "(", ")", "{", "}", "[",
-            "]", "^", "\"", "?", ":", "\\" };
-
-    /**
-     *
-     * @param text
-     * @return
-     */
-    private static String escape(String text) {
-        for (int i = SPECIAL_CHARS.length - 1; i >= 0; i--) {
-            text = StringUtils.replace(text, SPECIAL_CHARS[i], "\\" + SPECIAL_CHARS[i]);
-        }
-
-        return text;
-    }
 
     /**
      * This method takes the incoming contentlet and determines if the new fileName we're receiving
@@ -6080,7 +6089,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
             return !incomingFileName.equals(identifier.getAssetName());
         } catch (Exception e) {
-            throw new DotContentletStateException("Exception trying to determine if there's a new incoming file.",e);
+            throw new DotContentletStateException("Exception trying to determine if there's a new incoming file:" + e.getMessage(),e);
         }
     }
 
@@ -6297,6 +6306,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             // validate unique
             if(field.isUnique()){
+                final boolean isDataTypeNumber = field.getDataType().contains(DataTypes.INTEGER.toString())
+                        || field.getDataType().contains(DataTypes.FLOAT.toString());
                 try{
                     StringBuilder buffy = new StringBuilder(UUIDGenerator.generateUuid());
                     buffy.append(" +structureInode:" + contentlet.getStructureInode());
@@ -6306,11 +6317,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                     buffy.append(" +languageId:" + contentlet.getLanguageId());
 
-                    buffy.append(" +" + contentlet.getContentType().variable() + StringPool.PERIOD + field
-                            .getVelocityVarName() + StringPool.COLON);
-                    buffy.append(getFieldValue(contentlet, new LegacyFieldTransformer(field).from()));
+                    buffy.append(" +").append(contentlet.getContentType().variable()).append(StringPool.PERIOD)
+                            .append(field.getVelocityVarName()).append(ESUtils.SHA_256)
+                            .append(StringPool.COLON)
+                            .append(ESUtils.sha256(contentlet.getContentType().variable()
+                                    + StringPool.PERIOD + field.getVelocityVarName(), fieldValue,
+                            contentlet.getLanguageId()));
 
-                    List<ContentletSearch> contentlets = new ArrayList<ContentletSearch>();
+                    List<ContentletSearch> contentlets = new ArrayList<>();
                     try {
                         contentlets.addAll(searchIndex(buffy.toString() + " +working:true", -1, 0, "inode", APILocator.getUserAPI().getSystemUser(), false));
                         contentlets.addAll(searchIndex(buffy.toString() + " +live:true", -1, 0, "inode", APILocator.getUserAPI().getSystemUser(), false));
@@ -6327,9 +6341,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             Contentlet c = contentFactory.find(contentletSearch.getInode());
                             Map<String, Object> cMap = c.getMap();
                             Object obj = cMap.get(field.getVelocityVarName());
-
-                            boolean isDataTypeNumber = field.getDataType().contains(DataTypes.INTEGER.toString())
-                                    || field.getDataType().contains(DataTypes.FLOAT.toString());
 
                             if ( ( isDataTypeNumber && fieldValue.equals(obj) ) ||
                                     ( !isDataTypeNumber && ((String) obj).equalsIgnoreCase(((String) fieldValue)) ) )  {
@@ -7792,14 +7803,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private boolean isInodeIndexedWithQuery(final String luceneQuery,
                                             final int milliSecondsToWait) {
 
-        final long indexTimeOut    = Config.getLongProperty("TIMEOUT_INDEX_COUNT", 1000);
         final long millistoWait    = Config.getLongProperty("IS_NODE_INDEXED_INDEX_MILLIS_WAIT", 100);
         final int limit            = - 1 != milliSecondsToWait?milliSecondsToWait: 300;
         boolean   found            = false;
         int       counter          = 0;
         int       fibonacciIndex   = 0;
 
-        if (this.contentFactory.indexCount(luceneQuery, indexTimeOut) > 0) {
+        if (this.contentFactory.indexCount(luceneQuery) > 0) {
 
             if (ConfigUtils.isDevMode()) {
                 Logger.info(this, ()-> "******>>>>>> Index count found in the fist hit for the query: " + luceneQuery);
@@ -7814,7 +7824,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 try {
 
-                    found = this.contentFactory.indexCount(luceneQuery, indexTimeOut) > 0;
+                    found = this.contentFactory.indexCount(luceneQuery) > 0;
                 } catch (Exception e) {
                     Logger.error(this.getClass(), e.getMessage(), e);
                     return false;

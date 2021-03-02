@@ -5,17 +5,20 @@ import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.PaginationException;
 import com.dotcms.util.pagination.PaginatorOrdered;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -24,6 +27,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * PaginatorOrdered implementation for objects of type SiteView.
@@ -32,22 +36,20 @@ import java.util.stream.Collectors;
  */
 public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
 
-    private static final String CONTENT_TYPE_HOST_QUERY = "+contentType:Host +working:true -deleted:true ";
-    private static final String CONTENT_TYPE_HOST_WITH_TITLE_QUERY = "+contentType:Host +working:true -deleted:true +title:*%s*";
-
     private final Supplier<Set<String>> configuredSitesSupplier;
     private final Supplier<Map<String, Map<String, List<String>>>> warningsBySiteSupplier;
     private final HostAPI hostAPI;
-    private final ContentletAPI contentletAPI;
+    private final PermissionAPI permissionAPI;
 
     @VisibleForTesting
     public SiteViewPaginator(final Supplier<Set<String>> configuredSitesSupplier,
         final Supplier<Map<String, Map<String, List<String>>>> warningsBySiteSupplier,
-        final HostAPI hostAPI, final ContentletAPI contentletAPI) {
+        final HostAPI hostAPI,
+        final PermissionAPI permissionAPI) {
         this.configuredSitesSupplier = configuredSitesSupplier;
         this.warningsBySiteSupplier = warningsBySiteSupplier;
         this.hostAPI = hostAPI;
-        this.contentletAPI = contentletAPI;
+        this.permissionAPI = permissionAPI;
     }
 
     /**
@@ -68,13 +70,14 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
             final String orderBy, final OrderDirection direction,
             final Map<String, Object> extraParams) throws PaginationException {
         try {
-            //get all sites. Even though this comes from the index. it is permissions driven.
+            //get all sites. system_host is lower cased here.
             final List<String> allSitesIdentifiers = getHostIdentifiers(user, filter);
 
             final long totalCount = allSitesIdentifiers.size();
 
-            //This values are fed from the outside through the serviceIntegrationAPI.
-            final Set<String> sitesWithConfigurations = configuredSitesSupplier.get();
+            //This values are fed from the outside through the appsAPI.
+            final Set<String> sitesWithConfigurations = configuredSitesSupplier.get().stream()
+                    .map(String::toLowerCase).collect(Collectors.toSet());
             final LinkedHashSet<String> allSites = new LinkedHashSet<>(allSitesIdentifiers);
 
             //By doing this we remove from the configured-sites collection whatever sites didn't match the search.
@@ -151,12 +154,11 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
     }
 
     /**
-     * Load all host identifiers from index
-     * internally this includes permissions into the query.
+     * Load all host identifiers
+     * includes permissions into account.
      * So it is very performant.
-     * The results are returned by default in order Ascendant order by site name (internally content-title).
+     * The results are returned by default in order Ascendant order by site name.
      * This is very important cause any comparator applied must respect that.
-     * The identifier SYSTEM_HOST is returned in lower case by the index. If that ever changes this will be broken.
      * @param user logged-in user
      * @param filter a string to match against the title.
      * @return
@@ -165,15 +167,22 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
      */
     private List<String> getHostIdentifiers(final User user, final String filter)
             throws DotDataException, DotSecurityException {
-        //get all sites. This is permissions driven.
-        final String query = UtilMethods.isSet(filter) ? String
-                .format(CONTENT_TYPE_HOST_WITH_TITLE_QUERY, filter) : CONTENT_TYPE_HOST_QUERY;
-        //This returns a list with all the hosts
-        final List<ContentletSearch> allSitesIdentifiers = contentletAPI
-                .searchIndex(query, 0, 0, "title", user, false);
-        return allSitesIdentifiers.stream().filter(Objects::nonNull)
-                .map(ContentletSearch::getIdentifier)
-                .filter(Objects::nonNull).collect(Collectors.toList());
+        Stream<Host> hostStream = Stream.concat(
+                Stream.of(hostAPI.findSystemHost()),
+                hostAPI.findAllFromCache(user, false).stream()
+                        .filter(host -> Try.of(() -> !host.isArchived()).getOrElse(false))
+                );
+
+        if (UtilMethods.isSet(filter)) {
+            final String regexFilter = "(?i).*"+filter+"(.*)";
+            hostStream = hostStream.filter(host -> host.getHostname().matches(regexFilter));
+        }
+        return hostStream.filter(host -> Try.of(() -> permissionAPI
+                .doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user))
+                .getOrElse(false)).sorted(Comparator.comparing(Host::getHostname))
+                .map(Contentlet::getIdentifier).filter(Objects::nonNull).map(String::toLowerCase)
+                .collect(Collectors.toList());
+
     }
 
 }

@@ -350,9 +350,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                     return false;
                 }
                 if (!luckyServer.equals(ConfigUtils.getServerId())) {
-                    Logger.info(this.getClass(), "fullReindexSwitchover: Letting server [" + luckyServer + "] make the switch. My id : ["
-                            + ConfigUtils.getServerId() + "]");
-                    DateUtil.sleep(4000);
+                    logSwitchover(oldInfo, luckyServer);
+                    DateUtil.sleep(5000);
                     return false;
                 }
             }
@@ -365,7 +364,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
             final IndiciesInfo newInfo = builder.build();
 
-            logSwitchover(oldInfo);
+            logSwitchover(oldInfo, luckyServer);
             APILocator.getIndiciesAPI().point(newInfo);
 
             DotConcurrentFactory.getInstance().getSubmitter().submit(() -> {
@@ -436,13 +435,16 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     return Optional.empty();
   }
 
-    private void logSwitchover(IndiciesInfo oldInfo) {
+    private void logSwitchover(final IndiciesInfo oldInfo, final String luckyServer) {
         Logger.info(this, "-------------------------------");
-        Optional<String> duration = reindexTimeElapsed();
+        final String myServerId=APILocator.getServerAPI().readServerId();
+        final Optional<String> duration = reindexTimeElapsed();
         if (duration.isPresent()) {
             Logger.info(this, "Reindex took        : " + duration.get() );
         }
-        Logger.info(this, "Switching Server Id : " + ConfigUtils.getServerId() );
+        
+        Logger.info(this, "Switching Server Id : " + luckyServer + (luckyServer.equals(myServerId) ? " (this server) " : " (NOT this server)") );
+        
         Logger.info(this, "Old indicies        : [" + esIndexApi
                 .removeClusterIdFromName(oldInfo.getWorking()) + "," + esIndexApi
                 .removeClusterIdFromName(oldInfo.getLive()) + "]");
@@ -474,7 +476,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             return;
         }
 
-        Logger.info(this, "Indexing: " + parentContenlet.getIdentifier()
+        Logger.info(this, "Indexing: " + parentContenlet.getIdentifier() + " : " + parentContenlet.getTitle()
                 + ", includeDependencies: " + includeDependencies +
                 ", policy: " + parentContenlet.getIndexPolicy());
 

@@ -147,6 +147,26 @@ public class ContentTypeUtil {
 	 * @return The action URL associated to the specified Content Type.
 	 */
     public String getActionUrl( HttpServletRequest request, final String contentTypeInode, final User user) {
+        return getActionUrl(request,contentTypeInode,user,"/ext/contentlet/edit_contentlet");
+    }
+
+    /**
+     * Returns the action URL for the specified Content Type. Valid layouts must
+     * be returned by the {@link User} requesting this data; otherwise, the URL
+     * will not be returned. This means that a layout must contain at least one
+     * portlet.
+     *
+     * @param request
+     *            - The {@link HttpServletRequest} object.
+     * @param contentTypeInode
+     *            - The Inode of the Content Type whose action URL will be
+     *            returned.
+     * @param user
+     *            - The user performing this action.
+     * @param strutsAction - struts action url to execute
+     * @return The action URL associated to the specified Content Type.
+     */
+    public String getActionUrl( HttpServletRequest request, final String contentTypeInode, final User user, final String strutsAction) {
         final List<Layout> layouts;
         String actionUrl = StringUtils.EMPTY;
         String referrer = StringUtils.EMPTY;
@@ -156,15 +176,15 @@ public class ContentTypeUtil {
                 final Layout contentLayout = getContentPortletLayout(layouts);
                 referrer = generateReferrerUrl(request, contentLayout, contentTypeInode, user);
                 final PortletURL portletURL =
-                                new PortletURLImpl(request, PortletID.CONTENT.toString(), contentLayout.getId(), true);
+                        new PortletURLImpl(request, PortletID.CONTENT.toString(), contentLayout.getId(), true);
                 portletURL.setWindowState(WindowState.MAXIMIZED);
                 portletURL.setParameters(map(
-                                "struts_action", new String[] {"/ext/contentlet/edit_contentlet"}, 
-                                "cmd", new String[] {"new"}, 
-                                "referer", new String[] {referrer}, 
-                                "inode", new String[] {""},
-                                "selectedStructure", new String[] {contentTypeInode}, 
-                                "lang", new String[] {this.getLanguageId(user.getLanguageId()).toString()}));
+                        "struts_action", new String[] {strutsAction},
+                        "cmd", new String[] {"new"},
+                        "referer", new String[] {referrer},
+                        "inode", new String[] {""},
+                        "selectedStructure", new String[] {contentTypeInode},
+                        "lang", new String[] {this.getLanguageId(user.getLanguageId()).toString()}));
                 actionUrl = portletURL.toString();
             } else {
                 Logger.info(this, "Layouts are empty for the user: " + user.getUserId());

@@ -1,8 +1,8 @@
 package com.dotmarketing.startup;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.sql.Connection;
 import java.util.Date;
-import java.util.Map;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -12,6 +12,8 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.TaskLocatorUtil;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class StartupTasksExecutor {
 
@@ -29,6 +31,7 @@ public class StartupTasksExecutor {
 	private final String SELECT = "SELECT max(db_version) AS test FROM db_version";
 	private final String INSERT = "INSERT INTO db_version (db_version,date_update) VALUES (?,?)";
 
+	private static final Pattern TASK_ID_PATTERN = Pattern.compile("[0-9]+");
 
 	final boolean firstTimeStart;
 	
@@ -149,9 +152,21 @@ public class StartupTasksExecutor {
 
         
     }
-    
-    
-    
+
+    /**
+     * Returns the id part of a task name
+     * @param taskName
+     * @return
+     */
+    @VisibleForTesting
+    String getTaskId(final String taskName){
+        final Matcher matcher = TASK_ID_PATTERN.matcher(taskName);
+
+        if (matcher.find()){
+            return matcher.group();
+        }
+        return "-1";
+    }
     
     
     public void executeUpgrades() throws DotDataException {
@@ -165,11 +180,11 @@ public class StartupTasksExecutor {
         String name = null;
 
 
-        ReindexThread.pause();
+        ReindexThread.pauseExistingInstance();
         for (Class<?> c : TaskLocatorUtil.getStartupRunOnceTaskClasses()) {
             name = c.getCanonicalName();
             name = name.substring(name.lastIndexOf(".") + 1);
-            String id = name.substring(4, 9);
+            String id = getTaskId(name);
             try {
                 int taskId = Integer.parseInt(id);
                 if (StartupTask.class.isAssignableFrom(c) && taskId > Config.DB_VERSION) {

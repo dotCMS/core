@@ -27,7 +27,7 @@ import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import com.dotcms.rest.PublishThread;
+import com.dotcms.rest.PushPublisherJob;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -331,7 +331,9 @@ public class RemotePublishAjaxAction extends AjaxAction {
             }
 
             //We will be able to retry failed and successfully bundles
-            if ( !(status.getStatus().equals( Status.FAILED_TO_PUBLISH ) || status.getStatus().equals( Status.SUCCESS )) ) {
+            if (!(status.getStatus().equals(Status.FAILED_TO_PUBLISH) || status.getStatus()
+                    .equals(Status.SUCCESS) || status.getStatus()
+                    .equals(Status.SUCCESS_WITH_WARNINGS))) {
                 appendMessage( responseMessage, "publisher_retry.error.only.failed.publish", bundleId, true );
                 continue;
             }
@@ -425,7 +427,8 @@ public class RemotePublishAjaxAction extends AjaxAction {
 					appendMessage(responseMessage, "publisher_retry.error.not.found", bundleId, true);
 					continue;
 				}
-				if (status.getStatus().equals(Status.SUCCESS)) {
+                if (status.getStatus().equals(Status.SUCCESS) || status.getStatus()
+                        .equals(Status.SUCCESS_WITH_WARNINGS)) {
 					bundle.setForcePush(Boolean.TRUE);
 				} else {
 					bundle.setForcePush(isForcePush);
@@ -664,7 +667,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
             FileUtil.writeToFile( bundle, bundlePath + bundleName );
 
             if ( !status.getStatus().equals( Status.PUBLISHING_BUNDLE ) ) {
-                new Thread( new PublishThread( bundleName, null, endpointId, status ) ).start();
+                PushPublisherJob.triggerPushPublisherJob(bundleName, status);
             }
 
             out.print( "<html><head><script>isLoaded = true;</script></head><body><textarea>{'status':'success'}</textarea></body></html>" );

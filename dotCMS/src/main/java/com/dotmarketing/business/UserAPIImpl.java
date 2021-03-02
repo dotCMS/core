@@ -6,6 +6,7 @@ import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.publisher.bundle.business.BundleAPI;
+import com.dotcms.rest.api.v1.authentication.DotInvalidTokenException;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -36,6 +37,7 @@ import java.text.MessageFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import org.apache.commons.lang.StringUtils;
 
 /**
@@ -319,6 +321,15 @@ public class UserAPIImpl implements UserAPI {
 
     @CloseDBIfOpened
     @Override
+    public Optional<String> getUserIdByIcqId(final String icqId) throws DotInvalidTokenException {
+        if(!UtilMethods.isSet(icqId)){
+            throw new DotInvalidTokenException("icqId is not set");
+        }
+        return Optional.ofNullable(userFactory.getUserIdByIcqId(icqId));
+    }
+
+    @CloseDBIfOpened
+    @Override
     public List<User> getUsersByNameOrEmailOrUserID(String filter, int page, int pageSize) throws DotDataException {
         return userFactory.getUsersByNameOrEmailOrUserID(filter, page, pageSize);
     }
@@ -438,6 +449,13 @@ public class UserAPIImpl implements UserAPI {
 
         logDelete(DeletionStage.END, userToDelete, user, "Inodes");
 
+        //replace the user reference in Identifier
+        logDelete(DeletionStage.BEGINNING, userToDelete, user, "Identifier");
+
+        APILocator.getIdentifierAPI().updateUserReferences(userToDelete.getUserId(), replacementUser.getUserId());
+
+        logDelete(DeletionStage.END, userToDelete, user, "Identifier");
+
         //replace the user references in contentlets
         logDelete(DeletionStage.BEGINNING, userToDelete, user, "Contentlets");
 
@@ -458,9 +476,6 @@ public class UserAPIImpl implements UserAPI {
         logDelete(DeletionStage.BEGINNING, userToDelete, user, "HostVariables");
         APILocator.getHostVariableAPI().updateUserReferences(userToDelete.getUserId(), replacementUser.getUserId());
         logDelete(DeletionStage.END, userToDelete, user, "HostVariables");
-
-
-
 
         //replace user references in containers
         logDelete(DeletionStage.BEGINNING, userToDelete, user, "Containers");

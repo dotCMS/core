@@ -125,6 +125,14 @@ public interface HostAPI {
 	public List<Host> findAllFromDB(User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
+	 *
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 */
+	public List<Host> findAllFromCache(final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+	/**
 	 * Saves the host into the system
 	 */
 	public Host save(Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;

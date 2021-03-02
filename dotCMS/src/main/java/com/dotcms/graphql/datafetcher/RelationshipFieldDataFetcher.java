@@ -2,6 +2,7 @@ package com.dotcms.graphql.datafetcher;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.graphql.DotGraphQLContext;
+import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -18,6 +19,7 @@ import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import java.util.Collections;
 import java.util.List;
+import org.apache.commons.lang3.StringUtils;
 
 public class RelationshipFieldDataFetcher implements DataFetcher<Object> {
     @Override
@@ -55,8 +57,22 @@ public class RelationshipFieldDataFetcher implements DataFetcher<Object> {
 
             Object objectToReturn = records.doesAllowOnlyOne() ? null : Collections.emptyList();
 
-            List<Contentlet> relatedContent = contentlet.getRelated(fieldVar, user,
-                    true, isChildField, contentlet.getLanguageId(), contentlet.isLive());
+            final String query = StringUtils.defaultString(environment.getArgument("query"), "");
+
+            final int limit = environment.getArgument("limit")!=null
+                    ? environment.getArgument("limit") : -1;
+
+            final int offset = environment.getArgument("offset")!=null
+                    ? environment.getArgument("offset") : 0;
+
+            final String sort = StringUtils.defaultString(environment.getArgument("sort"), "");
+
+            final boolean pullParents = APILocator.getRelationshipAPI().isParentField(relationship, field);
+
+            List<Contentlet> relatedContent = ContentUtils
+                    .pullRelatedField(relationship, contentlet.getIdentifier(),
+                            query, limit, offset, sort, user, null, pullParents,
+                            nonCachedContentlet.getLanguageId(), nonCachedContentlet.isLive());
             
             if (UtilMethods.isSet(relatedContent)) {
                 final DotContentletTransformer transformer = new DotTransformerBuilder()

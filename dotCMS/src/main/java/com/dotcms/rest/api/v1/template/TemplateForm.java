@@ -1,5 +1,14 @@
 package com.dotcms.rest.api.v1.template;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import com.dotcms.rest.api.Validated;
+import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.exception.ValidationException;
+import com.dotcms.util.HttpRequestDataUtil;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
+import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
@@ -8,7 +17,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
  * @author jsanca
  */
 @JsonDeserialize(builder = TemplateForm.Builder.class)
-public class TemplateForm {
+public class TemplateForm  extends Validated {
 
     private final String  identifier;
     private final String  inode;
@@ -27,10 +36,12 @@ public class TemplateForm {
     private final String  friendlyName;
     private final String  header;
     private final String  name;
+    @NotNull
     private final String  title;
     private final int     sortOrder;
     private final boolean headerCheck;
     private final boolean footerCheck;
+    private final TemplateLayoutView layout;
 
     private TemplateForm(final Builder builder) {
 
@@ -55,6 +66,12 @@ public class TemplateForm {
         this.sortOrder = builder.sortOrder;
         this.headerCheck = builder.headerCheck;
         this.footerCheck = builder.footerCheck;
+        this.layout      = builder.layout;
+
+    }
+
+    public TemplateLayoutView getLayout() {
+        return layout;
     }
 
     public String getIdentifier() {
@@ -185,6 +202,14 @@ public class TemplateForm {
         private  boolean headerCheck;
         @JsonProperty
         private  boolean footerCheck;
+        @JsonProperty
+        private TemplateLayoutView layout;
+
+        public Builder layout (final TemplateLayoutView layout) {
+
+            this.layout = layout;
+            return this;
+        }
 
         public Builder identifier (final String identifier) {
 

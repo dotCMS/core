@@ -391,4 +391,70 @@ public class DateUtilTest extends UnitTestBase {
         assertEquals("Month should be Feb", Calendar.FEBRUARY, date1.getMonth());
         assertEquals("Day should be 4", 4, date1.getDate());
     }
+
+    /**
+     * Method to test: convert Date
+     * Given Scenario: Passing a Date with a specific time zone.
+     * ExpectedResult: The date is converted using the desired time zone.
+     *
+     */
+    @Test()
+    public void test_time_zone() throws ParseException {
+
+        final String   easternUSTimeZone = "US/Eastern";
+        final String   westernUSTimeZone = "US/Western";
+        final TimeZone timeZone      = TimeZone.getTimeZone(easternUSTimeZone);
+        final TimeZone defaultTimeZone =  TimeZone.getDefault();
+
+        final Date date1 = DateUtil.convertDate("2015-02-04 11", timeZone, "yyyy-MM-dd HH");
+
+        assertNotNull(date1);
+        assertEquals("Year should be 2015", 115,date1.getYear());
+        assertEquals("Month should be Feb", Calendar.FEBRUARY, date1.getMonth());
+        assertEquals("Day should be 4", 4, date1.getDate());
+
+        if (timeZone.getRawOffset() != date1.getTimezoneOffset()) {
+            assertNotEquals("If the date is not in the same time zone, hour should be diff",
+                    11, date1.getHours());
+            assertEquals("If the date is in the same time zone, hour should be the same",
+                    11, date1.toInstant().atZone(timeZone.toZoneId()).getHour());
+
+            final GregorianCalendar calendar = new GregorianCalendar();
+            calendar.setTime(date1);
+            assertEquals("Default time zone and date time zome should be the same",
+                    defaultTimeZone.getRawOffset(), calendar.getTimeZone().getRawOffset());
+        }
+    }
+
+    /**
+     * Method to test: convert Date
+     * Given Scenario: Passing a Date with a specific time zone into the pattern
+     * ExpectedResult: The date is converted using the desired time zone.
+     *
+     */
+    @Test()
+    public void test_time_zone_string() throws ParseException {
+
+        final String   gmt12TimeZone   = "GMT+1400";
+        final TimeZone timeZone        = TimeZone.getTimeZone(gmt12TimeZone);
+        final TimeZone defaultTimeZone =  TimeZone.getDefault();
+
+        final Date date1 = DateUtil.convertDate("2015-02-04 11 GMT +1400", defaultTimeZone, "yyyy-MM-dd HH z Z");
+
+        assertNotNull(date1);
+        assertEquals("Year should be 2015", 115,date1.getYear());
+        assertEquals("Month should be Feb", Calendar.FEBRUARY, date1.getMonth());
+
+        if (timeZone.getRawOffset() != date1.getTimezoneOffset()) {
+            assertNotEquals("If the date is not in the same time zone, hour should be diff",
+                    11, date1.getHours());
+            assertEquals("If the date is in the same time zone, hour should be same",
+                    11, date1.toInstant().atZone(timeZone.toZoneId()).getHour());
+
+            final GregorianCalendar calendar = new GregorianCalendar();
+            calendar.setTime(date1);
+            assertEquals("Default time zone and date time zome should be the same",
+                    defaultTimeZone.getRawOffset(), calendar.getTimeZone().getRawOffset());
+        }
+    }
 }

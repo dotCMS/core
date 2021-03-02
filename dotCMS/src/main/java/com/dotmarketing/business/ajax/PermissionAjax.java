@@ -1,5 +1,6 @@
 package com.dotmarketing.business.ajax;
 
+import com.dotmarketing.beans.Identifier;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -403,7 +404,11 @@ public class PermissionAjax {
 			if(results.size() > 0) {
 				String type =  (String) ((Map)results.get(0)).get("type");
 				String inode = (String) ((Map)results.get(0)).get("inode");
-				perm = InodeFactory.getInode(inode, InodeUtils.getClassByDBType(type));
+				if(assetType.equals(Identifier.ASSET_TYPE_TEMPLATE)){
+					perm = APILocator.getTemplateAPI().find(inode,user,respectFrontendRoles);
+				} else {
+					perm = InodeFactory.getInode(inode, InodeUtils.getClassByDBType(type));
+				}
 			}
 		}
 		
