@@ -789,50 +789,6 @@ public class UserAjax {
 	/**
 	 * 
 	 * @param userId
-	 * @param addressId
-	 * @return
-	 * @throws DotDataException
-	 * @throws PortalException
-	 * @throws SystemException
-	 * @throws DotSecurityException
-	 */
-	public String deleteAddress(String userId, String addressId) throws DotDataException, PortalException, SystemException, DotSecurityException {
-
-		//auth
-		User modUser = getLoggedInUser();
-
-		//Validate if this logged in user has the required permissions to access the users portlet
-		validateUsersPortletPermissions(modUser);
-
-		UserAPI uAPI = APILocator.getUserAPI();
-		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest request = ctx.getHttpServletRequest();
-
-		Address ad;
-		try {
-			ad = uAPI.loadAddressById(addressId, modUser, !uWebAPI.isLoggedToBackend(request));
-			uAPI.deleteAddress(ad, modUser, !uWebAPI.isLoggedToBackend(request));
-		} catch (DotRuntimeException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
-		} catch (PortalException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
-		} catch (SystemException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
-		} catch (DotSecurityException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
-		}
-
-		return addressId;
-	}
-
-	/**
-	 * 
-	 * @param userId
 	 * @param active
 	 * @param prefix
 	 * @param suffix

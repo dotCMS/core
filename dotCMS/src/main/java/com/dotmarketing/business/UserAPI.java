@@ -362,15 +362,6 @@ public interface UserAPI {
 	public Address loadAddressById(String addressId, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException;
 
 	/**
-	 * Removes from the system the given address
-	 * @param ad
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 * @throws DotRuntimeException
-	 */
-	public void deleteAddress(Address ad, User user, boolean respectFrontEndRoles) throws DotDataException, DotRuntimeException, DotSecurityException;
-
-	/**
 	 * Retrieves all addresses associated to a user
 	 * @param user
 	 * @return
@@ -434,13 +425,13 @@ public interface UserAPI {
       throws DotDataException;
 
 	/**
-	 * Get the userId by the icqId.
-	 * If the icqId is not set a DotInvalidTokenException will be thrown
+	 * Get the userId by its token.
+	 * If the token is not set a DotInvalidTokenException will be thrown
 	 *
-	 * @param icqId icqId to search for
-	 * @return userId that the icqId is associated
+	 * @param token to search for
+	 * @return userId that the token is associated with
 	 */
-	public Optional<String> getUserIdByIcqId(final String icqId)
+	public Optional<String> getUserIdByToken(final String token)
             throws DotInvalidTokenException, DotDataException;
 
 }

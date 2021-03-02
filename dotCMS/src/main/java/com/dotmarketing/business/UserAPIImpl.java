@@ -119,8 +119,7 @@ public class UserAPIImpl implements UserAPI {
             throw new DotDataException("You must specifiy an email to search for");
         }
 
-        final User u = userFactory.loadByUserEmailAndCompany(email,
-                APILocator.getCompanyAPI().getDefaultCompany().getCompanyId());
+        final User u = userFactory.loadByUserEmail(email);
         if(!UtilMethods.isSet(u)){
             throw new com.dotmarketing.business.NoSuchUserException("No user found with passed in email");
         }
@@ -150,8 +149,7 @@ public class UserAPIImpl implements UserAPI {
     @CloseDBIfOpened
     @Override
     public long getCountUsersByName(String filter, List<Role> roles) {
-        return userFactory.getCountUsersByName(filter, roles,
-                APILocator.getCompanyAPI().getDefaultCompany().getCompanyId());
+        return userFactory.getCountUsersByName(filter, roles);
     }
 
     @CloseDBIfOpened
@@ -163,8 +161,7 @@ public class UserAPIImpl implements UserAPI {
     @CloseDBIfOpened
     @Override
     public List<User> getUsersByName(String filter, List<Role> roles, int start,int limit) throws DotDataException {
-        return userFactory.getUsersByName(filter, roles,
-                APILocator.getCompanyAPI().getDefaultCompany().getCompanyId(), start, limit);
+        return userFactory.getUsersByName(filter, roles, start, limit);
     }
 
     @WrapInTransaction
@@ -298,13 +295,13 @@ public class UserAPIImpl implements UserAPI {
     @CloseDBIfOpened
     @Override
     public boolean userExistsWithEmail(String email) throws DotDataException {
-        return userFactory.userExistsWithEmail(email, APILocator.getCompanyAPI().getDefaultCompany().getCompanyId());
+        return userFactory.userExistsWithEmail(email);
     }
 
     @CloseDBIfOpened
     @Override
     public List<User> findAllUsers(int begin, int end) throws DotDataException {
-        return userFactory.findAllUsers(APILocator.getCompanyAPI().getDefaultCompany().getCompanyId(), begin, end);
+        return userFactory.findAllUsers(begin, end);
     }
 
     @CloseDBIfOpened
@@ -328,7 +325,7 @@ public class UserAPIImpl implements UserAPI {
     @CloseDBIfOpened
     @Override
     public List<String> getUsersIdsByCreationDate ( Date filterDate, int page, int pageSize ) throws DotDataException {
-        return userFactory.getUsersIdsByCreationDate( APILocator.getCompanyAPI().getDefaultCompany().getCompanyId(), filterDate, page, pageSize );
+        return userFactory.getUsersIdsByCreationDate(filterDate, page, pageSize );
     }
 
     @CloseDBIfOpened
@@ -358,12 +355,12 @@ public class UserAPIImpl implements UserAPI {
 
     @CloseDBIfOpened
     @Override
-    public Optional<String> getUserIdByIcqId(final String icqId)
+    public Optional<String> getUserIdByToken(final String token)
             throws DotInvalidTokenException, DotDataException {
-        if(!UtilMethods.isSet(icqId)){
+        if(!UtilMethods.isSet(token)){
             throw new DotInvalidTokenException("icqId is not set");
         }
-        return Optional.ofNullable(userFactory.getUserIdByIcqId(icqId));
+        return Optional.ofNullable(userFactory.getUserIdByToken(token));
     }
 
     @CloseDBIfOpened
@@ -623,15 +620,6 @@ public class UserAPIImpl implements UserAPI {
             throw new DotSecurityException("User doesn't have permission to userToDelete the user which is trying to be saved");
         }
         return ad;
-    }
-
-    @WrapInTransaction
-    @Override
-    public void deleteAddress(Address ad, User currentUser, boolean respectFrontEndRoles) throws DotDataException, DotRuntimeException, DotSecurityException {
-        if(!permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(ad.getUserId(),APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_EDIT, currentUser, respectFrontEndRoles)){
-            throw new DotSecurityException("User doesn't have permission to userToDelete the user which is trying to be saved");
-        }
-        userFactoryLiferay.deleteAddress(ad);
     }
 
     @CloseDBIfOpened

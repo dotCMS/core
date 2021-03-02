@@ -39,7 +39,7 @@ import org.apache.commons.lang3.StringUtils;
 
 public class UserHelper {
 
-    private UserAPI userAPI;
+    private final UserAPI userAPI;
 
     private static class SingletonHolder {
         private static final UserHelper INSTANCE = new UserHelper();
@@ -62,14 +62,14 @@ public class UserHelper {
             final String emailAddress, final Locale locale)
             throws DotDataException, SystemException, PortalException {
 
-        boolean alwaysAutoUserId = GetterUtil.getBoolean(
+        final boolean alwaysAutoUserId = GetterUtil.getBoolean(
                 PropsUtil.get(PropsUtil.USERS_ID_ALWAYS_AUTOGENERATE));
 
         validate(
                 companyId, alwaysAutoUserId? true: autoUserId, userId.trim().toLowerCase(), autoPassword, password1, password2,
                 firstName, lastName, emailAddress.trim().toLowerCase());
 
-        User user = new User();
+        final User user = new User();
 
         user.setUserId(userId.trim().toLowerCase());
         user.setEmailAddress(emailAddress.trim().toLowerCase());
@@ -148,7 +148,7 @@ public class UserHelper {
                 throw new UserIdException();
             }
 
-            com.dotmarketing.auth.UserIdValidator userIdValidator = (UserIdValidator) InstancePool.get(
+            final com.dotmarketing.auth.UserIdValidator userIdValidator = (UserIdValidator) InstancePool.get(
                     PropsUtil.get(PropsUtil.USERS_ID_VALIDATOR));
 
             if (!userIdValidator.validate(userId, companyId)) {
@@ -166,7 +166,7 @@ public class UserHelper {
                 Logger.warn(this, "Error loading user with id " + userId);
             }
 
-            UserConfig userConfig =
+            final UserConfig userConfig =
                     AdminConfigManagerUtil.getUserConfig(companyId);
 
             if (userConfig.hasReservedUserId(userId)) {
@@ -188,7 +188,7 @@ public class UserHelper {
             catch (NoSuchUserException nsue) {
             }
 
-            UserConfig userConfig =
+            final UserConfig userConfig =
                     AdminConfigManagerUtil.getUserConfig(companyId);
 
             if (userConfig.hasReservedUserEmailAddress(emailAddress)) {

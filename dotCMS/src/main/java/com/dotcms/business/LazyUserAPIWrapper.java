@@ -135,9 +135,9 @@ public class LazyUserAPIWrapper implements UserAPI {
     }
 
     @Override
-    public Optional<String> getUserIdByIcqId(final String icqId)
+    public Optional<String> getUserIdByToken(final String token)
             throws DotInvalidTokenException, DotDataException {
-        return this.getUserAPI().getUserIdByIcqId(icqId);
+        return this.getUserAPI().getUserIdByToken(token);
     }
 
     @Override
@@ -193,11 +193,6 @@ public class LazyUserAPIWrapper implements UserAPI {
     @Override
     public Address loadAddressById(String addressId, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException {
         return this.getUserAPI().loadAddressById(addressId, user, respectFrontEndRoles);
-    }
-
-    @Override
-    public void deleteAddress(Address ad, User user, boolean respectFrontEndRoles) throws DotDataException, DotRuntimeException, DotSecurityException {
-        this.getUserAPI().deleteAddress(ad, user, respectFrontEndRoles);
     }
 
     @Override

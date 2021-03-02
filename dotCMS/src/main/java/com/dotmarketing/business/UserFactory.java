@@ -16,17 +16,16 @@ public interface UserFactory {
     User loadUserById(String userId)
             throws DotDataException, com.dotmarketing.business.NoSuchUserException;
 
-    User loadByUserEmailAndCompany(String email, String companyId)
-            throws DotDataException;
+    User loadByUserEmail(String email) throws DotDataException;
 
     /**
      * Saves the user
      */
     User save(User user) throws DotDataException, DuplicateUserException;
 
-    List<User> findAllUsers(String companyId, int begin, int end) throws DotDataException;
+    List<User> findAllUsers(int begin, int end) throws DotDataException;
 
-    long getCountUsersByName(String filter, List<Role> roles, String companyId);
+    long getCountUsersByName(String filter, List<Role> roles);
 
     /**
      * This method returns a list of users whose names are like the filter passed in. It also allows
@@ -38,7 +37,7 @@ public interface UserFactory {
      * @param limit is the maximum number of elements to get.
      * @return List<User> of user entities
      */
-    List<User> getUsersByName(final String filter, final List<Role> roles, final String companyId, final int start,
+    List<User> getUsersByName(final String filter, final List<Role> roles, final int start,
             final int limit) throws DotDataException;
 
     /**
@@ -49,7 +48,7 @@ public interface UserFactory {
     /**
      *
      */
-    boolean userExistsWithEmail(final String email, final String companyId) throws DotDataException;
+    boolean userExistsWithEmail(final String email) throws DotDataException;
 
     /**
      * This Method return the number of user that have a firstname, lastname or email like the
@@ -78,7 +77,7 @@ public interface UserFactory {
      *
      * @param limit -1 for no limit
      */
-    List<String> getUsersIdsByCreationDate(final String companyId, final Date filterDate, final int start, final int limit)
+    List<String> getUsersIdsByCreationDate(final Date filterDate, final int start, final int limit)
             throws DotDataException;
 
     /**
@@ -211,12 +210,12 @@ public interface UserFactory {
 
 
 	/**
-	 * Get the userId by the icqId
+	 * Get the userId by its token
 	 *
-	 * @param icqId icqId to search for
-	 * @return userId that the icqId is associated
+	 * @param token to search for
+	 * @return userId that the token is associated with
 	 */
-	String getUserIdByIcqId(final String icqId) throws DotDataException;
+	String getUserIdByToken(final String token) throws DotDataException;
 
 
 }

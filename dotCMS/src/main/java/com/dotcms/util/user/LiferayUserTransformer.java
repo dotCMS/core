@@ -1,5 +1,6 @@
 package com.dotcms.util.user;
 
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
@@ -157,7 +158,7 @@ public class LiferayUserTransformer {
                 user.setDeleteDate((java.util.Date) map.get("delete_date"));
             }
             if (null != map.get("additional_info")) {
-                user.setAdditionalInfo(Try.of(() -> new ObjectMapper()
+                user.setAdditionalInfo(Try.of(() -> DotObjectMapperProvider.getInstance().getDefaultObjectMapper()
                         .readValue((String) map.get("additional_info"), HashMap.class))
                         .getOrElse(new HashMap<String, String>()));
             }

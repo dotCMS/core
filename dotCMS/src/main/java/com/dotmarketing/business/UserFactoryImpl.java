@@ -29,7 +29,7 @@ import org.apache.logging.log4j.util.Strings;
 
 public class UserFactoryImpl implements UserFactory {
 
-    private UserCache uc;
+    private final UserCache userCache;
 
     private static final ObjectMapper mapper = DotObjectMapperProvider.getInstance()
             .getDefaultObjectMapper();
@@ -38,7 +38,7 @@ public class UserFactoryImpl implements UserFactory {
      * Default class constructor.
      */
     public UserFactoryImpl() {
-        uc = CacheLocator.getUserCache();
+        userCache = CacheLocator.getUserCache();
     }
 
     @Override
@@ -48,43 +48,51 @@ public class UserFactoryImpl implements UserFactory {
         } catch (NoSuchUserException e) {
             Logger.debug(this, "Default user not found attempting to create by updating company");
             try {
-                final User defaultUser = new User();
-                final Date now = new Date();
-                defaultUser.setUserId(company.getCompanyId() + "." + User.DEFAULT);
-                defaultUser.setCompanyId(User.DEFAULT);
-                defaultUser.setCreateDate(now);
-                defaultUser.setPassword("password");
-                defaultUser.setFirstName(StringPool.BLANK);
-                defaultUser.setMiddleName(StringPool.BLANK);
-                defaultUser.setLastName(StringPool.BLANK);
-                defaultUser.setMale(true);
-                defaultUser.setBirthday(now);
-                defaultUser.setEmailAddress(User.DEFAULT + "@" + company.getMx());
-
-                defaultUser.setLanguageId(null);
-                defaultUser.setTimeZoneId(null);
-                defaultUser.setDottedSkins(false);
-                defaultUser.setRoundedSkins(false);
-                defaultUser.setGreeting("Welcome!");
-                defaultUser.setResolution(
-                        PropsUtil.get(PropsUtil.DEFAULT_GUEST_LAYOUT_RESOLUTION));
-                defaultUser.setRefreshRate(
-                        PropsUtil.get(PropsUtil.DEFAULT_USER_LAYOUT_REFRESH_RATE));
-                defaultUser.setLoginDate(now);
-                defaultUser.setFailedLoginAttempts(0);
-                defaultUser.setAgreedToTermsOfUse(false);
-                defaultUser.setActive(true);
-
-                return save(defaultUser);
+                return save(getDefaultUser(company));
             } catch (Exception e1) {
                 throw new DotDataException("Unable to create default user from company", e1);
             }
         }
     }
 
+    /**
+     * Creates a new instance of the default User
+     * @param company
+     * @return
+     */
+    private User getDefaultUser(Company company) {
+        final User defaultUser = new User();
+        final Date now = new Date();
+        defaultUser.setUserId(company.getCompanyId() + "." + User.DEFAULT);
+        defaultUser.setCompanyId(User.DEFAULT);
+        defaultUser.setCreateDate(now);
+        defaultUser.setPassword("password");
+        defaultUser.setFirstName(StringPool.BLANK);
+        defaultUser.setMiddleName(StringPool.BLANK);
+        defaultUser.setLastName(StringPool.BLANK);
+        defaultUser.setMale(true);
+        defaultUser.setBirthday(now);
+        defaultUser.setEmailAddress(User.DEFAULT + "@" + company.getMx());
+
+        defaultUser.setLanguageId(null);
+        defaultUser.setTimeZoneId(null);
+        defaultUser.setDottedSkins(false);
+        defaultUser.setRoundedSkins(false);
+        defaultUser.setGreeting("Welcome!");
+        defaultUser.setResolution(
+                PropsUtil.get(PropsUtil.DEFAULT_GUEST_LAYOUT_RESOLUTION));
+        defaultUser.setRefreshRate(
+                PropsUtil.get(PropsUtil.DEFAULT_USER_LAYOUT_REFRESH_RATE));
+        defaultUser.setLoginDate(now);
+        defaultUser.setFailedLoginAttempts(0);
+        defaultUser.setAgreedToTermsOfUse(false);
+        defaultUser.setActive(true);
+        return defaultUser;
+    }
+
     @Override
     public User loadUserById(final String userId) throws DotDataException, NoSuchUserException {
-        User user = uc.get(userId);
+        User user = userCache.get(userId);
         if (!UtilMethods.isSet(user)) {
 
             if (user == null) {
@@ -96,7 +104,7 @@ public class UserFactoryImpl implements UserFactory {
                     throw new NoSuchUserException(userId);
                 }else{
                     user = TransformerLocator.createUserTransformer(list).findFirst();
-                    uc.add(userId, user);
+                    userCache.add(userId, user);
                 }
             }
         }
@@ -104,15 +112,13 @@ public class UserFactoryImpl implements UserFactory {
     }
 
     @Override
-    public User loadByUserEmailAndCompany(final String email, final String companyId)
+    public User loadByUserEmail(final String email)
             throws DotDataException {
         final DotConnect dotConnect = new DotConnect();
 
         final StringBuffer query = new StringBuffer();
         query.append(
                 "select * FROM user_ WHERE ");
-        query.append("companyId = ?");
-        query.append(" AND ");
         query.append("emailAddress = ?");
         query.append(" AND delete_in_progress = ");
         query.append(DbConnectionFactory.getDBFalse());
@@ -122,7 +128,6 @@ public class UserFactoryImpl implements UserFactory {
         query.append("lastName ASC");
 
         dotConnect.setSQL(query.toString());
-        dotConnect.addParam(companyId);
         dotConnect.addParam(email.trim().toLowerCase());
 
         return UtilMethods.isSet(dotConnect.loadObjectResults()) ? TransformerLocator
@@ -131,11 +136,11 @@ public class UserFactoryImpl implements UserFactory {
     }
 
     @Override
-    public List<User> findAllUsers(final String companyId, final int begin, final int end) throws DotDataException {
+    public List<User> findAllUsers(final int begin, final int end) throws DotDataException {
         final DotConnect dotConnect = new DotConnect();
-        dotConnect.setSQL("select * from user_ where companyid = ? and delete_in_progress = ? order by firstname, lastname");
-        dotConnect.addParam(companyId);
-        dotConnect.addParam(DbConnectionFactory.getDBFalse());
+        dotConnect.setSQL("select * from user_ where companyid <> '" + User.DEFAULT
+                + "' and delete_in_progress = " + DbConnectionFactory.getDBFalse()
+                + " order by firstname, lastname");
         dotConnect.setStartRow(begin);
         dotConnect.setMaxRows(end -  begin);
         return TransformerLocator.createUserTransformer(dotConnect.loadObjectResults()).asList();
@@ -143,13 +148,13 @@ public class UserFactoryImpl implements UserFactory {
     }
 
     @Override
-    public long getCountUsersByName(String filter, final List<Role> roles, final String companyId) {
+    public long getCountUsersByName(String filter, final List<Role> roles) {
         filter = SQLUtil.sanitizeParameter(filter);
         final DotConnect dotConnect = new DotConnect();
         final boolean isFilteredByName = UtilMethods.isSet(filter);
         filter = (isFilteredByName ? filter : Strings.EMPTY);
         final StringBuilder baseSql = new StringBuilder(
-                "select count(*) as count from user_ where companyid = ? and userid <> 'system' ");
+                "select count(*) as count from user_ where companyid <> ? and userid <> 'system' ");
         if (UtilMethods.isSet(roles)) {
             final String joinedRoleKeys = roles.stream().map(Role::getRoleKey)
                     .map(s -> String.format("'%s'", s)).collect(Collectors.joining(","));
@@ -175,7 +180,7 @@ public class UserFactoryImpl implements UserFactory {
         Logger.debug(UserFactoryImpl.class,
                 "::getCountUsersByName -> query: " + dotConnect.getSQL());
 
-        dotConnect.addParam(companyId);
+        dotConnect.addParam(User.DEFAULT);
         if (isFilteredByName) {
             dotConnect.addParam("%" + filter.toLowerCase() + "%");
         }
@@ -184,14 +189,14 @@ public class UserFactoryImpl implements UserFactory {
     }
 
     @Override
-    public List<User> getUsersByName(final String filter, final List<Role> roles, final String companyId, final int start,
+    public List<User> getUsersByName(final String filter, final List<Role> roles, final int start,
             final int limit) throws DotDataException {
         String sanitizeFilter = SQLUtil.sanitizeParameter(filter);
         DotConnect dotConnect = new DotConnect();
         boolean isFilteredByName = UtilMethods.isSet(sanitizeFilter);
         sanitizeFilter = (isFilteredByName ? sanitizeFilter : Strings.EMPTY);
         final StringBuilder baseSql = new StringBuilder(
-                "select user_.userId from user_ where companyid = ? and userid <> 'system' ");
+                "select user_.userId from user_ where companyid <> ? and userid <> 'system' ");
         if (UtilMethods.isSet(roles)) {
             final String joinedRoleKeys = roles.stream().map(Role::getRoleKey)
                     .map(s -> String.format("'%s'", s)).collect(Collectors.joining(","));
@@ -218,7 +223,7 @@ public class UserFactoryImpl implements UserFactory {
         dotConnect.setSQL(sql);
         Logger.debug(UserFactoryImpl.class, "::getUsersByName -> query: " + dotConnect.getSQL());
 
-        dotConnect.addParam(companyId);
+        dotConnect.addParam(User.DEFAULT);
         if (isFilteredByName) {
             dotConnect.addParam("%" + sanitizeFilter.toLowerCase() + "%");
         }
@@ -236,9 +241,9 @@ public class UserFactoryImpl implements UserFactory {
 
         for (final Map<String, Object> hash : results) {
             final String userId = (String) hash.get("userid");
-            final User u = loadUserById(userId);
-            users.add(u);
-            uc.add(u.getUserId(), u);
+            final User user = loadUserById(userId);
+            users.add(user);
+            userCache.add(user.getUserId(), user);
         }
 
         return users;
@@ -260,7 +265,7 @@ public class UserFactoryImpl implements UserFactory {
             try {
                 final User oldUser = loadUserById(user.getUserId());
                 if (UtilMethods.isSet(oldUser)) {
-                    uc.remove(user.getUserId());
+                    userCache.remove(user.getUserId());
                     return updateUser(user, oldUser);
                 }
             }catch(NoSuchUserException e){
@@ -307,7 +312,7 @@ public class UserFactoryImpl implements UserFactory {
         if (!oldUser.getEmailAddress().equals(user.getEmailAddress())) {
             User emailUser = null;
             try {
-                emailUser = loadByUserEmailAndCompany (user.getEmailAddress(), user.getCompanyId());
+                emailUser = loadByUserEmail(user.getEmailAddress());
             } catch (Exception e) {
             }
             if (emailUser != null) {
@@ -368,16 +373,16 @@ public class UserFactoryImpl implements UserFactory {
     }
 
     @Override
-    public boolean userExistsWithEmail(final String email, final String companyId) throws DotDataException {
+    public boolean userExistsWithEmail(final String email) throws DotDataException {
 
-        User u;
+        User user;
         try {
-            u = loadByUserEmailAndCompany(email, companyId);
+            user = loadByUserEmail(email);
         } catch (Exception e) {
             throw new DotDataException(e.getMessage(), e);
         }
-        if (UtilMethods.isSet(u)) {
-            uc.add(u.getUserId(), u);
+        if (UtilMethods.isSet(user)) {
+            userCache.add(user.getUserId(), user);
             return true;
         }
         return false;
@@ -645,7 +650,7 @@ public class UserFactoryImpl implements UserFactory {
     }
 
     @Override
-    public List<String> getUsersIdsByCreationDate(final String companyId, final Date filterDate, int start, int limit)
+    public List<String> getUsersIdsByCreationDate(final Date filterDate, int start, int limit)
             throws DotDataException {
 
         final DotConnect dotConnect = new DotConnect();
@@ -653,7 +658,7 @@ public class UserFactoryImpl implements UserFactory {
         final StringBuffer
                 query =
                 new StringBuffer(
-                        "SELECT user_.userId FROM user_ WHERE companyid = ? AND userid <> 'system' ");
+                        "SELECT user_.userId FROM user_ WHERE companyid <> ? AND userid <> 'system' ");
         if (UtilMethods.isSet(filterDate)) {
             query.append(" AND createdate >= ?");
         }
@@ -667,7 +672,7 @@ public class UserFactoryImpl implements UserFactory {
                 "::getUsersByCreationDate -> query: " + dotConnect.getSQL());
 
         //Add the required params
-        dotConnect.addParam(companyId);
+        dotConnect.addParam(User.DEFAULT);
         if (UtilMethods.isSet(filterDate)) {
             dotConnect.addParam(filterDate);
         }
@@ -691,7 +696,7 @@ public class UserFactoryImpl implements UserFactory {
     }
 
     @Override
-    public String getUserIdByIcqId(final String icqId) throws DotDataException {
+    public String getUserIdByToken(final String token) throws DotDataException {
 
         final DotConnect dotConnect = new DotConnect();
         //Build the sql query
@@ -703,7 +708,7 @@ public class UserFactoryImpl implements UserFactory {
         dotConnect.setSQL(query.toString());
 
         //Add the required params
-        dotConnect.addParam(icqId);
+        dotConnect.addParam(token);
 
 
         final List<Map<String, Object>> results = dotConnect.loadResults();
@@ -717,7 +722,7 @@ public class UserFactoryImpl implements UserFactory {
 
     @Override
     public void delete(final User userToDelete) throws DotDataException {
-        uc.remove(userToDelete.getUserId());
+        userCache.remove(userToDelete.getUserId());
         final DotConnect dotConnect = new DotConnect();
         dotConnect.setSQL("delete from user_ where userid = ?");
         dotConnect.addParam(userToDelete.getUserId());
