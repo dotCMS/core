@@ -1361,6 +1361,9 @@ public class DependencyManager {
 		}
 	}
 
+	/**
+	 * Process the Assets to calculate dependency in a multi-threading environment
+	 */
 	private class DependencyProcessor {
 
 		private BlockingQueue<DependencyProcessorItem> queue;
@@ -1372,6 +1375,12 @@ public class DependencyManager {
 			assetsAlreadyProcessed = new HashMap<>();
 		}
 
+		/**
+		 * Add a asset to process
+		 *
+		 * @param assetKey
+		 * @param assetType
+		 */
 		void put(final String assetKey, final AssetTypes assetType) {
 
 			final boolean isFirst = submitter == null;
@@ -1427,7 +1436,7 @@ public class DependencyManager {
 			});
 		}
 
-		synchronized void sendFinishNotification() {
+		private synchronized void sendFinishNotification() {
 			queue.add(DependencyProcessorItem.FINISHED_DEPENDENCY_PROCESSOR_ITEM);
 		}
 
@@ -1439,6 +1448,10 @@ public class DependencyManager {
 			return submitter.getActiveCount() <= 1;
 		}
 
+		/**
+		 * The current thread wait until all the dependencies are processed
+		 * @throws ExecutionException
+		 */
 		void waitForAll() throws ExecutionException {
 
 			if (submitter == null) {
