@@ -96,13 +96,21 @@ public class Task201014UpdateColumnsValuesInIdentifierTableTest {
                 ((Date)result.get("create_date")).getTime()).toLocalDateTime().truncatedTo(
                 ChronoUnit.SECONDS);
 
-        return ((expectedResult.getOwner() == null && result.get("owner") == null) || result
-                .get("owner").equals(expectedResult.getOwner())) &&
+        return doesOwnerMatch(expectedResult, result) &&
                 resultDate.equals(expectedDate) &&
-                ((!expectedResult.getAssetType().equals("contentlet") && !UtilMethods
-                        .isSet(result.get("asset_subtype")))
-                        || (expectedResult.getAssetType().equals("contentlet") && result
-                        .get("asset_subtype").equals(expectedResult.getAssetSubType())));
+                doesAssetSubtypeMatch(expectedResult, result);
+    }
+
+    private boolean doesOwnerMatch(final Identifier expectedResult, final Map<String, Object> result) {
+        return (expectedResult.getOwner() == null && result.get("owner") == null) || result
+                .get("owner").equals(expectedResult.getOwner());
+    }
+
+    private boolean doesAssetSubtypeMatch(final Identifier expectedResult, final Map<String, Object> result) {
+        return (!expectedResult.getAssetType().equals("contentlet") && !UtilMethods
+                .isSet(result.get("asset_subtype")))
+                || (expectedResult.getAssetType().equals("contentlet") && result
+                .get("asset_subtype").equals(expectedResult.getAssetSubType()));
     }
 
     /**
