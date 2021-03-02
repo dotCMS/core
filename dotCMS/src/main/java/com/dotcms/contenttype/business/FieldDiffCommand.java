@@ -31,11 +31,11 @@ public class FieldDiffCommand implements DiffCommand<String, Field> {
         final DiffResult.Builder<String, Field> builder = new DiffResult.Builder<>();
 
         final Map<String, Field> fieldsToDelete = currentObjects.entrySet().stream()
-                .filter(entry ->  newObjects.containsKey(entry.getKey()))
+                .filter(entry ->  !newObjects.containsKey(entry.getKey()))
                 .collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue()));
 
         final Map<String, Field> fieldsToAdd    = newObjects.entrySet().stream()
-                .filter(entry ->  currentObjects.containsKey(entry.getKey()))
+                .filter(entry ->  !currentObjects.containsKey(entry.getKey()))
                 .collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue()));
 
         final Map<String, Field> fieldsToUpdate = newObjects.entrySet().stream()

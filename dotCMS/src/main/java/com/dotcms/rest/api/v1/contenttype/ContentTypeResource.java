@@ -306,7 +306,7 @@ public class ContentTypeResource implements Serializable {
 
 		if (!diffResult.getToDelete().isEmpty()) {
 
-			APILocator.getContentTypeFieldAPI().deleteFields(diffResult.getToDelete().
+			APILocator.getContentTypeFieldLayoutAPI().deleteField(currentContentType, diffResult.getToDelete().
 					values().stream().map(Field::id).collect(Collectors.toList()), user);
 		}
 
@@ -317,7 +317,9 @@ public class ContentTypeResource implements Serializable {
 
 		if (!diffResult.getToUpdate().isEmpty()) {
 
-			APILocator.getContentTypeFieldAPI().saveFields(new ArrayList<>(diffResult.getToAdd().values()), user);
+			for (final  Field field : diffResult.getToUpdate().values()) {
+				APILocator.getContentTypeFieldLayoutAPI().updateField(currentContentType, field, user);
+			}
 		}
 	}
 
