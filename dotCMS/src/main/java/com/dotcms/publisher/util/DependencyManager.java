@@ -1,7 +1,12 @@
 package com.dotcms.publisher.util;
 
+import static com.dotcms.util.CollectionsUtils.set;
+
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.enterprise.rules.RulesAPI;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
@@ -22,6 +27,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.PersonalizedContentlet;
 import com.dotmarketing.factories.WebAssetFactory;
@@ -107,9 +113,6 @@ public class DependencyManager {
 
 	private PushPublisherConfig config;
 
-	private final List<Exception> errors = Collections.synchronizedList(new ArrayList<>());
-
-
 	/**
 	 * Initializes the list of dependencies that this manager needs to satisfy,
 	 * based on the {@link PushPublisherConfig} specified for the bundle.
@@ -150,7 +153,7 @@ public class DependencyManager {
 				processContentDependency(contentId);
 			} catch (DotBundleException e) {
 				Logger.error(DependencyManager.class, e.getMessage());
-				errors.add(e);
+				throw new DotRuntimeException(e);
 			}
 		});
 		consumerDependencies.put(AssetTypes.RULES, (ruleId) -> setRuleDependencies(ruleId));
@@ -159,7 +162,7 @@ public class DependencyManager {
 				processLanguage(langId);
 			} catch (DotBundleException e) {
 				Logger.error(DependencyManager.class, e.getMessage());
-				errors.add(e);
+				throw new DotRuntimeException(e);
 			}
 		});
 
@@ -188,9 +191,6 @@ public class DependencyManager {
 		this.publisherFilter = APILocator.getPublisherAPI().createPublisherFilter(config.getId());
 
 		Logger.debug(DependencyManager.class, "publisherFilter.isDependencies() " + publisherFilter.isDependencies());
-		if(publisherFilter.isDependencies()){
-			dependencyProcessor.start();
-		}
 
 		setLanguageVariables();
 
@@ -354,27 +354,32 @@ public class DependencyManager {
 			}
 		}
 
-		dependencyProcessor.waitUntilFinish();
+		try {
+			dependencyProcessor.waitForAll();
 
-		if (!errors.isEmpty()) {
-			final String messages =
-					errors.stream().map(exception -> exception.getMessage()).collect(Collectors.joining(","));
-			throw new DotBundleException(messages);
+			config.setHostSet(hosts);
+			config.setFolders(folders);
+			config.setHTMLPages(htmlPages);
+			config.setTemplates(templates);
+			config.setContainers(containers);
+			config.setStructures(contentTypes);
+			config.setContents(contents);
+			config.setLinks(links);
+			config.setRelationships(relationships);
+			config.setWorkflows(workflows);
+			config.setLanguages(languages);
+			config.setRules(this.rules);
+			config.setCategories(categories);
+		} catch (ExecutionException e) {
+			final Optional<Throwable> causeOptional = ExceptionUtil.getCause(e, set(DotBundleException.class));
+
+			if (causeOptional.isPresent()) {
+				throw (DotBundleException) causeOptional.get();
+			} else {
+				final Throwable rootCause = ExceptionUtil.getRootCause(e);
+				throw new DotBundleException(rootCause.getMessage(), (Exception) rootCause);
+			}
 		}
-
-		config.setHostSet(hosts);
-		config.setFolders(folders);
-		config.setHTMLPages(htmlPages);
-		config.setTemplates(templates);
-		config.setContainers(containers);
-		config.setStructures(contentTypes);
-		config.setContents(contents);
-		config.setLinks(links);
-		config.setRelationships(relationships);
-		config.setWorkflows(workflows);
-		config.setLanguages(languages);
-		config.setRules(this.rules);
-		config.setCategories(categories);
 	}
 
 	/**
@@ -1342,7 +1347,11 @@ public class DependencyManager {
 		return folders;
 	}
 
-	private class DependencyProcessorItem {
+	private static class DependencyProcessorItem {
+		static final  String FINISHED_ASSET_KEY = "finished";
+		static final DependencyProcessorItem FINISHED_DEPENDENCY_PROCESSOR_ITEM =
+				new DependencyProcessorItem(FINISHED_ASSET_KEY, null);
+
 		String assetKey;
 		AssetTypes assetTypes;
 
@@ -1353,23 +1362,30 @@ public class DependencyManager {
 	}
 
 	private class DependencyProcessor {
+
 		private BlockingQueue<DependencyProcessorItem> queue;
 		private Map<AssetTypes, Set<String>> assetsAlreadyProcessed;
-		private boolean finished;
-		private boolean started;
-		private List<DependencyThread> threads;
+		private DotSubmitter submitter;
+
+		DependencyProcessor() {
+			queue = new LinkedBlockingDeque();
+			assetsAlreadyProcessed = new HashMap<>();
+		}
 
 		void put(final String assetKey, final AssetTypes assetType) {
-			if (!started) {
-				return;
-			}
 
-			if (assetsAlreadyProcessed != null && !this.alreadyProcess(assetKey, assetType)) {
+			final boolean isFirst = submitter == null;
+
+			if (!this.alreadyProcess(assetKey, assetType)) {
 				Logger.debug(DependencyProcessor.class, () -> String.format("%s: Putting %s in %s",
 						Thread.currentThread().getName(), assetKey, assetType));
 
 				queue.add(new DependencyProcessorItem(assetKey, assetType));
 				addSet(assetKey, assetType);
+			}
+
+			if (isFirst) {
+				this.start();
 			}
 		}
 
@@ -1384,75 +1400,52 @@ public class DependencyManager {
 			set.add(assetKey);
 		}
 
-		void start(){
+		private void start(){
 			Logger.debug(DependencyProcessor.class, "starting");
-			queue = new LinkedBlockingDeque();
-			assetsAlreadyProcessed = new HashMap<>();
+			submitter = DotConcurrentFactory.getInstance().getSubmitter("DependencyManagerSubmitter",
+					new DotConcurrentFactory.SubmitterConfigBuilder()
+							.poolSize(Config.getIntProperty("MIN_NUMBER_THREAD_TO_EXECUTE_BUNDLER", 10))
+							.maxPoolSize(Config.getIntProperty("MAX_NUMBER_THREAD_TO_EXECUTE_BUNDLER", 40))
+							.queueCapacity(Config.getIntProperty("QUEUE_CAPACITY_TO_EXECUTE_BUNDLER", 500))
+							.build()
+			);
 
-			int poolSize = Config.getIntProperty("NUMBER_THREAD_TO_EXECUTE_BUNDLER", 10);
+			new Thread(() -> {
+				while(!isFinish()) {
+					try {
+						final DependencyProcessorItem dependencyProcessorItem = queue.take();
 
-			threads = new ArrayList<>();
+						if (!dependencyProcessorItem.equals(DependencyProcessorItem.FINISHED_DEPENDENCY_PROCESSOR_ITEM)) {
+							submitter.submit(new DependencyRunnable(dependencyProcessorItem));
+						}
+					} catch (InterruptedException e) {
+						throw new RuntimeException(e);
+					}
+				}
 
-			for (int i = 0; i < poolSize; i++) {
-				final DependencyThread thread = new DependencyThread();
-				threads.add(thread);
-
-				Logger.debug(DependencyProcessor.class, () -> String.format("Starting %s", thread.getName()));
-				thread.start();
-			}
-
-			started = true;
+				submitter.shutdownNow();
+			}).start();
 		}
 
-		public void waitUntilFinish(){
-			Logger.debug(DependencyProcessor.class, () -> String.format("%s: Wait until all finish",
-					Thread.currentThread().getName()));
+		synchronized void sendFinishNotification() {
+			queue.add(DependencyProcessorItem.FINISHED_DEPENDENCY_PROCESSOR_ITEM);
+		}
+
+		private boolean isFinish() {
+			return queue.isEmpty() && !submitter.hasActive();
+		}
+
+		void waitForAll() throws ExecutionException {
+
+			if (submitter == null) {
+				return;
+			}
 
 			while(!isFinish()) {
-				Logger.debug(DependencyProcessor.class, () -> String.format("%s: it is not finish yet",
-						Thread.currentThread().getName()));
-				waitForDependencies();
+				submitter.waitForAll(5, TimeUnit.MINUTES);
 			}
 
-			Logger.debug(DependencyProcessor.class, () -> String.format("%s: it is finish",
-					Thread.currentThread().getName()));
-			this.stop();
-		}
-
-		private synchronized void waitForDependencies() {
-			try {
-				wait(TimeUnit.MINUTES.toMillis(1));
-			} catch (InterruptedException e) {
-				Logger.error(DependencyProcessor.class, e.getMessage());
-			}
-		}
-
-		private synchronized void notifyMainThread() {
-			notify();
-		}
-
-		private boolean isFinish(){
-			return queue == null || (queue.isEmpty() && allThreadWaiting());
-		}
-
-		private boolean allThreadWaiting() {
-			for (final DependencyThread thread : threads) {
-				if (!thread.getWaitingState()) {
-					return false;
-				}
-			}
-
-			return true;
-		}
-
-		void stop(){
-			this.finished = true;
-
-			if (threads != null) {
-				for (final Thread thread : threads) {
-					thread.interrupt();
-				}
-			}
+			submitter.shutdownNow();
 		}
 
 		public boolean alreadyProcess(final String assetKey, final AssetTypes assetTypes) {
@@ -1460,56 +1453,27 @@ public class DependencyManager {
 			return set != null && set.contains(assetKey);
 		}
 
-		private class DependencyThread extends Thread {
-			boolean waitingForSomethingToProcess = false;
+		private class DependencyRunnable implements Runnable {
+			final DependencyProcessorItem dependencyProcessorItem;
+
+			DependencyRunnable(final DependencyProcessorItem dependencyProcessorItem) {
+				this.dependencyProcessorItem = dependencyProcessorItem;
+			}
 
 			@Override
 			public void run() {
-				while (true) {
-					try {
-						DependencyProcessorItem dependencyProcessorItem = queue.poll();
+				try {
+					final AssetTypes assetTypes = dependencyProcessorItem.assetTypes;
+					Logger.debug(DependencyProcessor.class,
+							String.format("%s : We have something to process - %s %s",
+									Thread.currentThread().getName(), dependencyProcessorItem.assetKey, assetTypes));
 
-						if (dependencyProcessorItem == null) {
-							setWaitingState(true);
-							Logger.debug(DependencyProcessor.class, () -> String.format("%s : Notifying to main thread",
-									Thread.currentThread().getName()));
-
-							notifyMainThread();
-
-							Logger.debug(DependencyProcessor.class,
-									() -> String.format("%s : Waiting for something to process", Thread.currentThread().getName()));
-							dependencyProcessorItem = queue.take();
-							setWaitingState(false);
-						}
-
-						final AssetTypes assetTypes = dependencyProcessorItem.assetTypes;
-						Logger.debug(DependencyProcessor.class,
-								String.format("%s : We have something to process - %s %s",
-										Thread.currentThread().getName(), dependencyProcessorItem.assetKey, assetTypes));
-
-						consumerDependencies.get(assetTypes).accept(dependencyProcessorItem.assetKey);
-					} catch (InterruptedException e) {
-						if (!finished) {
-							Logger.error(DependencyProcessor.class, e.getMessage());
-						}
-
-						//todo: Remove when JAspect is running in test
-						DbConnectionFactory.closeSilently();
-
-						setWaitingState(false);
-						break;
-					} catch (Exception e) {
-						Logger.error(DependencyThread.class, e);
-					}
+					consumerDependencies.get(assetTypes).accept(dependencyProcessorItem.assetKey);
+				} catch (Exception e) {
+					Logger.error(DependencyRunnable.class, e);
 				}
-			}
 
-			private synchronized void setWaitingState(boolean value) {
-				waitingForSomethingToProcess = value;
-			}
-
-			private boolean getWaitingState() {
-				return waitingForSomethingToProcess;
+				sendFinishNotification();
 			}
 		}
 	}

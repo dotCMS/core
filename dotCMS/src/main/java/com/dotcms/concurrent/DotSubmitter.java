@@ -101,6 +101,11 @@ public interface DotSubmitter extends Executor, Serializable {
     public boolean isAborting();
 
 
+    /**
+     * The current Thread wait until all the Thread finish
+     */
+    void waitForAll(final long timeout, final TimeUnit unit) throws ExecutionException;
+
     default void waitForAll(final Collection<Future<Void>> futures) throws ExecutionException {
         for(final Future future : futures) {
             try {
@@ -114,4 +119,8 @@ public interface DotSubmitter extends Executor, Serializable {
             }
         }
     }
+
+    boolean hasActive();
+
+    long getTaskCount();
 } // E:O:F:DotExecutor.
