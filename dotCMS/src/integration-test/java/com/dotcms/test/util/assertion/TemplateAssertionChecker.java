@@ -86,7 +86,8 @@ public class TemplateAssertionChecker implements AssertionChecker<Template> {
                 "<header>null</header>",
                 "<footer>null</footer>",
                 "<image>null</image>",
-                "<liveInode>null</liveInode>"
+                "<liveInode>null</liveInode>",
+                "<owner>.*</owner>"
         );
     }
 }
