@@ -28,7 +28,6 @@ import com.liferay.portal.ejb.PasswordTrackerLocalManagerFactory;
 import com.liferay.portal.ejb.UserManagerUtil;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
-import com.liferay.portal.model.Address;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.pwd.PwdToolkitUtil;
@@ -601,34 +600,6 @@ public class UserAPIImpl implements UserAPI {
         } catch (LanguageException e) {
             Logger.error(this, "Error logging info of Delete user operation. User: " + userToDeleteStr);
         }
-    }
-
-    @WrapInTransaction
-    @Override
-    public void saveAddress(User user, Address ad, User currentUser, boolean respectFrontEndRoles) throws DotDataException, DotRuntimeException, DotSecurityException {
-        if(!permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(user,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_EDIT, currentUser, respectFrontEndRoles)){
-            throw new DotSecurityException("User doesn't have permission to userToDelete the user which is trying to be saved");
-        }
-        userFactoryLiferay.saveAddress(user, ad);
-    }
-
-    @CloseDBIfOpened
-    @Override
-    public Address loadAddressById(String addressId, User currentUser, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException {
-        Address ad = userFactoryLiferay.loadAddressById(addressId);
-        if(!permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(ad.getUserId(),APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_READ, currentUser, respectFrontEndRoles)){
-            throw new DotSecurityException("User doesn't have permission to userToDelete the user which is trying to be saved");
-        }
-        return ad;
-    }
-
-    @CloseDBIfOpened
-    @Override
-    public List<Address> loadUserAddresses(User user, User currentUser, boolean respectFrontEndRoles) throws DotDataException, DotRuntimeException, DotSecurityException {
-        if(!permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(user,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_READ, currentUser, respectFrontEndRoles)){
-            throw new DotSecurityException("User doesn't have permission to userToDelete the user which is trying to be saved");
-        }
-        return userFactoryLiferay.loadUserAddresses(user);
     }
 
     @Override

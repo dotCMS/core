@@ -7,7 +7,6 @@ import java.util.List;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.liferay.portal.model.Address;
 import com.liferay.portal.model.User;
 import java.util.Optional;
 
@@ -344,32 +343,6 @@ public interface UserAPI {
      * @throws DotSecurityException If the user requesting the delete doesn't have permission
      */
     public void delete(User userToDelete, User replacementUser, User user, boolean respectFrontEndRoles) throws DotDataException,DotSecurityException;
-    	
-    /**
-     * Method that saves a new address and tie it to the user
-     * @param user
-     * @param ad
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws DotRuntimeException
-     */
-	public void saveAddress(User userToSaveNewAddress, Address ad, User user, boolean respectFrontEndRoles) throws DotDataException, DotRuntimeException, DotSecurityException;
-
-	/**
-	 * Load address by id
-	 * @throws DotSecurityException
-	 */
-	public Address loadAddressById(String addressId, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException;
-
-	/**
-	 * Retrieves all addresses associated to a user
-	 * @param user
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 * @throws DotRuntimeException
-	 */
-	public List<Address> loadUserAddresses(User userToGetAddresses, User user, boolean respectFrontEndRoles) throws DotDataException, DotRuntimeException, DotSecurityException;
 
 	/**
 	 * Returns true if the user is a cms admin

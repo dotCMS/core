@@ -3,9 +3,7 @@ package com.dotcms.business;
 import com.dotcms.rest.api.v1.authentication.DotInvalidTokenException;
 import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.liferay.portal.model.Address;
 import com.liferay.portal.model.User;
 
 import java.util.Date;
@@ -183,21 +181,6 @@ public class LazyUserAPIWrapper implements UserAPI {
     @Override
     public void delete(User userToDelete, User replacementUser, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException {
         this.getUserAPI().delete(userToDelete, replacementUser, user, respectFrontEndRoles);
-    }
-
-    @Override
-    public void saveAddress(User userToSaveNewAddress, Address ad, User user, boolean respectFrontEndRoles) throws DotDataException, DotRuntimeException, DotSecurityException {
-        this.getUserAPI().saveAddress(userToSaveNewAddress, ad, user, respectFrontEndRoles);
-    }
-
-    @Override
-    public Address loadAddressById(String addressId, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException {
-        return this.getUserAPI().loadAddressById(addressId, user, respectFrontEndRoles);
-    }
-
-    @Override
-    public List<Address> loadUserAddresses(User userToGetAddresses, User user, boolean respectFrontEndRoles) throws DotDataException, DotRuntimeException, DotSecurityException {
-        return this.getUserAPI().loadUserAddresses(userToGetAddresses, user, respectFrontEndRoles);
     }
 
     @Override
