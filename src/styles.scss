@@ -75,3 +75,24 @@ a {
         cursor: pointer;
     }
 }
+
+/*
+
+Dragula clone and append dragged element to the body we need to have their styles globally.
+However this is for the dragula we use in the angular components the one in the edit page have their own place because we inject it to the page iframe
+
+*/
+
+.gu-mirror {
+    position: fixed !important;
+    margin: 0 !important;
+    z-index: 9999 !important;
+    opacity: 1;
+    transform-origin: right top;
+}
+.gu-hide {
+    display: none !important;
+}
+.gu-unselectable {
+    user-select: none !important;
+}

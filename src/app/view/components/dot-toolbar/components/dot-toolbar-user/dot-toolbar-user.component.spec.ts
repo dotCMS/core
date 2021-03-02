@@ -103,6 +103,10 @@ describe('DotToolbarUserComponent', () => {
             ]
         });
 
+        const mockDate = new Date(1466424490000);
+        jasmine.clock().install();
+        jasmine.clock().mockDate(mockDate);
+
         fixture = TestBed.createComponent(DotToolbarUserComponent);
         comp = fixture.componentInstance;
         de = fixture.debugElement;
@@ -110,6 +114,10 @@ describe('DotToolbarUserComponent', () => {
         loginService = de.injector.get(LoginService);
         locationService = de.injector.get(LOCATION_TOKEN);
         dotNavigationService = de.injector.get(DotNavigationService);
+    });
+
+    afterEach(() => {
+        jasmine.clock().uninstall();
     });
 
     it('should have correct href in logout link', () => {
@@ -124,7 +132,7 @@ describe('DotToolbarUserComponent', () => {
         fixture.detectChanges();
 
         const logoutLink = de.query(By.css('#dot-toolbar-user-link-logout'));
-        expect(logoutLink.attributes.href).toBe('/dotAdmin/logout');
+        expect(logoutLink.attributes.href).toBe('/dotAdmin/logout?r=1466424490000');
     });
 
     it('should call "logoutAs" in "LoginService" on logout click', async () => {

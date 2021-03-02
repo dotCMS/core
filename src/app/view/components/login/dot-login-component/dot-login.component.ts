@@ -22,6 +22,7 @@ import { DotMessageService } from '@services/dot-message/dot-messages.service';
  */
 export class DotLoginComponent implements OnInit, OnDestroy {
     message = '';
+    isError = false;
     loginForm: FormGroup;
     languages: SelectItem[] = [];
     loginInfo$: Observable<DotLoginInformation>;
@@ -69,21 +70,20 @@ export class DotLoginComponent implements OnInit, OnDestroy {
     logInUser(): void {
         this.setFromState(true);
         this.dotLoadingIndicatorService.show();
-        this.message = '';
-
+        this.setMessage('');
         this.loginService
             .loginUser(this.loginForm.value as DotLoginParams)
             .pipe(take(1))
             .subscribe(
                 (user: User) => {
-                    this.message = '';
+                    this.setMessage('');
                     this.dotLoadingIndicatorService.hide();
                     this.dotRouterService.goToMain(user['editModeUrl']);
                     this.dotMessageService.setRelativeDateMessages(user.languageId);
                 },
                 (res: any) => {
                     if (this.isBadRequestOrUnathorized(res.status)) {
-                        this.message = res.error.errors[0].message;
+                        this.setMessage(res.error.errors[0].message, true);
                     } else {
                         this.loggerService.debug(res);
                     }
@@ -123,11 +123,14 @@ export class DotLoginComponent implements OnInit, OnDestroy {
     private setInitialMessage(loginInfo: DotLoginInformation): void {
         this.route.queryParams.pipe(take(1)).subscribe((params: Params) => {
             if (params['changedPassword']) {
-                this.message = loginInfo.i18nMessagesMap['reset-password-success'];
+                this.setMessage(loginInfo.i18nMessagesMap['reset-password-success']);
             } else if (params['resetEmailSent']) {
-                this.message = loginInfo.i18nMessagesMap[
-                    'a-new-password-has-been-sent-to-x'
-                ].replace('{0}', params['resetEmail']);
+                this.setMessage(
+                    loginInfo.i18nMessagesMap['a-new-password-has-been-sent-to-x'].replace(
+                        '{0}',
+                        params['resetEmail']
+                    )
+                );
             }
         });
     }
@@ -156,5 +159,10 @@ export class DotLoginComponent implements OnInit, OnDestroy {
 
     private isBadRequestOrUnathorized(status: number) {
         return status === HttpCode.BAD_REQUEST || status === HttpCode.UNAUTHORIZED;
+    }
+
+    private setMessage(message: string, error?: boolean): void {
+        this.message = message;
+        this.isError = !!error;
     }
 }

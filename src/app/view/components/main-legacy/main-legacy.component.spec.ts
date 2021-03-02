@@ -81,8 +81,6 @@ class MockDotPushPublishDialogComponent {}
 describe('MainLegacyComponent', () => {
     let fixture: ComponentFixture<MainComponentLegacyComponent>;
     let de: DebugElement;
-    let dotIframeService: DotIframeService;
-    let dotRouterService: DotRouterService;
     let dotCustomEventHandlerService: DotCustomEventHandlerService;
 
     beforeEach(() => {
@@ -136,10 +134,7 @@ describe('MainLegacyComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(MainComponentLegacyComponent);
         de = fixture.debugElement;
-        dotIframeService = de.injector.get(DotIframeService);
-        dotRouterService = de.injector.get(DotRouterService);
         dotCustomEventHandlerService = de.injector.get(DotCustomEventHandlerService);
-        spyOn(dotIframeService, 'reloadData');
         fixture.detectChanges();
     });
     it('should have basic layout elements', () => {
@@ -161,16 +156,6 @@ describe('MainLegacyComponent', () => {
         let createContentlet: DebugElement;
         beforeEach(() => {
             createContentlet = de.query(By.css('dot-create-contentlet'));
-        });
-
-        it('should refresh the current portlet data', () => {
-            spyOnProperty(dotRouterService, 'currentPortlet', 'get').and.returnValue({
-                id: 'site-browser'
-            });
-
-            createContentlet.triggerEventHandler('close', {});
-
-            expect(dotIframeService.reloadData).toHaveBeenCalledWith('site-browser');
         });
 
         it('should call dotCustomEventHandlerService on customEvent', () => {

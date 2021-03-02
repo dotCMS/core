@@ -1,10 +1,12 @@
 import { DotRouterService } from './dot-router.service';
 import { RouterTestingModule } from '@angular/router/testing';
 import { LoginService } from 'dotcms-js';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute, NavigationEnd } from '@angular/router';
 import { waitForAsync, TestBed } from '@angular/core/testing';
+import { Subject } from 'rxjs';
 
 class RouterMock {
+    _events: Subject<any> = new Subject();
     url = '/c/test';
 
     routerState = {
@@ -19,10 +21,18 @@ class RouterMock {
         });
     });
 
+    get events() {
+        return this._events.asObservable();
+    }
+
     getCurrentNavigation() {
         return {
             finalUrl: {}
         };
+    }
+
+    triggerNavigationEnd(url: string): void {
+        this._events.next(new NavigationEnd(0, url || '/url/678', url || '/url/789'));
     }
 }
 
@@ -36,7 +46,7 @@ class ActivatedRouteMock {
 
 describe('DotRouterService', () => {
     let service: DotRouterService;
-    let router: Router;
+    let router;
 
     beforeEach(
         waitForAsync(() => {
@@ -59,10 +69,20 @@ describe('DotRouterService', () => {
                 imports: [RouterTestingModule]
             });
 
-            service = testbed.get(DotRouterService);
-            router = testbed.get(Router);
+            service = testbed.inject(DotRouterService);
+            router = testbed.inject(Router);
         })
     );
+
+    it('should set current url value', () => {
+        expect(service.currentSavedURL).toEqual(router.url);
+    });
+
+    it('should set previous & current url value', () => {
+        router.triggerNavigationEnd('/newUrl');
+        expect(service.routeHistory).toEqual({ url: '/newUrl', previousUrl: '/c/test' });
+        expect(service.currentSavedURL).toEqual('/newUrl');
+    });
 
     it('should get queryParams from Router', () => {
         spyOn<any>(router, 'getCurrentNavigation').and.returnValue({
@@ -92,13 +112,21 @@ describe('DotRouterService', () => {
     it('should go to edit page', () => {
         spyOn(service, 'goToEditPage');
         service.goToMain('/about/us');
-
         expect(service.goToEditPage).toHaveBeenCalledWith({ url: '/about/us' });
+    });
+
+    it('should go to Starter page', () => {
+        service.goToStarter();
+        expect(router.navigate).toHaveBeenCalledWith(['/starter']);
+    });
+
+    it('should go to Content page', () => {
+        service.goToContent();
+        expect(router.navigate).toHaveBeenCalledWith(['/c/content']);
     });
 
     it('should go to edit page', () => {
         service.goToEditTemplate('123');
-
         expect(router.navigate).toHaveBeenCalledWith(['/templates/edit/123']);
     });
 
@@ -110,13 +138,18 @@ describe('DotRouterService', () => {
 
     it('should go to edit content type page', () => {
         service.goToEditContentType('123', 'Form');
-
         expect(router.navigate).toHaveBeenCalledWith(['/Form/edit/123']);
     });
-    it('should go to previousSavedURL', () => {
-        service.previousSavedURL = 'test/fake';
-        service.goToMain();
 
+    it('should go to storedRedirectUrl', () => {
+        service.storedRedirectUrl = 'test/fake';
+        service.goToMain();
+        expect(router.navigate).toHaveBeenCalledWith(['test/fake']);
+    });
+
+    it('should go to previous URL when goToMain() called', () => {
+        service.routeHistory = { previousUrl: 'test/fake', url: '/' };
+        service.goToPreviousUrl();
         expect(router.navigate).toHaveBeenCalledWith(['test/fake']);
     });
 
@@ -142,6 +175,11 @@ describe('DotRouterService', () => {
     it('should go to edit workflow task', () => {
         service.goToEditTask('123');
         expect(router.navigate).toHaveBeenCalledWith(['/c/workflow/123']);
+    });
+
+    it('should go to create content route with provided content type variable name', () => {
+        service.goToCreateContent('persona');
+        expect(router.navigate).toHaveBeenCalledWith(['/c/content/new/persona']);
     });
 
     it('should go to create integration service', () => {
@@ -220,6 +258,22 @@ describe('DotRouterService', () => {
             });
             expect(router.navigate).toHaveBeenCalledWith(['/public/login'], {
                 queryParams: { test: 'test', r: 1466424490000 }
+            });
+            jasmine.clock().uninstall();
+        });
+    });
+
+    describe('go to logout', () => {
+        beforeEach(() => {
+            const mockDate = new Date(1466424490000);
+            jasmine.clock().install();
+            jasmine.clock().mockDate(mockDate);
+        });
+
+        it('should add the cache busting', () => {
+            service.doLogOut();
+            expect(router.navigate).toHaveBeenCalledWith(['/dotAdmin/logout'], {
+                queryParams: { r: 1466424490000 }
             });
             jasmine.clock().uninstall();
         });

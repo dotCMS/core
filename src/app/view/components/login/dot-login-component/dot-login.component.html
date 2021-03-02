@@ -5,6 +5,7 @@
                 <img src="{{ loginInfo.entity.logo }}" alt="DotCMS - Hybrid CMS" />
             </div>
             <p-dropdown
+                data-testId="language"
                 class="p-dropdown-sm"
                 [options]="languages"
                 formControlName="language"
@@ -15,11 +16,20 @@
             </p-dropdown>
         </div>
 
-        <h3 class="login__title">{{ loginInfo.i18nMessagesMap['welcome-login'] }}</h3>
+        <h3 data-testId="header" class="login__title">
+            {{ loginInfo.i18nMessagesMap['welcome-login'] }}
+        </h3>
 
-        <p class="p-invalid" [innerHTML]="message"></p>
+        <p
+            [ngClass]="{ 'p-invalid': isError, success: !isError }"
+            class="login__message"
+            data-testId="message"
+            [innerHTML]="message"
+        ></p>
         <div class="p-field form__group--validation">
-            <label for="inputtext">{{ loginInfo.i18nMessagesMap['emailAddressLabel'] }}</label>
+            <label data-testId="emailLabel" for="inputtext">{{
+                loginInfo.i18nMessagesMap['emailAddressLabel']
+            }}</label>
 
             <input
                 type="text"
@@ -29,6 +39,7 @@
                 dotAutofocus
                 formControlName="login"
                 autocomplete="username"
+                data-testId="userNameInput"
             />
 
             <dot-field-validation-message
@@ -43,13 +54,16 @@
             </dot-field-validation-message>
         </div>
         <div class="p-field form__group--validation">
-            <label for="inputtext">{{ loginInfo.i18nMessagesMap['password'] }}</label>
+            <label data-testId="passwordLabel" for="inputtext">{{
+                loginInfo.i18nMessagesMap['password']
+            }}</label>
 
             <input
                 pInputText
                 type="password"
                 formControlName="password"
                 autocomplete="current-password"
+                data-testId="password"
             />
 
             <dot-field-validation-message
@@ -66,12 +80,17 @@
         <div class="login__password-settings p-field">
             <p-checkbox
                 formControlName="rememberMe"
+                data-testId="rememberMe"
                 binary="true"
                 [label]="loginInfo.i18nMessagesMap['remember-me']"
             ></p-checkbox>
-            <a actionLink *ngIf="!isLoginInProgress" (click)="goToForgotPassword()">{{
-                loginInfo.i18nMessagesMap['get-new-password']
-            }}</a>
+            <a
+                actionLink
+                data-testId="actionLink"
+                *ngIf="!isLoginInProgress"
+                (click)="goToForgotPassword()"
+                >{{ loginInfo.i18nMessagesMap['get-new-password'] }}</a
+            >
         </div>
         <div class="p-field">
             <dot-loading-indicator></dot-loading-indicator>
@@ -81,17 +100,21 @@
                 *ngIf="loginForm.enabled"
                 (click)="logInUser()"
                 [label]="loginInfo.i18nMessagesMap['sign-in']"
+                data-testId="submitButton"
                 class="login__button"
             ></button>
         </div>
         <div class="login__footer">
-            <span>{{ loginInfo.i18nMessagesMap['Server'] }}: {{ loginInfo.entity.serverId }}</span>
+            <span data-testId="server"
+                >{{ loginInfo.i18nMessagesMap['Server'] }}: {{ loginInfo.entity.serverId }}</span
+            >
             |
-            <span
+            <span data-testId="version"
                 >{{ loginInfo.entity.levelName }}: {{ loginInfo.entity.version }} -
                 {{ loginInfo.entity.buildDateString }}</span
             >
             <span
+                data-testId="license"
                 *ngIf="loginInfo.entity.levelName.indexOf('COMMUNITY') !== -1"
                 [innerHTML]="
                     ' - ' +

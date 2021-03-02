@@ -80,13 +80,13 @@ class MockDotEditContentletComponent {
 }
 
 describe('DotEditPageMainComponent', () => {
-    let component: DotEditPageMainComponent;
     let fixture: ComponentFixture<DotEditPageMainComponent>;
     let route: ActivatedRoute;
     let dotContentletEditorService: DotContentletEditorService;
     let dotPageStateService: DotPageStateService;
     let dotRouterService: DotRouterService;
     let dotCustomEventHandlerService: DotCustomEventHandlerService;
+    let editContentlet: MockDotEditContentletComponent;
 
     const messageServiceMock = new MockDotMessageService({
         'editpage.toolbar.nav.content': 'Content',
@@ -172,7 +172,6 @@ describe('DotEditPageMainComponent', () => {
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotEditPageMainComponent);
-        component = fixture.debugElement.componentInstance;
         route = fixture.debugElement.injector.get(ActivatedRoute);
         route.data = observableOf({
             content: mockDotRenderedPageState
@@ -183,6 +182,8 @@ describe('DotEditPageMainComponent', () => {
         dotCustomEventHandlerService = fixture.debugElement.injector.get(
             DotCustomEventHandlerService
         );
+        editContentlet = fixture.debugElement.query(By.css('dot-edit-contentlet'))
+            .componentInstance;
         fixture.detectChanges();
     });
 
@@ -200,32 +201,54 @@ describe('DotEditPageMainComponent', () => {
         expect(nav.pageState).toEqual(mockDotRenderedPageState);
     });
 
-    it('should call reload pageSte when IframeClose evt happens', () => {
+    it('should not call goToEditPage if the dialog is closed without new page properties', () => {
         spyOn(dotPageStateService, 'get').and.callThrough();
 
-        component.pageState$.subscribe((res) => {
-            expect(res).toEqual(
-                new DotPageRenderState(mockUser(), new DotPageRender(mockDotRenderedPage()))
-            );
+        dotContentletEditorService.close$.next(true);
+        expect(dotRouterService.goToEditPage).not.toHaveBeenCalled();
+        expect(dotPageStateService.get).not.toHaveBeenCalled();
+    });
+
+    it('should call goToEditPage if page properties were saved with different URLs', () => {
+        spyOn(dotPageStateService, 'get').and.callThrough();
+        editContentlet.custom.emit({
+            detail: {
+                name: 'save-page',
+                payload: {
+                    htmlPageReferer: '/index'
+                }
+            }
+        });
+
+        dotContentletEditorService.close$.next(true);
+        expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
+            url: '/index',
+            language_id: '1'
+        });
+        dotContentletEditorService.close$.next(true);
+        expect(dotRouterService.goToEditPage).toHaveBeenCalledTimes(1);
+        expect(dotPageStateService.get).not.toHaveBeenCalled();
+    });
+
+    it('should call get if page properties were saved with equal URLs', () => {
+        spyOn(dotPageStateService, 'get').and.callThrough();
+        editContentlet.custom.emit({
+            detail: {
+                name: 'save-page',
+                payload: {
+                    htmlPageReferer: '/about-us/index'
+                }
+            }
         });
 
         dotContentletEditorService.close$.next(true);
         expect(dotPageStateService.get).toHaveBeenCalledWith({
             url: '/about-us/index',
-            viewAs: {
-                language: mockDotRenderedPage().page.languageId
-            }
+            viewAs: { language: 1 }
         });
     });
 
     describe('handle custom events from contentlet editor', () => {
-        let editContentlet: MockDotEditContentletComponent;
-
-        beforeEach(() => {
-            editContentlet = fixture.debugElement.query(By.css('dot-edit-contentlet'))
-                .componentInstance;
-        });
-
         it('should reload page when url attribute in dialog has been changed', () => {
             editContentlet.custom.emit({
                 detail: {
@@ -237,6 +260,7 @@ describe('DotEditPageMainComponent', () => {
                 }
             });
             dotContentletEditorService.close$.next(true);
+
             expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
                 url: '/about-us/index2',
                 language_id: mockDotRenderedPage().page.languageId.toString()

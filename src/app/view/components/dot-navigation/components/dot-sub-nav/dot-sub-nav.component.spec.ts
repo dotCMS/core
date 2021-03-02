@@ -76,7 +76,7 @@ describe('DotSubNavComponent', () => {
 
         component.itemClick.subscribe((event) => {
             expect(event).toEqual({
-                originalEvent: { hello: 'world' },
+                originalEvent: ({ hello: 'world' } as unknown) as MouseEvent,
                 data: data.menuItems[0]
             });
         });

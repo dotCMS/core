@@ -168,7 +168,7 @@ describe('DotPushPublishDialogComponent', () => {
 
         describe('on success pushPublishContent', () => {
             beforeEach(() => {
-                spyOn<any>(pushPublishService, 'pushPublishContent').and.returnValue(of({}));
+                spyOn<any>(pushPublishService, 'pushPublishContent').and.returnValue(of(null));
             });
 
             xit('should submit on accept and hide dialog', () => {

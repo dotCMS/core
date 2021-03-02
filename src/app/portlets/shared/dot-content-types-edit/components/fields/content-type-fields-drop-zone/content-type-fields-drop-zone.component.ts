@@ -14,7 +14,8 @@ import { FieldType } from '../models';
 import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
-    DotCMSContentTypeLayoutColumn
+    DotCMSContentTypeLayoutColumn,
+    DotCMSContentType
 } from 'dotcms-models';
 import { ContentTypeFieldsPropertiesFormComponent } from '../content-type-fields-properties-form';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
@@ -41,18 +42,21 @@ import * as _ from 'lodash';
 export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, OnDestroy {
     readonly OVERVIEW_TAB_INDEX = 0;
 
-    dialogActiveTab: number;
     displayDialog = false;
     currentField: DotCMSContentTypeField;
     currentFieldType: FieldType;
     dialogActions: DotDialogActions;
     fieldRows: DotCMSContentTypeLayoutRow[];
+    hideButtons = false;
 
     @ViewChild('fieldPropertiesForm', { static: true })
     propertiesForm: ContentTypeFieldsPropertiesFormComponent;
 
     @Input()
     layout: DotCMSContentTypeLayoutRow[];
+
+    @Input()
+    contentType: DotCMSContentType;
 
     @Output()
     saveFields = new EventEmitter<DotCMSContentTypeLayoutRow[]>();
@@ -63,7 +67,6 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     @Output()
     removeFields = new EventEmitter<DotCMSContentTypeField[]>();
 
-    hideButtons = false;
     private _loading: boolean;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -281,7 +284,6 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         this.hideButtons = false;
         this.displayDialog = false;
         this.currentField = null;
-        this.dialogActiveTab = null;
         this.setDialogOkButtonState(false);
     }
 
@@ -364,7 +366,6 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
 
     private toggleDialog(): void {
         this.displayDialog = !this.displayDialog;
-        this.dialogActiveTab = 0;
     }
 
     private emitSaveFields(layout: DotCMSContentTypeLayoutRow[]): void {

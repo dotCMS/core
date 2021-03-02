@@ -68,6 +68,18 @@
         </div>
 
         <div class="p-field">
+            <p-checkbox
+                #showStarterCheckbox
+                data-testid="showStarterBtn"
+                [(ngModel)]="showStarter"
+                [ngModelOptions]="{ standalone: true }"
+                binary="true"
+                label="{{ 'starter.show.getting.started' | dm }}"
+            >
+            </p-checkbox>
+        </div>
+
+        <div class="p-field">
             <label for="dot-my-account-current-password-input">{{ 'current-password' | dm }}</label>
             <input
                 pPassword

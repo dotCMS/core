@@ -59,7 +59,9 @@
         [cache]="false"
     >
         <ng-template pTemplate="content">
-            <dot-iframe [src]="relationshipURL"></dot-iframe>
+            <dot-portlet-box>
+                <dot-iframe [src]="relationshipURL"></dot-iframe>
+            </dot-portlet-box>
         </ng-template>
     </p-tabPanel>
     <p-tabPanel
@@ -69,7 +71,9 @@
         [cache]="false"
     >
         <ng-template pTemplate="content">
-            <dot-iframe [src]="permissionURL"></dot-iframe>
+            <dot-portlet-box>
+                <dot-iframe [src]="permissionURL"></dot-iframe>
+            </dot-portlet-box>
         </ng-template>
     </p-tabPanel>
     <p-tabPanel
@@ -79,7 +83,9 @@
         [cache]="false"
     >
         <ng-template pTemplate="content">
-            <dot-iframe [src]="pushHistoryURL"></dot-iframe>
+            <dot-portlet-box>
+                <dot-iframe [src]="pushHistoryURL"></dot-iframe>
+            </dot-portlet-box>
         </ng-template>
     </p-tabPanel>
 </p-tabView>

@@ -1,6 +1,6 @@
 import { of, Observable } from 'rxjs';
 import { ContentTypesLayoutComponent } from './content-types-layout.component';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, fakeAsync, TestBed } from '@angular/core/testing';
 import { DebugElement, Component, Input, Injectable, Output, EventEmitter } from '@angular/core';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
@@ -23,6 +23,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TabViewModule } from 'primeng/tabview';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { MenuItem } from 'primeng/api';
+import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
 
 @Component({
     selector: 'dot-content-types-fields-list',
@@ -117,7 +118,8 @@ describe('ContentTypesLayoutComponent', () => {
                 DotCopyButtonModule,
                 DotPipesModule,
                 SplitButtonModule,
-                HttpClientTestingModule
+                HttpClientTestingModule,
+                DotPortletBoxModule
             ],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
@@ -158,6 +160,45 @@ describe('ContentTypesLayoutComponent', () => {
         fixture.detectChanges();
         expect(fieldDragDropService.setBagOptions).toHaveBeenCalledTimes(1);
     });
+
+    it('should have dot-portlet-box in the second tab after it has been clicked', fakeAsync(() => {
+        fixture.componentInstance.contentType = fakeContentType;
+
+        fixture.detectChanges();
+
+        const contentTypeRelationshipsTabLink = de.query(
+            By.css('ul.p-tabview-nav li:nth-child(2) > a')
+        );
+        contentTypeRelationshipsTabLink.nativeElement.click();
+        fixture.detectChanges();
+
+        fixture.whenStable().then(() => {
+            const contentTypeRelationships = de.query(By.css('.content-type__relationships'));
+            const contentTypeRelationshipsPortletBox = contentTypeRelationships.query(
+                By.css('dot-portlet-box')
+            );
+            expect(contentTypeRelationshipsPortletBox).not.toBeNull();
+        });
+    }));
+
+    it('should have dot-portlet-box in the fourth tab after it has been clicked', fakeAsync(() => {
+        fixture.componentInstance.contentType = fakeContentType;
+        fixture.detectChanges();
+
+        const contentTypePushHistoryTabLink = de.query(
+            By.css('ul.p-tabview-nav li:nth-child(3) > a')
+        );
+        contentTypePushHistoryTabLink.nativeElement.click();
+        fixture.detectChanges();
+
+        fixture.whenStable().then(() => {
+            const contentTypePushHistory = de.query(By.css('.content-type__push_history'));
+            const contentTypePushHistoryPortletBox = contentTypePushHistory.query(
+                By.css('dot-portlet-box')
+            );
+            expect(contentTypePushHistoryPortletBox).not.toBeNull();
+        });
+    }));
 
     describe('Edit toolBar', () => {
         beforeEach(() => {

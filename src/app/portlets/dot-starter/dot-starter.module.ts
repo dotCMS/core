@@ -5,10 +5,11 @@ import { DotStarterRoutingModule } from './dot-starter-routing.module';
 import { DotStarterComponent } from './dot-starter.component';
 import { CheckboxModule } from 'primeng/checkbox';
 import { DotToolGroupService } from '@services/dot-tool-group/dot-tool-group.service';
+import { CommonModule } from '@angular/common';
 
 @NgModule({
     declarations: [DotStarterComponent],
-    imports: [DotStarterRoutingModule, DotMessagePipeModule, CheckboxModule],
+    imports: [CommonModule, DotStarterRoutingModule, DotMessagePipeModule, CheckboxModule],
     providers: [DotStarterResolver, DotToolGroupService]
 })
 export class DotStarterModule {}

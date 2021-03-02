@@ -19,7 +19,6 @@ export class ResetPasswordComponent implements OnInit {
     loginInfo$: Observable<DotLoginInformation>;
     message = '';
     private passwordDontMatchMessage = '';
-    private changePasswordSuccessfully = '';
 
     constructor(
         private fb: FormBuilder,
@@ -35,8 +34,6 @@ export class ResetPasswordComponent implements OnInit {
             tap((loginInfo: DotLoginInformation) => {
                 this.passwordDontMatchMessage =
                     loginInfo.i18nMessagesMap['reset-password-confirmation-do-not-match'];
-                this.changePasswordSuccessfully =
-                    loginInfo.i18nMessagesMap['message.forgot.password.password.updated'];
             })
         );
 
@@ -85,15 +82,14 @@ export class ResetPasswordComponent implements OnInit {
                 .pipe(take(1))
                 .subscribe(
                     () => {
-                        alert(this.changePasswordSuccessfully);
                         this.dotRouterService.goToLogin({
                             queryParams: {
                                 changedPassword: true
                             }
                         });
                     },
-                    (error) => {
-                        this.message = error.errorsMessages;
+                    (response) => {
+                        this.message = response.error?.errors[0]?.message;
                     }
                 );
         } else {

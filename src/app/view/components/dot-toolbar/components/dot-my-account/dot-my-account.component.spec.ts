@@ -27,6 +27,7 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { MockDotRouterService } from '@tests/dot-router-service.mock';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { DotMenuService } from '@services/dot-menu.service';
 
 describe('DotMyAccountComponent', () => {
     let fixture: ComponentFixture<DotMyAccountComponent>;
@@ -35,6 +36,7 @@ describe('DotMyAccountComponent', () => {
     let accountService: AccountService;
     let loginService: LoginService;
     let dotRouterService: DotRouterService;
+    let dotMenuService: DotMenuService;
 
     const messageServiceMock = new MockDotMessageService({
         'my-account': 'My Account',
@@ -51,7 +53,8 @@ describe('DotMyAccountComponent', () => {
         'message.createaccount.success': 'Success',
         'Error-communicating-with-server-Please-try-again': 'Server error, try again!',
         'change-password': 'Change Password',
-        'current-password': 'Current Password'
+        'current-password': 'Current Password',
+        'starter.show.getting.started': 'Show starter'
     });
 
     beforeEach(
@@ -81,6 +84,7 @@ describe('DotMyAccountComponent', () => {
                     DotcmsConfigService,
                     LoggerService,
                     StringUtils,
+                    DotMenuService,
                     UserModel
                 ]
             });
@@ -88,12 +92,12 @@ describe('DotMyAccountComponent', () => {
             fixture = TestBed.createComponent(DotMyAccountComponent);
             comp = fixture.componentInstance;
             de = fixture.debugElement;
-            accountService = TestBed.get(AccountService);
-            loginService = TestBed.get(LoginService);
-            dotRouterService = TestBed.get(DotRouterService);
+            accountService = TestBed.inject(AccountService);
+            loginService = TestBed.inject(LoginService);
+            dotRouterService = TestBed.inject(DotRouterService);
+            dotMenuService = TestBed.inject(DotMenuService);
 
             comp.visible = true;
-            fixture.detectChanges();
         })
     );
 
@@ -103,6 +107,7 @@ describe('DotMyAccountComponent', () => {
     });
 
     it(`should have right labels`, async () => {
+        fixture.detectChanges();
         await fixture.whenStable();
         comp.form.setValue({
             givenName: 'Admin',
@@ -130,6 +135,7 @@ describe('DotMyAccountComponent', () => {
         const confirmPassword = de.nativeElement.querySelector(
             '#dot-my-account-confirm-new-password-input'
         ).parentNode;
+        const showStarter = de.query(By.css('[data-testid="showStarterBtn"]'));
         const cancel = de.nativeElement.querySelector('.dialog__button-cancel');
         const save = de.nativeElement.querySelector('.dialog__button-accept');
 
@@ -140,11 +146,16 @@ describe('DotMyAccountComponent', () => {
         expect(changePassword.innerText).toEqual(messageServiceMock.get('change-password'));
         expect(newPassword.innerText).toEqual(messageServiceMock.get('new-password'));
         expect(confirmPassword.innerText).toEqual(messageServiceMock.get('re-enter-new-password'));
+        expect(showStarter.nativeElement.innerText).toEqual(
+            messageServiceMock.get('starter.show.getting.started')
+        );
         expect(cancel.innerText).toEqual(messageServiceMock.get('modes.Close').toUpperCase());
         expect(save.innerText).toEqual(messageServiceMock.get('save').toUpperCase());
     });
 
-    it(`should form be valid`, async () => {
+    it(`should form be valid and load starter page data`, async () => {
+        spyOn<any>(dotMenuService, 'isPortletInMenu').and.returnValue(of(true));
+        fixture.detectChanges();
         await fixture.whenStable();
 
         comp.form.setValue({
@@ -159,10 +170,15 @@ describe('DotMyAccountComponent', () => {
         const save = de.nativeElement.querySelector('.dialog__button-accept');
 
         expect(comp.form.valid).toBe(true);
+        expect(
+            de.query(By.css('[data-testid="showStarterBtn"]')).attributes['ng-reflect-model']
+        ).toBe('true');
         expect(save.disabled).toBe(false);
     });
 
     it(`should enable new passwords inputs when checked change password option`, async () => {
+        fixture.detectChanges();
+        await fixture.whenStable();
         comp.form.setValue({
             givenName: 'Admin',
             surname: 'Admin',
@@ -188,6 +204,8 @@ describe('DotMyAccountComponent', () => {
     });
 
     it(`should disabled SAVE when new passwords don't match`, async () => {
+        fixture.detectChanges();
+        await fixture.whenStable();
         comp.form.setValue({
             givenName: 'Admin2',
             surname: 'Admi2',
@@ -207,6 +225,58 @@ describe('DotMyAccountComponent', () => {
         expect(comp.dialogActions.accept.disabled).toBe(true);
     });
 
+    it(`should call to add starter method in account service`, async () => {
+        spyOn<any>(dotMenuService, 'isPortletInMenu').and.returnValue(of(false));
+        spyOn<any>(accountService, 'addStarterPage').and.returnValue(of({ entity: {} }));
+        spyOn<any>(accountService, 'updateUser').and.returnValue(
+            of({ entity: { user: mockUser() } })
+        );
+        fixture.detectChanges();
+        await fixture.whenStable();
+        const user = {
+            givenName: 'Admin',
+            surname: 'Admin',
+            email: 'admin@dotcms.com',
+            password: 'admin',
+            newPassword: 'newPassword',
+            confirmPassword: 'newPassword'
+        };
+        comp.form.setValue(user);
+        fixture.detectChanges();
+        de.query(
+            By.css('[data-testid="showStarterBtn"] input[type="checkbox"]')
+        ).nativeElement.click();
+        fixture.detectChanges();
+        de.query(By.css('.dialog__button-accept')).triggerEventHandler('click', {});
+        expect(accountService.addStarterPage).toHaveBeenCalledTimes(1);
+    });
+
+    it(`should call to remove starter method in account service`, async () => {
+        spyOn<any>(dotMenuService, 'isPortletInMenu').and.returnValue(of(true));
+        spyOn<any>(accountService, 'removeStarterPage').and.returnValue(of({ entity: {} }));
+        spyOn<any>(accountService, 'updateUser').and.returnValue(
+            of({ entity: { user: mockUser() } })
+        );
+        fixture.detectChanges();
+        await fixture.whenStable();
+        const user = {
+            givenName: 'Admin',
+            surname: 'Admin',
+            email: 'admin@dotcms.com',
+            password: 'admin',
+            newPassword: 'newPassword',
+            confirmPassword: 'newPassword'
+        };
+        comp.form.setValue(user);
+        fixture.detectChanges();
+        de.query(
+            By.css('[data-testid="showStarterBtn"] input[type="checkbox"]')
+        ).nativeElement.click();
+        fixture.detectChanges();
+        de.query(By.css('.dialog__button-accept')).triggerEventHandler('click', {});
+        expect(accountService.removeStarterPage).toHaveBeenCalledTimes(1);
+    });
+
     it(`should SAVE form and sethAuth when no reauthentication`, async () => {
         spyOn<any>(accountService, 'updateUser').and.returnValue(
             of({ entity: { user: mockUser() } })
@@ -214,6 +284,8 @@ describe('DotMyAccountComponent', () => {
         spyOn(loginService, 'setAuth');
         spyOn(comp.close, 'emit');
 
+        fixture.detectChanges();
+        await fixture.whenStable();
         const user = {
             givenName: 'Admin',
             surname: 'Admin',
@@ -248,6 +320,8 @@ describe('DotMyAccountComponent', () => {
         );
         spyOn(comp.close, 'emit');
 
+        fixture.detectChanges();
+        await fixture.whenStable();
         const user = {
             givenName: 'Admin',
             surname: 'Admin',

@@ -46,3 +46,7 @@
 .login__button {
     margin-right: $spacing-1;
 }
+
+.login__message.success {
+    color: $brand-primary;
+}

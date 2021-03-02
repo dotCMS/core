@@ -8,6 +8,7 @@
         *ngIf="data.id"
         [layout]="layout"
         [loading]="loadingFields"
+        [contentType]="data"
         (saveFields)="saveFields($event)"
         (removeFields)="removeFields($event)"
         (editField)="editField($event)"
