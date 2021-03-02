@@ -270,8 +270,9 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	public boolean doesUserHavePermission(final Permissionable permissionable, int permissionType, final User userIn, final boolean respectFrontendRoles) throws DotDataException {
 	    
 	    User user = (userIn==null || userIn.getUserId()==null) ? APILocator.getUserAPI().getAnonymousUser() : userIn;
-	    
-        if(user.getUserId().equals(APILocator.systemUser().getUserId())){
+
+
+	    if(user.getUserId().equals(APILocator.systemUser().getUserId())){
             return true;
         }
 
@@ -280,16 +281,20 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			throw new NullPointerException("Permissionable object is null");
 		}
 
-		if(UtilMethods.isEmpty(permissionable.getPermissionId())){
-			Logger.debug(this.getClass(), "Trying to get permissions on null inode of type :" + permissionable.getPermissionType()) ;
-			Logger.debug(this.getClass(), "Trying to get permissions on null inode of class :" + permissionable.getClass()) ;
+		if (UtilMethods.isEmpty(permissionable.getPermissionId())) {
+			Logger.debug(this.getClass(),
+					"Trying to get permissions on null inode of type :" + permissionable
+							.getPermissionType());
+			Logger.debug(this.getClass(),
+					"Trying to get permissions on null inode of class :" + permissionable
+							.getClass());
 			return false;
 
 		}
 
-        if(user.isAdmin()) {
-            return true;
-        }
+		if (user.isAdmin()) {
+			return true;
+		}
 
         // short circut for UserProxy
         if(permissionable instanceof UserProxy) {
