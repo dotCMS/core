@@ -96,10 +96,13 @@ public class Task201014UpdateColumnsValuesInIdentifierTableTest {
                 ((Date)result.get("create_date")).getTime()).toLocalDateTime().truncatedTo(
                 ChronoUnit.SECONDS);
 
-        return result.get("owner").equals(expectedResult.getOwner()) &&
+        return ((expectedResult.getOwner() == null && result.get("owner") == null) || result
+                .get("owner").equals(expectedResult.getOwner())) &&
                 resultDate.equals(expectedDate) &&
-                ((!expectedResult.getAssetType().equals("contentlet") && !UtilMethods.isSet(result.get("asset_subtype")))
-                        || (expectedResult.getAssetType().equals("contentlet") && result.get("asset_subtype").equals(expectedResult.getAssetSubType())));
+                ((!expectedResult.getAssetType().equals("contentlet") && !UtilMethods
+                        .isSet(result.get("asset_subtype")))
+                        || (expectedResult.getAssetType().equals("contentlet") && result
+                        .get("asset_subtype").equals(expectedResult.getAssetSubType())));
     }
 
     /**
