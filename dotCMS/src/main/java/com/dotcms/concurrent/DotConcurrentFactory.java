@@ -778,11 +778,6 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
             }
         }
 
-        @Override
-        public boolean hasActive() {
-            return threadPoolExecutor.getActiveCount() > 0;
-        }
-
         public long getTaskCount() {
             return threadPoolExecutor.getTaskCount();
         }

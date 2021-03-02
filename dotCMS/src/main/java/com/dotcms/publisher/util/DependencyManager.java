@@ -1410,7 +1410,7 @@ public class DependencyManager {
 							.build()
 			);
 
-			new Thread(() -> {
+			submitter.submit(() -> {
 				while(!isFinish()) {
 					try {
 						final DependencyProcessorItem dependencyProcessorItem = queue.take();
@@ -1424,7 +1424,7 @@ public class DependencyManager {
 				}
 
 				submitter.shutdownNow();
-			}).start();
+			});
 		}
 
 		synchronized void sendFinishNotification() {
@@ -1432,7 +1432,11 @@ public class DependencyManager {
 		}
 
 		private boolean isFinish() {
-			return queue.isEmpty() && !submitter.hasActive();
+			return queue.isEmpty() && isAllTaskFinished();
+		}
+
+		private boolean isAllTaskFinished() {
+			return submitter.getActiveCount() <= 1;
 		}
 
 		void waitForAll() throws ExecutionException {

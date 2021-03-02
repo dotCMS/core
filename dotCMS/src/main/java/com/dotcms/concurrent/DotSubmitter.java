@@ -120,7 +120,5 @@ public interface DotSubmitter extends Executor, Serializable {
         }
     }
 
-    boolean hasActive();
-
     long getTaskCount();
 } // E:O:F:DotExecutor.
