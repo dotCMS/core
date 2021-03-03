@@ -422,9 +422,9 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
                 Logger.error(this, String.format("Could not save field %s", field.id()), e);
                 throw new DotStateException(e);
             }
-        }
 
-        saveFieldVariables(field, fieldVariables);
+            saveFieldVariables(field, fieldVariables);
+        }
     }
 
     return retType;
