@@ -53,6 +53,8 @@ import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { TabViewModule } from 'primeng/tabview';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
 
 const COLUMN_BREAK_FIELD = FieldUtil.createColumnBreak();
 
@@ -215,7 +217,9 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                     FieldService,
                     FieldPropertyService,
                     DragulaService,
-                    DotEventsService
+                    DotEventsService,
+                    { provide: DotMessageDisplayService, useValue: {} },
+                    { provide: DotHttpErrorManagerService, useValue: {} }
                 ]
             });
 
@@ -224,6 +228,10 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
             de = fixture.debugElement;
         })
     );
+
+    it('should have propertiesForm', () => {
+        expect(comp.propertiesForm).not.toBeUndefined();
+    });
 
     it('should have fieldsContainer', () => {
         const fieldsContainer = de.query(By.css('.content-type-fields-drop-zone__container'));
@@ -257,21 +265,27 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         );
     });
 
-    it('should reset values when close dialog', () => {
+    it('should reset values when close dialog', async(() => {
         const fieldRow: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
         comp.fieldRows = [fieldRow];
 
         comp.displayDialog = true;
+        comp.activeTab = 1;
         spyOn(comp, 'setDialogOkButtonState');
+
         fixture.detectChanges();
+
         const dialog = de.query(By.css('dot-dialog')).componentInstance;
         dialog.hide.emit();
-        fixture.detectChanges();
-        expect(comp.displayDialog).toBe(false);
-        expect(comp.hideButtons).toBe(false);
-        expect(comp.currentField).toBe(null);
-        expect(comp.setDialogOkButtonState).toHaveBeenCalledWith(false);
-    });
+
+        fixture.whenStable().then(() => {
+            expect(comp.displayDialog).toBe(false);
+            expect(comp.hideButtons).toBe(false);
+            expect(comp.currentField).toBe(null);
+            expect(comp.activeTab).toBe(0);
+            expect(comp.setDialogOkButtonState).toHaveBeenCalledWith(false);
+        });
+    }));
 
     it('should emit removeFields event', () => {
         let fieldsToRemove;

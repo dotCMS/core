@@ -1,4 +1,4 @@
-import { DebugElement } from '@angular/core';
+import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
@@ -11,9 +11,20 @@ import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotPortletToolbarComponent } from './dot-portlet-toolbar.component';
 
+@Component({
+    selector: 'dot-test-host-component',
+    template: `
+        <dot-portlet-toolbar>
+            <div data-testId="leftExtraContent" left></div>
+            <div data-testId="rightExtraContent" right></div
+        ></dot-portlet-toolbar>
+    `
+})
+class TestHostComponent {}
+
 describe('DotPortletToolbarComponent', () => {
     let component: DotPortletToolbarComponent;
-    let fixture: ComponentFixture<DotPortletToolbarComponent>;
+    let hostfixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
 
     beforeEach(async () => {
@@ -27,43 +38,40 @@ describe('DotPortletToolbarComponent', () => {
                     })
                 }
             ],
-            declarations: [DotPortletToolbarComponent],
+            declarations: [DotPortletToolbarComponent, TestHostComponent],
             imports: [ToolbarModule, DotMessagePipeModule, ButtonModule, MenuModule]
         }).compileComponents();
     });
 
     beforeEach(() => {
-        fixture = TestBed.createComponent(DotPortletToolbarComponent);
-        de = fixture.debugElement;
-        component = fixture.componentInstance;
+        hostfixture = TestBed.createComponent(TestHostComponent);
+        de = hostfixture.debugElement;
+        component = de.query(By.css('dot-portlet-toolbar')).componentInstance;
     });
 
     describe('markup', () => {
         describe('empty', () => {
             it('should have not title', () => {
-                fixture.detectChanges();
+                hostfixture.detectChanges();
 
                 const title = de.query(By.css('[data-testId="title"]'));
                 expect(title).toBeNull();
             });
 
             it('should have left and right zone', () => {
-                fixture.detectChanges();
-
+                hostfixture.detectChanges();
                 const left = de.query(By.css('[data-testId="leftGroup"]'));
                 const right = de.query(By.css('[data-testId="rightGroup"]'));
-                const leftExtra = de.query(By.css('[data-testId="leftExtra"]'));
-                const rightExtra = de.query(By.css('[data-testId="rightExtra"]'));
+                const leftExtraContent = de.query(By.css('[data-testId="leftExtraContent"]'));
+                const rightExtraContent = de.query(By.css('[data-testId="rightExtraContent"]'));
                 expect(left).not.toBeNull();
                 expect(right).not.toBeNull();
-                expect(leftExtra).not.toBeNull();
-                expect(rightExtra).not.toBeNull();
-                expect(leftExtra.nativeElement.childElementCount).toBe(0);
-                expect(rightExtra.nativeElement.childElementCount).toBe(0);
+                expect(leftExtraContent).not.toBeNull();
+                expect(rightExtraContent).not.toBeNull();
             });
 
             it('should have actions', () => {
-                fixture.detectChanges();
+                hostfixture.detectChanges();
 
                 const actionsWrapper = de.query(By.css('[data-testId="actionsWrapper"]'));
                 const actionsMenu = de.query(By.css('[data-testId="actionsMenu"]'));
@@ -96,7 +104,7 @@ describe('DotPortletToolbarComponent', () => {
                     cancel: () => {}
                 };
 
-                fixture.detectChanges();
+                hostfixture.detectChanges();
 
                 const actionsPrimaryButton = de.query(
                     By.css('[data-testId="actionsPrimaryButton"]')
@@ -126,7 +134,7 @@ describe('DotPortletToolbarComponent', () => {
                     cancel: () => {}
                 };
 
-                fixture.detectChanges();
+                hostfixture.detectChanges();
                 const actionsMenuButton = de.query(By.css('[data-testId="actionsMenuButton"]'));
                 expect(actionsMenuButton.nativeElement.textContent).toBe('Custom Action Label');
             });
@@ -146,7 +154,7 @@ describe('DotPortletToolbarComponent', () => {
                     cancel: () => {}
                 };
 
-                fixture.detectChanges();
+                hostfixture.detectChanges();
                 const actionsPrimaryButton = de.query(
                     By.css('[data-testId="actionsPrimaryButton"]')
                 );
@@ -170,7 +178,7 @@ describe('DotPortletToolbarComponent', () => {
                     cancel: () => {}
                 };
 
-                fixture.detectChanges();
+                hostfixture.detectChanges();
 
                 const actionsMenuButton = de.query(By.css('[data-testId="actionsMenuButton"]'));
 
@@ -200,7 +208,7 @@ describe('DotPortletToolbarComponent', () => {
                     cancel: spy
                 };
 
-                fixture.detectChanges();
+                hostfixture.detectChanges();
                 const actionsCancelButton = de.query(By.css('[data-testId="actionsCancelButton"]'));
                 actionsCancelButton.triggerEventHandler('click', {});
 
@@ -216,7 +224,7 @@ describe('DotPortletToolbarComponent', () => {
                     cancel: () => {}
                 };
 
-                fixture.detectChanges();
+                hostfixture.detectChanges();
                 const actionsCancelButton = de.query(By.css('[data-testId="actionsCancelButton"]'));
                 expect(actionsCancelButton.nativeElement.textContent).toBe('Custom Cancel Label');
             });
@@ -231,7 +239,7 @@ describe('DotPortletToolbarComponent', () => {
                     }
                 };
 
-                fixture.detectChanges();
+                hostfixture.detectChanges();
                 const actionsCancelButton = de.query(By.css('[data-testId="actionsCancelButton"]'));
 
                 actionsCancelButton.triggerEventHandler('click', {});

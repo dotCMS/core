@@ -143,9 +143,11 @@ describe('DotTemplateAdvancedComponent', () => {
         it('should have portlet base', () => {
             const portlet = de.query(By.css('dot-portlet-base'));
             const toolbar = portlet.query(By.css('dot-portlet-toolbar'));
+            const globalMessage = portlet.query(By.css('dot-global-message[right]'));
 
             expect(portlet).not.toBeNull();
             expect(toolbar).not.toBeNull();
+            expect(globalMessage).not.toBeNull();
             expect(toolbar.componentInstance.actions).toEqual({
                 primary: [
                     {

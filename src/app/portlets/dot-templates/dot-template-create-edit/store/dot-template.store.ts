@@ -11,6 +11,8 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotTemplateContainersCacheService } from '@services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { DotContainerMap } from '@models/container/dot-container.model';
 import { DotLayout, DotTemplate } from '@models/dot-edit-layout-designer';
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 
 type DotTemplateType = 'design' | 'advanced';
 
@@ -108,15 +110,22 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
     );
 
     readonly saveTemplate = this.effect((origin$: Observable<DotTemplateItem>) => {
+        this.dotGlobalMessageService.loading(
+            this.dotMessageService.get('dot.common.message.saving')
+        );
         return origin$.pipe(
             switchMap((template: DotTemplateItem) => this.persistTemplate(template)),
             tap((template: DotTemplate) => {
                 if (template.drawed) {
                     this.templateContainersCacheService.set(template.containers);
                 }
-
                 this.updateTemplate(this.getTemplateItem(template));
-                this.goToTemplateList();
+                this.dotGlobalMessageService.success(
+                    this.dotMessageService.get('dot.common.message.saved')
+                );
+                if (this.activatedRoute?.snapshot?.params['inode']) {
+                    this.dotRouterService.goToEditTemplate(template.identifier);
+                }
             })
         );
     });
@@ -153,7 +162,9 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
         private dotTemplateService: DotTemplatesService,
         private dotRouterService: DotRouterService,
         private activatedRoute: ActivatedRoute,
-        private templateContainersCacheService: DotTemplateContainersCacheService
+        private templateContainersCacheService: DotTemplateContainersCacheService,
+        private dotGlobalMessageService: DotGlobalMessageService,
+        private dotMessageService: DotMessageService
     ) {
         super(null);
 

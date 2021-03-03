@@ -6,6 +6,7 @@ import { DotTextareaContentModule } from '@components/_common/dot-textarea-conte
 import { DotContainerSelectorModule } from '@components/dot-container-selector/dot-container-selector.module';
 import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
 import { ReactiveFormsModule } from '@angular/forms';
+import { DotGlobalMessageModule } from '@components/_common/dot-global-message/dot-global-message.module';
 
 @NgModule({
     declarations: [DotTemplateAdvancedComponent],
@@ -15,7 +16,8 @@ import { ReactiveFormsModule } from '@angular/forms';
         DotContainerSelectorModule,
         DotTextareaContentModule,
         DotPortletBaseModule,
-        ReactiveFormsModule
+        ReactiveFormsModule,
+        DotGlobalMessageModule
     ],
     providers: []
 })
