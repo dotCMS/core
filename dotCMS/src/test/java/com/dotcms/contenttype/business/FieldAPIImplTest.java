@@ -1,24 +1,31 @@
 package com.dotcms.contenttype.business;
 
-import com.dotcms.contenttype.business.FieldAPIImpl;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
+import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.net.ConnectException;
+import java.util.List;
 import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.map;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -31,6 +38,7 @@ public class FieldAPIImplTest {
     private static RelationshipAPI relationshipAPI;
     private static LocalSystemEventsAPI localSystemEventsAPI;
     private static LanguageVariableAPI languageVariableAPI;
+    private static FieldFactory fieldFactory;
 
     private static FieldAPIImpl fieldAPIImpl;
 
@@ -42,6 +50,7 @@ public class FieldAPIImplTest {
         relationshipAPI = mock(RelationshipAPI.class);
         localSystemEventsAPI = mock(LocalSystemEventsAPI.class);
         languageVariableAPI = mock(LanguageVariableAPI.class);
+        fieldFactory = mock(FieldFactory.class);
 
         fieldAPIImpl = new FieldAPIImpl(
                 perAPI,
@@ -49,7 +58,8 @@ public class FieldAPIImplTest {
                 userAPI,
                 relationshipAPI,
                 localSystemEventsAPI,
-                languageVariableAPI
+                languageVariableAPI,
+                fieldFactory
         );
     }
 
@@ -156,5 +166,30 @@ public class FieldAPIImplTest {
         assertEquals("value_1", fieldInternationalization.get("attribute_1"));
         assertEquals("value_2", fieldInternationalization.get("attribute_2"));
         assertEquals("value_3", fieldInternationalization.get("attribute_3"));
+    }
+
+    @Test
+    public void test_loadVariables() throws DotDataException {
+        final Field field = FieldBuilder.builder(WysiwygField.class).name("TestField").build();
+        final List<FieldVariable> fieldVariables = ImmutableList.of(
+                ImmutableFieldVariable.builder()
+                        .key("foo")
+                        .value("bar")
+                        .build(),
+                ImmutableFieldVariable.builder()
+                        .key("hello")
+                        .value("world")
+                        .build()
+        );
+        when(fieldFactory.loadVariables(field)).thenReturn(fieldVariables);
+        assertEquals(2, fieldAPIImpl.loadVariables(field).size());
+        assertEquals("foo", fieldAPIImpl.loadVariables(field).get(0).key());
+        assertEquals("bar", fieldAPIImpl.loadVariables(field).get(0).value());
+    }
+
+    @Test
+    public void test_loadVariables_nullField() throws DotDataException {
+        final Field field = null;
+        assertTrue(fieldAPIImpl.loadVariables(field).isEmpty());
     }
 }
