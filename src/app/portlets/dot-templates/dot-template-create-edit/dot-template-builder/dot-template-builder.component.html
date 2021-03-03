@@ -18,14 +18,14 @@
             ></dot-edit-layout-designer>
         </ng-template>
     </p-tabPanel>
-    <p-tabPanel header="Permissions">
+    <p-tabPanel [header]="'Permissions' | dm">
         <ng-template pTemplate="content">
             <dot-portlet-box>
                 <dot-iframe data-testId="permissionsIframe" [src]="permissionsUrl"></dot-iframe>
             </dot-portlet-box>
         </ng-template>
     </p-tabPanel>
-    <p-tabPanel header="History">
+    <p-tabPanel [header]="'History' | dm">
         <ng-template pTemplate="content">
             <dot-portlet-box>
                 <dot-iframe

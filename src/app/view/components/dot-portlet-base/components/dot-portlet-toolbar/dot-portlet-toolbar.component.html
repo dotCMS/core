@@ -1,14 +1,14 @@
 <p-toolbar>
     <div class="p-toolbar-group-left" data-testId="leftGroup">
         <h3 data-testId="title" *ngIf="title">{{ title }}</h3>
-        <div class="dot-portlet-toolbar__extra-left" data-testId="leftExtra">
-            <ng-content select="#left"></ng-content>
+        <div class="dot-portlet-toolbar__extra-left">
+            <ng-content select="[left]"></ng-content>
         </div>
     </div>
 
     <div class="p-toolbar-group-right" data-testId="rightGroup">
-        <div class="dot-portlet-toolbar__extra-right" data-testId="rightExtra">
-            <ng-content select="#right"></ng-content>
+        <div class="dot-portlet-toolbar__extra-right">
+            <ng-content select="[right]"></ng-content>
         </div>
 
         <div class="dot-portlet-toolbar__actions" data-testId="actionsWrapper">

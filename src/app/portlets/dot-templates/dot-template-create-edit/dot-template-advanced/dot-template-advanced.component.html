@@ -1,5 +1,7 @@
 <dot-portlet-base>
-    <dot-portlet-toolbar [actions]="actions$ | async"></dot-portlet-toolbar>
+    <dot-portlet-toolbar [actions]="actions$ | async">
+        <dot-global-message right></dot-global-message>
+    </dot-portlet-toolbar>
 
     <form [formGroup]="form">
         <dot-container-selector (change)="containerChange($event)"> </dot-container-selector>
