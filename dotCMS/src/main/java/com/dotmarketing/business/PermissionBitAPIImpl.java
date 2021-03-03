@@ -283,10 +283,10 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 		if (UtilMethods.isEmpty(permissionable.getPermissionId())) {
 			Logger.debug(this.getClass(),
-					"Trying to get permissions on null inode of type :" + permissionable
+					() -> "Trying to get permissions on null inode of type :" + permissionable
 							.getPermissionType());
 			Logger.debug(this.getClass(),
-					"Trying to get permissions on null inode of class :" + permissionable
+					() -> "Trying to get permissions on null inode of class :" + permissionable
 							.getClass());
 			return false;
 
