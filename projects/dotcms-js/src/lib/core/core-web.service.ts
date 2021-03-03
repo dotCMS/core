@@ -261,15 +261,14 @@ export class CoreWebService {
     }
 
     private getFixedUrl(url: string): string {
-        if (url.startsWith('api')) {
+        if (url?.startsWith('api')) {
             return `/${url}`;
         }
 
-        const [version] = url.split('/');
+        const version = url ? url.split('/')[0] : '';
         if (version.match(/v[1-9]/g)) {
             return `/api/${url}`;
         }
-
         return url;
     }
 

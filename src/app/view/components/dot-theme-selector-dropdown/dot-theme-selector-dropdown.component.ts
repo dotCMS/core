@@ -168,7 +168,7 @@ export class DotThemeSelectorDropdownComponent
      */
     handlePageChange(event: LazyLoadEvent): void {
         this.currentOffset = event.first;
-        if (this.currentSiteIdentifier) {
+        if (this.currentSiteIdentifier && this.paginatorService.url) {
             this.paginatorService
                 .getWithOffset(event.first)
                 /*

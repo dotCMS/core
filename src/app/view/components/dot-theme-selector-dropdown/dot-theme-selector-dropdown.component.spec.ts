@@ -14,7 +14,10 @@ import { mockDotThemes } from '@tests/dot-themes.mock';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { SearchableDropdownComponent } from '@components/_common/searchable-dropdown/component/searchable-dropdown.component';
+import {
+    PaginationEvent,
+    SearchableDropdownComponent
+} from '@components/_common/searchable-dropdown/component/searchable-dropdown.component';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -164,9 +167,24 @@ describe('DotThemeSelectorDropdownComponent', () => {
 
         describe('html', () => {
             it('should set themes if theme selector is open', () => {
-                component.onShow();
+                component.searchableDropdown.show.emit();
                 expect(component.totalRecords).toEqual(3);
                 expect(component.themes).toEqual(mockDotThemes);
+            });
+
+            it('should not call pagination service if the url is not set', () => {
+                component.currentSiteIdentifier = '123';
+                spyOn(paginationService, 'getWithOffset');
+                component.searchableDropdown.pageChange.emit({ first: 0 } as PaginationEvent);
+                expect(paginationService.getWithOffset).not.toHaveBeenCalled();
+            });
+
+            it('should not call pagination service if the url is not set', () => {
+                component.currentSiteIdentifier = '123';
+                component.paginatorService.url = 'v1/test';
+                spyOn(paginationService, 'getWithOffset');
+                component.searchableDropdown.pageChange.emit({ first: 10 } as PaginationEvent);
+                expect(paginationService.getWithOffset).toHaveBeenCalledWith(10);
             });
 
             it('should set the right attributes', () => {
