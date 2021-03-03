@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import com.dotmarketing.beans.UserProxy;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -254,6 +255,14 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		return doesUserHavePermission(permissionable, permissionType, user, true);
 	}
 
+	private boolean userPermissions(final UserProxy userProxy, final User userIn) {
+
+		if(userProxy.getPermissionId().equals(userIn.getUserId())) {
+			return true;
+		}
+		return Try.of(()-> APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("user", userIn)).getOrElse(false);
+	}
+
 	@CloseDBIfOpened
 	@Override
 	public boolean doesUserHavePermission(final Permissionable permissionable, int permissionType, final User userIn, final boolean respectFrontendRoles) throws DotDataException {
@@ -282,7 +291,12 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		}
 
 
-		
+		// short circut for UserProxy
+		if(permissionable instanceof UserProxy) {
+			return userPermissions((UserProxy) permissionable, user);
+		}
+
+
 		// Folders do not have PUBLISH, use EDIT instead
 		if(PermissionableType.FOLDERS.getCanonicalName().equals(permissionable.getPermissionType()) && permissionType == PERMISSION_PUBLISH){
 			permissionType=PERMISSION_EDIT;
