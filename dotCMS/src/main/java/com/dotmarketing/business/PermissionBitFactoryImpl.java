@@ -1682,7 +1682,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
   }
 
   
-  private Lazy<DotSubmitter> submitter = Lazy.of(()-> DotConcurrentFactory.getInstance().getSubmitter("permissionreferences", new SubmitterConfigBuilder().poolSize(5).maxPoolSize(5).queueCapacity(10000).build()));
+  private Lazy<DotSubmitter> submitter = Lazy.of(()-> DotConcurrentFactory.getInstance().getSubmitter("permissionreferences", new SubmitterConfigBuilder().poolSize(1).maxPoolSize(5).queueCapacity(10000).build()));
   
   
   @CloseDBIfOpened
