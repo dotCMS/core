@@ -1489,7 +1489,7 @@ public class DependencyManager {
 					consumerDependencies.get(assetTypes).accept(dependencyProcessorItem.assetKey);
 				} finally {
 					sendFinishNotification();
-					DbConnectionFactory.closeSilently();
+					DbConnectionFactory.closeConnection();
 				}
 			}
 		}
