@@ -26,6 +26,7 @@ import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -1486,11 +1487,10 @@ public class DependencyManager {
 									Thread.currentThread().getName(), dependencyProcessorItem.assetKey, assetTypes));
 
 					consumerDependencies.get(assetTypes).accept(dependencyProcessorItem.assetKey);
-				} catch (Exception e) {
-					Logger.error(DependencyRunnable.class, e);
+				} finally {
+					sendFinishNotification();
+					DbConnectionFactory.closeSilently();
 				}
-
-				sendFinishNotification();
 			}
 		}
 	}
