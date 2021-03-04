@@ -4,64 +4,11 @@ import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotmarketing.util.StringUtils.lowercaseStringExceptMatchingTokens;
 
-import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.util.transform.TransformerLocator;
-import com.dotmarketing.util.PaginatedArrayList;
-import java.io.Serializable;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.StringTokenizer;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
-
-import com.google.common.collect.Lists;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.lucene.search.TotalHits;
-import org.apache.lucene.search.TotalHits.Relation;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.ElasticsearchStatusException;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.search.ClearScrollRequest;
-import org.elasticsearch.action.search.ClearScrollResponse;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.SearchScrollRequest;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.core.CountRequest;
-import org.elasticsearch.client.core.CountResponse;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.index.IndexNotFoundException;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.functionscore.RandomScoreFunctionBuilder;
-import org.elasticsearch.search.Scroll;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.search.sort.SortBuilders;
-import org.elasticsearch.search.sort.SortOrder;
-import org.jetbrains.annotations.NotNull;
-import org.springframework.util.NumberUtils;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
@@ -69,6 +16,7 @@ import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.util.I18NMessage;
+import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -92,7 +40,6 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.business.ContentletFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -108,13 +55,62 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.NumberUtil;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
 import com.google.common.primitives.Ints;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import java.io.Serializable;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.stream.Collectors;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.lucene.search.TotalHits;
+import org.apache.lucene.search.TotalHits.Relation;
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.ElasticsearchStatusException;
+import org.elasticsearch.action.search.ClearScrollRequest;
+import org.elasticsearch.action.search.ClearScrollResponse;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchScrollRequest;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.core.CountRequest;
+import org.elasticsearch.client.core.CountResponse;
+import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.index.IndexNotFoundException;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.functionscore.RandomScoreFunctionBuilder;
+import org.elasticsearch.search.Scroll;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.sort.SortBuilders;
+import org.elasticsearch.search.sort.SortOrder;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.util.NumberUtils;
 
 /**
  * Implementation class for the {@link ContentletFactory} interface. This class
@@ -132,7 +128,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
     public static final String ES_TRACK_TOTAL_HITS = "ES_TRACK_TOTAL_HITS";
     private final ContentletCache contentletCache;
 	private final LanguageAPI languageAPI;
-	private final IndiciesAPI indiciesAPI;
 	private final ESQueryCache queryCache;
     @VisibleForTesting
     public static final String CACHE_404_CONTENTLET = "CACHE_404_CONTENTLET";
@@ -153,7 +148,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	public ESContentFactoryImpl() {
         this.contentletCache = CacheLocator.getContentletCache();
         this.languageAPI     =  APILocator.getLanguageAPI();
-        this.indiciesAPI     = APILocator.getIndiciesAPI();
         this.queryCache      = CacheLocator.getESQueryCache();
 	}
 
@@ -238,6 +232,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         return count;
 	}
 
+	@Deprecated
 	@Override
 	public com.dotmarketing.portlets.contentlet.business.Contentlet convertContentletToFatContentlet(Contentlet cont,
 			com.dotmarketing.portlets.contentlet.business.Contentlet fatty) throws DotDataException {
@@ -306,6 +301,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         return fatty;
 	}
 
+	@Deprecated
 	@Override
 	public Contentlet convertFatContentletToContentlet(com.dotmarketing.portlets.contentlet.business.Contentlet fatty)
 			throws DotDataException, DotStateException, DotSecurityException {
@@ -605,50 +601,36 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         //Now workflows, and versions
         Set<String> identsDeleted = new HashSet<>();
-        for (Contentlet con : contentlets) {
-            contentletCache.remove(con.getInode());
+        for (final Contentlet contentlet : contentlets) {
+            contentletCache.remove(contentlet.getInode());
 
             // delete workflow task for contentlet
             final WorkFlowFactory workFlowFactory = FactoryLocator.getWorkFlowFactory();
             workFlowFactory.deleteWorkflowTaskByContentletIdAndLanguage(
-                    con.getIdentifier(), con.getLanguageId());
+                    contentlet.getIdentifier(), contentlet.getLanguageId());
 
             //Remove the tag references to this Contentlet
-            APILocator.getTagAPI().deleteTagInodesByInode(con.getInode());
+            APILocator.getTagAPI().deleteTagInodesByInode(contentlet.getInode());
 
-            if(InodeUtils.isSet(con.getInode())){
-                APILocator.getPermissionAPI().removePermissions(con);
+            if(InodeUtils.isSet(contentlet.getInode())){
+                APILocator.getPermissionAPI().removePermissions(contentlet);
 
-                Optional<ContentletVersionInfo> verInfo=APILocator.getVersionableAPI().getContentletVersionInfo(con.getIdentifier(), con.getLanguageId());
+                Optional<ContentletVersionInfo> verInfo=APILocator.getVersionableAPI().getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
 
                 if(verInfo.isPresent()) {
-                    if(UtilMethods.isSet(verInfo.get().getLiveInode()) && verInfo.get().getLiveInode().equals(con.getInode()))
+                    if(UtilMethods.isSet(verInfo.get().getLiveInode()) && verInfo.get().getLiveInode().equals(contentlet.getInode()))
                         try {
-                            APILocator.getVersionableAPI().removeLive(con);
+                            APILocator.getVersionableAPI().removeLive(contentlet);
                         } catch (Exception e) {
                             throw new DotDataException(e.getMessage(),e);
                         }
-                    if(verInfo.get().getWorkingInode().equals(con.getInode()))
-                        APILocator.getVersionableAPI().deleteContentletVersionInfo(con.getIdentifier(), con.getLanguageId());
+                    if(verInfo.get().getWorkingInode().equals(contentlet.getInode()))
+                        APILocator.getVersionableAPI().deleteContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
                 }
-
-                try {
-                    com.dotmarketing.portlets.contentlet.business.Contentlet contentlet =
-                            (com.dotmarketing.portlets.contentlet.business.Contentlet)HibernateUtil.load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, con.getInode());
-                    if(contentlet!=null && InodeUtils.isSet(contentlet.getInode())) {
-
-                        HibernateUtil.delete(contentlet);
-                    }
-                }
-                catch(Exception ex) {
-                    Logger.warn(this, "Error deleting contentlet inode "+con.getInode()+". Probably it was already deleted?");
-                    Logger.debug(this, "Error deleting contentlet inode "+con.getInode()+". Probably it was already deleted?", ex);
-                    this.checkOrphanInode (con.getInode());
-                }
-
+                delete(contentlet.getInode());
             }
             //Removes content from index
-            APILocator.getContentletIndexAPI().removeContentFromIndex(con);
+            APILocator.getContentletIndexAPI().removeContentFromIndex(contentlet);
         }
         if (deleteIdentifier) {
 	        for (Contentlet c : contentlets) {
@@ -666,6 +648,19 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	        }
         }
 	}
+
+    private void delete(final String inode) throws DotDataException {
+        try {
+            final DotConnect dotConnect = new DotConnect();
+            dotConnect.setSQL("delete from contentlet where inode=?");
+            dotConnect.addParam(inode);
+            dotConnect.loadResult();
+        } catch(Exception ex) {
+            Logger.warn(this, "Error deleting contentlet inode "+ inode+ ". Probably it was already deleted?");
+            Logger.debug(this, "Error deleting contentlet inode "+ inode +". Probably it was already deleted?", ex);
+            this.checkOrphanInode (inode);
+        }
+    }
 
     /**
      * If the orphan exists will be deleted.
@@ -814,36 +809,33 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
 	@Override
-	protected void deleteVersion(Contentlet contentlet) throws DotDataException {
-	    String conInode = contentlet.getInode();
-        DotConnect db = new DotConnect();
+	protected void deleteVersion(final Contentlet contentlet) throws DotDataException {
+	    final String conInode = contentlet.getInode();
+        final DotConnect db = new DotConnect();
         db.setSQL("delete from tree where child = ? or parent = ?");
         db.addParam( conInode );
         db.addParam( conInode );
-        db.getResult();
+        db.loadResult();
 
         // workaround for dbs where we can't have more than one constraint
         // or triggers
         APILocator.getMultiTreeAPI().deleteMultiTreesRelatedToIdentifier(conInode);
 
         contentletCache.remove(conInode);
-        com.dotmarketing.portlets.contentlet.business.Contentlet c =
-                (com.dotmarketing.portlets.contentlet.business.Contentlet) InodeFactory.getInode(conInode, com.dotmarketing.portlets.contentlet.business.Contentlet.class);
-        //Checking contentlet exists inode > 0
-        if(InodeUtils.isSet(c.getInode())){
-            HibernateUtil.delete(c);
-            Contentlet anyVersionContentlet = null;
-            try {
-                anyVersionContentlet = findContentletByIdentifierAnyLanguage(
-                        contentlet.getIdentifier());
-            } catch(DotSecurityException e) {
-                Logger.debug(this,"Unable to find content in any version", e);
-            }
 
-            if(!UtilMethods.isSet(anyVersionContentlet) ||
-                    !UtilMethods.isSet(anyVersionContentlet.getIdentifier())) {
-                APILocator.getPermissionAPI().removePermissions(contentlet);
-            }
+        delete(conInode);
+
+        Contentlet anyVersionContentlet = null;
+        try {
+            anyVersionContentlet = findContentletByIdentifierAnyLanguage(
+                    contentlet.getIdentifier());
+        } catch(DotSecurityException e) {
+            Logger.debug(this,"Unable to find content in any version", e);
+        }
+
+        if(!UtilMethods.isSet(anyVersionContentlet) ||
+                !UtilMethods.isSet(anyVersionContentlet.getIdentifier())) {
+            APILocator.getPermissionAPI().removePermissions(contentlet);
         }
 	}
 
@@ -852,12 +844,18 @@ public class ESContentFactoryImpl extends ContentletFactory {
     public Optional<Contentlet> findInDb(final String inode) {
         try {
             if (inode != null) {
-                com.dotmarketing.portlets.contentlet.business.Contentlet fatty = (com.dotmarketing.portlets.contentlet.business.Contentlet) HibernateUtil
-                        .load(com.dotmarketing.portlets.contentlet.business.Contentlet.class,
-                                inode);
-                return Optional.ofNullable(convertFatContentletToContentlet(fatty));
+                final DotConnect dotConnect = new DotConnect();
+                dotConnect.setSQL("select * from contentlet where inode=?");
+                dotConnect.addParam(inode);
+
+                final List<Map<String, Object>> result = dotConnect.loadObjectResults();
+
+                if (UtilMethods.isSet(result)) {
+                    return Optional.ofNullable(
+                            TransformerLocator.createContentletTransformer(result).asList().get(0));
+                }
             }
-        } catch (DotDataException | DotSecurityException e) {
+        } catch (DotDataException e) {
             if (!(e.getCause() instanceof ObjectNotFoundException)) {
                 throw new DotRuntimeException(e);
             }
@@ -934,41 +932,42 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
 	@Override
-	protected List<Contentlet> findAllUserVersions(Identifier identifier) throws DotDataException, DotStateException, DotSecurityException {
-	    List<Contentlet> cons = new ArrayList<Contentlet>();
-        if(!InodeUtils.isSet(identifier.getInode()))
-            return cons;
-        HibernateUtil hu = new HibernateUtil(com.dotmarketing.portlets.contentlet.business.Contentlet.class);
-        hu.setQuery("select inode from inode in class " + com.dotmarketing.portlets.contentlet.business.Contentlet.class.getName() +
-                " , vi in class "+ContentletVersionInfo.class.getName()+" where vi.identifier=inode.identifier and " +
-                " inode.inode<>vi.workingInode and "+
-                " mod_user <> 'system' and inode.identifier = '" + identifier.getInode() + "'" +
-                " and type='contentlet' order by mod_date desc");
-        List<com.dotmarketing.portlets.contentlet.business.Contentlet> fatties = hu.list();
-        if(fatties == null)
-            return cons;
+	protected List<Contentlet> findAllUserVersions(final Identifier identifier) throws DotDataException, DotStateException, DotSecurityException {
+        if(!InodeUtils.isSet(identifier.getId()))
+            return Collections.emptyList();
+
+        final DotConnect dotConnect = new DotConnect();
+        final StringBuilder query = new StringBuilder();
+        query.append("select inode from inode, contentlet_version_info vi ")
+                .append("where vi.identifier=inode.identifier and ")
+                .append("inode.inode<>vi.workingInode and ")
+                .append("mod_user <> 'system' and inode.identifier = ? ")
+                .append("and type='contentlet' order by mod_date desc");
+
+        dotConnect.setSQL(query.toString());
+        dotConnect.addParam(identifier.getId());
+
+        List results = dotConnect.loadObjectResults();
+
+        if(results == null)
+            return Collections.emptyList();
         else{
-            for (com.dotmarketing.portlets.contentlet.business.Contentlet fatty : fatties) {
-                Contentlet content = convertFatContentletToContentlet(fatty);
-                contentletCache.add(String.valueOf(content.getInode()), content);
-                cons.add(content);
-            }
+            return TransformerLocator.createContentletTransformer(results).asList();
         }
-        return cons;
 	}
 
     @Override
-    protected List<Contentlet> findAllVersions(Identifier identifier) throws DotDataException, DotStateException, DotSecurityException {
+    protected List<Contentlet> findAllVersions(final Identifier identifier) throws DotDataException, DotStateException, DotSecurityException {
         return findAllVersions(identifier, true);
     }
 
 	@Override
-	protected List<Contentlet> findAllVersions(Identifier identifier, boolean bringOldVersions) throws DotDataException, DotStateException, DotSecurityException {
-	    if(!InodeUtils.isSet(identifier.getInode()))
-            return new ArrayList<Contentlet>();
+	protected List<Contentlet> findAllVersions(final Identifier identifier, final boolean bringOldVersions) throws DotDataException, DotStateException, DotSecurityException {
+	    if(!InodeUtils.isSet(identifier.getId()))
+            return new ArrayList<>();
 
-        DotConnect dc = new DotConnect();
-        StringBuffer query = new StringBuffer();
+        final DotConnect dc = new DotConnect();
+        final StringBuffer query = new StringBuffer();
 
         if(bringOldVersions) {
             query.append("SELECT inode FROM contentlet WHERE identifier=? order by mod_date desc");
@@ -1033,13 +1032,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
             dotConnect.setMaxRows(limit);
         }
 
-        List<com.dotmarketing.portlets.contentlet.business.Contentlet> fatContentlets =
-                TransformerLocator.createFatContentletTransformer
+        List<Contentlet> contentlets = TransformerLocator.createContentletTransformer
                 (dotConnect.loadObjectResults()).asList();
-
-        List<Contentlet> contentlets = fatContentlets.stream()
-                .map(fatty -> Try.of(() -> convertFatContentletToContentlet(fatty)).getOrNull())
-                .collect(Collectors.toList());
 
         contentlets.forEach(contentlet ->contentletCache
                 .add(String.valueOf(contentlet.getInode()), contentlet));
@@ -1094,38 +1088,41 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     final HashMap<String, Contentlet> conMap = new HashMap<>();
     for (String i : inodes) {
-      Contentlet c = contentletCache.get(i);
+      final Contentlet c = contentletCache.get(i);
       if (c != null && InodeUtils.isSet(c.getInode())) {
         conMap.put(c.getInode(), c);
       }
     }
     
     if (conMap.size() != inodes.size()) {
-      List<String> missingCons = new ArrayList<>(CollectionUtils.subtract(inodes, conMap.keySet()));
+        final List<String> missingCons = new ArrayList<>(
+                CollectionUtils.subtract(inodes, conMap.keySet()));
 
-      final String contentletBase = "select {contentlet.*} from contentlet join inode contentlet_1_ "
-          + " on contentlet_1_.inode = contentlet.inode and contentlet_1_.type = 'contentlet' where  contentlet.inode in ('";
+        final String contentletBase =
+                "select contentlet.* from contentlet join inode contentlet_1_ "
+                        + " on contentlet_1_.inode = contentlet.inode and contentlet_1_.type = 'contentlet' where  contentlet.inode in ('";
 
-      for (int init = 0; init < missingCons.size(); init += 200) {
-        int end = Math.min(init + 200, missingCons.size());
+        for (int init = 0; init < missingCons.size(); init += 200) {
+            int end = Math.min(init + 200, missingCons.size());
+            final DotConnect dotConnect = new DotConnect();
+            final StringBuilder query = new StringBuilder().append(contentletBase)
+                    .append(StringUtils.join(missingCons.subList(init, end), "','"))
+                    .append("') order by contentlet.mod_date DESC");
 
-        HibernateUtil hu = new HibernateUtil(com.dotmarketing.portlets.contentlet.business.Contentlet.class);
-        final StringBuilder hql = new StringBuilder().append(contentletBase).append(StringUtils.join(missingCons.subList(init, end), "','"))
-            .append("') order by contentlet.mod_date DESC");
+            dotConnect.setSQL(query.toString());
 
-        hu.setSQLQuery(hql.toString());
+            final List<Contentlet> result = TransformerLocator
+                    .createContentletTransformer(dotConnect.loadObjectResults()).asList();
 
-        List<com.dotmarketing.portlets.contentlet.business.Contentlet> fatties = hu.list();
-        for (com.dotmarketing.portlets.contentlet.business.Contentlet fatty : fatties) {
-          Contentlet con = convertFatContentletToContentlet(fatty);
-          conMap.put(con.getInode(), con);
-          contentletCache.add(con.getInode(), con);
+            result.forEach(contentlet -> {
+                conMap.put(contentlet.getInode(), contentlet);
+                contentletCache.add(contentlet.getInode(), contentlet);
+            });
         }
-        HibernateUtil.getSession().clear();
-      }
     }
-    
-    return inodes.stream().map(inode -> conMap.get(inode)).filter(Objects::nonNull).collect(Collectors.toList());
+
+      return inodes.stream().map(inode -> conMap.get(inode)).filter(Objects::nonNull)
+              .collect(Collectors.toList());
   }
 
 	/**
@@ -1151,12 +1148,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
     @NotNull
-    private List<Contentlet> getContentletsFromSearchResponse(SearchRequest searchRequest) {
-        
+    private List<Contentlet> getContentletsFromSearchResponse(final SearchRequest searchRequest) {
 
-        SearchHits hits = cachedIndexSearch(searchRequest);
+        final SearchHits hits = cachedIndexSearch(searchRequest);
 
-        List<Contentlet> cons = new ArrayList<>();
+        final List<Contentlet> cons = new ArrayList<>();
         for (int i = 0; i < hits.getHits().length; i++) {
             try {
                 cons.add(find(hits.getAt(i).getSourceAsMap().get("inode").toString()));
@@ -1169,9 +1165,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     @Override
 	protected List<Contentlet> findContentletsByIdentifier(String identifier, Boolean live, Long languageId) throws DotDataException, DotStateException, DotSecurityException {
-	    List<Contentlet> cons = new ArrayList<>();
-        StringBuilder queryBuffer = new StringBuilder();
-        queryBuffer.append("select {contentlet.*} ")
+	    final List<Contentlet> cons = new ArrayList<>();
+        final StringBuilder queryBuffer = new StringBuilder();
+        final DotConnect dotConnect = new DotConnect();
+        queryBuffer.append("select contentlet.* ")
                    .append("from contentlet, inode contentlet_1_, contentlet_version_info contentvi ")
                    .append("where contentlet_1_.type = 'contentlet' and contentlet.inode = contentlet_1_.inode and ")
                    .append("contentvi.identifier=contentlet.identifier and ")
@@ -1185,82 +1182,73 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         queryBuffer.append(" and contentlet.identifier = ? ");
 
-        HibernateUtil hu = new HibernateUtil(com.dotmarketing.portlets.contentlet.business.Contentlet.class);
-        hu.setSQLQuery(queryBuffer.toString());
+        dotConnect.setSQL(queryBuffer.toString());
         if(languageId!=null){
-          hu.setParam(languageId.longValue());
+            dotConnect.addParam(languageId.longValue());
         }
-        hu.setParam(identifier);
-        List<com.dotmarketing.portlets.contentlet.business.Contentlet> fatties = hu.list();
-        for (com.dotmarketing.portlets.contentlet.business.Contentlet fatty : fatties) {
-            Contentlet con = convertFatContentletToContentlet(fatty);
-            contentletCache.add(String.valueOf(con.getInode()), con);
-            cons.add(con);
-        }
-        return cons;
-	}
+        dotConnect.addParam(identifier);
+        final List<Contentlet> result = TransformerLocator
+                .createContentletTransformer(dotConnect.loadObjectResults()).asList();
 
-	@Override
-	protected List<Contentlet> findContentletsWithFieldValue(String structureInode, Field field) throws DotDataException {
-	    List<Contentlet> result = new ArrayList<>();
-
-        try {
-            Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(structureInode);
-            if ((structure == null) || (!InodeUtils.isSet(structure.getInode())))
-                return result;
-
-            if ((field == null) || (!InodeUtils.isSet(field.getInode())))
-                return result;
-
-            DotConnect dc = new DotConnect();
-            String countSQL = ("select count(*) as count from contentlet, contentlet_version_info contentletvi" +
-                               " where contentlet.identifier=contentletvi.identifier " +
-                               " and contentletvi.live_inode=contentlet.inode " +
-                               " and structure_inode= '" + structure.getInode() + "' and " +
-                               field.getFieldContentlet() + " is not null and " +
-                               field.getFieldContentlet() + "<>''");
-            dc.setSQL(countSQL);
-            List<HashMap<String, String>> resultCount = dc.getResults();
-            int count = Integer.parseInt(resultCount.get(0).get("count"));
-            int limit = 500;
-
-            HibernateUtil hu = new HibernateUtil();
-            hu.setQuery("from inode in class com.dotmarketing.portlets.contentlet.business.Contentlet, " +
-                        " contentletvi in class "+ContentletVersionInfo.class.getName() +
-                        " where contentletvi.identifier=inode.identifier " +
-                        " and contentletvi.live_inode=inode.inode " +
-                        " and structure_inode= '" + structure.getInode() + "' " +
-                        " and " + field.getFieldContentlet() + " is not null" +
-                        " and " + field.getFieldContentlet() + "<>'' " +
-                        " order by " + field.getFieldContentlet());
-            hu.setMaxResults(limit);
-            for (int offset = 0; offset < count; offset+=limit) {
-                if (offset > 0)
-                    hu.setFirstResult(offset);
-                List<com.dotmarketing.portlets.contentlet.business.Contentlet> fatties =  hu.list();
-                for (com.dotmarketing.portlets.contentlet.business.Contentlet fatty : fatties) {
-                    result.add(convertFatContentletToContentlet(fatty));
-                }
-            }
-        } catch (Exception e) {
-            throw new DotDataException(e.getMessage(),e);
-        }
+        result.forEach(contentlet -> contentletCache.add(String.valueOf(contentlet.getInode()), contentlet));
 
         return result;
 	}
 
 	@Override
-	protected List<Contentlet> findPageContentlets(String HTMLPageIdentifier, String containerIdentifier, String orderby, boolean working,
-			long languageId) throws DotDataException, DotStateException, DotSecurityException {
-	    
-	    
-       if(Config.getBooleanProperty("FIND_PAGE_CONTENTLETS_FROM_CACHE", false)){
+	protected List<Contentlet> findContentletsWithFieldValue(final String structureInode, final Field field) throws DotDataException {
+	    final List<Contentlet> contentlets = new ArrayList<>();
+
+        try {
+
+            if ((field == null) || (!InodeUtils.isSet(field.getInode())))
+                return contentlets;
+
+            DotConnect dotConnect = new DotConnect();
+            final StringBuilder query = new StringBuilder();
+            query.append("from contentlet, contentlet_version_info contentletvi")
+                    .append(" where contentlet.identifier=contentletvi.identifier ")
+                    .append(" and contentletvi.live_inode=contentlet.inode ")
+                    .append(" and structure_inode= '")
+                    .append(structureInode)
+                    .append("' and ")
+                    .append(field.getFieldContentlet())
+                    .append(" is not null and ")
+                    .append(field.getFieldContentlet())
+                    .append("<>''");
+
+            dotConnect.setSQL("select count(*) as count " + query);
+            final List<Map<String, String>> resultCount = dotConnect.loadResults();
+            final int count = Integer.parseInt(resultCount.get(0).get("count"));
+            final int limit = 500;
+
+            dotConnect = new DotConnect();
+            dotConnect.setSQL("select * " + query + " order by " + field.getFieldContentlet());
+            dotConnect.setMaxRows(limit);
+            for (int offset = 0; offset < count; offset+=limit) {
+                if (offset > 0)
+                    dotConnect.setStartRow(offset);
+
+                contentlets.addAll(TransformerLocator
+                        .createContentletTransformer(dotConnect.loadObjectResults()).asList());
+            }
+        } catch (Exception e) {
+            throw new DotDataException(e.getMessage(),e);
+        }
+
+        return contentlets;
+	}
+
+	@Override
+	protected List<Contentlet> findPageContentlets(final String HTMLPageIdentifier,
+            final String containerIdentifier, String orderby, final boolean working,
+            long languageId) throws DotDataException, DotStateException, DotSecurityException {
+
+        if(Config.getBooleanProperty("FIND_PAGE_CONTENTLETS_FROM_CACHE", false)){
             return findPageContentletFromCache(HTMLPageIdentifier, containerIdentifier, orderby, working, languageId);
-       }
-	    
-	    
-	    
-	    StringBuilder condition = new StringBuilder();
+        }
+
+        final StringBuilder condition = new StringBuilder();
         if (working) {
             condition.append("contentletvi.working_inode=contentlet.inode")
                      .append(" and contentletvi.deleted = ")
@@ -1281,33 +1269,33 @@ public class ESContentFactoryImpl extends ContentletFactory {
             condition.append(" and contentletvi.lang = ").append(languageId);
         }
 
-        HibernateUtil hu = new HibernateUtil(com.dotmarketing.portlets.contentlet.business.Contentlet.class);
-
         if (!UtilMethods.isSet(orderby) || orderby.equals("tree_order")) {
             orderby = "multi_tree.tree_order";
         }
-        String query = "SELECT {contentlet.*} FROM contentlet JOIN inode contentlet_1_ ON (contentlet.inode=contentlet_1_.inode) "
-        	+ " JOIN multi_tree ON (multi_tree.child = contentlet.identifier) "
-            + " JOIN contentlet_version_info contentletvi ON (contentlet.identifier=contentletvi.identifier) "
-            + " where multi_tree.parent1 = ? and multi_tree.parent2 = ? and " + condition.toString() + " order by "
-            + orderby;
+        final StringBuilder query = new StringBuilder();
+        query.append("SELECT contentlet.* FROM contentlet JOIN inode contentlet_1_ ON (contentlet.inode=contentlet_1_.inode) ")
+                .append(" JOIN multi_tree ON (multi_tree.child = contentlet.identifier) ")
+                .append(" JOIN contentlet_version_info contentletvi ON (contentlet.identifier=contentletvi.identifier) ")
+                .append(" where multi_tree.parent1 = ? and multi_tree.parent2 = ? and ")
+                .append(condition.toString())
+                .append(" order by ")
+                .append(orderby);
 
-        hu.setSQLQuery(query);
-        hu.setParam(HTMLPageIdentifier);
-        hu.setParam(containerIdentifier);
+        final DotConnect dotConnect = new DotConnect();
+        dotConnect.setSQL(query.toString());
+        dotConnect.addParam(HTMLPageIdentifier);
+        dotConnect.addParam(containerIdentifier);
 
-        List<com.dotmarketing.portlets.contentlet.business.Contentlet> fatties =  hu.list();
-        List<Contentlet> result = new ArrayList<Contentlet>();
-        for (com.dotmarketing.portlets.contentlet.business.Contentlet fatty : fatties) {
-            Contentlet content = convertFatContentletToContentlet(fatty);
-            contentletCache.add(content.getInode(), content);
-            result.add(content);
-        }
+        final List<Contentlet> result = TransformerLocator
+                .createContentletTransformer(dotConnect.loadObjectResults()).asList();
+        result.forEach(contentlet -> contentletCache.add(contentlet.getInode(), contentlet));
+
         return result;
 	}
 
 
-	protected List<Contentlet> findPageContentletFromCache(String HTMLPageIdentifier, String containerIdentifier, String orderby, boolean working,
+	protected List<Contentlet> findPageContentletFromCache(final String HTMLPageIdentifier,
+            final String containerIdentifier, String orderby, final boolean working,
             long languageId) throws DotDataException, DotStateException, DotSecurityException {
         StringBuilder condition = new StringBuilder();
         
@@ -1315,7 +1303,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
             orderby = " multi_tree.tree_order ";
         }
         languageId = (languageId==0) ?  languageAPI.getDefaultLanguage().getId() : languageId;
-        
 
         condition
             .append("select contentlet_version_info.{0} as mynode from contentlet_version_info, multi_tree ")
@@ -1328,14 +1315,14 @@ public class ESContentFactoryImpl extends ContentletFactory {
             condition.append(" and contentlet_version_info.lang = ").append(languageId);
         }
 
-        int marker = condition.indexOf("{0}");
+        final int marker = condition.indexOf("{0}");
         if(working){
             condition.replace(marker, marker+3,"working_inode");
         }else{
             condition.replace(marker, marker+3,"live_inode");
         }
 
-        DotConnect db = new DotConnect();
+        final DotConnect db = new DotConnect();
         db.setSQL(condition.toString());
         db.addParam(false);
         db.addParam(HTMLPageIdentifier);
@@ -1343,8 +1330,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
         
         List<Map<String,Object>> res = db.loadObjectResults();
         List<Contentlet> cons = new ArrayList<>();
-        for(Map<String,Object> map :res ){
-            Contentlet c = find((String) map.get("mynode"));
+        for(final Map<String,Object> map :res ){
+            final Contentlet c = find((String) map.get("mynode"));
             if(c!=null && c.getInode()!=null){
                 cons.add(c);
             }
@@ -1362,74 +1349,62 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
 	@Override
-	protected List<Contentlet> getContentletsByIdentifier(String identifier, Boolean live) throws DotDataException, DotStateException, DotSecurityException {
-	    StringBuilder queryBuffer = new StringBuilder();
-        queryBuffer.append("SELECT {contentlet.*} ")
+	protected List<Contentlet> getContentletsByIdentifier(final String identifier, final Boolean live)
+            throws DotDataException, DotStateException, DotSecurityException {
+
+	    final StringBuilder queryBuffer = new StringBuilder();
+        queryBuffer.append("SELECT contentlet.* ")
                    .append(" FROM contentlet JOIN inode contentlet_1_ ON (contentlet.inode = contentlet_1_.inode) ")
         		   .append(" JOIN contentlet_version_info contentletvi ON (contentlet.identifier=contentletvi.identifier) ")
                    .append(" WHERE ")
                    .append((live!=null && live.booleanValue() ?
                            "contentletvi.live_inode" : "contentletvi.working_inode"))
                    .append(" = contentlet.inode and contentlet.identifier = ? ");
-        HibernateUtil hu = new HibernateUtil(com.dotmarketing.portlets.contentlet.business.Contentlet.class);
-        hu.setSQLQuery(queryBuffer.toString());
-        hu.setParam(identifier);
-        List<com.dotmarketing.portlets.contentlet.business.Contentlet> fatties =  hu.list();
-        List<Contentlet> result = new ArrayList<Contentlet>();
-        for (com.dotmarketing.portlets.contentlet.business.Contentlet fatty : fatties) {
-            Contentlet content = convertFatContentletToContentlet(fatty);
-            contentletCache.add(content.getInode(), content);
-            result.add(content);
-        }
+
+        final DotConnect dotConnect = new DotConnect();
+        dotConnect.setSQL(queryBuffer.toString());
+        dotConnect.addParam(identifier);
+
+        final List<Contentlet> result = TransformerLocator
+                .createContentletTransformer(dotConnect.loadObjectResults()).asList();
+        result.forEach(contentlet -> contentletCache.add(contentlet.getInode(), contentlet));
+
         return result;
 	}
 
 	@Override
-	protected Identifier getRelatedIdentifier(Contentlet contentlet, String relationshipType) throws DotDataException {
-	    String tableName;
-        try {
-            tableName = "identifier";
-        } catch (Exception e) {
-            throw new DotDataException("Unable to instantiate identifier",e);
-        }
-        HibernateUtil dh = new HibernateUtil(Identifier.class);
+	protected Identifier getRelatedIdentifier(final Contentlet contentlet, final String relationshipType) throws DotDataException {
 
-        String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
-        + tableName + "_1_ where tree.parent = ? and "+ tableName+"_1_.type ='"+tableName+"' and tree.child = " + tableName + ".id and " + tableName
-        + "_1_.inode = " + tableName + ".id and tree.relation_type = ?";
+        final StringBuilder sql = new StringBuilder();
+        sql.append("SELECT identifier.* from identifier identifier, tree tree, inode inode ")
+                .append("where tree.parent = ? and inode.type ='identifier' and ")
+                .append("tree.child = identifier.id and inode.inode = identifier.id ")
+                .append(" and tree.relation_type = ?");
 
-        Logger.debug(this, "HibernateUtilSQL:getChildOfClassByRelationType\n " + sql + "\n");
+        final DotConnect dotConnect = new DotConnect();
+        dotConnect.setSQL(sql.toString());
+        dotConnect.addParam(contentlet.getInode());
+        dotConnect.addParam(relationshipType);
 
-        dh.setSQLQuery(sql);
-
-        Logger.debug(this, "contentlet inode:  " + contentlet.getInode() + "\n");
-
-        dh.setParam(contentlet.getInode());
-        dh.setParam(relationshipType);
-
-        return (Identifier)dh.load();
+        return TransformerLocator
+                .createIdentifierTransformer(dotConnect.loadObjectResults()).asList().get(0);
 	}
 
 	@Override
 	protected List<Link> getRelatedLinks(Contentlet contentlet) throws DotDataException {
-	    HibernateUtil dh = new HibernateUtil(Link.class);
 
-        Link l = new Link();
-        String tableName = l.getType();
+        final StringBuilder sql = new StringBuilder();
+        sql.append("SELECT links.* from links links, tree tree, inode inode ")
+                .append("where tree.parent = ? and tree.child = links.inode and ")
+                .append("inode.inode = links.inode and inode.type ='links'");
 
-        String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
-        + tableName + "_1_ where tree.parent = ? and tree.child = " + tableName + ".inode and " + tableName
-        + "_1_.inode = " + tableName + ".inode and "+tableName+"_1_.type ='"+tableName+"'";
+        final DotConnect dotConnect = new DotConnect();
+        dotConnect.setSQL(sql.toString());
 
-        Logger.debug(this, "HibernateUtilSQL:getRelatedLinks\n " + sql);
+        dotConnect.addParam(contentlet.getInode());
 
-        dh.setSQLQuery(sql);
-
-        Logger.debug(this, "inode:  " + contentlet.getInode() + "\n");
-
-        dh.setParam(contentlet.getInode());
-
-        return dh.list();
+        return TransformerLocator
+                .createLinkTransformer(dotConnect.loadObjectResults()).asList();
 	}
 
 	@Override

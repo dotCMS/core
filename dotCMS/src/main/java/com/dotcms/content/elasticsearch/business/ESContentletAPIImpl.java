@@ -6933,6 +6933,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return false;
     }
 
+    @Deprecated
     @CloseDBIfOpened
     @Override
     public com.dotmarketing.portlets.contentlet.business.Contentlet convertContentletToFatContentlet(
@@ -6942,6 +6943,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentFactory.convertContentletToFatContentlet(cont, fatty);
     }
 
+    @Deprecated
     @CloseDBIfOpened
     @Override
     public Contentlet convertFatContentletToContentlet(

@@ -1678,19 +1678,23 @@ public interface ContentletAPI {
 
 	/**
 	 * Converts a "fat" (legacy) contentlet into a new contentlet.
+     * @deprecated The {@link com.dotmarketing.portlets.contentlet.business.Contentlet} will be removed any time soon
 	 * @param fatty Fat contentlet to be converted.
 	 * @return A "light" contentlet.
 	 * @throws DotDataException
 	 * @throws DotSecurityException 
 	 */
+	@Deprecated
 	public Contentlet convertFatContentletToContentlet (com.dotmarketing.portlets.contentlet.business.Contentlet fatty) throws DotDataException, DotSecurityException;
 	
 	/**
 	 * Converts a "light" contentlet into a "fat" (legacy) contentlet.
+     * @deprecated The {@link com.dotmarketing.portlets.contentlet.business.Contentlet} will be removed any time soon
 	 * @param cont A "light" contentlet to be converted.
 	 * @return fatty Fat contentlet.
 	 * @throws DotDataException
 	 */
+	@Deprecated
 	public com.dotmarketing.portlets.contentlet.business.Contentlet convertContentletToFatContentlet (Contentlet cont, com.dotmarketing.portlets.contentlet.business.Contentlet fatty) throws DotDataException;
     
    /**

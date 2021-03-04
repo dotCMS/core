@@ -1033,18 +1033,22 @@ public interface ContentletAPIPostHook {
 	public default void isFieldTypeFloat(Field field,boolean returnValue){}
 
 	/**
-	 * Converts a "fat" (legacy) contentlet into a new contentlet.
+	 * @deprecated The {@link com.dotmarketing.portlets.contentlet.business.Contentlet} will be removed any time soon
+     * Converts a "fat" (legacy) contentlet into a new contentlet.
 	 * @param fatty contentlet to be converted.
      * @param returnValue
 	 */
+	@Deprecated
 	public default void convertFatContentletToContentlet (com.dotmarketing.portlets.contentlet.business.Contentlet fatty,Contentlet returnValue){}
 	
 	/**
-	 * Converts a "light" contentlet into a "fat" (legacy) contentlet.
+	 * @deprecated The {@link com.dotmarketing.portlets.contentlet.business.Contentlet} will be removed any time soon
+     * Converts a "light" contentlet into a "fat" (legacy) contentlet.
 	 * @param cont "light" contentlet to be converted.
      * @param fatty
      * @param returnValue
 	 */
+	@Deprecated
 	public default void convertContentletToFatContentlet (Contentlet cont, com.dotmarketing.portlets.contentlet.business.Contentlet fatty,com.dotmarketing.portlets.contentlet.business.Contentlet returnValue){}
     
 	/**

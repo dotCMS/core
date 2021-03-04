@@ -425,6 +425,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
+	@Deprecated
 	@Override
 	public com.dotmarketing.portlets.contentlet.business.Contentlet convertContentletToFatContentlet(Contentlet cont,com.dotmarketing.portlets.contentlet.business.Contentlet fatty)	throws DotDataException {
 		for(ContentletAPIPreHook pre : preHooks){

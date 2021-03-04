@@ -293,19 +293,23 @@ public abstract class ContentletFactory {
 
 	/**
 	 * Converts a "fat" (legacy) contentlet into a new contentlet.
+     * @deprecated The {@link com.dotmarketing.portlets.contentlet.business.Contentlet} will be removed any time soon
 	 * @param Fat contentlet to be converted.
 	 * @return A "light" contentlet.
 	 * @throws DotDataException
 	 * @throws DotSecurityException 
 	 */
+	@Deprecated
 	public abstract Contentlet convertFatContentletToContentlet (com.dotmarketing.portlets.contentlet.business.Contentlet fatty) throws DotDataException, DotSecurityException;
 	
 	/**
 	 * Converts a "light" contentlet into a "fat" (legacy) contentlet.
+     * @deprecated The {@link com.dotmarketing.portlets.contentlet.business.Contentlet} will be removed any time soon
 	 * @param A "light" contentlet to be converted.
 	 * @return Fat contentlet.
 	 * @throws DotDataException
 	 */
+	@Deprecated
 	public abstract com.dotmarketing.portlets.contentlet.business.Contentlet convertContentletToFatContentlet (Contentlet cont, com.dotmarketing.portlets.contentlet.business.Contentlet fatty) throws DotDataException;
 
 	/**

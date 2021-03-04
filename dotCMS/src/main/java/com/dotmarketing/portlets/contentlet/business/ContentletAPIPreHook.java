@@ -1216,20 +1216,24 @@ public interface ContentletAPIPreHook {
     }
 
 	/**
-	 * Converts a "fat" (legacy) contentlet into a new contentlet.
+	 * @deprecated The {@link com.dotmarketing.portlets.contentlet.business.Contentlet} will be removed any time soon
+     * Converts a "fat" (legacy) contentlet into a new contentlet.
 	 * @param fatty contentlet to be converted.
 	 * @return
 	 */
+	@Deprecated
 	public default boolean convertFatContentletToContentlet (com.dotmarketing.portlets.contentlet.business.Contentlet fatty){
       return true;
     }
 	
 	/**
-	 * Converts a "light" contentlet into a "fat" (legacy) contentlet.
+	 * @deprecated The {@link com.dotmarketing.portlets.contentlet.business.Contentlet} will be removed any time soon
+     * Converts a "light" contentlet into a "fat" (legacy) contentlet.
 	 * @param cont "light" contentlet to be converted.
      * @param fatty
 	 * @return
 	 */
+	@Deprecated
 	public default boolean convertContentletToFatContentlet (Contentlet cont, com.dotmarketing.portlets.contentlet.business.Contentlet fatty){
       return true;
     }
