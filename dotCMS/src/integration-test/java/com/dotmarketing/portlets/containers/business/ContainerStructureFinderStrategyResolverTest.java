@@ -9,7 +9,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import org.junit.Assert;
@@ -25,7 +24,6 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.liferay.util.FileUtil;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -84,17 +82,18 @@ public class ContainerStructureFinderStrategyResolverTest {
         //Getting the current default host
         final String pathRoot             = "/application/containers/test"+System.currentTimeMillis();
         final Host currentDefaultHost     = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
-        final Folder containerFolder      = this.createAppContainerTest(currentDefaultHost, pathRoot);
+        final Folder containerFolder      = APILocator.getFolderAPI().createFolders(pathRoot, currentDefaultHost, APILocator.systemUser(), false);
         final String contentTypeVariable  = "testfa"+System.currentTimeMillis();
         ContentType fileAssetContentType  = ImmutableFileAssetContentType.builder()
                 .name("FileAssetTestContentType").variable(contentTypeVariable).build();
         fileAssetContentType              = APILocator.getContentTypeAPI(APILocator.systemUser()).save(fileAssetContentType);
-        final List<FileAsset> assets      = Arrays.asList(
-                this.createFileAsset("container", ".vtl",
+        //create system container
+        this.createFileAsset("container", ".vtl",
                         "$dotJSON.put(\"title\", \"Test No VTL and All Content Types\")\n" +
                                 "$dotJSON.put(\"max_contentlets\", 25)\n" +
-                                "$dotJSON.put(\"useDefaultLayout\",\"*\")", containerFolder, fileAssetContentType),
-                this.createFileAsset("default_container", ".vtl", "$title", containerFolder, fileAssetContentType));
+                                "$dotJSON.put(\"useDefaultLayout\",\"*\")", containerFolder, fileAssetContentType);
+        //create default_container
+        this.createFileAsset("default_container", ".vtl", "$title", containerFolder, fileAssetContentType);
 
         final ContainerStructureFinderStrategyResolver containerStructureFinderStrategyResolver =
                 new ContainerStructureFinderStrategyResolver();
@@ -141,12 +140,6 @@ public class ContainerStructureFinderStrategyResolverTest {
         // Create a piece of content for the default host
         return APILocator.getFileAssetAPI().fromContentlet(
                 APILocator.getContentletAPI().checkin(fileAsset, APILocator.systemUser(), false));
-    }
-
-    private Folder createAppContainerTest(final Host currentDefaultHost, final String pathRoot) throws DotDataException, DotSecurityException {
-
-        final Folder rootFolder = APILocator.getFolderAPI().createFolders(pathRoot, currentDefaultHost, APILocator.systemUser(), false);
-        return rootFolder;
     }
 
 }
