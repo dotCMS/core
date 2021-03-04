@@ -34,6 +34,7 @@ public class BundleDataGen extends AbstractDataGen<Bundle> {
     private PushPublisherConfig config;
     private Set<AssetsItem> assets = new HashSet<>();
     private FilterDescriptor filter;
+    private List<String> luceneQueries = new ArrayList<>();
 
     static{
         howAddInBundle = new AssignableFromMap<>();
@@ -174,6 +175,7 @@ public class BundleDataGen extends AbstractDataGen<Bundle> {
                 config.setId(bundleFromDataBase.getId());
                 config.setOperation(PublisherConfig.Operation.PUBLISH);
                 config.setDownloading(true);
+                config.setLuceneQueries(luceneQueries);
             }
 
             return bundleFromDataBase;
@@ -190,11 +192,17 @@ public class BundleDataGen extends AbstractDataGen<Bundle> {
     public BundleDataGen addAssets(final Collection<Object> assetsToAddInBundle) {
         for (Object asset : assetsToAddInBundle) {
             final MetaData metaData = howAddInBundle.get(asset.getClass());
+
             this.addAsset(metaData.dataToAdd.apply(asset), metaData.pusheableAsset);
+
+            if (Contentlet.class.isAssignableFrom(asset.getClass()) && Host.class != asset.getClass()) {
+                luceneQueries.add("+identifier:" + ((Contentlet) asset).getIdentifier());
+            }
         }
 
         return this;
     }
+
 
     private class AssetsItem {
         String inode;

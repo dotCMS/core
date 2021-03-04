@@ -44,6 +44,8 @@ import com.dotcms.keyvalue.business.KeyValueAPI;
 import com.dotcms.keyvalue.business.KeyValueAPIImpl;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.languagevariable.business.LanguageVariableAPIImpl;
+import com.dotcms.mail.MailAPI;
+import com.dotcms.mail.MailAPIImpl;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.notifications.business.NotificationAPIImpl;
 import com.dotcms.publisher.assets.business.PushedAssetsAPI;
@@ -76,6 +78,7 @@ import com.dotcms.util.FileWatcherAPIImpl;
 import com.dotcms.util.ReflectionUtils;
 import com.dotcms.util.SecurityLoggerServiceAPI;
 import com.dotcms.util.SecurityLoggerServiceAPIFactory;
+import com.dotcms.uuid.shorty.LegacyShortyIdAPIImpl;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.uuid.shorty.ShortyIdAPIImpl;
 import com.dotcms.vanityurl.business.VanityUrlAPI;
@@ -144,6 +147,7 @@ import com.dotmarketing.tag.business.TagAPIImpl;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Queue;
@@ -273,6 +277,14 @@ public class APILocator extends Locator<APIIndex>{
 		return (UserAPI)getInstance(APIIndex.USER_API);
 	}
 
+	private static Lazy<MailAPI> lazyMail = Lazy.of(MailAPIImpl::new);
+	                
+    public static MailAPI getMailApi() {
+        return lazyMail.get();
+    }
+
+	
+	
 	/**
 	 * Creates a single instance of the {@link LoginAsAPI} class.
 	 *
@@ -1230,7 +1242,7 @@ enum APIIndex
     		case ES_SEARCH_API: return new ESSearchProxy();
     		case RULES_API: return new RulesAPIProxy();
     		case VISITOR_API: return new VisitorAPIImpl();
-    		case SHORTY_ID_API: return new ShortyIdAPIImpl();
+    		case SHORTY_ID_API: return Config.getBooleanProperty("dotshortyapi_use_legacy", false)? new LegacyShortyIdAPIImpl(): new ShortyIdAPIImpl();
     		case SYSTEM_EVENTS_API: return SystemEventsFactory.getInstance().getSystemEventsAPI();
     		case WEB_SOCKET_CONTAINER_API:return WebSocketContainerAPIFactory.getInstance().getWebSocketContainerAPI();
     		case COMPANY_API: return CompanyAPIFactory.getInstance().getCompanyAPI();

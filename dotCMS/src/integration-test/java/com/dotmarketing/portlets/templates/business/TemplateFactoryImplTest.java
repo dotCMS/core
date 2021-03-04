@@ -1,21 +1,20 @@
 package com.dotmarketing.portlets.templates.business;
 
-import static org.junit.Assert.assertNull;
+
+import com.dotcms.datagen.SiteDataGen;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import java.util.List;
+import java.util.Map;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.rest.api.v1.template.TemplateHelper;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotcms.util.PaginationUtil;
-import com.dotcms.util.pagination.OrderDirection;
-import com.dotcms.util.pagination.TemplatePaginator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.common.util.SQLUtilTest;
-import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.UUIDGenerator;
@@ -104,6 +103,25 @@ public class TemplateFactoryImplTest extends IntegrationTestBase {
 
         assert templates.size() ==2;
 
+    }
+
+    /**
+     * Method to test: {@link TemplateFactoryImpl#findTemplates(User, boolean, Map, String, String, String, String, int, int, String)} ()}
+     * Given Scenario: Try to get all the templates of a specific host, no other param is set.
+     * ExpectedResult: empty list since there are no templates for that host
+     *
+     */
+    @Test
+    public void test_findTemplates_usingHostId_hostWithNoTemplates_returnEmptyList()
+            throws DotDataException, DotSecurityException {
+        final Host newHost = new SiteDataGen().nextPersisted();
+
+        final TemplateFactory templateFactory = new TemplateFactoryImpl();
+
+        final List<Template> templates = templateFactory.
+                findTemplates(user, false, null, newHost.getIdentifier(), null, null, null, 0, 10, "title");
+
+        Assert.assertTrue(templates.isEmpty());
     }
 
 

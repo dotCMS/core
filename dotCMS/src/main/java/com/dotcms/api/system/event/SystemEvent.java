@@ -160,7 +160,7 @@ public class SystemEvent implements Serializable {
 		}
 		SystemEvent other = (SystemEvent) obj;
 		if (!UtilMethods.isSet(other.id)) {
-			return false;
+			return this.event == other.event;
 		}
 		if (!this.id.equalsIgnoreCase(other.id)) {
 			return false;

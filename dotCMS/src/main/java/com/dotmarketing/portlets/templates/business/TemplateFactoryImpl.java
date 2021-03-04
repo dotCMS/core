@@ -266,7 +266,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 				//Search by inode
 				if(resultList.isEmpty()){
-					final Template templateInode = find(params.get("filter").toString());
+					final Template templateInode = params!=null ? find(params.get("filter").toString()) : null;
 					resultList = templateInode != null ? Collections.singletonList(templateInode) : Collections.emptyList();
 				}
 
