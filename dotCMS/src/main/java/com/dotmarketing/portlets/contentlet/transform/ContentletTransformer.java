@@ -1,13 +1,35 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
+import com.dotcms.contenttype.model.field.LegacyFieldTypes;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.FileAssetContentType;
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.transform.DBTransformer;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.BinaryFileFilter;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.StringTokenizer;
+import org.apache.commons.beanutils.PropertyUtils;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -35,44 +57,179 @@ public class ContentletTransformer implements DBTransformer {
 
     @NotNull
     private static Contentlet transform(final Map<String, Object> map)  {
-        final Contentlet contentlet;
-        contentlet = new Contentlet();
-        contentlet.setInode((String) map.get("inode"));
+        final Contentlet contentlet = new Contentlet();
+        final String inode = (String) map.get("inode");
+        final String contentletId = (String) map.get("identifier");
+        final String contentTypeId = (String) map.get("structure_inode");
+
+        if (!UtilMethods.isSet(contentTypeId)) {
+            throw new DotRuntimeException("Contentlet must have a content type.");
+        }
+        contentlet.setInode(inode);
+        contentlet.setIdentifier(contentletId);
+        contentlet.setContentTypeId(contentTypeId);
         contentlet.setModDate((Date) map.get("mod_date"));
         contentlet.setModUser((String) map.get("mod_user"));
         contentlet.setSortOrder(ConversionUtils.toInt(map.get("sort_order"),0));
-        contentlet.setContentTypeId((String) map.get("structure_inode"));
+
+        contentlet.setLanguageId(ConversionUtils.toLong(map.get("language_id"), 0L));
         contentlet.setLastReview((Date) map.get("last_review"));
         contentlet.setNextReview((Date) map.get("next_review"));
         contentlet.setReviewInterval((String) map.get("review_interval"));
 
-        final List disabledWysiwyg = new ArrayList();
-        disabledWysiwyg.add(map.get("disabled_wysiwyg"));
-        contentlet.setDisabledWysiwyg(disabledWysiwyg);
-        contentlet.setIdentifier((String) map.get("identifier"));
-        contentlet.setLanguageId(ConversionUtils.toLong(map.get("language_id"), 0L));
+        try {
+            populateFields(contentlet, map);
+            populateFolderAndHost(contentlet, contentletId, contentTypeId);
+            populateWysiwyg(map, contentlet);
+        } catch (final Exception e) {
+            final String errorMsg = String
+                    .format("Unable to populate contentlet with ID='%s', Inode='%s', Content Type '%s': %s", contentletId, inode,
+                            contentTypeId, e
+                                    .getMessage());
+            Logger.error(ContentletTransformer.class, errorMsg, e);
+            throw new DotRuntimeException(errorMsg, e);
+        }
 
-        String key;
-        List<String> ignoredFields = new ArrayList<>();
-        ignoredFields.add("inode");
-        ignoredFields.add("mod_date");
-        ignoredFields.add("mod_user");
-        ignoredFields.add("sort_order");
-        ignoredFields.add("structure_inode");
-        ignoredFields.add("last_review");
-        ignoredFields.add("next_review");
-        ignoredFields.add("review_interval");
-        ignoredFields.add("disabled_wysiwyg");
+        return contentlet;
+    }
 
-        for (Entry<String, Object> property: map.entrySet()){
+    private static void populateFolderAndHost(Contentlet contentlet, String contentletId,
+            String contentTypeId) throws DotDataException, DotSecurityException {
+        if (UtilMethods.isSet(contentlet.getIdentifier())) {
+            final Identifier identifier = APILocator.getIdentifierAPI().loadFromDb(contentletId);
 
-            key = property.getKey();
-            if (!ignoredFields.contains(key)) {
-                contentlet.setProperty(property.getKey(), property.getValue());
+            if (identifier == null) {
+                throw new DotStateException(
+                        "Fatty's identifier not found in db. Fatty's inode: " + contentlet
+                                .getInode()
+                                + ". Fatty's identifier: " + contentlet.getIdentifier());
             }
 
+            final Folder folder;
+            if (!"/".equals(identifier.getParentPath())) {
+                folder = APILocator.getFolderAPI()
+                        .findFolderByPath(identifier.getParentPath(), identifier.getHostId(),
+                                APILocator.getUserAPI().getSystemUser(), false);
+            } else {
+                folder = APILocator.getFolderAPI().findSystemFolder();
+            }
+            contentlet.setHost(identifier.getHostId());
+            contentlet.setFolder(folder.getInode());
+
+            // lets check if we have publish/expire fields to set
+            final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                    .find(contentTypeId);
+
+            if (UtilMethods.isSet(contentType.publishDateVar()))
+                contentlet.setDateProperty(contentType.publishDateVar(),
+                        identifier.getSysPublishDate());
+            if (UtilMethods.isSet(contentType.expireDateVar()))
+                contentlet
+                        .setDateProperty(contentType.expireDateVar(), identifier.getSysExpireDate());
+        } else {
+            if (contentlet.isSystemHost()) {
+                // When we are saving a systemHost we cannot call
+                // APILocator.getHostAPI().findSystemHost() method, because this
+                // method will create a system host if not exist which cause
+                // a infinite loop.
+                contentlet.setHost(Host.SYSTEM_HOST);
+            } else {
+                contentlet.setHost(APILocator.getHostAPI().findSystemHost().getIdentifier());
+            }
+            contentlet.setFolder(APILocator.getFolderAPI().findSystemFolder().getInode());
         }
-        return contentlet;
+    }
+
+    private static void populateWysiwyg(Map<String, Object> map, Contentlet contentlet) {
+        final String wysiwyg = (String) map.get("disabled_wysiwyg");
+        if( UtilMethods.isSet(wysiwyg) ) {
+            final List<String> wysiwygFields = new ArrayList<String>();
+            final StringTokenizer st = new StringTokenizer(wysiwyg,",");
+            while( st.hasMoreTokens() ) wysiwygFields.add(st.nextToken().trim());
+            contentlet.setDisabledWysiwyg(wysiwygFields);
+        }
+    }
+
+    /**
+     * Gets map of the contentlet properties based on the fields of the structure
+     * The keys used in the map will be the velocity variables names
+     * @param originalMap Map with the fields obtained from database
+     */
+    private static void populateFields(final Contentlet contentlet, final Map<String, Object> originalMap)
+            throws DotDataException, DotSecurityException {
+        final Map<String, Object> fieldsMap = new HashMap<>();
+        final String inode = (String) originalMap.get("inode");
+        final String identifier = (String) originalMap.get("identifier");
+        final String contentTypeId = (String) originalMap.get("structure_inode");
+
+        final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                .find(contentTypeId);
+        final List<Field> fields = new LegacyFieldTransformer(contentType.fields())
+                .asOldFieldList();
+        for (final Field field : fields) {
+            // DO NOT map these types of fields
+            if (!APILocator.getFieldAPI().valueSettable(field) ||
+                    LegacyFieldTypes.HOST_OR_FOLDER.legacyValue().equals(field.getFieldType())
+                    ||
+                    LegacyFieldTypes.TAG.legacyValue().equals(field.getFieldType()) ||
+                    (field.getFieldContentlet() != null && field.getFieldContentlet()
+                            .startsWith("system_field") &&
+                            !LegacyFieldTypes.BINARY.legacyValue()
+                                    .equals(field.getFieldType()))) {
+                continue;
+            }
+            Object value;
+            if (APILocator.getFieldAPI().isElementConstant(field)) {
+                value = field.getValues();
+            } else {
+                try {
+                    if (UtilMethods.isSet(identifier)
+                            && contentType instanceof FileAssetContentType
+                            && FileAssetAPI.FILE_NAME_FIELD
+                            .equals(field.getVelocityVarName())) {
+                        value = APILocator.getIdentifierAPI().find(identifier).getAssetName();
+                    } else {
+                        if (LegacyFieldTypes.BINARY.legacyValue()
+                                .equals(field.getFieldType())) {
+                            java.io.File binaryFile = null;
+                            final java.io.File binaryFilefolder = new java.io.File(
+                                    APILocator.getFileAssetAPI().getRealAssetsRootPath()
+                                            + java.io.File.separator
+                                            + inode.charAt(0)
+                                            + java.io.File.separator
+                                            + inode.charAt(1)
+                                            + java.io.File.separator
+                                            + inode
+                                            + java.io.File.separator
+                                            + field.getVelocityVarName());
+                            if (binaryFilefolder.exists()) {
+                                java.io.File[] files = binaryFilefolder
+                                        .listFiles(new BinaryFileFilter());
+                                if (files.length > 0) {
+                                    binaryFile = files[0];
+                                }
+                            }
+                            value = binaryFile;
+                        } else {
+                            value = originalMap.get(field.getFieldContentlet());
+                        }
+                    }
+                } catch (final Exception e) {
+                    final String errorMsg = String
+                            .format("Unable to obtain property value for field '%s' in " +
+                                            "Contentlet with ID='%s', Inode='%s', Content Type '%s': %s",
+                                    field
+                                            .getFieldContentlet(), identifier, inode,
+                                    contentTypeId, e
+                                            .getMessage());
+                    Logger.error(ContentletTransformer.class, errorMsg, e);
+                    throw new DotRuntimeException(errorMsg, e);
+                }
+            }
+            fieldsMap.put(field.getVelocityVarName(), value);
+        }
+
+        APILocator.getContentletAPI().copyProperties(contentlet, fieldsMap);
     }
 }
 

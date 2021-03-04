@@ -133,10 +133,12 @@ public class TransformerLocator {
     }
 
     /**
+     * @deprecated The {@link com.dotmarketing.portlets.contentlet.business.Contentlet} will be removed any time soon
      * Creates a DBTransformer for Fat Contentlet {@link com.dotmarketing.portlets.contentlet.business.Contentlet} objects
      * @param initList List of DB results to be transformed
      * @return
      */
+    @Deprecated
     public static FatContentletTransformer createFatContentletTransformer(
             List<Map<String, Object>> initList) {
 
