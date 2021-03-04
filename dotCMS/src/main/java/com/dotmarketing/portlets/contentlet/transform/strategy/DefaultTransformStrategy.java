@@ -36,6 +36,7 @@ import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.storage.model.Metadata;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -114,6 +115,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
         map.put(CONTENT_TYPE_KEY, type != null ? type.variable() : NOT_APPLICABLE);
         map.put(BASE_TYPE_KEY, type != null ? type.baseType().name() : NOT_APPLICABLE);
         map.put(LANGUAGEID_KEY, contentlet.getLanguageId());
+
         final Optional<Field> titleImage = contentlet.getTitleImage();
         final boolean hasTitleImage = titleImage.isPresent();
         map.put(HAS_TITLE_IMAGE_KEY, hasTitleImage);
@@ -122,6 +124,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
         } else {
            map.put(TITLE_IMAGE_KEY, TITLE_IMAGE_NOT_FOUND);
         }
+
         final Host host = toolBox.hostAPI.find(contentlet.getHost(), APILocator.systemUser(), true);
         map.put(HOST_NAME, host != null ? host.getHostname() : NOT_APPLICABLE);
         map.put(HOST_KEY, host != null ? host.getIdentifier() : NOT_APPLICABLE);
@@ -203,21 +206,20 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
                     final String velocityVarName = field.variable();
                     //Extra precaution in case we are attempting to process a contentlet that has already been transformed.
                     if (map.get(velocityVarName) instanceof File) {
-                        final File conBinary = (File) map.get(velocityVarName); //contentlet.getBinary(field.variable());
-                        if (null != conBinary) {
+                        final Metadata metadata = contentlet.getBinaryMetadata(velocityVarName);
+                        if (null != metadata) {
                             //The binary-field per se. Must be replaced by file-name. We dont want to disclose any file specifics.
-                            //TODO: in a near future this must be read from a pre-cached metadata.
                             final String dAPath = "/dA/%s/%s/%s";
-                            map.put(field.variable() + "Version",
+                            map.put(velocityVarName + "Version",
                                     String.format(dAPath, contentlet.getInode(),
-                                            field.variable(), conBinary.getName()));
-                            map.put(field.variable(),
+                                            velocityVarName, metadata.getName()));
+                            map.put(velocityVarName,
                                     String.format(dAPath, contentlet.getIdentifier(),
-                                            field.variable(), conBinary.getName()));
-                            map.put(field.variable() + "ContentAsset",
-                                    contentlet.getIdentifier() + "/" + field.variable());
+                                            velocityVarName, metadata.getName()));
+                            map.put(velocityVarName + "ContentAsset",
+                                    contentlet.getIdentifier() + "/" + velocityVarName);
                         } else {
-                            Logger.warn(FileAssetViewStrategy.class,"We're missing a binary");
+                            Logger.warn(FileAssetViewStrategy.class," Binary isn't present.");
                         }
                     }
                 } catch (Exception e) {

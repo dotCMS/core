@@ -2,7 +2,9 @@ package com.dotcms.storage;
 
 import static com.dotcms.storage.StoragePersistenceAPI.HASH_OBJECT;
 import static com.dotcms.storage.model.BasicMetadataFields.*;
+import static com.dotmarketing.util.UtilMethods.isSet;
 
+import com.dotcms.storage.model.BasicMetadataFields;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.util.MimeTypeUtils;
 import com.dotmarketing.business.CacheLocator;
@@ -21,6 +23,7 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
@@ -105,8 +108,9 @@ public class FileStorageAPIImpl implements FileStorageAPI {
                 new ImmutableSortedMap.Builder<>(Comparator.naturalOrder());
 
         if (this.validBinary(binary)) {
-
-            mapBuilder.put(TITLE_META_KEY.key(), binary.getName());
+            final String binaryName = binary.getName();
+            mapBuilder.put(NAME_META_KEY.key(), binaryName);
+            mapBuilder.put(TITLE_META_KEY.key(), binaryName); //Title gets replaced by the loaded metadata. Otherwise iwe set a default
             final String relativePath = binary.getAbsolutePath()
                     .replace(ConfigUtils.getAbsoluteAssetsRootPath(),
                             StringPool.BLANK);
@@ -156,11 +160,11 @@ public class FileStorageAPIImpl implements FileStorageAPI {
             final Predicate<String> metaDataKeyFilter,
             final long maxLength) {
 
-        final TreeMap<String, Serializable> metadataMap = new TreeMap<>(Comparator.naturalOrder());
+        TreeMap<String, Serializable> metadataMap = new TreeMap<>(Comparator.naturalOrder());
 
         try {
             final Map<String, Serializable> fullMetaDataMap = this.metadataGenerator.generate(binary, maxLength);
-            if (UtilMethods.isSet(fullMetaDataMap)) {
+            if (isSet(fullMetaDataMap)) {
                 for (final Map.Entry<String, Serializable> entry : fullMetaDataMap.entrySet()) {
                     if (metaDataKeyFilter.test(entry.getKey())) {
                         metadataMap.put(entry.getKey(), entry.getValue());
@@ -178,7 +182,38 @@ public class FileStorageAPIImpl implements FileStorageAPI {
             return Collections.emptyMap();
         }
 
+        metadataMap = ensureTypes(metadataMap);
+
         return ImmutableSortedMap.copyOf(metadataMap);
+    }
+
+    /**
+     *This bit makes sure that the expected properties are rendered accordingly to the registered type
+     * @param metadataMap
+     * @return
+     */
+    private TreeMap<String, Serializable> ensureTypes(TreeMap<String, Serializable> metadataMap){
+
+        final Map<String, BasicMetadataFields> metadataFieldsMap = BasicMetadataFields.keyMap();
+        final Iterator<Entry<String, Serializable>> iterator = metadataMap.entrySet().iterator();
+        while(iterator.hasNext()){
+            final Entry<String, Serializable> entry = iterator.next();
+            final Serializable value = entry.getValue();
+            if (isSet(value)) {
+                final BasicMetadataFields field = metadataFieldsMap.get(entry.getKey());
+                if(null == field) {
+                   continue;
+                }
+                if (field.isNumericType()) {
+                     Try.of(()-> entry.setValue(Integer.parseInt(value.toString())));
+                }
+
+                if (field.isBooleanType()) {
+                     Try.of(()-> entry.setValue(Boolean.parseBoolean(value.toString())));
+                }
+            }
+        }
+        return metadataMap;
     }
 
     /**

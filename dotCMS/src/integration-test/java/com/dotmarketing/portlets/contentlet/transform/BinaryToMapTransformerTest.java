@@ -7,9 +7,11 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.storage.model.Metadata;
 import com.dotcms.util.ConfigTestHelper;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.google.common.io.Files;
@@ -127,7 +129,7 @@ public class BinaryToMapTransformerTest {
 
     @Test
     public void test_BinaryToMapTransformer_transform()
-            throws IOException, URISyntaxException {
+            throws IOException, URISyntaxException, DotDataException {
 
         // create content type with 1 text field and 2 binary fields
         final long time = System.currentTimeMillis();
@@ -148,10 +150,13 @@ public class BinaryToMapTransformerTest {
                     .setProperty("bin3", testImage)
                     .nextPersisted();
 
-            final BinaryToMapTransformer transformer =
-                    new BinaryToMapTransformer(contentWithBinaries);
+            //final BinaryToMapTransformer transformer =
+              //      new BinaryToMapTransformer(contentWithBinaries);
 
-            final Map<String, Object>  map = transformer.transform(testImage, contentWithBinaries, contentWithBinaries.getContentType().fieldMap().get("bin1"));
+            final Metadata metadata = contentWithBinaries.getBinaryMetadata("bin1");
+
+            final Map<String, Object>  map = BinaryToMapTransformer
+                    .transform(metadata, contentWithBinaries, contentWithBinaries.getContentType().fieldMap().get("bin1"));
 
             Assert.assertNotNull(map);
             Assert.assertTrue(map.containsKey("versionPath"));

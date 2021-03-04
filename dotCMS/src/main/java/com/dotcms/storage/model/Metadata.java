@@ -1,7 +1,19 @@
 package com.dotcms.storage.model;
 
+import static com.dotcms.storage.model.BasicMetadataFields.CONTENT_TYPE_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.HEIGHT_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.IS_IMAGE_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.LENGTH_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.NAME_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.PATH_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.SHA256_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.SIZE_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.TITLE_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.WIDTH_META_KEY;
+
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap;
+import io.vavr.control.Try;
 import java.io.Serializable;
 import java.util.Comparator;
 import java.util.Map;
@@ -50,6 +62,46 @@ public class Metadata implements Serializable {
 
     public Map<String, Serializable> getMap() {
         return new ImmutableSortedMap.Builder<String, Serializable>(Comparator.naturalOrder()).putAll(fieldsMeta).build();
+    }
+
+    public String getTitle(){
+        return Try.of(()->(String)getFieldsMeta().get(TITLE_META_KEY.key())).getOrElse("unknown");
+    }
+
+    public String getName(){
+        return Try.of(()->(String)getFieldsMeta().get(NAME_META_KEY.key())).getOrElse("unknown");
+    }
+
+    public int getLength(){
+        return Try.of(()->(int)getFieldsMeta().get(LENGTH_META_KEY.key())).getOrElse(0);
+    }
+
+    public int getSize(){
+        return Try.of(()->(int)getFieldsMeta().get(SIZE_META_KEY.key())).getOrElse(0);
+    }
+
+    public String getPath(){
+        return (String)getFieldsMeta().get(PATH_META_KEY.key());
+    }
+
+    public String getSha256(){
+        return (String)getFieldsMeta().get(SHA256_META_KEY.key());
+    }
+
+    public String getContentType(){
+       return (String)getFieldsMeta().get(CONTENT_TYPE_META_KEY.key());
+    }
+
+    public boolean isImage(){
+        return  Try.of(()->(Boolean)getFieldsMeta().get(IS_IMAGE_META_KEY.key())).getOrElse(false);
+    }
+
+    public int getWidth(){
+        return Try.of(()->(int)getFieldsMeta().get(WIDTH_META_KEY.key())).getOrElse(0);
+    }
+
+    public int getHeight(){
+        return Try.of(()->(int)getFieldsMeta().get(HEIGHT_META_KEY.key())).getOrElse(0);
     }
 
     @Override

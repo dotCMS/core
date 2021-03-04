@@ -84,6 +84,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -386,6 +387,11 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
                 final List<Contentlet> contentlets) {
             this.baseContentType = baseContentType;
             this.contentlets = contentlets;
+        }
+
+        @Override
+        public String toString() {
+            return "CompatibilityTestCase{" + "baseContentType=" + baseContentType +'}';
         }
     }
 

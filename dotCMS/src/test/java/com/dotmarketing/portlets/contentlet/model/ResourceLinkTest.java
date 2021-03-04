@@ -2,6 +2,9 @@ package com.dotmarketing.portlets.contentlet.model;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
+import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
+import com.dotcms.repackage.com.google.common.collect.ImmutableMap.Builder;
+import com.dotcms.storage.model.Metadata;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -15,6 +18,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
+import java.io.Serializable;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
@@ -57,6 +61,20 @@ public class ResourceLinkTest {
         };
     }
 
+    private Metadata mockMetadata(final File binary) {
+        final Builder<String, Serializable> builder = new Builder<>();
+        final ImmutableMap<String, Serializable> immutableMap =
+         builder.put("contentType", "text/html")
+                .put("fileSize", 0)
+                .put("length", 0)
+                .put("isImage", false)
+                .put("path",binary.getPath())
+                .put("sha256","9e2d4ab5bf0aba3113f90791b2975251a92bf1585125838bb73b6cec515ada41")
+                .put("title",binary.getName())
+                .put("modDate", 1614790279000L).build();
+        return new Metadata(binary.getName(), immutableMap);
+    }
+
     private ResourceLinkBuilder getResourceLinkBuilder(final String hostName, final String path, final String mimeType, final String htmlFileName){
         final ResourceLinkBuilder resourceLinkBuilder = new ResourceLink.ResourceLinkBuilder(){
 
@@ -91,7 +109,7 @@ public class ResourceLinkTest {
 
             @Override
             Tuple2<String, String> createVersionPathIdPath (final Contentlet contentlet, final String velocityVarName,
-                                                            final File binary) throws DotDataException {
+                                                            final Metadata binary) throws DotDataException {
 
                 return Tuple.of("/dA/" + APILocator.getShortyAPI().shortify(contentlet.getInode()) + "/" + velocityVarName + "/" + binary.getName(),
                         "/dA/" + APILocator.getShortyAPI().shortify(contentlet.getIdentifier()) + "/" + velocityVarName + "/" + binary.getName());
@@ -141,6 +159,7 @@ public class ResourceLinkTest {
         when(contentlet.getBinary(FileAssetAPI.BINARY_FIELD)).thenReturn(file);
         when(contentlet.getLanguageId()).thenReturn(languageId);
         when(contentlet.isNew()).thenReturn(false);
+        when(contentlet.getBinaryMetadata(FileAssetAPI.BINARY_FIELD)).thenReturn(mockMetadata(file));
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getAttribute(ResourceLink.HOST_REQUEST_ATTRIBUTE)).thenReturn(HOST_ID);
@@ -179,7 +198,7 @@ public class ResourceLinkTest {
         when(contentlet.getLanguageId()).thenReturn(languageId);
         when(contentlet.isNew()).thenReturn(false);
         when(contentlet.getInode()).thenReturn(UUIDGenerator.generateUuid());
-
+        when(contentlet.getBinaryMetadata(FileAssetAPI.BINARY_FIELD)).thenReturn(mockMetadata(file));
 
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
@@ -218,6 +237,7 @@ public class ResourceLinkTest {
         when(contentlet.getBinary(FileAssetAPI.BINARY_FIELD)).thenReturn(file);
         when(contentlet.getLanguageId()).thenReturn(languageId);
         when(contentlet.isNew()).thenReturn(false);
+        when(contentlet.getBinaryMetadata(FileAssetAPI.BINARY_FIELD)).thenReturn(mockMetadata(file));
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getAttribute(ResourceLink.HOST_REQUEST_ATTRIBUTE)).thenReturn(HOST_ID);
@@ -256,6 +276,7 @@ public class ResourceLinkTest {
         when(contentlet.getBinary(FileAssetAPI.BINARY_FIELD)).thenReturn(file);
         when(contentlet.getLanguageId()).thenReturn(languageId);
         when(contentlet.isNew()).thenReturn(false);
+        when(contentlet.getBinaryMetadata(FileAssetAPI.BINARY_FIELD)).thenReturn(mockMetadata(file));
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getAttribute(ResourceLink.HOST_REQUEST_ATTRIBUTE)).thenReturn(HOST_ID);
@@ -295,6 +316,7 @@ public class ResourceLinkTest {
         when(contentlet.isFileAsset()).thenReturn(true);
         when(contentlet.getLanguageId()).thenReturn(languageId);
         when(contentlet.isNew()).thenReturn(false);
+        when(contentlet.getBinaryMetadata(FileAssetAPI.BINARY_FIELD)).thenReturn(mockMetadata(file));
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getAttribute(ResourceLink.HOST_REQUEST_ATTRIBUTE)).thenReturn(HOST_ID);
@@ -331,6 +353,7 @@ public class ResourceLinkTest {
         when(contentlet.getBinary(FileAssetAPI.BINARY_FIELD)).thenReturn(file);
         when(contentlet.getLanguageId()).thenReturn(languageId);
         when(contentlet.isNew()).thenReturn(false);
+        when(contentlet.getBinaryMetadata(FileAssetAPI.BINARY_FIELD)).thenReturn(mockMetadata(file));
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getAttribute(ResourceLink.HOST_REQUEST_ATTRIBUTE)).thenReturn(HOST_ID);

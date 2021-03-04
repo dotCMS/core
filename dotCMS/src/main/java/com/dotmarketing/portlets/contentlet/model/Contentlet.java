@@ -1034,14 +1034,17 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
         if(map.get(TITLE_IMAGE_KEY) == null) {
             String returnVal = TITLE_IMAGE_NOT_FOUND;
-            for(final com.dotcms.contenttype.model.field.Field f : type.fields()) {
+            for(final com.dotcms.contenttype.model.field.Field field : type.fields()) {
                 try {
-                    if(f instanceof BinaryField && (UtilMethods.isImage(this.getBinary(f.variable()).toString()) || MimeTypeUtils.getMimeType(this.getBinary(f.variable())).contains("pdf") )){
-                        returnVal=f.variable();
-                        break;
+                    if(field instanceof BinaryField){
+                        final Metadata metadata = getBinaryMetadata(field);
+                        if(null != metadata && (metadata.isImage() || metadata.getContentType().contains("pdf"))){
+                          returnVal = field.variable();
+                          break;
+                        }
                     }
-                    else if( f instanceof ImageField && isSet(get(f.variable()))) {
-                        returnVal=f.variable();
+                    else if( field instanceof ImageField && isSet(get(field.variable()))) {
+                        returnVal=field.variable();
                         break;
                     }
                 } catch (Exception e) {

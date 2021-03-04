@@ -331,31 +331,35 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
     private Metadata getMetadata(final Contentlet contentlet, final String fieldVariableName, final boolean forceGenerate)
             throws DotDataException {
 
-        final StorageType storageType = StoragePersistenceProvider.getStorageType();
-        final String metadataBucketName = Config.getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);
-        final String metadataPath       = this.getFileName(contentlet, fieldVariableName);
+        if(null != contentlet.get(fieldVariableName)) {
+            final StorageType storageType = StoragePersistenceProvider.getStorageType();
+            final String metadataBucketName = Config
+                    .getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);
+            final String metadataPath = getFileName(contentlet, fieldVariableName);
 
-        Map<String, Serializable> metadataMap = fileStorageAPI.retrieveMetaData(
-                new FetchMetadataParams.Builder()
-                        .projectionMapForCache(this::filterNonCacheableMetadataFields)
-                        .cache(() -> contentlet.getInode() + StringPool.COLON + fieldVariableName)
-                        .storageKey(new StorageKey.Builder().group(metadataBucketName)
-                                .path(metadataPath).storage(storageType).build())
-                        .build()
-        );
+            Map<String, Serializable> metadataMap = fileStorageAPI.retrieveMetaData(
+                    new FetchMetadataParams.Builder()
+                            .projectionMapForCache(this::filterNonCacheableMetadataFields)
+                            .cache(() -> contentlet.getInode() + StringPool.COLON
+                                    + fieldVariableName)
+                            .storageKey(new StorageKey.Builder().group(metadataBucketName)
+                                    .path(metadataPath).storage(storageType).build())
+                            .build()
+            );
 
-        if(null != metadataMap){
-            return new Metadata(fieldVariableName, metadataMap);
-        }
+            if (null != metadataMap) {
+                return new Metadata(fieldVariableName, metadataMap);
+            }
 
-        if(forceGenerate){
-            try {
-                return generateContentletMetadata(contentlet).getFullMetadataMap().get(fieldVariableName);
-            } catch (IOException e) {
-                throw new DotDataException(e);
+            if (forceGenerate) {
+                try {
+                    return generateContentletMetadata(contentlet).getFullMetadataMap()
+                            .get(fieldVariableName);
+                } catch (IOException e) {
+                    throw new DotDataException(e);
+                }
             }
         }
-
         return null;
 
     }
@@ -429,7 +433,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @return
      */
     private Map<String, Serializable> filterNonCacheableMetadataFields(final Map<String, Serializable> originalMap) {
-        final Set<String> basicMetadataFieldsSet = BasicMetadataFields.keySet();
+        final Set<String> basicMetadataFieldsSet = BasicMetadataFields.keyMap().keySet();
         return originalMap.entrySet().stream().filter(entry -> basicMetadataFieldsSet
                 .contains(entry.getKey()) || entry.getKey().startsWith(Metadata.CUSTOM_PROP_PREFIX) ).collect(
                 Collectors.toMap(Entry::getKey, Entry::getValue));

@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.contentlet.model;
 import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
 
 import com.dotcms.contenttype.model.type.DotAssetContentType;
+import com.dotcms.storage.model.Metadata;
 import com.dotcms.util.MimeTypeUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -150,6 +151,7 @@ public class ResourceLink {
         public final ResourceLink build(final HttpServletRequest request, final User user, final Contentlet contentlet, final String fieldVelocityVarName) throws DotDataException, DotSecurityException {
 
             final File binary           = Try.of(()->contentlet.getBinary(fieldVelocityVarName)).getOrNull();
+            final Metadata metadata = contentlet.getBinaryMetadata(fieldVelocityVarName);
             final Identifier identifier = getIdentifier(contentlet);
             if (binary==null || identifier == null || UtilMethods.isEmpty(identifier.getInode())){
 
@@ -171,10 +173,10 @@ public class ResourceLink {
             }
 
             final boolean downloadRestricted    = isDownloadPermissionBasedRestricted(contentlet, user);
-            final String mimeType               = this.getMimiType(binary);
-            final String fileAssetName          = binary.getName();
-            final Tuple2<String, String> resourceLink      = this.createResourceLink(request, user, contentlet, identifier, binary, hostUrlBuilder.toString());
-            final Tuple2<String, String> versionPathIdPath = this.createVersionPathIdPath(contentlet, fieldVelocityVarName, binary);
+            final String mimeType               = metadata.getContentType();
+            final String fileAssetName          = metadata.getName();
+            final Tuple2<String, String> resourceLink      = this.createResourceLink(request, user, contentlet, identifier, metadata, hostUrlBuilder.toString());
+            final Tuple2<String, String> versionPathIdPath = this.createVersionPathIdPath(contentlet, fieldVelocityVarName, metadata);
             final String configuredImageURL                = this.getConfiguredImageURL (contentlet, binary, host);
 
             return new ResourceLink(resourceLink._1(), resourceLink._2(), mimeType, contentlet,
@@ -215,9 +217,9 @@ public class ResourceLink {
         }
 
         Tuple2<String, String> createVersionPathIdPath (final Contentlet contentlet, final String velocityVarName,
-                                                                                final File binary) throws DotDataException {
+                                                                                final Metadata binaryMeta) throws DotDataException {
 
-            final Map<String, Object> properties = BinaryToMapTransformer.transform(binary, contentlet,
+            final Map<String, Object> properties = BinaryToMapTransformer.transform(binaryMeta, contentlet,
                     APILocator.getContentTypeFieldAPI().byContentTypeAndVar(contentlet.getContentType(), velocityVarName));
 
             final String versionPath = (String)properties.get("versionPath");
@@ -228,12 +230,12 @@ public class ResourceLink {
 
         Tuple2<String, String> createResourceLink (final HttpServletRequest request, final User user,
                                                            final Contentlet contentlet, final Identifier identifier,
-                                                           final File binary, final String hostUrl) throws DotSecurityException, DotDataException {
+                                                           final Metadata binaryMeta, final String hostUrl) throws DotSecurityException, DotDataException {
 
             final StringBuilder resourceLink    = new StringBuilder(hostUrl);
             final StringBuilder resourceLinkUri = new StringBuilder();
 
-            resourceLinkUri.append(identifier.getParentPath()).append(binary.getName());
+            resourceLinkUri.append(identifier.getParentPath()).append(binaryMeta.getName());
             resourceLink.append(escapeUri(resourceLinkUri.toString()));
             resourceLinkUri.append(LANG_ID_PARAM).append(contentlet.getLanguageId());
             resourceLink.append(LANG_ID_PARAM).append(contentlet.getLanguageId());

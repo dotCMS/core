@@ -26,6 +26,7 @@ public class MimeTypeUtils {
      * @param binary {@link File}
      * @return String
      */
+    @Deprecated
     public static String getMimeType (final File binary) {
         if(binary==null) {
             return FileAsset.UNKNOWN_MIME_TYPE;

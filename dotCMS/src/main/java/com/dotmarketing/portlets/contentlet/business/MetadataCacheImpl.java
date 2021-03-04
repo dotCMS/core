@@ -11,7 +11,7 @@ public class MetadataCacheImpl implements MetadataCache {
 
     private final DotCacheAdministrator cache;
 
-    private String metadataGroup = "FileAssetMetadataCache";
+    private String metadataGroup = "AssetMetadataCache";
 
     private String[] groupNames = {metadataGroup};
 

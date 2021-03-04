@@ -216,7 +216,7 @@ public class FileMetadataAPITest {
         });
     }
 
-    private static Set<String> basicMetadataFields = new HashSet<>(BasicMetadataFields.keySet()); //Remove width and height since they are present only on images
+    private static Set<String> basicMetadataFields = new HashSet<>(BasicMetadataFields.keyMap().keySet());
 
     /**
      * validate basic layout expected in the basic md for File-Asset
