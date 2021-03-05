@@ -15,9 +15,12 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
+import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -34,6 +37,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.Serializable;
+import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -144,6 +148,7 @@ public class DotSamlResource implements Serializable {
 	@POST
 	@Path("/login/{idpConfigId}")
 	@Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_FORM_URLENCODED})
+	@Produces( { MediaType.APPLICATION_XML, "text/html" } )
 	@NoCache
 	public void processLogin(@PathParam("idpConfigId") final String idpConfigId,
 							 @Context final HttpServletRequest httpServletRequest,
@@ -218,7 +223,7 @@ public class DotSamlResource implements Serializable {
 						session.removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
 					}
 
-					httpServletResponse.sendRedirect(loginPath);
+					sendRedirectHTML(httpServletResponse, loginPath);
 					return;
 				}
 			} finally {
@@ -233,6 +238,31 @@ public class DotSamlResource implements Serializable {
 		throw new DotSamlException(message);
 	}
 
+    final static Lazy<String> redirectTemplate = Lazy.of(()->new StringWriter()
+                    .append("<html>")
+                    .append("<head>")
+                    .append("<meta http-equiv=\"refresh\" content=\"0;URL='REDIRECT_ME'\"/>")
+                    .append("</head>")
+                    .append("<body><p>If your browser does not refresh, click <a href=\"REDIRECT_ME\">Here</a>.</p></body>")
+                    .append("</html>").toString());
+    
+    
+    
+    public void sendRedirectHTML(HttpServletResponse response, final String redirectUrl) {
+        
+        final String finalTemplate = UtilMethods.replace(redirectTemplate.get(),"REDIRECT_ME", redirectUrl);
+        
+        response.setContentType("text/html");
+        Try.run(() -> {
+            response.getWriter().write(finalTemplate);
+            response.getWriter().flush();
+        }).onFailure(e->Logger.warn(DotSamlResource.class,"Unable to redirect after saml login:" +e.getMessage()));
+    }
+	
+	
+	
+	
+	
 	/**
 	 * Renders the XML metadata.
 	 * @param idpConfigId          {@link String} identifier config (here the host id)
