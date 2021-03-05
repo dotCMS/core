@@ -19,6 +19,8 @@ import com.dotcms.business.expiring.ExpiringMapBuilder;
 import com.dotmarketing.loggers.Log4jUtil;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.RemovalCause;
+import com.github.benmanes.caffeine.cache.RemovalListener;
 import com.google.common.base.Objects;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
@@ -36,7 +38,12 @@ public class Logger {
      * Caffeine Cache is going to be much more performant concurrently than a hashmap
      */
     private final static Cache<String, org.apache.logging.log4j.Logger> loggerMap =
-                    Caffeine.newBuilder().maximumSize(5000).softValues().build();
+                    Caffeine.newBuilder().maximumSize(10000).removalListener(new RemovalListener<String, org.apache.logging.log4j.Logger>() {
+                        @Override
+                        public void onRemoval(String key, org.apache.logging.log4j.Logger value, RemovalCause cause) {
+                            System.out.println("removing Logger :" + key + " due to " + cause);
+                        }
+                    }).build();
 
     public static void clearLoggers() {
         loggerMap.invalidateAll();
