@@ -1,8 +1,5 @@
 package com.dotcms.rest.api.v1.theme;
 
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotmarketing.business.ThemeAPI.THEME_THUMBNAIL_KEY;
-
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -15,18 +12,18 @@ import com.dotcms.util.pagination.PaginationException;
 import com.dotcms.util.pagination.ThemePaginator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Theme;
 import com.dotmarketing.business.ThemeAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
-import java.util.HashMap;
-import java.util.Map;
+import org.glassfish.jersey.server.JSONP;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DefaultValue;
@@ -39,7 +36,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.glassfish.jersey.server.JSONP;
+import java.util.Map;
+
+import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * Provides different methods to access information about Themes in dotCMS.
@@ -89,7 +88,7 @@ public class ThemeResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findThemes(@Context final HttpServletRequest request,
-                                     final @Context HttpServletResponse response,
+                                     @Context final HttpServletResponse response,
                                      @QueryParam("hostId") final String hostId,
                                      @QueryParam(PaginationUtil.PAGE) final int page,
                                      @QueryParam(PaginationUtil.PER_PAGE) @DefaultValue("-1") final int perPage,
@@ -158,18 +157,7 @@ public class ThemeResource {
         Logger.debug(this, "Getting the theme by identifier: " + themeId);
 
         final InitDataObject initData = this.webResource.init(null, request, response, true, null);
-        final User user = initData.getUser();
-
-        final Folder folder = folderAPI.find(themeId, user, false);
-
-        if (folder == null) {
-            return Response.status(Status.NOT_FOUND).build();
-        } else {
-            final Map<String, Object> map = new HashMap<>();
-            map.putAll(folder.getMap());
-            map.put(THEME_THUMBNAIL_KEY, themeAPI.getThemeThumbnail(folder, user));
-
-            return Response.ok(new ResponseEntityView(map)).build();
-        }
+        final User user   = initData.getUser();
+        return Response.ok(new ResponseEntityView(themeAPI.findThemeById(themeId, user, false).getMap())).build();
     }
 }
