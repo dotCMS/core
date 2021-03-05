@@ -43,11 +43,9 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.Table;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import java.io.IOException;
 import java.io.Serializable;
@@ -226,7 +224,7 @@ public class PageResourceHelper implements Serializable {
         try {
             final Host host = getHost(pageForm.getHostId(), user);
             final User systemUser = userAPI.getSystemUser();
-            final Template template = getTemplate(page, systemUser, pageForm);
+            final Template template = checkoutTemplate(page, systemUser, pageForm);
             final boolean hasPermission = template.isAnonymous() ?
                     permissionAPI.doesUserHavePermission(page, PermissionLevel.EDIT.getType(), user) :
                     !InodeUtils.isSet(template.getPermissionId())?
@@ -320,7 +318,7 @@ public class PageResourceHelper implements Serializable {
         return this.saveTemplate(null, user, pageForm);
     }
 
-    private Template getTemplate(final IHTMLPage page, final User user, final PageForm form)
+    private Template checkoutTemplate(final IHTMLPage page, final User user, final PageForm form)
             throws DotDataException, DotSecurityException {
 
         final Template oldTemplate  = this.templateAPI.findWorkingTemplate(page.getTemplateId(), user, false);
@@ -328,6 +326,7 @@ public class PageResourceHelper implements Serializable {
                 && (!form.isAnonymousLayout() || oldTemplate.isAnonymous())?
                 oldTemplate:new Template();
 
+        saveTemplate.setInode(null);
         saveTemplate.setTitle(form.getTitle());
         saveTemplate.setTheme((form.getThemeId()==null) ? oldTemplate.getTheme() : form.getThemeId());
         saveTemplate.setDrawedBody(form.getLayout());

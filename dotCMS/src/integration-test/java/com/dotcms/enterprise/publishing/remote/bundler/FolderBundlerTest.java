@@ -1,0 +1,122 @@
+package com.dotcms.enterprise.publishing.remote.bundler;
+
+import com.dotcms.datagen.*;
+import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publishing.BundlerStatus;
+import com.dotcms.publishing.DotBundleException;
+import com.dotcms.publishing.FilterDescriptor;
+import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.test.util.FileTestUtil;
+import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.FileUtil;
+import com.liferay.portal.model.User;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import java.io.File;
+import java.io.IOException;
+
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.set;
+import static org.mockito.Mockito.mock;
+
+@RunWith(DataProviderRunner.class)
+public class FolderBundlerTest {
+
+    public static void prepare() throws Exception {
+
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+    }
+
+
+    @DataProvider
+    public static Object[] folders() throws Exception {
+        prepare();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+        final Folder parentFolder = new FolderDataGen().site(host).nextPersisted();
+        final Folder folderWithParent = new FolderDataGen()
+                .parent(parentFolder)
+                .site(host)
+                .nextPersisted();
+
+        final Folder folderWithDoubleParent = new FolderDataGen()
+                .parent(folderWithParent)
+                .site(host)
+                .nextPersisted();
+
+        return new TestCase[]{
+                new TestCase(folder),
+                new TestCase(folderWithParent),
+                new TestCase(folderWithDoubleParent)
+        };
+    }
+
+
+    /**
+     * Method to Test: {@link FolderBundler#generate(File, BundlerStatus)}
+     * When: Add a {@link Folder} in a bundle
+     * Should:
+     * - The file should be create in:
+     * For Live Version: <bundle_root_path>/ROOT/<folder_path>/.../<folder_id>.folder.xml
+     */
+    @Test
+    @UseDataProvider("folders")
+    public void addFolderInBundle(final TestCase testCase)
+            throws DotBundleException, IOException, DotSecurityException, DotDataException {
+
+        Folder folder =  testCase.folder;
+
+        final BundlerStatus status = mock(BundlerStatus.class);
+        final FolderBundler bundler = new FolderBundler();
+        final File bundleRoot = FileUtil.createTemporaryDirectory("FolderBundlerTest_addFolderInBundle_");
+
+        final FilterDescriptor filterDescriptor = new FileDescriptorDataGen().nextPersisted();
+
+        final PushPublisherConfig config = new PushPublisherConfig();
+        config.setFolders(set(folder.getIdentifier()));
+        config.setOperation(PublisherConfig.Operation.PUBLISH);
+
+        new BundleDataGen()
+                .pushPublisherConfig(config)
+                .addAssets(list(folder))
+                .filter(filterDescriptor)
+                .nextPersisted();
+
+        bundler.setConfig(config);
+        bundler.generate(bundleRoot, status);
+
+        final User systemUser = APILocator.systemUser();
+
+        while(folder != null && !folder.isSystemFolder()) {
+            FileTestUtil.assertBundleFile(bundleRoot, folder, testCase.expectedFilePath);
+
+            folder = APILocator.getFolderAPI().findParentFolder(folder, systemUser, false);
+        }
+    }
+
+    private static class TestCase{
+        Folder folder;
+        String expectedFilePath;
+
+        public TestCase(final Folder folder, final String expectedFilePath) {
+            this.folder = folder;
+            this.expectedFilePath = expectedFilePath;
+        }
+
+        public TestCase(final Folder folder) {
+            this(folder, "/bundlers-test/folder/folder.folder.xml");
+        }
+    }
+}

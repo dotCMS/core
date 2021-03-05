@@ -9,7 +9,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -2006,6 +2005,76 @@ public class ContentletAPITest extends ContentletBaseTest {
             ContentletDataGen.remove(contentInSpanish);
             HTMLPageDataGen.remove(englishPage);
             HTMLPageDataGen.remove(spanishPage);
+            TemplateDataGen.remove(template);
+            ContainerDataGen.remove(container);
+            StructureDataGen.remove(structure);
+            FolderDataGen.remove(folder);
+
+            HibernateUtil.closeAndCommitTransaction();
+        } catch (Exception e) {
+            HibernateUtil.rollbackTransaction();
+            throw e;
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentletAPI#getContentletReferences(Contentlet, User, boolean)}
+     * Test case: Checks that the fallback page is returned by the method when there is no page for the source content in its language (Spanish)
+     * Expected result: The page in the fallback language (English) should be returned for the Spanish content
+     */
+    @Test
+    public void getContentletReferencesForMonolingualPages() throws Exception {
+        int english = 1;
+        long spanish = spanishLanguage.getId();
+
+        try {
+            HibernateUtil.startTransaction();
+            final String UUID = UUIDGenerator.generateUuid();
+            Structure structure = new StructureDataGen().nextPersisted();
+            Container container = new ContainerDataGen().withStructure(structure, "").nextPersisted();
+            Template template = new TemplateDataGen().withContainer(container.getIdentifier(),UUID).nextPersisted();
+            Folder folder = new FolderDataGen().nextPersisted();
+
+            HTMLPageDataGen htmlPageDataGen = new HTMLPageDataGen(folder, template);
+            HTMLPageAsset englishPage = htmlPageDataGen.languageId(english).nextPersisted();
+
+            ContentletDataGen contentletDataGen = new ContentletDataGen(structure.getInode());
+            Contentlet contentInEnglish = contentletDataGen.languageId(english).nextPersisted();
+            Contentlet contentInSpanish = contentletDataGen.languageId(spanish).nextPersisted();
+
+            // let's add the English content to the page in English (create the page-container-content relationship)
+            MultiTree multiTreeEN = new MultiTree(englishPage.getIdentifier(), container.getIdentifier(),
+                    contentInEnglish.getIdentifier(),UUID,0);
+            APILocator.getMultiTreeAPI().saveMultiTree(multiTreeEN);
+
+            // let's add the Spanish content to the page in English (create the page-container-content relationship)
+            MultiTree multiTreeSP = new MultiTree(englishPage.getIdentifier(), container.getIdentifier(),
+                    contentInSpanish.getIdentifier(),UUID,0);
+            APILocator.getMultiTreeAPI().saveMultiTree(multiTreeSP);
+
+            // let's get the references for english content
+            List<Map<String, Object>> references = contentletAPI.getContentletReferences(contentInEnglish, user, false);
+
+            assertNotNull(references);
+            assertTrue(!references.isEmpty());
+            // let's check if the referenced page is in the expected language
+            assertEquals(((IHTMLPage) references.get(0).get("page")).getLanguageId(), english);
+            // let's check the referenced container is the expected
+            assertEquals(((Container) references.get(0).get("container")).getInode(), container.getInode());
+
+            // let's get the references for spanish content
+            references = contentletAPI.getContentletReferences(contentInSpanish, user, false);
+
+            assertNotNull(references);
+            assertTrue(!references.isEmpty());
+            // let's check if the referenced page is in the expected language
+            assertEquals(english, ((IHTMLPage) references.get(0).get("page")).getLanguageId());
+            // let's check the referenced container is the expected
+            assertEquals(container.getInode(),((Container) references.get(0).get("container")).getInode());
+
+            ContentletDataGen.remove(contentInEnglish);
+            ContentletDataGen.remove(contentInSpanish);
+            HTMLPageDataGen.remove(englishPage);
             TemplateDataGen.remove(template);
             ContainerDataGen.remove(container);
             StructureDataGen.remove(structure);

@@ -172,20 +172,6 @@ public interface TemplateAPI {
 			throws DotSecurityException, DotDataException;
 
 	/**
-	 * Unlock the template
-	 * @param template {@link Template}
-	 * @param user     {@link User}
-	 */
-	void unlock (Template template, User user) throws DotSecurityException, DotDataException;
-
-	/**
-	 * Lock the template
-	 * @param template {@link Template}
-	 * @param user     {@link User}
-	 */
-	void lock (Template template, User user) throws DotSecurityException, DotDataException;
-
-	/**
 	 * Archive the template, it should be unpublish, but if it is not, then will be unpublish and consequently archive.
 	 * @param template {@link Template}
 	 * @param user     {@link User}

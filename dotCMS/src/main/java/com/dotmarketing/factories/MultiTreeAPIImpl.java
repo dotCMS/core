@@ -876,7 +876,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
                 if (container != null) {
 
-                    myContents.add(new PersonalizedContentlet(multiTree.getContentlet(), personalization));
+                    myContents.add(new PersonalizedContentlet(multiTree.getContentlet(), personalization, multiTree.getTreeOrder()));
                 }
 
                 pageContents.put(containerId, multiTree.getRelationType(), myContents);

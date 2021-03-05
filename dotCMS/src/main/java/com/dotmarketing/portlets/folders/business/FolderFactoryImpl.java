@@ -1220,7 +1220,11 @@ public class FolderFactoryImpl extends FolderFactory {
 
 	@Override
 	protected void save(Folder folderInode) throws DotDataException {
-		validateFolderName(folderInode);
+        if (SYSTEM_FOLDER.equals(folderInode.getInode()) && !Host.SYSTEM_HOST.equals(folderInode.getHostId())) {
+            throw new DotRuntimeException(String.format("Host ID for SYSTEM_FOLDER must always be SYSTEM_HOST. Value " +
+                    "'%s' was set.", folderInode.getHostId()));
+        }
+        validateFolderName(folderInode);
 
 		HibernateUtil.getSession().clear();
 		HibernateUtil.saveOrUpdate(folderInode);
@@ -1231,6 +1235,10 @@ public class FolderFactoryImpl extends FolderFactory {
 
 	@Override
 	protected void save(Folder folderInode, String existingId) throws DotDataException {
+        if (SYSTEM_FOLDER.equals(folderInode.getInode()) && !Host.SYSTEM_HOST.equals(folderInode.getHostId())) {
+            throw new DotRuntimeException(String.format("Host ID for SYSTEM_FOLDER must always be SYSTEM_HOST. Value " +
+                    "'%s' was set.", folderInode.getHostId()));
+        }
 		validateFolderName(folderInode);
 
 		if(existingId==null){

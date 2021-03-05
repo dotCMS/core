@@ -83,7 +83,8 @@ public class TemplatePaginator implements PaginatorOrdered<TemplateView> {
                     new PaginatedArrayList<>();
             templates.addAll(allTemplates.stream().map(template -> this.templateHelper.toTemplateView(template, user)).collect(Collectors.toList()));
             templates.setQuery(allTemplates.getQuery());
-            templates.setTotalResults(allTemplates.getTotalResults());
+            templates.setTotalResults(templateAPI.findTemplates(user, archive, params, hostId,
+                    null, null, null, 0, -1, orderByDirection).size());
 
             return templates;
         } catch (DotSecurityException | DotDataException e) {

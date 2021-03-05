@@ -956,7 +956,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 isAdmin = true;
             }
         }
-        StringBuffer buffy = new StringBuffer(luceneQuery);
+        final StringBuffer buffy = new StringBuffer(luceneQuery);
 
         // Permissions in the query
         if (!isAdmin)
@@ -971,26 +971,25 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         if(limit<=MAX_LIMIT) {
-            SearchHits lc = contentFactory.indexSearch(buffy.toString(), limit, offset, sortBy);
-            PaginatedArrayList <ContentletSearch> list=new PaginatedArrayList<>();
-            list.setTotalResults(lc.getTotalHits().value);
+            final SearchHits searchHits = contentFactory.indexSearch(buffy.toString(), limit, offset, sortBy);
+            final PaginatedArrayList <ContentletSearch> list=new PaginatedArrayList<>();
+            list.setTotalResults(searchHits.getTotalHits().value);
 
-            for (SearchHit sh : lc.getHits()) {
+            for (final SearchHit searchHit : searchHits.getHits()) {
                 try{
-                    Map<String, Object> sourceMap = sh.getSourceAsMap();
-                    ContentletSearch conwrapper= new ContentletSearch();
-                    conwrapper.setId(sh.getId());
-                    conwrapper.setIndex(sh.getIndex());
-                    conwrapper.setIdentifier(sourceMap.get("identifier").toString());
-                    conwrapper.setInode(sourceMap.get("inode").toString());
-                    conwrapper.setScore(sh.getScore());
+                    final Map<String, Object> sourceMap = searchHit.getSourceAsMap();
+                    final ContentletSearch conWrapper = new ContentletSearch();
+                    conWrapper.setId(searchHit.getId());
+                    conWrapper.setIndex(searchHit.getIndex());
+                    conWrapper.setIdentifier(sourceMap.get("identifier").toString());
+                    conWrapper.setInode(sourceMap.get("inode").toString());
+                    conWrapper.setScore(searchHit.getScore());
 
-                    list.add(conwrapper);
+                    list.add(conWrapper);
                 }
                 catch(Exception e){
                     Logger.error(this,e.getMessage(),e);
                 }
-
             }
             return list;
         } else {
@@ -1192,8 +1191,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         final List<MultiTree> trees = APILocator.getMultiTreeAPI().getMultiTreesByChild(id.getId());
         for (final MultiTree tree : trees) {
-            final IHTMLPage page = loadPageByIdentifier(tree.getParent1(), false, contentlet.getLanguageId(), APILocator.getUserAPI().getSystemUser(), false);
-            final Container container = APILocator.getContainerAPI().getWorkingContainerById(tree.getParent2(), APILocator.getUserAPI().getSystemUser(), false);
+            final IHTMLPage page = APILocator.getHTMLPageAssetAPI()
+                    .findByIdLanguageFallback(tree.getParent1(), contentlet.getLanguageId(), false,
+                            APILocator.getUserAPI().getSystemUser(), false);
+            final Container container = APILocator.getContainerAPI()
+                    .getWorkingContainerById(tree.getParent2(),
+                            APILocator.getUserAPI().getSystemUser(), false);
             if (InodeUtils.isSet(page.getInode()) && InodeUtils.isSet(container.getInode())) {
                 final Map<String, Object> map = new HashMap<String, Object>();
                 map.put("page", page);
@@ -5914,11 +5917,23 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    private static final String[] DEFAULT_DATE_FORMATS = new String[] {
+            // time zone
+            "yyyy-MM-dd HH:mm:ss z Z", "d-MMM-yy z Z", "dd-MMM-yyyy z Z", "MM/dd/yy HH:mm:ss z Z",
+            "MM/dd/yy hh:mm:ss z Z", "MMMM dd, yyyy z Z", "M/d/y z Z", "MM/dd/yyyy z Z", "yyyy-MM-dd z Z",
+
+            "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm", "d-MMM-yy", "MMM-yy", "MMMM-yy", "d-MMM", "dd-MMM-yyyy",
+            "MM/dd/yyyy hh:mm:ss aa", "MM/dd/yyyy hh:mm aa", "MM/dd/yy HH:mm:ss", "MM/dd/yy HH:mm:ss", "MM/dd/yy HH:mm",
+            "MM/dd/yy hh:mm:ss aa", "MM/dd/yy hh:mm:ss", "MM/dd/yyyy HH:mm:ss", "MM/dd/yyyy HH:mm", "MMMM dd, yyyy",
+            "M/d/y", "M/d", "EEEE, MMMM dd, yyyy", "MM/dd/yyyy",
+            "hh:mm:ss aa", "hh:mm aa", "HH:mm:ss", "HH:mm", "yyyy-MM-dd"
+    };
+
     @Override
     public void setContentletProperty(Contentlet contentlet,Field field, Object value)throws DotContentletStateException {
-        String[] dateFormats = new String[] { "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm", "d-MMM-yy", "MMM-yy", "MMMM-yy", "d-MMM", "dd-MMM-yyyy", "MM/dd/yyyy hh:mm:ss aa", "MM/dd/yyyy hh:mm aa", "MM/dd/yy HH:mm:ss", "MM/dd/yy HH:mm:ss", "MM/dd/yy HH:mm", "MM/dd/yy hh:mm:ss aa", "MM/dd/yy hh:mm:ss",
-                "MM/dd/yyyy HH:mm:ss", "MM/dd/yyyy HH:mm", "MMMM dd, yyyy", "M/d/y", "M/d", "EEEE, MMMM dd, yyyy", "MM/dd/yyyy",
-                "hh:mm:ss aa", "hh:mm aa", "HH:mm:ss", "HH:mm", "yyyy-MM-dd"};
+
+        final String[] dateFormats = Config.getStringArrayProperty("dotcontentlet_dateformats", DEFAULT_DATE_FORMATS);
+
         if(contentlet == null){
             throw new DotContentletValidationException("The contentlet must not be null");
         }
@@ -7788,14 +7803,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private boolean isInodeIndexedWithQuery(final String luceneQuery,
                                             final int milliSecondsToWait) {
 
-        final long indexTimeOut    = Config.getLongProperty("TIMEOUT_INDEX_COUNT", 1000);
         final long millistoWait    = Config.getLongProperty("IS_NODE_INDEXED_INDEX_MILLIS_WAIT", 100);
         final int limit            = - 1 != milliSecondsToWait?milliSecondsToWait: 300;
         boolean   found            = false;
         int       counter          = 0;
         int       fibonacciIndex   = 0;
 
-        if (this.contentFactory.indexCount(luceneQuery, indexTimeOut) > 0) {
+        if (this.contentFactory.indexCount(luceneQuery) > 0) {
 
             if (ConfigUtils.isDevMode()) {
                 Logger.info(this, ()-> "******>>>>>> Index count found in the fist hit for the query: " + luceneQuery);
@@ -7810,7 +7824,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 try {
 
-                    found = this.contentFactory.indexCount(luceneQuery, indexTimeOut) > 0;
+                    found = this.contentFactory.indexCount(luceneQuery) > 0;
                 } catch (Exception e) {
                     Logger.error(this.getClass(), e.getMessage(), e);
                     return false;

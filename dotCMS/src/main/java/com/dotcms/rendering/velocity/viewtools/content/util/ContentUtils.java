@@ -6,6 +6,7 @@ import com.dotcms.util.TimeMachineUtil;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -24,6 +25,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 /**
@@ -674,5 +676,34 @@ public class ContentUtils {
         return getPullResults(relationship, contentletIdentifier, condition, limit, offset, sort,
                 user, tmDate, pullParents, -1, null);
     }
+
+	public static String addDefaultsToQuery(String query, final boolean editOrPreviewMode, final
+			HttpServletRequest request){
+		String q = "";
+
+		if(query != null)
+			q = query;
+		else
+			query = q;
+
+		if(!query.contains("languageId")){
+			q += " +languageId:" + WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
+		}
+
+		if(!(query.contains("live:") || query.contains("working:") )){
+			if(editOrPreviewMode && !TimeMachineUtil.isRunning()){
+				q +=" +working:true ";
+			}else{
+				q +=" +live:true ";
+			}
+
+		}
+
+
+		if(!UtilMethods.contains(query,"deleted:")){
+			q+=" +deleted:false ";
+		}
+		return q;
+	}
 		
 }

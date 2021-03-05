@@ -6,6 +6,8 @@ import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
@@ -79,16 +81,20 @@ public class VisitorAPIImpl implements VisitorAPI {
         // If we are forcing a persona on a visitor
         if(visitorOpt.isPresent()) {
 
-			if(Objects.nonNull(request.getParameter(WebKeys.CMS_PERSONA_PARAMETER))){
+			if(Objects.nonNull(request.getParameter(WebKeys.CMS_PERSONA_PARAMETER)) ||
+                    Objects.nonNull(request.getAttribute(WebKeys.CMS_PERSONA_PARAMETER))){
 
 				final Visitor visitor   = visitorOpt.get();
 				final PageMode pageMode = PageMode.get(request);
 				try {
 
 					final User user = com.liferay.portal.util.PortalUtil.getUser(request);
-					final Persona persona = pageMode.showLive?
-                            personaAPI.findLive(request.getParameter(WebKeys.CMS_PERSONA_PARAMETER), user, true):
-                            personaAPI.find(request.getParameter(WebKeys.CMS_PERSONA_PARAMETER), user, true);
+					final String personaIDorTag = Objects.nonNull(request
+                            .getParameter(WebKeys.CMS_PERSONA_PARAMETER)) ? request
+                            .getParameter(WebKeys.CMS_PERSONA_PARAMETER) :
+                            (String) request.getAttribute(WebKeys.CMS_PERSONA_PARAMETER);
+
+                    final Persona persona = getPersona(pageMode, user, personaIDorTag);
 					visitor.setPersona(persona);
 				}catch(DotContentletStateException e) {
 				    // This is meant to catch the "Can't find contentlet" error.
@@ -103,6 +109,24 @@ public class VisitorAPIImpl implements VisitorAPI {
         }
 
         return visitorOpt;
+    }
+
+    private Persona getPersona(PageMode pageMode, User user, String personaID)
+            throws DotDataException, DotSecurityException {
+        Persona persona = null;
+
+        if (pageMode.showLive) {
+            persona = personaAPI.findLive(personaID, user, true);
+        } else {
+            persona = personaAPI.find(personaID, user, true);
+        }
+
+        if(persona==null) {
+            persona = personaAPI.findPersonaByTag(personaID, user, true)
+                    .orElse(null);
+        }
+
+        return persona;
     }
 
     public void removeVisitor(final HttpServletRequest request){

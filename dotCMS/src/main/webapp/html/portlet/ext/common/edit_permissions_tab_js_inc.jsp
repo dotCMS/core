@@ -706,7 +706,7 @@
 		if(dijit.byId('permissionsUserSelector').attr('value') == '') {
 			return;
 		}
-		var userId = dijit.byId('permissionsUserSelector').attr('value').split('-')[1];
+		var userId = dijit.byId('permissionsUserSelector').attr('value').replace('user-', '');
 		RoleAjax.getUserRole(userId, addUserToPermissionCallback);
 	}
 

@@ -354,13 +354,23 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			toReturn.addAll(this.findFolderAssetTemplate(user, hostId, orderBy,
 					includeArchived, params != null? params.values(): Collections.emptyList()));
 
-			if(countLimit > 0 && toReturn.size() < countLimit + offset) {
+			if (countLimit > 0 && toReturn.size() < countLimit + offset) {
 
 				while (!done) {
 					dc.setStartRow(internalOffset);
 					dc.setMaxRows(internalLimit);
 
-					resultList = TransformerLocator.createTemplateTransformer(dc.loadObjectResults()).asList();
+					resultList = TransformerLocator
+							.createTemplateTransformer(dc.loadObjectResults()).asList();
+
+					//Search by inode
+					if (resultList.isEmpty()) {
+						final Template templateInode =
+								params != null ? find(params.get("filter").toString()) : null;
+						resultList =
+								templateInode != null ? Collections.singletonList(templateInode)
+										: Collections.emptyList();
+					}
 
 					toReturn.addAll(APILocator.getPermissionAPI().filterCollection(
 							resultList, PermissionAPI.PERMISSION_READ, false, user));

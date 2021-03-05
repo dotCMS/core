@@ -102,6 +102,8 @@ public class TemplateHelper {
         TemplateLayout layout = null;
 
         if (null != templateLayoutView) {
+            //update UUID for the containers
+            templateLayoutView.updateUUIDOfContainers();
 
             layout = new TemplateLayout();
             layout.setBody(this.toBody(templateLayoutView.getBody()));
