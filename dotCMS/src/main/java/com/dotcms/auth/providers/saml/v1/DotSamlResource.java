@@ -11,6 +11,7 @@ import com.dotcms.saml.SamlAuthenticationService;
 import com.dotcms.saml.DotSamlException;
 import com.dotcms.saml.SamlConfigurationService;
 import com.dotcms.saml.SamlName;
+import com.dotcms.util.RedirectUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -223,7 +224,7 @@ public class DotSamlResource implements Serializable {
 						session.removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
 					}
 
-					sendRedirectHTML(httpServletResponse, loginPath);
+					RedirectUtil.sendRedirectHTML(httpServletResponse, loginPath);
 					return;
 				}
 			} finally {
@@ -238,27 +239,7 @@ public class DotSamlResource implements Serializable {
 		throw new DotSamlException(message);
 	}
 
-    final static Lazy<String> redirectTemplate = Lazy.of(()->new StringWriter()
-                    .append("<html>")
-                    .append("<head>")
-                    .append("<meta http-equiv=\"refresh\" content=\"0;URL='REDIRECT_ME'\"/>")
-                    .append("</head>")
-                    .append("<body><p>If your browser does not refresh, click <a href=\"REDIRECT_ME\">Here</a>.</p></body>")
-                    .append("</html>").toString());
-    
-    
-    
-    public void sendRedirectHTML(HttpServletResponse response, final String redirectUrl) {
-        
-        final String finalTemplate = UtilMethods.replace(redirectTemplate.get(),"REDIRECT_ME", redirectUrl);
-        
-        response.setContentType("text/html");
-        Try.run(() -> {
-            response.getWriter().write(finalTemplate);
-            response.getWriter().flush();
-        }).onFailure(e->Logger.warn(DotSamlResource.class,"Unable to redirect after saml login:" +e.getMessage()));
-    }
-	
+
 	
 	
 	
@@ -316,7 +297,7 @@ public class DotSamlResource implements Serializable {
 	@NoCache
 	@Produces({MediaType.TEXT_HTML, MediaType.APPLICATION_XHTML_XML})
 	// Login configuration by id
-	public Response logoutPost(@PathParam("idpConfigId") final String idpConfigId,
+	public void logoutPost(@PathParam("idpConfigId") final String idpConfigId,
 					   @Context final HttpServletRequest httpServletRequest,
 					   @Context final HttpServletResponse httpServletResponse) throws IOException, URISyntaxException {
 
@@ -332,8 +313,9 @@ public class DotSamlResource implements Serializable {
 					final String logoutPath = this.samlConfigurationService.getConfigAsString(identityProviderConfiguration,
 							SamlName.DOT_SAML_LOGOUT_SERVICE_ENDPOINT_URL,
 							()-> "/dotAdmin/#/public/logout");
+					RedirectUtil.sendRedirectHTML(httpServletResponse, logoutPath);
 
-					return Response.temporaryRedirect(new URI(logoutPath)).build();
+
 				}
 			} finally {
 				if (null != identityProviderConfiguration) {
@@ -352,7 +334,7 @@ public class DotSamlResource implements Serializable {
 	@NoCache
 	@Produces({MediaType.TEXT_HTML, MediaType.APPLICATION_XHTML_XML})
 	// Login configuration by id
-	public Response logoutGet(@PathParam("idpConfigId") final String idpConfigId,
+	public void logoutGet(@PathParam("idpConfigId") final String idpConfigId,
 					   @Context final HttpServletRequest httpServletRequest,
 					   @Context final HttpServletResponse httpServletResponse) throws IOException, URISyntaxException {
 
@@ -369,7 +351,10 @@ public class DotSamlResource implements Serializable {
 							SamlName.DOT_SAML_LOGOUT_SERVICE_ENDPOINT_URL,
 							()-> this.buildBaseUrlFromRequest(httpServletRequest));
 
-					return Response.temporaryRedirect(new URI(logoutPath)).build();
+					
+					
+					RedirectUtil.sendRedirectHTML(httpServletResponse, logoutPath);
+
 				}
 			} finally {
 				if (null != identityProviderConfiguration) {
