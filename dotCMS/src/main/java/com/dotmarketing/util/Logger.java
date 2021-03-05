@@ -37,13 +37,17 @@ public class Logger {
     /**
      * Caffeine Cache is going to be much more performant concurrently than a hashmap
      */
-    private final static Cache<String, org.apache.logging.log4j.Logger> loggerMap =
-                    Caffeine.newBuilder().maximumSize(10000).removalListener(new RemovalListener<String, org.apache.logging.log4j.Logger>() {
-                        @Override
-                        public void onRemoval(String key, org.apache.logging.log4j.Logger value, RemovalCause cause) {
-                            System.out.println("removing Logger :" + key + " due to " + cause);
-                        }
-                    }).build();
+    private final static Cache<String, org.apache.logging.log4j.Logger> loggerMap =  
+                    Caffeine.newBuilder()
+                        .maximumSize(10000)
+                        .expireAfterAccess(6,TimeUnit.HOURS)
+                        .removalListener(new RemovalListener<String, org.apache.logging.log4j.Logger>() {
+                            @Override
+                            public void onRemoval(String key, org.apache.logging.log4j.Logger value, RemovalCause cause) {
+                                System.out.println("removing Logger :" + key + " due to " + cause);
+                            }
+                        })
+                        .build();
 
     public static void clearLoggers() {
         loggerMap.invalidateAll();
