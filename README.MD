@@ -1,176 +1,105 @@
-# DotCMS UI
 
-This project was created using [angular-cli](https://cli.angular.io/) it means you can use `ng` with all the commands and params.
 
-## Before start
+# Dotcms
 
-1. Install node and npm
-2. Install angular-cli: `npm i @angular/cli`
-3. `npm install`
+This project was generated using [Nx](https://nx.dev).
 
-## Build and run in local DotCMS instance
+<p align="center"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="450"></p>
 
-Watch and compile your files in development mode and copy it into `dotAdmin` folder in your `tomcat` folder.
+🔎 **Nx is a set of Extensible Dev Tools for Monorepos.**
 
-1. `npm run build:dev -- --output-path your/path/to/dotadmin` (ex. ~/dev/dotcms/tomcat8/webapps/ROOT/dotAdmin)
-2. Open http://localhost:8080/dotAdmin
+## Quick Start & Documentation
 
-## Run unit tests
+[Nx Documentation](https://nx.dev/angular)
 
-To test `dotcms-ui` (main app):
+[10-minute video showing all Nx features](https://nx.dev/angular/getting-started/what-is-nx)
 
-`ng test dotcms-ui --browsers=Chrome`
+[Interactive Tutorial](https://nx.dev/angular/tutorial/01-create-application)
 
-To run tests for any internal library:
+## Adding capabilities to your workspace
 
-`ng test {library-name} --browsers=Chrome`
+Nx supports many plugins which add capabilities for developing different types of applications and different tools.
 
-## Publish to NPM
+These capabilities include generating applications, libraries, etc as well as the devtools to test, and build projects as well.
 
-**You need the credentials for dotcms npm account**
+Below are our core plugins:
 
-### Publish a dev verison
+- [Angular](https://angular.io)
+  - `ng add @nrwl/angular`
+- [React](https://reactjs.org)
+  - `ng add @nrwl/react`
+- Web (no framework frontends)
+  - `ng add @nrwl/web`
+- [Nest](https://nestjs.com)
+  - `ng add @nrwl/nest`
+- [Express](https://expressjs.com)
+  - `ng add @nrwl/express`
+- [Node](https://nodejs.org)
+  - `ng add @nrwl/node`
 
-```
-$ npm run publish:dev
-```
+There are also many [community plugins](https://nx.dev/nx-community) you could add.
 
-This will build a production ready app, update the `package.json` version using a timestamp (ex: 5.0.1-1537889821825) and publish that as latest version to npm.
+## Generate an application
 
-### Publish a release
+Run `ng g @nrwl/angular:app my-app` to generate an application.
 
-```
-$ npm run build:prod
-```
+> You can use any of the plugins above to generate applications as well.
 
-This will build a production ready app inside `dist` folder, then:
+When using Nx, you can create multiple applications and libraries in the same workspace.
 
-```
-$ cd dist
-```
+## Generate a library
 
-Edit the `package.json` to update manually the version of the module and finally run:
+Run `ng g @nrwl/angular:lib my-lib` to generate a library.
 
-```
-$ npm publish
-```
+> You can also use any of the plugins above to generate libraries as well.
 
-## StorybookJS
+Libraries are shareable across libraries and applications. They can be imported from `@dotcms/mylib`.
 
-> “Storybook is a powerful frontend workshop environment tool that allows teams to design, build, and organize UI components (and even full screens!) without getting tripped up over business logic and plumbing.” Brad Frost
+## Development server
 
-We use [StorybookJS](https://storybook.js.org/) to showcase our internal design system and tests our components in isolation: https://dotcms.github.io/core-web/design/
+Run `ng serve my-app` for a dev server. Navigate to http://localhost:4200/. The app will automatically reload if you change any of the source files.
 
-## Internal Libraries
+## Code scaffolding
 
-### [dotcms](https://github.com/dotCMS/core-web/tree/master/projects/dotcms)
+Run `ng g component my-component --project=my-app` to generate a new component.
 
-A collection of Angular Services to connect our FE with the DotCMS APIs. [Full docs](https://dotcms.github.io/core-web/docs/dotcms/globals.html)
+## Build
 
-### [dotcms-models](https://github.com/dotCMS/core-web/tree/master/projects/dotcms-models)
+Run `ng build my-app` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `--prod` flag for a production build.
 
-A collection of DotCMS interfaces and types to be reused in all our libraries and main app. [Full docs](https://dotcms.github.io/core-web/docs/dotcms-models/globals.html)
+## Running unit tests
 
-A [StencilJS](https://stenciljs.com/) Web Elements library of DotCMS form fields.
+Run `ng test my-app` to execute the unit tests via [Jest](https://jestjs.io).
 
-### [dot-layout-grid](https://github.com/dotCMS/core-web/tree/master/projects/dot-layout-grid)
+Run `nx affected:test` to execute the unit tests affected by a change.
 
-For our page Layout Editor, allow us to create rows and columns on a page layout.
+## Running end-to-end tests
 
-### [dot-rules](https://github.com/dotCMS/core-web/tree/master/projects/dot-rules)
+Run `ng e2e my-app` to execute the end-to-end tests via [Cypress](https://www.cypress.io).
 
-Our DotCMS Rules portlet.
+Run `nx affected:e2e` to execute the end-to-end tests affected by a change.
 
-### [dotcms-js](https://github.com/dotCMS/core-web/tree/master/projects/dotcms-js) _(deprecated)_
+## Understand your workspace
 
-This in a inherit collection of Angular Services.
+Run `nx dep-graph` to see a diagram of the dependencies of your projects.
 
----
+## Further help
 
-# File structure
+Visit the [Nx Documentation](https://nx.dev/angular) to learn more.
 
-## Modules
 
-Normally is a big funcionality, probably a portlet, typically will contain: components, services and maybe even other modules, but regarthelss, make sure that everything that is contain in the folder of the module is used by the module and only by this module, if a service or component or anything is used by thismodule but also by other module in the app the files for those should not live inside this current module but in the global of the app.
 
-### Services, models and utils
 
-They should live in the module if they are shared by more than one component or directive.
 
-```
-module-name/
-├── components/
-│   ├── index.ts
-│   ├── component-one
-│   │   ├── components/
-│   │   ├── services/
-│   │   ├── models/
-│   │   ├── utils/
-│   │   ├── component.one.component.html
-│   │   ├── component.one.component.scss
-│   │   ├── component.one.component.ts
-│   │   ├── component.one.component.spec.ts
-│   ├── component-two
-│   │   └── ...
-├── services/
-│   ├── index.ts
-│   ├── service.one.service.ts
-│   ├── service.one.service.spec.ts
-│   ├── service.two.service.ts
-│   └── service.two.service.spec.ts
-├── models/
-│   ├── index.ts
-│   ├── model-one.ts
-│   ├── model-two.ts
-│   └── model-xxx.ts
-├── utils/
-│   ├── index.ts
-│   ├── util-one.ts
-│   ├── util-two.ts
-│   └── util-xxx.ts
-├── component-name.component.ts
-├── component-name.component.scss
-├── component-name.component.html
-├── component-name.component.spec.ts
-├── component-name.module..ts
-└── component-name-routing.module..ts
-```
 
-## Components and or directives
+## ☁ Nx Cloud
 
-Services, models and utils are _JUST_ for this component and should be only use it for this component, if any of this needs to be shared between components in the module, it should live at module level
+### Computation Memoization in the Cloud
 
-### Services, models and utils
+<p align="center"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-cloud-card.png"></p>
 
-They live in the component if they are use ONLY by this component and/or directive, if they are use in other components/directive they should live in the module level.
+Nx Cloud pairs with Nx in order to enable you to build and test code more rapidly, by up to 10 times. Even teams that are new to Nx can connect to Nx Cloud and start saving time instantly.
 
-```
-component-name/
-├── components/
-│   ├── index.ts
-│   ├── components-one
-│   │   ├── components.one.service.ts
-│   │   └── components.one.service.spec.ts
-│   ├── components-two
-│   │   └── ...
-├── services/
-│   ├── index.ts
-│   ├── service.one.service.ts
-│   ├── service.one.service.spec.ts
-│   ├── service.two.service.ts
-│   └── service.two.service.spec.ts
-├── models/
-│   ├── index.ts
-│   ├── model-one.ts
-│   ├── model-two.ts
-│   └── model-xxx.ts
-├── utils/
-│   ├── index.ts
-│   ├── util-one.ts
-│   ├── util-two.ts
-│   └── util-xxx.ts
-├── component-name.component.ts
-├── component-name.component.scss
-├── component-name.component.html
-└── component-name.component.spec.ts
-```
+Teams using Nx gain the advantage of building full-stack applications with their preferred framework alongside Nx’s advanced code generation and project dependency graph, plus a unified experience for both frontend and backend developers.
+
+Visit [Nx Cloud](https://nx.app/) to learn more.

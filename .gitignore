@@ -12,6 +12,7 @@
 /node_modules
 /**/node_modules
 
+
 # IDEs and editors
 /.idea
 .project
@@ -22,15 +23,23 @@
 *.sublime-workspace
 *.vscode
 
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
 # misc
 /.sass-cache
 /connect.lock
 /coverage
 /libpeerconnection.log
 npm-debug.log
+yarn-error.log
 testem.log
 /typings
-yarn-error.log
+karma_html/
 
 # e2e
 /e2e/*.js
@@ -39,14 +48,3 @@ yarn-error.log
 # System Files
 .DS_Store
 Thumbs.db
-
-# Storybook
-documentation.json
-storybook-static/
-
-
-# projects/dotcms-field-elements
-**/dist/
-**/www/
-**/loader/
-**/.stencil/

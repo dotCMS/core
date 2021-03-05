@@ -35,11 +35,11 @@ jobs:
             - name: Installing dependencies
               run: npm install
             - name: Building for production
-              run: npm run build:prod
+              run: npm run nx build dotcms-ui
             - name: Running tests
               id: test_run
               run: |
-                  if ! (npm run test -- dotcms-ui --watch=false --reporters=html,progress --source-map=false) then
+                  if ! (npm run nx test --target=dotcms-ui --prod) then
                     echo "::set-output name=status::failure";
                     echo "::set-output name=color::#ff2400";
                     exit 1;

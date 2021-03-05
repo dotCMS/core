@@ -1,0 +1,35 @@
+{
+    "compileOnSave": false,
+    "compilerOptions": {
+        "rootDir": ".",
+        "sourceMap": true,
+        "declaration": false,
+        "moduleResolution": "node",
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "importHelpers": true,
+        "target": "es2015",
+        "module": "esnext",
+        "lib": ["es2017", "dom", "dom.iterable"],
+        "skipLibCheck": true,
+        "skipDefaultLibCheck": true,
+        "baseUrl": ".",
+        "paths": {
+            "@dotcms/dot-rules": ["libs/dot-rules/src/public_api.ts"],
+            "@pipes/*": ["apps/dotcms-ui/src/app/view/pipes/*"],
+            "@services/*": ["apps/dotcms-ui/src/app/api/services/*"],
+            "@dotcms/dotcms-js": ["libs/dotcms-js/src/public_api.ts"],
+            "@dotcms/app/*": ["apps/dotcms-ui/src/app/*"],
+            "@components/*": ["apps/dotcms-ui/src/app/view/components/*"],
+            "@directives/*": ["apps/dotcms-ui/src/app/view/directives/*"],
+            "@models/*": ["apps/dotcms-ui/src/app/shared/models/*"],
+            "@shared/*": ["apps/dotcms-ui/src/app/shared/*"],
+            "@tests/*": ["apps/dotcms-ui/src/app/test/*"],
+            "@portlets/*": ["apps/dotcms-ui/src/app/portlets/*"],
+            "@dotcms/dot-layout-grid": ["libs/dot-layout-grid/src/public_api.ts"],
+            "@dotcms/dotcms-models": ["libs/dotcms-models/src/public_api.ts"],
+            "@dotcms/dotcms": ["libs/dotcms/src/public_api.ts"]
+        }
+    },
+    "exclude": ["node_modules", "tmp"]
+}

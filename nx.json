@@ -1,0 +1,49 @@
+{
+    "implicitDependencies": {
+        "angular.json": "*",
+        "package.json": {
+            "dependencies": "*",
+            "devDependencies": "*"
+        },
+        "tsconfig.base.json": "*",
+        "tslint.json": "*",
+        ".eslintrc.json": "*",
+        "nx.json": "*"
+    },
+    "affected": {
+        "defaultBase": "master"
+    },
+    "npmScope": "dotcms",
+    "tasksRunnerOptions": {
+        "default": {
+            "runner": "@nrwl/workspace/tasks-runners/default",
+            "options": {
+                "cacheableOperations": ["build", "lint", "test", "e2e"]
+            }
+        }
+    },
+    "projects": {
+        "dotcms-ui": {
+            "tags": []
+        },
+        "dotcms-ui-e2e": {
+            "tags": [],
+            "implicitDependencies": ["dotcms-ui"]
+        },
+        "dot-rules": {
+            "tags": []
+        },
+        "dotcms-js": {
+            "tags": []
+        },
+        "dot-layout-grid": {
+            "tags": []
+        },
+        "dotcms-models": {
+            "tags": []
+        },
+        "dotcms": {
+            "tags": []
+        }
+    }
+}

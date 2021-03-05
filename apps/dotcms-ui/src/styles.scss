@@ -1,0 +1,98 @@
+@use "variables" as *;
+@import "forms";
+@import "mixins";
+@import "typography";
+@import "dotcms-theme/utils/theme-variables"; /* temporary */
+@import "dotcms-theme/theme"; /* prime-ng */
+
+// CSS VARIABLEs
+:root {
+    --color-background: #3a3847;
+    --color-main: #6b4de2;
+    --color-main_mod: #8674c0;
+    --color-main_rgb: 107, 77, 226;
+    --color-sec: #6f5fa3;
+    --color-sec_rgb: 111, 95, 163;
+    --color-white: #fff;
+    --color-white_rgb: 255, 255, 255;
+    --empty-message: "";
+}
+
+/*
+    FONT AWESOME
+    Legacy code, this is to support font awesome icons in the main navigation
+*/
+// @import "../node_modules/font-awesome/css/font-awesome.css";
+
+// MATERIAL DESIGN ICONS
+@import url("https://fonts.googleapis.com/icon?family=Material+Icons&display=swap");
+
+// GOOGLE FONTS
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap");
+
+*,
+*:before,
+*:after {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    color: $black;
+    font-family: $body-text;
+    font-size: 14px;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    -ms-overflow-style: -ms-autohiding-scrollbar; // Hiding scrollbars in IE11 and Edge by default
+}
+
+// For the login component user photo background
+body {
+    background-position: top center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+a {
+    color: $brand-primary;
+
+    &:hover {
+        text-decoration: none;
+    }
+
+    &.link-secondary {
+        color: $brand-secondary;
+    }
+
+    &[actionlink] {
+        color: $brand-secondary;
+        font-size: $button-tiny-text-size;
+        text-transform: uppercase;
+        cursor: pointer;
+    }
+}
+
+/*
+
+Dragula clone and append dragged element to the body we need to have their styles globally.
+However this is for the dragula we use in the angular components the one in the edit page have their own place because we inject it to the page iframe
+
+*/
+
+.gu-mirror {
+    position: fixed !important;
+    margin: 0 !important;
+    z-index: 9999 !important;
+    opacity: 1;
+    transform-origin: right top;
+}
+.gu-hide {
+    display: none !important;
+}
+.gu-unselectable {
+    user-select: none !important;
+}
