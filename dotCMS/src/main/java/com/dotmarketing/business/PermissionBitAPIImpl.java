@@ -266,33 +266,33 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	@CloseDBIfOpened
 	@Override
 	public boolean doesUserHavePermission(final Permissionable permissionable, int permissionType, final User userIn, final boolean respectFrontendRoles) throws DotDataException {
-	    
-	    
-	    final User user = (userIn==null || userIn.getUserId()==null) ? APILocator.getUserAPI().getAnonymousUser() : userIn;
-	    
-	    
-	    
-	    
-        if(user.getUserId().equals(APILocator.getUserAPI().getSystemUser().getUserId())){
-            return true;
-        }
-        
+
+		final User user = (userIn == null || userIn.getUserId() == null) ? APILocator.getUserAPI()
+				.getAnonymousUser() : userIn;
+
+		if (user.getUserId().equals(APILocator.getUserAPI().getSystemUser().getUserId())) {
+			return true;
+		}
+
 		// if we have bad data
 		if ((permissionable == null) || (!InodeUtils.isSet(permissionable.getPermissionId()))) {
-			if(permissionable != null){
-				Logger.debug(this.getClass(), "Trying to get permissions on null inode of type :" + permissionable.getPermissionType()) ;
-				Logger.debug(this.getClass(), "Trying to get permissions on null inode of class :" + permissionable.getClass()) ;
+			if (permissionable != null) {
+				Logger.debug(this.getClass(),
+						"Trying to get permissions on null inode of type :" + permissionable
+								.getPermissionType());
+				Logger.debug(this.getClass(),
+						"Trying to get permissions on null inode of class :" + permissionable
+								.getClass());
 			}
-			if(permissionable == null){
+			if (permissionable == null) {
 				Logger.error(this, "Permissionable object is null");
 				throw new NullPointerException("Permissionable object is null");
 			}
 			return false;
 		}
 
-
 		// short circut for UserProxy
-		if(permissionable instanceof UserProxy) {
+		if (permissionable instanceof UserProxy) {
 			return userPermissions((UserProxy) permissionable, user);
 		}
 
