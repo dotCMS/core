@@ -291,6 +291,9 @@ public class PermissionBitAPIImpl implements PermissionAPI {
             
         }
 
+
+
+        
         // short circut for UserProxy
         if(permissionable instanceof UserProxy) {
             return userPermissions((UserProxy) permissionable, user);
