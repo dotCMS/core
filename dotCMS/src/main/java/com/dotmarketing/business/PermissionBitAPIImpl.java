@@ -275,7 +275,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		}
 
 		// if we have bad data
-		if ((permissionable == null) || (!InodeUtils.isSet(permissionable.getPermissionId()))) {
+		/*if ((permissionable == null) || (!InodeUtils.isSet(permissionable.getPermissionId()))) {
 			if (permissionable != null) {
 				Logger.debug(this.getClass(),
 						"Trying to get permissions on null inode of type :" + permissionable
@@ -289,6 +289,22 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 				throw new NullPointerException("Permissionable object is null");
 			}
 			return false;
+		}*/
+
+		if(user.isAdmin()) {
+			return true;
+		}
+
+		if (permissionable == null) {
+			Logger.warn(this, "Permissionable object is null");
+			throw new NullPointerException("Permissionable object is null");
+		}
+
+		if(UtilMethods.isEmpty(permissionable.getPermissionId())){
+			Logger.debug(this.getClass(), "Trying to get permissions on null inode of type :" + permissionable.getPermissionType()) ;
+			Logger.debug(this.getClass(), "Trying to get permissions on null inode of class :" + permissionable.getClass()) ;
+			return false;
+
 		}
 
 		// short circut for UserProxy
