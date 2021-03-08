@@ -153,7 +153,7 @@ public class ContainerStructureFinderStrategyResolver {
                     containerStructures = builder.build();
                     containerStructures = containerStructures.stream().map((cs)-> {
                         if(cs.getCode()==null) {
-                            cs.setCode("");
+                            cs.setCode(""); 
                         }
                         return cs;
                     }).collect(Collectors.toList());
