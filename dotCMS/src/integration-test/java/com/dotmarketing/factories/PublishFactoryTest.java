@@ -1,10 +1,20 @@
 package com.dotmarketing.factories;
 
+import com.dotcms.api.system.event.message.MessageSeverity;
+import com.dotcms.api.system.event.message.MessageType;
+import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotcms.contenttype.model.field.DateTimeField;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.*;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.google.common.collect.Lists;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -22,6 +32,14 @@ import com.liferay.portal.model.User;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+
+import static com.dotcms.util.CollectionsUtils.list;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.*;
 
 public class PublishFactoryTest extends IntegrationTestBase {
 
@@ -107,5 +125,300 @@ public class PublishFactoryTest extends IntegrationTestBase {
                 folderAPI.delete(folder, systemUser, false);
             }
         }
+    }
+
+    /***
+     * Method to Test: {@link PublishFactory#publishHTMLPage(IHTMLPage, HttpServletRequest)}
+     * When: Try to publish a page with a {@link Contentlet} with a future publish page
+     * Should: Publish the page anywhere and send a notification saying that the content is not going to show in the live version
+     * @throws Exception
+     */
+    @Test
+    public void testPublishHTMLPageWithContentWithFuturePublishDate() throws Exception {
+        final Host host = new SiteDataGen().nextPersisted();
+        com.dotcms.contenttype.model.field.Field publishField = new FieldDataGen()
+                .name("Pub Date")
+                .velocityVarName("sysPublishDate")
+                .defaultValue(null)
+                .type(DateTimeField.class)
+                .indexed(true)
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(publishField)
+                .host(host)
+                .publishDateFieldVarName(publishField.variable())
+                .nextPersisted();
+
+        final Container container = new ContainerDataGen()
+                .withContentType(contentType, "")
+                .site(host)
+                .nextPersisted();
+
+        final Template template = new TemplateDataGen()
+                .site(host)
+                .withContainer(container.getIdentifier())
+                .nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
+
+        Calendar tomorrow = Calendar.getInstance();
+        tomorrow.add(Calendar.DATE, 1);
+
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType.id())
+                .setProperty(publishField.variable(), tomorrow.getTime())
+                .nextPersisted();
+
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType.id())
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setContainer(container)
+                .setPage(htmlPageAsset)
+                .setContentlet(contentlet_1)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setContainer(container)
+                .setPage(htmlPageAsset)
+                .setContentlet(contentlet_2)
+                .nextPersisted();
+
+        final User systemUser = APILocator.systemUser();
+
+        final List relatedNotPublished = new ArrayList();
+
+        PublishFactory.getUnpublishedRelatedAssetsForPage(htmlPageAsset, relatedNotPublished,
+                true, systemUser, false);
+
+        ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(
+                htmlPageAsset.getIdentifier(), htmlPageAsset.getLanguageId()).get();
+
+        Assert.assertNull(contentletVersionInfo.getLiveInode());
+
+        final SystemMessageEventUtil systemMessageEventUtilMock = mock(SystemMessageEventUtil.class);
+
+        PublishFactory.setSystemMessageEventUtil(systemMessageEventUtilMock);
+
+        APILocator.getContentletAPI().publish(htmlPageAsset, systemUser, false);
+
+
+        contentletVersionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(
+                htmlPageAsset.getIdentifier(), htmlPageAsset.getLanguageId()).get();
+
+        Assert.assertNotNull(contentletVersionInfo.getLiveInode());
+
+        assertFutureContentErrorMessage(contentlet_1, systemMessageEventUtilMock);
+    }
+
+    private void assertFutureContentErrorMessage(Contentlet contentlet_1, SystemMessageEventUtil systemMessageEventUtilMock) {
+        final SystemMessageBuilder messageBuilder = new SystemMessageBuilder()
+                .setMessage(
+                        String.format("The following contents in the Page have Publish Dates set to a future time. " +
+                        "These contents will not be displayed in the live version of the Page until their respective " +
+                        "Publish Dates: <ul>" +
+                        "<li>%s</li></ul>", contentlet_1.getTitle()))
+                .setSeverity(MessageSeverity.ERROR)
+                .setType(MessageType.SIMPLE_MESSAGE)
+                .setLife(TimeUnit.SECONDS.toMillis(5));
+
+        verify(systemMessageEventUtilMock, times(1)).pushMessage(
+                eq(messageBuilder.create()),
+                any()
+         );
+    }
+
+    /***
+     * Method to Test: {@link PublishFactory#publishHTMLPage(IHTMLPage, HttpServletRequest)}
+     * When: Try to publish a page with a {@link Contentlet} already expired
+     * Should: Publish the page anywhere and send a notification saying that the content is not going to show in the live version
+     * @throws Exception
+     */
+    @Test
+    public void testPublishHTMLPageWithExperiredContent() throws Exception {
+        final Host host = new SiteDataGen().nextPersisted();
+        com.dotcms.contenttype.model.field.Field expireField = new FieldDataGen()
+                .name("Exp Date")
+                .velocityVarName("sysExpDate")
+                .defaultValue(null)
+                .type(DateTimeField.class)
+                .indexed(true)
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(expireField)
+                .host(host)
+                .expireDateFieldVarName(expireField.variable())
+                .nextPersisted();
+
+        final Container container = new ContainerDataGen()
+                .withContentType(contentType, "")
+                .site(host)
+                .nextPersisted();
+
+        final Template template = new TemplateDataGen()
+                .site(host)
+                .withContainer(container.getIdentifier())
+                .nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
+
+        Calendar yesterday = Calendar.getInstance();
+        yesterday.add(Calendar.DATE, -1);
+
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType.id())
+                .setProperty(expireField.variable(), yesterday.getTime())
+                .setProperty(Contentlet.DONT_VALIDATE_ME, true)
+                .nextPersisted();
+
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType.id())
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setContainer(container)
+                .setPage(htmlPageAsset)
+                .setContentlet(contentlet_1)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setContainer(container)
+                .setPage(htmlPageAsset)
+                .setContentlet(contentlet_2)
+                .nextPersisted();
+
+        final User systemUser = APILocator.systemUser();
+
+        ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(
+                htmlPageAsset.getIdentifier(), htmlPageAsset.getLanguageId()).get();
+
+        Assert.assertNull(contentletVersionInfo.getLiveInode());
+
+        final SystemMessageEventUtil systemMessageEventUtilMock = mock(SystemMessageEventUtil.class);
+
+        PublishFactory.setSystemMessageEventUtil(systemMessageEventUtilMock);
+
+        APILocator.getContentletAPI().publish(htmlPageAsset, systemUser, false);
+
+
+        contentletVersionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(
+                htmlPageAsset.getIdentifier(), htmlPageAsset.getLanguageId()).get();
+
+        Assert.assertNotNull(contentletVersionInfo.getLiveInode());
+
+        assertExpiredContentErrorMessage(contentlet_1, systemMessageEventUtilMock);
+    }
+
+    /***
+     * Method to Test: {@link PublishFactory#publishHTMLPage(IHTMLPage, HttpServletRequest)}
+     * When: Try to publish a page with a {@link Contentlet} already expired and another {@link Contentlet} whit a future publish date
+     * Should: Publish the page anywhere and send two notification
+     * @throws Exception
+     */
+    @Test
+    public void testPublishHTMLPageWithExperiredAndFutureContent() throws Exception {
+        final Host host = new SiteDataGen().nextPersisted();
+        com.dotcms.contenttype.model.field.Field expireField = new FieldDataGen()
+                .name("Exp Date")
+                .velocityVarName("sysExpDate")
+                .defaultValue(null)
+                .type(DateTimeField.class)
+                .indexed(true)
+                .next();
+
+        com.dotcms.contenttype.model.field.Field publishField = new FieldDataGen()
+                .name("Pub Date")
+                .velocityVarName("sysPublishDate")
+                .defaultValue(null)
+                .type(DateTimeField.class)
+                .indexed(true)
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(expireField)
+                .host(host)
+                .publishDateFieldVarName(publishField.variable())
+                .expireDateFieldVarName(expireField.variable())
+                .nextPersisted();
+
+        final Container container = new ContainerDataGen()
+                .withContentType(contentType, "")
+                .site(host)
+                .nextPersisted();
+
+        final Template template = new TemplateDataGen()
+                .site(host)
+                .withContainer(container.getIdentifier())
+                .nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
+
+        Calendar yesterday = Calendar.getInstance();
+        yesterday.add(Calendar.DATE, -1);
+
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType.id())
+                .setProperty(expireField.variable(), yesterday.getTime())
+                .setProperty(Contentlet.DONT_VALIDATE_ME, true)
+                .nextPersisted();
+
+        Calendar tomorrow = Calendar.getInstance();
+        tomorrow.add(Calendar.DATE, 1);
+
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType.id())
+                .setProperty(publishField.variable(), tomorrow.getTime())
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setContainer(container)
+                .setPage(htmlPageAsset)
+                .setContentlet(contentlet_1)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setContainer(container)
+                .setPage(htmlPageAsset)
+                .setContentlet(contentlet_2)
+                .nextPersisted();
+
+        final User systemUser = APILocator.systemUser();
+
+        final List relatedNotPublished = new ArrayList();
+        PublishFactory.getUnpublishedRelatedAssetsForPage(htmlPageAsset, relatedNotPublished,
+                true, systemUser, false);
+
+        ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(
+                htmlPageAsset.getIdentifier(), htmlPageAsset.getLanguageId()).get();
+
+        Assert.assertNull(contentletVersionInfo.getLiveInode());
+
+        final SystemMessageEventUtil systemMessageEventUtilMock = mock(SystemMessageEventUtil.class);
+
+        PublishFactory.setSystemMessageEventUtil(systemMessageEventUtilMock);
+
+        APILocator.getContentletAPI().publish(htmlPageAsset, systemUser, false);
+
+        contentletVersionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(
+                htmlPageAsset.getIdentifier(), htmlPageAsset.getLanguageId()).get();
+
+        Assert.assertNotNull(contentletVersionInfo.getLiveInode());
+
+        assertExpiredContentErrorMessage(contentlet_1, systemMessageEventUtilMock);
+
+        assertFutureContentErrorMessage(contentlet_2, systemMessageEventUtilMock);
+    }
+
+    private void assertExpiredContentErrorMessage(Contentlet contentlet_1, SystemMessageEventUtil systemMessageEventUtilMock) {
+        final SystemMessageBuilder messageBuilderExpiredContent = new SystemMessageBuilder()
+                .setMessage(
+                        String.format("The following contents in the Page have Expired Dates set to the past time. " +
+                                "These contents will not be displayed in the live version of the Page: <ul>" +
+                                "<li>%s</li></ul>", contentlet_1.getTitle()))
+                .setSeverity(MessageSeverity.ERROR)
+                .setType(MessageType.SIMPLE_MESSAGE)
+                .setLife(TimeUnit.SECONDS.toMillis(5));
+
+        verify(systemMessageEventUtilMock, times(1)).pushMessage(
+                eq(messageBuilderExpiredContent.create()),
+                any()
+        );
     }
 }
