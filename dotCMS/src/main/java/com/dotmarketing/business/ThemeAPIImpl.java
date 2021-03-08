@@ -22,6 +22,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.swagger.jersey.listing.ApiListingResourceJSON;
 
+import io.vavr.control.Try;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -35,21 +36,21 @@ import java.util.stream.Collectors;
  */
 public class ThemeAPIImpl implements ThemeAPI, DotInitializer {
 
-    private final FolderAPI     folderAPI;
+    private final FolderAPI folderAPI;
     private final ContentletAPI contentletAPI;
-    private Theme               systemTheme;
+    private Theme systemTheme;
     @VisibleForTesting
-    public static final String BASE_LUCENE_QUERY           = "+parentpath:/application/themes/* +title:template.vtl ";
-    public static final String SYSTEM_THEME_PATH           = "/static/system_theme/";
+    public static final String BASE_LUCENE_QUERY = "+parentpath:/application/themes/* +title:template.vtl ";
+    public static final String SYSTEM_THEME_PATH = "/static/system_theme/";
     public static final String SYSTEM_THEME_THUMBNAIL_PATH = "/html/images/system-theme.png";
 
     @VisibleForTesting
     ThemeAPIImpl(final ContentletAPI contentletAPI, final FolderAPI folderAPI) {
         this.contentletAPI = contentletAPI;
-        this.folderAPI     = folderAPI;
+        this.folderAPI = folderAPI;
     }
 
-    public ThemeAPIImpl () {
+    public ThemeAPIImpl() {
         this(APILocator.getContentletAPI(), APILocator.getFolderAPI());
     }
 
@@ -76,7 +77,8 @@ public class ThemeAPIImpl implements ThemeAPI, DotInitializer {
     }
 
     @Override
-    public String getThemeThumbnail(final Folder folder, final User user) throws DotSecurityException, DotDataException {
+    public String getThemeThumbnail(final Folder folder, final User user)
+            throws DotSecurityException, DotDataException {
         if (folder == null || user == null) {
             return null;
         }
@@ -84,7 +86,8 @@ public class ThemeAPIImpl implements ThemeAPI, DotInitializer {
         final StringBuilder query = new StringBuilder();
         query.append("+conFolder:").append(folder.getInode()).append(" +title:").append(THEME_PNG)
                 .append(" +live:true +deleted:false");
-        final List<Contentlet> results = contentletAPI.search(query.toString(), -1, 0, null, user, false);
+        final List<Contentlet> results = contentletAPI
+                .search(query.toString(), -1, 0, null, user, false);
 
         return UtilMethods.isSet(results) ? results.get(0).getIdentifier() : null;
     }
@@ -128,10 +131,11 @@ public class ThemeAPIImpl implements ThemeAPI, DotInitializer {
     }
 
     @Override
-    public Theme fromFolder(final Folder folder, final User user, final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+    public Theme fromFolder(final Folder folder, final User user,
+            final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
         final String themeThumbnail = this.getThemeThumbnail(folder, user);
-        final Theme theme           = new Theme(themeThumbnail, folder.getPath());
+        final Theme theme = new Theme(themeThumbnail, folder.getPath());
         theme.setIdentifier(folder.getIdentifier());
         theme.setInode(theme.getInode());
         theme.setHostId(folder.getHostId());
@@ -147,8 +151,8 @@ public class ThemeAPIImpl implements ThemeAPI, DotInitializer {
 
     @Override
     public List<Theme> findThemes(final String themeId, final User user, final int limit,
-            final int offset,  final String hostId,  final OrderDirection direction,
-            final String searchParams,  final boolean respectFrontendRoles)
+            final int offset, final String hostId, final OrderDirection direction,
+            final String searchParams, final boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
 
         final PaginatedArrayList<Theme> result = new PaginatedArrayList();
@@ -156,34 +160,46 @@ public class ThemeAPIImpl implements ThemeAPI, DotInitializer {
 
         query.append(BASE_LUCENE_QUERY);
 
-        if (UtilMethods.isSet(themeId)){
+        if (UtilMethods.isSet(themeId)) {
             query.append("+conFolder").append(StringPool.COLON).append(themeId);
         }
 
-        if(UtilMethods.isSet(hostId)) {
+        if (UtilMethods.isSet(hostId)) {
+            Try.of(() -> APILocator.getHostAPI()
+                    .find(hostId, APILocator.systemUser(), false).getIdentifier())
+                    .getOrElseThrow(() -> new DotDataException("HostId not belong to any host"));
+            Try.of(() -> APILocator.getHostAPI()
+                    .find(hostId, user, false).getIdentifier())
+                    .getOrElseThrow(() -> new DotSecurityException(
+                            "User does not have Permissions over the host"));
             query.append("+conhost").append(StringPool.COLON).append(hostId);
         }
 
-        if (UtilMethods.isSet(searchParams)){
+        if (UtilMethods.isSet(searchParams)) {
             query.append(" +catchall:*").append(searchParams).append("*");
         }
 
         final String sortBy = String.format("parentPath %s", direction.toString().toLowerCase());
 
-            final List<ContentletSearch> contentletSearches =
-                        this.contentletAPI.searchIndex(query.toString(), limit, offset, sortBy, user, respectFrontendRoles);
+        final List<ContentletSearch> contentletSearches =
+                this.contentletAPI.searchIndex(query.toString(), limit, offset, sortBy, user,
+                        respectFrontendRoles);
+        //TODO: If we modify that the hostId is not required we need to add system theme is hostId is not set.
+        //Add system theme only if hostId is SYSTEM_HOST
+        if (hostId.equals(this.systemTheme.getHostId())) {
             result.add(this.systemTheme());
-            //List of inodes of the template.vtl files found
-            final List<String> inodes = contentletSearches.stream()
-                    .map(ContentletSearch::getInode).collect(Collectors.toList());
-            //For each inode found, find the contentlet, get the folder were the contentlet live
-            // and convert it to Theme and add to the list
-            for (final Contentlet contentlet : this.contentletAPI.findContentlets(inodes)) {
-                final Folder folder = folderAPI.find(contentlet.getFolder(), user, false);
-                result.add(this.fromFolder(folder, user, respectFrontendRoles));
-            }
+        }
+        //List of inodes of the template.vtl files found
+        final List<String> inodes = contentletSearches.stream()
+                .map(ContentletSearch::getInode).collect(Collectors.toList());
+        //For each inode found, find the contentlet, get the folder were the contentlet live
+        // and convert it to Theme and add to the list
+        for (final Contentlet contentlet : this.contentletAPI.findContentlets(inodes)) {
+            final Folder folder = folderAPI.find(contentlet.getFolder(), user, false);
+            result.add(this.fromFolder(folder, user, respectFrontendRoles));
+        }
 
-            return result;
+        return result;
 
     }
 }
