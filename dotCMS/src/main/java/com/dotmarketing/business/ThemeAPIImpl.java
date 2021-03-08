@@ -146,9 +146,10 @@ public class ThemeAPIImpl implements ThemeAPI, DotInitializer {
     }
 
     @Override
-    public PaginatedArrayList<Theme> findThemes(final String themeId, final User user, final int limit,
+    public List<Theme> findThemes(final String themeId, final User user, final int limit,
             final int offset,  final String hostId,  final OrderDirection direction,
-            final String searchParams,  final boolean respectFrontendRoles) {
+            final String searchParams,  final boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException {
 
         final PaginatedArrayList<Theme> result = new PaginatedArrayList();
         final StringBuilder query = new StringBuilder();
@@ -169,40 +170,20 @@ public class ThemeAPIImpl implements ThemeAPI, DotInitializer {
 
         final String sortBy = String.format("parentPath %s", direction.toString().toLowerCase());
 
-        try {
-
-            final List<ContentletSearch> totalResults =
-                    this.contentletAPI.searchIndex(query.toString(), limit, offset, sortBy, user, respectFrontendRoles);
-
-            final List<ContentletSearch> contentletSearches;
-
-            if (limit !=-1 || offset!=0) {
-
-                contentletSearches =
+            final List<ContentletSearch> contentletSearches =
                         this.contentletAPI.searchIndex(query.toString(), limit, offset, sortBy, user, respectFrontendRoles);
-                result.setTotalResults(totalResults.size());
-            } else {
-
-                contentletSearches = totalResults;
-                result.add(this.systemTheme());
-                result.setTotalResults(totalResults.size() + 1);
-            }
-
-            final List<String>  inodes = contentletSearches.stream()
+            result.add(this.systemTheme());
+            //List of inodes of the template.vtl files found
+            final List<String> inodes = contentletSearches.stream()
                     .map(ContentletSearch::getInode).collect(Collectors.toList());
-
+            //For each inode found, find the contentlet, get the folder were the contentlet live
+            // and convert it to Theme and add to the list
             for (final Contentlet contentlet : this.contentletAPI.findContentlets(inodes)) {
-
                 final Folder folder = folderAPI.find(contentlet.getFolder(), user, false);
                 result.add(this.fromFolder(folder, user, respectFrontendRoles));
             }
 
-            result.setQuery(query.toString());
             return result;
-        } catch (DotSecurityException | DotDataException e) {
 
-            Logger.error(this, e.getMessage(), e);
-            throw new PaginationException(e);
-        }
     }
 }

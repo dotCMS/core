@@ -7,6 +7,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
+import java.util.List;
 
 /**
  * It is intended as a Helper class to handle Theme
@@ -75,9 +76,9 @@ public interface ThemeAPI {
      * @param direction {@link OrderDirection} asc or desc order
      * @param searchParams {@link String} general search filter param
      * @param respectFrontendRoles {@link Boolean}
-     * @return PaginatedArrayList
+     * @return List of Themes
      */
-    PaginatedArrayList<Theme> findThemes(String themeId, User user, int limit, int offset,
+    List<Theme> findThemes(String themeId, User user, int limit, int offset,
             String hostId, OrderDirection direction, String searchParams,
-            boolean respectFrontendRoles);
+            boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 }
