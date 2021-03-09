@@ -652,16 +652,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
     private void delete(final String inode) throws DotDataException {
-        try {
-            final DotConnect dotConnect = new DotConnect();
-            dotConnect.setSQL("delete from contentlet where inode=?");
-            dotConnect.addParam(inode);
-            dotConnect.loadResult();
-        } catch(Exception ex) {
-            Logger.warn(this, "Error deleting contentlet inode "+ inode+ ". Probably it was already deleted?");
-            Logger.debug(this, "Error deleting contentlet inode "+ inode +". Probably it was already deleted?", ex);
-            this.checkOrphanInode (inode);
-        }
+        checkOrphanInode (inode);
+        final DotConnect dotConnect = new DotConnect();
+        dotConnect.setSQL("delete from contentlet where inode=?");
+        dotConnect.addParam(inode);
+        dotConnect.loadResult();
     }
 
     /**
@@ -1952,7 +1947,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         final StringBuilder script = new StringBuilder();
         if(found) { //update a piece of content
-            script.append("UPDATE contentlet SET inode=?, show_on_menu=?, title=?, mod_date=?, ")
+            script.append("UPDATE contentlet SET show_on_menu=?, title=?, mod_date=?, ")
                     .append("mod_user=?, sort_order=?, friendly_name=?, structure_inode=?, last_review=?, ")
                     .append("next_review=?, review_interval=?, disabled_wysiwyg=?, identifier=?, ")
                     .append("language_id=?, date1=?, date2=?, date3=?, date4=?, date5=?, date6=?, ")
@@ -1981,7 +1976,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     .append("bool14=?, bool15=?, bool16=?, bool17=?, bool18=?, bool19=?, bool20=?, ")
                     .append("bool21=?, bool22=?, bool23=?, bool24=?, bool25=? WHERE inode = ? ");
         } else { //save a new piece of content
-            dotConnect.addParam(inode);
+            createNewInode(inode, contentlet.getOwner());
             script.append("INSERT INTO contentlet(inode, show_on_menu, title, mod_date, mod_user,")
                     .append("sort_order, friendly_name, structure_inode, last_review, next_review, ")
                     .append("review_interval, disabled_wysiwyg, identifier, language_id, date1, ")
@@ -2004,7 +1999,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     .append("float18, float19, float20, float21, float22, float23, float24, float25, ")
                     .append("bool1, bool2, bool3, bool4, bool5, bool6, bool7, bool8, bool9, bool10, ")
                     .append("bool11, bool12, bool13, bool14, bool15, bool16, bool17, bool18, bool19, ")
-                    .append("bool20, bool21, bool22, bool23, bool24, bool25 VALUES (?, ?, ?, ?, ?, ")
+                    .append("bool20, bool21, bool22, bool23, bool24, bool25) VALUES (?, ?, ?, ?, ?, ")
                     .append("?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ")
                     .append("?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ")
                     .append("?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ")
@@ -2015,28 +2010,44 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 
         dotConnect.setSQL(script.toString());
-        contentlet.setInode(inode);
-        addParamsToSaveUpdateContent(contentlet, dotConnect);
+
 
         //Add WHERE condition if needed
         if (found){
+            addParamsToSaveUpdateContent(contentlet, dotConnect);
             dotConnect.addParam(inode);
+        } else{
+            dotConnect.addParam(inode);
+            addParamsToSaveUpdateContent(contentlet, dotConnect);
         }
+        contentlet.setInode(inode);
         dotConnect.loadResult();
         contentletCache.remove(inode);
 
         return contentlet;
 	}
 
+	private void createNewInode(final String inode, final String owner) throws DotDataException {
+        final DotConnect dotConnect = new DotConnect();
+        dotConnect.setSQL("INSERT INTO inode(inode, owner, idate, type) VALUES (?, ?, ?, ?)");
+        dotConnect.addParam(inode);
+        dotConnect.addParam(owner);
+        dotConnect.addParam(new Date());
+        dotConnect.addParam("contentlet");
+        dotConnect.loadResult();
+    }
+
 	private void addParamsToSaveUpdateContent(final Contentlet contentlet, final DotConnect dotConnect)
             throws DotDataException {
 
         dotConnect.addParam(contentlet.getStringProperty("showOnMenu") != null && contentlet
-                .getStringProperty("showOnMenu").contains("true") ? DbConnectionFactory.getDBTrue()
-                : DbConnectionFactory.getDBFalse());
+                .getStringProperty("showOnMenu").contains("true") ? Boolean.TRUE
+                : Boolean.FALSE);
 
         // if the title was not intentionally set to null.
-        final boolean allowTitle = null == contentlet.getNullProperties() || !contentlet.getNullProperties().contains(Contentlet.TITTLE_KEY);
+        final boolean allowTitle =
+                null == contentlet.getNullProperties() || !contentlet.getNullProperties()
+                        .contains(Contentlet.TITTLE_KEY);
 
         String name = "";
         if (allowTitle) {
@@ -2045,16 +2056,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 if (UtilMethods.isSet(contentlet) && UtilMethods.isSet(contentlet.getIdentifier())) {
                     name = APILocator.getContentletAPI().getName(
                             contentlet, APILocator.getUserAPI().getSystemUser(), true);
-
-                    dotConnect.addParam(name);
+                } else{
+                    name = contentlet.getStringProperty(Contentlet.TITTLE_KEY);
                 }
             } catch (DotSecurityException e) {
-                dotConnect.addParam(name);
+
             }
-        } else{
-            dotConnect.addParam((String)null);
         }
 
+        dotConnect.addParam(name);
         dotConnect.addParam(contentlet.getModDate());
         dotConnect.addParam(contentlet.getModUser());
         dotConnect.addParam(new Long(contentlet.getSortOrder()).intValue());
@@ -2111,18 +2121,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
         if (prefix.equals("integer") || prefix.equals("float")){
             defaultValue = 0;
         } else if (prefix.equals("bool")){
-            defaultValue = DbConnectionFactory.getDBFalse();
+            defaultValue = Boolean.FALSE;
         }
 
         for (int i = 1; i <= 25; i++) {
             if (fieldsMap.containsKey(prefix + i)) {
-                if (prefix.equals("bool")) {
-                    dotConnect.addParam(
-                            (Boolean) fieldsMap.get(prefix + i) ? DbConnectionFactory.getDBTrue()
-                                    : DbConnectionFactory.getDBFalse());
-                } else {
-                    dotConnect.addParam(fieldsMap.get(prefix + i));
-                }
+                dotConnect.addParam(fieldsMap.get(prefix + i));
             } else {
                 dotConnect.addParam(defaultValue);
             }
