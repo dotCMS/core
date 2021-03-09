@@ -8,6 +8,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.Params;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -18,6 +19,8 @@ import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.quartz.DotStatefulJob;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import io.vavr.control.Try;
 import org.quartz.*;
 
 import java.util.*;
@@ -35,6 +38,14 @@ public class UpdateContainersPathsJob extends DotStatefulJob  {
             "INNER JOIN template_version_info ON identifier.id = template_version_info.identifier) " +
             "where template.drawed_body is not null and template.drawed_body LIKE ? " +
             "and (template.inode = template_version_info.working_inode or template.inode = template_version_info.live_inode)";
+
+    final String GET_TEMPLATES_QUERY_ORACLE = "SELECT DISTINCT template.inode, identifier.host_inode " +
+            "FROM ((identifier " +
+            "INNER JOIN template ON identifier.id = template.identifier) " +
+            "INNER JOIN template_version_info ON identifier.id = template_version_info.identifier) " +
+            "where template.drawed_body is not null and template.drawed_body LIKE ? " +
+            "and (template.inode = template_version_info.working_inode or template.inode = template_version_info.live_inode)";
+
 
     @WrapInTransaction
     @Override
@@ -147,8 +158,23 @@ public class UpdateContainersPathsJob extends DotStatefulJob  {
         final List<Params> params = new ArrayList<>();
 
         for (final Map<String, Object> template : templates) {
-            final String drawedBody = (String) template.get("drawed_body");
-            final String body = (String) template.get("body");
+            String drawedBody = (String) template.get("drawed_body");
+
+            if(UtilMethods.isNotSet(drawedBody)) {
+               drawedBody = Try.of(()->APILocator.getTemplateAPI()
+                       .find((String) template.get("inode"),APILocator.systemUser(),
+                               false).getDrawedBody()
+                       ).getOrNull();
+            }
+
+            String body = (String) template.get("body");
+
+            if(UtilMethods.isNotSet(body)) {
+                body = Try.of(()->APILocator.getTemplateAPI()
+                        .find((String) template.get("inode"),APILocator.systemUser(),
+                                false).getBody()
+                ).getOrNull();
+            }
 
             final String newDrawBody = drawedBody.replaceAll("//" + oldHostName + "/", "//" + newHostName + "/");
             final String newBody = body != null ? body.replaceAll("//" + oldHostName + "/", "//" + newHostName + "/") : null;
@@ -164,8 +190,11 @@ public class UpdateContainersPathsJob extends DotStatefulJob  {
     }
 
     private List<Map<String, Object>> getAllTemplatesByPath(final String hostName) throws DotDataException {
+        final String getTemplatesQuery = DbConnectionFactory.isOracle() ? GET_TEMPLATES_QUERY_ORACLE :
+                GET_TEMPLATES_QUERY;
+
         return new DotConnect()
-                .setSQL(GET_TEMPLATES_QUERY)
+                .setSQL(getTemplatesQuery)
                 .addParam(String.format("%%//%s%%", hostName + "/"))
                 .loadObjectResults();
     }
