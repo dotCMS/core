@@ -22,14 +22,17 @@ import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.pagination.OrderDirection;
+import com.dotcms.util.pagination.PaginationException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Theme;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -108,6 +111,25 @@ public class ThemeResourceIntegrationTest {
 
     /**
      * Method to test: findThemes
+     * Given Scenario: Find all the themes of the system host.
+     * ExpectedResult: The endpoint should return 200, system theme should be returned
+     *
+     */
+    @Test
+    public void test_FindThemes_WhenHostIdIsSystemTheme_ReturnsSystemTheme() {
+
+        final Response responseResource = resource.findThemes(getHttpRequest(null),  response, APILocator.systemHost().getIdentifier(), 0, -1,
+                OrderDirection.ASC.name(), null);
+
+        assertEquals(Status.OK.getStatusCode(), responseResource.getStatus());
+        final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+        final PaginatedArrayList themeList = PaginatedArrayList.class.cast(responseEntityView.getEntity());
+        assertEquals(1,themeList.size());
+        assertEquals(APILocator.getThemeAPI().systemTheme().getIdentifier(),HashMap.class.cast(themeList.get(0)).get("identifier"));
+    }
+
+    /**
+     * Method to test: findThemes
      * Given Scenario: Tries to find the themes without sending the hostId (required field).
      * ExpectedResult: The endpoint should return BadRequest
      *
@@ -124,8 +146,8 @@ public class ThemeResourceIntegrationTest {
      * ExpectedResult: The endpoint should return DotDataException 404
      *
      */
-    @Test(expected = DotDataException.class)
-    public void test_FindThemes_WhenInvalidHostId_ReturnsDotDataException() {
+    @Test(expected = DoesNotExistException.class)
+    public void test_FindThemes_WhenInvalidHostId_ReturnsDoesNotExistException() {
         resource.findThemes(getHttpRequest(null),  response, "Id-Not-Exist", 0, -1,
                 OrderDirection.ASC.name(), null);
     }
@@ -136,8 +158,8 @@ public class ThemeResourceIntegrationTest {
      * ExpectedResult: DotSecurityException
      *
      */
-    @Test(expected = DotSecurityException.class)
-    public void test_FindThemes_LimitedUserWithoutPermissions_DotSecurityException()
+    @Test(expected = PaginationException.class)
+    public void test_FindThemes_LimitedUserWithoutPermissions_PaginationException()
             throws DotDataException, DotSecurityException {
         final Host newHost = new SiteDataGen().nextPersisted();
 
@@ -217,154 +239,178 @@ public class ThemeResourceIntegrationTest {
         assertEquals(1,themeList.size());
         assertEquals(themeOneFolder.getIdentifier(),HashMap.class.cast(themeList.get(0)).get("identifier"));
     }
-//
-//
-//    @Test
-//    public void test_FindThemeById() throws Throwable {
-//        final Folder folderExpected = folderAPI
-//                .findFolderByPath("/application/themes/quest", host, user, false);
-//        final ThemeResource resource = new ThemeResource();
-//        final Response response = resource.findThemeById(getHttpRequest(),  new EmptyHttpResponse(), folderExpected.getInode());
-//        assertEquals(Status.OK.getStatusCode(), response.getStatus());
-//        final HashMap folder =  (HashMap) ((ResponseEntityView) response.getEntity()).getEntity();
-//
-//        Map<String, Object> mapExpected = folderExpected.getMap();
-//
-//        //Considering THEME_THUMBNAIL_KEY
-//        assertEquals(mapExpected.size(), folder.size() - 1);
-//
-//        mapExpected.entrySet().stream().filter(entry -> entry.getKey().equals(THEME_THUMBNAIL_KEY)).forEach(expectedEntry -> assertEquals(expectedEntry.getValue(),
-//                folder.get(expectedEntry.getKey())));
-//    }
-//
-//    @Test
-//    public void test_FindThemeByIdWithPublishedThemePNG_ReturnsThemeThumbnail()
-//            throws Throwable {
-//        Contentlet thumbnail;
-//        Folder destinationFolder = null;
-//
-//        final String folderName = "/PublishedThemePNGFolder"+System.currentTimeMillis();
-//
-//        final File file = File.createTempFile(THEME_PNG.split("\\.")[0], ".png");
-//        FileUtil.write(file, "Theme Thumbnail");
-//
-//        try{
-//            destinationFolder = folderAPI
-//                    .createFolders(folderName, host, user, false);
-//            //Creating theme.png
-//            final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(destinationFolder,file);
-//            fileAssetDataGen.setProperty("title", THEME_PNG);
-//            fileAssetDataGen.setProperty("fileName", THEME_PNG);
-//            fileAssetDataGen.setProperty("__DOTNAME__", THEME_PNG);
-//            fileAssetDataGen.host(host);
-//
-//            thumbnail = fileAssetDataGen.nextPersisted();
-//
-//            //Publishing theme.png
-//            thumbnail.setIndexPolicy(IndexPolicy.FORCE);
-//            contentletAPI.publish(thumbnail, user, false);
-//
-//            final ThemeResource resource = new ThemeResource();
-//            final Response response = resource.findThemeById(getHttpRequest(),  new EmptyHttpResponse(), destinationFolder.getInode());
-//            assertEquals(Status.OK.getStatusCode(), response.getStatus());
-//
-//            Map entity = (Map) ((ResponseEntityView) response.getEntity()).getEntity();
-//            assertNotNull(entity.get(THEME_THUMBNAIL_KEY));
-//            assertEquals(thumbnail.getIdentifier(), entity.get(THEME_THUMBNAIL_KEY));
-//
-//        } finally {
-//            if (destinationFolder != null && destinationFolder.getInode() != null) {
-//                folderAPI.delete(destinationFolder, user, false);
-//            }
-//        }
-//    }
-//
-//    @Test
-//    public void test_FindThemeByIdWithArchivedThemePNG_MustNotReturnThemeThumbnail()
-//            throws Throwable {
-//
-//        Contentlet thumbnail;
-//        Folder destinationFolder = null;
-//        final String folderName = "/ArchivedThemePNGFolder"+System.currentTimeMillis();
-//
-//        try{
-//
-//            destinationFolder = folderAPI
-//                    .createFolders(folderName, host, user, false);
-//
-//            final File file = File.createTempFile(THEME_PNG.split("\\.")[0], ".png");
-//            FileUtil.write(file, "Theme Thumbnail");
-//
-//
-//            final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(destinationFolder,file);
-//            fileAssetDataGen.setProperty("title", THEME_PNG);
-//            fileAssetDataGen.setProperty("fileName", THEME_PNG);
-//            fileAssetDataGen.setProperty("__DOTNAME__", THEME_PNG);
-//
-//            thumbnail = fileAssetDataGen.nextPersisted();
-//            FileAssetDataGen.archive(thumbnail);
-//
-//            final ThemeResource resource = new ThemeResource();
-//            final Response response = resource.findThemeById(getHttpRequest(),  new EmptyHttpResponse(), destinationFolder.getInode());
-//            assertEquals(Status.OK.getStatusCode(), response.getStatus());
-//
-//            Map entity = (Map) ((ResponseEntityView) response.getEntity()).getEntity();
-//            assertNull(entity.get(THEME_THUMBNAIL_KEY));
-//
-//        } finally {
-//            if (destinationFolder != null && destinationFolder.getInode() != null) {
-//                folderAPI.delete(destinationFolder, user, false);
-//            }
-//        }
-//    }
-//
-//    @Test
-//    public void test_FindThemeByIdWithUnpublishedThemePNG_MustNotReturnThemeThumbnail()
-//            throws Throwable {
-//
-//        Folder destinationFolder = null;
-//
-//        try{
-//            final String folderName = "/UnpublishedThemePNGFolder"+System.currentTimeMillis();
-//
-//            destinationFolder = folderAPI
-//                    .createFolders(folderName, host, user, false);
-//
-//            final File file = File.createTempFile(THEME_PNG.split("\\.")[0], ".png");
-//            FileUtil.write(file, "Theme Thumbnail");
-//
-//            final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(destinationFolder,file);
-//            fileAssetDataGen.setProperty("title", THEME_PNG);
-//            fileAssetDataGen.setProperty("fileName", THEME_PNG);
-//            fileAssetDataGen.setProperty("__DOTNAME__", THEME_PNG);
-//
-//            fileAssetDataGen.nextPersisted();
-//
-//            final ThemeResource resource = new ThemeResource();
-//            final Response response = resource.findThemeById(getHttpRequest(),  new EmptyHttpResponse(), destinationFolder.getInode());
-//            assertEquals(Status.OK.getStatusCode(), response.getStatus());
-//            final Map entity = (Map) (((ResponseEntityView) response.getEntity())).getEntity();
-//
-//            assertNull(entity.get(THEME_THUMBNAIL_KEY));
-//
-//        } finally {
-//            try {
-//                if (destinationFolder != null && destinationFolder.getInode() != null) {
-//                    folderAPI.delete(destinationFolder, user, false);
-//                }
-//            }catch (Exception e) {
-//                e.printStackTrace();
-//            }
-//        }
-//    }
-//
-//    @Test
-//    public void test_FindThemeById_WhenInvalidID_Returns404Error() throws Throwable {
-//        final ThemeResource resource = new ThemeResource();
-//        final Response response = resource.findThemeById(getHttpRequest(),  new EmptyHttpResponse(), "123456");
-//        assertEquals(Status.NOT_FOUND.getStatusCode(), response.getStatus());
-//    }
-//
+
+    /**
+     * Method to test: findThemeById
+     * Given Scenario: Find a specific theme by it's id (folder Id)
+     * ExpectedResult: The endpoint should return 200, created theme should be returned
+     *
+     */
+    @Test
+    public void test_FindThemById_Success()
+            throws DotDataException, DotSecurityException {
+        final Host newHost = new SiteDataGen().nextPersisted();
+        final Contentlet themeVTL = new ThemeDataGen().site(newHost).nextPersisted();
+        final Identifier id = APILocator.getIdentifierAPI().find(themeVTL.getIdentifier());
+        final Folder themeFolder = APILocator.getFolderAPI().findFolderByPath(id.getParentPath(),id.getHostId(),user,false);
+
+        final Response responseResource = resource.findThemeById(getHttpRequest(""),response,themeFolder.getIdentifier());
+
+        assertEquals(Status.OK.getStatusCode(), responseResource.getStatus());
+        assertEquals(themeFolder.getIdentifier(),HashMap.class.cast(ResponseEntityView.class.cast(responseResource.getEntity()).getEntity()).get("identifier"));
+    }
+
+    /**
+     * Method to test: findThemeById
+     * Given Scenario: Find a specific theme by it's id (folder Id), but the id sent does not belong to any theme
+     * ExpectedResult: The endpoint should return Does Not Exception
+     *
+     */
+    @Test(expected = DoesNotExistException.class)
+    public void test_FindThemById_IdNotExists_returnDoesNotExistException()
+            throws DotDataException, DotSecurityException {
+        resource.findThemeById(getHttpRequest(""),response,"Id-Not-Exist");
+    }
+
+    /**
+     * Method to test: findThemeById
+     * Given Scenario: Find a specific theme by it's id (folder Id), checks that the Thumbnail it's returned.
+     * ExpectedResult: The endpoint should return 200, created theme should be returned
+     *
+     */
+    @Test
+    public void test_FindThemeByIdWithPublishedThemePNG_ReturnsThemeThumbnail()
+            throws IOException, DotDataException, DotSecurityException {
+        final Host newHost = new SiteDataGen().nextPersisted();
+        Contentlet thumbnail;
+        Folder destinationFolder = null;
+
+        final String folderName = "/PublishedThemePNGFolder"+System.currentTimeMillis();
+
+        final File file = File.createTempFile(THEME_PNG.split("\\.")[0], ".png");
+        FileUtil.write(file, "Theme Thumbnail");
+
+        try{
+            destinationFolder = folderAPI
+                    .createFolders(folderName, newHost, user, false);
+            //Creating theme.png
+            final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(destinationFolder,file);
+            fileAssetDataGen.setProperty("title", THEME_PNG);
+            fileAssetDataGen.setProperty("fileName", THEME_PNG);
+            fileAssetDataGen.setProperty("__DOTNAME__", THEME_PNG);
+            fileAssetDataGen.host(newHost);
+
+            thumbnail = fileAssetDataGen.nextPersisted();
+
+            //Publishing theme.png
+            thumbnail.setIndexPolicy(IndexPolicy.FORCE);
+            contentletAPI.publish(thumbnail, user, false);
+
+            final Response responseResource = resource.findThemeById(getHttpRequest(""),response, destinationFolder.getInode());
+            assertEquals(Status.OK.getStatusCode(), responseResource.getStatus());
+
+            Map entity = (Map) ((ResponseEntityView) responseResource.getEntity()).getEntity();
+            assertNotNull(entity.get(THEME_THUMBNAIL_KEY));
+            assertEquals(thumbnail.getIdentifier(), entity.get(THEME_THUMBNAIL_KEY));
+
+        } finally {
+            if (destinationFolder != null && destinationFolder.getInode() != null) {
+                folderAPI.delete(destinationFolder, user, false);
+            }
+        }
+    }
+
+    /**
+     * Method to test: findThemeById
+     * Given Scenario: Find a specific theme by it's id (folder Id), thumbnail is archived, so shouldn't be returned.
+     * ExpectedResult: The endpoint should return 200, created theme should be returned but no the theme thumbnail.
+     *
+     */
+    @Test
+    public void test_FindThemeByIdWithArchivedThemePNG_MustNotReturnThemeThumbnail()
+            throws IOException, DotDataException, DotSecurityException {
+        final Host newHost = new SiteDataGen().nextPersisted();
+        Contentlet thumbnail;
+        Folder destinationFolder = null;
+        final String folderName = "/ArchivedThemePNGFolder"+System.currentTimeMillis();
+
+        try{
+
+            destinationFolder = folderAPI
+                    .createFolders(folderName, newHost, user, false);
+
+            final File file = File.createTempFile(THEME_PNG.split("\\.")[0], ".png");
+            FileUtil.write(file, "Theme Thumbnail");
+
+
+            final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(destinationFolder,file);
+            fileAssetDataGen.setProperty("title", THEME_PNG);
+            fileAssetDataGen.setProperty("fileName", THEME_PNG);
+            fileAssetDataGen.setProperty("__DOTNAME__", THEME_PNG);
+
+            thumbnail = fileAssetDataGen.nextPersisted();
+            FileAssetDataGen.archive(thumbnail);
+
+            final Response responseResource = resource.findThemeById(getHttpRequest(""),response, destinationFolder.getInode());
+            assertEquals(Status.OK.getStatusCode(), responseResource.getStatus());
+
+            Map entity = (Map) ((ResponseEntityView) responseResource.getEntity()).getEntity();
+            assertNull(entity.get(THEME_THUMBNAIL_KEY));
+
+        } finally {
+            if (destinationFolder != null && destinationFolder.getInode() != null) {
+                folderAPI.delete(destinationFolder, user, false);
+            }
+        }
+    }
+
+    /**
+     * Method to test: findThemeById
+     * Given Scenario: Find a specific theme by it's id (folder Id), thumbnail is unpublished, so shouldn't be returned.
+     * ExpectedResult: The endpoint should return 200, created theme should be returned but no the theme thumbnail.
+     *
+     */
+    @Test
+    public void test_FindThemeByIdWithUnpublishedThemePNG_MustNotReturnThemeThumbnail()
+            throws IOException, DotDataException, DotSecurityException {
+        final Host newHost = new SiteDataGen().nextPersisted();
+
+        Folder destinationFolder = null;
+
+        try{
+            final String folderName = "/UnpublishedThemePNGFolder"+System.currentTimeMillis();
+
+            destinationFolder = folderAPI
+                    .createFolders(folderName, newHost, user, false);
+
+            final File file = File.createTempFile(THEME_PNG.split("\\.")[0], ".png");
+            FileUtil.write(file, "Theme Thumbnail");
+
+            final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(destinationFolder,file);
+            fileAssetDataGen.setProperty("title", THEME_PNG);
+            fileAssetDataGen.setProperty("fileName", THEME_PNG);
+            fileAssetDataGen.setProperty("__DOTNAME__", THEME_PNG);
+
+            fileAssetDataGen.nextPersisted();
+
+            final Response responseResource = resource.findThemeById(getHttpRequest(""),response, destinationFolder.getInode());
+
+            assertEquals(Status.OK.getStatusCode(), responseResource.getStatus());
+            final Map entity = (Map) (((ResponseEntityView) responseResource.getEntity())).getEntity();
+
+            assertNull(entity.get(THEME_THUMBNAIL_KEY));
+
+        } finally {
+            try {
+                if (destinationFolder != null && destinationFolder.getInode() != null) {
+                    folderAPI.delete(destinationFolder, user, false);
+                }
+            }catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
 
     private HttpServletRequest getHttpRequest(String userEmail) {
         userEmail = UtilMethods.isSet(userEmail) ? userEmail : "admin@dotcms.com";

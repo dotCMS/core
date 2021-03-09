@@ -167,7 +167,7 @@ public class ThemeAPIImpl implements ThemeAPI, DotInitializer {
         if (UtilMethods.isSet(hostId)) {
             Try.of(() -> APILocator.getHostAPI()
                     .find(hostId, APILocator.systemUser(), false).getIdentifier())
-                    .getOrElseThrow(() -> new DotDataException("HostId not belong to any host"));
+                    .getOrElseThrow(() -> new DoesNotExistException("HostId not belong to any host"));
             Try.of(() -> APILocator.getHostAPI()
                     .find(hostId, user, false).getIdentifier())
                     .getOrElseThrow(() -> new DotSecurityException(

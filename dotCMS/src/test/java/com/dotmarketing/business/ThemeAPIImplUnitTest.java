@@ -20,7 +20,7 @@ import static org.mockito.Mockito.when;
 /**
  * test for {@link ThemeAPIImpl}
  */
-public class ThemeAPIImplTest {
+public class ThemeAPIImplUnitTest {
 
     public static final String LUCENE_QUERY = "+conFolder:1 +title:theme.png +live:true +deleted:false";
 
