@@ -278,6 +278,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
         if(user.isAdmin()) {
             return true;
         }
+
         
         if (permissionable == null) {
             Logger.warn(this, "Permissionable object is null");
