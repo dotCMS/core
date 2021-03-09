@@ -16,6 +16,8 @@ import javax.servlet.http.HttpSessionBindingEvent;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
 
+import static com.dotcms.cms.login.LoginServiceAPIFactory.LOG_OUT_ATTRIBUTE;
+
 /**
  * Listener that keeps track of logged in users by monitoring for USER_ID
  * session attribute addition.
@@ -115,8 +117,14 @@ public class SessionMonitor implements ServletRequestListener,
 
                 Logger.debug(this, "Triggering a session destroyed event");
 
-                this.systemEventsAPI.push(new SystemEvent
-                        (SystemEventType.SESSION_DESTROYED, UserSessionPayloadBuilder.build(userId, sessionId)));
+                final Boolean isLogout = event.getSession().getAttribute(LOG_OUT_ATTRIBUTE) != null ?
+                        Boolean.parseBoolean(event.getSession().getAttribute(LOG_OUT_ATTRIBUTE).toString()) :
+                        false;
+
+                if (!isLogout) {
+                    this.systemEventsAPI.push(new SystemEvent
+                            (SystemEventType.SESSION_DESTROYED, UserSessionPayloadBuilder.build(userId, sessionId)));
+                }
             } catch (DotDataException e) {
 
                 Logger.debug(this, "Could not sent the session destroyed event" + e.getMessage(), e);

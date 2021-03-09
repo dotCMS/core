@@ -7,7 +7,7 @@ jobs:
     name: Release Process Automation
     runs-on: ubuntu-18.04
     env:
-      DOT_CICD_BRANCH: 18562-automate-release-process
+      DOT_CICD_BRANCH: master
       DOT_CICD_CLOUD_PROVIDER: github
       DOT_CICD_TARGET: core
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -46,7 +46,7 @@ jobs:
       - name: Build DotCMS Release Docker Image
         run: |
           dotcicd/library/pipeline.sh buildRelease
-#        if: env.IS_RELEASE == 'false'
+        if: env.IS_RELEASE != 'true'
       - name: Run DotCMS Release Docker Image
         run: |
           dotcicd/library/pipeline.sh runRelease
