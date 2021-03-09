@@ -3,8 +3,6 @@ package com.dotmarketing.business;
 import com.dotcms.config.DotInitializer;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.pagination.OrderDirection;
-import com.dotcms.util.pagination.PaginationException;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -13,21 +11,14 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import io.swagger.jersey.listing.ApiListingResourceJSON;
 
 import io.vavr.control.Try;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 
@@ -92,22 +83,6 @@ public class ThemeAPIImpl implements ThemeAPI, DotInitializer {
         return UtilMethods.isSet(results) ? results.get(0).getIdentifier() : null;
     }
 
-//    @Override
-//    public String getThemePath(final Theme theme, final User user, final String themeName,
-//            final Host host, final boolean respectAnonPerms) throws DotSecurityException, DotDataException {
-//
-//        if (theme.isSystemTheme()) {
-//
-//            return SYSTEM_THEME_PATH;
-//        }
-//
-//        final String themeHostId = theme.getHostId();
-//        return themeHostId.equals(host.getInode())?
-//                Template.THEMES_PATH + themeName + "/":
-//                "//" + APILocator.getHostAPI().find(themeHostId, user, respectAnonPerms).getHostname()
-//                        + Template.THEMES_PATH + themeName + "/";
-//    }
-
     @Override
     public Theme findThemeById(final String themeId,
             final User user,
@@ -137,7 +112,7 @@ public class ThemeAPIImpl implements ThemeAPI, DotInitializer {
         final String themeThumbnail = this.getThemeThumbnail(folder, user);
         final Theme theme = new Theme(themeThumbnail, folder.getPath());
         theme.setIdentifier(folder.getIdentifier());
-        theme.setInode(theme.getInode());
+        theme.setInode(folder.getInode());
         theme.setHostId(folder.getHostId());
         theme.setName(folder.getName());
         theme.setTitle(folder.getTitle());

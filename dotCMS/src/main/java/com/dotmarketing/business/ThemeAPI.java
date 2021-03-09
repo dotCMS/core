@@ -5,7 +5,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
 import java.util.List;
 
@@ -26,20 +25,6 @@ public interface ThemeAPI {
      * @throws DotDataException
      */
     String getThemeThumbnail(final Folder folder, final User user) throws DotSecurityException, DotDataException;
-
-    /**
-     * Gets the theme path
-     * @param theme {@link Theme}
-     * @param user  {@link User}
-     * @param themeName {@link String}
-     * @param host {@link Host}
-     * @param respectAnonPerms {@link Boolean}
-     * @return String
-     * @throws DotSecurityException
-     * @throws DotDataException
-     */
-//    String getThemePath(final Theme theme, final User user, final String themeName,
-//            final Host host, final boolean respectAnonPerms) throws DotSecurityException, DotDataException;
 
     /**
      * Returns the system theme
