@@ -423,7 +423,6 @@ public class PropsUtil {
 	}
 
 	public static String get(final String key) {
-	    String x="testing";
 		return Config.getStringProperty(key, PropsLoader.getInstance().get(key));
 	}
 
