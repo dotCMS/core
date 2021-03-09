@@ -243,7 +243,8 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 		PermissionAPI perAPI = APILocator.getPermissionAPI();
 
 		if (UtilMethods.isSet(folder.getIdentifier()) &&
-				perAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user)) {
+				perAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_EDIT_PERMISSIONS,
+						user)) {
 	%>
 		<div id="permissionsTab" refreshOnShow="true" preload="true"  dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Permissions") %>" onShow="hideEditButtonsRow()" >
 			<%
