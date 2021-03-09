@@ -20,6 +20,7 @@ import java.io.File;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -150,6 +151,12 @@ public class ContainerStructureFinderStrategyResolver {
 
                     //Add the list to cache.
                     containerStructures = builder.build();
+                    containerStructures = containerStructures.stream().map((cs)-> {
+                        if(cs.getCode()==null) {
+                            cs.setCode(""); 
+                        }
+                        return cs;
+                    }).collect(Collectors.toList());
                     CacheLocator.getContentTypeCache().addContainerStructures(containerStructures, container.getIdentifier(), container.getInode());
                 } catch (DotHibernateException e) {
                     throw new DotStateException("cannot find container structures for : " + container);
