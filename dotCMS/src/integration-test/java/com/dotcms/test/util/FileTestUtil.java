@@ -26,8 +26,8 @@ import java.io.IOException;
 import java.util.*;
 
 import static com.dotcms.util.CollectionsUtils.*;
-import static org.jgroups.util.Util.assertEquals;
-import static org.jgroups.util.Util.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Provide util test for testing
