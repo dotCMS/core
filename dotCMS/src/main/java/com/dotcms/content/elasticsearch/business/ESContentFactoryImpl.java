@@ -58,6 +58,7 @@ import com.dotmarketing.util.NumberUtil;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
@@ -69,6 +70,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -1934,34 +1936,231 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 	@Override
 	protected Contentlet save(Contentlet contentlet, String existingInode) throws DotDataException, DotStateException, DotSecurityException {
-	    com.dotmarketing.portlets.contentlet.business.Contentlet fatty = new com.dotmarketing.portlets.contentlet.business.Contentlet();
-        if(InodeUtils.isSet(contentlet.getInode())){
-            fatty = (com.dotmarketing.portlets.contentlet.business.Contentlet)HibernateUtil.load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, contentlet.getInode());
-        }
-        fatty = convertContentletToFatContentlet(contentlet, fatty);
 
-        if(UtilMethods.isSet(existingInode))
-            HibernateUtil.saveWithPrimaryKey(fatty, existingInode);
-        else
-            HibernateUtil.saveOrUpdate(fatty);
-
-        final Contentlet content = convertFatContentletToContentlet(fatty);
-
-        if (InodeUtils.isSet(contentlet.getHost())) {
-            content.setHost(contentlet.getHost());
+        final String inode;
+        if(UtilMethods.isSet(existingInode)){
+            inode = existingInode;
+        } else if (UtilMethods.isSet(contentlet.getInode())){
+            inode = contentlet.getInode();
+        } else {
+            inode = UUIDGenerator.generateUuid();
         }
 
-        if (InodeUtils.isSet(contentlet.getFolder())) {
-            content.setFolder(contentlet.getFolder());
+        final boolean found = find(inode) != null;
+
+        final DotConnect dotConnect = new DotConnect();
+
+        final StringBuilder script = new StringBuilder();
+        if(found) { //update a piece of content
+            script.append("UPDATE contentlet SET inode=?, show_on_menu=?, title=?, mod_date=?, ")
+                    .append("mod_user=?, sort_order=?, friendly_name=?, structure_inode=?, last_review=?, ")
+                    .append("next_review=?, review_interval=?, disabled_wysiwyg=?, identifier=?, ")
+                    .append("language_id=?, date1=?, date2=?, date3=?, date4=?, date5=?, date6=?, ")
+                    .append("date7=?, date8=?, date9=?, date10=?, date11=?, date12=?, date13=?, ")
+                    .append("date14=?, date15=?, date16=?, date17=?, date18=?, date19=?, date20=?, ")
+                    .append("date21=?, date22=?, date23=?, date24=?, date25=?, text1=?, text2=?, ")
+                    .append("text3=?, text4=?, text5=?, text6=?, text7=?, text8=?, text9=?, text10=?,")
+                    .append("text11=?, text12=?, text13=?, text14=?, text15=?, text16=?, text17=?, ")
+                    .append("text18=?, text19=?, text20=?, text21=?, text22=?, text23=?, text24=?, ")
+                    .append("text25=?, text_area1=?, text_area2=?, text_area3=?, text_area4=?, ")
+                    .append("text_area5=?, text_area6=?, text_area7=?, text_area8=?, text_area9=?, ")
+                    .append("text_area10=?, text_area11=?, text_area12=?, text_area13=?, ")
+                    .append("text_area14=?, text_area15=?, text_area16=?, text_area17=?, text_area18=?, ")
+                    .append("text_area19=?, text_area20=?, text_area21=?, text_area22=?, text_area23=?, ")
+                    .append("text_area24=?, text_area25=?, integer1=?, integer2=?, integer3=?, ")
+                    .append("integer4=?, integer5=?, integer6=?, integer7=?, integer8=?, integer9=?, ")
+                    .append("integer10=?, integer11=?, integer12=?, integer13=?, integer14=?, ")
+                    .append("integer15=?, integer16=?, integer17=?, integer18=?, integer19=?, ")
+                    .append("integer20=?, integer21=?, integer22=?, integer23=?, integer24=?, ")
+                    .append("integer25=?, float1=?, float2=?, float3=?, float4=?, float5=?, ")
+                    .append("float6=?, float7=?, float8=?, float9=?, float10=?, float11=?, float12=?, ")
+                    .append("float13=?, float14=?, float15=?, float16=?, float17=?, float18=?, ")
+                    .append("float19=?, float20=?, float21=?, float22=?, float23=?, float24=?, ")
+                    .append("float25=?, bool1=?, bool2=?, bool3=?, bool4=?, bool5=?, bool6=?, ")
+                    .append("bool7=?, bool8=?, bool9=?, bool10=?, bool11=?, bool12=?, bool13=?, ")
+                    .append("bool14=?, bool15=?, bool16=?, bool17=?, bool18=?, bool19=?, bool20=?, ")
+                    .append("bool21=?, bool22=?, bool23=?, bool24=?, bool25=? WHERE inode = ? ");
+        } else { //save a new piece of content
+            dotConnect.addParam(inode);
+            script.append("INSERT INTO contentlet(inode, show_on_menu, title, mod_date, mod_user,")
+                    .append("sort_order, friendly_name, structure_inode, last_review, next_review, ")
+                    .append("review_interval, disabled_wysiwyg, identifier, language_id, date1, ")
+                    .append("date2, date3, date4, date5, date6, date7, date8, date9, date10, date11, ")
+                    .append("date12, date13, date14, date15, date16, date17, date18, date19, date20, ")
+                    .append("date21, date22, date23, date24, date25, text1, text2, text3, text4, ")
+                    .append("text5, text6, text7, text8, text9, text10, text11, text12, text13, ")
+                    .append("text14, text15, text16, text17, text18, text19, text20, text21, text22, ")
+                    .append("text23, text24, text25, text_area1, text_area2, text_area3, text_area4, ")
+                    .append("text_area5, text_area6, text_area7, text_area8, text_area9, text_area10, ")
+                    .append("text_area11, text_area12, text_area13, text_area14, text_area15, ")
+                    .append("text_area16, text_area17, text_area18, text_area19, text_area20, ")
+                    .append("text_area21, text_area22, text_area23, text_area24, text_area25, ")
+                    .append("integer1, integer2, integer3, integer4, integer5, integer6, integer7, ")
+                    .append("integer8, integer9, integer10, integer11, integer12, integer13, ")
+                    .append("integer14, integer15, integer16, integer17, integer18, integer19, ")
+                    .append("integer20, integer21, integer22, integer23, integer24, integer25, ")
+                    .append("float1, float2, float3, float4, float5, float6, float7, float8, float9, ")
+                    .append("float10, float11, float12, float13, float14, float15, float16, float17, ")
+                    .append("float18, float19, float20, float21, float22, float23, float24, float25, ")
+                    .append("bool1, bool2, bool3, bool4, bool5, bool6, bool7, bool8, bool9, bool10, ")
+                    .append("bool11, bool12, bool13, bool14, bool15, bool16, bool17, bool18, bool19, ")
+                    .append("bool20, bool21, bool22, bool23, bool24, bool25 VALUES (?, ?, ?, ?, ?, ")
+                    .append("?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ")
+                    .append("?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ")
+                    .append("?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ")
+                    .append("?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ")
+                    .append("?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ")
+                    .append("?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ")
+                    .append("?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         }
 
-        contentletCache.remove(content.getInode());
-        HibernateUtil.evict(content);
+        dotConnect.setSQL(script.toString());
+        contentlet.setInode(inode);
+        addParamsToSaveUpdateContent(contentlet, dotConnect);
 
-        return content;
+        //Add WHERE condition if needed
+        if (found){
+            dotConnect.addParam(inode);
+        }
+        dotConnect.loadResult();
+        contentletCache.remove(inode);
+
+        return contentlet;
 	}
 
-	/**
+	private void addParamsToSaveUpdateContent(final Contentlet contentlet, final DotConnect dotConnect)
+            throws DotDataException {
+
+        dotConnect.addParam(contentlet.getStringProperty("showOnMenu") != null && contentlet
+                .getStringProperty("showOnMenu").contains("true") ? DbConnectionFactory.getDBTrue()
+                : DbConnectionFactory.getDBFalse());
+
+        // if the title was not intentionally set to null.
+        final boolean allowTitle = null == contentlet.getNullProperties() || !contentlet.getNullProperties().contains(Contentlet.TITTLE_KEY);
+
+        String name = "";
+        if (allowTitle) {
+            try {
+                // If the contentlet doesn't have the identifier is pointless to call ContentletAPI().getName().
+                if (UtilMethods.isSet(contentlet) && UtilMethods.isSet(contentlet.getIdentifier())) {
+                    name = APILocator.getContentletAPI().getName(
+                            contentlet, APILocator.getUserAPI().getSystemUser(), true);
+
+                    dotConnect.addParam(name);
+                }
+            } catch (DotSecurityException e) {
+                dotConnect.addParam(name);
+            }
+        } else{
+            dotConnect.addParam((String)null);
+        }
+
+        dotConnect.addParam(contentlet.getModDate());
+        dotConnect.addParam(contentlet.getModUser());
+        dotConnect.addParam(new Long(contentlet.getSortOrder()).intValue());
+
+        if (allowTitle) { // if the title was not intentionally set to null.
+            dotConnect.addParam(name); //friendly name
+        } else {
+            dotConnect.addParam((String)null);
+        }
+
+        dotConnect.addParam(contentlet.getContentTypeId());
+        dotConnect.addParam(contentlet.getLastReview());
+        dotConnect.addParam(contentlet.getNextReview());
+        dotConnect.addParam(contentlet.getReviewInterval());
+
+        addWysiwygParam(contentlet, dotConnect);
+
+        dotConnect.addParam(UtilMethods.isSet(contentlet.getIdentifier())?contentlet.getIdentifier():null);
+        dotConnect.addParam(contentlet.getLanguageId());
+
+        final Map<String, Object> fieldsMap = getFieldsMap(contentlet);
+
+        addDynamicFields(dotConnect, fieldsMap,"date");
+        addDynamicFields(dotConnect, fieldsMap,"text");
+        addDynamicFields(dotConnect, fieldsMap,"text_area");
+        addDynamicFields(dotConnect, fieldsMap,"integer");
+        addDynamicFields(dotConnect, fieldsMap,"float");
+        addDynamicFields(dotConnect, fieldsMap,"bool");
+    }
+
+    private void addWysiwygParam(Contentlet contentlet, DotConnect dotConnect) {
+        final List<String> wysiwygFields = contentlet.getDisabledWysiwyg();
+        if( wysiwygFields != null && wysiwygFields.size() > 0 ) {
+            final StringBuilder wysiwyg = new StringBuilder();
+            int j = 0;
+            for(final String wysiwygField : wysiwygFields ) {
+                wysiwyg.append(wysiwygField);
+                j++;
+                if( j < wysiwygFields.size() ) wysiwyg.append(",");
+            }
+            dotConnect.addParam(wysiwyg.toString());
+        }
+    }
+
+    /**
+     * Add dates, text, text_area and integer fields from the contentlet's fields map to the {@link DotConnect} object
+     * @param dotConnect
+     * @param fieldsMap
+     * @param prefix
+     */
+    private void addDynamicFields(final DotConnect dotConnect, final Map<String, Object> fieldsMap, final String prefix){
+        Object defaultValue = null;
+
+        if (prefix.equals("integer") || prefix.equals("float")){
+            defaultValue = 0;
+        } else if (prefix.equals("bool")){
+            defaultValue = DbConnectionFactory.getDBFalse();
+        }
+
+        for (int i = 1; i <= 25; i++) {
+            if (fieldsMap.containsKey(prefix + i)) {
+                if (prefix.equals("bool")) {
+                    dotConnect.addParam(
+                            (Boolean) fieldsMap.get(prefix + i) ? DbConnectionFactory.getDBTrue()
+                                    : DbConnectionFactory.getDBFalse());
+                } else {
+                    dotConnect.addParam(fieldsMap.get(prefix + i));
+                }
+            } else {
+                dotConnect.addParam(defaultValue);
+            }
+        }
+    }
+
+    private Map<String, Object> getFieldsMap(Contentlet contentlet) throws DotDataException {
+        final Map<String, Object> fieldsMap = new HashMap<>();
+        final List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getContentTypeId());
+        for (Field field : fields) {
+            if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
+                continue;
+            }
+            if (field.getFieldType().equals(Field.FieldType.BINARY.toString())) {
+                continue;
+            }
+
+            if(!APILocator.getFieldAPI().valueSettable(field)){
+                continue;
+            }
+            Object value;
+            value = contentlet.get(field.getVelocityVarName());
+
+            try {
+                if(value != null && value instanceof Timestamp){
+                    value = new Date(((Timestamp)value).getTime());
+                }
+
+                fieldsMap.put(field.getFieldContentlet(), value);
+            } catch (final IllegalArgumentException e) {
+                throw new DotDataException("Unable to set field value",e);
+            }
+        }
+
+        return fieldsMap;
+    }
+
+    /**
 	 *
 	 * @param contentlets
 	 * @throws DotDataException
