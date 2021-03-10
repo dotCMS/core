@@ -102,9 +102,7 @@ public class EmailActionlet extends WorkFlowActionlet {
         try {
             // get the host of the content
             Host host = APILocator.getHostAPI().find(
-                    StringUtils.defaultIfBlank(
-                            processor.getContentlet().getHost(),
-                            processor.getContentlet().getContentType().host()),
+                    processor.getContentlet(),
                     APILocator.getUserAPI().getSystemUser(),
                     false);
             if (host.isSystemHost()) {
