@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 
 import java.util.Optional;
-import javax.mail.internet.InternetAddress;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -29,6 +28,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Mailer;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
+import org.apache.commons.lang3.StringUtils;
 
 public class EmailActionlet extends WorkFlowActionlet {
 
@@ -101,8 +101,12 @@ public class EmailActionlet extends WorkFlowActionlet {
 
         try {
             // get the host of the content
-            Host host = APILocator.getHostAPI().find(processor.getContentlet().getHost(),
-                    APILocator.getUserAPI().getSystemUser(), false);
+            Host host = APILocator.getHostAPI().find(
+                    StringUtils.defaultIfBlank(
+                            processor.getContentlet().getHost(),
+                            processor.getContentlet().getContentType().host()),
+                    APILocator.getUserAPI().getSystemUser(),
+                    false);
             if (host.isSystemHost()) {
                 host = APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), false);
             }
