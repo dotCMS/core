@@ -2072,7 +2072,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         if (allowTitle) { // if the title was not intentionally set to null.
             dotConnect.addParam(name); //friendly name
         } else {
-            dotConnect.addParam((String)null);
+            dotConnect.addParam((String) null);
         }
 
         dotConnect.addParam(contentlet.getContentTypeId());
@@ -2106,6 +2106,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 if( j < wysiwygFields.size() ) wysiwyg.append(",");
             }
             dotConnect.addParam(wysiwyg.toString());
+        } else{
+            dotConnect.addParam((String) null);
         }
     }
 
