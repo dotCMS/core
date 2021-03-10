@@ -385,10 +385,8 @@ public class ContentTool implements ViewTool {
         try {
             final PaginatedArrayList<ContentMap> ret = new PaginatedArrayList<ContentMap>();
 
-			long langId = language.getId();
-			if(UtilMethods.isSet(condition) && condition.contains("languageId")) {
-				langId =-1;
-			}
+			long langId = UtilMethods.isSet(condition) && condition.contains("languageId") ? -1 :
+					language.getId();
 
             final List<Contentlet> cons = ContentUtils
                     .pullRelated(relationshipName, contentletIdentifier,
