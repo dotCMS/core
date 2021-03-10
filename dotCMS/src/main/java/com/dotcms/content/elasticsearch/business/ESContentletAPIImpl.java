@@ -5816,7 +5816,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             contentlet.setProperty(conVariable, value);
                         }
                     }else if(isFieldTypeBoolean(field)){
-                        contentlet.setBoolProperty(conVariable, value != null ? (Boolean)value : null);
+                        contentlet.setBoolProperty(conVariable, value != null ? (Boolean)value : false);
                     }else if(isFieldTypeFloat(field)){
                         contentlet.setFloatProperty(conVariable, value != null ? (Float)value : null);
                     }else if(isFieldTypeDate(field)){

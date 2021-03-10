@@ -652,11 +652,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
     private void delete(final String inode) throws DotDataException {
-        checkOrphanInode (inode);
         final DotConnect dotConnect = new DotConnect();
         dotConnect.setSQL("delete from contentlet where inode=?");
         dotConnect.addParam(inode);
         dotConnect.loadResult();
+        checkOrphanInode (inode);
     }
 
     /**
@@ -958,8 +958,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
         return findAllVersions(identifier, true);
     }
 
+    @Override
+    protected List<Contentlet> findAllVersions(final Identifier identifier, final boolean bringOldVersions) throws DotDataException, DotStateException, DotSecurityException {
+        return findAllVersions(identifier, bringOldVersions, Optional.empty());
+    }
+
 	@Override
-	protected List<Contentlet> findAllVersions(final Identifier identifier, final boolean bringOldVersions) throws DotDataException, DotStateException, DotSecurityException {
+    public List<Contentlet> findAllVersions(final Identifier identifier,
+            final boolean bringOldVersions, final Optional<Integer> maxResults)
+            throws DotDataException, DotStateException, DotSecurityException {
 	    if(!InodeUtils.isSet(identifier.getId()))
             return new ArrayList<>();
 
@@ -977,6 +984,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         dc.setSQL(query.toString());
         dc.addObject(identifier.getId());
+
+        if (maxResults.isPresent()){
+            dc.setMaxRows(maxResults.get());
+        }
         List<Map<String,Object>> list=dc.loadObjectResults();
         ArrayList<String> inodes=new ArrayList<String>(list.size());
         for(Map<String,Object> r : list)
@@ -2128,7 +2139,13 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         for (int i = 1; i <= 25; i++) {
             if (fieldsMap.containsKey(prefix + i)) {
-                dotConnect.addParam(fieldsMap.get(prefix + i));
+
+                if (prefix.equals("date")){
+                    dotConnect.addParam((Date) fieldsMap.get(prefix + i));
+                } else{
+                    dotConnect.addParam(fieldsMap.get(prefix + i));
+                }
+
             } else {
                 dotConnect.addParam(defaultValue);
             }

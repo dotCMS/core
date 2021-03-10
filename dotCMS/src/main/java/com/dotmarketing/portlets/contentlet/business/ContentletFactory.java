@@ -291,6 +291,18 @@ public abstract class ContentletFactory {
 	 */
 	protected abstract List<Contentlet> findAllVersions(Identifier identifier, boolean bringOldVersions) throws DotDataException, DotSecurityException;
 
+    /**
+     * Retrieves all versions for a contentlet identifier.
+     * @param identifier
+     * @param bringOldVersions Include old versions of contents, so it will return only live/working
+     * versions of contents, regardless of their languages
+     * @param maxResults
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public abstract List<Contentlet> findAllVersions(Identifier identifier, boolean bringOldVersions, final Optional<Integer> maxResults) throws DotDataException, DotSecurityException;
+
 	/**
 	 * Converts a "fat" (legacy) contentlet into a new contentlet.
      * @deprecated The {@link com.dotmarketing.portlets.contentlet.business.Contentlet} will be removed any time soon
