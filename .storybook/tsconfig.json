@@ -1,16 +1,5 @@
 {
-    "extends": "../src/tsconfig.app.json",
-    "compilerOptions": {
-        "types": ["node"],
-        "skipLibCheck": true
-    },
-    "exclude": [
-        "../src/test.ts",
-        "../src/**/*.spec.ts",
-        "../src/app/test",
-        "../src/app/api",
-        "../src/app/portlets"
-    ],
-    "include": ["../src/**/*"],
-    "files": ["./typings.d.ts"]
+    "extends": "../tsconfig.base.json",
+    "exclude": ["../**/*.spec.js", "../**/*.spec.ts", "../**/*.spec.tsx", "../**/*.spec.jsx"],
+    "include": ["../**/*"]
 }

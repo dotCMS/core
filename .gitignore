@@ -48,3 +48,6 @@ karma_html/
 # System Files
 .DS_Store
 Thumbs.db
+
+/storybook
+/out*/
