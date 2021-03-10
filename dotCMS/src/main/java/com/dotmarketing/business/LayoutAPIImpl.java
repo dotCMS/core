@@ -36,6 +36,10 @@ public class LayoutAPIImpl implements LayoutAPI {
 
 	private final LayoutFactory layoutFactory = FactoryLocator.getLayoutFactory();
 
+	private static void accept(Throwable e) {
+		throw new DotRuntimeException(e);
+	}
+
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.business.LayoutAPI#addPortletsToLayout(com.dotmarketing.business.Layout, java.util.List)
 	 */
@@ -214,14 +218,14 @@ public class LayoutAPIImpl implements LayoutAPI {
     private synchronized Layout createGettingStartedLayout() {
         final Layout gettingStarted = new Layout();
         gettingStarted.setId(LayoutAPI.GETTING_STARTED_LAYOUT_ID);
-        gettingStarted.setName("Getting Started");
+        gettingStarted.setName(LayoutAPI.GETTING_STARTED_LAYOUT_NAME);
         gettingStarted.setDescription("whatshot");
         gettingStarted.setPortletIds(Collections.singletonList("starter"));
         gettingStarted.setTabOrder(-320000);
         Try.run(() -> {
             layoutFactory.saveLayout(gettingStarted);
             layoutFactory.setPortletsToLayout(gettingStarted, Collections.singletonList("starter"));
-        }).onFailure(e -> new DotRuntimeException(e));
+        }).onFailure(LayoutAPIImpl::accept);
 
         return gettingStarted;
     }
