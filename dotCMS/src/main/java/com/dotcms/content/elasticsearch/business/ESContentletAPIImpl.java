@@ -5818,11 +5818,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }else if(isFieldTypeBoolean(field)){
                         contentlet.setBoolProperty(conVariable, value != null ? (Boolean)value : false);
                     }else if(isFieldTypeFloat(field)){
-                        contentlet.setFloatProperty(conVariable, value != null ? (Float)value : null);
+                        contentlet.setFloatProperty(conVariable, value != null ? (Float)value : 0);
                     }else if(isFieldTypeDate(field)){
                         contentlet.setDateProperty(conVariable,value != null ? (Date)value : null);
                     }else if(isFieldTypeLong(field)){
-                        contentlet.setLongProperty(conVariable,value != null ? ((Number)value).longValue(): null);
+                        contentlet.setLongProperty(conVariable,value != null ? ((Number)value).longValue(): 0L);
                     }else if(isFieldTypeBinary(field)){
                         final File myFile = (value instanceof String) ? new File(String.valueOf(value)) : (File) value; 
                         contentlet.setBinary(conVariable,myFile);
