@@ -1,0 +1,93 @@
+dot-material-icon-picker {
+    display: flex;
+}
+
+.dot-material-icon__select-container {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    position: relative;
+}
+
+.dot-material-icon__select-options-container {
+    position: relative;
+}
+
+.dot-material-icon__select-input {
+    display: flex;
+    flex-grow: 1;
+}
+
+.dot-material-icon__preview {
+    align-items: center;
+    border: 1px solid #000;
+    border-right: 0;
+    display: flex;
+    font-size: 1em;
+    padding-right: 0.2em;
+    width: 1em;
+}
+
+.dot-material-icon__input {
+    border-left: 0;
+    border-top: 1px solid;
+    border-right: 0;
+    border-bottom: 1px solid;
+    box-sizing: border-box;
+    font-size: 1em;
+    width: 100%;
+}
+
+.dot-material-icon__list {
+    border: 1px solid;
+    background-color: white;
+    list-style: none;
+    margin: 0;
+    max-height: 20em;
+    overflow: auto;
+    padding: 0;
+    position: absolute;
+    top: 0;
+    width: 100%;
+    z-index: 1;
+}
+
+.dot-material-icon__option {
+    align-items: center;
+    display: flex;
+
+    label {
+        display: flex;
+    }
+
+    mwc-icon {
+        align-items: center;
+        display: flex;
+        --mdc-icon-size: 1em;
+        margin-right: 0.2em;
+    }
+}
+.dot-material-icon__option:hover {
+    background-color: black;
+    cursor: pointer;
+    color: white;
+}
+
+.dot-material-icon__option-selected {
+    background-color: blue;
+    color: white;
+}
+
+.dot-material-icon__button {
+    cursor: pointer;
+
+    mwc-icon {
+        --mdc-icon-size: 1em;
+    }
+}
+
+.dot-material-icon__color-label {
+    margin-left: 16px;
+    margin-right: 0.5em;
+    padding-top: 0.3em;
+}

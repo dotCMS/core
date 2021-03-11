@@ -1,0 +1,51 @@
+:host {
+    --sucess-color: #27b970;
+    position: relative;
+    display: inline-block;
+}
+
+div {
+    border-radius: 50%;
+    border: solid 2px;
+    box-sizing: border-box;
+    height: var(--size);
+    width: var(--size);
+}
+
+.published,
+.revision:after {
+    background-color: var(--sucess-color);
+}
+
+.archived,
+.revision {
+    position: relative;
+
+    &:before {
+        box-sizing: border-box;
+        background-color: currentColor;
+        content: "";
+        height: 2px;
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: calc(var(--size) - 2px);
+        z-index: 1;
+    }
+}
+
+.revision {
+    transform: rotate(90deg);
+
+    &:after {
+        border-bottom-left-radius: var(--size);
+        border-top-left-radius: var(--size);
+        bottom: 25%;
+        content: "";
+        height: 100%;
+        left: 25%;
+        position: absolute;
+        transform: rotate(90deg);
+        width: 50%;
+    }
+}

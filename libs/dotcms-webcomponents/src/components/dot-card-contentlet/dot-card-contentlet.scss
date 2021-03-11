@@ -1,0 +1,75 @@
+@import "../../global/variables";
+
+:host {
+    @include mwc-dotcms-theme;
+
+    *,
+    *:after,
+    *:before {
+        box-sizing: border-box;
+    }
+}
+
+dot-card {
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    height: 100%;
+    position: relative;
+    transition: box-shadow var(--basic-speed) ease;
+    width: 100%;
+
+    &:hover {
+        box-shadow: var(--md-shadow-2);
+    }
+}
+
+dot-contentlet-thumbnail {
+    align-items: center;
+    display: flex;
+    flex: 1 1 auto;
+    position: relative;
+    width: 100%;
+}
+
+dot-contentlet-lock-icon {
+    color: #EC4B41;
+}
+
+header {
+    border-top: solid 1px rgba(0,0,0, 0.15);
+    display: flex;
+    padding: var(--basic-padding);
+    flex-direction: column;
+}
+
+label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.main,
+.extra,
+.state {
+    display: flex;
+    align-items: center;
+}
+
+.extra {
+    display: flex;
+    justify-content: space-between;
+    margin-top: -0.5rem;
+    padding-left: 40px; // The space between the hit area of the checkbox and the checkbox itself
+}
+
+.state {
+    & > * {
+        margin-right: var(--basic-padding);
+
+        &:last-child {
+            margin-right: 0;
+        }
+    }
+}

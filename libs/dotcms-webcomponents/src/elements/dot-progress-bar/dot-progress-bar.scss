@@ -1,0 +1,30 @@
+dot-progress-bar {
+    text-align: center;
+
+    div {
+        color: var(--color-sec);
+        border: 1px solid var(--color-sec);
+        border-radius: var(--border-radius);
+        height: 32px;
+        width: 100%;
+        position: relative;
+        margin-bottom: 4px;
+
+        &:before {
+            content: "";
+            background-color: var(--color-sec);
+            width: calc(var(--progress-width, 0) * 1%);
+            display: flex;
+            position: absolute;
+            left: 0px;
+            bottom: 0px;
+            top: 0px;
+            max-width: 100%;
+            transition: width 100ms;
+        }
+    }
+
+    span {
+        color: var(--color-sec);
+    }
+}

@@ -1,0 +1,19 @@
+:host {
+    --bg-color: var(--color-sec);
+    --color: var(--color-white);
+    --font-size: 12px;
+}
+
+div {
+    background-color: var(--bg-color);
+    border-radius: var(--border-radius);
+    color: var(--color);
+    font-size: var(--font-size);
+    padding: 0.1em 0.25em 0.15em;
+
+    &.bordered {
+        background-color: transparent;
+        border: solid 1px var(--bg-color);
+        color: var(--bg-color);
+    }
+}

@@ -1,0 +1,77 @@
+@import "../../global/variables";
+
+dot-asset-drop-zone {
+    .dot-asset-drop-zone__indicators {
+        --mdc-dialog-scrim-color: transparent;
+        align-items: center;
+        background-color: rgba(255, 255, 255, 0.8);
+        border: 3px solid transparent;
+        bottom: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        left: 0;
+        opacity: 0;
+        pointer-events: none;
+        position: absolute;
+        right: 0;
+        top: 0;
+        transition: opacity 250ms ease-in;
+        z-index: 1002;
+
+        &.drag-enter {
+            pointer-events: all ;
+            border: 3px dashed var(--color-sec);
+            opacity: 1;
+
+            .dot-asset-drop-zone__icon {
+                display: block;
+            }
+        }
+        &.drop {
+            pointer-events: all ;
+            border: 3px dashed #7e7a86;
+            opacity: 1;
+
+            dot-progress-bar {
+                display: block;
+            }
+        }
+
+        .dot-asset-drop-zone__icon {
+            display: none;
+
+            span {
+                display: block;
+                color: var(--color-sec);
+                margin-top: -20px;
+                font-size: 20px;
+                text-align: center;
+            }
+        }
+
+        dot-progress-bar {
+            width: 200px;
+            display: none;
+
+            span {
+                font-size: 16px;
+            }
+        }
+    }
+
+    .dot-asset-drop-zone__error-list {
+        list-style-position: inside;
+        padding: 0;
+        margin-left: 0;
+    }
+
+    mwc-icon {
+        color: var(--color-sec);
+        --mdc-icon-size: 200px;
+    }
+
+    mwc-button {
+        @include mwc-dotcms-theme;
+    }
+}
