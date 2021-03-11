@@ -402,7 +402,8 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
      */
     @Test
     @UseDataProvider("listTestCases")
-    public void Transformer_Backwards_Compatibility_Test(final CompatibilityTestCase testCase) {
+    public void Transformer_Backwards_Compatibility_Test(final CompatibilityTestCase testCase)
+            throws DotDataException {
 
         final List <Contentlet> list = testCase.contentlets;
 
@@ -447,8 +448,11 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
                 if(object1 instanceof File){
                     //Binaries are now formatted to their /dA/ path form.
                     final File conBinary = (File)object1;
+
+                    final Identifier identifier = APILocator.getIdentifierAPI().find(original.getIdentifier());
+
                     final String dAPath = "/dA/%s/%s/%s";
-                    final String binaryPath = String.format(dAPath, sourceMap.get("identifier"),propertyName,conBinary.getName());
+                    final String binaryPath = String.format(dAPath, sourceMap.get("identifier"),propertyName,identifier.getAssetName());
                     assertEquals(String.format(assertMessage,
                             baseTypeName, original.getIdentifier(), propertyName), binaryPath, object2);
                     continue;
@@ -486,8 +490,9 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
                 if(object1 instanceof File){
                     //Binaries are now formatted to their /dA/ path form.
                     final File conBinary = (File)object1;
+                    final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet1.getIdentifier());
                     final String dAPath = "/dA/%s/%s/%s";
-                    final String binaryPath = String.format(dAPath, contentlet1.getMap().get("identifier"),propertyName,conBinary.getName());
+                    final String binaryPath = String.format(dAPath, contentlet1.getMap().get("identifier"),propertyName,identifier.getAssetName());
                     assertEquals(String.format(" contentType:`%s` , id: `%s` ,  key: `%s` ",
                             baseTypeName, contentlet1.getIdentifier(), propertyName), binaryPath, object2);
                     continue;

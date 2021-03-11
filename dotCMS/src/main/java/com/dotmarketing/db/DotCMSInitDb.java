@@ -1,15 +1,13 @@
 package com.dotmarketing.db;
 
-import java.io.File;
-import org.apache.felix.framework.OSGIUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.ReindexThread;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.startup.runonce.Task210304RemoveOldMetadataFiles;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ImportStarterUtil;
 import com.dotmarketing.util.Logger;
@@ -17,6 +15,8 @@ import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.FileUtil;
 import io.vavr.control.Try;
+import java.io.File;
+import org.apache.felix.framework.OSGIUtil;
 
 public class DotCMSInitDb {
 
@@ -78,9 +78,10 @@ public class DotCMSInitDb {
 	private static void loadStarterSite() throws Exception{
 		
 	    loadStarterSiteData() ;
-	    
-		DbConnectionFactory.closeAndCommit();
-		
+
+        DbConnectionFactory.closeAndCommit();
+
+        new Task210304RemoveOldMetadataFiles().executeUpgrade();
 
         MaintenanceUtil.flushCache();
         ReindexThread.startThread();

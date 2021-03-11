@@ -8,6 +8,7 @@ import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.util.DotPreconditions;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -20,6 +21,7 @@ import io.vavr.control.Try;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -55,7 +57,6 @@ public class BinaryViewStrategy extends AbstractTransformStrategy<Contentlet> {
             for (final Field field : binaries) {
                 try {
                     map.put(field.variable() + "Map", transform(field, contentlet));
-                    //final File conBinary = contentlet.getBinary(field.variable());
                     final Metadata metadata = contentlet.getBinaryMetadata(field.variable());
                     if (metadata != null) {
                         //This clearly replaces the binary by a string which is the expected output on BinaryToMapTransformer.
@@ -73,8 +74,6 @@ public class BinaryViewStrategy extends AbstractTransformStrategy<Contentlet> {
     /**
      * Transform function
      */
-
-
     public static Map<String, Object> transform(final Field field, final Contentlet contentlet) {
         Metadata metadata;
         try {
@@ -98,17 +97,20 @@ public class BinaryViewStrategy extends AbstractTransformStrategy<Contentlet> {
         DotPreconditions.checkNotNull(metadata, IllegalArgumentException.class, "File can't be null");
         final Map<String, Object> map = new HashMap<>();
 
+        final Identifier identifier = Try.of(()-> APILocator.getIdentifierAPI().find(contentlet.getIdentifier())).getOrNull();
+        final String assetName = identifier == null ? metadata.getName() : identifier.getAssetName();
+
         map.put("versionPath",
                 "/dA/" + APILocator.getShortyAPI().shortify(contentlet.getInode()) + "/" + field
-                        .variable() + "/" + metadata.getName());
+                        .variable() + "/" + assetName);
         final int contentLanguageSize = Try
                 .of(() -> APILocator.getLanguageAPI().getLanguages()).getOrElse(emptyList()).size();
         map.put("idPath",
                 "/dA/" + APILocator.getShortyAPI().shortify(contentlet.getIdentifier()) + "/"
-                        + field.variable() + "/" + metadata.getName()
+                        + field.variable() + "/" + assetName
                         + (contentLanguageSize > 1 ? "?language_id=" + contentlet.getLanguageId()
                         : StringPool.BLANK));
-        map.put("name", metadata.getName());
+        map.put("name", assetName);
         map.put("size", metadata.getLength());
         map.put("mime", metadata.getContentType());
         map.put("isImage", metadata.isImage());

@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.fileassets.business;
 
+import com.dotcms.storage.model.Metadata;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -53,9 +54,13 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	 * @return
 	 */
     public Map<String, Serializable> getMetaDataMap() {
-        return Try.of(() -> super.getBinaryMetadata(FileAssetAPI.BINARY_FIELD).getFieldsMeta())
+        return Try.of(() -> getMetadata().getFieldsMeta())
                 .getOrElse(ImmutableMap.of());
     }
+
+	public Metadata getMetadata() throws DotDataException {
+		return super.getBinaryMetadata(FileAssetAPI.BINARY_FIELD);
+	}
 
 	public long getLanguageId(){
 		return super.getLanguageId();
@@ -93,34 +98,24 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	}
 
 	public long getFileSize() {
-		return 	Try.of(() -> Integer.parseInt(getMetaDataMap().get("fileSize").toString())).getOrElse(0);
+		return 	Try.of(() -> getMetadata().getSize()).getOrElse(0);
 	}
 
 	public int getHeight() {
-        return computeDimensions().height;
+        return  Try.of(()-> getMetadata().getHeight()).getOrElse(0);
 	}
 
 	public int getWidth() {
-		return computeDimensions().width;
+		return  Try.of(()-> getMetadata().getWidth()).getOrElse(0);
 	}
 
-	private Dimension computeDimensions() {
-	   try {
-           final Map<String, Serializable> metaDataMap = getMetaDataMap();
-           final int height = Integer.parseInt(metaDataMap.get("height").toString());
-           final int width = Integer.parseInt(metaDataMap.get("width").toString());
-           return new Dimension(width, height);
-       }catch (Exception e){
-          return new Dimension(0, 0);
-       }
-    }
 
   /**
    * This gives you access to the physical file on disk.
    * @return
    */
   public String getUnderlyingFileName() {
-	  return Try.of(() -> getMetaDataMap().get("title").toString())
+	  return Try.of(() -> getMetadata().getName())
 			  .getOrNull();
   }
 
@@ -140,7 +135,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
 
 	public String getMimeType() {
 
-		String mimeType = Try.of(() -> getMetaDataMap().get("contentType").toString()).getOrNull();
+		String mimeType = Try.of(() -> getMetadata().getContentType()).getOrNull();
 		if(null != mimeType){
 		   return mimeType;
 		}
@@ -154,6 +149,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
 		return mimeType;
 	}
 
+    @Deprecated
 	public void setMimeType(String mimeType) {
 
 	}

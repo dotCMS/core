@@ -65,11 +65,11 @@ public class Metadata implements Serializable {
     }
 
     public String getTitle(){
-        return Try.of(()->(String)getFieldsMeta().get(TITLE_META_KEY.key())).getOrElse("unknown");
+        return Try.of(()->getFieldsMeta().get(TITLE_META_KEY.key()).toString()).getOrElse("unknown");
     }
 
     public String getName(){
-        return Try.of(()->(String)getFieldsMeta().get(NAME_META_KEY.key())).getOrElse("unknown");
+        return Try.of(()->getFieldsMeta().get(NAME_META_KEY.key()).toString()).getOrElse("unknown");
     }
 
     public int getLength(){
@@ -81,19 +81,27 @@ public class Metadata implements Serializable {
     }
 
     public String getPath(){
-        return (String)getFieldsMeta().get(PATH_META_KEY.key());
+        return Try.of(()->getFieldsMeta().get(PATH_META_KEY.key()).toString()).getOrElse("unknown");
     }
 
     public String getSha256(){
-        return (String)getFieldsMeta().get(SHA256_META_KEY.key());
+        return Try.of(()->getFieldsMeta().get(SHA256_META_KEY.key()).toString()).getOrElse("unknown");
     }
 
     public String getContentType(){
-       return (String)getFieldsMeta().get(CONTENT_TYPE_META_KEY.key());
+       return Try.of(()->getFieldsMeta().get(CONTENT_TYPE_META_KEY.key()).toString()).getOrElse("unknown");
     }
 
     public boolean isImage(){
-        return  Try.of(()->(Boolean)getFieldsMeta().get(IS_IMAGE_META_KEY.key())).getOrElse(false);
+        try{
+           final Object value = getFieldsMeta().get(IS_IMAGE_META_KEY.key());
+           if(value instanceof Boolean){
+              return (Boolean) value;
+           }
+        }catch (Exception e){
+           //quite
+        }
+        return false;
     }
 
     public int getWidth(){

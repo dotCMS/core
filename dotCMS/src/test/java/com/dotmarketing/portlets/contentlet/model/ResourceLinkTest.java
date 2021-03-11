@@ -65,11 +65,12 @@ public class ResourceLinkTest {
         final Builder<String, Serializable> builder = new Builder<>();
         final ImmutableMap<String, Serializable> immutableMap =
          builder.put("contentType", "text/html")
-                .put("fileSize", 0)
-                .put("length", 0)
+                .put("fileSize", binary.length())
+                .put("length", binary.length())
                 .put("isImage", false)
                 .put("path",binary.getPath())
                 .put("sha256","9e2d4ab5bf0aba3113f90791b2975251a92bf1585125838bb73b6cec515ada41")
+                .put("name",binary.getName())
                 .put("title",binary.getName())
                 .put("modDate", 1614790279000L).build();
         return new Metadata(binary.getName(), immutableMap);
@@ -93,6 +94,7 @@ public class ResourceLinkTest {
                 final Identifier identifier = mock(Identifier.class);
                 when(identifier.getInode()).thenReturn("83864b2c-3988-4acc-953d-ff8d0ba5e093");
                 when(identifier.getParentPath()).thenReturn(path);
+                when(identifier.getAssetName()).thenReturn(htmlFileName);
                 return identifier;
             }
 
@@ -156,7 +158,7 @@ public class ResourceLinkTest {
         when(contentlet.getInode()).thenReturn(UUIDGenerator.generateUuid());
         when(contentlet.isFileAsset()).thenReturn(true);
         when(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)).thenReturn(htmlFileName);
-        when(contentlet.getBinary(FileAssetAPI.BINARY_FIELD)).thenReturn(file);
+        //when(contentlet.getBinary(FileAssetAPI.BINARY_FIELD)).thenReturn(file);
         when(contentlet.getLanguageId()).thenReturn(languageId);
         when(contentlet.isNew()).thenReturn(false);
         when(contentlet.getBinaryMetadata(FileAssetAPI.BINARY_FIELD)).thenReturn(mockMetadata(file));
@@ -194,7 +196,7 @@ public class ResourceLinkTest {
         when(contentlet.getInode()).thenReturn(UUIDGenerator.generateUuid());
         when(contentlet.isFileAsset()).thenReturn(true);
         when(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)).thenReturn(htmlFileName);
-        when(contentlet.getBinary(FileAssetAPI.BINARY_FIELD)).thenReturn(file);
+        //when(contentlet.getBinary(FileAssetAPI.BINARY_FIELD)).thenReturn(file);
         when(contentlet.getLanguageId()).thenReturn(languageId);
         when(contentlet.isNew()).thenReturn(false);
         when(contentlet.getInode()).thenReturn(UUIDGenerator.generateUuid());
@@ -234,7 +236,7 @@ public class ResourceLinkTest {
         when(contentlet.getInode()).thenReturn(UUIDGenerator.generateUuid());
         when(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)).thenReturn(htmlFileName);
         when(contentlet.isFileAsset()).thenReturn(true);
-        when(contentlet.getBinary(FileAssetAPI.BINARY_FIELD)).thenReturn(file);
+        //when(contentlet.getBinary(FileAssetAPI.BINARY_FIELD)).thenReturn(file);
         when(contentlet.getLanguageId()).thenReturn(languageId);
         when(contentlet.isNew()).thenReturn(false);
         when(contentlet.getBinaryMetadata(FileAssetAPI.BINARY_FIELD)).thenReturn(mockMetadata(file));
@@ -273,7 +275,7 @@ public class ResourceLinkTest {
         when(contentlet.getInode()).thenReturn(UUIDGenerator.generateUuid());
         when(contentlet.isFileAsset()).thenReturn(true);
         when(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)).thenReturn(htmlFileName);
-        when(contentlet.getBinary(FileAssetAPI.BINARY_FIELD)).thenReturn(file);
+        //when(contentlet.getBinary(FileAssetAPI.BINARY_FIELD)).thenReturn(file);
         when(contentlet.getLanguageId()).thenReturn(languageId);
         when(contentlet.isNew()).thenReturn(false);
         when(contentlet.getBinaryMetadata(FileAssetAPI.BINARY_FIELD)).thenReturn(mockMetadata(file));
@@ -312,7 +314,7 @@ public class ResourceLinkTest {
         when(contentlet.getIdentifier()).thenReturn(UUIDGenerator.generateUuid());
         when(contentlet.getInode()).thenReturn(UUIDGenerator.generateUuid());
         when(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)).thenReturn(htmlFileName);
-        when(contentlet.getBinary(FileAssetAPI.BINARY_FIELD)).thenReturn(file);
+        //when(contentlet.getBinary(FileAssetAPI.BINARY_FIELD)).thenReturn(file);
         when(contentlet.isFileAsset()).thenReturn(true);
         when(contentlet.getLanguageId()).thenReturn(languageId);
         when(contentlet.isNew()).thenReturn(false);
@@ -350,7 +352,7 @@ public class ResourceLinkTest {
         when(contentlet.getInode()).thenReturn(UUIDGenerator.generateUuid());
         when(contentlet.isFileAsset()).thenReturn(true);
         when(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)).thenReturn(htmlFileName);
-        when(contentlet.getBinary(FileAssetAPI.BINARY_FIELD)).thenReturn(file);
+        //when(contentlet.getBinary(FileAssetAPI.BINARY_FIELD)).thenReturn(file);
         when(contentlet.getLanguageId()).thenReturn(languageId);
         when(contentlet.isNew()).thenReturn(false);
         when(contentlet.getBinaryMetadata(FileAssetAPI.BINARY_FIELD)).thenReturn(mockMetadata(file));

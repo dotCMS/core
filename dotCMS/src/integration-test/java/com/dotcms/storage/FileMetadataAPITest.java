@@ -11,6 +11,7 @@ import static com.dotcms.storage.StoragePersistenceProvider.DEFAULT_STORAGE_TYPE
 import static com.dotcms.storage.model.Metadata.CUSTOM_PROP_PREFIX;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -96,7 +97,7 @@ public class FileMetadataAPITest {
             assertNotNull(metadata.getFullMetadataMap());
 
             validateBasicStrict(metadata.getBasicMetadataMap().get(FILE_ASSET));
-            validateFull(metadata.getFullMetadataMap().get(FILE_ASSET), testCase.testFile);
+            validateFull(metadata.getFullMetadataMap().get(FILE_ASSET));
 
             final Map<String, Set<String>> metadataInfo = fileMetadataAPI.removeMetadata(testCase.fileAssetContent);
             assertFalse(metadataInfo.isEmpty());
@@ -117,6 +118,33 @@ public class FileMetadataAPITest {
         }
 
     }
+
+    @Test
+    @UseDataProvider("getFileAssetMetadataTestCases")
+    public void Test_Force_Set_Metadata(final TestCase testCase) throws Exception {
+        prepareIfNecessary();
+        final String stringProperty = Config.getStringProperty(DEFAULT_STORAGE_TYPE);
+        try {
+            Config.setProperty(DEFAULT_STORAGE_TYPE, testCase.storageType.name());
+            final Contentlet fileAssetContent = testCase.fileAssetContent;
+            final Metadata binaryMetadata = fileAssetContent.getBinaryMetadata(FILE_ASSET);
+            assertNotNull(binaryMetadata);
+            fileMetadataAPI.putCustomMetadataAttributes(fileAssetContent,
+                    ImmutableMap.of(FILE_ASSET, ImmutableMap.of("custom-attribute", "lol")));
+            final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+            final Contentlet fileAsset = getFileAssetContent(true, langId);
+            final Metadata metadataBefore = fileAsset.getBinaryMetadata(FILE_ASSET);
+            fileMetadataAPI.setMetadata(fileAsset, ImmutableMap.of(FILE_ASSET, binaryMetadata));
+            final Metadata metadataAfter = fileAsset.getBinaryMetadata(FILE_ASSET);
+            final Serializable serializable = metadataAfter.getCustomMeta().get("custom-attribute");
+            assertEquals("lol", serializable.toString());
+            assertNotEquals(metadataAfter, metadataBefore);
+        } finally {
+            Config.setProperty(DEFAULT_STORAGE_TYPE, stringProperty);
+        }
+
+    }
+
 
     @DataProvider
     public static Object[] getFileAssetMetadataTestCases() throws Exception {
@@ -183,9 +211,8 @@ public class FileMetadataAPITest {
     /**
      * validate basic layout expected in the full md for File-Asset
      * @param metaData
-     * @param testFile
      */
-    private void validateFull(final Metadata metaData, final TestFile testFile){
+    private void validateFull(final Metadata metaData){
         final Map<String, Serializable> meta = metaData.getFieldsMeta();
         assertTrue(meta.containsKey("content"));
         assertTrue(meta.containsKey("contentType"));
@@ -731,6 +758,15 @@ public class FileMetadataAPITest {
            }
         );
 
-    }
+        final Metadata emptyMapMetadata = new Metadata("lol", ImmutableMap.of());
+        assertEquals(emptyMapMetadata.getName(),"unknown");
+        assertEquals(emptyMapMetadata.getTitle(),"unknown");
+        assertEquals(emptyMapMetadata.getSha256(),"unknown");
+        assertEquals(emptyMapMetadata.getLength(),0);
+        assertEquals(emptyMapMetadata.getSize(),0);
+        assertEquals(emptyMapMetadata.getHeight(),0);
+        assertEquals(emptyMapMetadata.getWidth(),0);
+        assertFalse(emptyMapMetadata.isImage());
 
+    }
 }

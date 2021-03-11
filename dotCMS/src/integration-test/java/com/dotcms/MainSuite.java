@@ -77,6 +77,7 @@ import com.dotmarketing.startup.runalways.Task00050LoadAppsSecretsTest;
 import com.dotmarketing.startup.runonce.Task201013AddNewColumnsToIdentifierTableTest;
 import com.dotmarketing.startup.runonce.Task201014UpdateColumnsValuesInIdentifierTableTest;
 import com.dotmarketing.startup.runonce.Task201102UpdateColumnSitelicTableTest;
+import com.dotmarketing.startup.runonce.Task210304RemoveOldMetadataFilesTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
@@ -390,7 +391,8 @@ import org.junit.runners.Suite.SuiteClasses;
         WorkflowBundlerTest.class,
         PublisherAPIImplTest.class,
         LegacyShortyIdApiTest.class,
-        FolderCacheImplIntegrationTest.class
+        FolderCacheImplIntegrationTest.class,
+        Task210304RemoveOldMetadataFilesTest.class
 })
 public class MainSuite {
 

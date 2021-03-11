@@ -621,7 +621,14 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			
 			
 			if (field.getFieldType().equals(Field.FieldType.BINARY.toString()) && field.isIndexed()){
-			    String fileName = Try.of(()-> contentlet.getBinary(field.getVelocityVarName()).getName()).getOrElse("_unk");
+				final String fileName;
+				final Metadata metadata = Try.of(()->contentlet.getBinaryMetadata(field.getVelocityVarName())).getOrNull();
+				if(null != metadata && UtilMethods.isSet(metadata.getName())){
+				   fileName = metadata.getName();
+				} else {
+				   //fallback
+				   fileName = Try.of(()-> contentlet.getBinary(field.getVelocityVarName()).getName()).getOrElse("_unk");
+				}
                 contentletMap.put(keyName, fileName);
                 contentletMap.put(keyNameText, fileName);
                 continue;

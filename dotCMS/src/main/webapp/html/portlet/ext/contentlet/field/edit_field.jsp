@@ -548,6 +548,7 @@
     <%-- File uploader --%>
 
     <div
+            assetName="<%= contentlet.isFileAsset() ? resourceLink.getAssetName() : "" %>"
             resourceLink="<%= contentlet.isFileAsset() ? resourceLink.getResourceLinkAsString() : "" %>"
             resourceLinkUri="<%= contentlet.isFileAsset() ? resourceLink.getResourceLinkUriAsString() : "" %>"
             resourceLinkLabel="<%= contentlet.isFileAsset() ? LanguageUtil.get(pageContext, "Resource-Link") : "" %>"

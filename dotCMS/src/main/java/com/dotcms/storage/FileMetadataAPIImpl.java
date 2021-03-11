@@ -100,7 +100,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
 		enabling this could affect greatly the performance of a reindex process.
 		 */
         final boolean alwaysRegenerateMetadata = Config
-                .getBooleanProperty("always.regenerate.metadata.on.reindex", false);
+                .getBooleanProperty(ALWAYS_REGENERATE_METADATA_ON_REINDEX, false);
 
         Logger.info(this, ()-> "Generating the metadata for contentlet, id = " + contentlet.getIdentifier());
 
@@ -568,7 +568,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
     }
 
     /**
-     *
+     * {@inheritDoc}
      * @param binary
      * @param fallbackContentlet
      * @return
@@ -591,7 +591,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
 
 
     /**
-     *
+     * {@inheritDoc}
      * @param contentlet the contentlet we want to associate the md with
      * @param customAttributesByField
      * @throws DotDataException
@@ -625,7 +625,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
 
 
     /**
-     *
+     * {@inheritDoc}
      * @param source
      * @param destination
      * @throws DotDataException
@@ -675,6 +675,37 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
             }
         }
 
+    }
+
+    /**
+     * {@inheritDoc}
+     * @param contentlet
+     * @param binariesMetadata
+     * @throws DotDataException
+     */
+    @Override
+    public void setMetadata(final Contentlet contentlet, final Map<String, Metadata> binariesMetadata) throws DotDataException {
+          removeMetadata(contentlet);
+          final Set<Field> validFields = contentlet.getContentType().fields(BinaryField.class).stream()
+                .filter(field -> contentlet.get(field.variable()) != null)
+                .collect(Collectors.toSet());
+        final StorageType storageType = StoragePersistenceProvider.getStorageType();
+        final String metadataBucketName = Config
+                .getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);
+        for (final Field validField : validFields) {
+            final Metadata metadata = binariesMetadata.get(validField.variable());
+            if(null != metadata){
+                final String destMetadataPath = getFileName(contentlet, validField.variable());
+                fileStorageAPI.setMetadata(new FetchMetadataParams.Builder()
+                        .cache(() -> contentlet.getInode() + StringPool.COLON + validField.variable())
+                        .projectionMapForCache(this::filterNonCacheableMetadataFields)
+                        .storageKey(
+                                new StorageKey.Builder().group(metadataBucketName)
+                                        .path(destMetadataPath)
+                                        .storage(storageType).build())
+                        .build(), metadata.getMap());
+            }
+        }
     }
 
 }

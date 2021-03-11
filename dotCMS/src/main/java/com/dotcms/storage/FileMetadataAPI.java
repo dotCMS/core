@@ -31,6 +31,8 @@ import java.util.function.Supplier;
  */
 public interface FileMetadataAPI {
 
+    String ALWAYS_REGENERATE_METADATA_ON_REINDEX = "always.regenerate.metadata.on.reindex";
+
     /**
      * Reads INDEX_METADATA_FIELDS for  pre-configured metadata fields
      * @return
@@ -174,4 +176,14 @@ public interface FileMetadataAPI {
      */
     void copyMetadata(Contentlet source, Contentlet destination) throws DotDataException;
 
+    /**
+     * This forces the metadata into a contentlet. No validation type is performed
+     * This means that a pdf file could end-up with something like "isImage:true"
+     * So be careful.
+     * This is pretty much meant for push publishing purposes
+     * @param contentlet
+     * @param binariesMetadata
+     * @throws DotDataException
+     */
+    void setMetadata(final Contentlet contentlet, final Map<String, Metadata> binariesMetadata) throws DotDataException;
 }
