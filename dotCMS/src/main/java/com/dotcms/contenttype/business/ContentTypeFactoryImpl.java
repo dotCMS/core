@@ -438,7 +438,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
    */
   private void saveFieldVariables(final Field field, List<FieldVariable> fieldVariables) {
       if (field.id() == null) {
-          Logger.warn(getClass(), String.format("Found null id at field %s", field.name()));
+          Logger.warn(getClass(), String.format("Not saving field variables. Found null id at field %s", field.name()));
           return;
       }
 
