@@ -480,7 +480,8 @@ public class FieldAPIImpl implements FieldAPI {
             }
 
             //verify if the cardinality was changed to update it on the other side of the relationship
-            if (relationship.getParentRelationName() != null) {
+            //todo remove IF
+//            if (relationship.getParentRelationName() != null) {
                 final Field otherSideField = Try.of(()->byContentTypeAndVar(relatedContentType,
                         relationship.getParentRelationName())).getOrNull();
 
@@ -489,7 +490,7 @@ public class FieldAPIImpl implements FieldAPI {
                     builder = FieldBuilder.builder(otherSideField);
                     fieldFactory.save(builder.values(field.values()).build());
                 }
-            }
+//            }
         }
         relationship.setCardinality(cardinality);
     }
