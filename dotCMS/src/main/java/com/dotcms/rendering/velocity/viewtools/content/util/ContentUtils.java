@@ -554,7 +554,7 @@ public class ContentUtils {
 
                 final StringBuilder pullQuery = new StringBuilder();
 
-                if (language != -1){
+                if (language != -1 && !condition.contains("languageId")){
                     pullQuery.append(" ").append("+languageId:").append(language).append(" ");
                 }
                 if (!user.isBackendUser()){
