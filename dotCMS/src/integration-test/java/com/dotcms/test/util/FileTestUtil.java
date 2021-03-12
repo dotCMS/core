@@ -274,11 +274,20 @@ public class FileTestUtil {
         return index != -1 ? fileName.substring(index) : fileName;
     }
 
-    private static String removeContent(String content, Collection<String> toRemove) {
+    private static String removeContent(
+            final String content,
+            final Collection<String> toRemoveParams) {
+
+        final Collection<String> toRemove = new ArrayList<>();
+        toRemove.addAll(toRemoveParams);
+        toRemove.add("<.*></.*>");
+
+        String result = content;
+
         for (String regex : toRemove) {
-            content = content.replaceAll(regex, "");
+            result = result.replaceAll(regex, "");
         }
-        return content;
+        return result;
     }
 
 }
