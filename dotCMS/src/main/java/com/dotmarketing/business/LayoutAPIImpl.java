@@ -210,7 +210,7 @@ public class LayoutAPIImpl implements LayoutAPI {
 	@CloseDBIfOpened
 	@Override
     public Layout findGettingStartedLayout() {
-	    final Layout layout = Try.of(() -> findLayout(GETTING_STARTED_LAYOUT_ID)).getOrElseThrow(e->new DotRuntimeException(e));
+	    final Layout layout = Try.of(() -> findLayoutByName(GETTING_STARTED_LAYOUT_NAME)).getOrElseThrow(e->new DotRuntimeException(e));
 	    return layout.getPortletIds().isEmpty()  ? this.createGettingStartedLayout() : layout ;
     }
 	
