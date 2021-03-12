@@ -41,7 +41,6 @@
         "workspace-generator": "nx workspace-generator",
         "dep-graph": "nx dep-graph",
         "help": "nx help",
-        "prepare": "husky install",
         "pretty-quick": "pretty-quick"
     },
     "private": false,
@@ -95,6 +94,9 @@
         "@nrwl/storybook": "^11.4.0",
         "@nrwl/tao": "11.4.0",
         "@nrwl/workspace": "11.4.0",
+        "@nxext/stencil": "^11.2.0",
+        "@stencil/core": "^2.3.0",
+        "@stencil/sass": "1.4.1",
         "@storybook/addon-actions": "^6.1.16",
         "@storybook/addon-essentials": "^6.1.16",
         "@storybook/addon-knobs": "^6.1.11",
@@ -137,6 +139,13 @@
         "tslint-angular": "^3.0.3",
         "typedoc": "^0.14.2",
         "typescript": "~4.0.3",
-        "webpack-bundle-analyzer": "^4.1.0"
+        "webpack-bundle-analyzer": "^4.1.0",
+        "@storybook/html": "^6.0.21",
+        "@types/jest": "26.0.8",
+        "flatpickr": "^4.5.7",
+        "jest": "26.2.2",
+        "jest-cli": "^26.6.3",
+        "puppeteer": "~5.3.1",
+        "ts-jest": "26.4.0"
     }
 }
