@@ -465,12 +465,12 @@ public class VersionableAPIImpl implements VersionableAPI {
 
             if ( UtilMethods.isSet( structure.getPublishDateVar() ) ) {//Verify if the structure have a Publish Date Field set
                 if ( UtilMethods.isSet( identifier.getSysPublishDate() ) && identifier.getSysPublishDate().after( new Date() ) ) {
-                    throw new PublishStateException( "The content cannot be published because it is scheduled to be published on future date." );
+                    throw new FutureContentletPublishStateException(contentlet);
                 }
             }
             if ( UtilMethods.isSet( structure.getExpireDateVar() ) ) {//Verify if the structure have a Expire Date Field set
                 if ( UtilMethods.isSet( identifier.getSysExpireDate() ) && identifier.getSysExpireDate().before( new Date() ) ) {
-                    throw new PublishStateException( "The content cannot be published because the expire date has already passed." );
+                    throw new ExpiredContentletPublishStateException( contentlet );
                 }
             }
             final ContentletVersionInfo newInfo = Sneaky.sneak(()-> (ContentletVersionInfo) BeanUtils.cloneBean(info.get())) ;

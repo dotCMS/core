@@ -19,6 +19,7 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
@@ -52,6 +53,7 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import org.apache.velocity.context.Context;
@@ -794,5 +796,89 @@ public class ContentToolTest extends IntegrationTestBase {
                         .allMatch(inode -> inode.equals(childContentlet1.getInode())
                                 || inode.equals(childContentlet3Live.getInode())
                         ));
+    }
+
+    /**
+     * Method to Test: {@link ContentTool#pullRelated(String, String, String, boolean, int, String)} (String, int, String)}
+     * When: pulling related content in different languages passing a condition which includes all langs (languageId:*)
+     * Should: Return all contents in all languages
+     *
+     */
+
+    @Test
+    public void testPullRelated_MultiLangContent() throws DotDataException, DotSecurityException {
+
+        final long time = System.currentTimeMillis();
+
+        // creates second language
+        final Language secondLang = new LanguageDataGen().nextPersisted();
+
+        //creates parent content type
+        ContentType parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
+
+        //creates child content type
+        ContentType childContentType = createAndSaveSimpleContentType("childContentType" + time);
+
+        Field field = createField(childContentType.variable(), parentContentType.id(),
+                childContentType.variable(),
+                String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()));
+
+        //One side of the relationship is set parentContentType --> childContentType
+        field = fieldAPI.save(field, user);
+
+        //creates a new parent contentlet and publishes it
+        ContentletDataGen contentletDataGen = new ContentletDataGen(parentContentType.id());
+
+        final Contentlet parentContentlet = contentletDataGen.languageId(defaultLanguage.getId())
+                .nextPersisted();
+        ContentletDataGen.publish(parentContentlet);
+
+        //creates 2 children contentlets in defaultLang and 1 in secondLang
+        contentletDataGen = new ContentletDataGen(childContentType.id());
+        final Contentlet childContentlet1 = contentletDataGen.languageId(defaultLanguage.getId())
+                .nextPersisted();
+
+        final Contentlet childContentlet2 = contentletDataGen.languageId(defaultLanguage.getId())
+                .nextPersisted();
+
+        final Contentlet childContentlet3 = contentletDataGen.languageId(secondLang.getId())
+                .nextPersisted();
+
+        ContentletDataGen.publish(childContentlet1);
+        ContentletDataGen.publish(childContentlet2);
+        ContentletDataGen.publish(childContentlet3);
+
+        final List<Contentlet> children = CollectionsUtils.list(childContentlet1, childContentlet2,
+                childContentlet3);
+
+        final String fullFieldVar =
+                parentContentType.variable() + StringPool.PERIOD + field.variable();
+
+        final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
+
+        //relates parent contentlet with the child contentlet
+        contentletAPI.relateContent(parentContentlet, relationship, children, user, false);
+
+        //refresh relationships in the ES index
+        contentletAPI.refresh(parentContentlet);
+        contentletAPI.refresh(childContentlet1);
+        contentletAPI.refresh(childContentlet2);
+        contentletAPI.refresh(childContentlet3);
+
+        final ContentTool contentTool = getContentTool(defaultLanguage.getId());
+
+        final List<ContentMap> result = contentTool
+                .pullRelated(relationship.getRelationTypeValue(),
+                        parentContentlet.getIdentifier(), "+languageId:*", false, -1, null);
+
+        List<Contentlet> pullRelatedContent = result.stream().map((ContentMap::getContentObject)).collect(
+                Collectors.toList());
+
+        assertNotNull(result);
+        assertEquals(3, result.size());
+        assertTrue("Unexpected related content pulled",
+                children.containsAll(pullRelatedContent));
+
+
     }
 }

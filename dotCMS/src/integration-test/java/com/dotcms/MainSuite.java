@@ -44,7 +44,9 @@ import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.storage.StoragePersistenceAPITest;
 import com.dotcms.security.apps.AppsCacheImplTest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
+import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
 import com.dotmarketing.business.helper.PermissionHelperTest;
+import com.dotmarketing.cache.FolderCacheImplIntegrationTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.osgi.GenericBundleActivatorTest;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
@@ -199,6 +201,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v3.contenttype.FieldResourceTest.class,
         com.dotcms.rest.api.v3.contenttype.MoveFieldFormTest.class,
         com.dotcms.rest.api.CorsFilterTest.class,
+        com.dotcms.mail.MailAPIImplTest.class,
         com.dotcms.rest.elasticsearch.ESContentResourcePortletTest.class,
         com.dotcms.filters.VanityUrlFilterTest.class,
         com.dotcms.vanityurl.business.VanityUrlAPITest.class,
@@ -385,7 +388,9 @@ import org.junit.runners.Suite.SuiteClasses;
         RuleBundlerTest.class,
         TemplateBundlerTest.class,
         WorkflowBundlerTest.class,
-        PublisherAPIImplTest.class
+        PublisherAPIImplTest.class,
+        LegacyShortyIdApiTest.class,
+        FolderCacheImplIntegrationTest.class
 })
 public class MainSuite {
 
