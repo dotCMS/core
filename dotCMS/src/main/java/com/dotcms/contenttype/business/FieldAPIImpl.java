@@ -490,6 +490,7 @@ public class FieldAPIImpl implements FieldAPI {
                     fieldFactory.save(builder.values(field.values()).build());
                 }
             }
+
         }
         relationship.setCardinality(cardinality);
     }
