@@ -112,7 +112,7 @@ public class ResourceLinkTest {
     private User mockLimitedUser(){
         final User adminUser = mock(User.class);
         when(adminUser.getUserId()).thenReturn("anonymous");
-        when(adminUser.getEmailAddress()).thenReturn("anonymous@dotcmsfakeemail.org");
+        when(adminUser.getEmailAddress()).thenReturn("anonymous@dotcms.anonymoususer");
         when(adminUser.getFirstName()).thenReturn("anonymous user");
         when(adminUser.getLastName()).thenReturn("anonymous");
         return adminUser;
