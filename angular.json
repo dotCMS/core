@@ -1,472 +1,453 @@
 {
-  "version": 1,
-  "cli": {
-    "defaultCollection": "@nrwl/angular"
-  },
-  "defaultProject": "dotcms-ui",
-  "schematics": {
-    "@nrwl/angular": {
-      "application": {
-        "linter": "eslint"
-      },
-      "library": {
-        "linter": "eslint"
-      },
-      "storybook-configuration": {
-        "linter": "eslint"
-      }
+    "version": 1,
+    "cli": {
+        "defaultCollection": "@nrwl/angular"
     },
-    "@nrwl/angular:application": {
-      "style": "scss",
-      "linter": "eslint",
-      "unitTestRunner": "karma",
-      "e2eTestRunner": "cypress"
-    },
-    "@nrwl/angular:library": {
-      "style": "scss",
-      "linter": "eslint",
-      "unitTestRunner": "karma"
-    },
-    "@nrwl/angular:component": {
-      "style": "scss"
-    }
-  },
-  "projects": {
-    "dotcms-ui": {
-      "projectType": "application",
-      "root": "apps/dotcms-ui",
-      "sourceRoot": "apps/dotcms-ui/src",
-      "prefix": "dot",
-      "architect": {
-        "build": {
-          "builder": "@angular-devkit/build-angular:browser",
-          "options": {
-            "baseHref": "./",
-            "outputPath": "dist/apps/dotcms-ui",
-            "index": "apps/dotcms-ui/src/index.html",
-            "main": "apps/dotcms-ui/src/main.ts",
-            "polyfills": "apps/dotcms-ui/src/polyfills.ts",
-            "tsConfig": "apps/dotcms-ui/tsconfig.app.json",
-            "aot": true,
-            "assets": [
-              "apps/dotcms-ui/src/favicon.ico",
-              "apps/dotcms-ui/src/assets",
-              {
-                "glob": "**/*",
-                "input": "./node_modules/ngx-monaco-editor/assets/monaco",
-                "output": "./assets/monaco/"
-              },
-              {
-                "glob": "index.jsp",
-                "input": "apps/dotcms-ui/src/tomcat",
-                "output": "./"
-              }
-            ],
-            "styles": [
-              "apps/dotcms-ui/src/styles.scss",
-              "node_modules/primeicons/primeicons.css",
-              "node_modules/primeflex/primeflex.css",
-              "node_modules/primeng/resources/primeng.min.css"
-            ],
-            "scripts": [
-              "node_modules/marked/lib/marked.js"
-            ],
-            "stylePreprocessorOptions": {
-              "includePaths": [
-                "apps/dotcms-ui/src/styles"
-              ]
+    "defaultProject": "dotcms-ui",
+    "schematics": {
+        "@nrwl/angular": {
+            "application": {
+                "linter": "eslint"
+            },
+            "library": {
+                "linter": "eslint"
+            },
+            "storybook-configuration": {
+                "linter": "eslint"
             }
-          },
-          "configurations": {
-            "production": {
-              "fileReplacements": [
-                {
-                  "replace": "apps/dotcms-ui/src/environments/environment.ts",
-                  "with": "apps/dotcms-ui/src/environments/environment.prod.ts"
-                }
-              ],
-              "optimization": true,
-              "outputHashing": "all",
-              "sourceMap": false,
-              "namedChunks": false,
-              "extractLicenses": true,
-              "vendorChunk": false,
-              "buildOptimizer": true,
-              "budgets": [
-                {
-                  "type": "initial",
-                  "maximumWarning": "2mb",
-                  "maximumError": "5mb"
+        },
+        "@nrwl/angular:application": {
+            "style": "scss",
+            "linter": "eslint",
+            "unitTestRunner": "karma",
+            "e2eTestRunner": "cypress"
+        },
+        "@nrwl/angular:library": {
+            "style": "scss",
+            "linter": "eslint",
+            "unitTestRunner": "karma"
+        },
+        "@nrwl/angular:component": {
+            "style": "scss"
+        }
+    },
+    "projects": {
+        "dotcms-ui": {
+            "projectType": "application",
+            "root": "apps/dotcms-ui",
+            "sourceRoot": "apps/dotcms-ui/src",
+            "prefix": "dot",
+            "architect": {
+                "build": {
+                    "builder": "@angular-devkit/build-angular:browser",
+                    "options": {
+                        "baseHref": "./",
+                        "outputPath": "dist/apps/dotcms-ui",
+                        "index": "apps/dotcms-ui/src/index.html",
+                        "main": "apps/dotcms-ui/src/main.ts",
+                        "polyfills": "apps/dotcms-ui/src/polyfills.ts",
+                        "tsConfig": "apps/dotcms-ui/tsconfig.app.json",
+                        "aot": true,
+                        "allowedCommonJsDependencies": [
+                            "lodash",
+                            "dragula",
+                            "md5",
+                            "dom-autoscroller"
+                        ],
+                        "assets": [
+                            "apps/dotcms-ui/src/favicon.ico",
+                            "apps/dotcms-ui/src/assets",
+                            {
+                                "glob": "**/*",
+                                "input": "./node_modules/ngx-monaco-editor/assets/monaco",
+                                "output": "./assets/monaco/"
+                            },
+                            {
+                                "glob": "index.jsp",
+                                "input": "apps/dotcms-ui/src/tomcat",
+                                "output": "./"
+                            }
+                        ],
+                        "styles": [
+                            "apps/dotcms-ui/src/styles.scss",
+                            "node_modules/primeicons/primeicons.css",
+                            "node_modules/primeflex/primeflex.css",
+                            "node_modules/primeng/resources/primeng.min.css"
+                        ],
+                        "scripts": ["node_modules/marked/lib/marked.js"],
+                        "stylePreprocessorOptions": {
+                            "includePaths": ["apps/dotcms-ui/src/styles"]
+                        }
+                    },
+                    "configurations": {
+                        "production": {
+                            "fileReplacements": [
+                                {
+                                    "replace": "apps/dotcms-ui/src/environments/environment.ts",
+                                    "with": "apps/dotcms-ui/src/environments/environment.prod.ts"
+                                }
+                            ],
+                            "optimization": true,
+                            "outputHashing": "all",
+                            "sourceMap": false,
+                            "namedChunks": false,
+                            "extractLicenses": true,
+                            "vendorChunk": false,
+                            "buildOptimizer": true,
+                            "budgets": [
+                                {
+                                    "type": "initial",
+                                    "maximumWarning": "2mb",
+                                    "maximumError": "5mb"
+                                },
+                                {
+                                    "type": "anyComponentStyle",
+                                    "maximumWarning": "6kb",
+                                    "maximumError": "150kb"
+                                }
+                            ]
+                        }
+                    }
                 },
-                {
-                  "type": "anyComponentStyle",
-                  "maximumWarning": "6kb",
-                  "maximumError": "150kb"
+                "serve": {
+                    "builder": "@angular-devkit/build-angular:dev-server",
+                    "options": {
+                        "baseHref": "/",
+                        "browserTarget": "dotcms-ui:build",
+                        "proxyConfig": "apps/dotcms-ui/proxy.conf.json"
+                    },
+                    "configurations": {
+                        "production": {
+                            "browserTarget": "dotcms-ui:build:production"
+                        }
+                    }
+                },
+                "extract-i18n": {
+                    "builder": "@angular-devkit/build-angular:extract-i18n",
+                    "options": {
+                        "browserTarget": "dotcms-ui:build"
+                    }
+                },
+                "lint": {
+                    "builder": "@nrwl/linter:eslint",
+                    "options": {
+                        "lintFilePatterns": [
+                            "apps/dotcms-ui/src/**/*.ts",
+                            "apps/dotcms-ui/src/**/*.html"
+                        ]
+                    }
+                },
+                "test": {
+                    "builder": "@angular-devkit/build-angular:karma",
+                    "options": {
+                        "main": "apps/dotcms-ui/src/test.ts",
+                        "tsConfig": "apps/dotcms-ui/tsconfig.spec.json",
+                        "karmaConfig": "apps/dotcms-ui/karma.conf.js",
+                        "polyfills": "apps/dotcms-ui/src/polyfills.ts",
+                        "styles": ["apps/dotcms-ui/src/styles.scss"],
+                        "scripts": [],
+                        "stylePreprocessorOptions": {
+                            "includePaths": ["apps/dotcms-ui/src/styles"]
+                        }
+                    }
+                },
+                "storybook": {
+                    "builder": "@nrwl/storybook:storybook",
+                    "options": {
+                        "uiFramework": "@storybook/angular",
+                        "port": 4400,
+                        "config": {
+                            "configFolder": "apps/dotcms-ui/.storybook"
+                        }
+                    },
+                    "configurations": {
+                        "ci": {
+                            "quiet": true
+                        }
+                    }
+                },
+                "build-storybook": {
+                    "builder": "@nrwl/storybook:build",
+                    "outputs": ["{options.outputPath}"],
+                    "options": {
+                        "uiFramework": "@storybook/angular",
+                        "outputPath": "storybook/dotcms-ui",
+                        "config": {
+                            "configFolder": "apps/dotcms-ui/.storybook"
+                        }
+                    },
+                    "configurations": {
+                        "ci": {
+                            "quiet": true
+                        }
+                    }
+                },
+                "publish-storybook": {
+                    "builder": "@nrwl/workspace:run-commands",
+                    "options": {
+                        "outputPath": "storybook/dotcms-ui",
+                        "commands": [
+                            {
+                                "command": "nx build-storybook"
+                            },
+                            {
+                                "command": "npm run publish-storybook-to-ghpages -- --existing-output-dir=storybook/dotcms-ui"
+                            }
+                        ],
+                        "parallel": false
+                    }
                 }
-              ]
             }
-          }
         },
-        "serve": {
-          "builder": "@angular-devkit/build-angular:dev-server",
-          "options": {
-            "baseHref": "/",
-            "browserTarget": "dotcms-ui:build",
-            "proxyConfig": "apps/dotcms-ui/proxy.conf.json"
-          },
-          "configurations": {
-            "production": {
-              "browserTarget": "dotcms-ui:build:production"
+        "dotcms-ui-e2e": {
+            "root": "apps/dotcms-ui-e2e",
+            "sourceRoot": "apps/dotcms-ui-e2e/src",
+            "projectType": "application",
+            "architect": {
+                "e2e": {
+                    "builder": "@nrwl/cypress:cypress",
+                    "options": {
+                        "cypressConfig": "apps/dotcms-ui-e2e/cypress.json",
+                        "tsConfig": "apps/dotcms-ui-e2e/tsconfig.e2e.json",
+                        "devServerTarget": "dotcms-ui:serve"
+                    },
+                    "configurations": {
+                        "production": {
+                            "devServerTarget": "dotcms-ui:serve:production"
+                        }
+                    }
+                },
+                "lint": {
+                    "builder": "@nrwl/linter:eslint",
+                    "options": {
+                        "lintFilePatterns": ["apps/dotcms-ui-e2e/**/*.{js,ts}"]
+                    }
+                }
             }
-          }
         },
-        "extract-i18n": {
-          "builder": "@angular-devkit/build-angular:extract-i18n",
-          "options": {
-            "browserTarget": "dotcms-ui:build"
-          }
-        },
-        "lint": {
-          "builder": "@nrwl/linter:eslint",
-          "options": {
-            "lintFilePatterns": [
-              "apps/dotcms-ui/src/**/*.ts",
-              "apps/dotcms-ui/src/**/*.html"
-            ]
-          }
-        },
-        "test": {
-          "builder": "@angular-devkit/build-angular:karma",
-          "options": {
-            "main": "apps/dotcms-ui/src/test.ts",
-            "tsConfig": "apps/dotcms-ui/tsconfig.spec.json",
-            "karmaConfig": "apps/dotcms-ui/karma.conf.js",
-            "polyfills": "apps/dotcms-ui/src/polyfills.ts",
-            "styles": [
-              "apps/dotcms-ui/src/styles.scss"
-            ],
-            "scripts": [],
-            "stylePreprocessorOptions": {
-              "includePaths": [
-                "apps/dotcms-ui/src/styles"
-              ]
-            }
-          }
-        },
-        "storybook": {
-          "builder": "@nrwl/storybook:storybook",
-          "options": {
-            "uiFramework": "@storybook/angular",
-            "port": 4400,
-            "config": {
-              "configFolder": "apps/dotcms-ui/.storybook"
-            }
-          },
-          "configurations": {
-            "ci": {
-              "quiet": true
-            }
-          }
-        },
-        "build-storybook": {
-          "builder": "@nrwl/storybook:build",
-          "outputs": [
-            "{options.outputPath}"
-          ],
-          "options": {
-            "uiFramework": "@storybook/angular",
-            "outputPath": "storybook/dotcms-ui",
-            "config": {
-              "configFolder": "apps/dotcms-ui/.storybook"
-            }
-          },
-          "configurations": {
-            "ci": {
-              "quiet": true
-            }
-          }
-        },
-        "publish-storybook": {
-          "builder": "@nrwl/workspace:run-commands",
-          "options": {
-            "outputPath": "storybook/dotcms-ui",
-            "commands": [
-              {
-                "command": "nx build-storybook"
-              },
-              {
-                "command": "npm run publish-storybook-to-ghpages -- --existing-output-dir=storybook/dotcms-ui"
-              }
-            ],
-            "parallel": false
-          }
-        }
-      }
-    },
-    "dotcms-ui-e2e": {
-      "root": "apps/dotcms-ui-e2e",
-      "sourceRoot": "apps/dotcms-ui-e2e/src",
-      "projectType": "application",
-      "architect": {
-        "e2e": {
-          "builder": "@nrwl/cypress:cypress",
-          "options": {
-            "cypressConfig": "apps/dotcms-ui-e2e/cypress.json",
-            "tsConfig": "apps/dotcms-ui-e2e/tsconfig.e2e.json",
-            "devServerTarget": "dotcms-ui:serve"
-          },
-          "configurations": {
-            "production": {
-              "devServerTarget": "dotcms-ui:serve:production"
-            }
-          }
-        },
-        "lint": {
-          "builder": "@nrwl/linter:eslint",
-          "options": {
-            "lintFilePatterns": [
-              "apps/dotcms-ui-e2e/**/*.{js,ts}"
-            ]
-          }
-        }
-      }
-    },
-    "dot-rules": {
-      "projectType": "library",
-      "root": "libs/dot-rules",
-      "sourceRoot": "libs/dot-rules/src",
-      "prefix": "",
-      "architect": {
-        "lint": {
-          "builder": "@nrwl/linter:eslint",
-          "options": {
-            "lintFilePatterns": [
-              "libs/dot-rules/src/**/*.ts",
-              "libs/dot-rules/src/**/*.html"
-            ]
-          }
-        },
-        "test": {
-          "builder": "@angular-devkit/build-angular:karma",
-          "outputs": [
-            "coverage/libs/dot-rules"
-          ],
-          "options": {
-            "main": "libs/dot-rules/src/test.ts",
-            "karmaConfig": "libs/dot-rules/karma.conf.js",
-            "tsConfig": "libs/dot-rules/tsconfig.spec.json"
-          }
-        }
-      }
-    },
-    "dotcms-js": {
-      "projectType": "library",
-      "root": "libs/dotcms-js",
-      "sourceRoot": "libs/dotcms-js/src",
-      "prefix": "",
-      "architect": {
-        "lint": {
-          "builder": "@nrwl/linter:eslint",
-          "options": {
-            "lintFilePatterns": [
-              "libs/dotcms-js/src/**/*.ts",
-              "libs/dotcms-js/src/**/*.html"
-            ]
-          }
-        },
-        "test": {
-          "builder": "@angular-devkit/build-angular:karma",
-          "outputs": [
-            "coverage/libs/dotcms-js"
-          ],
-          "options": {
-            "main": "libs/dotcms-js/src/test.ts",
-            "karmaConfig": "libs/dotcms-js/karma.conf.js",
-            "tsConfig": "libs/dotcms-js/tsconfig.spec.json"
-          }
-        }
-      }
-    },
-    "dot-layout-grid": {
-      "projectType": "library",
-      "root": "libs/dot-layout-grid",
-      "sourceRoot": "libs/dot-layout-grid/src",
-      "prefix": "",
-      "architect": {
-        "lint": {
-          "builder": "@nrwl/linter:eslint",
-          "options": {
-            "lintFilePatterns": [
-              "libs/dot-layout-grid/src/**/*.ts",
-              "libs/dot-layout-grid/src/**/*.html"
-            ]
-          }
-        },
-        "test": {
-          "builder": "@angular-devkit/build-angular:karma",
-          "outputs": [
-            "coverage/libs/dot-layout-grid"
-          ],
-          "options": {
-            "main": "libs/dot-layout-grid/src/test.ts",
-            "karmaConfig": "libs/dot-layout-grid/karma.conf.js",
-            "tsConfig": "libs/dot-layout-grid/tsconfig.spec.json"
-          }
-        }
-      }
-    },
-    "dotcms-models": {
-      "projectType": "library",
-      "root": "libs/dotcms-models",
-      "sourceRoot": "libs/dotcms-models/src",
-      "prefix": "dot",
-      "architect": {
-        "build": {
-          "builder": "@nrwl/angular:ng-packagr-lite",
-          "options": {
-            "tsConfig": "libs/dotcms-models/tsconfig.lib.json",
-            "project": "libs/dotcms-models/ng-package.json"
-          },
-          "configurations": {
-            "production": {
-              "tsConfig": "libs/dotcms-models/tsconfig.lib.prod.json"
-            }
-          }
-        },
-        "lint": {
-          "builder": "@nrwl/linter:eslint",
-          "options": {
-            "lintFilePatterns": [
-              "libs/dotcms-models/src/**/*.ts",
-              "libs/dotcms-models/src/**/*.html"
-            ]
-          }
-        },
-        "test": {
-          "builder": "@angular-devkit/build-angular:karma",
-          "outputs": [
-            "coverage/libs/dotcms-models"
-          ],
-          "options": {
-            "main": "libs/dotcms-models/src/test.ts",
-            "karmaConfig": "libs/dotcms-models/karma.conf.js",
-            "tsConfig": "libs/dotcms-models/tsconfig.spec.json"
-          }
-        }
-      }
-    },
-    "dotcms": {
-      "projectType": "library",
-      "root": "libs/dotcms",
-      "sourceRoot": "libs/dotcms/src",
-      "prefix": "dot",
-      "architect": {
-        "build": {
-          "builder": "@nrwl/angular:ng-packagr-lite",
-          "options": {
-            "tsConfig": "libs/dotcms/tsconfig.lib.json",
-            "project": "libs/dotcms/ng-package.json"
-          },
-          "configurations": {
-            "production": {
-              "tsConfig": "libs/dotcms/tsconfig.lib.prod.json"
-            }
-          }
-        },
-        "lint": {
-          "builder": "@nrwl/linter:eslint",
-          "options": {
-            "lintFilePatterns": [
-              "libs/dotcms/src/**/*.ts",
-              "libs/dotcms/src/**/*.html"
-            ]
-          }
-        },
-        "test": {
-          "builder": "@angular-devkit/build-angular:karma",
-          "outputs": [
-            "coverage/libs/dotcms"
-          ],
-          "options": {
-            "main": "libs/dotcms/src/test.ts",
-            "karmaConfig": "libs/dotcms/karma.conf.js",
-            "tsConfig": "libs/dotcms/tsconfig.spec.json"
-          }
-        }
-      }
-    },
-    "dotcms-webcomponents": {
-      "projectType": "library",
-      "schematics": {
-        "@nxext/stencil:component": {
-          "style": "scss",
-          "storybook": true
-        }
-      },
-      "root": "libs/dotcms-webcomponents",
-      "sourceRoot": "libs/dotcms-webcomponents/src",
-      "architect": {
-        "test": {
-          "builder": "@nxext/stencil:test",
-          "options": {
+        "dot-rules": {
             "projectType": "library",
-            "configPath": "libs/dotcms-webcomponents/stencil.config.ts"
-          }
+            "root": "libs/dot-rules",
+            "sourceRoot": "libs/dot-rules/src",
+            "prefix": "",
+            "architect": {
+                "lint": {
+                    "builder": "@nrwl/linter:eslint",
+                    "options": {
+                        "lintFilePatterns": [
+                            "libs/dot-rules/src/**/*.ts",
+                            "libs/dot-rules/src/**/*.html"
+                        ]
+                    }
+                },
+                "test": {
+                    "builder": "@angular-devkit/build-angular:karma",
+                    "outputs": ["coverage/libs/dot-rules"],
+                    "options": {
+                        "main": "libs/dot-rules/src/test.ts",
+                        "karmaConfig": "libs/dot-rules/karma.conf.js",
+                        "tsConfig": "libs/dot-rules/tsconfig.spec.json"
+                    }
+                }
+            }
         },
-        "e2e": {
-          "builder": "@nxext/stencil:e2e",
-          "options": {
+        "dotcms-js": {
             "projectType": "library",
-            "configPath": "libs/dotcms-webcomponents/stencil.config.ts"
-          }
+            "root": "libs/dotcms-js",
+            "sourceRoot": "libs/dotcms-js/src",
+            "prefix": "",
+            "architect": {
+                "lint": {
+                    "builder": "@nrwl/linter:eslint",
+                    "options": {
+                        "lintFilePatterns": [
+                            "libs/dotcms-js/src/**/*.ts",
+                            "libs/dotcms-js/src/**/*.html"
+                        ]
+                    }
+                },
+                "test": {
+                    "builder": "@angular-devkit/build-angular:karma",
+                    "outputs": ["coverage/libs/dotcms-js"],
+                    "options": {
+                        "main": "libs/dotcms-js/src/test.ts",
+                        "karmaConfig": "libs/dotcms-js/karma.conf.js",
+                        "tsConfig": "libs/dotcms-js/tsconfig.spec.json"
+                    }
+                }
+            }
         },
-        "build": {
-          "builder": "@nxext/stencil:build",
-          "options": {
+        "dot-layout-grid": {
             "projectType": "library",
-            "configPath": "libs/dotcms-webcomponents/stencil.config.ts"
-          }
+            "root": "libs/dot-layout-grid",
+            "sourceRoot": "libs/dot-layout-grid/src",
+            "prefix": "",
+            "architect": {
+                "lint": {
+                    "builder": "@nrwl/linter:eslint",
+                    "options": {
+                        "lintFilePatterns": [
+                            "libs/dot-layout-grid/src/**/*.ts",
+                            "libs/dot-layout-grid/src/**/*.html"
+                        ]
+                    }
+                },
+                "test": {
+                    "builder": "@angular-devkit/build-angular:karma",
+                    "outputs": ["coverage/libs/dot-layout-grid"],
+                    "options": {
+                        "main": "libs/dot-layout-grid/src/test.ts",
+                        "karmaConfig": "libs/dot-layout-grid/karma.conf.js",
+                        "tsConfig": "libs/dot-layout-grid/tsconfig.spec.json"
+                    }
+                }
+            }
         },
-        "serve": {
-          "builder": "@nxext/stencil:build",
-          "options": {
+        "dotcms-models": {
             "projectType": "library",
-            "configPath": "libs/dotcms-webcomponents/stencil.config.ts",
-            "serve": true,
-            "watch": true
-          }
+            "root": "libs/dotcms-models",
+            "sourceRoot": "libs/dotcms-models/src",
+            "prefix": "dot",
+            "architect": {
+                "build": {
+                    "builder": "@nrwl/angular:ng-packagr-lite",
+                    "options": {
+                        "tsConfig": "libs/dotcms-models/tsconfig.lib.json",
+                        "project": "libs/dotcms-models/ng-package.json"
+                    },
+                    "configurations": {
+                        "production": {
+                            "tsConfig": "libs/dotcms-models/tsconfig.lib.prod.json"
+                        }
+                    }
+                },
+                "lint": {
+                    "builder": "@nrwl/linter:eslint",
+                    "options": {
+                        "lintFilePatterns": [
+                            "libs/dotcms-models/src/**/*.ts",
+                            "libs/dotcms-models/src/**/*.html"
+                        ]
+                    }
+                },
+                "test": {
+                    "builder": "@angular-devkit/build-angular:karma",
+                    "outputs": ["coverage/libs/dotcms-models"],
+                    "options": {
+                        "main": "libs/dotcms-models/src/test.ts",
+                        "karmaConfig": "libs/dotcms-models/karma.conf.js",
+                        "tsConfig": "libs/dotcms-models/tsconfig.spec.json"
+                    }
+                }
+            }
         },
-        "storybook": {
-          "builder": "@nrwl/storybook:storybook",
-          "options": {
-            "uiFramework": "@storybook/html",
-            "port": 4400,
-            "config": {
-              "configFolder": "libs/dotcms-webcomponents/.storybook"
+        "dotcms": {
+            "projectType": "library",
+            "root": "libs/dotcms",
+            "sourceRoot": "libs/dotcms/src",
+            "prefix": "dot",
+            "architect": {
+                "build": {
+                    "builder": "@nrwl/angular:ng-packagr-lite",
+                    "options": {
+                        "tsConfig": "libs/dotcms/tsconfig.lib.json",
+                        "project": "libs/dotcms/ng-package.json"
+                    },
+                    "configurations": {
+                        "production": {
+                            "tsConfig": "libs/dotcms/tsconfig.lib.prod.json"
+                        }
+                    }
+                },
+                "lint": {
+                    "builder": "@nrwl/linter:eslint",
+                    "options": {
+                        "lintFilePatterns": ["libs/dotcms/src/**/*.ts", "libs/dotcms/src/**/*.html"]
+                    }
+                },
+                "test": {
+                    "builder": "@angular-devkit/build-angular:karma",
+                    "outputs": ["coverage/libs/dotcms"],
+                    "options": {
+                        "main": "libs/dotcms/src/test.ts",
+                        "karmaConfig": "libs/dotcms/karma.conf.js",
+                        "tsConfig": "libs/dotcms/tsconfig.spec.json"
+                    }
+                }
             }
-          },
-          "configurations": {
-            "ci": {
-              "quiet": true
-            }
-          }
         },
-        "build-storybook": {
-          "builder": "@nrwl/storybook:build",
-          "options": {
-            "uiFramework": "@storybook/html",
-            "outputPath": "dist/storybook/dotcms-webcomponents",
-            "config": {
-              "configFolder": "libs/dotcms-webcomponents/.storybook"
+        "dotcms-webcomponents": {
+            "projectType": "library",
+            "schematics": {
+                "@nxext/stencil:component": {
+                    "style": "scss",
+                    "storybook": true
+                }
+            },
+            "root": "libs/dotcms-webcomponents",
+            "sourceRoot": "libs/dotcms-webcomponents/src",
+            "architect": {
+                "test": {
+                    "builder": "@nxext/stencil:test",
+                    "options": {
+                        "projectType": "library",
+                        "configPath": "libs/dotcms-webcomponents/stencil.config.ts"
+                    }
+                },
+                "e2e": {
+                    "builder": "@nxext/stencil:e2e",
+                    "options": {
+                        "projectType": "library",
+                        "configPath": "libs/dotcms-webcomponents/stencil.config.ts"
+                    }
+                },
+                "build": {
+                    "builder": "@nxext/stencil:build",
+                    "options": {
+                        "projectType": "library",
+                        "configPath": "libs/dotcms-webcomponents/stencil.config.ts"
+                    }
+                },
+                "serve": {
+                    "builder": "@nxext/stencil:build",
+                    "options": {
+                        "projectType": "library",
+                        "configPath": "libs/dotcms-webcomponents/stencil.config.ts",
+                        "serve": true,
+                        "watch": true
+                    }
+                },
+                "storybook": {
+                    "builder": "@nrwl/storybook:storybook",
+                    "options": {
+                        "uiFramework": "@storybook/html",
+                        "port": 4400,
+                        "config": {
+                            "configFolder": "libs/dotcms-webcomponents/.storybook"
+                        }
+                    },
+                    "configurations": {
+                        "ci": {
+                            "quiet": true
+                        }
+                    }
+                },
+                "build-storybook": {
+                    "builder": "@nrwl/storybook:build",
+                    "options": {
+                        "uiFramework": "@storybook/html",
+                        "outputPath": "dist/storybook/dotcms-webcomponents",
+                        "config": {
+                            "configFolder": "libs/dotcms-webcomponents/.storybook"
+                        }
+                    },
+                    "configurations": {
+                        "ci": {
+                            "quiet": true
+                        }
+                    }
+                }
             }
-          },
-          "configurations": {
-            "ci": {
-              "quiet": true
-            }
-          }
         }
-      }
     }
-  }
 }

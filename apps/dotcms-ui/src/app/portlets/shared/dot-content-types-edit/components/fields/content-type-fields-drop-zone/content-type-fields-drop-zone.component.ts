@@ -7,14 +7,16 @@ import {
     OnInit,
     OnChanges,
     OnDestroy,
-    ViewChild
+    ViewChild,
+    ElementRef
 } from '@angular/core';
 import { FieldDragDropService, DropFieldData } from '../service';
 import { FieldType } from '../models';
 import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
-    DotCMSContentTypeLayoutColumn, DotCMSContentType
+    DotCMSContentTypeLayoutColumn,
+    DotCMSContentType
 } from '@dotcms/dotcms-models';
 import { ContentTypeFieldsPropertiesFormComponent } from '../content-type-fields-properties-form';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
@@ -26,6 +28,8 @@ import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
 import * as _ from 'lodash';
+import { DragulaService } from 'ng2-dragula';
+import * as autoScroll from 'dom-autoscroller';
 
 /**
  * Display all the Field Types
@@ -75,7 +79,9 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         private fieldDragDropService: FieldDragDropService,
         private fieldPropertyService: FieldPropertyService,
         private dotEventsService: DotEventsService,
-        private dotLoadingIndicatorService: DotLoadingIndicatorService
+        private dotLoadingIndicatorService: DotLoadingIndicatorService,
+        private dragulaService: DragulaService,
+        private elRef: ElementRef
     ) {}
 
     private static findColumnBreakIndex(fields: DotCMSContentTypeField[]): number {
@@ -182,6 +188,8 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
                 this.setDroppedField(fieldTab.divider);
                 this.toggleDialog();
             });
+
+        this.setUpDragulaScroll();
     }
 
     ngOnChanges(changes: SimpleChanges): void {
@@ -371,5 +379,17 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
 
     private emitSaveFields(layout: DotCMSContentTypeLayoutRow[]): void {
         this.saveFields.emit(layout);
+    }
+
+    private setUpDragulaScroll(): void {
+        const drake = this.dragulaService.find('fields-bag')?.drake;
+        autoScroll([this.elRef.nativeElement.parentElement], {
+            margin: 35,
+            maxSpeed: 4,
+            scrollWhenOutside: true,
+            autoScroll() {
+                return this.down && drake.dragging;
+            }
+        });
     }
 }
