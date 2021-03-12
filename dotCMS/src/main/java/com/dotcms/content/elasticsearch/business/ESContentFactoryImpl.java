@@ -842,7 +842,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         try {
             if (inode != null) {
                 final DotConnect dotConnect = new DotConnect();
-                dotConnect.setSQL("select * from contentlet where inode=?");
+                dotConnect.setSQL("select contentlet.*, inode.owner from contentlet, inode where contentlet.inode=? and contentlet.inode=inode.inode");
                 dotConnect.addParam(inode);
 
                 final List<Map<String, Object>> result = dotConnect.loadObjectResults();
@@ -935,7 +935,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         final DotConnect dotConnect = new DotConnect();
         final StringBuilder query = new StringBuilder();
-        query.append("select inode from inode, contentlet_version_info vi ")
+        query.append("select inode, owner from inode, contentlet_version_info vi ")
                 .append("where vi.identifier=inode.identifier and ")
                 .append("inode.inode<>vi.workingInode and ")
                 .append("mod_user <> 'system' and inode.identifier = ? ")
@@ -1107,7 +1107,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 CollectionUtils.subtract(inodes, conMap.keySet()));
 
         final String contentletBase =
-                "select contentlet.* from contentlet join inode contentlet_1_ "
+                "select contentlet.*, contentlet_1_.owner  from contentlet join inode contentlet_1_ "
                         + " on contentlet_1_.inode = contentlet.inode and contentlet_1_.type = 'contentlet' where  contentlet.inode in ('";
 
         for (int init = 0; init < missingCons.size(); init += 200) {
@@ -1176,7 +1176,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	    final List<Contentlet> cons = new ArrayList<>();
         final StringBuilder queryBuffer = new StringBuilder();
         final DotConnect dotConnect = new DotConnect();
-        queryBuffer.append("select contentlet.* ")
+        queryBuffer.append("select contentlet.*, contentlet_1_.owner ")
                    .append("from contentlet, inode contentlet_1_, contentlet_version_info contentvi ")
                    .append("where contentlet_1_.type = 'contentlet' and contentlet.inode = contentlet_1_.inode and ")
                    .append("contentvi.identifier=contentlet.identifier and ")
@@ -1214,9 +1214,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
             DotConnect dotConnect = new DotConnect();
             final StringBuilder query = new StringBuilder();
-            query.append("from contentlet, contentlet_version_info contentletvi")
+            query.append("from contentlet, inode, contentlet_version_info contentletvi")
                     .append(" where contentlet.identifier=contentletvi.identifier ")
                     .append(" and contentletvi.live_inode=contentlet.inode ")
+                    .append(" and inode.inode=contentlet.inode ")
                     .append(" and structure_inode= '")
                     .append(structureInode)
                     .append("' and ")
@@ -1281,7 +1282,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             orderby = "multi_tree.tree_order";
         }
         final StringBuilder query = new StringBuilder();
-        query.append("SELECT contentlet.* FROM contentlet JOIN inode contentlet_1_ ON (contentlet.inode=contentlet_1_.inode) ")
+        query.append("SELECT contentlet.*, contentlet_1_.owner FROM contentlet JOIN inode contentlet_1_ ON (contentlet.inode=contentlet_1_.inode) ")
                 .append(" JOIN multi_tree ON (multi_tree.child = contentlet.identifier) ")
                 .append(" JOIN contentlet_version_info contentletvi ON (contentlet.identifier=contentletvi.identifier) ")
                 .append(" where multi_tree.parent1 = ? and multi_tree.parent2 = ? and ")
@@ -1361,7 +1362,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             throws DotDataException, DotStateException, DotSecurityException {
 
 	    final StringBuilder queryBuffer = new StringBuilder();
-        queryBuffer.append("SELECT contentlet.* ")
+        queryBuffer.append("SELECT contentlet.*, contentlet_1_.owner ")
                    .append(" FROM contentlet JOIN inode contentlet_1_ ON (contentlet.inode = contentlet_1_.inode) ")
         		   .append(" JOIN contentlet_version_info contentletvi ON (contentlet.identifier=contentletvi.identifier) ")
                    .append(" WHERE ")
@@ -1828,9 +1829,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
             dc.loadResult();
 
             HibernateUtil.addCommitListener(() -> {
-
-                reindexReplacedUserContent(userToReplace, user);
-
+                reindexReplacedUserContent(userToReplace, user, true);
+                reindexReplacedUserContent(userToReplace, user, false);
             });
         } catch (DotDataException e) {
             Logger.error(this.getClass(),e.getMessage(),e);
@@ -1845,13 +1845,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
      *
      * @param userToReplace The user whose references will be removed.
      * @param user          The user performing this operation.
+     * @param working
      */
-    private void reindexReplacedUserContent(final User userToReplace, final User user) {
+    private void reindexReplacedUserContent(final User userToReplace, final User user, final boolean working) {
         final NotificationAPI notificationAPI = APILocator.getNotificationAPI();
 
         try {
             final StringBuilder luceneQuery = new StringBuilder();
-            luceneQuery.append("+working:true +modUser:").append(userToReplace.getUserId());
+            luceneQuery.append(working?" +working:true":" +live:true")
+                    .append(" +modUser:").append(userToReplace.getUserId());
             final int limit = 0;
             final int offset = -1;
             final List<ContentletSearch> contentlets = APILocator.getContentletAPI().searchIndex

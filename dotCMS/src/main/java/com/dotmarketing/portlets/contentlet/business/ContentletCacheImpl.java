@@ -179,7 +179,7 @@ public class ContentletCacheImpl extends ContentletCache {
 
 		try {
 
-			content = (com.dotmarketing.portlets.contentlet.model.Contentlet)cache.get(key,primaryGroup);
+			content = (com.dotmarketing.portlets.contentlet.model.Contentlet)cache.get(myKey,primaryGroup);
 
 			if(content != null && content.isVanityUrl()){
 				APILocator.getVanityUrlAPI().invalidateVanityUrl(content);
@@ -200,7 +200,10 @@ public class ContentletCacheImpl extends ContentletCache {
 		if(host != null){
 			CacheLocator.getHostCache().remove(host);
 		}
-		CacheLocator.getHTMLPageCache().remove(key);
+
+		if (content != null && content.getIdentifier() != null)
+		    CacheLocator.getHTMLPageCache().remove(content.getIdentifier());
+
 		new ShortyIdCache().remove(key);
 		
         //Delete query cache when a new content has been reindexed

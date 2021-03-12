@@ -70,6 +70,7 @@ public class ContentletTransformer implements DBTransformer {
         contentlet.setContentTypeId(contentTypeId);
         contentlet.setModDate((Date) map.get("mod_date"));
         contentlet.setModUser((String) map.get("mod_user"));
+        contentlet.setOwner((String) map.get("owner"));
         contentlet.setSortOrder(ConversionUtils.toInt(map.get("sort_order"),0));
 
         contentlet.setLanguageId(ConversionUtils.toLong(map.get("language_id"), 0L));
