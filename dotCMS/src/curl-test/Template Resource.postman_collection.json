@@ -4927,14 +4927,14 @@
 			"response": []
 		},
 		{
-			"name": "Create New Template Theme Id Does Not Belong to Folder BadRequest",
+			"name": "Create New Template Theme Id Does Not Belong to Folder NotFound",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code should be ok 400\", function () {",
-							"    pm.response.to.have.status(400);",
+							"pm.test(\"Status code should be 404\", function () {",
+							"    pm.response.to.have.status(404);",
 							"});",
 							""
 						],
