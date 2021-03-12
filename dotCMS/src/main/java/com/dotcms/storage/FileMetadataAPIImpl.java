@@ -248,7 +248,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
                 new HashSet<>(Arrays.asList(customIndexMetaDataFieldsOpt.get().value().split(StringPool.COMMA))):
                 getConfiguredMetadataFields();
 
-        Logger.info(FileMetadataAPIImpl.class,
+        Logger.debug(FileMetadataAPIImpl.class,
                 () -> String.format(" `%s` has these fields: `%s` ", fieldIdentifier, String
                         .join(",", metadataFields)));
 

@@ -284,7 +284,7 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
                 final int groupsCount = dotConnect.executeUpdate(connection,
                         "DELETE FROM storage_group WHERE group_name = ?", groupNameLC);
 
-                Logger.info(this, () -> String
+                Logger.debug(this, () -> String
                         .format("total of `%d` objects allocated in `%d` removed for `%d` group. ",
                                 storageEntriesCount, count, groupsCount));
                 return storageEntriesCount;

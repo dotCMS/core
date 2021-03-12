@@ -44,7 +44,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         final String rootGroupKey = getRootGroupKey();
         final File rootFolder = getRootFolder();
         groups.put(rootGroupKey, rootFolder);
-        Logger.info(FileSystemStoragePersistenceAPIImpl.class, () -> String
+        Logger.debug(FileSystemStoragePersistenceAPIImpl.class, () -> String
                 .format("Default group key is `%s` currently mapped to folder `%s` ", rootGroupKey,
                         rootFolder));
     }
@@ -65,7 +65,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                     folder));
         }
         this.groups.put(groupName.toLowerCase(), folder);
-        Logger.info(FileSystemStoragePersistenceAPIImpl.class, () -> String.format("Registering New Group with key is `%s` mapped to folder `%s` ",groupName, folder));
+        Logger.debug(FileSystemStoragePersistenceAPIImpl.class, () -> String.format("Registering New Group with key is `%s` mapped to folder `%s` ",groupName, folder));
     }
 
     /**

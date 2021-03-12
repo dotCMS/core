@@ -63,9 +63,11 @@ public class FocalPointAPIImpl implements FocalPointAPI {
     public void writeFocalPoint(final String inode, final String fieldVar, final FocalPoint focalPoint) {
 
         final Optional<Contentlet> contentlet = findContentlet(inode);
-        contentlet.ifPresent(contentlet1 ->{
-           writeFocalPoint(contentlet1, fieldVar, focalPoint);
-        });
+        if(contentlet.isPresent()){
+                writeFocalPoint(contentlet.get(), fieldVar, focalPoint);
+        } else {
+           Logger.warn(FocalPointAPIImpl.class, "Unable to persist focal point info.  Couldn't find a contentlet for the given inode " + inode);
+        }
 
     }
 

@@ -11,7 +11,6 @@ import static com.dotcms.storage.StoragePersistenceProvider.DEFAULT_STORAGE_TYPE
 import static com.dotcms.storage.model.Metadata.CUSTOM_PROP_PREFIX;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -40,12 +39,14 @@ import io.vavr.Tuple2;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -119,6 +120,11 @@ public class FileMetadataAPITest {
 
     }
 
+    /**
+     *
+     * @param testCase
+     * @throws Exception
+     */
     @Test
     @UseDataProvider("getFileAssetMetadataTestCases")
     public void Test_Force_Set_Metadata(final TestCase testCase) throws Exception {
@@ -126,19 +132,43 @@ public class FileMetadataAPITest {
         final String stringProperty = Config.getStringProperty(DEFAULT_STORAGE_TYPE);
         try {
             Config.setProperty(DEFAULT_STORAGE_TYPE, testCase.storageType.name());
-            final Contentlet fileAssetContent = testCase.fileAssetContent;
-            final Metadata binaryMetadata = fileAssetContent.getBinaryMetadata(FILE_ASSET);
-            assertNotNull(binaryMetadata);
-            fileMetadataAPI.putCustomMetadataAttributes(fileAssetContent,
-                    ImmutableMap.of(FILE_ASSET, ImmutableMap.of("custom-attribute", "lol")));
+            final Contentlet fileAsset1 = testCase.fileAssetContent;
+            final Metadata fileAsset1Metadata = fileAsset1.getBinaryMetadata(FILE_ASSET);
+            assertNotNull(fileAsset1Metadata);
+            final boolean isImageNegatedValue = !fileAsset1Metadata.isImage();
+
             final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-            final Contentlet fileAsset = getFileAssetContent(true, langId);
-            final Metadata metadataBefore = fileAsset.getBinaryMetadata(FILE_ASSET);
-            fileMetadataAPI.setMetadata(fileAsset, ImmutableMap.of(FILE_ASSET, binaryMetadata));
-            final Metadata metadataAfter = fileAsset.getBinaryMetadata(FILE_ASSET);
+            final Contentlet fileAsset2 = getFileAssetContent(true, langId);
+
+            final HashMap <String,Serializable> editedMap = new HashMap<>(fileAsset1Metadata.getMap());
+
+            editedMap.put("isImage", isImageNegatedValue);
+            editedMap.put("content", "lol");//Expect this within the regular attributes
+            editedMap.put("foo", "bar");
+            editedMap.put(Metadata.CUSTOM_PROP_PREFIX + "custom-attribute", "custom");//Expect one custom attribute
+            final Metadata fileAsset2Metadata = new Metadata(FILE_ASSET, editedMap);
+            fileMetadataAPI.setMetadata(fileAsset2, ImmutableMap.of(FILE_ASSET, fileAsset2Metadata));
+
+            final Metadata metadataAfter = fileAsset2.getBinaryMetadata(FILE_ASSET);
+            //For the sake of demonstrating we can manipulate metadata with through this method
+            assertEquals(metadataAfter.isImage(), isImageNegatedValue);
+
+            final Map<String, Serializable> metadataAfterMap = metadataAfter.getMap();
+            assertNull(metadataAfterMap.get("content"));
+            assertNull(metadataAfterMap.get("foo"));
+
+            //Verify we have the custom attributes
             final Serializable serializable = metadataAfter.getCustomMeta().get("custom-attribute");
-            assertEquals("lol", serializable.toString());
-            assertNotEquals(metadataAfter, metadataBefore);
+            assertEquals("custom", serializable.toString());
+
+            final Metadata fullMetadataNoCache = fileMetadataAPI
+                    .getFullMetadataNoCache(fileAsset2, FILE_ASSET);
+
+            final Map<String, Serializable> fullMetadataNoCacheMap = fullMetadataNoCache.getMap();
+            assertEquals("lol", fullMetadataNoCacheMap.get("content"));
+            assertEquals("bar", fullMetadataNoCacheMap.get("foo"));
+
+
         } finally {
             Config.setProperty(DEFAULT_STORAGE_TYPE, stringProperty);
         }

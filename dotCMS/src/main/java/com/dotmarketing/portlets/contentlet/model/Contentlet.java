@@ -1315,7 +1315,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 			if (isFileAsset()) {
 				final Metadata fileAssetMetadata = Try
 						.of(() -> //Access directly the binaryField
-							getBinaryMetadata(FileAssetAPI.BINARY_FIELD)
+							 getBinaryMetadata(FileAssetAPI.BINARY_FIELD)
 						).getOrNull();
 				if (null != fileAssetMetadata) {
 					return fileAssetMetadata;

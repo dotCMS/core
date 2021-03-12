@@ -98,7 +98,11 @@ public class BinaryViewStrategy extends AbstractTransformStrategy<Contentlet> {
         final Map<String, Object> map = new HashMap<>();
 
         final Identifier identifier = Try.of(()-> APILocator.getIdentifierAPI().find(contentlet.getIdentifier())).getOrNull();
-        final String assetName = identifier == null ? metadata.getName() : identifier.getAssetName();
+
+        String assetName = metadata.getName();
+        if( contentlet.isFileAsset() && null != identifier){
+            assetName = identifier.getAssetName();
+        }
 
         map.put("versionPath",
                 "/dA/" + APILocator.getShortyAPI().shortify(contentlet.getInode()) + "/" + field

@@ -59,7 +59,7 @@ public final class StoragePersistenceProvider {
             storageType = getStorageType();
         }
         final StorageType finalStorageType = storageType;
-        Logger.info(this, ()-> "Retrieving from storage: " + finalStorageType);
+        Logger.debug(this, ()-> "Retrieving from storage: " + finalStorageType);
 
         final StoragePersistenceAPI api = storagePersistenceInstances.putIfAbsent(storageType, initializers.get(storageType).get());
         if(null != api){

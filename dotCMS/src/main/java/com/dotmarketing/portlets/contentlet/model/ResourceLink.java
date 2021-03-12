@@ -182,25 +182,24 @@ public class ResourceLink {
 
             final boolean downloadRestricted    = isDownloadPermissionBasedRestricted(contentlet, user);
             final String mimeType               = metadata.getContentType();
-            final String fileAssetName          = metadata.getName();
-            final Tuple2<String, String> resourceLink      = createResourceLink(contentlet, identifier, hostUrlBuilder.toString());
+            final Tuple2<String, String> resourceLink      = createResourceLink(contentlet, identifier, metadata, hostUrlBuilder.toString());
             final Tuple2<String, String> versionPathIdPath = createVersionPathIdPath(contentlet, fieldVelocityVarName, metadata);
-            final String configuredImageURL                = getConfiguredImageURL (contentlet, identifier, host);
+            final String configuredImageURL                = getConfiguredImageURL (contentlet, identifier, metadata, host);
 
             return new ResourceLink(resourceLink._1(), resourceLink._2(), mimeType, contentlet, identifier,
-                    fieldVelocityVarName, isEditableAsText(mimeType, fileAssetName), downloadRestricted,
+                    fieldVelocityVarName, isEditableAsText(mimeType, metadata.getName()), downloadRestricted,
                     versionPathIdPath._1(), versionPathIdPath._2(), configuredImageURL);
         }
 
-        private String getConfiguredImageURL(final Contentlet contentlet, final Identifier identifier, final Host host) {
+        private String getConfiguredImageURL(final Contentlet contentlet, final Identifier identifier, final Metadata metadata, final Host host) {
 
             final  String pattern = Config.getStringProperty("WYSIWYG_IMAGE_URL_PATTERN", "{path}{name}?language_id={languageId}");
-            return replaceUrlPattern(pattern, contentlet, identifier, host);
+            return replaceUrlPattern(pattern, contentlet, identifier, metadata, host);
         }
 
-        String replaceUrlPattern(final String pattern, final Contentlet contentlet, final Identifier identifier, final Host host) {
+        String replaceUrlPattern(final String pattern, final Contentlet contentlet, final Identifier identifier, final Metadata metadata, final Host host) {
 
-            final String fileName  = identifier.getAssetName();
+            final String fileName  = contentlet.isFileAsset() ? identifier.getAssetName() : metadata.getName();
             final String path      = getPath(contentlet);
             final String extension = UtilMethods.getFileExtension(fileName);
             final String shortyId  = contentlet.getIdentifier().replace(StringPool.DASH, StringPool.BLANK).substring(0, 10);
@@ -236,13 +235,13 @@ public class ResourceLink {
             return Tuple.of(versionPath, idPath);
         }
 
-        Tuple2<String, String> createResourceLink (final Contentlet contentlet, final Identifier identifier,
+        Tuple2<String, String> createResourceLink (final Contentlet contentlet, final Identifier identifier, Metadata metadata,
                                                    final String hostUrl)  {
 
             final StringBuilder resourceLink    = new StringBuilder(hostUrl);
             final StringBuilder resourceLinkUri = new StringBuilder();
-
-            resourceLinkUri.append(identifier.getParentPath()).append(identifier.getAssetName());
+            final String assetName = contentlet.isFileAsset() ? identifier.getAssetName() : metadata.getName();
+            resourceLinkUri.append(identifier.getParentPath()).append(assetName);
             resourceLink.append(escapeUri(resourceLinkUri.toString()));
             resourceLinkUri.append(LANG_ID_PARAM).append(contentlet.getLanguageId());
             resourceLink.append(LANG_ID_PARAM).append(contentlet.getLanguageId());

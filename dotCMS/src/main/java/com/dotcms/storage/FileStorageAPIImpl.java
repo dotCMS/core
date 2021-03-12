@@ -235,7 +235,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         //if the entry isn't already there skip and simply store in cache.
         if (!storage.existsObject(storageKey.getGroup(), storageKey.getPath())) {
             if (this.validBinary(binary)) {
-                Logger.info(FileStorageAPIImpl.class, ()->String.format(
+                Logger.debug(FileStorageAPIImpl.class, ()->String.format(
                         "Object identified by `/%s/%s` didn't exist in storage %s will be generated.",
                         storageKey.getGroup(), storageKey,
                         configuration.isFull() ? "full-metadata" : "basic-metadata"));
@@ -310,7 +310,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
         final Map<String, Serializable> objectMap = (Map<String, Serializable>) storage
                 .pullObject(storageKey.getGroup(), storageKey.getPath(), this.objectReaderDelegate);
-        Logger.info(this, "Metadata read from path: " + storageKey.getPath());
+        Logger.debug(this, "Metadata read from path: " + storageKey.getPath());
 
         return objectMap;
     }
@@ -329,7 +329,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
         storage.pushObject(storageKey.getGroup(), storageKey.getPath(),
                 this.objectWriterDelegate, (Serializable) metadataMap, paramsMap);
-        Logger.info(this, "Metadata written to: " + storageKey.getPath());
+        Logger.debug(this, "Metadata written to: " + storageKey.getPath());
 
     }
 
@@ -402,7 +402,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         if (storage.existsObject(storageKey.getGroup(), storageKey.getPath())) {
 
             metadataMap = retrieveMetadata(storageKey, storage);
-            Logger.info(FileStorageAPIImpl.class,
+            Logger.debug(FileStorageAPIImpl.class,
                     "Retrieve the meta data from storage, path: " + storageKey.getPath());
             if (null != requestMetaData.getCacheKeySupplier()) {
                 final Map<String, Serializable> projection = requestMetaData.getProjectionMapForCache().apply(metadataMap);
@@ -484,11 +484,11 @@ public class FileStorageAPIImpl implements FileStorageAPI {
                     putIntoCache(cacheKey, newMetadataMap);
                 }
             } else {
-                Logger.info(FileStorageAPIImpl.class, String.format("Unable to locate object: `%s` ",storageKey));
+                Logger.warn(FileStorageAPIImpl.class, String.format("Unable to locate object: `%s` ",storageKey));
             }
 
         } else {
-            Logger.info(FileStorageAPIImpl.class, String.format(
+            Logger.warn(FileStorageAPIImpl.class, String.format(
                     "Unable to set custom attribute for the given group: `%s` and path: `%s` ",
                     storageKey.getGroup(), storageKey.getPath()));
         }
