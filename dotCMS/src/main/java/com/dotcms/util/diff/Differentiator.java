@@ -1,5 +1,7 @@
 package com.dotcms.util.diff;
 
+import java.util.Collection;
+
 /**
  * Similar idea of a {@link java.util.Comparator} to determine if two objects are diff.
  * @param <T>
@@ -12,5 +14,5 @@ public interface Differentiator<T> {
      * @param t2
      * @return
      */
-    boolean diff (T t1, T t2);
+    Collection<DiffItem> diff (T t1, T t2);
 }
