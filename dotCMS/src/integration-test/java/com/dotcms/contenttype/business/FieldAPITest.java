@@ -1530,7 +1530,7 @@ public class FieldAPITest extends IntegrationTestBase {
 
     /**
      * Method to test: com.dotcms.contenttype.business.FieldAPI#save(com.dotcms.contenttype.model.field.Field, com.liferay.portal.model.User, boolean)
-     * Given scenario: Recreate a deleted relationship field but choosing exiting relationship, from parent to child
+     * Given scenario: Recreate a deleted relationship field but choosing existing relationship, from parent to child
      * Expected result: Should succeed
      */
 
@@ -1571,6 +1571,9 @@ public class FieldAPITest extends IntegrationTestBase {
             final String parentTypeRelationshipFieldVariable = parentTypeRelationshipField.variable();
             // let's delete the relationship field from the parent content type
             APILocator.getContentTypeFieldAPI().delete(parentTypeRelationshipField);
+
+            final Relationship reFetchedRelationship = relationshipAPI.byTypeValue(fullFieldVar);
+            assertNull(reFetchedRelationship.getChildRelationName());
 
             // let's attempt to re-add the field but choosing the existing relationship
             final Field recreatedParentTypeRelationshipField = createAndSaveRelationshipField("newRel",
