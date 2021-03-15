@@ -26,6 +26,10 @@ public interface UserAPI {
 	final static String SYSTEM_USER_ID = "system";
 
 	final static String CMS_ANON_USER_ID="anonymous";
+
+	final static String SYSTEM_USER_EMAIL = "system@dotcms.systemuser";
+
+	final static String CMS_ANON_USER_EMAIL = "anonymous@dotcms.anonymoususer";
 	
 	
 	

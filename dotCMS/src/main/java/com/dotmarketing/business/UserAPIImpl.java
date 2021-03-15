@@ -193,7 +193,7 @@ public class UserAPIImpl implements UserAPI {
         try {
             user = userFactory.loadUserById(SYSTEM_USER_ID);
         } catch (NoSuchUserException e) {
-            user = createUser("system", "system@dotcms.systemuser");
+            user = createUser(SYSTEM_USER_ID, SYSTEM_USER_EMAIL);
             user.setUserId(SYSTEM_USER_ID);
             user.setFirstName("system user");
             user.setLastName("system user");
@@ -231,7 +231,7 @@ public class UserAPIImpl implements UserAPI {
         try {
             user = userFactory.loadUserById(CMS_ANON_USER_ID);
         } catch (DotDataException e) {
-            user = createUser(CMS_ANON_USER_ID, "anonymous@dotcms.anonymoususer");
+            user = createUser(CMS_ANON_USER_ID, CMS_ANON_USER_EMAIL);
             user.setUserId(CMS_ANON_USER_ID);
             user.setFirstName("Anonymous");
             user.setLastName("User");
@@ -239,7 +239,7 @@ public class UserAPIImpl implements UserAPI {
             user.setCompanyId(PublicCompanyFactory.getDefaultCompanyId());
             userFactory.saveUser(user);
         } catch (NoSuchUserException e) {
-            user = createUser(CMS_ANON_USER_ID, "anonymous@dotcms.anonymoususer");
+            user = createUser(CMS_ANON_USER_ID, CMS_ANON_USER_EMAIL);
             user.setUserId(CMS_ANON_USER_ID);
             user.setFirstName("Anonymous");
             user.setLastName("User");
