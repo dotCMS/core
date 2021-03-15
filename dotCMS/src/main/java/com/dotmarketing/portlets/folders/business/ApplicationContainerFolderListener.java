@@ -282,7 +282,9 @@ public class ApplicationContainerFolderListener implements FolderListener {
     private boolean isSpecialAsset(final String childName) {
 
         return ContainerAPI.CONTAINER_META_INFO.contains(childName) ||
-                ContainerAPI. POST_LOOP.contains(childName) ||
+                ContainerAPI.DEFAULT_CONTAINER_LAYOUT.contains(childName) ||
+                ContainerAPI.CODE.contains(childName) ||
+                ContainerAPI.POST_LOOP.contains(childName) ||
                 ContainerAPI.PRE_LOOP.contains(childName);
     }
 
