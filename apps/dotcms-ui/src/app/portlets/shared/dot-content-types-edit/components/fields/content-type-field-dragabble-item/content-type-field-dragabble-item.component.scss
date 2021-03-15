@@ -17,6 +17,10 @@
     &:last-child {
         margin-bottom: 0;
     }
+
+    &.gu-transit {
+        opacity: 0.4;
+    }
 }
 
 dot-icon-button-tooltip ::ng-deep .material-icons,
