@@ -1528,6 +1528,69 @@ public class FieldAPITest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Method to test: com.dotcms.contenttype.business.FieldAPI#save(com.dotcms.contenttype.model.field.Field, com.liferay.portal.model.User, boolean)
+     * Given scenario: Recreate a deleted relationship field but choosing exiting relationship, from parent to child
+     * Expected result: Should succeed
+     */
+
+    @Test
+    public void testSaveRelationshipField_GivenRecreatedDeletedRelationshipFieldChoosingExistingRel_SaveShouldSucceed()
+            throws DotSecurityException, DotDataException {
+        final long time = System.currentTimeMillis();
+
+        ContentType parentContentType = null;
+        ContentType childContentType  = null;
+
+        try {
+            parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
+            childContentType = createAndSaveSimpleContentType("childContentType" + time);
+
+            //Adding a RelationshipField to the parent
+            final Field parentTypeRelationshipField = createAndSaveRelationshipField("newRel",
+                    parentContentType.id(), childContentType.variable(), CARDINALITY);
+
+            final String fullFieldVar =
+                    parentContentType.variable() + StringPool.PERIOD + parentTypeRelationshipField.variable();
+
+            //Adding a RelationshipField to the child
+            final Field childTypeRelationshipField = createAndSaveRelationshipField("otherSideRel",
+                    childContentType.id(), fullFieldVar, CARDINALITY);
+
+            final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
+
+            assertNotNull(relationship);
+
+            assertEquals(childContentType.id(), relationship.getChildStructureInode());
+            assertEquals(parentTypeRelationshipField.variable(), relationship.getChildRelationName());
+            assertEquals(parentContentType.id(), relationship.getParentStructureInode());
+            assertEquals(childTypeRelationshipField.variable(), relationship.getParentRelationName());
+            assertEquals(CARDINALITY, Integer.toString(relationship.getCardinality()));
+            assertEquals(fullFieldVar, relationship.getRelationTypeValue());
+
+            final String parentTypeRelationshipFieldVariable = parentTypeRelationshipField.variable();
+            // let's delete the relationship field from the parent content type
+            APILocator.getContentTypeFieldAPI().delete(parentTypeRelationshipField);
+
+            // let's attempt to re-add the field but choosing the existing relationship
+            final Field recreatedParentTypeRelationshipField = createAndSaveRelationshipField("newRel",
+                    parentContentType.id(), parentContentType.variable() + "." + parentTypeRelationshipFieldVariable
+                    , CARDINALITY);
+
+            assertEquals(recreatedParentTypeRelationshipField.variable(),
+                    relationship.getChildRelationName());
+
+        } finally {
+            if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
+                contentTypeAPI.delete(parentContentType);
+            }
+
+            if (UtilMethods.isSet(childContentType) && UtilMethods.isSet(childContentType.id())) {
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+    }
+
     static class GraphQLFieldNameCompatibilityTestCase {
         String fieldName;
         private Class<? extends Field> fieldType;
