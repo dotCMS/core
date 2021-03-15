@@ -141,6 +141,7 @@ public class TimeMachineFilter implements Filter {
     @Override
     public void init(FilterConfig fc) throws ServletException {
         ctx=fc.getServletContext();
+		com.dotmarketing.util.Config.setMyApp(ctx);
     }
 
 	/**
@@ -229,7 +230,7 @@ public class TimeMachineFilter implements Filter {
 	 */
 	private void sendFile(final File file, ServletRequest request, final ServletResponse response) {
 		final HttpServletResponse resp = (HttpServletResponse) response;
-		String mimeType = APILocator.getFileAssetAPI().getMimeType(file.getName());
+		String mimeType = APILocator.getFileAssetAPI().getMimeType(file);
 		if (mimeType == null) {
 			mimeType = MediaType.APPLICATION_OCTET_STREAM;
 		}
