@@ -141,7 +141,6 @@ public class TimeMachineFilter implements Filter {
     @Override
     public void init(FilterConfig fc) throws ServletException {
         ctx=fc.getServletContext();
-		com.dotmarketing.util.Config.setMyApp(ctx);
     }
 
 	/**
