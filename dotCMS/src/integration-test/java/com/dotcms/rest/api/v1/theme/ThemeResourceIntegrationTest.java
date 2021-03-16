@@ -155,7 +155,7 @@ public class ThemeResourceIntegrationTest {
     /**
      * Method to test: findThemes
      * Given Scenario: Find all the themes of a specific host, sending the host id as a filter but as a limited user.
-     * ExpectedResult: DotSecurityException
+     * ExpectedResult: PaginationException because DotSecurityException is caught by Paginator.
      *
      */
     @Test(expected = PaginationException.class)
