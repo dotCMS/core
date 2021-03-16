@@ -338,7 +338,7 @@ public class StoragePersistenceAPITest {
         }
 
         return new Object[]{
-              //  new TestCase(StorageType.FILE_SYSTEM, groupName, path, temp),
+                new TestCase(StorageType.FILE_SYSTEM, groupName, path, temp),
                 new TestCase(StorageType.DB, groupName, path, temp)
         };
     }
