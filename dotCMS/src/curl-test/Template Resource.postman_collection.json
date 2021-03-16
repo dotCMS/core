@@ -4927,14 +4927,14 @@
 			"response": []
 		},
 		{
-			"name": "Create New Template Theme Id Does Not Belong to Folder BadRequest",
+			"name": "Create New Template Theme Id Does Not Belong to Folder NotFound",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code should be ok 400\", function () {",
-							"    pm.response.to.have.status(400);",
+							"pm.test(\"Status code should be 404\", function () {",
+							"    pm.response.to.have.status(404);",
 							"});",
 							""
 						],
@@ -5284,6 +5284,417 @@
 						"templates"
 					]
 				}
+			},
+			"response": []
+		},
+		{
+			"name": "pre_ImportBundleWithThemes",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Bundle uploaded sucessfully\", function () {",
+							"    pm.response.to.have.status(200);",
+							"",
+							"    var jsonData = pm.response.json();",
+							"    console.log(jsonData);",
+							"",
+							"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"themes-all.tar.gz\");",
+							"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"type": "text",
+						"value": "application/octet-stream"
+					},
+					{
+						"key": "Content-Disposition",
+						"type": "text",
+						"value": "attachment"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "resources/themes-all.tar.gz"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/bundle?sync=true",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"bundle"
+					],
+					"query": [
+						{
+							"key": "sync",
+							"value": "true"
+						},
+						{
+							"key": "AUTH_TOKEN",
+							"value": "",
+							"disabled": true
+						}
+					]
+				},
+				"description": "Imports a Bundle that includes:\n* the themes folder of the demo.dotcms.com\n*"
+			},
+			"response": []
+		},
+		{
+			"name": "Create New Template Success Design Template",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"UUIDs Check\", function () {",
+							"    pm.expect(jsonData.entity.layout.body.rows[0].columns[0].containers[0].uuid).to.eql(\"1\");",
+							"    pm.expect(jsonData.entity.layout.body.rows[1].columns[0].containers[0].uuid).to.eql(\"1\");",
+							"    pm.expect(jsonData.entity.layout.body.rows[1].columns[1].containers[0].uuid).to.eql(\"2\");",
+							"    pm.expect(jsonData.entity.layout.body.rows[1].columns[2].containers[0].uuid).to.eql(\"1\");",
+							"    pm.expect(jsonData.entity.layout.body.rows[1].columns[3].containers[0].uuid).to.eql(\"3\");",
+							"});",
+							"",
+							"pm.test(\"Title check\", function () {",
+							"    pm.expect(jsonData.entity.title).to.eql('Postman Test Design Template - Generate UUIDs Containers');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n   \"title\":\"Postman Test Design Template - Generate UUIDs Containers\",\n   \"theme\":\"13f88067-1e25-4e30-bc64-7e8f42ad542f\",\n   \"layout\":{\n      \"body\":{\n         \"rows\":[\n            {\n               \"styleClass\":\"\",\n               \"columns\":[\n                  {\n                     \"styleClass\":\"\",\n                     \"leftOffset\":1,\n                     \"width\":12,\n                     \"containers\":[\n                        {\n                           \"identifier\":\"container1\"\n                        }\n                     ]\n                  }\n               ]\n            },\n            {\n               \"styleClass\":null,\n               \"columns\":[\n                  {\n                     \"styleClass\":\"\",\n                     \"leftOffset\":1,\n                     \"width\":3,\n                     \"containers\":[\n                        {\n                           \"identifier\":\"container2\"\n                        }\n                     ]\n                  },\n                  {\n                     \"styleClass\":\"\",\n                     \"leftOffset\":4,\n                     \"width\":3,\n                     \"containers\":[\n                        {\n                           \"identifier\":\"container1\"\n                        }\n                     ]\n                  },\n                  {\n                     \"styleClass\":\"\",\n                     \"leftOffset\":7,\n                     \"width\":3,\n                     \"containers\":[\n                        {\n                           \"identifier\":\"container3\"\n                        }\n                     ]\n                  },\n                  {\n                     \"styleClass\":\"\",\n                     \"leftOffset\":10,\n                     \"width\":3,\n                     \"containers\":[\n                        {\n                           \"identifier\":\"container1\"\n                        }\n                     ]\n                  }\n               ]\n            }\n         ]\n      },\n      \"header\":true,\n      \"footer\":true,\n      \"sidebar\":{\n         \"location\":\"\",\n         \"containers\":[\n            \n         ],\n         \"width\":\"small\"\n      }\n   }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/templates",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"templates"
+					]
+				},
+				"description": "Create a new template successfully, the template is a design one, this is to test the updateUUIDofContainers method, that will assign the uuid to the container according to the number of times the container is present in the template."
+			},
+			"response": []
+		},
+		{
+			"name": "Create New Template Success Using System Theme",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"UUIDs Check\", function () {",
+							"    pm.expect(jsonData.entity.layout.body.rows[0].columns[0].containers[0].uuid).to.eql(\"1\");",
+							"    pm.expect(jsonData.entity.layout.body.rows[1].columns[0].containers[0].uuid).to.eql(\"1\");",
+							"    pm.expect(jsonData.entity.layout.body.rows[1].columns[1].containers[0].uuid).to.eql(\"2\");",
+							"    pm.expect(jsonData.entity.layout.body.rows[1].columns[2].containers[0].uuid).to.eql(\"1\");",
+							"    pm.expect(jsonData.entity.layout.body.rows[1].columns[3].containers[0].uuid).to.eql(\"3\");",
+							"});",
+							"",
+							"pm.test(\"Title check\", function () {",
+							"    pm.expect(jsonData.entity.title).to.eql('Postman Test Design Template - System_theme');",
+							"});",
+							"",
+							"pm.test(\"Theme check\", function () {",
+							"    pm.expect(jsonData.entity.theme).to.eql('system_theme');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n   \"title\":\"Postman Test Design Template - System_theme\",\n   \"theme\":\"system_theme\",\n   \"image\":\"\",\n   \"layout\":{\n      \"body\":{\n         \"rows\":[\n            {\n               \"styleClass\":\"\",\n               \"columns\":[\n                  {\n                     \"styleClass\":\"\",\n                     \"leftOffset\":1,\n                     \"width\":12,\n                     \"containers\":[\n                        {\n                           \"identifier\":\"container1\"\n                        }\n                     ]\n                  }\n               ]\n            },\n            {\n               \"styleClass\":null,\n               \"columns\":[\n                  {\n                     \"styleClass\":\"\",\n                     \"leftOffset\":1,\n                     \"width\":3,\n                     \"containers\":[\n                        {\n                           \"identifier\":\"container2\"\n                        }\n                     ]\n                  },\n                  {\n                     \"styleClass\":\"\",\n                     \"leftOffset\":4,\n                     \"width\":3,\n                     \"containers\":[\n                        {\n                           \"identifier\":\"container1\"\n                        }\n                     ]\n                  },\n                  {\n                     \"styleClass\":\"\",\n                     \"leftOffset\":7,\n                     \"width\":3,\n                     \"containers\":[\n                        {\n                           \"identifier\":\"container3\"\n                        }\n                     ]\n                  },\n                  {\n                     \"styleClass\":\"\",\n                     \"leftOffset\":10,\n                     \"width\":3,\n                     \"containers\":[\n                        {\n                           \"identifier\":\"container1\"\n                        }\n                     ]\n                  }\n               ]\n            }\n         ]\n      },\n      \"header\":true,\n      \"footer\":true,\n      \"sidebar\":{\n         \"location\":\"\",\n         \"containers\":[\n            \n         ],\n         \"width\":\"small\"\n      }\n   }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/templates",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"templates"
+					]
+				},
+				"description": "Create a new template successfully, the template is a design one, and sets the system_theme as the theme."
+			},
+			"response": []
+		},
+		{
+			"name": "Create New Template Success Using System Theme And System Container",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"UUIDs Check\", function () {",
+							"    pm.expect(jsonData.entity.layout.body.rows[0].columns[0].containers[0].identifier).to.eql(\"//default/application/containers/system/\");",
+							"});",
+							"",
+							"pm.test(\"Title check\", function () {",
+							"    pm.expect(jsonData.entity.title).to.eql('Postman Test Design Template - System_theme And System Container');",
+							"});",
+							"",
+							"pm.test(\"Theme check\", function () {",
+							"    pm.expect(jsonData.entity.theme).to.eql('system_theme');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n   \"title\":\"Postman Test Design Template - System_theme And System Container\",\n   \"theme\":\"system_theme\",\n   \"image\":\"\",\n   \"layout\":{\n      \"body\":{\n         \"rows\":[\n            {\n               \"styleClass\":\"\",\n               \"columns\":[\n                  {\n                     \"styleClass\":\"\",\n                     \"leftOffset\":1,\n                     \"width\":12,\n                     \"containers\":[\n                        {\n                           \"identifier\":\"//default/application/containers/system/\"\n                        }\n                     ]\n                  }\n               ]\n            }\n         ]\n      },\n      \"header\":true,\n      \"footer\":true,\n      \"sidebar\":{\n         \"location\":\"\",\n         \"containers\":[\n         ],\n         \"width\":\"small\"\n      }\n   }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/templates",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"templates"
+					]
+				},
+				"description": "Create a new template successfully, the template is a design one, and sets the system_theme as the theme. And it uses the system container"
+			},
+			"response": []
+		},
+		{
+			"name": "Create New Template Success Design Template With SideBar",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"UUIDs Check\", function () {",
+							"    pm.expect(jsonData.entity.layout.body.rows[0].columns[0].containers[0].uuid).to.eql(\"1\");",
+							"    pm.expect(jsonData.entity.layout.body.rows[1].columns[0].containers[0].uuid).to.eql(\"1\");",
+							"    pm.expect(jsonData.entity.layout.body.rows[1].columns[1].containers[0].uuid).to.eql(\"2\");",
+							"    pm.expect(jsonData.entity.layout.body.rows[1].columns[2].containers[0].uuid).to.eql(\"1\");",
+							"    pm.expect(jsonData.entity.layout.body.rows[1].columns[3].containers[0].uuid).to.eql(\"3\");",
+							"    pm.expect(jsonData.entity.layout.sidebar.containers[0].uuid).to.eql(\"4\");",
+							"    pm.expect(jsonData.entity.layout.sidebar.containers[1].uuid).to.eql(\"2\");",
+							"});",
+							"",
+							"pm.test(\"Title check\", function () {",
+							"    pm.expect(jsonData.entity.title).to.eql('Postman Test Design Template With Sidebar - Generate UUIDs Containers');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n   \"title\":\"Postman Test Design Template With Sidebar - Generate UUIDs Containers\",\n   \"theme\":\"13f88067-1e25-4e30-bc64-7e8f42ad542f\",\n   \"layout\":{\n      \"body\":{\n         \"rows\":[\n            {\n               \"styleClass\":\"\",\n               \"columns\":[\n                  {\n                     \"styleClass\":\"\",\n                     \"leftOffset\":1,\n                     \"width\":12,\n                     \"containers\":[\n                        {\n                           \"identifier\":\"container1\"\n                        }\n                     ]\n                  }\n               ]\n            },\n            {\n               \"styleClass\":null,\n               \"columns\":[\n                  {\n                     \"styleClass\":\"\",\n                     \"leftOffset\":1,\n                     \"width\":3,\n                     \"containers\":[\n                        {\n                           \"identifier\":\"container2\"\n                        }\n                     ]\n                  },\n                  {\n                     \"styleClass\":\"\",\n                     \"leftOffset\":4,\n                     \"width\":3,\n                     \"containers\":[\n                        {\n                           \"identifier\":\"container1\"\n                        }\n                     ]\n                  },\n                  {\n                     \"styleClass\":\"\",\n                     \"leftOffset\":7,\n                     \"width\":3,\n                     \"containers\":[\n                        {\n                           \"identifier\":\"container3\"\n                        }\n                     ]\n                  },\n                  {\n                     \"styleClass\":\"\",\n                     \"leftOffset\":10,\n                     \"width\":3,\n                     \"containers\":[\n                        {\n                           \"identifier\":\"container1\"\n                        }\n                     ]\n                  }\n               ]\n            }\n         ]\n      },\n      \"header\":true,\n      \"footer\":true,\n      \"sidebar\":{\n         \"location\":\"\",\n         \"containers\":[\n            {\n                 \"identifier\":\"container1\"\n            },\n            {\n                 \"identifier\":\"container3\"\n            }\n         ],\n         \"width\":\"small\"\n      }\n   }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/templates",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"templates"
+					]
+				},
+				"description": "Create a new template successfully, the template is a design one, this is to test the updateUUIDofContainers method, that will assign the uuid to the container according to the number of times the container is present in the template."
 			},
 			"response": []
 		}

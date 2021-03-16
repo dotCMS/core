@@ -86,7 +86,8 @@ public class FolderAssertionChecker implements AssertionChecker<Folder> {
                 "<modDate class=\"sql-timestamp\">.*</modDate>",
                 "<createDate class=\"sql-timestamp\">.*</createDate>",
                 "<date>.*</date>",
-                "<parentPath>.*</parentPath>"
+                "<parentPath>.*</parentPath>",
+                "<owner>.*</owner>"
         );
     }
 }

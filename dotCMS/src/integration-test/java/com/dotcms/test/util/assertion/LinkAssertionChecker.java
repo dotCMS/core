@@ -67,7 +67,8 @@ public class LinkAssertionChecker implements AssertionChecker<Link> {
                 "<versionTs class=\"sql-timestamp\">.*</versionTs>",
                 "<lockedOn>.*</lockedOn>",
                 "<versionTs>.*</versionTs>",
-                "<liveInode>.*</liveInode>"
+                "<liveInode>.*</liveInode>",
+                "<owner>.*</owner>"
         );
     }
 }
