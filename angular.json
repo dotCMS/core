@@ -453,6 +453,49 @@
                     }
                 }
             }
+        },
+        "dotcms-field-elements": {
+            "projectType": "library",
+            "schematics": {
+                "@nxext/stencil:component": {
+                    "style": "scss",
+                    "storybook": false
+                }
+            },
+            "root": "libs/dotcms-field-elements",
+            "sourceRoot": "libs/dotcms-field-elements/src",
+            "architect": {
+                "test": {
+                    "builder": "@nxext/stencil:test",
+                    "options": {
+                        "projectType": "library",
+                        "configPath": "libs/dotcms-field-elements/stencil.config.ts"
+                    }
+                },
+                "e2e": {
+                    "builder": "@nxext/stencil:e2e",
+                    "options": {
+                        "projectType": "library",
+                        "configPath": "libs/dotcms-field-elements/stencil.config.ts"
+                    }
+                },
+                "build": {
+                    "builder": "@nxext/stencil:build",
+                    "options": {
+                        "projectType": "library",
+                        "configPath": "libs/dotcms-field-elements/stencil.config.ts"
+                    }
+                },
+                "serve": {
+                    "builder": "@nxext/stencil:build",
+                    "options": {
+                        "projectType": "library",
+                        "configPath": "libs/dotcms-field-elements/stencil.config.ts",
+                        "serve": true,
+                        "watch": true
+                    }
+                }
+            }
         }
     }
 }

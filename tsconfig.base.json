@@ -30,7 +30,9 @@
             "@dotcms/dotcms-models": ["libs/dotcms-models/src/public_api.ts"],
             "@dotcms/dotcms": ["libs/dotcms/src/public_api.ts"],
             "@dotcms/dotcms-webcomponents": ["libs/dotcms-webcomponents/src/index.ts"],
-            "@dotcms/dotcms-webcomponents/loader": ["dist/libs/dotcms-webcomponents/loader"]
+            "@dotcms/dotcms-webcomponents/loader": ["dist/libs/dotcms-webcomponents/loader"],
+            "@dotcms/dotcms-field-elements": ["libs/dotcms-field-elements/src/index.ts"],
+            "@dotcms/dotcms-field-elements/loader": ["dist/libs/dotcms-field-elements/loader"]
         }
     },
     "exclude": ["node_modules", "tmp"]
