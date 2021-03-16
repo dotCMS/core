@@ -34,6 +34,11 @@ public class FetchMetadataParams {
     private final Function<Map<String, Serializable>, Map<String, Serializable>> projectionMapForCache;
 
     /**
+     * on non existing entry found, force insertion
+     */
+    private final boolean forceInsertion;
+
+    /**
      * Builder based constructor
      * @param builder
      */
@@ -41,7 +46,8 @@ public class FetchMetadataParams {
         this.cache                   = builder.cache;
         this.cacheKeySupplier        = builder.cacheKeySupplier;
         this.storageKey              = builder.storageKey;
-        this.projectionMapForCache = builder.projectionMapForCache;
+        this.projectionMapForCache   = builder.projectionMapForCache;
+        this.forceInsertion          = builder.forceInsertion;
     }
 
     public StorageKey getStorageKey() {
@@ -62,6 +68,10 @@ public class FetchMetadataParams {
 
     public Function<Map<String, Serializable>, Map<String, Serializable>> getProjectionMapForCache() {
         return projectionMapForCache;
+    }
+
+    public boolean isForceInsertion() {
+        return forceInsertion;
     }
 
     /**
@@ -90,6 +100,11 @@ public class FetchMetadataParams {
          */
         private Function<Map<String, Serializable>, Map<String, Serializable>> projectionMapForCache = map-> map;
 
+        /**
+         * on none-existing entry force insertion
+         */
+        private boolean forceInsertion;
+
         public Builder cache(final boolean cache) {
 
             this.cache            = cache;
@@ -113,6 +128,11 @@ public class FetchMetadataParams {
 
             this.projectionMapForCache = projectionMapForCache;
             return this;
+        }
+
+        public Builder forceInsert(final boolean forceInsertion){
+          this.forceInsertion = forceInsertion;
+          return this;
         }
 
         public FetchMetadataParams build() {

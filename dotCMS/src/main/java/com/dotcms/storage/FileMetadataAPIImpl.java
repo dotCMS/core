@@ -494,7 +494,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
         final String first = binaryFields._1().first();
 
         try {
-            return Optional.ofNullable(getMetadata(contentlet, first, true));
+            return Optional.ofNullable(getMetadata(contentlet, first, forceGenerate));
         } catch (DotDataException e) {
             Logger.error(FileMetadataAPIImpl.class, e);
         }
@@ -610,6 +610,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
                 fileStorageAPI.putCustomMetadataAttributes((new FetchMetadataParams.Builder()
                         .cache(() -> contentlet.getInode() + StringPool.COLON + fieldName)
                         .projectionMapForCache(this::filterNonCacheableMetadataFields)
+                        .forceInsert(true)
                         .storageKey(
                                 new StorageKey.Builder().group(metadataBucketName)
                                         .path(metadataPath)
@@ -623,6 +624,60 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
 
     }
 
+    /**
+     * {@inheritDoc}
+     * @param tempResourceId
+     * @param customAttributesByField
+     * @throws DotDataException
+     */
+    public void putCustomMetadataAttributes(final String tempResourceId,
+            final Map<String, Map<String,Serializable>> customAttributesByField) throws DotDataException {
+
+        final StorageType storageType = StoragePersistenceProvider.getStorageType();
+        final String metadataBucketName = Config
+                .getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);
+
+        customAttributesByField.forEach((fieldName, customAttributes) -> {
+
+            try {
+                fileStorageAPI.putCustomMetadataAttributes((new FetchMetadataParams.Builder()
+                        .projectionMapForCache(this::filterNonCacheableMetadataFields)
+                        .forceInsert(true)
+                        .storageKey(
+                                new StorageKey.Builder().group(metadataBucketName)
+                                        .path(tempResourceId)
+                                        .storage(storageType).build())
+                        .build()), customAttributes);
+
+            }catch (Exception e){
+                Logger.error(FileMetadataAPIImpl.class, "Error saving custom attributes", e);
+            }
+        });
+    }
+
+
+    public Optional<Metadata> getMetadata(final String tempResourceId)
+            throws DotDataException {
+
+            final StorageType storageType = StoragePersistenceProvider.getStorageType();
+            final String metadataBucketName = Config
+                    .getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);
+
+            Map<String, Serializable> metadataMap = fileStorageAPI.retrieveMetaData(
+                    new FetchMetadataParams.Builder()
+                            .projectionMapForCache(this::filterNonCacheableMetadataFields)
+                            .cache(() -> tempResourceId)
+                            .storageKey(new StorageKey.Builder().group(metadataBucketName)
+                                    .path(tempResourceId).storage(storageType).build())
+                            .build()
+            );
+
+            if (null != metadataMap) {
+                return  Optional.of(new Metadata(tempResourceId, metadataMap));
+            }
+
+        return Optional.empty();
+    }
 
     /**
      * {@inheritDoc}

@@ -37,7 +37,9 @@ import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.storage.FileMetadataAPI;
+import com.dotcms.storage.model.Metadata;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -4862,6 +4864,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                     } else { // if we have an incoming file
                         if (incomingFile.exists() ){
+
+                            //If the incoming file is temp resource we need to find out if there is any metadata associated
+                            final Optional<String> tempResourceId = getTempResourceId(incomingFile);
+
                             //The physical file name is preserved across versions.
                             //No need to update the name. We will only reference the file through the logical asset-name
                             final String oldFileName  = incomingFile.getName();
@@ -4904,10 +4910,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 FileUtil.copyFile(incomingFile, newFile, contentVersionHardLink, validateEmptyFile);
 
                                 if(workingContentlet != contentlet){
+                                   //This copies the metadata from version to version so we don't lose any any custom attribute previously added
                                    fileMetadataAPI.copyMetadata(workingContentlet, contentlet);
                                 }
                             }
                             contentlet.setBinary(velocityVarNm, newFile);
+
+                            //This copies any metadata associated to the temp resource passed
+                            if(tempResourceId.isPresent()){
+                                final Optional<Metadata> optionalMetadata = fileMetadataAPI.getMetadata(tempResourceId.get());
+                                if(optionalMetadata.isPresent()){
+                                   final Metadata tempMeta = optionalMetadata.get();
+                                   fileMetadataAPI.putCustomMetadataAttributes(contentlet, ImmutableMap.of(velocityVarNm, tempMeta.getCustomMeta()));
+                                }
+                            }
                         }
                     }
                 } catch (FileNotFoundException e) {
@@ -5128,6 +5144,24 @@ public class ESContentletAPIImpl implements ContentletAPI {
             bubbleUpException(e);
         }
         return contentlet;
+    }
+
+    /**
+     * given a file We explore the parent folder to figure out if it represents a temp resource
+     * and if it is so.. We return it.
+     * @param file
+     * @return
+     */
+    private Optional<String> getTempResourceId(final File file){
+      try {
+          final String tempResourceId = file.toPath().getParent().getFileName().toString();
+          if (tempApi.isTempResource(tempResourceId)) {
+              return Optional.of(tempResourceId);
+          }
+      }catch (Exception e){
+         //Quite
+      }
+      return Optional.empty();
     }
 
     private void checkPermission(

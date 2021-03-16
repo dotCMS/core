@@ -70,5 +70,7 @@ public class FocalPoint implements Serializable {
     }
 
     
-    
+    public boolean isEmpty(){
+      return this.x == 0 && this.y == 0;
+    }
 }

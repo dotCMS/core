@@ -168,6 +168,26 @@ public interface FileMetadataAPI {
     void putCustomMetadataAttributes(Contentlet contentlet,
             final Map<String, Map<String, Serializable>> customAttributesByField) throws DotDataException;
 
+
+    /**
+     * Write custom metadata to a temporary file
+     * @param tempResourceId
+     * @param customAttributesByField
+     * @throws DotDataException
+     */
+    void putCustomMetadataAttributes(final String tempResourceId,
+            final Map<String, Map<String,Serializable>> customAttributesByField) throws DotDataException;
+
+
+    /**
+     * Temp metadata retrieve method
+     * @param tempResourceId
+     * @return
+     * @throws DotDataException
+     */
+    Optional<Metadata> getMetadata(final String tempResourceId)
+            throws DotDataException;
+
     /**
      * Given a source contentlet this will grab all current meta and copy it into the destination contentlet
      * assuming both are of the same CT

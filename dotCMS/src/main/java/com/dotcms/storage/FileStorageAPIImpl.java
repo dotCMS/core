@@ -453,19 +453,19 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
     /**
      * {@inheritDoc}
-     * @param requestMetadata
+     * @param fetchMetadataParams
      * @param customAttributes
      * @throws DotDataException
      */
     @Override
     public void putCustomMetadataAttributes(
-            final FetchMetadataParams requestMetadata,
+            final FetchMetadataParams fetchMetadataParams,
             final Map<String, Serializable> customAttributes) throws DotDataException {
 
         final Map<String, Serializable> prefixedCustomAttributes = customAttributes.entrySet().stream()
                 .collect(Collectors.toMap(o -> Metadata.CUSTOM_PROP_PREFIX + o.getKey(), Entry::getValue));
 
-        final StorageKey storageKey = requestMetadata.getStorageKey();
+        final StorageKey storageKey = fetchMetadataParams.getStorageKey();
         final StoragePersistenceAPI storage = persistenceProvider.getStorage(storageKey.getStorage());
 
         this.checkBucket(storageKey, storage);
@@ -476,21 +476,28 @@ public class FileStorageAPIImpl implements FileStorageAPI {
                 final Map<String,Serializable> newMetadataMap = new HashMap<>(retrievedMetadata);
                 newMetadataMap.putAll(prefixedCustomAttributes);
 
-                checkOverride(storage, requestMetadata.getStorageKey(), true);
+                checkOverride(storage, fetchMetadataParams.getStorageKey(), true);
                 storeMetadata(storageKey, storage, newMetadataMap);
 
-                if(null != requestMetadata.getCacheKeySupplier()){
-                    final String cacheKey = requestMetadata.getCacheKeySupplier().get();
+                if(null != fetchMetadataParams.getCacheKeySupplier()){
+                    final String cacheKey = fetchMetadataParams.getCacheKeySupplier().get();
                     putIntoCache(cacheKey, newMetadataMap);
                 }
             } else {
                 Logger.warn(FileStorageAPIImpl.class, String.format("Unable to locate object: `%s` ",storageKey));
             }
-
         } else {
-            Logger.warn(FileStorageAPIImpl.class, String.format(
+           if(fetchMetadataParams.isForceInsertion()){
+              storeMetadata(storageKey, storage, prefixedCustomAttributes);
+               if(null != fetchMetadataParams.getCacheKeySupplier()){
+                   final String cacheKey = fetchMetadataParams.getCacheKeySupplier().get();
+                   putIntoCache(cacheKey, prefixedCustomAttributes);
+               }
+           } else {
+               Logger.warn(FileStorageAPIImpl.class, String.format(
                     "Unable to set custom attribute for the given group: `%s` and path: `%s` ",
                     storageKey.getGroup(), storageKey.getPath()));
+            }
         }
 
     }
