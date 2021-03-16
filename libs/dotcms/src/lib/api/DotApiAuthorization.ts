@@ -1,4 +1,4 @@
-import fetch from 'node-fetch';
+import fetch, { Response } from 'node-fetch';
 import { DotCMSAuthorizationLoginParams, DotCMSError } from '../models';
 
 function getErrorMessage(data: { [key: string]: any }) {
@@ -27,11 +27,11 @@ export class DotApiAuthorization {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: {
+            body: JSON.stringify({
                 user: user,
                 password: password,
                 expirationDays: expirationDays || 10
-            }
+            })
         }).then(async (res: Response) => {
             const data = await res.json();
 

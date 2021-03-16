@@ -1,0 +1,31 @@
+name: Publish Docs & Storybook
+on:
+    workflow_dispatch:
+    push:
+        branches:
+            - master
+jobs:
+    publish:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v2
+              with:
+                  fetch-depth: 1
+            - name: Configuring Node.js
+              uses: actions/setup-node@v2-beta
+              with:
+                  node-version: '10.15.3'
+            - name: Installing dependencies
+              run: |
+                  npm install
+            - name: Run NX Commands
+              run: |
+                  npm run nx build dotcms-webcomponents
+                  npm run nx run-many -- --target=build-storybook --parallel --projects=dotcms-ui,dotcms-webcomponents
+                  npm run nx run-many -- --target=build-docs --parallel --projects=dotcms,dotcms-models
+            - name: Deploy to GitHub Pages
+              uses: JamesIves/github-pages-deploy-action@4.1.0
+              with:
+                  branch: gh-pages
+                  folder: docs

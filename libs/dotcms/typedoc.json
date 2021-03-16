@@ -1,9 +1,6 @@
 {
     "name": "DotCMS",
-    "mode": "file",
-    "out": "./dist-docs/dotcms",
-    "module": "commonjs",
-    "target": "ES6",
+    "out": "./docs/dotcms",
     "readme": "./libs/dotcms/README.md",
     "excludePrivate": true,
     "tsconfig": "./libs/dotcms/tsconfig.lib.json",
