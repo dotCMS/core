@@ -10,6 +10,7 @@ import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.ema.EMAWebInterceptorTest;
 import com.dotcms.enterprise.HTMLDiffUtilTest;
 import com.dotcms.enterprise.cluster.ClusterFactoryTest;
+import com.dotcms.enterprise.publishing.bundlers.ShortyBundlerTest;
 import com.dotcms.enterprise.publishing.remote.PushPublishBundleGeneratorTest;
 import com.dotcms.enterprise.publishing.remote.bundler.*;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
@@ -392,7 +393,8 @@ import org.junit.runners.Suite.SuiteClasses;
         PublisherAPIImplTest.class,
         LegacyShortyIdApiTest.class,
         AutoLoginFilterTest.class,
-        FolderCacheImplIntegrationTest.class
+        FolderCacheImplIntegrationTest.class,
+        ShortyBundlerTest.class
 })
 public class MainSuite {
 
