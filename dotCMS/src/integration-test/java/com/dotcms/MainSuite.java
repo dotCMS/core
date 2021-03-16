@@ -94,6 +94,7 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+        com.dotcms.content.elasticsearch.business.ESMappingAPITest.class,
         org.apache.velocity.runtime.parser.node.SimpleNodeTest.class,
         com.liferay.portal.ejb.UserLocalManagerTest.class,
         com.liferay.portal.ejb.UserUtilTest.class,
@@ -128,7 +129,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.content.elasticsearch.business.IndiciesFactoryTest.class,
         com.dotcms.content.elasticsearch.business.ESIndexSpeedTest.class,
         com.dotcms.content.elasticsearch.business.ESSiteSearchAPITest.class,
-        com.dotcms.content.elasticsearch.business.ESMappingAPITest.class,
         com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplTest.class,
         com.dotcms.content.elasticsearch.business.ES6UpgradeTest.class,
         com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest.class,
@@ -161,7 +161,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.contenttype.model.field.layout.FieldLayoutTest.class,
         com.dotcms.workflow.helper.TestSystemActionMappingsHandlerMerger.class,
         com.dotcms.concurrent.lock.DotKeyLockManagerTest.class,
-        com.dotcms.concurrent.DotConcurrentFactoryTest.class,
         com.dotcms.rendering.velocity.VelocityMacroCacheTest.class,
         com.dotcms.rendering.velocity.VelocityUtilTest.class,
         com.dotcms.rendering.velocity.viewtools.navigation.NavToolTest.class,
