@@ -390,7 +390,8 @@ import org.junit.runners.Suite.SuiteClasses;
         WorkflowBundlerTest.class,
         PublisherAPIImplTest.class,
         LegacyShortyIdApiTest.class,
-        FolderCacheImplIntegrationTest.class
+        FolderCacheImplIntegrationTest.class,
+        com.dotmarketing.startup.runonce.Task210316UpdateLayoutIconsTest.class
 })
 public class MainSuite {
 
