@@ -2,7 +2,6 @@ package com.dotcms.util.diff;
 
 import com.dotcms.UnitTestBase;
 import com.dotcms.util.CollectionsUtils;
-import com.liferay.util.StringPool;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -26,7 +25,7 @@ public class DiffCommandTest extends UnitTestBase {
                 "three", new StringDifferentiable("three"), "four", new StringDifferentiable("fourxxx"),
                 "five", new StringDifferentiable("five"), "six", new StringDifferentiable("six"));
 
-        final DiffCommand<String, StringDifferentiable> diffCommand = new SimpleDiffCommand<>();
+        final DiffCommand<String, StringDifferentiable, String, StringDifferentiable> diffCommand = new SimpleDiffCommand<>();
         final DiffResult<String, StringDifferentiable> diffResult = diffCommand.applyDiff(currentObjects, newObjects);
 
         Assert.assertNotNull(diffResult);
@@ -60,7 +59,7 @@ public class DiffCommandTest extends UnitTestBase {
                 "three", "three", "four", "fourxxx",
                 "five", "five", "six", "six");
 
-        final DiffCommand<String, String> diffCommand = new SimpleDiffCommand<>();
+        final DiffCommand<String, String, String, String> diffCommand = new SimpleDiffCommand<>();
         final DiffResult<String, String> diffResult = diffCommand.applyDiff(currentObjects, newObjects);
 
         Assert.assertNotNull(diffResult);
@@ -99,7 +98,7 @@ public class DiffCommandTest extends UnitTestBase {
     }
 
 
-    private class SimpleDiffCommand<T> implements DiffCommand<String, T> {
+    private class SimpleDiffCommand<T> implements DiffCommand<String, T, String, T> {
 
         @Override
         public DiffResult<String, T> applyDiff(final Map<String, T> currentObjects,

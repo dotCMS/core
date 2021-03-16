@@ -47,9 +47,11 @@ import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -352,7 +354,7 @@ public class ContentTypeResource implements Serializable {
 			}
 		}
 
-		if (UtilMethods.isSet(fieldToUpdate)) { // any diff on fields, so update the fields (but not update field variable :( )
+		if (UtilMethods.isSet(fieldToUpdate)) { // any diff on fields, so update the fields (but not update field variables :( )
 			APILocator.getContentTypeFieldAPI().saveFields(fieldToUpdate, user);
 		}
 
@@ -363,16 +365,22 @@ public class ContentTypeResource implements Serializable {
 				final Map<String, FieldVariable>  fieldVariableMap = fieldVariableTuple._1().fieldVariablesMap();
 				for (final DiffItem diffItem : fieldVariableTuple._2()) {
 
-					if ("delete".equals(diffItem.getDetail()) && fieldVariableMap.containsKey(diffItem.getVariable())) {
+					// normalizing the real varname
+					final String fieldVariableVarName = StringUtils.replace(diffItem.getVariable(), "fieldVariable.", StringPool.BLANK);
+					if ("delete".equals(diffItem.getDetail()) && fieldVariableMap.containsKey(fieldVariableVarName)) {
 
-						APILocator.getContentTypeFieldAPI().delete(fieldVariableMap.get(diffItem.getVariable()));
+						APILocator.getContentTypeFieldAPI().delete(fieldVariableMap.get(fieldVariableVarName));
 					}
 
 					// if add or update, it is pretty much the same
-					if (("add".equals(diffItem.getDetail()) || "update".equals(diffItem.getDetail())) &&
-							fieldVariableMap.containsKey(diffItem.getVariable())) {
+					if ("add".equals(diffItem.getDetail()) || "update".equals(diffItem.getDetail())) {
 
-						APILocator.getContentTypeFieldAPI().save(fieldVariableMap.get(diffItem.getVariable()), user);
+						if ("update".equals(diffItem.getDetail()) && !fieldVariableMap.containsKey(fieldVariableVarName)) {
+							// on update get the current field and gets the id
+							continue;
+						}
+
+						APILocator.getContentTypeFieldAPI().save(fieldVariableMap.get(fieldVariableVarName), user);
 					}
 				}
 			}

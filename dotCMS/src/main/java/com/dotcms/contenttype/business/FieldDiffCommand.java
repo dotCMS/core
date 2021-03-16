@@ -7,6 +7,7 @@ import com.dotcms.util.diff.DiffItem;
 import com.dotcms.util.diff.DiffResult;
 import com.dotcms.util.diff.Differentiator;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableMap;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -57,7 +58,7 @@ public class FieldDiffCommand implements DiffCommand<FieldDiffItemsKey, Field ,S
 
             if (currentObjects.containsKey(entry.getKey())) {
 
-                final Collection<DiffItem> diffItems = this.fieldDifferentiator.diff(entry.getValue(), currentObjects.get(entry.getKey()));
+                final Collection<DiffItem> diffItems = this.fieldDifferentiator.diff(currentObjects.get(entry.getKey()), entry.getValue());
                 if (UtilMethods.isSet(diffItems)) {
 
                     fieldsToUpdate.put(new FieldDiffItemsKey(entry.getKey(), diffItems), entry.getValue());
@@ -158,39 +159,48 @@ public class FieldDiffCommand implements DiffCommand<FieldDiffItemsKey, Field ,S
             diffItems.add(new DiffItem.Builder().variable("relationType").message(field1.relationType() + " != " + field2.relationType()).build());
         }
 
-        final Map<String, FieldVariable> fieldVariablesMap1 = UtilMethods.get(field1.fieldVariablesMap(), Collections::emptyMap);
-        final Map<String, FieldVariable> fieldVariablesMap2 = UtilMethods.get(field2.fieldVariablesMap(), Collections::emptyMap);
+        final Map<String, FieldVariable> fieldVariablesMap1 = UtilMethods.get(this.indexFieldVariables(field1), Collections::emptyMap);
+        final Map<String, FieldVariable> fieldVariablesMap2 = UtilMethods.get(this.indexFieldVariables(field2), Collections::emptyMap);
         final boolean areFieldVariablesEmpty = fieldVariablesMap1.isEmpty() && fieldVariablesMap2.isEmpty();
 
         if (!areFieldVariablesEmpty) {
-            diffItems.addAll(this.fieldVariableDifferentiator.diff(field1.fieldVariablesMap(), field2.fieldVariablesMap()));
+            diffItems.addAll(this.fieldVariableDifferentiator.diff(fieldVariablesMap1, fieldVariablesMap2));
         }
 
         return diffItems;
     }
 
-    private Collection<DiffItem> diffFieldVariable(final Map<String, FieldVariable> fieldVariablesMap1,
-                         final Map<String, FieldVariable> fieldVariablesMap2) {
+    final Map<String, FieldVariable> indexFieldVariables (final Field field) {
+
+        final Map<String, FieldVariable> fmap = new HashMap<>();
+        for (final FieldVariable fv : field.fieldVariables()) {
+            fmap.put(fv.key(), fv);
+        }
+        return fmap;
+    }
+
+    private Collection<DiffItem> diffFieldVariable(final Map<String, FieldVariable> currentFieldVariablesMap,
+                         final Map<String, FieldVariable> newFieldVariablesMap) {
 
         final List<DiffItem> diffItems = new ArrayList<>();
 
-        final Collection<DiffItem> fieldsVariablesToDelete = fieldVariablesMap1.entrySet().stream()
-                .filter(entry ->  !fieldVariablesMap2.containsKey(entry.getKey()))
+        final Collection<DiffItem> fieldsVariablesToDelete = currentFieldVariablesMap.entrySet().stream()
+                .filter(entry ->  !newFieldVariablesMap.containsKey(entry.getKey()))
                 .map(entry -> new DiffItem.Builder().variable("fieldVariable." + entry.getKey())
                         .detail("delete").build())
                 .collect(Collectors.toList());
 
-        final Collection<DiffItem>  fieldsVariablesToAdd   = fieldVariablesMap2.entrySet().stream()
-                .filter(entry ->  !fieldVariablesMap1.containsKey(entry.getKey()))
+        final Collection<DiffItem>  fieldsVariablesToAdd   = newFieldVariablesMap.entrySet().stream()
+                .filter(entry ->  !currentFieldVariablesMap.containsKey(entry.getKey()))
                 .map(entry -> new DiffItem.Builder().variable("fieldVariable." + entry.getKey())
                         .detail("add").build())
                 .collect(Collectors.toList());
 
-        final Collection<DiffItem> fieldsVariablesToUpdate = fieldVariablesMap2.entrySet().stream()
-                .filter(entry ->  fieldVariablesMap1.containsKey(entry.getKey()))
-                .filter(entry ->  !entry.getValue().value().equals(fieldVariablesMap1.get(entry.getKey()).value()))
+        final Collection<DiffItem> fieldsVariablesToUpdate = newFieldVariablesMap.entrySet().stream()
+                .filter(entry ->  currentFieldVariablesMap.containsKey(entry.getKey()))
+                .filter(entry ->  !entry.getValue().value().equals(currentFieldVariablesMap.get(entry.getKey()).value()))
                 .map(entry -> new DiffItem.Builder().variable("fieldVariable." + entry.getKey())
-                        .detail("update").detail(entry.getValue().value() + " != " + fieldVariablesMap1.get(entry.getKey()).value()).build())
+                        .detail("update").message(entry.getValue().value() + " != " + currentFieldVariablesMap.get(entry.getKey()).value()).build())
                 .collect(Collectors.toList());
 
         diffItems.addAll(fieldsVariablesToDelete);
