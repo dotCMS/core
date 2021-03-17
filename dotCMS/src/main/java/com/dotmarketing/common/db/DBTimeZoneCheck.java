@@ -14,6 +14,14 @@ import io.vavr.control.Try;
 
 public class DBTimeZoneCheck {
 
+
+    /**
+     * This code checks to see if the timezone id being passed in is a valid id both with java and with
+     * the db
+     * 
+     * @param timezone
+     * @return
+     */
     public boolean timeZoneValid(final String timezone) {
         Connection connection = null;
         final TimeZone defaultTimeZone = TimeZone.getDefault();
@@ -26,12 +34,12 @@ public class DBTimeZoneCheck {
 
             final TimeZone testingTimeZone = TimeZone.getTimeZone(timezone);
 
-            if(!testingTimeZone.getID().equals(timezone.toUpperCase())) {
+            if (!testingTimeZone.getID().equals(timezone.toUpperCase())) {
                 throw new DotRuntimeException("Invalid Timezone: " + timezone);
             }
 
             TimeZone.setDefault(testingTimeZone);
-            
+
             Class.forName(dbDriverClazz);
             connection = DriverManager.getConnection(hikari.getJdbcUrl(), hikari.getUsername(), hikari.getPassword());
 
@@ -41,27 +49,21 @@ public class DBTimeZoneCheck {
 
             statement.setTimestamp(1, stamp);
             ResultSet results = statement.executeQuery();
-            if (results.next()) {
-                Logger.info(DBTimeZoneCheck.class, "Timezone + " + timezone + " worked");
-
-            }
+            results.next();
             return true;
 
 
         } catch (Exception e) {
             Logger.error(DBTimeZoneCheck.class, "Timezone + '" + timezone + "' failed :" + e.getMessage(), e);
             return false;
-        }
-        finally {
+        } finally {
             final Connection finalConnection = connection;
-            Try.run(()->TimeZone.setDefault(defaultTimeZone)).onFailure(e->Logger.warnAndDebug(DBTimeZoneCheck.class, e));
-            Try.run(()->finalConnection.close());
+            Try.run(() -> TimeZone.setDefault(defaultTimeZone))
+                            .onFailure(e -> Logger.warnAndDebug(DBTimeZoneCheck.class, e));
+            Try.run(() -> finalConnection.close());
         }
 
     }
-
-
-
 
 
 }
