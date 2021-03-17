@@ -25,7 +25,6 @@ package com.liferay.portal.ejb;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.util.user.LiferayUserTransformer;
-import com.dotcms.util.user.UserTransformer;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
@@ -56,12 +55,13 @@ import com.dotcms.repackage.net.sf.hibernate.Session;
  *
  * @author  Brian Wing Shun Chan
  * @version $Revision: 1.15 $
- *
+ * @deprecated Use {@link com.dotmarketing.business.UserFactory} instead
  */
+@Deprecated
 public class UserPersistence extends BasePersistence {
 
 	private final String SEARCH_USER_BY_ID="select * from user_ where userid=?";
-	private final UserTransformer userTransformer = new LiferayUserTransformer();
+	private final LiferayUserTransformer userTransformer = new LiferayUserTransformer();
     private final String SELECT_ALL_USERS="select * from user_ where companyid <> 'default' and delete_in_progress = " + DbConnectionFactory.getDBFalse() + " order by firstname, lastname";
 	protected com.liferay.portal.model.User create(String userId) {
 		return new com.liferay.portal.model.User(userId);
