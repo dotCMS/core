@@ -1,6 +1,7 @@
 package com.dotmarketing.business.web;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.UserDataGen;
@@ -16,6 +17,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import static junit.framework.TestCase.assertEquals;
 import static org.mockito.Mockito.*;
 
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import org.junit.BeforeClass;
@@ -643,6 +645,42 @@ public class HostWebAPIImplIntegrationTest extends IntegrationTestBase {
         assertEquals(host.getIdentifier(), currentHost.getIdentifier());
         verify(request).setAttribute(WebKeys.CURRENT_HOST, currentHost);
         verify(session).setAttribute(WebKeys.CURRENT_HOST, currentHost);
+    }
+
+    /**
+     * Method to test: {@link HostWebAPIImpl#find(Contentlet, User, boolean )}}
+     * When: Contentlet.getHost() returns null
+     * Should: fallback to Contentlet.getContentType().host() to fetch the actual host.
+     */
+    @Test
+    public void findHostByContentletWithNullHost() throws DotSecurityException, DotDataException {
+        final User user = createBackendUser();
+        final HostWebAPIImpl hostWebAPI = new HostWebAPIImpl();
+        final Contentlet contentlet = mock(Contentlet.class);
+        final ContentType contentType = mock(ContentType.class);
+        when(contentlet.getHost()).thenReturn(null);
+        when(contentlet.getContentType()).thenReturn(contentType);
+        final Host host = hostWebAPI.findSystemHost(user, false);
+        when(contentType.host()).thenReturn(host.getHost());
+        assertEquals(host.getHost(), hostWebAPI.find(contentlet, user, false).getHost());
+    }
+
+    /**
+     * Method to test: {@link HostWebAPIImpl#find(Contentlet, User, boolean )}}
+     * When: Contentlet.getHost() returns some id
+     * Should: use it to fetch the actual host.
+     */
+    @Test
+    public void findHostByContentlet() throws DotSecurityException, DotDataException {
+        final User user = createBackendUser();
+        final HostWebAPIImpl hostWebAPI = new HostWebAPIImpl();
+        final Contentlet contentlet = mock(Contentlet.class);
+        final Host host = hostWebAPI.findSystemHost(user, false);
+        when(contentlet.getHost()).thenReturn(host.getHost());
+        final ContentType contentType = mock(ContentType.class);
+        when(contentlet.getContentType()).thenReturn(contentType);
+        when(contentType.host()).thenReturn(host.getHost());
+        assertEquals(host.getHost(), hostWebAPI.find(contentlet, user, false).getHost());
     }
 
     private User createUser() throws DotDataException, DotSecurityException {

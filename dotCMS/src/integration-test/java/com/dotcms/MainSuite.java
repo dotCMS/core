@@ -77,6 +77,7 @@ import com.dotmarketing.startup.runalways.Task00050LoadAppsSecretsTest;
 import com.dotmarketing.startup.runonce.Task201013AddNewColumnsToIdentifierTableTest;
 import com.dotmarketing.startup.runonce.Task201014UpdateColumnsValuesInIdentifierTableTest;
 import com.dotmarketing.startup.runonce.Task201102UpdateColumnSitelicTableTest;
+import com.dotmarketing.startup.runonce.Task210218MigrateUserProxyTableTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
@@ -201,7 +202,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v3.contenttype.FieldResourceTest.class,
         com.dotcms.rest.api.v3.contenttype.MoveFieldFormTest.class,
         com.dotcms.rest.api.CorsFilterTest.class,
-        com.dotcms.mail.MailAPIImplTest.class,
         com.dotcms.rest.elasticsearch.ESContentResourcePortletTest.class,
         com.dotcms.filters.VanityUrlFilterTest.class,
         com.dotcms.vanityurl.business.VanityUrlAPITest.class,
@@ -390,7 +390,8 @@ import org.junit.runners.Suite.SuiteClasses;
         WorkflowBundlerTest.class,
         PublisherAPIImplTest.class,
         LegacyShortyIdApiTest.class,
-        FolderCacheImplIntegrationTest.class
+        FolderCacheImplIntegrationTest.class,
+        Task210218MigrateUserProxyTableTest.class
 })
 public class MainSuite {
 
