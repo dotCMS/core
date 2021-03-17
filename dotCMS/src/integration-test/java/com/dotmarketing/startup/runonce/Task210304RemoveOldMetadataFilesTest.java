@@ -56,7 +56,7 @@ public class Task210304RemoveOldMetadataFilesTest {
 
         } finally {
             Config.setProperty(DEFAULT_STORAGE_TYPE, stringProperty);
-            Config.getStringProperty("ASSET_REAL_PATH", assetRealPath);
+            Config.setProperty("ASSET_REAL_PATH", assetRealPath);
             StoragePersistenceProvider.INSTANCE.get().forceInitialize();
         }
 

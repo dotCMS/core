@@ -7,6 +7,7 @@ import static com.dotcms.datagen.TestDataUtils.getFileAssetContent;
 import static com.dotcms.datagen.TestDataUtils.getMultipleBinariesContent;
 import static com.dotcms.datagen.TestDataUtils.getMultipleImageBinariesContent;
 import static com.dotcms.datagen.TestDataUtils.removeAnyMetadata;
+import static com.dotcms.rest.api.v1.temp.TempFileAPITest.*;
 import static com.dotcms.storage.StoragePersistenceProvider.DEFAULT_STORAGE_TYPE;
 import static com.dotcms.storage.model.Metadata.CUSTOM_PROP_PREFIX;
 import static org.junit.Assert.assertEquals;
@@ -15,10 +16,16 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.datagen.TestDataUtils.TestFile;
+import com.dotcms.mock.request.MockSession;
+import com.dotcms.rest.api.v1.temp.DotTempFile;
+import com.dotcms.rest.api.v1.temp.TempFileAPI;
+import com.dotcms.rest.api.v1.temp.TempFileAPITest;
 import com.dotcms.storage.model.BasicMetadataFields;
 import com.dotcms.storage.model.ContentletMetadata;
 import com.dotcms.storage.model.Metadata;
@@ -30,7 +37,9 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.ImmutableMap;
+import com.liferay.portal.util.WebKeys;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -42,13 +51,15 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
 @RunWith(DataProviderRunner.class)
 public class FileMetadataAPITest {
@@ -56,6 +67,7 @@ public class FileMetadataAPITest {
     private static final String WRITE_METADATA_ON_REINDEX = ESMappingAPIImpl.WRITE_METADATA_ON_REINDEX;
     private static final String FILE_ASSET = FileAssetAPI.BINARY_FIELD;
     private static FileMetadataAPI fileMetadataAPI;
+    private static TempFileAPI tempFileAPI;
 
     /**
      * if we have a code that requires some environment initialization required to run prior to our dataProvider Methods the @BeforeClass annotation won't do
@@ -65,9 +77,12 @@ public class FileMetadataAPITest {
      * @throws Exception
      */
     private static void prepareIfNecessary() throws Exception {
-       if(fileMetadataAPI == null){
-         IntegrationTestInitService.getInstance().init();
-         fileMetadataAPI = APILocator.getFileMetadataAPI();
+       if(null == fileMetadataAPI){
+          IntegrationTestInitService.getInstance().init();
+          fileMetadataAPI = APILocator.getFileMetadataAPI();
+       }
+       if(null == tempFileAPI){
+          tempFileAPI = APILocator.getTempFileAPI();
        }
     }
 
@@ -121,7 +136,8 @@ public class FileMetadataAPITest {
     }
 
     /**
-     *
+     * Given scenario: We simply force pushing any metadata into an empty contentlet
+     * Expected result: The Contentlet must have the attributes we forced in it.
      * @param testCase
      * @throws Exception
      */
@@ -263,7 +279,7 @@ public class FileMetadataAPITest {
         final Map<String, Serializable> meta = metaData.getFieldsMeta();
         basicMetadataFields.forEach(key -> {
 
-            if (key.equals("width") || key.equals("height") && !(Boolean)meta.get("isImage")) {
+            if (!(Boolean)meta.get("isImage") && (key.equals("width") || key.equals("height"))) {
                 // we don't expect
                 Logger.info(FileMetadataAPI.class,"We're not supposed to have width or height in a non-image type of file");
             } else {
@@ -323,7 +339,7 @@ public class FileMetadataAPITest {
                     .getBasicMetadataMap();
             assertNotNull(basicMetadataMap);
 
-            //the filed is set as the first one according to the sortOrder prop. This is the only that has to have full metadata
+            //the field is set as the first one according to the sortOrder prop. This is the only that has to have full metadata
             final Metadata fileAsset2FullMeta = fullMetadataMap.get(FILE_ASSET_2);
             assertNotNull(fileAsset2FullMeta);
 
@@ -690,7 +706,7 @@ public class FileMetadataAPITest {
     /**
      * Method to test: {@link FileMetadataAPIImpl#generateContentletMetadata(Contentlet)}
      * Given scenario: We have a source contentlet that we have fed with custom metadata attributes
-     * Expected Resilt:
+     * Expected Result: Then we call generate metadata methods then we look for the custom attributes we initially set.. They still must be there.
      * @param storageType
      * @throws Exception
      */
@@ -742,6 +758,41 @@ public class FileMetadataAPITest {
             Config.setProperty(WRITE_METADATA_ON_REINDEX, defaultValue);
         }
 
+    }
+
+    /**
+     * Method to test: {@link FileMetadataAPIImpl#putCustomMetadataAttributes(String, Map)}
+     * Given scenario: We create a temp file to get a valid temp-resource-id we attach some random meta
+     * Expected result: When we request such info using the same id the results we get must match the originals
+     * @param storageType
+     * @throws Exception
+     */
+    @Test
+    @UseDataProvider("getStorageType")
+    public void Test_Add_Then_Recover_Temp_Resource_Metadata(final StorageType storageType) throws Exception {
+        prepareIfNecessary();
+        final String stringProperty = Config.getStringProperty(DEFAULT_STORAGE_TYPE);
+        //disconnect the MD generation on indexing so we can test directly here.
+        final boolean defaultValue = Config.getBooleanProperty(WRITE_METADATA_ON_REINDEX, true);
+        try {
+            Config.setProperty(WRITE_METADATA_ON_REINDEX, false);
+            Config.setProperty(DEFAULT_STORAGE_TYPE, storageType.name());
+
+            final HttpServletRequest request = mockHttpServletRequest();
+
+            final DotTempFile dotTempFile = tempFileAPI.createEmptyTempFile("temp", request);
+            fileMetadataAPI.putCustomMetadataAttributes(dotTempFile.id,
+                    ImmutableMap.of("fieldXYZ", ImmutableMap.of("foo", "bar", "bar", "foo")));
+            final Optional<Metadata> metadataOptional = fileMetadataAPI.getMetadata(dotTempFile.id);
+            assertTrue(metadataOptional.isPresent());
+            final Metadata metadata = metadataOptional.get();
+            assertEquals(dotTempFile.id, metadata.getFieldName());
+            final Map<String, Serializable> customMeta = metadata.getCustomMeta();
+            validateCustomMetadata(customMeta);
+        }finally {
+            Config.setProperty(DEFAULT_STORAGE_TYPE, stringProperty);
+            Config.setProperty(WRITE_METADATA_ON_REINDEX, defaultValue);
+        }
     }
 
     private void validateCustomMetadata(final Map<String, Serializable> customMeta){

@@ -14,6 +14,7 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.business.MetadataCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
@@ -520,7 +521,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
         try {
             for (final String basicMetaFieldName : fields) {
                 final String metadataPath = getFileName(contentlet, basicMetaFieldName);
-                if (this.fileStorageAPI.removeMetaData(
+                if (fileStorageAPI.removeMetaData(
                         new FetchMetadataParams.Builder()
                                 .storageKey(new StorageKey.Builder().group(metadataBucketName)
                                         .path(metadataPath).storage(storageType).build()).build()
@@ -624,6 +625,13 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
 
     }
 
+   /**
+    * Build a tmp resource path so that temp files will get created under a more suitable location
+    */
+    private String tempResourcePath(final String tempResourceId){
+        return File.separator + FileAssetAPI.TMP_UPLOAD + File.separator + tempResourceId + File.separator + tempResourceId;
+    }
+
     /**
      * {@inheritDoc}
      * @param tempResourceId
@@ -645,7 +653,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
                         .forceInsert(true)
                         .storageKey(
                                 new StorageKey.Builder().group(metadataBucketName)
-                                        .path(tempResourceId)
+                                        .path(tempResourcePath(tempResourceId))
                                         .storage(storageType).build())
                         .build()), customAttributes);
 
@@ -655,21 +663,28 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
         });
     }
 
-
+    /**
+     * {@inheritDoc}
+     * @param tempResourceId
+     * @return
+     * @throws DotDataException
+     */
     public Optional<Metadata> getMetadata(final String tempResourceId)
             throws DotDataException {
 
             final StorageType storageType = StoragePersistenceProvider.getStorageType();
             final String metadataBucketName = Config
                     .getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);
-
+            final String resourcePath = tempResourcePath(tempResourceId);
             Map<String, Serializable> metadataMap = fileStorageAPI.retrieveMetaData(
                     new FetchMetadataParams.Builder()
-                            .projectionMapForCache(this::filterNonCacheableMetadataFields)
-                            .cache(() -> tempResourceId)
-                            .storageKey(new StorageKey.Builder().group(metadataBucketName)
-                                    .path(tempResourceId).storage(storageType).build())
-                            .build()
+                        .projectionMapForCache(this::filterNonCacheableMetadataFields)
+                        .cache(() -> resourcePath)
+                        .storageKey(
+                            new StorageKey.Builder().group(metadataBucketName)
+                                .path(resourcePath)
+                                .storage(storageType).build())
+                        .build()
             );
 
             if (null != metadataMap) {

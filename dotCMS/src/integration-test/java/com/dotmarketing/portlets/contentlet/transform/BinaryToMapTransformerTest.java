@@ -150,9 +150,6 @@ public class BinaryToMapTransformerTest {
                     .setProperty("bin3", testImage)
                     .nextPersisted();
 
-            //final BinaryToMapTransformer transformer =
-              //      new BinaryToMapTransformer(contentWithBinaries);
-
             final Metadata metadata = contentWithBinaries.getBinaryMetadata("bin1");
 
             final Map<String, Object>  map = BinaryToMapTransformer

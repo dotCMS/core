@@ -4866,7 +4866,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         if (incomingFile.exists() ){
 
                             //If the incoming file is temp resource we need to find out if there is any metadata associated
-                            final Optional<String> tempResourceId = getTempResourceId(incomingFile);
+                            final Optional<String> tempResourceId = tempApi.getTempResourceId(incomingFile);
 
                             //The physical file name is preserved across versions.
                             //No need to update the name. We will only reference the file through the logical asset-name
@@ -4916,7 +4916,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             }
                             contentlet.setBinary(velocityVarNm, newFile);
 
-                            //This copies any metadata associated to the temp resource passed
+                            //This copies the metadata associated with the temp resource passed if any.
                             if(tempResourceId.isPresent()){
                                 final Optional<Metadata> optionalMetadata = fileMetadataAPI.getMetadata(tempResourceId.get());
                                 if(optionalMetadata.isPresent()){
@@ -5144,24 +5144,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
             bubbleUpException(e);
         }
         return contentlet;
-    }
-
-    /**
-     * given a file We explore the parent folder to figure out if it represents a temp resource
-     * and if it is so.. We return it.
-     * @param file
-     * @return
-     */
-    private Optional<String> getTempResourceId(final File file){
-      try {
-          final String tempResourceId = file.toPath().getParent().getFileName().toString();
-          if (tempApi.isTempResource(tempResourceId)) {
-              return Optional.of(tempResourceId);
-          }
-      }catch (Exception e){
-         //Quite
-      }
-      return Optional.empty();
     }
 
     private void checkPermission(

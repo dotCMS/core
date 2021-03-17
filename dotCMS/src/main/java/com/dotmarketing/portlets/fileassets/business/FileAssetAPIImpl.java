@@ -863,7 +863,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 
 	public String getRealAssetPathTmpBinary() {
 
-		java.io.File adir=new java.io.File(getRealAssetsRootPath() +java.io.File.separator+"tmp_upload");
+		java.io.File adir=new java.io.File(getRealAssetsRootPath() + java.io.File.separator + TMP_UPLOAD);
 		if(!adir.isDirectory())
 			adir.mkdirs();
 

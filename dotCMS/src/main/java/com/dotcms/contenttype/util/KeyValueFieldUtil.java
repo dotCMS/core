@@ -1,8 +1,5 @@
 package com.dotcms.contenttype.util;
 
-// import com.fasterxml.jackson.core.JsonFactory;
-// import com.fasterxml.jackson.databind.ObjectMapper;
-
 import com.dotcms.util.marshal.DotTypeToken;
 import com.dotcms.util.marshal.MarshalFactory;
 import com.dotmarketing.util.Logger;
@@ -19,18 +16,9 @@ import java.util.Map;
  */
 public class KeyValueFieldUtil {
 
-  // private static final JsonFactory factory = new JsonFactory();
-  // private static final ObjectMapper mapper = new ObjectMapper(factory);
-
   public static Map<String, Object> JSONValueToHashMap(final String json) {
     LinkedHashMap<String, Object> keyValueMap = new LinkedHashMap<String, Object>();
     if (UtilMethods.isSet(json)) {
-
-      /*
-       * TypeReference<LinkedHashMap<String,Object>> typeRef = new
-       * TypeReference<LinkedHashMap<String,Object>>() {}; try { keyValueMap = mapper.readValue(json,
-       * typeRef); } catch (Exception e) { }
-       */
 
       // the following code fixes issue 10529
       try {

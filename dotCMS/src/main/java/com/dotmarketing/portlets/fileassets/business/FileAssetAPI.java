@@ -43,6 +43,8 @@ public interface FileAssetAPI {
 	String DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME = "FileAsset";
 	String DEFAULT_FILE_ASSET_STRUCTURE_INODE = "33888b6f-7a8e-4069-b1b6-5c1aa9d0a48d";
 
+	String TMP_UPLOAD = "tmp_upload";
+
 	void createBaseFileAssetFields(Structure structure) throws DotDataException,DotStateException;
 
     /**

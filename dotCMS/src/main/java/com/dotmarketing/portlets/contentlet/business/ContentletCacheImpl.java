@@ -22,7 +22,7 @@ public class ContentletCacheImpl extends ContentletCache {
 	private DotCacheAdministrator cache;
 
 	private String primaryGroup = "ContentletCache";
-	//This `metadataGroup` should go away also
+
 	private String translatedQueryGroup = "TranslatedQueryCache";
 	// region's name for the cache
 	private String[] groupNames = {primaryGroup, HostCache.PRIMARY_GROUP, translatedQueryGroup};

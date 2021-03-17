@@ -554,7 +554,7 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
     }
 
     /**
-     * if the param `hashObject` is set then the file it self is decomposed into a sha254 representation
+     * if the param `hashObject` is set then the file itself is decomposed into a sha254 representation
      * so the entries in storage_data table point to the metadata-file bytes and not to the binary owning the meta-data.
      * @param file
      * @param extraMeta

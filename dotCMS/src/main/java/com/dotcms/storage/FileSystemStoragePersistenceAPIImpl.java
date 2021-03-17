@@ -1,6 +1,7 @@
 package com.dotcms.storage;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.repackage.com.bradmcevoy.common.Path;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
@@ -49,8 +50,6 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                         rootFolder));
     }
 
-
-
     /**
      * Adds a mapping between a bucket name and a file
      *
@@ -64,7 +63,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                     "Invalid attempt of mapping an non existing or writable folder. Argument`%s` must be a valid. ",
                     folder));
         }
-        this.groups.put(groupName.toLowerCase(), folder);
+        groups.put(groupName.toLowerCase(), folder);
         Logger.debug(FileSystemStoragePersistenceAPIImpl.class, () -> String.format("Registering New Group with key is `%s` mapped to folder `%s` ",groupName, folder));
     }
 
@@ -76,20 +75,28 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
     @Override
     public boolean existsGroup(final String groupName) throws DotDataException{
         final String groupNameLC = groupName.toLowerCase();
-        return this.groups.containsKey(groupNameLC) && this.groups.get(groupNameLC).exists();
+        return groups.containsKey(groupNameLC) && this.groups.get(groupNameLC).exists();
     }
 
     /**
      * {@inheritDoc}
      * @param groupName  {@link String}
-     * @param objectPath {@link String}
+     * @param path {@link String}
      * @return
      */
     @Override
-    public boolean existsObject(final String groupName, final String objectPath) throws DotDataException {
+    public boolean existsObject(final String groupName, final String path) throws DotDataException {
         final String groupNameLC = groupName.toLowerCase();
-        return this.existsGroup(groupNameLC) && new File(this.groups.get(groupNameLC), objectPath.toLowerCase())
-                .exists();
+
+        if(!existsGroup(groupNameLC)){
+            return false;
+        }
+        final File groupDir = groups.get(groupNameLC);
+        try {
+           return Paths.get(groupDir.getCanonicalPath(), path.toLowerCase()).toFile().exists();
+        }catch(IOException e){
+            throw new DotDataException(e.getMessage(), e);
+        }
     }
 
     /**
@@ -111,11 +118,11 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
     @Override
     public boolean createGroup(final String groupName, final Map<String, Object> extraOptions) throws DotDataException {
         final String groupNameLC = groupName.toLowerCase();
-        final File rootGroup = this.groups.get(getRootGroupKey());
+        final File rootGroup = groups.get(getRootGroupKey());
         final File destBucketFile = new File(rootGroup, groupNameLC);
         final boolean mkdirs = destBucketFile.mkdirs();
         if(mkdirs) {
-           this.groups.put(groupNameLC, destBucketFile);
+           groups.put(groupNameLC, destBucketFile);
         }
         return mkdirs;
     }
@@ -127,7 +134,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
      */
     @Override
     public int deleteGroup(final String groupName) throws DotDataException {
-        final File rootGroup = this.groups.get(getRootGroupKey());
+        final File rootGroup = groups.get(getRootGroupKey());
         final File destBucketFile = new File(rootGroup, groupName.toLowerCase());
         if (!rootGroup.equals(destBucketFile)) {
             final int count = countFiles(destBucketFile);
@@ -145,7 +152,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
      */
     @Override
     public boolean deleteObjectAndReferences(final String groupName, final String path) throws DotDataException {
-        return new File(this.groups.get(groupName.toLowerCase()), path.toLowerCase()).delete();
+        return new File(groups.get(groupName.toLowerCase()), path.toLowerCase()).delete();
     }
 
     @Override
@@ -160,7 +167,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
     @Override
     public List<String> listGroups() throws DotDataException {
 
-        return new ImmutableList.Builder<String>().addAll(this.groups.keySet()).build();
+        return new ImmutableList.Builder<String>().addAll(groups.keySet()).build();
     }
 
     /**
@@ -183,17 +190,15 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                     THE_BUCKET_NAME_S_DOES_NOT_HAVE_ANY_FILE_MAPPED,groupName));
         }
 
-        final File groupFile = this.groups.get(groupName.toLowerCase());
+        final File groupDir = groups.get(groupName.toLowerCase());
 
-        if (null != file && file.exists() && file.canRead() && groupFile.canWrite()) {
+        if (null != file && file.exists() && file.canRead() && groupDir.canWrite()) {
 
             try {
-
-                final File destBucketFile = new File(groupFile, path.toLowerCase());
+                final File destBucketFile = Paths.get(groupDir.getCanonicalPath(), path.toLowerCase()).toFile();
                 FileUtils.copyFile(file, destBucketFile);
             } catch (IOException e) {
-
-                Logger.error(this, e.getMessage(), e);
+                Logger.error(FileSystemStoragePersistenceAPIImpl.class, e.getMessage(), e);
                 throw new DotDataException(e.getMessage(), e);
             }
         } else {
@@ -226,20 +231,16 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                     THE_BUCKET_NAME_S_DOES_NOT_HAVE_ANY_FILE_MAPPED,groupName));
         }
 
-        final File groupFile = this.groups.get(groupName.toLowerCase());
+        final File groupDir = groups.get(groupName.toLowerCase());
 
-        if (groupFile.canWrite()) {
+        if (groupDir.canWrite()) {
 
             try {
-
-                final File destBucketFile = new File(groupFile, path.toLowerCase());
-                final String compressor = Config
-                        .getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
+                final File destBucketFile = Paths.get(groupDir.getCanonicalPath(),path.toLowerCase()).toFile();
                 this.prepareParent(destBucketFile);
 
-                try (OutputStream outputStream = FileUtil
-                        .createOutputStream(destBucketFile.toPath(), compressor)) {
-
+                final String compressor = Config.getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
+                try (OutputStream outputStream = FileUtil.createOutputStream(destBucketFile.toPath(), compressor)) {
                     writerDelegate.write(outputStream, object);
                     outputStream.flush();
                 }
@@ -248,7 +249,6 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                 throw new  DotDataException(e.getMessage(),e);
             }
         } else {
-
             throw new IllegalArgumentException("The bucket: " + groupName + " could not write");
         }
 
@@ -256,7 +256,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
     }
 
     /**
-     * makes parent dir if doesnt exist
+     * makes parent dir if doesn't exist
      * @param file
      */
     private void prepareParent(final File file) {
@@ -308,30 +308,36 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
      * @param path {@link String}
      * @return
      */
+
     @Override
     public File pullFile(final String groupName, final String path) throws DotDataException {
 
         if (!this.existsGroup(groupName)) {
 
             throw new IllegalArgumentException(String.format(
-                    THE_BUCKET_NAME_S_DOES_NOT_HAVE_ANY_FILE_MAPPED,groupName));
+                    THE_BUCKET_NAME_S_DOES_NOT_HAVE_ANY_FILE_MAPPED, groupName));
         }
         final File clientFile;
-        final File bucketFile = this.groups.get(groupName.toLowerCase());
-        if (bucketFile.canRead()) {
-            final File destBucketFile = new File(bucketFile, path.toLowerCase());
-            if (destBucketFile.exists()) {
-                clientFile = destBucketFile;
+        try {
+            final File groupDir = groups.get(groupName.toLowerCase());
+            if (groupDir.canRead()) {
+                final File destBucketFile = Paths.get(groupDir.getCanonicalPath(), path.toLowerCase()).toFile();
+                if (destBucketFile.exists()) {
+                    clientFile = destBucketFile;
+                } else {
+                    throw new IllegalArgumentException(
+                            "The group: " + destBucketFile + ", does not exists.");
+                }
             } else {
-                throw new IllegalArgumentException("The group: " + destBucketFile + ", does not exists.");
+                throw new IllegalArgumentException(
+                        "The bucket: " + groupName + " could not be read");
             }
-        } else {
-            throw new IllegalArgumentException("The bucket: " + groupName + " could not be read");
+        } catch (IOException e) {
+            Logger.error(FileSystemStoragePersistenceAPIImpl.class, e.getMessage(), e);
+            throw new DotRuntimeException(e);
         }
-
         return clientFile;
     }
-
     /**
      * {@inheritDoc}
      * @param groupName {@link String}  group name to pull
@@ -347,33 +353,27 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         if (!this.existsGroup(groupName)) {
 
             throw new IllegalArgumentException(String.format(
-                    THE_BUCKET_NAME_S_DOES_NOT_HAVE_ANY_FILE_MAPPED,groupName));
+                    THE_BUCKET_NAME_S_DOES_NOT_HAVE_ANY_FILE_MAPPED, groupName));
         }
 
-        final File groupDir = this.groups.get(groupName.toLowerCase());
+        final File groupDir = groups.get(groupName.toLowerCase());
 
         if (groupDir.canRead()) {
-
-            final File file = new File(groupDir, path.toLowerCase());
-
-            if (file.exists()) {
-
-                final String compressor = Config
-                        .getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
-                try (InputStream input = FileUtil.createInputStream(file.toPath(), compressor)) {
-
-                    object = readerDelegate.read(input);
-                } catch (IOException e) {
-
-                    Logger.error(this, e.getMessage(), e);
-                    throw new DotRuntimeException(e);
+            try {
+                final File file = Paths.get(groupDir.getCanonicalPath(), path.toLowerCase()).toFile();
+                if (file.exists()) {
+                    final String compressor = Config.getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
+                    try (InputStream input = FileUtil.createInputStream(file.toPath(), compressor)) {
+                        object = readerDelegate.read(input);
+                    }
+                } else {
+                    throw new IllegalArgumentException("The file: " + path + ", does not exists.");
                 }
-            } else {
-
-                throw new IllegalArgumentException("The file: " + path + ", does not exists.");
+            } catch (IOException e) {
+                Logger.error(FileSystemStoragePersistenceAPIImpl.class, e.getMessage(), e);
+                throw new DotRuntimeException(e);
             }
         } else {
-
             throw new IllegalArgumentException("The bucket: " + groupName + " could not read");
         }
 

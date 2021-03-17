@@ -344,7 +344,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
     }
 
     /**
-     * if the given configuration states we must override the previously existing file will be deleted before re-generating.
+     * if the given configuration states we must override the previously existing file. It will be deleted before re-generating.
      * @param storage
      * @param generateMetaDataConfiguration
      */
