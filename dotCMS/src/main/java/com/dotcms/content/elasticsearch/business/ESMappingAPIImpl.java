@@ -111,15 +111,21 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	//If you want to skip indexing metadata dotraw fields set this prop to false
 	static final String INDEX_DOTRAW_METADATA_FIELDS = "index.dotraw.metadata.fields";
 
-    //If you want to override and specify a set of particular fields to be excluded from the dotRaw generation it can be accomplished through this prop.
-	static final String EXCLUDE_DOTRAW_METADATA_FIELDS = "exclude.dotraw.metadata.fields";
+	//If you want to override and specify a set of particular fields to be included in the dotRaw generation it can be accomplished through this prop.
+	static final String INCLUDE_DOTRAW_METADATA_FIELDS = "include.dotraw.metadata.fields";
 
-	//TODO: Flip this logic so this set includes fiedls that must be used to generate dotraws
-    //Default fields to exclude from meta-data dotRaw generation
-	static final String[] defaultExcludedDotRawMetadataFields = {
-	        FileAssetAPI.CONTENT_FIELD,
-			IS_IMAGE_META_KEY.key(),
-			SHA256_META_KEY.key()
+    //These are the fields included by default to be used as  metadata.fieldname_dotraw
+	static final String[] defaultIncludedDotRawMetadataFields = {
+			"author",
+			"contenttype",
+			"filesize",
+			"height",
+			"length",
+			"moddate",
+			"name",
+			"path",
+			"title",
+			"width"
 	};
 
 	// if you want to limit the size of the field `metadata.content`
@@ -389,46 +395,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 mlowered.put(lowerCaseKey, lowerCaseValue);
 			}
 
-			if (Config.getBooleanProperty(WRITE_METADATA_ON_REINDEX, true)) {
-
-				if (contentlet.isLive() || contentlet.isWorking()) {
-
-					final ContentletMetadata metadata = fileMetadataAPI
-							.generateContentletMetadata(contentlet);
-					final Map<String, Metadata> fullMetadataMap = metadata
-							.getFullMetadataMap();
-
-					//Full metadata map is expected to have one single entry with everything
-					fullMetadataMap.forEach((field, metadataValues) -> {
-						if (null != metadataValues) {
-
-							final Set<String> dotRawExclude = Sets.newHashSet(
-									Config.getStringArrayProperty(
-											EXCLUDE_DOTRAW_METADATA_FIELDS,
-											defaultExcludedDotRawMetadataFields));
-
-							metadataValues.getFieldsMeta().forEach((metadataKey, metadataValue) -> {
-
-								final String contentData =
-										metadataValue != null ? metadataValue.toString() : BLANK;
-								final String compositeKey =
-										FileAssetAPI.META_DATA_FIELD.toLowerCase() + PERIOD +  metadataKey.toLowerCase();
-								final Object value = preProcessValue(compositeKey, metadataValue);
-								mlowered.put(compositeKey, value);
-
-								if (Config.getBooleanProperty(INDEX_DOTRAW_METADATA_FIELDS, true) && !dotRawExclude.contains(metadataKey)) {
-									mlowered.put(compositeKey + DOTRAW, value);
-								}
-
-								if (metadataKey.contains(FileAssetAPI.CONTENT_FIELD)) {
-									sw.append(contentData).append(' ');
-								}
-
-							});
-						}
-					});
-				}
-			}
+			writeMetadata(contentlet, sw, mlowered);
 
 			//The url is now stored under the identifier for html pages, so we need to index that also.
 			if (contentlet.getContentType().baseType().getType() == BaseContentType.HTMLPAGE.getType()) {
@@ -447,20 +414,75 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		}
 	}
 
+	/**
+	 * Metadata generation happens here
+	 * @param contentlet
+	 * @param stringWriter
+	 * @param mapLowered
+	 * @throws IOException
+	 * @throws DotDataException
+	 */
+	private void writeMetadata(final Contentlet contentlet, final StringWriter stringWriter,
+			final Map<String, Object> mapLowered) throws IOException, DotDataException {
+		if (Config.getBooleanProperty(WRITE_METADATA_ON_REINDEX, true)) {
 
-    private Object preProcessValue(final String compositeKey, final Object value) {
+			final ContentletMetadata metadata = fileMetadataAPI
+					.generateContentletMetadata(contentlet);
+			final Map<String, Metadata> fullMetadataMap = metadata
+					.getFullMetadataMap();
+
+			//Full metadata map is expected to have one single entry with everything
+			fullMetadataMap.forEach((field, metadataValues) -> {
+				if (null != metadataValues) {
+
+					final Set<String> dotRawInclude = Sets.newHashSet(
+							Config.getStringArrayProperty(
+									INCLUDE_DOTRAW_METADATA_FIELDS,
+									defaultIncludedDotRawMetadataFields));
+
+					metadataValues.getFieldsMeta().forEach((metadataKey, metadataValue) -> {
+
+						final String contentData =
+								metadataValue != null ? metadataValue.toString() : BLANK;
+						final String compositeKey =
+								FileAssetAPI.META_DATA_FIELD.toLowerCase() + PERIOD + metadataKey
+										.toLowerCase();
+						final Object value = preProcessMetadataValue(compositeKey, metadataValue);
+						mapLowered.put(compositeKey, value);
+
+						if (Config.getBooleanProperty(INDEX_DOTRAW_METADATA_FIELDS, true)
+								&& dotRawInclude.contains(metadataKey)) {
+							mapLowered.put(compositeKey + DOTRAW, value);
+						}
+
+						if (metadataKey.contains(FileAssetAPI.CONTENT_FIELD)) {
+							stringWriter.append(contentData).append(' ');
+						}
+
+					});
+				}
+			});
+
+		}
+	}
+
+	/**
+	 * logic extract to pre-process and ensure proper value added to the index
+	 * @param compositeKey
+	 * @param value
+	 * @return
+	 */
+	private Object preProcessMetadataValue(final String compositeKey, final Object value) {
         if ("metadata.content".equals(compositeKey)) {
             if (null == value) {
                 //This "NO_METADATA" constant is getting relocated from tika utils
                 return NO_METADATA;
             }
-            //TODO:make sure this is not a dupe META_DATA_MAX_SIZE
+            //This is not a dupe of META_DATA_MAX_SIZE since that one is the flag used to set the number of bytes read by tika
+            //This one allows me to set a max number of chars on the content field itself
             final int length = Config.getIntProperty(INDEX_METADATA_CONTENT_LENGTH, 0);
             final String string = value.toString().toLowerCase();
-            if (length > 0) {
-                return string.substring(0, Math.min(length, string.length()));
-            }
-            return string;
+            return  length > 0 ? string.substring(0, Math.min(length, string.length())) : string;
         }
         return value;
     }

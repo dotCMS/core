@@ -1,6 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.EXCLUDE_DOTRAW_METADATA_FIELDS;
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.INCLUDE_DOTRAW_METADATA_FIELDS;
 import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.INDEX_DOTRAW_METADATA_FIELDS;
 import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.TEXT;
 import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.WRITE_METADATA_ON_REINDEX;
@@ -430,8 +430,8 @@ public class ESMappingAPITest {
         final boolean writeMetadataOnReindex = Config.getBooleanProperty(WRITE_METADATA_ON_REINDEX, true);
         final boolean indexDotRowMetaDataFields = Config
                 .getBooleanProperty(INDEX_DOTRAW_METADATA_FIELDS,true);
-        final String[] excludeDotRawFields = Config
-                .getStringArrayProperty(EXCLUDE_DOTRAW_METADATA_FIELDS);
+        final String[] includeDotRawFields = Config
+                .getStringArrayProperty(INCLUDE_DOTRAW_METADATA_FIELDS);
 
         try {
             Config.setProperty(WRITE_METADATA_ON_REINDEX, true);
@@ -442,8 +442,8 @@ public class ESMappingAPITest {
             final Contentlet multipleBinariesContent = getMultipleImageBinariesContent(true, langId,
                     null);
 
-            final Set<String> excludedDotRawFields = Stream
-                    .of(ESMappingAPIImpl.defaultExcludedDotRawMetadataFields)
+            final Set<String> includedDotRawFields = Stream
+                    .of(ESMappingAPIImpl.defaultIncludedDotRawMetadataFields)
                     .map(s -> "metadata." + s + "_dotraw").map(String::toLowerCase)
                     .collect(Collectors.toSet());
 
@@ -454,32 +454,32 @@ public class ESMappingAPITest {
                     .filter(s -> s.startsWith("metadata") && s.endsWith("dotraw"))
                     .collect(Collectors.toList());
 
-            //Test that with the default configuration the default dotRaw fields are truly excluded
-            Assert.assertFalse(dotRawMetaList.containsAll(excludedDotRawFields));
+            //Test that with the dotRaw fields generated are part of the list of inclusions
+            Assert.assertTrue(includedDotRawFields.containsAll(dotRawMetaList));
 
             //Now lets set an empty list to force skipping the defaults
-            Config.setProperty(EXCLUDE_DOTRAW_METADATA_FIELDS, "");
-            final Map<String, Object> contentletMapIncludingAll = esMappingAPI
+            Config.setProperty(INCLUDE_DOTRAW_METADATA_FIELDS, "");
+            final Map<String, Object> contentletMapIncludingNone = esMappingAPI
                     .toMap(multipleBinariesContent);
 
             //Now lets get the list of metadata keys
-            final List<String> dotRawMetaListForceNoneExclusion = contentletMapIncludingAll.keySet()
+            final List<String> dotRawMetaListForceNoneExclusion = contentletMapIncludingNone.keySet()
                     .stream()
                     .filter(s -> s.startsWith("metadata") && s.endsWith("dotraw"))
                     .collect(Collectors.toList());
 
-            Assert.assertTrue(dotRawMetaListForceNoneExclusion.containsAll(excludedDotRawFields));
+            Assert.assertTrue(dotRawMetaListForceNoneExclusion.isEmpty());
 
             //Now lets set a list with entries to exclude
-            Config.setProperty(EXCLUDE_DOTRAW_METADATA_FIELDS, "isImage,content");
-            final Map<String, Object> contentletMapCustomExclude = esMappingAPI
+            Config.setProperty(INCLUDE_DOTRAW_METADATA_FIELDS, "isImage,content");
+            final Map<String, Object> contentletMapCustomInclude = esMappingAPI
                     .toMap(multipleBinariesContent);
 
-            assertTrue(contentletMapCustomExclude.containsKey("metadata.isimage"));
-            assertFalse(contentletMapCustomExclude.containsKey("metadata.isimage_dotraw"));
+            assertTrue(contentletMapCustomInclude.containsKey("metadata.isimage"));
+            assertTrue(contentletMapCustomInclude.containsKey("metadata.isimage_dotraw"));
 
-            assertTrue(contentletMapCustomExclude.containsKey("metadata.content"));
-            assertFalse(contentletMapCustomExclude.containsKey("metadata.content_dotraw"));
+            assertTrue(contentletMapCustomInclude.containsKey("metadata.content"));
+            assertTrue(contentletMapCustomInclude.containsKey("metadata.content_dotraw"));
 
             //Test disconnecting the dot raw fields generation
             Config.setProperty(INDEX_DOTRAW_METADATA_FIELDS, false);
@@ -492,7 +492,7 @@ public class ESMappingAPITest {
         } finally {
             Config.setProperty(WRITE_METADATA_ON_REINDEX, writeMetadataOnReindex);
             Config.setProperty(INDEX_DOTRAW_METADATA_FIELDS, indexDotRowMetaDataFields);
-            Config.setProperty(EXCLUDE_DOTRAW_METADATA_FIELDS, excludeDotRawFields);
+            Config.setProperty(INCLUDE_DOTRAW_METADATA_FIELDS, includeDotRawFields);
         }
 
     }
