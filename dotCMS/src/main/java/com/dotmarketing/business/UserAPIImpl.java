@@ -4,10 +4,8 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
-import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.publisher.bundle.business.BundleAPI;
 import com.dotcms.rest.api.v1.authentication.DotInvalidTokenException;
-import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -19,7 +17,10 @@ import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.DuplicateUserEmailAddressException;
+import com.liferay.portal.DuplicateUserIdException;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.PasswordTrackerLocalManager;
@@ -27,7 +28,7 @@ import com.liferay.portal.ejb.PasswordTrackerLocalManagerFactory;
 import com.liferay.portal.ejb.UserManagerUtil;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
-import com.liferay.portal.model.Address;
+import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.pwd.PwdToolkitUtil;
 import com.liferay.portal.util.PropsUtil;
@@ -55,9 +56,9 @@ import org.apache.commons.lang.StringUtils;
 public class UserAPIImpl implements UserAPI {
 
     private final UserFactory userFactory;
+    private final UserFactoryLiferay userFactoryLiferay;
     private final PermissionAPI permissionAPI;
     private final UserProxyAPI userProxyAPI;
-    private final NotificationAPI notfAPI;
     private final BundleAPI bundleAPI;
     static User systemUser, anonUser=null;
     /**
@@ -65,9 +66,9 @@ public class UserAPIImpl implements UserAPI {
      */
     public UserAPIImpl() {
         userFactory = FactoryLocator.getUserFactory();
+        userFactoryLiferay = FactoryLocator.getUserFactoryLiferay();
         permissionAPI = APILocator.getPermissionAPI();
         userProxyAPI = APILocator.getUserProxyAPI();
-        notfAPI = APILocator.getNotificationAPI();
         bundleAPI = APILocator.getBundleAPI();
     }
 
@@ -79,6 +80,7 @@ public class UserAPIImpl implements UserAPI {
         if(!UtilMethods.isSet(userId)){
             throw new DotDataException("You must specifiy an userId to search for");
         }
+
         final User u = userFactory.loadUserById(userId);
         if(!UtilMethods.isSet(u)){
             throw new com.dotmarketing.business.NoSuchUserException("No user found with passed in email");
@@ -95,7 +97,7 @@ public class UserAPIImpl implements UserAPI {
 
     @CloseDBIfOpened
     @Override
-    public User loadUserById(final String userId) throws DotDataException, DotSecurityException,com.dotmarketing.business.NoSuchUserException {
+    public User loadUserById(final String userId) throws DotDataException,com.dotmarketing.business.NoSuchUserException {
         if(!UtilMethods.isSet(userId)){
             throw new DotDataException("You must specifiy an userId to search for");
         }
@@ -116,7 +118,7 @@ public class UserAPIImpl implements UserAPI {
             throw new DotDataException("You must specifiy an email to search for");
         }
 
-        final User u = userFactory.loadByUserByEmail(email);
+        final User u = userFactory.loadByUserEmail(email);
         if(!UtilMethods.isSet(u)){
             throw new com.dotmarketing.business.NoSuchUserException("No user found with passed in email");
         }
@@ -140,38 +142,69 @@ public class UserAPIImpl implements UserAPI {
     @CloseDBIfOpened
     @Override
     public long getCountUsersByName(String filter) throws DotDataException {
-        return userFactory.getCountUsersByName(filter);
+        return getCountUsersByName(filter, null);
     }
 
     @CloseDBIfOpened
     @Override
-    public long getCountUsersByName(String filter, List<Role> roles) throws DotDataException {
+    public long getCountUsersByName(String filter, List<Role> roles) {
         return userFactory.getCountUsersByName(filter, roles);
     }
 
     @CloseDBIfOpened
     @Override
     public List<User> getUsersByName(String filter, int start,int limit, User user, boolean respectFrontEndRoles) throws DotDataException {
-        return userFactory.getUsersByName(filter, start, limit);
+        return getUsersByName(filter, null, start, limit);
     }
 
     @CloseDBIfOpened
     @Override
     public List<User> getUsersByName(String filter, List<Role> roles, int start,int limit) throws DotDataException {
-        return userFactory.getUsersByName(filter, roles ,start, limit);
+        return userFactory.getUsersByName(filter, roles, start, limit);
     }
 
     @WrapInTransaction
     @Override
     public User createUser(String userId, String email) throws DotDataException, DuplicateUserException {
-        return userFactory.createUser(userId, email);
+
+        final Company company = APILocator.getCompanyAPI().getDefaultCompany();
+        final String companyId = company.getCompanyId();
+
+        final User defaultUser = APILocator.getUserAPI().getDefaultUser();
+
+        if (!UtilMethods.isSet(userId)) {
+            userId = "user-" + UUIDUtil.uuid();
+        }
+
+        if (!UtilMethods.isSet(email)) {
+            email = userId + "@fakedotcms.com";
+        }
+
+        User user;
+        try {
+            user = UserHelper.getInstance()
+                    .getUserObject(companyId, false, userId, true, null, null, false, userId, null,
+                            userId, null, true, null, email, defaultUser.getLocale());
+        } catch (DuplicateUserEmailAddressException e) {
+            Logger.info(this, "User already exists with this email");
+            throw new DuplicateUserException(e.getMessage(), e);
+        } catch (DuplicateUserIdException e) {
+            Logger.info(this, "User already exists with this ID");
+            throw new DuplicateUserException(e.getMessage(), e);
+        } catch (Exception e) {
+            Logger.error(this, e.getMessage(), e);
+            throw new DotDataException(e.getMessage(), e);
+        }
+
+        user.setNew(false);
+        return userFactory.save(user);
     }
 
     @CloseDBIfOpened
     @Override
     public User getDefaultUser() throws DotDataException {
         try {
-            return userFactory.loadDefaultUser();
+            return userFactory.loadDefaultUser(APILocator.getCompanyAPI().getDefaultCompany());
         } catch (Exception e) {
             throw new DotDataException("getting default user user failed", e);
         }
@@ -198,8 +231,8 @@ public class UserAPIImpl implements UserAPI {
             user.setFirstName("system user");
             user.setLastName("system user");
             user.setCreateDate(new java.util.Date());
-            user.setCompanyId(PublicCompanyFactory.getDefaultCompanyId());
-            userFactory.saveUser(user);
+            user.setCompanyId(APILocator.getCompanyAPI().getDefaultCompany().getCompanyId());
+            userFactory.save(user);
         }
         if(!roleAPI.doesUserHaveRole(user, cmsAdminRole))
             roleAPI.addRoleToUser(cmsAdminRole.getId(), user);
@@ -236,16 +269,16 @@ public class UserAPIImpl implements UserAPI {
             user.setFirstName("Anonymous");
             user.setLastName("User");
             user.setCreateDate(new java.util.Date());
-            user.setCompanyId(PublicCompanyFactory.getDefaultCompanyId());
-            userFactory.saveUser(user);
+            user.setCompanyId(APILocator.getCompanyAPI().getDefaultCompany().getCompanyId());
+            userFactory.save(user);
         } catch (NoSuchUserException e) {
             user = createUser(CMS_ANON_USER_ID, "anonymous@dotcmsfakeemail.org");
             user.setUserId(CMS_ANON_USER_ID);
             user.setFirstName("Anonymous");
             user.setLastName("User");
             user.setCreateDate(new java.util.Date());
-            user.setCompanyId(PublicCompanyFactory.getDefaultCompanyId());
-            userFactory.saveUser(user);
+            user.setCompanyId(APILocator.getCompanyAPI().getDefaultCompany().getCompanyId());
+            userFactory.save(user);
         }
 
         // Assure CMS ANON has the anon role and the Front End User Role
@@ -273,7 +306,7 @@ public class UserAPIImpl implements UserAPI {
     @CloseDBIfOpened
     @Override
     public List<User> findAllUsers() throws DotDataException {
-        return userFactory.findAllUsers();
+        return findAllUsers(0, 100000);
     }
 
     @CloseDBIfOpened
@@ -291,7 +324,7 @@ public class UserAPIImpl implements UserAPI {
     @CloseDBIfOpened
     @Override
     public List<String> getUsersIdsByCreationDate ( Date filterDate, int page, int pageSize ) throws DotDataException {
-        return userFactory.getUsersIdsByCreationDate( filterDate, page, pageSize );
+        return userFactory.getUsersIdsByCreationDate(filterDate, page, pageSize );
     }
 
     @CloseDBIfOpened
@@ -321,11 +354,12 @@ public class UserAPIImpl implements UserAPI {
 
     @CloseDBIfOpened
     @Override
-    public Optional<String> getUserIdByIcqId(final String icqId) throws DotInvalidTokenException {
-        if(!UtilMethods.isSet(icqId)){
+    public Optional<String> getUserIdByToken(final String token)
+            throws DotInvalidTokenException, DotDataException {
+        if(!UtilMethods.isSet(token)){
             throw new DotInvalidTokenException("icqId is not set");
         }
-        return Optional.ofNullable(userFactory.getUserIdByIcqId(icqId));
+        return Optional.ofNullable(userFactory.getUserIdByToken(token));
     }
 
     @CloseDBIfOpened
@@ -366,7 +400,7 @@ public class UserAPIImpl implements UserAPI {
             throw new DotSecurityException(
                     "User doesn't have permission to save the user which is trying to be saved");
         }
-        userFactory.saveUser(userToSave);
+        userFactory.save(userToSave);
         PasswordTrackerLocalManager passwordTracker = PasswordTrackerLocalManagerFactory
                 .getManager();
         try {
@@ -568,43 +602,6 @@ public class UserAPIImpl implements UserAPI {
         }
     }
 
-    @WrapInTransaction
-    @Override
-    public void saveAddress(User user, Address ad, User currentUser, boolean respectFrontEndRoles) throws DotDataException, DotRuntimeException, DotSecurityException {
-        if(!permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(user,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_EDIT, currentUser, respectFrontEndRoles)){
-            throw new DotSecurityException("User doesn't have permission to userToDelete the user which is trying to be saved");
-        }
-        userFactory.saveAddress(user, ad);
-    }
-
-    @CloseDBIfOpened
-    @Override
-    public Address loadAddressById(String addressId, User currentUser, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException {
-        Address ad = userFactory.loadAddressById(addressId);
-        if(!permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(ad.getUserId(),APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_READ, currentUser, respectFrontEndRoles)){
-            throw new DotSecurityException("User doesn't have permission to userToDelete the user which is trying to be saved");
-        }
-        return ad;
-    }
-
-    @WrapInTransaction
-    @Override
-    public void deleteAddress(Address ad, User currentUser, boolean respectFrontEndRoles) throws DotDataException, DotRuntimeException, DotSecurityException {
-        if(!permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(ad.getUserId(),APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_EDIT, currentUser, respectFrontEndRoles)){
-            throw new DotSecurityException("User doesn't have permission to userToDelete the user which is trying to be saved");
-        }
-        userFactory.deleteAddress(ad);
-    }
-
-    @CloseDBIfOpened
-    @Override
-    public List<Address> loadUserAddresses(User user, User currentUser, boolean respectFrontEndRoles) throws DotDataException, DotRuntimeException, DotSecurityException {
-        if(!permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(user,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_READ, currentUser, respectFrontEndRoles)){
-            throw new DotSecurityException("User doesn't have permission to userToDelete the user which is trying to be saved");
-        }
-        return userFactory.loadUserAddresses(user);
-    }
-
     @Override
     public boolean isCMSAdmin(User user) throws DotDataException {
         RoleAPI roleAPI = APILocator.getRoleAPI();
@@ -637,7 +634,7 @@ public class UserAPIImpl implements UserAPI {
     public void markToDelete(User userToDelete) throws DotDataException {
         userToDelete.setDeleteInProgress(true);
         userToDelete.setDeleteDate(Calendar.getInstance().getTime());
-        userFactory.saveUser(userToDelete);
+        userFactory.save(userToDelete);
     }
 
     @CloseDBIfOpened

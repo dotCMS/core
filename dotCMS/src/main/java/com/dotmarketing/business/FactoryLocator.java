@@ -120,6 +120,15 @@ public class FactoryLocator extends Locator<FactoryIndex>{
     	return (UserFactory)getInstance(FactoryIndex.USER_FACTORY);
     }
 
+    /**
+     * @deprecated Use {@link FactoryLocator#getUserFactory()} instead
+     * @return
+     */
+    @Deprecated
+    public static UserFactoryLiferay getUserFactoryLiferay(){
+        return (UserFactoryLiferay) getInstance(FactoryIndex.USER_FACTORY_LIFERAY);
+    }
+
     public static CalendarReminderFactory getCalendarReminderFactory(){
     	return (CalendarReminderFactory) getInstance(FactoryIndex.CALENDAR_REMINDER_FACTORY);
     }
@@ -265,6 +274,7 @@ enum FactoryIndex
 	PLUGIN_FACTORY,
 	LANGUAGE_FACTORY,
 	USER_FACTORY,
+    USER_FACTORY_LIFERAY,
 	CHAIN_FACTORY,
 	CALENDAR_REMINDER_FACTORY,
 	USER_PROXY_FACTORY,
@@ -308,7 +318,8 @@ enum FactoryIndex
             case PLUGIN_FACTORY: return new PluginFactoryDBImpl();
             case LANGUAGE_FACTORY: return new LanguageFactoryImpl();
             case DISTRIBUTED_JOURNAL_FACTORY: return new ReindexQueueFactory();
-            case USER_FACTORY : return new UserFactoryLiferayImpl();
+            case USER_FACTORY : return new UserFactoryImpl();
+            case USER_FACTORY_LIFERAY : return new UserFactoryLiferayImpl();
             case CALENDAR_REMINDER_FACTORY: return new CalendarReminderFactoryImpl();
             case TEMPLATE_FACTORY: return new TemplateFactoryImpl();
             case HOST_VARIABLE_FACTORY: return new HostVariableFactoryImpl();

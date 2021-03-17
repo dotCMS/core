@@ -48,7 +48,6 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
         CONTENTLET("contentlet", "contentlet_version_info"),
         TEMPLATE("template", "template_version_info"),
         CONTAINERS("dot_containers", "container_version_info"),
-        USER_PROXY("user_proxy", null),
         FOLDER("folder", null),
         STRUCTURE("structure", null),
         RELATIONSHIP("relationship", null),
