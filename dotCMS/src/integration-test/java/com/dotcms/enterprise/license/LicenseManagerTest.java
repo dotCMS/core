@@ -28,7 +28,7 @@ public class LicenseManagerTest extends IntegrationTestBase {
     public void test_checkServerDuplicity_community() throws Exception {
         try {
             LicenseManager.getInstance().freeLicenseOnRepo();
-            //assertEquals(LicenseLevel.COMMUNITY.level, LicenseManager.getInstance().license.level);
+            assertEquals(LicenseLevel.COMMUNITY.level, LicenseManager.getInstance().license.level);
             assertFalse(LicenseManager.getInstance().checkServerDuplicity());
         } finally {
             LicenseManager.getInstance().takeLicenseFromRepoIfNeeded();
@@ -38,7 +38,7 @@ public class LicenseManagerTest extends IntegrationTestBase {
     @Test
     public void test_checkServerDuplicity_noDups() throws Exception {
         LicenseManager.getInstance().updateServerStartTime();
-        //assertNotEquals(LicenseLevel.COMMUNITY.level, LicenseManager.getInstance().license.level);
+        assertNotEquals(LicenseLevel.COMMUNITY.level, LicenseManager.getInstance().license.level);
         assertFalse(LicenseManager.getInstance().checkServerDuplicity());
     }
 
@@ -52,8 +52,7 @@ public class LicenseManagerTest extends IntegrationTestBase {
             dotConnect
                     .setSQL("SELECT * FROM sitelic WHERE serverid = ? AND license = ?")
                     .addParam(serverId)
-              //      .addParam(LicenseManager.getInstance().license.raw)
-                    ;
+                    .addParam(LicenseManager.getInstance().license.raw);
 
             final List<Map<String, Object>> results = dotConnect.loadResults();
             final Map<String, Object> first = results.get(0);
@@ -66,7 +65,7 @@ public class LicenseManagerTest extends IntegrationTestBase {
                     .loadResult();
             added = true;
 
-          //  assertNotEquals(LicenseLevel.COMMUNITY.level, LicenseManager.getInstance().license.level);
+            assertNotEquals(LicenseLevel.COMMUNITY.level, LicenseManager.getInstance().license.level);
             assertTrue(LicenseManager.getInstance().checkServerDuplicity());
         } finally {
             if (added) {
