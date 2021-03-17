@@ -13,7 +13,7 @@ import io.vavr.control.Try;
  */
 public class Task210316UpdateLayoutIcons implements StartupTask {
 
-    private static final String CHECK_FA_ICONS_QUERY = "select count(*) from cms_layout where description like 'fa-%'";
+    private static final String CHECK_FA_ICONS_QUERY = "select count(*) as count from cms_layout where description like 'fa-%'";
     private static final String UPDATE_ICONS_QUERY = "update cms_layout set description = ? where description like 'fa-%'";
     private static final String LABEL_IMPORTANT_ICON = "label_important";
 
