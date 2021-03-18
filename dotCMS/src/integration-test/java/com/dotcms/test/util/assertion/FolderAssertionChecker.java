@@ -82,12 +82,10 @@ public class FolderAssertionChecker implements AssertionChecker<Folder> {
     @Override
     public Collection<String> getRegExToRemove(File file) {
         return list(
-                "<iDate class=\"sql-timestamp\">.*</iDate>",
-                "<modDate class=\"sql-timestamp\">.*</modDate>",
-                "<createDate class=\"sql-timestamp\">.*</createDate>",
-                "<date>.*</date>",
-                "<parentPath>.*</parentPath>",
-                "<owner>.*</owner>"
+                "<iDate class=\"sql\\-timestamp\">.*</iDate>",
+                "<modDate class=\"sql\\-timestamp\">.*</modDate>",
+                "<createDate class=\"sql\\-timestamp\">.*</createDate>",
+                "<date>.*</date>"
         );
     }
 }

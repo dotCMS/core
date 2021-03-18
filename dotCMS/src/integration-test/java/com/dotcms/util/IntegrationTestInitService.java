@@ -49,6 +49,7 @@ public class IntegrationTestInitService {
                 //For these tests fire the reindex immediately
                 Config.setProperty("ASYNC_REINDEX_COMMIT_LISTENERS", false);
                 Config.setProperty("ASYNC_COMMIT_LISTENERS", false);
+                Config.setProperty("GRAPHQL_SCHEMA_DEBOUNCE_DELAY_MILLIS", 0);
 
                 Config.setProperty("NETWORK_CACHE_FLUSH_DELAY", (long) 0);
                 // Init other dotCMS services.

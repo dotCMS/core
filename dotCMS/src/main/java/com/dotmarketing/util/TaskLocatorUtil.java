@@ -293,7 +293,8 @@ public class TaskLocatorUtil {
         .add(Task201013AddNewColumnsToIdentifierTable.class)
         .add(Task201014UpdateColumnsValuesInIdentifierTable.class)
 		.add(Task210218MigrateUserProxyTable.class)
-        .add(Task210304RemoveOldMetadataFiles.class)
+		.add(Task210316UpdateLayoutIcons.class)
+		.add(Task210304RemoveOldMetadataFiles.class)
         .build();
         
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());

@@ -119,6 +119,8 @@ public interface LayoutAPI {
 
 	String GETTING_STARTED_LAYOUT_ID="2df9f117-b140-44bf-93d7-5b10a36fb7f9";
 
+	String GETTING_STARTED_LAYOUT_NAME = "Getting Started";
+
 	/**
 	 * returns or create the getting started layout
 	 * @return
