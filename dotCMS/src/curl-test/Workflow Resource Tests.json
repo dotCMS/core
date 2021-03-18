@@ -12112,6 +12112,38 @@
 			"name": "SaveActionletToAction",
 			"item": [
 				{
+					"name": "invalidateSession",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "pre_saveSchema",
 					"event": [
 						{
@@ -12478,15 +12510,15 @@
 		},
 		{
 			"key": "saveActionletSchemeId",
-			"value": "c4ea0eca-418e-439f-81b7-be42b3cb123a"
+			"value": "fcb70ad6-f973-480e-acfa-9d95b50229fa"
 		},
 		{
 			"key": "saveActionletStepId",
-			"value": "9d0bf6f7-b2fb-4532-bb8d-9a71f228faec"
+			"value": "42e3980d-ad99-4ca7-84f4-242e4c69d051"
 		},
 		{
 			"key": "saveActionletActionId",
-			"value": "a38562b8-6a70-4539-aa36-040598cb50df"
+			"value": "1d4e3483-f61f-4b70-a4cc-6458260aa4c9"
 		}
 	]
 }
