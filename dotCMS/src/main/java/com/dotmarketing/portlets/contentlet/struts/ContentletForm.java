@@ -35,9 +35,6 @@ public class ContentletForm extends ValidatorForm {
     public static final String INODE_KEY = "inode";
     public static final String LANGUAGEID_KEY = "languageId";
     public static final String STRUCTURE_INODE_KEY = "stInode";
-    public static final String LAST_REVIEW_KEY = "lastReview";
-    public static final String NEXT_REVIEW_KEY = "nextReview";
-    public static final String REVIEW_INTERNAL_KEY = "reviewInternal";
     public static final String DISABLED_WYSIWYG_KEY = "disabledWYSIWYG";
     public static final String LOCKED_KEY = "locked";
     public static final String ARCHIVED_KEY = "archived";
@@ -58,11 +55,7 @@ public class ContentletForm extends ValidatorForm {
 	
 	private String[] categories;
 	
-	private boolean allowChange = true; 
-    
-    private boolean reviewContent;
-    private String reviewIntervalNum;
-    private String reviewIntervalSelect;
+	private boolean allowChange = true;
 
     private String taskAssignment;
     private String taskComments;
@@ -137,30 +130,6 @@ public class ContentletForm extends ValidatorForm {
 	public Structure getStructure () {
 		return CacheLocator.getContentTypeCache().getStructureByInode( getStructureInode() );
 	}
-
-    public Date getLastReview() {
-    	return (Date)map.get(LAST_REVIEW_KEY);
-    }
-
-    public void setLastReview(Date lastReview) {
-    	map.put(LAST_REVIEW_KEY, lastReview);
-    }
-
-    public Date getNextReview() {
-    	return (Date)map.get(NEXT_REVIEW_KEY);
-    }
-
-    public void setNextReview(Date nextReview) {
-    	map.put(NEXT_REVIEW_KEY, nextReview);
-    }
-
-    public String getReviewInterval() {
-    	return (String)map.get(REVIEW_INTERNAL_KEY);
-    }
-
-    public void setReviewInterval(String reviewInterval) {
-    	map.put(REVIEW_INTERNAL_KEY, reviewInterval);
-    }
 
     public int hashCode() {
         return new HashCodeBuilder().append(getInode()).toHashCode();
@@ -437,37 +406,6 @@ public class ContentletForm extends ValidatorForm {
 
     public void setTaskAssignment(String taskRole) {
         this.taskAssignment = taskRole;
-    }
-
-
-    public boolean isReviewContent() {
-        return reviewContent;
-    }
-
-
-    public void setReviewContent(boolean reviewContent) {
-        this.reviewContent = reviewContent;
-    }
-
-   
-
-    public String getReviewIntervalNum() {
-        return reviewIntervalNum;
-    }
-
-
-    public void setReviewIntervalNum(String reviewIntervalNum) {
-        this.reviewIntervalNum = reviewIntervalNum;
-    }
-
-
-    public String getReviewIntervalSelect() {
-        return reviewIntervalSelect;
-    }
-
-
-    public void setReviewIntervalSelect(String reviewIntervalSelect) {
-        this.reviewIntervalSelect = reviewIntervalSelect;
     }
 
 

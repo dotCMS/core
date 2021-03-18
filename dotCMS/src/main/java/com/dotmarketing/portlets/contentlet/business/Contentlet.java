@@ -52,10 +52,6 @@ public class Contentlet extends WebAsset implements Serializable {
 
     private String[] categories;
 
-    /** Content reviewing fields */
-    private String reviewInterval;
-    private Date lastReview;
-    private Date nextReview;
     private String disabledWysiwyg;
 
     /** Generic fields */
@@ -310,30 +306,6 @@ public class Contentlet extends WebAsset implements Serializable {
                     "Contentlet '%s'", this.getIdentifier()));
         }
         return null;
-    }
-
-    public Date getLastReview() {
-        return lastReview;
-    }
-
-    public void setLastReview(Date lastReview) {
-        this.lastReview = lastReview;
-    }
-
-    public Date getNextReview() {
-        return nextReview;
-    }
-
-    public void setNextReview(Date nextReview) {
-        this.nextReview = nextReview;
-    }
-
-    public String getReviewInterval() {
-        return reviewInterval;
-    }
-
-    public void setReviewInterval(String reviewInterval) {
-        this.reviewInterval = reviewInterval;
     }
 
     public String toString() {

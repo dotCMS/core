@@ -1188,21 +1188,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				}
 			}
 		}
-
-		//Setting review intervals form properties
-		if (contentType.getReviewInterval() != null) {
-			final String interval = contentType.getReviewInterval();
-			final Pattern pattern = Pattern.compile("(\\d+)([dmy])");
-			final Matcher matcher = pattern.matcher(interval);
-			final boolean b = matcher.matches();
-			if (b) {
-				cf.setReviewContent(true);
-				String g1 = matcher.group(1);
-				String g2 = matcher.group(2);
-				cf.setReviewIntervalNum(g1);
-				cf.setReviewIntervalSelect(g2);
-			}
-		}
 	}
 
 	/**
@@ -1347,19 +1332,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 		req.setAttribute(WebKeys.CONTENTLET_EDIT, contentlet);
 
-		if (contentlet.getReviewInterval() != null) {
-			final String interval = contentlet.getReviewInterval();
-			final Pattern pattern = Pattern.compile("(\\d+)([dmy])");
-			final Matcher matcher = pattern.matcher(interval);
-			final boolean matches = matcher.matches();
-			if (matches) {
-				contentletForm.setReviewContent(true);
-				final String g1 = matcher.group(1);
-				final String g2 = matcher.group(2);
-				contentletForm.setReviewIntervalNum(g1);
-				contentletForm.setReviewIntervalSelect(g2);
-			}
-		}
 		if(UtilMethods.isSet(req.getParameter("is_rel_tab"))) {
 			req.setAttribute("is_rel_tab", req.getParameter("is_rel_tab"));
 		}
@@ -1430,7 +1402,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			contentlet.setIdentifier(contentletForm.getIdentifier());
 			contentlet.setInode(contentletForm.getInode());
 			contentlet.setLanguageId(contentletForm.getLanguageId());
-			contentlet.setReviewInterval(contentletForm.getReviewInterval());
 			List<String> disabled = new ArrayList<String>();
 			CollectionUtils.addAll(disabled, contentletForm.getDisabledWysiwyg().split(","));
 			contentlet.setDisabledWysiwyg(disabled);
@@ -1525,19 +1496,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			ae.add(Globals.ERROR_KEY, new ActionMessage("message.contentlet.invalid.form"));
 			req.setAttribute(Globals.ERROR_KEY, ae);
 			throw new DotContentletValidationException(ve.getMessage());
-		}
-
-		//Saving interval review properties
-		if (contentletForm.isReviewContent()) {
-			currentContentlet.setReviewInterval(contentletForm.getReviewIntervalNum() + contentletForm.getReviewIntervalSelect());
-		} else {
-			currentContentlet.setReviewInterval(null);
-		}
-
-		// saving the review dates
-		currentContentlet.setLastReview(new Date ());
-		if (currentContentlet.getReviewInterval() != null) {
-			currentContentlet.setNextReview(conAPI.getNextReview(currentContentlet, user, false));
 		}
 
 		ArrayList<Category> cats = new ArrayList<Category>();

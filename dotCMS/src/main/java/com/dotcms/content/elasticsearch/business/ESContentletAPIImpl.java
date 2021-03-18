@@ -1117,32 +1117,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         cleanField(structure, null, oldField, user, respectFrontendRoles);
     }
 
-    @Override
-    public Date getNextReview(Contentlet content, User user, boolean respectFrontendRoles) throws DotSecurityException {
-
-        Date baseDate = new Date();
-        String reviewInterval = content.getReviewInterval();
-        Pattern p = Pattern.compile("(\\d+)([dmy])");
-        Matcher m = p.matcher(reviewInterval);
-        boolean b = m.matches();
-        GregorianCalendar cal = new GregorianCalendar();
-        cal.setTime(baseDate);
-        if (b) {
-            int num = Integer.parseInt(m.group(1));
-            String qual = m.group(2);
-            if (qual.equals("d")) {
-                cal.add(GregorianCalendar.DATE, num);
-            }
-            if (qual.equals("m")) {
-                cal.add(GregorianCalendar.MONTH, num);
-            }
-            if (qual.equals("y")) {
-                cal.add(GregorianCalendar.YEAR, num);
-            }
-        }
-        return cal.getTime();
-    }
-
     /**
      * Searches for a HTML Page with a given identifier and a given languageId, the languageId will be use only
      * the new HTML Pages (pages as content).
@@ -5775,12 +5749,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     contentlet.setLanguageId((Long)value);
                 }else if(conVariable.equals(Contentlet.STRUCTURE_INODE_KEY)){
                     contentlet.setStructureInode((String)value);
-                }else if(conVariable.equals(Contentlet.LAST_REVIEW_KEY)){
-                    contentlet.setLastReview((Date)value);
-                }else if(conVariable.equals(Contentlet.NEXT_REVIEW_KEY)){
-                    contentlet.setNextReview((Date)value);
-                }else if(conVariable.equals(Contentlet.REVIEW_INTERNAL_KEY)){
-                    contentlet.setReviewInterval((String)value);
                 }else if(conVariable.equals(Contentlet.DISABLED_WYSIWYG_KEY)){
                     contentlet.setDisabledWysiwyg((List<String>)value);
                 }else if(conVariable.equals(Contentlet.MOD_DATE_KEY)){
@@ -6931,25 +6899,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return true;
         }
         return false;
-    }
-
-    @Deprecated
-    @CloseDBIfOpened
-    @Override
-    public com.dotmarketing.portlets.contentlet.business.Contentlet convertContentletToFatContentlet(
-            Contentlet cont,
-            com.dotmarketing.portlets.contentlet.business.Contentlet fatty)
-            throws DotDataException {
-        return contentFactory.convertContentletToFatContentlet(cont, fatty);
-    }
-
-    @Deprecated
-    @CloseDBIfOpened
-    @Override
-    public Contentlet convertFatContentletToContentlet(
-            com.dotmarketing.portlets.contentlet.business.Contentlet fatty)
-            throws DotDataException, DotSecurityException {
-        return contentFactory.convertFatContentletToContentlet(fatty);
     }
 
     /**

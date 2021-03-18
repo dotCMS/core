@@ -1920,30 +1920,6 @@ public class ContentletAPITest extends ContentletBaseTest {
     }
 
     /**
-     * Testing {@link ContentletAPI#getNextReview(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)}
-     *
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @see ContentletAPI
-     * @see Contentlet
-     */
-    @Test
-    public void getNextReview () throws DotSecurityException, DotDataException {
-
-        //Getting a known structure
-        Structure structure = structures.iterator().next();
-
-        //Search the contentlet for this structure
-        List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
-
-        //Getting the next review date
-        Date nextReview = contentletAPI.getNextReview( contentletList.iterator().next(), user, false );
-
-        //Validations
-        assertNotNull( nextReview );
-    }
-
-    /**
      * Tests method {@link ContentletAPI#getContentletReferences(Contentlet, User, boolean)}.
      * <p>
      * Checks that expected containers and pages (in the correct language) are returned by the method.
@@ -3701,7 +3677,6 @@ public class ContentletAPITest extends ContentletBaseTest {
         Contentlet cont=new Contentlet();
         cont.setStructureInode(testStructure.getInode());
         cont.setStringProperty(field.getVelocityVarName(), "a value");
-        cont.setReviewInterval( "1m" );
         cont.setStructureInode( testStructure.getInode() );
         cont.setHost( defaultHost.getIdentifier() );
 
@@ -4048,7 +4023,6 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         // ENGLISH CONTENT
         Contentlet englishContent = new Contentlet();
-        englishContent.setReviewInterval( "1m" );
         englishContent.setStructureInode( testStructure.getInode() );
         englishContent.setLanguageId(1);
 
@@ -4063,7 +4037,6 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         // SPANISH CONTENT
 		Contentlet spanishContent = new Contentlet();
-		spanishContent.setReviewInterval("1m");
 		spanishContent.setStructureInode(testStructure.getInode());
         spanishContent.setLanguageId(spanishLanguage.getId());
 		spanishContent.setIdentifier(englishContent.getIdentifier());
@@ -4164,7 +4137,6 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             //As a copy we need to remove this info to do a clean checkin.
             htmlPageContentlet.getMap().remove("modDate");
-            htmlPageContentlet.getMap().remove("lastReview");
             htmlPageContentlet.getMap().remove("owner");
             htmlPageContentlet.getMap().remove("modUser");
 
@@ -6677,9 +6649,6 @@ public class ContentletAPITest extends ContentletBaseTest {
         final Contentlet beforeTouch = TestDataUtils.getGenericContentContent(true,
                 languageAPI.getDefaultLanguage().getId());
         assertNotNull(beforeTouch);
-
-        //We need to evict the contentlet from hibernate's cache so we can see our changes once we pull-it out from db.
-        HibernateUtil.evict(HibernateUtil.load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, beforeTouch.getInode()));
 
         final Set<String> inodes = Stream.of(beforeTouch).map(Contentlet::getInode).collect(Collectors.toSet());
         contentletAPI.updateModDate(inodes, user);

@@ -74,9 +74,6 @@ public class ContentletTransformer implements DBTransformer {
         contentlet.setSortOrder(ConversionUtils.toInt(map.get("sort_order"),0));
 
         contentlet.setLanguageId(ConversionUtils.toLong(map.get("language_id"), 0L));
-        contentlet.setLastReview((Date) map.get("last_review"));
-        contentlet.setNextReview((Date) map.get("next_review"));
-        contentlet.setReviewInterval((String) map.get("review_interval"));
 
         try {
             populateFields(contentlet, map);
