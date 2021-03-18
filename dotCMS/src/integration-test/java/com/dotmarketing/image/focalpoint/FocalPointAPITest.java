@@ -41,41 +41,6 @@ public class FocalPointAPITest {
      * we should read and write the same values when a focal point is set
      * @throws Exception
      */
-    @Ignore
-    @Test
-    public void Test_Reading_and_Writing_From_FocalPoint_File() throws Exception {
-        final String fieldVarToTest = "fileAsset";
-        for (final String ext : extensions) {
-
-            final URL url = FocalPointAPITest.class.getResource("/images/test." + ext);
-
-            final File incomingFile = new File(url.getFile());
-
-            final String inode = UUIDGenerator.generateUuid();
-
-            final File testFile = new File("/tmp/testing/assets/" + inode + "/" + inode.charAt(0) + "/" + inode.charAt(1) + "/"
-                            + fieldVarToTest + "/" + incomingFile.getName());
-            testFile.getParentFile().mkdirs();
-            FileUtils.copyFile(incomingFile, testFile);
-
-            assert (testFile.exists());
-
-            final FocalPoint focalPoint = new FocalPoint(.2f, .3f);
-
-            focalPointAPI.writeFocalPoint(inode, fieldVarToTest, focalPoint);
-
-            final Optional<FocalPoint> writtenFp = focalPointAPI.readFocalPoint(inode, fieldVarToTest);
-            assertTrue("Focal points read", writtenFp.isPresent());
-            assertEquals("Focal points do not match", focalPoint, writtenFp.get());
-
-        }
-
-    }
-
-    /**
-     * we should read and write the same values when a focal point is set
-     * @throws Exception
-     */
     @Test
     public void Test_Reading_and_Writing_From_FocalPoint_For_Given_Conentlet() throws Exception {
             final String fieldVarToTest = "fileAsset";

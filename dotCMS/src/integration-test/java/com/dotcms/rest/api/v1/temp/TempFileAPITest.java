@@ -1,11 +1,14 @@
 package com.dotcms.rest.api.v1.temp;
 
+import static com.dotcms.datagen.TestDataUtils.getFileAssetContent;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestDataUtils.TestFile;
 import com.dotcms.mock.request.MockSession;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
@@ -54,6 +57,13 @@ public class TempFileAPITest {
         assertFalse(APILocator.getTempFileAPI().validUrl(url));
     }
 
+    /**
+     * Method to test: {@link TempFileAPI#getTempResourceId(File)}
+     * Test scenario: create a temp file using the api
+     * Expected: see how the method succeeds
+     * @throws DotSecurityException
+     * @throws IOException
+     */
     @Test
     public void Test_Get_Temp_Id_From_Temp_File() throws DotSecurityException, IOException {
         final File file = FileUtil.createTemporaryFile("test", "txt", "");
@@ -65,9 +75,16 @@ public class TempFileAPITest {
         assertEquals(tempId.get(), dotTempFile.id);
     }
 
+    /**
+     * Method to test: {@link TempFileAPI#getTempResourceId(File)}
+     * Test scenario: Create any non-temp file
+     * Expected: See how the method fails to extract the temp_id
+     * @throws DotSecurityException
+     * @throws IOException
+     */
     @Test
-    public void Test_Get_Temp_Id_From_Regular_File() {
-        final File file = new File("/Users/any-user/code/servers/server1/assets/a/b/ab5b5ed8-4021-43b5-b16a-708f0cdacc57/coil.jpg");
+    public void Test_Get_Temp_Id_From_Regular_File() throws IOException {
+        final File file = getFileAssetContent(true, 1L, TestFile.PNG).getBinary("fileAsset");
         final Optional<String> tempId = APILocator.getTempFileAPI().getTempResourceId(file);
         assertFalse(tempId.isPresent());
     }

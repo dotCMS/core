@@ -219,8 +219,9 @@ public class StoragePersistenceAPITest {
     }
 
     /**
-     * Given Scenario:
-     * Expected Result:
+     * Since we support various version of an object we should support removing one single version too
+     * Given Scenario: Same binary pushed twice under a different name should be saved just once and two references should have been created
+     * Expected Result: Expect the specific reference to be remove
      * @param testCase
      * @throws IOException
      * @throws DotDataException
@@ -293,8 +294,8 @@ public class StoragePersistenceAPITest {
     }
 
     /**
-     * Given scenario:
-     * Expected Results:
+     * Given scenario: We create a pretty large file to test it does fit
+     * Expected Results: The large object should fit
      * @param testCase
      * @throws IOException
      * @throws NoSuchAlgorithmException
