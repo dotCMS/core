@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.zip.GZIPOutputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 import org.apache.felix.framework.OSGIUtil;
@@ -183,7 +184,8 @@ public class TikaUtils {
      * @deprecated
      *   This method is no longer acceptable to compute metadata.
      *   <p> Use {@link Contentlet#getBinaryMetadata(Field)}
-     *   or {@link com.dotcms.storage.FileMetadataAPI#generateContentletMetadata(Contentlet)} instead.
+     *   or {@link com.dotcms.storage.FileMetadataAPI#generateContentletMetadata(Contentlet)}
+     *   or {@link com.dotcms.storage.FileMetadataAPI#getFullMetadataNoCache(File, Supplier)} instead.
      * @param contentlet Content parse in order to extract the metadata info
      * @return True if a metadata file was generated.
      */
