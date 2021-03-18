@@ -11,10 +11,14 @@ import java.util.concurrent.atomic.AtomicReference;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.InvalidTimeZoneException;
 import com.dotmarketing.util.Logger;
 import com.zaxxer.hikari.HikariDataSource;
 import io.vavr.control.Try;
 
+/**
+ * Class which main purpose is to verify if setting the default {@link TimeZone} will end up messing the JDBC driver.
+ */
 public class DBTimeZoneCheck {
     private static final AtomicReference<Class> DRIVER_REF = new AtomicReference<>(null);
 
@@ -30,13 +34,13 @@ public class DBTimeZoneCheck {
     }
 
     /**
-     * This code checks to see if the timezone id being passed in is a valid id both with java and with
-     * the db
-     * 
-     * @param timezone
+     * This code checks to see if the timezone id being passed in is a valid id both with java and with the db.
+     *
+     * @param timezone timezone id
      * @return
+     * @throws InvalidTimeZoneException when timezone is early detected to be invalid, just before to set it as default
      */
-    public static boolean isTimeZoneValid(final String timezone) {
+    public static boolean isTimeZoneValid(final String timezone) throws InvalidTimeZoneException {
         Connection connection = null;
         PreparedStatement statement = null;
         ResultSet resultSet = null;
@@ -47,7 +51,7 @@ public class DBTimeZoneCheck {
 
             final TimeZone testingTimeZone = TimeZone.getTimeZone(timezone);
             if (!testingTimeZone.getID().equalsIgnoreCase(timezone)) {
-                throw new DotRuntimeException("Invalid Timezone: " + timezone);
+                throw new InvalidTimeZoneException("Invalid Timezone: " + timezone);
             }
             TimeZone.setDefault(testingTimeZone);
 
