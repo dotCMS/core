@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.fileassets.business;
 
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.rendering.velocity.viewtools.content.FileAssetMap;
 import java.io.File;
 import java.io.IOException;
@@ -283,7 +284,10 @@ public interface FileAssetAPI {
 	
 	/**
 	 * constructs the file path for content metadata assetpath/inode(0)/inode(1)/inode/metaData/content
-	 * 
+	 * @deprecated
+	 * This method is Here for compatibility purposes.
+	 *    <p> Use {@link Contentlet#getBinaryMetadata(Field)} }
+	 *    or {@link FileAsset#getMetaDataMap()} instead.
 	 * @param inode content inode
 	 * @return
 	 */
@@ -292,7 +296,10 @@ public interface FileAssetAPI {
 
 	/**
 	 * constructs the file path for content metadata assetpath/inode(0)/inode(1)/inode/{fileName}
-	 *
+	 * @deprecated
+	 * This method is Here for compatibility purposes.
+	 *    <p> Use {@link Contentlet#getBinaryMetadata(Field)} }
+	 *    or {@link FileAsset#getMetaDataMap()} instead.
 	 * @param inode    {@link String } content inode
 	 * @param fileName {@link String}  fileName for the metadata
 	 * @return File
@@ -304,7 +311,12 @@ public interface FileAssetAPI {
 	 * Takes the content metadata file and loads its content in a string.
 	 * It handles compression gzip, bzip2 or none using Tika to detect it 
 	 * based on the file header.
-	 * 
+	 *
+	 * @deprecated
+	 * This method is Here for compatibility purposes.
+	 *    <p> Use {@link Contentlet#getBinaryMetadata(Field)} }
+	 *    or {@link FileAsset#getMetaDataMap()} instead.
+	 *
 	 * @param metadataFile
 	 * @return
 	 */

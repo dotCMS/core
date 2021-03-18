@@ -1,5 +1,8 @@
 package com.dotmarketing.portlets.htmlpageasset.model;
 
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.storage.FileStorageAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import java.io.Serializable;
 import java.util.Map;
 
@@ -42,9 +45,23 @@ public interface IHTMLPage extends Serializable, Versionable, Permissionable,
     String getInode();
     void setInode(String inode);
 
+    /**
+     * We no longer need to set or get Metadata as String
+     * @deprecated
+     *   Please use instead {@link com.dotcms.storage.FileMetadataAPI#getMetadata(Contentlet, Field)}
+     *   or {@link Contentlet#getBinaryMetadata(Field)}
+     * @return
+     */
     @Deprecated
     String getMetadata();
 
+    /**
+     * We no longer need to set or get Metadata as String
+     * @deprecated
+     *   Please use instead {@link com.dotcms.storage.FileMetadataAPI#getMetadata(Contentlet, Field)}
+     *   or {@link Contentlet#getBinaryMetadata(Field)}
+     * @return
+     */
     @Deprecated
     void setMetadata(String metadata);
     

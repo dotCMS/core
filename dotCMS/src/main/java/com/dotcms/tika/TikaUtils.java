@@ -1,6 +1,7 @@
 package com.dotcms.tika;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.osgi.OSGIConstants;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
@@ -107,6 +108,10 @@ public class TikaUtils {
      * returns a Map of the metadata <strong>BUT this method won't try to create any metadata file
      * if does not exist or to override the existing metadata file for the given Contentlet and
      * beside that will put in memory the given file content before to parse it</strong>.
+     * @deprecated
+     *   This method is no longer acceptable to compute metadata.
+     *   <p> Use {@link Contentlet#getBinaryMetadata(Field)}
+     *   or {@link com.dotcms.storage.FileMetadataAPI#generateContentletMetadata(Contentlet)} instead.
      *
      * @param inode Contentlet owner of the file to parse
      * @param binFile File to parse the metadata from it
@@ -121,6 +126,9 @@ public class TikaUtils {
      * returns a Map of the metadata and creates a metadata file for the given
      * Contentlet if does not already exist, if already exist only the metadata is returned and no
      * file is override.
+     * @deprecated
+     *      * This method is no longer acceptable to compute metadata.
+     *      * <p> Use {@link Contentlet#getBinaryMetadata(Field)} instead.
      *
      * @param inode Contentlet owner of the file to parse
      * @param binFile File to parse the metadata from it
@@ -135,6 +143,10 @@ public class TikaUtils {
      * is missing a metadata file, if the metadata does not exist this method
      * parses the file asset and generates it, <strong>this operation also implies a save
      * operation to the Contentlet in order to save the parsed metadata info</strong>.
+     * @deprecated
+     *   This method is no longer acceptable to compute metadata.
+     *   <p> Use {@link Contentlet#getBinaryMetadata(Field)}
+     *   or {@link com.dotcms.storage.FileMetadataAPI#generateContentletMetadata(Contentlet)} instead.
      *
      * @param contentlet Content parse in order to extract the metadata info
      * @return True if a metadata file was generated.
@@ -149,7 +161,10 @@ public class TikaUtils {
      * Verifies if the Contentlet is a File asset in order to parse it and generate a metadata
      * file for it, <strong>this operation also implies a save operation to the Contentlet
      * in order to save the parsed metadata info</strong>.
-     *
+     * @deprecated
+     *   This method is no longer acceptable to compute metadata.
+     *   <p> Use {@link Contentlet#getBinaryMetadata(Field)}
+     *   or {@link com.dotcms.storage.FileMetadataAPI#generateContentletMetadata(Contentlet)} instead.
      * @param contentlet Content parse in order to extract the metadata info
      * @return True if a metadata file was generated.
      */
@@ -165,6 +180,10 @@ public class TikaUtils {
      * file for it, <strong>this operation also implies a save operation to the Contentlet
      * in order to save the parsed metadata info</strong>.
      *
+     * @deprecated
+     *   This method is no longer acceptable to compute metadata.
+     *   <p> Use {@link Contentlet#getBinaryMetadata(Field)}
+     *   or {@link com.dotcms.storage.FileMetadataAPI#generateContentletMetadata(Contentlet)} instead.
      * @param contentlet Content parse in order to extract the metadata info
      * @return True if a metadata file was generated.
      */
@@ -271,6 +290,10 @@ public class TikaUtils {
      * Verifies if the Contentlet is a File asset in order to parse it and generate a metadata
      * file for it, <strong>this operation also implies a save operation to the Contentlet
      * in order to save the parsed metadata info</strong>.
+     * @deprecated
+     *   This method is no longer acceptable to compute metadata.
+     *   <p> Use {@link Contentlet#getBinaryMetadata(Field)}
+     *   or {@link com.dotcms.storage.FileMetadataAPI#generateContentletMetadata(Contentlet)} instead.
      *
      * @param contentlet Content parse in order to extract the metadata info
      * @param force If <strong>false</strong> we will try to parse and generate the metadata file

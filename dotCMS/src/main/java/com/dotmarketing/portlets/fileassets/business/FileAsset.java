@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.fileassets.business;
 
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.storage.model.Metadata;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -149,7 +150,15 @@ public class FileAsset extends Contentlet implements IFileAsset {
 		return mimeType;
 	}
 
-    @Deprecated
+	/**
+	 *
+	 * @deprecated
+	 * This method is Here for compatibility purposes.
+	 *    <p> Use {@link Contentlet#getBinaryMetadata(Field)} }
+	 *    or {@link FileAsset#getMetaDataMap()} instead.
+	 * @param mimeType
+	 */
+	@Deprecated
 	public void setMimeType(String mimeType) {
 
 	}
