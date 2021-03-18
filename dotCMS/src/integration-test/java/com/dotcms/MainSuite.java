@@ -391,7 +391,8 @@ import org.junit.runners.Suite.SuiteClasses;
         PublisherAPIImplTest.class,
         LegacyShortyIdApiTest.class,
         FolderCacheImplIntegrationTest.class,
-        Task210218MigrateUserProxyTableTest.class
+        Task210218MigrateUserProxyTableTest.class,
+        com.dotmarketing.startup.runonce.Task210316UpdateLayoutIconsTest.class
 })
 public class MainSuite {
 
