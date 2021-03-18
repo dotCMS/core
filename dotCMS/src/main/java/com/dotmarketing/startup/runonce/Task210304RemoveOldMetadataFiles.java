@@ -22,6 +22,12 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.mutable.MutableInt;
 
+/**
+ *  This task takes care of removing all the old metadata files.
+ *  Because Now the reindex thread regenerates the new metadata and internally the heuristic used to determine
+ *  if the metadata needs to be generated will skip it if it finds there's a file already in place.
+ *  That's why all the old files must be removed.
+ */
 public class Task210304RemoveOldMetadataFiles implements StartupTask {
 
     private Future<Tuple2<Integer, Integer>> future;
