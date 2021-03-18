@@ -30,6 +30,8 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.Company;
 
+import java.util.TimeZone;
+
 /**
  * <a href="CompanyManagerUtil.java.html"><b><i>View Source</i></b></a>
  *
@@ -195,12 +197,13 @@ public class CompanyManagerUtil {
 	throws PortalException, SystemException,com.dotmarketing.exception.DotRuntimeException {
 		try{		
 			CompanyManager companyManager = CompanyManagerFactory.getManager();
-			if (DBTimeZoneCheck.timeZoneValid(timeZoneId)) {
-				//companyManager.updateUsers(languageId, timeZoneId, skinId, dottedSkins, roundedSkins, resolution);
-				companyManager.updateDefaultUser(languageId, timeZoneId, skinId, dottedSkins, roundedSkins, resolution);
-			} else {
+			if (!DBTimeZoneCheck.timeZoneValid(timeZoneId)) {
 				throw new PortalException(String.format("Invalid Timezone %s", timeZoneId));
 			}
+
+			//companyManager.updateUsers(languageId, timeZoneId, skinId, dottedSkins, roundedSkins, resolution);
+			companyManager.updateDefaultUser(languageId, timeZoneId, skinId, dottedSkins, roundedSkins, resolution);
+			TimeZone.setDefault(TimeZone.getTimeZone(timeZoneId));
 
 			CacheLocator.getCacheAdministrator().flushGroup(CacheLocator.getUserCache().getPrimaryGroup());
 			
