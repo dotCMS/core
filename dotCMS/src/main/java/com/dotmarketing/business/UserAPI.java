@@ -7,7 +7,6 @@ import java.util.List;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.liferay.portal.model.Address;
 import com.liferay.portal.model.User;
 import java.util.Optional;
 
@@ -344,41 +343,6 @@ public interface UserAPI {
      * @throws DotSecurityException If the user requesting the delete doesn't have permission
      */
     public void delete(User userToDelete, User replacementUser, User user, boolean respectFrontEndRoles) throws DotDataException,DotSecurityException;
-    	
-    /**
-     * Method that saves a new address and tie it to the user
-     * @param user
-     * @param ad
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws DotRuntimeException
-     */
-	public void saveAddress(User userToSaveNewAddress, Address ad, User user, boolean respectFrontEndRoles) throws DotDataException, DotRuntimeException, DotSecurityException;
-
-	/**
-	 * Load address by id
-	 * @throws DotSecurityException
-	 */
-	public Address loadAddressById(String addressId, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException;
-
-	/**
-	 * Removes from the system the given address
-	 * @param ad
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 * @throws DotRuntimeException
-	 */
-	public void deleteAddress(Address ad, User user, boolean respectFrontEndRoles) throws DotDataException, DotRuntimeException, DotSecurityException;
-
-	/**
-	 * Retrieves all addresses associated to a user
-	 * @param user
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 * @throws DotRuntimeException
-	 */
-	public List<Address> loadUserAddresses(User userToGetAddresses, User user, boolean respectFrontEndRoles) throws DotDataException, DotRuntimeException, DotSecurityException;
 
 	/**
 	 * Returns true if the user is a cms admin
@@ -434,12 +398,13 @@ public interface UserAPI {
       throws DotDataException;
 
 	/**
-	 * Get the userId by the icqId.
-	 * If the icqId is not set a DotInvalidTokenException will be thrown
+	 * Get the userId by its token.
+	 * If the token is not set a DotInvalidTokenException will be thrown
 	 *
-	 * @param icqId icqId to search for
-	 * @return userId that the icqId is associated
+	 * @param token to search for
+	 * @return userId that the token is associated with
 	 */
-	public Optional<String> getUserIdByIcqId(final String icqId) throws DotInvalidTokenException;
+	public Optional<String> getUserIdByToken(final String token)
+            throws DotInvalidTokenException, DotDataException;
 
 }

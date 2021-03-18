@@ -1,13 +1,13 @@
 package com.dotcms.rendering.velocity.viewtools;
 
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.Theme;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
 import com.dotcms.contenttype.transform.JsonTransformer;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -22,7 +22,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
-import io.vavr.control.Try;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -242,7 +241,7 @@ public class DotTemplateTool implements ViewTool {
             throws DotDataException, DotSecurityException {
 
         //Get the theme folder
-        Folder themeFolder = APILocator.getFolderAPI().find( themeFolderInode, APILocator.getUserAPI().getSystemUser(), false );
+        final Folder themeFolder = APILocator.getThemeAPI().findThemeById(themeFolderInode, APILocator.systemUser(),false);
         return setThemeData( themeFolder, hostId );
     }
 
@@ -340,6 +339,8 @@ public class DotTemplateTool implements ViewTool {
         String themeTemplatePath;
         if ( UtilMethods.isSet( themeTemplate ) && InodeUtils.isSet( themeTemplate.getInode() ) ) {
             themeTemplatePath = themeTemplate.getFileAsset().getPath();
+        } else if(themeFolder.getIdentifier().equals(Theme.SYSTEM_THEME)){
+            themeTemplatePath = "static/system_theme/" + Template.THEME_TEMPLATE;
         } else {//If the theme doesn't provide a template.vtl file lest use ours
             themeTemplatePath = "static/template/" + Template.THEME_TEMPLATE;
         }

@@ -99,7 +99,8 @@ public class User extends UserModel implements Recipient {
 				String refreshRate, String layoutIds, String comments,
 				Date createDate, Date loginDate, String loginIP,
 				Date lastLoginDate, String lastLoginIP, int failedLoginAttempts,
-				boolean agreedToTermsOfUse, boolean active, boolean deleteInProgress, Date deleteDate) {
+				boolean agreedToTermsOfUse, boolean active, boolean deleteInProgress, Date deleteDate,
+                final Map<String, String> additionalInfo) {
 
 		super(userId, companyId, password, passwordEncrypted,
 			  passwordExpirationDate, passwordReset, firstName, middleName,
@@ -116,6 +117,7 @@ public class User extends UserModel implements Recipient {
 		setTimeZoneId(timeZoneId);
 		setResolution(resolution);
 		setRefreshRate(refreshRate);
+		setAdditionalInfo(additionalInfo);
 	}
 
 	public boolean isDefaultUser() {
@@ -403,7 +405,7 @@ public class User extends UserModel implements Recipient {
         map.put("id", getUserId());
         map.put("type", UserAjax.USER_TYPE_VALUE);
         map.put("gravitar", DigestUtils.md5Hex(this.getEmailAddress().toLowerCase()).toString());
-
+        map.put("additionalInfo", getAdditionalInfo());
         return map;
     }
 

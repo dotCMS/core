@@ -39,9 +39,10 @@ import org.apache.logging.log4j.util.Strings;
 
 /**
  * @author Jason Tesser
- *
+ * @deprecated Use {@link UserFactory } instead
  */
-public class UserFactoryLiferayImpl extends UserFactory {
+@Deprecated
+public class UserFactoryLiferayImpl extends UserFactoryLiferay {
 
 	private UserCache uc;
 
@@ -454,15 +455,6 @@ public class UserFactoryLiferayImpl extends UserFactory {
     }
     
 		return dotConnect.getInt("count");
-	}
-
-	@Override
-	protected String getUserIdByIcqId(final String icqId) {
-		final String sql = "select userid from user_ where icqid = ?";
-		DotConnect dotConnect = new DotConnect();
-		dotConnect.setSQL(sql);
-		dotConnect.addParam(icqId);
-		return dotConnect.getString("userid");
 	}
 
 	@Override

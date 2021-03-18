@@ -462,10 +462,10 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		}
 
 		if(UtilMethods.isSet(template.getTheme())) {
-			final Folder themeFolder = APILocator.getFolderAPI().find(template.getTheme(), user, respectFrontendRoles);
-			if (null != themeFolder && InodeUtils.isSet(themeFolder.getInode())) {
-				template.setThemeName(APILocator.getFolderAPI().find(template.getTheme(), user, respectFrontendRoles).getName());
-			} else {
+			final Theme theme = APILocator.getThemeAPI().findThemeById(template.getTheme(),user,respectFrontendRoles);
+			if(null != theme && InodeUtils.isSet(theme.getInode())){
+				template.setThemeName(theme.getName());
+			}else{
 				Logger.error(this.getClass(),"Invalid Theme: " + template.getTheme());
 				throw new DotDataException("Invalid theme: " + template.getTheme());
 			}
