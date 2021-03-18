@@ -14,7 +14,13 @@ import io.vavr.control.Try;
 public class DBTimeZoneCheck {
     private static Class driverClass;
 
-    public static Class resolveDriverClass(final HikariDataSource dataSource) throws ClassNotFoundException {
+    /**
+     * Driver class loaded to avoid call the loading method.
+     * @param dataSource
+     * @return
+     * @throws ClassNotFoundException
+     */
+    private static Class resolveDriverClass(final HikariDataSource dataSource) throws ClassNotFoundException {
         if (driverClass == null) {
             driverClass = Class.forName(dataSource.getDriverClassName());
         }
