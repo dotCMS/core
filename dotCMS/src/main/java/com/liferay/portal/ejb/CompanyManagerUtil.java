@@ -197,7 +197,7 @@ public class CompanyManagerUtil {
 	throws PortalException, SystemException,com.dotmarketing.exception.DotRuntimeException {
 		try{		
 			CompanyManager companyManager = CompanyManagerFactory.getManager();
-			if (!DBTimeZoneCheck.timeZoneValid(timeZoneId)) {
+			if (!DBTimeZoneCheck.isTimeZoneValid(timeZoneId)) {
 				throw new PortalException(String.format("Invalid Timezone %s", timeZoneId));
 			}
 

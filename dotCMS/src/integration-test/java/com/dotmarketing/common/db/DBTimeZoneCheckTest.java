@@ -17,10 +17,10 @@ public class DBTimeZoneCheckTest {
     
     @Test
     public void test_timezones_work() throws Exception {
-        assertTrue(DBTimeZoneCheck.timeZoneValid("CST6CDT"));
-        assertFalse(DBTimeZoneCheck.timeZoneValid("CST"));
-        assertTrue(DBTimeZoneCheck.timeZoneValid("EST"));
-        assertFalse(DBTimeZoneCheck.timeZoneValid("asdf435ergre"));
+        assertTrue(DBTimeZoneCheck.isTimeZoneValid("CST6CDT"));
+        assertFalse(DBTimeZoneCheck.isTimeZoneValid("CST"));
+        assertTrue(DBTimeZoneCheck.isTimeZoneValid("EST"));
+        assertFalse(DBTimeZoneCheck.isTimeZoneValid("asdf435ergre"));
     }
 
 }

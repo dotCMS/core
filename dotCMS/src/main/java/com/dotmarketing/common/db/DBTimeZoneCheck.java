@@ -36,7 +36,7 @@ public class DBTimeZoneCheck {
      * @param timezone
      * @return
      */
-    public static boolean timeZoneValid(final String timezone) {
+    public static boolean isTimeZoneValid(final String timezone) {
         Connection connection = null;
         PreparedStatement statement = null;
         ResultSet resultSet = null;
