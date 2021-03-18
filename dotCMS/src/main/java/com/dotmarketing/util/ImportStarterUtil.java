@@ -1,5 +1,7 @@
 package com.dotmarketing.util;
 
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import java.io.File;
@@ -49,7 +51,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.logConsole.model.LogMapperRow;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.business.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -672,7 +674,7 @@ public class ImportStarterUtil {
 
             else {
                 String id;
-                if (_importClass.equals(Relationship.class) || _importClass.equals(Template.class)) {
+                if (_importClass.equals(Relationship.class) || _importClass.equals(Template.class) || _importClass.equals(Contentlet.class)) {
                     id = "inode";
                 } else if(_importClass.equals(ContentletVersionInfo.class)) {
                     id = "identifier";
@@ -693,10 +695,10 @@ public class ImportStarterUtil {
                 }
                 for (int j = 0; j < l.size(); j++) {
                     Object obj = l.get(j);
-                    if (l.get(j) instanceof com.dotmarketing.portlets.contentlet.business.Contentlet
+                    if (l.get(j) instanceof Contentlet
                                     && DbConnectionFactory.isMsSql()) {
-                        com.dotmarketing.portlets.contentlet.business.Contentlet contentlet =
-                                        (com.dotmarketing.portlets.contentlet.business.Contentlet) l.get(j);
+                        Contentlet contentlet =
+                                        (Contentlet) l.get(j);
                         changeDateForSQLServer(contentlet);
                     }
 
@@ -715,9 +717,9 @@ public class ImportStarterUtil {
                                 }
 
                             } else {
-                                if (obj instanceof Relationship) {
-                                    
-                                    
+                                if (obj instanceof Contentlet) {
+                                    FactoryLocator.getContentletFactory().save((Contentlet) obj);
+                                } else if (obj instanceof Relationship) {
                                     Relationship rel = (Relationship) obj;
                                     if(new DotConnect().setSQL("select count(*) as counter from relationship where relation_type_value=?")
                                                     .addParam(rel.getRelationTypeValue())
@@ -732,10 +734,8 @@ public class ImportStarterUtil {
                                     final Template template = Template.class.cast(obj);
                                     FactoryLocator.getTemplateFactory().save(template, template.getInode());
                                 } else{
-
                                     Logger.debug(this, "Saving the object: " + obj.getClass() + ", with the id: " + prop);
                                     HibernateUtil.saveWithPrimaryKey(obj, prop);
-
                                     HibernateUtil.flush();
                                 }
                             }
@@ -957,108 +957,20 @@ public class ImportStarterUtil {
      *
      * @param contentlet
      */
-    private void changeDateForSQLServer(com.dotmarketing.portlets.contentlet.business.Contentlet contentlet) {
-        if (!validateDate(contentlet.getDate1())) {
-            contentlet.setDate1(new Date());
-            Logger.warn(ImportStarterUtil.class,
-                            "Unsupported data in SQL Server, so changed date to current date for contentlet with inode ");
-        }
-        if (!validateDate(contentlet.getDate2())) {
-            contentlet.setDate2(new Date());
-            Logger.warn(ImportStarterUtil.class, "Date changed to current date");
-        }
-        if (!validateDate(contentlet.getDate3())) {
-            contentlet.setDate3(new Date());
-            Logger.warn(ImportStarterUtil.class, "Date changed to current date");
-        }
-        if (!validateDate(contentlet.getDate4())) {
-            contentlet.setDate4(new Date());
-            Logger.warn(ImportStarterUtil.class, "Date changed to current date");
-        }
-        if (!validateDate(contentlet.getDate5())) {
-            contentlet.setDate5(new Date());
-            Logger.warn(ImportStarterUtil.class, "Date changed to current date");
-        }
-        if (!validateDate(contentlet.getDate6())) {
-            contentlet.setDate6(new Date());
-            Logger.warn(ImportStarterUtil.class, "Date changed to current date");
-        }
-        if (!validateDate(contentlet.getDate7())) {
-            contentlet.setDate7(new Date());
-            Logger.warn(ImportStarterUtil.class, "Date changed to current date");
-        }
-        if (!validateDate(contentlet.getDate8())) {
-            contentlet.setDate8(new Date());
-            Logger.warn(ImportStarterUtil.class, "Date changed to current date");
-        }
-        if (!validateDate(contentlet.getDate9())) {
-            contentlet.setDate9(new Date());
-            Logger.warn(ImportStarterUtil.class, "Date changed to current date");
-        }
-        if (!validateDate(contentlet.getDate10())) {
-            contentlet.setDate10(new Date());
-            Logger.warn(ImportStarterUtil.class, "Date changed to current date");
-        }
-        if (!validateDate(contentlet.getDate11())) {
-            contentlet.setDate11(new Date());
-            Logger.warn(ImportStarterUtil.class, "Date changed to current date");
-        }
-        if (!validateDate(contentlet.getDate12())) {
-            contentlet.setDate12(new Date());
-            Logger.warn(ImportStarterUtil.class, "Date changed to current date");
-        }
-        if (!validateDate(contentlet.getDate13())) {
-            contentlet.setDate13(new Date());
-            Logger.warn(ImportStarterUtil.class, "Date changed to current date");
-        }
-        if (!validateDate(contentlet.getDate14())) {
-            contentlet.setDate14(new Date());
-            Logger.warn(ImportStarterUtil.class, "Date changed to current date");
-        }
-        if (!validateDate(contentlet.getDate15())) {
-            contentlet.setDate15(new Date());
-            Logger.warn(ImportStarterUtil.class, "Date changed to current date");
-        }
-        if (!validateDate(contentlet.getDate16())) {
-            contentlet.setDate16(new Date());
-            Logger.warn(ImportStarterUtil.class, "Date changed to current date");
-        }
-        if (!validateDate(contentlet.getDate17())) {
-            contentlet.setDate17(new Date());
-            Logger.warn(ImportStarterUtil.class, "Date changed to current date");
-        }
-        if (!validateDate(contentlet.getDate18())) {
-            contentlet.setDate18(new Date());
-            Logger.warn(ImportStarterUtil.class, "Date changed to current date");
-        }
-        if (!validateDate(contentlet.getDate19())) {
-            contentlet.setDate19(new Date());
-            Logger.warn(ImportStarterUtil.class, "Date changed to current date");
-        }
-        if (!validateDate(contentlet.getDate20())) {
-            contentlet.setDate20(new Date());
-            Logger.warn(ImportStarterUtil.class, "Date changed to current date");
-        }
-        if (!validateDate(contentlet.getDate21())) {
-            contentlet.setDate21(new Date());
-            Logger.warn(ImportStarterUtil.class, "Date changed to current date");
-        }
-        if (!validateDate(contentlet.getDate22())) {
-            contentlet.setDate22(new Date());
-            Logger.warn(ImportStarterUtil.class, "Date changed to current date");
-        }
-        if (!validateDate(contentlet.getDate23())) {
-            contentlet.setDate23(new Date());
-            Logger.warn(ImportStarterUtil.class, "Date changed to current date");
-        }
-        if (!validateDate(contentlet.getDate24())) {
-            contentlet.setDate24(new Date());
-            Logger.warn(ImportStarterUtil.class, "Date changed to current date");
-        }
-        if (!validateDate(contentlet.getDate25())) {
-            contentlet.setDate25(new Date());
-            Logger.warn(ImportStarterUtil.class, "Date changed to current date");
-        }
+    private void changeDateForSQLServer(Contentlet contentlet) {
+
+        final List<Field> dateFields = contentlet.getContentType().fields().stream()
+                .filter(field -> field.dataType() == DataTypes.DATE).collect(Collectors.toList());
+
+        dateFields.forEach(field -> {
+            if (!validateDate(contentlet.getDateProperty(field.variable()))) {
+                contentlet.setDateProperty(field.variable(), new Date());
+                Logger.warn(ImportStarterUtil.class,
+                        "Unsupported data in SQL Server, so changed date to current date for contentlet with inode "
+                                + contentlet.getInode());
+            }
+        });
+
     }
 
     List<File> contains(String pattern) {

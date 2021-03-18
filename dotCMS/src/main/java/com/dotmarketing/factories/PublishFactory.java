@@ -287,20 +287,15 @@ public class PublishFactory {
 		}
 
 		if (webAsset instanceof Link) {
-			List contentlets = InodeFactory.getParentsOfClass(webAsset, com.dotmarketing.portlets.contentlet.business.Contentlet.class);
-			Iterator it = contentlets.iterator();
-			while (it.hasNext()) {
-				com.dotmarketing.portlets.contentlet.business.Contentlet cont = (com.dotmarketing.portlets.contentlet.business.Contentlet) it.next();
-			    if (cont.isLive()) {
-			    	try {
-			    		com.dotmarketing.portlets.contentlet.model.Contentlet newFormatContentlet =
-							conAPI.convertFatContentletToContentlet(cont);
-			    		    new ContentletLoader().invalidate(newFormatContentlet);
-					} catch (DotDataException e) {
-						throw new WebAssetException(e.getMessage(), e);
-					}
-			    }
-			}
+            FactoryLocator.getMenuLinkFactory()
+                    .getParentContentlets(webAsset.getInode()).stream().filter(contentlet -> {
+                try {
+                    return contentlet.isLive();
+                } catch (DotDataException | DotSecurityException  e) {
+                    throw new DotRuntimeException(e);
+                }
+			}).forEach( contentlet -> new ContentletLoader().invalidate(contentlet));
+
 			// Removes static menues to provoke all possible dependencies be generated.
 			Folder parentFolder = (Folder)APILocator.getFolderAPI().findParentFolder((Treeable) webAsset,user,false);
 			Host host = (Host) hostAPI.findParentHost(parentFolder, APILocator.getUserAPI().getSystemUser(), respectFrontendRoles);

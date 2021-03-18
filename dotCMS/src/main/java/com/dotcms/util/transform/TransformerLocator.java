@@ -13,7 +13,6 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.transform.ContainerTransformer;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.ContentletTransformer;
-import com.dotmarketing.portlets.contentlet.transform.FatContentletTransformer;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.transform.TemplateTransformer;
 import com.dotmarketing.portlets.hostvariable.transform.HostVariableTransformer;
@@ -130,19 +129,6 @@ public class TransformerLocator {
             List<Map<String, Object>> initList) {
 
         return new ContentletTransformer(initList);
-    }
-
-    /**
-     * @deprecated The {@link com.dotmarketing.portlets.contentlet.business.Contentlet} will be removed any time soon
-     * Creates a DBTransformer for Fat Contentlet {@link com.dotmarketing.portlets.contentlet.business.Contentlet} objects
-     * @param initList List of DB results to be transformed
-     * @return
-     */
-    @Deprecated
-    public static FatContentletTransformer createFatContentletTransformer(
-            List<Map<String, Object>> initList) {
-
-        return new FatContentletTransformer(initList);
     }
 
     /**

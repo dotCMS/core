@@ -15,6 +15,7 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.quartz.QuartzUtils;
@@ -75,15 +76,13 @@ public class IdentifierDateJob implements Job {
 					//Get the identifier of each contentlet
 					Identifier identifier= APILocator.getIdentifierAPI().find(contentletSearch.getIdentifier());
 
-					//Gets from hibernate all the Data of the Contentlet
-					com.dotmarketing.portlets.contentlet.business.Contentlet fatty =
-							(com.dotmarketing.portlets.contentlet.business.Contentlet)HibernateUtil
-							.load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, contentletSearch.getInode());
+					//Gets contentlet info
+                    Contentlet contentlet = contentletAPI.find(contentletSearch.getInode(), user, false);
 
 					//Check if the new Publish Date Var is not null
 					if(UtilMethods.isSet(type.publishDateVar())){
 						//Sets the identifier SysPublishDate to the new Structure/Content Publish Date Var
-						identifier.setSysPublishDate((Date)fatty.getMap().get(type.publishDateVar()));
+						identifier.setSysPublishDate((Date)contentlet.getMap().get(type.publishDateVar()));
 					}else{
 						identifier.setSysPublishDate(null);
 					}
@@ -91,7 +90,7 @@ public class IdentifierDateJob implements Job {
 					//Check if the new Expire Date Var is not null
 					if(UtilMethods.isSet(type.expireDateVar())){
 						//Sets the identifier SysExpireDate to the new Structure/Content Expire Date Var
-						identifier.setSysExpireDate((Date)fatty.getMap().get(type.expireDateVar()));
+						identifier.setSysExpireDate((Date)contentlet.getMap().get(type.expireDateVar()));
 					}else{
 						identifier.setSysExpireDate(null);
 					}

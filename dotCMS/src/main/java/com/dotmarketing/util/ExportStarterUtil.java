@@ -1,5 +1,6 @@
 package com.dotmarketing.util;
 
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.templates.model.Template;
 import java.io.File;
@@ -97,6 +98,7 @@ public class ExportStarterUtil {
             _tablesToDump.add(Relationship.class);
             _tablesToDump.add(ContentletVersionInfo.class);
             _tablesToDump.add(Template.class);
+            _tablesToDump.add(Contentlet.class);
             //end classes no longer mapped with Hibernate
             _tablesToDump.addAll(HibernateUtil.getSession().getSessionFactory().getAllClassMetadata().keySet());
 
@@ -180,8 +182,11 @@ public class ExportStarterUtil {
                         dc = new DotConnect();
                         dc.setSQL("SELECT * FROM template ORDER BY inode")
                                 .setStartRow(i).setMaxRows(step);
-                    }
-                    else {
+                    } else if (Contentlet.class.equals(clazz)) {
+                        dc = new DotConnect();
+                        dc.setSQL("SELECT * FROM contentlet ORDER BY inode")
+                                .setStartRow(i).setMaxRows(step);
+                    } else {
                         _dh.setQuery("from " + clazz.getName() + " order by 1");
                     }
 
@@ -201,6 +206,10 @@ public class ExportStarterUtil {
                     } else if (Template.class.equals(clazz)) {
                         _list = TransformerLocator
                                 .createTemplateTransformer(dc.loadObjectResults())
+                                .asList();
+                    } else if (Contentlet.class.equals(clazz)) {
+                        _list = TransformerLocator
+                                .createContentletTransformer(dc.loadObjectResults())
                                 .asList();
                     } else {
                         _list = _dh.list();

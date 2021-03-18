@@ -83,7 +83,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.StringTokenizer;
 import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -232,153 +231,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
         List<Map<String,String>> results = dc.loadResults();
         long count = Long.parseLong(results.get(0).get("count"));
         return count;
-	}
-
-	@Deprecated
-	@Override
-	public com.dotmarketing.portlets.contentlet.business.Contentlet convertContentletToFatContentlet(Contentlet cont,
-			com.dotmarketing.portlets.contentlet.business.Contentlet fatty) throws DotDataException {
-
-        // if the title was not intentionally set to null.
-        final boolean allowTitle = null == cont.getNullProperties() || !cont.getNullProperties().contains(Contentlet.TITTLE_KEY);
-
-	    String name = "";
-	    if (allowTitle) {
-            try {
-                // If the contentlet doesn't have the identifier is pointless to call ContentletAPI().getName().
-                if (UtilMethods.isSet(cont) && UtilMethods.isSet(cont.getIdentifier())) {
-                    name = APILocator.getContentletAPI().getName(
-                            cont, APILocator.getUserAPI().getSystemUser(), true);
-                }
-            } catch (DotSecurityException e) {
-
-            }
-        }
-        List<Field> fields = FieldsCache.getFieldsByStructureInode(cont.getStructureInode());
-        for (Field f : fields) {
-            if (f.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
-                continue;
-            }
-            if (f.getFieldType().equals(Field.FieldType.BINARY.toString())) {
-                continue;
-            }
-
-            if(!APILocator.getFieldAPI().valueSettable(f)){
-                continue;
-            }
-            Object value;
-            value = cont.get(f.getVelocityVarName());
-            try{
-                fatty.setField(f, value);
-            }catch (DotRuntimeException re) {
-                throw new DotDataException("Unable to set field value",re);
-            }
-        }
-        fatty.setInode(cont.getInode());
-        fatty.setIdentifier(UtilMethods.isSet(cont.getIdentifier())?cont.getIdentifier():null);
-        fatty.setSortOrder(new Long(cont.getSortOrder()).intValue());
-        fatty.setStructureInode(cont.getStructureInode());
-        fatty.setLanguageId(cont.getLanguageId());
-        fatty.setNextReview(cont.getNextReview());
-        fatty.setLastReview(cont.getLastReview());
-        fatty.setOwner(cont.getOwner());
-        fatty.setModUser(cont.getModUser());
-        fatty.setModDate(cont.getModDate());
-        fatty.setReviewInterval(cont.getReviewInterval());
-        if (allowTitle) { // if the title was not intentionally set to null.
-            fatty.setTitle(name);
-            fatty.setFriendlyName(name);
-        }
-        List<String> wysiwygFields = cont.getDisabledWysiwyg();
-        if( wysiwygFields != null && wysiwygFields.size() > 0 ) {
-            StringBuilder wysiwyg = new StringBuilder();
-            int j = 0;
-            for(String wysiwygField : wysiwygFields ) {
-                wysiwyg.append(wysiwygField);
-                j++;
-                if( j < wysiwygFields.size() ) wysiwyg.append(",");
-            }
-            fatty.setDisabledWysiwyg(wysiwyg.toString());
-        }
-        return fatty;
-	}
-
-	@Deprecated
-	@Override
-	public Contentlet convertFatContentletToContentlet(com.dotmarketing.portlets.contentlet.business.Contentlet fatty)
-			throws DotDataException, DotStateException, DotSecurityException {
-	    Contentlet contentlet = new Contentlet();
-
-
-        contentlet.setStructureInode(fatty.getStructureInode());
-        Map<String, Object> contentletMap = fatty.getMap();
-
-        try {
-            APILocator.getContentletAPI().copyProperties(contentlet, contentletMap);
-        } catch (Exception e) {
-            Logger.error(this,"Unable to copy contentlet properties",e);
-            throw new DotDataException("Unable to copy contentlet properties",e);
-        }
-        contentlet.setInode(fatty.getInode());
-        contentlet.setStructureInode(fatty.getStructureInode());
-        contentlet.setIdentifier(fatty.getIdentifier());
-        contentlet.setSortOrder(fatty.getSortOrder());
-        contentlet.setLanguageId(fatty.getLanguageId());
-        contentlet.setNextReview(fatty.getNextReview());
-        contentlet.setLastReview(fatty.getLastReview());
-        contentlet.setOwner(fatty.getOwner());
-        contentlet.setModUser(fatty.getModUser());
-        contentlet.setModDate(fatty.getModDate());
-        contentlet.setReviewInterval(fatty.getReviewInterval());
-
-	     if(UtilMethods.isSet(fatty.getIdentifier())){
-	        IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
-	        Identifier identifier = identifierAPI.loadFromDb(fatty.getIdentifier());
-
-	        if(identifier==null) {
-	            throw new DotStateException("Fatty's identifier not found in db. Fatty's inode: " + fatty.getInode()
-                    + ". Fatty's identifier: " + fatty.getIdentifier());
-            }
-
-	        Folder folder = null;
-	        if(!"/".equals(identifier.getParentPath())){
-	            folder = APILocator.getFolderAPI().findFolderByPath(identifier.getParentPath(), identifier.getHostId(), APILocator.getUserAPI().getSystemUser(),false);
-	        }else{
-	            folder = APILocator.getFolderAPI().findSystemFolder();
-	        }
-	        contentlet.setHost(identifier.getHostId());
-	        contentlet.setFolder(folder.getInode());
-
-	        // lets check if we have publish/expire fields to set
-	        Structure st=contentlet.getStructure();
-	        if(UtilMethods.isSet(st.getPublishDateVar()))
-	            contentlet.setDateProperty(st.getPublishDateVar(), identifier.getSysPublishDate());
-	        if(UtilMethods.isSet(st.getExpireDateVar()))
-	            contentlet.setDateProperty(st.getExpireDateVar(), identifier.getSysExpireDate());
-		} else {
-	        if(!UtilMethods.isSet(contentlet.getStructureInode())) {
-	            throw new DotDataException("Contentlet must have a structure type.");
-	        }
-
-            if (contentlet.isSystemHost()) {
-                // When we are saving a systemHost we cannot call
-                // APILocator.getHostAPI().findSystemHost() method, because this
-                // method will create a system host if not exist which cause 
-                // a infinite loop.
-                contentlet.setHost(Host.SYSTEM_HOST);
-            } else {
-                contentlet.setHost(APILocator.getHostAPI().findSystemHost().getIdentifier());
-            }
-            contentlet.setFolder(APILocator.getFolderAPI().findSystemFolder().getInode());
-        }
-        String wysiwyg = fatty.getDisabledWysiwyg();
-        if( UtilMethods.isSet(wysiwyg) ) {
-            List<String> wysiwygFields = new ArrayList<String>();
-            StringTokenizer st = new StringTokenizer(wysiwyg,",");
-            while( st.hasMoreTokens() ) wysiwygFields.add(st.nextToken().trim());
-            contentlet.setDisabledWysiwyg(wysiwygFields);
-        }
-        return contentlet;
 	}
 
 	@Override
@@ -1961,8 +1813,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
         final StringBuilder script = new StringBuilder();
         if(found) { //update a piece of content
             script.append("UPDATE contentlet SET show_on_menu=?, title=?, mod_date=?, ")
-                    .append("mod_user=?, sort_order=?, friendly_name=?, structure_inode=?, last_review=?, ")
-                    .append("next_review=?, review_interval=?, disabled_wysiwyg=?, identifier=?, ")
+                    .append("mod_user=?, sort_order=?, friendly_name=?, structure_inode=?, ")
+                    .append("disabled_wysiwyg=?, identifier=?, ")
                     .append("language_id=?, date1=?, date2=?, date3=?, date4=?, date5=?, date6=?, ")
                     .append("date7=?, date8=?, date9=?, date10=?, date11=?, date12=?, date13=?, ")
                     .append("date14=?, date15=?, date16=?, date17=?, date18=?, date19=?, date20=?, ")
@@ -1991,8 +1843,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
         } else { //save a new piece of content
             createNewInode(inode, contentlet.getOwner());
             script.append("INSERT INTO contentlet(inode, show_on_menu, title, mod_date, mod_user,")
-                    .append("sort_order, friendly_name, structure_inode, last_review, next_review, ")
-                    .append("review_interval, disabled_wysiwyg, identifier, language_id, date1, ")
+                    .append("sort_order, friendly_name, structure_inode, ")
+                    .append("disabled_wysiwyg, identifier, language_id, date1, ")
                     .append("date2, date3, date4, date5, date6, date7, date8, date9, date10, date11, ")
                     .append("date12, date13, date14, date15, date16, date17, date18, date19, date20, ")
                     .append("date21, date22, date23, date24, date25, text1, text2, text3, text4, ")
@@ -2019,7 +1871,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     .append("?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ")
                     .append("?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ")
                     .append("?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ")
-                    .append("?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    .append("?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         }
 
         dotConnect.setSQL(script.toString());
@@ -2089,9 +1941,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 
         dotConnect.addParam(contentlet.getContentTypeId());
-        dotConnect.addParam(contentlet.getLastReview());
-        dotConnect.addParam(contentlet.getNextReview());
-        dotConnect.addParam(contentlet.getReviewInterval());
 
         addWysiwygParam(contentlet, dotConnect);
 

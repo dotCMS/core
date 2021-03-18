@@ -304,27 +304,6 @@ public abstract class ContentletFactory {
     public abstract List<Contentlet> findAllVersions(Identifier identifier, boolean bringOldVersions, final Optional<Integer> maxResults) throws DotDataException, DotSecurityException;
 
 	/**
-	 * Converts a "fat" (legacy) contentlet into a new contentlet.
-     * @deprecated The {@link com.dotmarketing.portlets.contentlet.business.Contentlet} will be removed any time soon
-	 * @param Fat contentlet to be converted.
-	 * @return A "light" contentlet.
-	 * @throws DotDataException
-	 * @throws DotSecurityException 
-	 */
-	@Deprecated
-	public abstract Contentlet convertFatContentletToContentlet (com.dotmarketing.portlets.contentlet.business.Contentlet fatty) throws DotDataException, DotSecurityException;
-	
-	/**
-	 * Converts a "light" contentlet into a "fat" (legacy) contentlet.
-     * @deprecated The {@link com.dotmarketing.portlets.contentlet.business.Contentlet} will be removed any time soon
-	 * @param A "light" contentlet to be converted.
-	 * @return Fat contentlet.
-	 * @throws DotDataException
-	 */
-	@Deprecated
-	public abstract com.dotmarketing.portlets.contentlet.business.Contentlet convertContentletToFatContentlet (Contentlet cont, com.dotmarketing.portlets.contentlet.business.Contentlet fatty) throws DotDataException;
-
-	/**
 	 * 
 	 * @param structureInode
 	 * @param field
@@ -418,13 +397,13 @@ public abstract class ContentletFactory {
 	protected abstract void removeFolderReferences(Folder folder) throws DotDataException, DotSecurityException;
 
     protected abstract Object loadField(String inode, String fieldContentlet) throws DotDataException;
-    
+
     protected abstract long indexCount(String query);
 
     /**
      * Gets the top viewed contents identifier and numberOfViews for a particular structure for a specified date interval
      * 
-     * @param structureName
+     * @param structureInode
      * @param startDate
      * @param endDate
      * @param user
