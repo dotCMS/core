@@ -60,7 +60,7 @@ public class FocalPointAPIImpl implements FocalPointAPI {
         if(tempFileAPI.isTempResource(inode)){
             writeFocalPointMeta(inode, fieldVar, focalPoint);
         } else {
-            final Optional<Contentlet> contentlet = findContentlet(inode);
+            final Optional<Contentlet> contentlet = findContentletByInode(inode);
             if (contentlet.isPresent()) {
                 writeFocalPointMeta(contentlet.get(), fieldVar, focalPoint);
             } else {
@@ -135,7 +135,7 @@ public class FocalPointAPIImpl implements FocalPointAPI {
         if (tempFileAPI.isTempResource(inode)) {
             return readFocalPointMeta(inode);
         } else {
-            final Optional<Contentlet> optional = findContentlet(inode);
+            final Optional<Contentlet> optional = findContentletByInode(inode);
             if (optional.isPresent()) {
                 return readFocalPointMeta(optional.get(), fieldVar);
             }
@@ -175,7 +175,7 @@ public class FocalPointAPIImpl implements FocalPointAPI {
      * @param inode
      * @return
      */
-    private Optional<Contentlet> findContentlet(final String inode){
+    private Optional<Contentlet> findContentletByInode(final String inode){
       return Optional.ofNullable(Try.of(()->contentletAPI.find(inode, currentUserSupplier.get(), false)).getOrNull());
     }
 
