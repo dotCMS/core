@@ -931,7 +931,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                final List<Contentlet> contentlets = samples.get(ct);
                if(UtilMethods.isSet(contentlets)){
                    final Contentlet contentlet = contentlets.get(0);
-                   DateUtil.sleep(DateUtil.TWO_SECOND_MILLIS);
+//                   DateUtil.sleep(DateUtil.TWO_SECOND_MILLIS);
                    workflowAPI.deleteWorkflowTaskByContentletIdAnyLanguage(contentlet, adminUser);
                    contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
                    APILocator.getContentletIndexAPI().addContentToIndex(contentlet);

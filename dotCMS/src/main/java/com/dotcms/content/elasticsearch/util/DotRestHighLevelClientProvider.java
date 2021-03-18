@@ -81,6 +81,10 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
     private static final String HTTPS_PROTOCOL = "https";
 
     DotRestHighLevelClientProvider() {
+        buildClient();
+    }
+
+    private void buildClient() {
         try {
             final RestClientBuilder clientBuilder = getClientBuilder(getCredentialsProvider());
             client = new RestHighLevelClient(clientBuilder);
@@ -271,6 +275,12 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
 
     public RestHighLevelClient getClient() {
         return client;
+    }
+
+    @Override
+    public void rebuildClient() {
+        Logger.warn(this, "Rebuilding REST High Level Client");
+        buildClient();
     }
 
     public void setClient(final RestHighLevelClient theClient) {
