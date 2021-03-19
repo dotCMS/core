@@ -671,9 +671,9 @@ public class CategoryFactoryImpl extends CategoryFactory {
 		HibernateUtil dh = new HibernateUtil();
 		HibernateUtil dh2 = new HibernateUtil();
 		HibernateUtil dh3 = new HibernateUtil();
-		query= "select  count(*) from Tree  Tree, Inode inode_ where Tree.parent = '"+cat.getInode()+"' and  inode_.type = 'category' and  Tree.child = inode_.inode" ;
+		query= "select  count(*) from Tree  Tree, Inode inode_ where Tree.parent = '"+cat.getInode()+"' and  inode.type = 'category' and  Tree.child = inode_.inode" ;
 		dh.setQuery(query);
-		query= "select  count(*)   from Tree  Tree, Inode inode_ where Tree.child = '"+cat.getInode()+"' and Tree.parent = inode_.inode and inode_.type !='category'";
+		query= "select  count(*)   from Tree  Tree, Inode inode_ where Tree.child = '"+cat.getInode()+"' and Tree.parent = inode_.inode and inode.type !='category'";
 		dh2.setQuery(query);
 		query= "select  count(*)   from Field field where field_values like '"+cat.getInode()+"'";
 		dh3.setQuery(query);

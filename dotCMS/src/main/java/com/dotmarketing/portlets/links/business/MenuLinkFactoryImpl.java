@@ -267,7 +267,7 @@ public class MenuLinkFactoryImpl implements MenuLinkFactory {
         final DotConnect dotConnect = new DotConnect();
         dotConnect.setSQL("SELECT contentlet.* from contentlet, tree, inode where tree.child = ? and "
                 + "tree.parent = contentlet.inode and inode.inode = contentlet.inode "
-                + "and inode_.type = 'contentlet'");
+                + "and inode.type = 'contentlet'");
 
         dotConnect.addParam(childInode);
 
