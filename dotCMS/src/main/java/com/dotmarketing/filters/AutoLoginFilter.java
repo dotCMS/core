@@ -40,11 +40,11 @@ public class AutoLoginFilter extends AbstractWebInterceptorSupportFilter {
         final WebInterceptorDelegate delegate =
             this.getDelegate(config.getServletContext());
 
+        delegate.add(new LogoutWebInterceptor());
         delegate.add(new CasAutoLoginWebInterceptor());
         delegate.add(new DefaultAutoLoginWebInterceptor());
         delegate.add(new JsonWebTokenInterceptor());
         delegate.add(new SamlWebInterceptor());
-        delegate.add(new LogoutWebInterceptor());
     } // addDefaultInterceptors.
 
 

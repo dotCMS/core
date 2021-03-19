@@ -38,6 +38,7 @@ public class ContentTypeAssertionChecker implements AssertionChecker<ContentType
             Collections.reverse(schemas);
 
             Map<String, Object> arguments = map(
+                    "class", contentType.getClass().getName(),
                     "content_type_name", contentType.name(),
                     "content_type_description", contentType.description(),
                     "content_type_id", contentType.id(),
@@ -49,6 +50,8 @@ public class ContentTypeAssertionChecker implements AssertionChecker<ContentType
                     "workflows_names", schemas.stream().map(WorkflowScheme::getName).collect(Collectors.toList()),
                     "folder_id", contentType.folder()
             );
+
+            arguments.put("fixed", contentType.fixed());
 
             if (!contentType.fields().isEmpty()) {
                 final Field field = contentType.fields().get(0);
@@ -112,9 +115,10 @@ public class ContentTypeAssertionChecker implements AssertionChecker<ContentType
     @Override
     public Collection<String> getRegExToRemove(File file) {
         return list(
-            "\\\"workflowSchemaIds\\\":\\[.*\\],",
-            "\\\"workflowSchemaNames\\\":\\[.*\\],",
-            "\\\"fields\\\":\\[.*\\],"
+            "\"workflowSchemaIds\":\\[[^\\]]*\\],",
+            "\"workflowSchemaNames\":\\[[^\\]]*\\],",
+            "\"fields\":\\[[^\\]]*\\],",
+            "\"owner\":.*,"
         );
     }
 }
