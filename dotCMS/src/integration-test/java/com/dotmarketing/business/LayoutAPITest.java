@@ -36,6 +36,8 @@ public class LayoutAPITest extends IntegrationTestBase {
         IntegrationTestInitService.getInstance().init();
 
         layoutAPI = APILocator.getLayoutAPI();
+
+        deleteGettingStartedLayout();
     }
 
 
@@ -150,19 +152,27 @@ public class LayoutAPITest extends IntegrationTestBase {
      */
     @Test
     public void test_findGettingStartedLayout_Success() throws DotDataException {
+        //Create the Getting Started Layout
+      layoutAPI.findGettingStartedLayout();
       //Find the Getting Started Layout
-      Layout gettingStartedLayout = layoutAPI.findLayout(LayoutAPI.GETTING_STARTED_LAYOUT_ID);
-      //If it finds the layout remove it
-      if(gettingStartedLayout != null && UtilMethods.isSet(gettingStartedLayout.getId())){
-          layoutAPI.removeLayout(gettingStartedLayout);
-      }
-      //Create the Getting Started Layout
-      gettingStartedLayout = layoutAPI.findGettingStartedLayout();
-      //Find the Getting Started Layout
-      gettingStartedLayout = layoutAPI.findLayout(LayoutAPI.GETTING_STARTED_LAYOUT_ID);
+        Layout gettingStartedLayout = layoutAPI.findLayout(LayoutAPI.GETTING_STARTED_LAYOUT_ID);
       assertNotNull(gettingStartedLayout);
       assertEquals("Getting Started",gettingStartedLayout.getName());
       assertEquals("whatshot",gettingStartedLayout.getDescription());
+    }
+
+    static private void deleteGettingStartedLayout() throws DotDataException {
+        Layout gettingStartedLayout = layoutAPI.findLayout(LayoutAPI.GETTING_STARTED_LAYOUT_ID);
+        //If it finds the layout remove it
+        if(gettingStartedLayout != null && UtilMethods.isSet(gettingStartedLayout.getId())){
+            layoutAPI.removeLayout(gettingStartedLayout);
+        } else {
+            // try by name, which is unique as well
+            gettingStartedLayout = layoutAPI.findLayoutByName(LayoutAPI.GETTING_STARTED_LAYOUT_NAME);
+            if(gettingStartedLayout != null && UtilMethods.isSet(gettingStartedLayout.getId())){
+                layoutAPI.removeLayout(gettingStartedLayout);
+            }
+        }
     }
 
     /**

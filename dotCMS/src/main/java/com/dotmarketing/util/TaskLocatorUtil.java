@@ -292,6 +292,8 @@ public class TaskLocatorUtil {
 		//New task date-based naming convention starts here
         .add(Task201013AddNewColumnsToIdentifierTable.class)
         .add(Task201014UpdateColumnsValuesInIdentifierTable.class)
+		.add(Task210218MigrateUserProxyTable.class)
+		.add(Task210316UpdateLayoutIcons.class)
         .add(Task210318DropReviewFieldsFromContentletTable.class)
         .build();
         

@@ -10,6 +10,7 @@ import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.enterprise.license.LicenseManager;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
@@ -1405,7 +1406,14 @@ public class ESContentFactoryImpl extends ContentletFactory {
             Logger.warn(this.getClass(), String.format("Class %s: %s", e.getClass().getName(), exceptionMsg));
             Logger.warn(this.getClass(), "----------------------------------------------");
             return new SearchHits(new SearchHit[] {}, new TotalHits(0, Relation.EQUAL_TO), 0);
+        } catch(final IllegalStateException e) {
+            rebuildRestHighLevelClientIfNeeded(e);
+            Logger.warnAndDebug(ESContentFactoryImpl.class, e);
+            throw new DotRuntimeException(e);
         } catch (final Exception e) {
+            if(ExceptionUtil.causedBy(e, IllegalStateException.class)) {
+                rebuildRestHighLevelClientIfNeeded(e);
+            }
             final String errorMsg = String.format("An error occurred when executing the Lucene Query [ %s ] : %s",
                             searchRequest.source().toString(), e.getMessage());
             Logger.warnAndDebug(ESContentFactoryImpl.class, errorMsg, e);
@@ -1414,6 +1422,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
             
         
         
+    }
+
+    private void rebuildRestHighLevelClientIfNeeded(Exception e) {
+        if(e != null && e.getMessage().contains("reactor status: STOPPED")) {
+            RestHighLevelClientProvider.getInstance().rebuildClient();
+        }
     }
 
     /**
@@ -1442,7 +1456,14 @@ public class ESContentFactoryImpl extends ContentletFactory {
             Logger.warn(this.getClass(), String.format("Class %s: %s", e.getClass().getName(), exceptionMsg));
             Logger.warn(this.getClass(), "----------------------------------------------");
             return -1L;
+        } catch(final IllegalStateException e) {
+            rebuildRestHighLevelClientIfNeeded(e);
+            Logger.warnAndDebug(ESContentFactoryImpl.class, e);
+            throw new DotRuntimeException(e);
         } catch (final Exception e) {
+            if(ExceptionUtil.causedBy(e, IllegalStateException.class)) {
+                rebuildRestHighLevelClientIfNeeded(e);
+            }
             final String errorMsg = String.format("An error occurred when executing the Lucene Query [ %s ] : %s",
                     countRequest.source().toString(), e.getMessage());
             Logger.warnAndDebug(ESContentFactoryImpl.class, errorMsg, e);
@@ -1603,6 +1624,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
             Logger.warn(this.getClass(), String.format("Class %s: %s", e.getClass().getName(), exceptionMsg));
             Logger.warn(this.getClass(), "----------------------------------------------");
             return new PaginatedArrayList<>();
+        } catch(final IllegalStateException e) {
+            rebuildRestHighLevelClientIfNeeded(e);
+            Logger.warnAndDebug(ESContentFactoryImpl.class, e);
+            throw new DotRuntimeException(e);
         } catch (final Exception e) {
             final String errorMsg = String.format("An error occurred when executing the Lucene Query [ %s ] : %s",
                     searchRequest.source().toString(), e.getMessage());

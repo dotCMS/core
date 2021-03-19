@@ -13,7 +13,6 @@ public enum ShortType {
     FILED("field"),
     RELATIONSHIP("relationship"),
     STRUCTURE("structure"),
-    USER_PROXY("user_proxy"),
     IDENTIFIER("identifier"),
     INODE("inode"),
     WORKFLOW_SCHEME("workflow_scheme"),

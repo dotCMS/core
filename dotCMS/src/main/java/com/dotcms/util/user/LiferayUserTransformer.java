@@ -1,16 +1,20 @@
 package com.dotcms.util.user;
 
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
  * This class implement the UserTransformer interface to convert dotconnect maps from user to User
+ * @deprecated User {@link com.dotmarketing.business.transform.UserTransformer} instead
  */
-public class LiferayUserTransformer implements UserTransformer {
+@Deprecated
+public class LiferayUserTransformer {
 
-
-    @Override
     public User fromMap(final Map<String, Object> map) {
         User user = null;
         if (null != map) {
@@ -153,7 +157,11 @@ public class LiferayUserTransformer implements UserTransformer {
             if (null != map.get("delete_date")) {
                 user.setDeleteDate((java.util.Date) map.get("delete_date"));
             }
-
+            if (null != map.get("additional_info")) {
+                user.setAdditionalInfo(Try.of(() -> DotObjectMapperProvider.getInstance().getDefaultObjectMapper()
+                        .readValue((String) map.get("additional_info"), HashMap.class))
+                        .getOrElse(new HashMap<String, String>()));
+            }
         }
 
         return user;

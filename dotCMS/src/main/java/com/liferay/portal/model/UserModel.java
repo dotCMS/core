@@ -28,6 +28,7 @@ import com.liferay.util.GetterUtil;
 import com.liferay.util.Xss;
 
 import java.util.Date;
+import java.util.Map;
 
 /**
  * <a href="UserModel.java.html"><b><i>View Source</i></b></a>
@@ -929,6 +930,14 @@ public class UserModel extends BaseModel {
 		}
 	}
 
+	public Map<String, String> getAdditionalInfo(){
+	    return _additionalInfo;
+    }
+
+    public void setAdditionalInfo(final Map<String, String> additionalInfo){
+	    _additionalInfo = additionalInfo;
+    }
+
 	public BaseModel getProtected() {
 		return null;
 	}
@@ -948,7 +957,8 @@ public class UserModel extends BaseModel {
 			getGreeting(), getResolution(), getRefreshRate(), getLayoutIds(),
 			getComments(), getCreateDate(), getLoginDate(), getLoginIP(),
 			getLastLoginDate(), getLastLoginIP(), getFailedLoginAttempts(),
-			getAgreedToTermsOfUse(), getActive(), getDeleteInProgress(), getDeleteDate());
+			getAgreedToTermsOfUse(), getActive(), getDeleteInProgress(), getDeleteDate(),
+                getAdditionalInfo());
 	}
 
 	public int compareTo(Object obj) {
@@ -1053,4 +1063,5 @@ public class UserModel extends BaseModel {
 	private boolean _active;
 	private boolean _deleteInProgress;
 	private Date _deleteDate;
+	private Map<String, String> _additionalInfo;
 }

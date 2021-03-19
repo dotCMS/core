@@ -1,5 +1,6 @@
 package com.dotcms.concurrent;
 
+import com.dotcms.UnitTestBase;
 import com.dotcms.concurrent.DotConcurrentFactory.SubmitterConfigBuilder;
 import com.dotmarketing.util.json.JSONException;
 
@@ -9,7 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 import static org.junit.Assert.*;
 
-public class DotConcurrentFactoryTest {
+public class DotConcurrentFactoryTest extends UnitTestBase {
 
     @Test
     public void testDefaultOne_Submitter_Config() throws JSONException{
@@ -42,7 +43,7 @@ public class DotConcurrentFactoryTest {
             int count = submitter.getActiveCount();
             System.out.println("Active Threads : " + count);
             try {
-                Thread.sleep(1000);
+                Thread.sleep(100);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -72,7 +73,7 @@ public class DotConcurrentFactoryTest {
             int count = submitter2.getActiveCount();
             System.out.println("Active Threads : " + count);
             try {
-                Thread.sleep(1000);
+                Thread.sleep(100);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -118,7 +119,7 @@ public class DotConcurrentFactoryTest {
             int count = submitter.getActiveCount();
             System.out.println("Active Threads : " + count);
             try {
-                Thread.sleep(1000);
+                Thread.sleep(100);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -153,7 +154,7 @@ public class DotConcurrentFactoryTest {
             int count = submitter2.getActiveCount();
             System.out.println("Active Threads : " + count);
             try {
-                Thread.sleep(1000);
+                Thread.sleep(100);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -192,7 +193,7 @@ public class DotConcurrentFactoryTest {
             int count = submitter.getActiveCount();
             System.out.println("Active Threads : " + count);
             try {
-                Thread.sleep(1000);
+                Thread.sleep(100);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -222,7 +223,7 @@ public class DotConcurrentFactoryTest {
             int count = submitter2.getActiveCount();
             System.out.println("Active Threads : " + count);
             try {
-                Thread.sleep(1000);
+                Thread.sleep(100);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -249,7 +250,7 @@ public class DotConcurrentFactoryTest {
             System.out.println(name + " is running");
 
             try {
-                Thread.sleep(5000);
+                Thread.sleep(500);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -277,14 +278,14 @@ public class DotConcurrentFactoryTest {
         // add 50 to the atomicInteger, 3 seconds in the future
         int runs = 50;
         for(int i=0;i<runs;i++) {
-            submitter.delay(()-> aInt.addAndGet(1), 3, TimeUnit.SECONDS);
+            submitter.delay(()-> aInt.addAndGet(1), 1, TimeUnit.SECONDS);
         }
         
         // None of the jobs have been run
         assert(aInt.get()==0);
         
         // rest.  I must rest
-        Thread.sleep(6000);
+        Thread.sleep(2000);
         
         // all of the jobs have been run
         assert(aInt.get()==50);
