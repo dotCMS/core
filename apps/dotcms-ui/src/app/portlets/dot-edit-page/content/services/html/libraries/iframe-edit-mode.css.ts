@@ -24,7 +24,6 @@ export const getEditPageCss = (timestampId: string): string => {
         display: flex !important;
         flex-direction: column !important;
         width: 100% !important;
-        height: 100% !important;
     }
 
     ${timestampId} [data-dot-object="container"].no {

@@ -1,7 +1,7 @@
 <ng-container *ngIf="vm$ | async as vm">
     <dot-portlet-base [boxed]="false" *ngIf="vm.original.identifier">
         <dot-portlet-toolbar [title]="vm.original.title">
-            <ng-container id="left" *ngIf="vm.original.title">
+            <ng-container left *ngIf="vm.original.title">
                 <button
                     data-testId="editTemplateButton"
                     pButton

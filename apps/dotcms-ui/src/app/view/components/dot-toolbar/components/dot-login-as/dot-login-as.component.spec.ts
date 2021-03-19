@@ -104,7 +104,6 @@ describe('DotLoginAsComponent', () => {
             emailAddress: 'a@a.com',
             firstName: 'user_first_name',
             lastName: 'user_lastname',
-            loggedInDate: 1,
             name: 'user 1',
             userId: '1'
         }

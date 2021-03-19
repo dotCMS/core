@@ -527,7 +527,7 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
     }
 
     private getTemplateName(identifier: string): string {
-        return this.selectedTemplates.find((template: DotTemplate) => {
+        return this.listing.items.find((template: DotTemplate) => {
             return template.identifier === identifier;
         }).name;
     }

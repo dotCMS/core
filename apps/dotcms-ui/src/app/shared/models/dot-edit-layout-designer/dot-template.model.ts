@@ -40,4 +40,5 @@ export interface DotTemplate {
     containers?: DotContainerMap;
     layout: DotLayout;
     selectedimage?: string;
+    themeId?: string;
 }

@@ -80,7 +80,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
      *
      * @memberof DotTemplateCreateEditComponent
      */
-    saveTemplate({ layout, body }: DotTemplate): void {
+    saveTemplate({ layout, body, themeId }: DotTemplate): void {
         let value = {
             ...this.form.value,
             body
@@ -89,7 +89,8 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
         if (layout) {
             value = {
                 ...this.form.value,
-                layout
+                layout,
+                theme: themeId
             };
         }
         this.store.saveTemplate({

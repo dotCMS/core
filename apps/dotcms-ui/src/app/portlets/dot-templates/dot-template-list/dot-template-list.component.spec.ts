@@ -185,6 +185,18 @@ const columnsMock = [
     }
 ];
 
+const mockSingleResponseFail: DotActionBulkResult = {
+    skippedCount: 0,
+    successCount: 0,
+    fails: [
+        {
+            errorMessage: 'error 1',
+            element: '123Published'
+        }
+    ],
+    action: ''
+};
+
 const mockBulkResponseFail: DotActionBulkResult = {
     skippedCount: 0,
     successCount: 1,
@@ -516,6 +528,32 @@ describe('DotTemplateListComponent', () => {
                 archivedTemplate.actions[1].menuItem.command();
                 expect(dotTemplatesService.delete).toHaveBeenCalledWith(['123Archived']);
                 checkNotificationAndReLoadOfPage('Template deleted');
+            });
+
+            it('should handle error request', () => {
+                spyOn(dotTemplatesService, 'delete').and.returnValue(of(mockSingleResponseFail));
+                spyOn(dotAlertConfirmService, 'confirm').and.callFake((conf) => {
+                    conf.accept();
+                });
+                archivedTemplate.actions[1].menuItem.command();
+
+                expect(dialogService.open).toHaveBeenCalledWith(DotBulkInformationComponent, {
+                    header: 'Results',
+                    width: '40rem',
+                    contentStyle: { 'max-height': '500px', overflow: 'auto' },
+                    baseZIndex: 10000,
+                    data: {
+                        ...mockSingleResponseFail,
+                        fails: [
+                            {
+                                errorMessage: 'error 1',
+                                element: '123Published',
+                                description: 'Published template'
+                            }
+                        ],
+                        action: 'Template deleted'
+                    }
+                });
             });
         });
 

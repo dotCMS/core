@@ -166,11 +166,11 @@ MultipleActions.parameters = {
 const ExtraActionsTemplate = `
 <dot-portlet-base>
     <dot-portlet-toolbar [title]="title" [actions]="portletActions">
-    <ng-container id="left">
+    <ng-container left>
         <dot-api-link href="#"></dot-api-link>
         <p-checkbox label="Some stuff"></p-checkbox>
     </ng-container>
-    <ng-container id="right">
+    <ng-container right>
         <button pButton label="Another action" class="p-button-secondary"></button>
         <p-checkbox label="Whatever"></p-checkbox>
     </ng-container>

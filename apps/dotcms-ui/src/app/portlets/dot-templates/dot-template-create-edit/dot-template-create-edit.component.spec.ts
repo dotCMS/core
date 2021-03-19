@@ -67,7 +67,7 @@ export class DotPortletBaseMockComponent {
 
 @Component({
     selector: 'dot-portlet-toolbar',
-    template: '<ng-content></ng-content>'
+    template: '<div><div class="left"><ng-content select="[left]"></ng-content></div><ng-content></ng-content></div>'
 })
 export class DotPortletToolbarMockComponent {
     @Input() title;
@@ -480,7 +480,8 @@ describe('DotTemplateCreateEditComponent', () => {
                             body: {
                                 rows: []
                             }
-                        }
+                        },
+                        themeId: '123'
                     });
 
                     expect(store.saveTemplate).toHaveBeenCalledWith({
@@ -497,7 +498,7 @@ describe('DotTemplateCreateEditComponent', () => {
                         },
                         identifier: '123',
                         friendlyName: '',
-                        theme: '',
+                        theme: '123',
                         image: ''
                     });
                 });
@@ -527,8 +528,7 @@ describe('DotTemplateCreateEditComponent', () => {
 
             describe('edit properties', () => {
                 it('should have edit button', () => {
-                    const button = de.query(By.css('[data-testId="editTemplateButton"]'));
-
+                    const button = de.query(By.css('.left [data-testId="editTemplateButton"]'));
                     expect(button.attributes['ng-reflect-label']).toBe('Edit');
                     expect(button.attributes.icon).toBe('pi pi-pencil');
                     expect(button.attributes.class).toContain('p-button-text');
