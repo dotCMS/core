@@ -100,7 +100,8 @@ public class EventsResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .rejectWhenNoUser(true).init();
 
-        final AppContext appContext    =  WebSessionContext.getInstance(httpServletRequest);
+        final
+        AppContext appContext    =  WebSessionContext.getInstance(httpServletRequest);
         List<SystemEvent> systemEvents = null;
 
         try {

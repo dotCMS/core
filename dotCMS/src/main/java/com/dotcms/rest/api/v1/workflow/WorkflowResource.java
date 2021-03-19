@@ -4,6 +4,8 @@ import static com.dotcms.rest.ResponseEntityView.OK;
 import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.util.DotLambdas.not;
 
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.ConstantField;
@@ -21,6 +23,7 @@ import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.MapToContentletPopulator;
+import com.dotcms.rest.PATCH;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.IncludePermissions;
@@ -57,6 +60,7 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -81,6 +85,7 @@ import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
@@ -90,14 +95,20 @@ import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.Tuple2;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -112,11 +123,14 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
+
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.server.JSONP;
 
@@ -1555,6 +1569,208 @@ public class WorkflowResource {
             return ResponseUtil.mapExceptionResponse(e);
         }
     } // fireAction.
+
+    /**
+     * Fires a workflow with default action to perform a merge (Patch) between the fields sent in the body form and
+     * the existing contentlets.
+     *
+     * Users may merge just one contentlet by using:
+     * - identifier + lang (optional)
+     * - inode
+     * - a query
+     *
+     * The result of the execution is a streaming of the json, it will return a set of maps
+     *
+     * @param request    {@link HttpServletRequest}
+     * @param inode      {@link String} (Optional) to fire an action over the existing inode.
+     * @param identifier {@link String} (Optional) to fire an action over the existing identifier (in combination of language).
+     * @param language   {@link String} (Optional) to fire an action over the existing language (in combination of identifier).
+     * @param fireActionForm {@link FireActionForm} Fire Action Form
+     * (if an inode is set, this param is not ignored).
+     * @param systemAction {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction} system action to determine the default action
+     * @return Response
+     */
+    @PATCH()
+    @Path("/actions/default/fire/{systemAction}")
+    @JSONP
+    @NoCache
+    //@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces("application/octet-stream")
+    public final Response fireMergeActionDefault(@Context final HttpServletRequest request,
+                                            @Context final HttpServletResponse response,
+                                            @QueryParam("inode")            final String inode,
+                                            @QueryParam("identifier")       final String identifier,
+                                            @DefaultValue("-1") @QueryParam("language") final String language,
+                                            @PathParam("systemAction") final WorkflowAPI.SystemAction systemAction,
+                                            final FireActionForm fireActionForm) throws DotDataException, DotSecurityException {
+
+        final InitDataObject initDataObject = new WebResource.InitBuilder()
+                .requestAndResponse(request, response)
+                .requiredAnonAccess(AnonymousAccess.WRITE)
+                .init();
+
+        final String query = (null != fireActionForm)?fireActionForm.getQuery():StringPool.BLANK;
+        Logger.debug(this, ()-> "On Fire Merge Action: systemAction = " + systemAction + ", inode = " + inode +
+                ", identifier = " + identifier + ", language = " + language + ", query: " + query);
+
+        final PageMode mode   = PageMode.get(request);
+        final long languageId = LanguageUtil.getLanguageId(language);
+        final List<SingleContentQuery> contentletsToMergeList = new ArrayList<>();
+        if (UtilMethods.isNotSet(query)) { // it is single update
+            //if inode is set we use it to look up a contentlet
+
+            contentletsToMergeList.add(new SingleContentQuery(identifier, inode, languageId, IndexPolicy.WAIT_FOR)); // todo: figured out if send a IndexPolicy otherwise use Wait for
+        } else {
+
+            //  would say, if it is specified, we respect it (obvi)  - something like if the searchResults.size > 10 we defer automatically
+            //otherwise use WAIT_FOR
+            final List<ContentletSearch> contentletSearches  = this.contentletAPI.searchIndex(query, 100000, 0, null,
+                    initDataObject.getUser(), mode.respectAnonPerms);
+
+            for (final ContentletSearch contentletSearch : contentletSearches) {
+
+                // todo: missing the index policy
+                contentletsToMergeList.add(new SingleContentQuery(contentletSearch.getIdentifier(),
+                        contentletSearch.getInode(), -1));
+            }
+        }
+
+        return Response.ok(new MergeContentletStreamingOutput(contentletsToMergeList, systemAction,
+                fireActionForm, request, mode, initDataObject)).build();
+    } // fireMergeActionDefault.
+
+
+    private class MergeContentletStreamingOutput implements StreamingOutput {
+
+        private final List<SingleContentQuery> contentletsToMergeList;
+        private final WorkflowAPI.SystemAction systemAction;
+        private final FireActionForm fireActionForm;
+        private final HttpServletRequest request;
+        private final PageMode mode;
+        private final InitDataObject initDataObject;
+
+        private MergeContentletStreamingOutput(final List<SingleContentQuery> contentletsToMergeList,
+                                               final WorkflowAPI.SystemAction systemAction,
+                                               final FireActionForm fireActionForm,
+                                               final HttpServletRequest request,
+                                               final PageMode mode,
+                                               final InitDataObject initDataObject) {
+
+            this.contentletsToMergeList = contentletsToMergeList;
+            this.systemAction           = systemAction;
+            this.fireActionForm = fireActionForm;
+            this.request = request;
+            this.mode = mode;
+            this.initDataObject = initDataObject;
+
+        }
+
+        @Override
+        public void write(final OutputStream output) throws IOException, WebApplicationException {
+
+            final ObjectMapper objectMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+            WorkflowResource.this.mergeContentletsByDefaultAction(this.contentletsToMergeList, this.systemAction, this.fireActionForm,
+                    this.request, this.mode, this.initDataObject, output, objectMapper);
+
+        }
+    }
+
+    private void mergeContentletsByDefaultAction(final List<SingleContentQuery> contentletsToMergeList,
+                                                     final WorkflowAPI.SystemAction systemAction,
+                                                     final FireActionForm fireActionForm,
+                                                     final HttpServletRequest request,
+                                                     final PageMode mode,
+                                                     final InitDataObject initDataObject,
+                                                     final OutputStream outputStream,
+                                                     final ObjectMapper objectMapper) {
+
+        final DotSubmitter dotSubmitter = DotConcurrentFactory.getInstance().getSubmitter("workflow_submitter",
+                new DotConcurrentFactory.SubmitterConfigBuilder().poolSize(2).maxPoolSize(5).queueCapacity(100000).build());
+        final CompletionService<Map<String, Object>> completionService = new ExecutorCompletionService<>(dotSubmitter);
+
+        for (final SingleContentQuery singleContentQuery : contentletsToMergeList) {
+
+            // this triggers the merges
+            completionService.submit(() -> {
+
+                final Map<String, Object> resultMap = new HashMap<>();
+                final String inode      = singleContentQuery.getInode();
+                final String identifier = singleContentQuery.getIdentifier();
+                final long languageId   = singleContentQuery.getLanguage();
+                final User user         = initDataObject.getUser();
+                final IndexPolicy indexPolicy = singleContentQuery.getIndexPolicy();
+
+                try {
+
+                    final Contentlet contentlet = this.getContentlet // this do the merge
+                            (inode, identifier, languageId,
+                                    () -> WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
+                                    fireActionForm, initDataObject, mode);
+
+                    contentlet.setIndexPolicy(indexPolicy);
+                    this.checkContentletState(contentlet, systemAction);
+
+                    final Optional<WorkflowAction> workflowActionOpt = this.workflowAPI.findActionMappedBySystemActionContentlet
+                            (contentlet, systemAction, user);
+
+                    final Response restResponse = this.mergeContentlet(systemAction, fireActionForm, request, user, contentlet, workflowActionOpt);
+                    resultMap.put(identifier, ResponseEntityView.class.cast(restResponse.getEntity()).getEntity());
+                } catch (Exception e) {
+
+                    resultMap.put(UtilMethods.isSet(identifier)?identifier:inode, UtilMethods.isSet(identifier)?
+                            ActionFail.newInstanceById(user, identifier, e):ActionFail.newInstance(user, inode, e));
+                }
+
+                return resultMap;
+            });
+        }
+
+        // todo: wrap on the output stream a collection [
+        // now recover the N results
+        for (final SingleContentQuery singleContentQuery : contentletsToMergeList) {
+
+            try {
+                final Map<String, Object> resultMap = completionService.take().get();
+                objectMapper.writeValue (outputStream, resultMap);
+            } catch (InterruptedException | ExecutionException | IOException e) {
+
+                Logger.error(this, e.getMessage(), e);
+            }
+        }
+        // todo: end wrap on the output stream a collection ]
+    }
+
+    private Response mergeContentlet(SystemAction systemAction, FireActionForm fireActionForm, HttpServletRequest request, User user,
+                                                Contentlet contentlet, Optional<WorkflowAction> workflowActionOpt) throws DotDataException, DotSecurityException {
+        if (workflowActionOpt.isPresent()) {
+
+            final WorkflowAction workflowAction = workflowActionOpt.get();
+            final String actionId = workflowAction.getId();
+
+            Logger.info(this, "Using the default action: " + workflowAction +
+                    ", for the system action: " + systemAction);
+
+            final Optional<SystemActionApiFireCommand> fireCommandOpt =
+                    this.systemActionApiFireCommandProvider.get(workflowAction,
+                            this.needSave(fireActionForm), systemAction);
+
+            return this.fireAction(request, fireActionForm, user, contentlet, actionId, fireCommandOpt);
+        } else {
+
+            final Optional<SystemActionApiFireCommand> fireCommandOpt =
+                    this.systemActionApiFireCommandProvider.get(systemAction);
+
+            if (fireCommandOpt.isPresent()) {
+
+                return this.fireAction(request, fireActionForm, user, contentlet, null, fireCommandOpt);
+            }
+
+            final ContentType contentType = contentlet.getContentType();
+            throw new DoesNotExistException("For the contentType: " + (null != contentType ? contentType.variable() : "unknown") +
+                    " systemAction = " + systemAction);
+        }
+    }
+
 
     /**
      * Check preconditions.
