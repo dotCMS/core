@@ -280,7 +280,13 @@ public class ApiTokenResource implements Serializable {
                     .header("Authorization", "Basic " + Base64.encodeAsString(formData.login() + ":" + password))
                     .post(Entity.entity(formData.getTokenInfo(), MediaType.APPLICATION_JSON));
 
+            
+
+
+            
+            
             if (response.getStatus() != HttpStatus.SC_OK) {
+                
                 final String message = String.format("Status code : %s", response.getStatus());
 
                 if (response.getStatus() == HttpStatus.SC_UNAUTHORIZED || response.getStatus() == HttpStatus.SC_FORBIDDEN ) {
@@ -290,7 +296,10 @@ public class ApiTokenResource implements Serializable {
                 }
             }
 
-            return response;
+            
+            return Response.ok(response.readEntity(String.class)).build();
+
+           
         } catch (ProcessingException e){
             if (e.getCause().getClass() == UnknownHostException.class || e.getCause().getClass() == NoRouteToHostException.class) {
                 Logger.error(ApiTokenResource.class, String.format("Invalid server URL: %s", remoteURL));
