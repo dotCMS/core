@@ -48,6 +48,7 @@ import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
 import com.dotmarketing.business.helper.PermissionHelperTest;
 import com.dotmarketing.filters.AutoLoginFilterTest;
 import com.dotmarketing.cache.FolderCacheImplIntegrationTest;
+import com.dotmarketing.common.db.DBTimeZoneCheckTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.osgi.GenericBundleActivatorTest;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
@@ -393,7 +394,8 @@ import org.junit.runners.Suite.SuiteClasses;
         AutoLoginFilterTest.class,
         FolderCacheImplIntegrationTest.class,
         Task210218MigrateUserProxyTableTest.class,
-        com.dotmarketing.startup.runonce.Task210316UpdateLayoutIconsTest.class
+        com.dotmarketing.startup.runonce.Task210316UpdateLayoutIconsTest.class,
+        DBTimeZoneCheckTest.class
 })
 public class MainSuite {
 
