@@ -48,6 +48,7 @@ import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
 import com.dotmarketing.business.helper.PermissionHelperTest;
 import com.dotmarketing.filters.AutoLoginFilterTest;
 import com.dotmarketing.cache.FolderCacheImplIntegrationTest;
+import com.dotmarketing.common.db.DBTimeZoneCheckTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.osgi.GenericBundleActivatorTest;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
@@ -78,6 +79,7 @@ import com.dotmarketing.startup.runalways.Task00050LoadAppsSecretsTest;
 import com.dotmarketing.startup.runonce.Task201013AddNewColumnsToIdentifierTableTest;
 import com.dotmarketing.startup.runonce.Task201014UpdateColumnsValuesInIdentifierTableTest;
 import com.dotmarketing.startup.runonce.Task201102UpdateColumnSitelicTableTest;
+import com.dotmarketing.startup.runonce.Task210303AddHashRefColumnStorageTable;
 import com.dotmarketing.startup.runonce.Task210304RemoveOldMetadataFilesTest;
 import com.dotmarketing.startup.runonce.Task210218MigrateUserProxyTableTest;
 import com.dotmarketing.util.ConfigTest;
@@ -90,8 +92,6 @@ import org.junit.runners.Suite.SuiteClasses;
 
 /* grep -l -r "@Test" dotCMS/src/integration-test */
 /* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
-//@RunWith(Suite.class)
-
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
         com.dotcms.content.elasticsearch.business.ESMappingAPITest.class,
@@ -393,10 +393,14 @@ import org.junit.runners.Suite.SuiteClasses;
         FolderCacheImplIntegrationTest.class,
         Task210218MigrateUserProxyTableTest.class,
         com.dotmarketing.startup.runonce.Task210316UpdateLayoutIconsTest.class,
-        Task210304RemoveOldMetadataFilesTest.class
+        Task210303AddHashRefColumnStorageTable.class,
+        Task210304RemoveOldMetadataFilesTest.class,
+        DBTimeZoneCheckTest.class
 })
 public class MainSuite {
 
 }
+
+//@RunWith(Suite.class)
 
 
