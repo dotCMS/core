@@ -3,14 +3,15 @@ package com.dotcms.rest.api.v1.portlet;
 import static com.dotcms.util.CollectionsUtils.map;
 
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import java.io.Serializable;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.DELETE;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -49,26 +50,33 @@ public class ToolGroupResource implements Serializable {
 
 
     /**
-     * This method removes a toolgroup to the current user, using the id as key to find the toolgroup.
+     * This method removes a toolgroup to the specified user, using the id as key to find the toolgroup.
      * If the layoutId is gettingStarted it will remove the gettingStartedLayout to the user.
+     * In case the user is not sent, the operation will be performed over the current user
      */
     @PUT
-    @Path("/{layoutId}/_removefromcurrentuser")
+    @Path("/{layoutId}/_removefromuser")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response deleteToolGroupFromUser(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("layoutId") final String layoutId) throws DotDataException {
+            @PathParam("layoutId") final String layoutId, @QueryParam("userid") final String userid)
+            throws DotDataException, DotSecurityException {
 
-        final User user = new WebResource.InitBuilder(webResource)
+        final User user;
+        if (null == userid){
+            user = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init()
                 .getUser();
+        }else{
+            user = APILocator.getUserAPI().loadUserById(userid);
+        }
 
-        Layout layoutToRemove = null;
+        Layout layoutToRemove;
         if(layoutId.equalsIgnoreCase("gettingstarted")){
             layoutToRemove = APILocator.getLayoutAPI().findGettingStartedLayout();
         }else{
@@ -83,26 +91,33 @@ public class ToolGroupResource implements Serializable {
 
 
     /**
-     * This method adds a toolgroup to the current user, using the id as key to find the toolgroup.
+     * This method adds a toolgroup to the specified user, using the id as key to find the toolgroup.
      * If the layoutId is gettingStarted it will add the gettingStartedLayout to the user.
+     * In case the user is not sent, the operation will be performed over the current user
      */
     @PUT
-    @Path("/{layoutId}/_addtocurrentuser")
+    @Path("/{layoutId}/_addtouser")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response addToolGroupToUser(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("layoutId") final String layoutId) throws DotDataException {
+            @PathParam("layoutId") final String layoutId, @QueryParam("userid") final String userid)
+            throws DotDataException, DotSecurityException {
 
-        final User user = new WebResource.InitBuilder(webResource)
-                .requiredBackendUser(true)
-                .requestAndResponse(request, response)
-                .rejectWhenNoUser(true)
-                .init()
-                .getUser();
+        final User user;
+        if (null == userid){
+            user = new WebResource.InitBuilder(webResource)
+                    .requiredBackendUser(true)
+                    .requestAndResponse(request, response)
+                    .rejectWhenNoUser(true)
+                    .init()
+                    .getUser();
+        }else{
+            user = APILocator.getUserAPI().loadUserById(userid);
+        }
 
-        Layout layoutToAdd = null;
+        final Layout layoutToAdd;
         if(layoutId.equalsIgnoreCase("gettingstarted")){
             layoutToAdd = APILocator.getLayoutAPI().findGettingStartedLayout();
         }else{
