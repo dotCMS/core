@@ -215,17 +215,29 @@ describe('SiteSelectorComponent', () => {
         expect(result).toEqual({ fake: 'site' });
     });
 
-    xit('should set current site correctly', async () => {
+    it('should set current site correctly', () => {
         paginatorService.filter = 'filter';
         paginatorService.totalRecords = 2;
         spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([]));
         spyOn(comp, 'handleSitesRefresh');
-        fixture.detectChanges();
-        await fixture.whenStable();
-
         comp.currentSite$.subscribe((res) => {
             expect(res).toEqual(mockSites[0]);
         });
+        fixture.detectChanges();
+    });
+
+    it('should set site based on passed id', async () => {
+        paginatorService.filter = 'filter';
+        paginatorService.totalRecords = 2;
+        comp.id = mockSites[1].identifier;
+        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(mockSites));
+        spyOn(siteService, 'getSiteById').and.returnValue(observableOf(mockSites[1]));
+        spyOnProperty(siteService, 'currentSite', 'get').and.returnValue(mockSites[0]);
+        comp.currentSite$.subscribe((res) => {
+            expect(res).toEqual(mockSites[1]);
+        });
+        fixture.detectChanges();
+        await fixture.whenStable();
     });
 
     it('should set current on switchSite$', () => {

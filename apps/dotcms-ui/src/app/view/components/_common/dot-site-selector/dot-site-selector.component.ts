@@ -38,6 +38,7 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
     @Input() system: boolean;
     @Input() cssClass: string;
     @Input() width: string;
+    @Input() pageSize = 10;
 
     @Output() change: EventEmitter<Site> = new EventEmitter();
     @Output() hide: EventEmitter<any> = new EventEmitter();
@@ -67,6 +68,7 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
         this.paginationService.setExtraParams('archive', this.archive);
         this.paginationService.setExtraParams('live', this.live);
         this.paginationService.setExtraParams('system', this.system);
+        this.paginationService.paginationPerPage = this.pageSize;
 
         this.siteService.refreshSites$
             .pipe(takeUntil(this.destroy$))
@@ -169,12 +171,14 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
      * @memberof SiteSelectorComponent
      */
     getSitesList(filter = '', offset = 0): void {
-        // Set filter if undefined
-        Promise.resolve().then(() => this.updateCurrentSite(this.siteService.currentSite));
+        Promise.resolve().then(() => this.setSelectedSite());
         this.paginationService.filter = filter;
-        this.paginationService.getWithOffset(offset).subscribe((items) => {
-            this.sitesCurrentPage = [...items];
-        });
+        this.paginationService
+            .getWithOffset(offset)
+            .pipe(take(1))
+            .subscribe((items: Site[]) => {
+                this.sitesCurrentPage = [...items];
+            });
     }
 
     /**
@@ -221,5 +225,16 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
     private updateValues(items: Site[]): void {
         this.sitesCurrentPage = [...items];
         this.updateCurrentSite(this.siteService.currentSite);
+    }
+
+    private setSelectedSite(): void {
+        if (this.id && this.siteService.currentSite.identifier !== this.id) {
+            this.siteService
+                .getSiteById(this.id)
+                .pipe(take(1))
+                .subscribe((selectedSite) => this.updateCurrentSite(selectedSite));
+        } else {
+            this.updateCurrentSite(this.siteService.currentSite);
+        }
     }
 }

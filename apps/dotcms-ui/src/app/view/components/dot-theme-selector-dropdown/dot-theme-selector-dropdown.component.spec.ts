@@ -1,10 +1,10 @@
-import { DebugElement } from '@angular/core';
+import { DebugElement, Input } from '@angular/core';
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { of } from 'rxjs';
 
-import { SiteService } from '@dotcms/dotcms-js';
+import { Site, SiteService } from '@dotcms/dotcms-js';
 
 import { DotThemeSelectorDropdownComponent } from './dot-theme-selector-dropdown.component';
 import { DotThemesService } from '@services/dot-themes/dot-themes.service';
@@ -21,6 +21,7 @@ import {
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { mockSites } from '@tests/site-service.mock';
 
 const messageServiceMock = new MockDotMessageService({
     'dot.common.select.themes': 'Select Themes',
@@ -33,7 +34,12 @@ const messageServiceMock = new MockDotMessageService({
         <option>Fake site selector</option>
     </select>`
 })
-class MockDotSiteSelectorComponent {}
+class MockDotSiteSelectorComponent {
+    @Input() system;
+    searchableDropdown = {
+        handleClick: () => {}
+    };
+}
 
 @Component({
     selector: 'dot-fake-form',
@@ -130,7 +136,8 @@ describe('DotThemeSelectorDropdownComponent', () => {
                             return of({
                                 identifier: '123'
                             });
-                        }
+                        },
+                        currentSite: { identifier: '123' }
                     }
                 },
                 {
@@ -182,7 +189,7 @@ describe('DotThemeSelectorDropdownComponent', () => {
             it('should not call pagination service if the url is not set', () => {
                 component.currentSiteIdentifier = '123';
                 component.paginatorService.url = 'v1/test';
-                spyOn(paginationService, 'getWithOffset');
+                spyOn(paginationService, 'getWithOffset').and.callThrough();
                 component.searchableDropdown.pageChange.emit({ first: 10 } as PaginationEvent);
                 expect(paginationService.getWithOffset).toHaveBeenCalledWith(10);
             });
@@ -248,8 +255,13 @@ describe('DotThemeSelectorDropdownComponent', () => {
                 fixture.detectChanges();
             });
 
+            it('should system to true', () => {
+                const siteSelector = de.query(By.css('[data-testId="siteSelector"]'));
+                expect(siteSelector.componentInstance.system).toEqual(true);
+            });
+
             it('should update themes, totalRecords and call setExtraParams when site selector change', () => {
-                const siteSelector = de.query(By.css('dot-site-selector'));
+                const siteSelector = de.query(By.css('[data-testId="siteSelector"]'));
                 siteSelector.triggerEventHandler('change', {
                     identifier: '123'
                 });
@@ -271,6 +283,35 @@ describe('DotThemeSelectorDropdownComponent', () => {
                 expect(component.themes).toEqual([mockDotThemes[2]]);
                 expect(component.totalRecords).toBe(1);
             });
+        });
+    });
+
+    describe('no themes', () => {
+        let component: DotThemeSelectorDropdownComponent;
+        let siteService: SiteService;
+        let fixture: ComponentFixture<DotThemeSelectorDropdownComponent>;
+
+        beforeEach(() => {
+            fixture = TestBed.createComponent(DotThemeSelectorDropdownComponent);
+            de = fixture.debugElement;
+            paginationService = TestBed.inject(PaginatorService);
+            siteService = TestBed.inject(SiteService);
+            component = fixture.componentInstance;
+            spyOn(paginationService, 'getWithOffset').and.returnValue(of([]));
+            spyOn(siteService, 'getSiteById').and.returnValue(of(mockSites[0]));
+        });
+
+        it('should set the site host as default', () => {
+            fixture.detectChanges();
+            component.onShow();
+            expect(siteService.getSiteById).toHaveBeenCalledWith('SYSTEM_HOST');
+        });
+
+        it('should get sistem themes just once', () => {
+            fixture.detectChanges();
+            component.onShow();
+            setTimeout(() => component.siteChange({ identifier: '123' } as Site), 0); // simulate user site change.
+            expect(siteService.getSiteById).toHaveBeenCalledOnceWith('SYSTEM_HOST');
         });
     });
 
