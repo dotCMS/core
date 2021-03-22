@@ -902,7 +902,7 @@ public class ESIndexAPI {
     public String removeClusterIdFromName(final String name) {
         if(name==null) return "";
         return name.indexOf(".")>-1 
-                        ? name.substring(name.indexOf("."), name.length()) 
+                        ? name.substring(name.lastIndexOf("."), name.length()) 
                         : name;
 
 	}
