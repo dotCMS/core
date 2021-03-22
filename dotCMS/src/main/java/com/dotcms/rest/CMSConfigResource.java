@@ -181,7 +181,6 @@ public class CMSConfigResource {
 
             //Updating the locale info
             CompanyManagerUtil.updateUsers( languageId, timeZoneId, null, false, false, null );
-            TimeZone.setDefault( TimeZone.getTimeZone( timeZoneId ) );
 
             //And prepare the response
             JSONObject jsonResponse = new JSONObject();
