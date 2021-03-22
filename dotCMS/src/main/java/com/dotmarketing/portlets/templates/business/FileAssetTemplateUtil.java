@@ -9,6 +9,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Source;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Theme;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -27,6 +28,7 @@ import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import org.apache.commons.io.IOUtils;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.context.Context;
@@ -333,6 +335,10 @@ public class FileAssetTemplateUtil {
         layout.ifPresent(template::setDrawedBody);
         layout.ifPresent(l -> template.setDrawed(true));
         this.setMetaInfo (templateMetaInfo, template);
+        if(UtilMethods.isSet(template.getTheme())) {
+            template.setThemeName(Try.of(()->APILocator.getThemeAPI()
+                    .findThemeById(template.getTheme(), APILocator.systemUser(), false)).get().getName());
+        }
 
         bodyAsset.ifPresent  (template::setBodyAsset);
         layoutAsset.ifPresent(template::setLayoutAsset);
