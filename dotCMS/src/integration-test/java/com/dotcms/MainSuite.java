@@ -89,8 +89,8 @@ import com.dotmarketing.startup.runonce.Task201013AddNewColumnsToIdentifierTable
 import com.dotmarketing.startup.runonce.Task201014UpdateColumnsValuesInIdentifierTableTest;
 import com.dotmarketing.startup.runonce.Task201102UpdateColumnSitelicTableTest;
 import com.dotmarketing.startup.runonce.Task210218MigrateUserProxyTableTest;
-import com.dotmarketing.startup.runonce.Task210303AddHashRefColumnStorageTableTest;
-import com.dotmarketing.startup.runonce.Task210304RemoveOldMetadataFilesTest;
+import com.dotmarketing.startup.runonce.Task210320AddHashRefColumnStorageTableTest;
+import com.dotmarketing.startup.runonce.Task210321RemoveOldMetadataFilesTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.TestConfig;
@@ -401,8 +401,8 @@ import org.junit.runners.Suite.SuiteClasses;
         FolderCacheImplIntegrationTest.class,
         Task210218MigrateUserProxyTableTest.class,
         com.dotmarketing.startup.runonce.Task210316UpdateLayoutIconsTest.class,
-        Task210303AddHashRefColumnStorageTableTest.class,
-        Task210304RemoveOldMetadataFilesTest.class,
+        Task210320AddHashRefColumnStorageTableTest.class,
+        Task210321RemoveOldMetadataFilesTest.class,
         DBTimeZoneCheckTest.class
 })
 public class MainSuite {

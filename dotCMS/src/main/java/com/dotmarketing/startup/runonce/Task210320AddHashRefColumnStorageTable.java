@@ -13,7 +13,7 @@ import java.sql.SQLException;
  * We're adding a new column to the stable storage which basically is a nullable pointer to another sha in the storage
  * It's would be useful from the trouble shooting - support perspective.
  */
-public class Task210303AddHashRefColumnStorageTable implements StartupTask {
+public class Task210320AddHashRefColumnStorageTable implements StartupTask {
 
     @Override
     public boolean forceRun() {

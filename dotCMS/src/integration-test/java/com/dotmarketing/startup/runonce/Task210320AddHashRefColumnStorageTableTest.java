@@ -11,7 +11,7 @@ import java.sql.SQLException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class Task210303AddHashRefColumnStorageTableTest {
+public class Task210320AddHashRefColumnStorageTableTest {
 
 
     @BeforeClass
@@ -40,7 +40,7 @@ public class Task210303AddHashRefColumnStorageTableTest {
     @Test
     public void Test_Upgrade_Task() throws DotDataException {
         removeConstraintIfAny();
-        final Task210303AddHashRefColumnStorageTable task =  new Task210303AddHashRefColumnStorageTable();
+        final Task210320AddHashRefColumnStorageTable task =  new Task210320AddHashRefColumnStorageTable();
         assertTrue(task.forceRun());
         task.executeUpgrade();
         //Now we assert the task does not need to run again since now we have the column

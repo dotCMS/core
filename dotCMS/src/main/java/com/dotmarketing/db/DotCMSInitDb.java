@@ -8,7 +8,7 @@ import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.startup.runonce.Task210304RemoveOldMetadataFiles;
+import com.dotmarketing.startup.runonce.Task210321RemoveOldMetadataFiles;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ImportStarterUtil;
 import com.dotmarketing.util.Logger;
@@ -126,7 +126,7 @@ public class DotCMSInitDb {
      * @throws DotDataException
      */
 	private static void removeAnyOldMetadata() throws DotDataException {
-        final Task210304RemoveOldMetadataFiles task = new Task210304RemoveOldMetadataFiles();
+        final Task210321RemoveOldMetadataFiles task = new Task210321RemoveOldMetadataFiles();
         task.executeUpgrade();
         try {
             final Future<Tuple2<Integer, Integer>> future = task.getFuture();

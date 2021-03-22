@@ -21,7 +21,7 @@ import java.util.concurrent.ExecutionException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class Task210304RemoveOldMetadataFilesTest {
+public class Task210321RemoveOldMetadataFilesTest {
 
 
     @BeforeClass
@@ -46,7 +46,7 @@ public class Task210304RemoveOldMetadataFilesTest {
 
             APILocator.getFileMetadataAPI().generateContentletMetadata(contentlet);
 
-            final Task210304RemoveOldMetadataFiles task = new Task210304RemoveOldMetadataFiles();
+            final Task210321RemoveOldMetadataFiles task = new Task210321RemoveOldMetadataFiles();
             assertTrue(task.forceRun());
             task.executeUpgrade();
             final Tuple2<Integer, Integer> tuple = task.getFuture().get();
