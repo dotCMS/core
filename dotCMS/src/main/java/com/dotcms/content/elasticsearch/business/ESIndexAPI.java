@@ -127,6 +127,7 @@ public class ESIndexAPI {
 	final private ContentletIndexAPI iapi;
 	final private ESIndexHelper esIndexHelper;
 
+	final private Lazy<String> clusterPrefix;
 	public enum Status { ACTIVE("active"), INACTIVE("inactive"), PROCESSING("processing");
 		private final String status;
 
@@ -139,9 +140,15 @@ public class ESIndexAPI {
 		}
 	}
 
+	
+     ESIndexAPI(Lazy<String> clusterPrefix){
+         this.iapi = new ContentletIndexAPIImpl();
+         this.esIndexHelper = ESIndexHelper.getInstance();
+         this.clusterPrefix = clusterPrefix;
+         
+     }
 	public ESIndexAPI(){
-		this.iapi = new ContentletIndexAPIImpl();
-		this.esIndexHelper = ESIndexHelper.getInstance();
+	    this(Lazy.of(()->CLUSTER_PREFIX + ClusterFactory.getClusterId() +"."));
 	}
 
     private class IndexSortByDate implements Comparator<String> {
@@ -886,7 +893,7 @@ public class ESIndexAPI {
 
 	boolean hasClusterPrefix(final String indexName) {
 	    
-	    return indexName!=null && indexName.startsWith(MY_CLUSTER_PREFIX.get());
+	    return indexName!=null && indexName.startsWith(clusterPrefix.get());
 	    
 
     }
@@ -902,7 +909,7 @@ public class ESIndexAPI {
     public String removeClusterIdFromName(final String name) {
         if(name==null) return "";
         return name.indexOf(".")>-1 
-                        ? name.substring(name.lastIndexOf("."), name.length()) 
+                        ? name.substring(name.lastIndexOf(".")+1, name.length()) 
                         : name;
 
 	}
@@ -989,8 +996,6 @@ public class ESIndexAPI {
 		}
 	}
 
-	private final static Lazy<String> MY_CLUSTER_PREFIX = Lazy.of(()->CLUSTER_PREFIX + ClusterFactory.getClusterId() +".");
-	
 	
     /**
      * Given an alias or index name, this method will return the full name including the cluster id,
@@ -1000,7 +1005,7 @@ public class ESIndexAPI {
      */
     public String getNameWithClusterIDPrefix(final String name) {
         return hasClusterPrefix(name) ? name
-                : MY_CLUSTER_PREFIX.get() + name;
+                : clusterPrefix.get() + name;
     }
 
     /**
