@@ -20,6 +20,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.ZipUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.Lazy;
@@ -140,16 +141,16 @@ public class ESIndexAPI {
 		}
 	}
 
-	
-     ESIndexAPI(Lazy<String> clusterPrefix){
-         this.iapi = new ContentletIndexAPIImpl();
-         this.esIndexHelper = ESIndexHelper.getInstance();
-         this.clusterPrefix = clusterPrefix;
-         
-     }
-	public ESIndexAPI(){
-	    this(Lazy.of(()->CLUSTER_PREFIX + ClusterFactory.getClusterId() +"."));
-	}
+    @VisibleForTesting
+    ESIndexAPI(Lazy<String> clusterPrefix) {
+        this.iapi = new ContentletIndexAPIImpl();
+        this.esIndexHelper = ESIndexHelper.getInstance();
+        this.clusterPrefix = clusterPrefix;
+    }
+     
+    public ESIndexAPI() {
+        this(Lazy.of(() -> CLUSTER_PREFIX + ClusterFactory.getClusterId() + "."));
+    }
 
     private class IndexSortByDate implements Comparator<String> {
         public int compare(String o1, String o2) {
