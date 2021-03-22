@@ -1,9 +1,7 @@
 package com.dotcms.publisher.pusher.wrapper;
 
 import com.dotcms.publishing.PublisherConfig.Operation;
-import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.Role;
-import com.liferay.portal.model.Address;
 import com.liferay.portal.model.User;
 
 import java.util.List;
