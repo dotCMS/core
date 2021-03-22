@@ -231,7 +231,7 @@ public class Template extends WebAsset implements Serializable, Comparable {
 	}
 
 	public Integer getCountAddContainer() {
-		return countAddContainer;
+		return countAddContainer != null ? countAddContainer : 0;
 	}
 
 	public void setCountAddContainer(Integer countAddContainer) {
@@ -239,7 +239,7 @@ public class Template extends WebAsset implements Serializable, Comparable {
 	}
 
 	public Integer getCountContainers() {
-		return countContainers;
+		return countContainers != null ? countContainers : 0;
 	}
 
 	public void setCountContainers(Integer countContainers) {
