@@ -22,6 +22,7 @@ import com.dotmarketing.util.ZipUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -884,8 +885,10 @@ public class ESIndexAPI {
 	}
 
 	boolean hasClusterPrefix(final String indexName) {
-        final String clusterId = getClusterIdFromIndexName(indexName).orElse(null);
-        return clusterId != null && clusterId.equals(ClusterFactory.getClusterId());
+	    
+	    return indexName!=null && indexName.startsWith(MY_CLUSTER_PREFIX.get());
+	    
+
     }
 
     /**
@@ -897,25 +900,14 @@ public class ESIndexAPI {
      * @return Index name or alias without the cluster id prefix
      */
     public String removeClusterIdFromName(final String name) {
-        if (name == null){
-            return Strings.EMPTY;
-        }
-		final String[] indexNameSplit = name.split("\\.");
-		return indexNameSplit.length == 1 ?
-				indexNameSplit[0] :
-				indexNameSplit[1];
+        if(name==null) return "";
+        return name.indexOf(".")>-1 
+                        ? name.substring(name.indexOf("."), name.length()) 
+                        : name;
+
 	}
 
-	private Optional<String> getClusterIdFromIndexName(final String indexName) {
-        if (indexName != null) {
-            final String[] indexNameSplit = indexName.split("\\.");
-            if (indexNameSplit.length > 1 && indexNameSplit[0].split("_").length > 1) {
-                return Optional.of(indexNameSplit[0].split("_")[1]);
-            }
-        }
 
-		return Optional.empty();
-	}
 
 	public List<String> getClosedIndexes() {
 
@@ -997,6 +989,9 @@ public class ESIndexAPI {
 		}
 	}
 
+	private final static Lazy<String> MY_CLUSTER_PREFIX = Lazy.of(()->CLUSTER_PREFIX + ClusterFactory.getClusterId() +".");
+	
+	
     /**
      * Given an alias or index name, this method will return the full name including the cluster id,
      * using this format: <b>{@link IndiciesInfo#CLUSTER_PREFIX CLUSTER_PREFIX}_{id}.{name}</b>
@@ -1005,8 +1000,7 @@ public class ESIndexAPI {
      */
     public String getNameWithClusterIDPrefix(final String name) {
         return hasClusterPrefix(name) ? name
-                : new StringBuilder(CLUSTER_PREFIX).append(ClusterFactory.getClusterId())
-                        .append(".").append(name).toString();
+                : MY_CLUSTER_PREFIX.get() + name;
     }
 
     /**
