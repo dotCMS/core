@@ -21,6 +21,7 @@ import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.EmptyHttpResponse;
+import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.MapToContentletPopulator;
 import com.dotcms.rest.PATCH;
@@ -90,12 +91,14 @@ import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import com.liferay.util.HttpHeaders;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.Tuple2;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -109,6 +112,7 @@ import java.util.concurrent.CompletionService;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.Future;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -131,6 +135,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 
+import org.apache.commons.lang.time.StopWatch;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.server.JSONP;
 
@@ -165,6 +170,7 @@ public class WorkflowResource {
     private static final String PREFIX_BINARY = "binary";
     private static final String ACTION_NAME   = "actionName";
     private static final String CONTENTLET    = "contentlet";
+    private static final int CONTENTLETS_LIMIT = 100000;
 
 
     private final WorkflowHelper   workflowHelper;
@@ -1601,15 +1607,14 @@ public class WorkflowResource {
                                             @QueryParam("inode")            final String inode,
                                             @QueryParam("identifier")       final String identifier,
                                             @DefaultValue("-1") @QueryParam("language") final String language,
+                                            @QueryParam("offset") final int offset,
                                             @PathParam("systemAction") final WorkflowAPI.SystemAction systemAction,
                                             final FireActionForm fireActionForm) throws DotDataException, DotSecurityException {
 
         final InitDataObject initDataObject = new WebResource.InitBuilder()
-                .requestAndResponse(request, response)
-                .requiredAnonAccess(AnonymousAccess.WRITE)
-                .init();
+                .requestAndResponse(request, response).requiredAnonAccess(AnonymousAccess.WRITE).init();
 
-        final String query = (null != fireActionForm)?fireActionForm.getQuery():StringPool.BLANK;
+        final String query = null != fireActionForm? fireActionForm.getQuery():StringPool.BLANK;
         Logger.debug(this, ()-> "On Fire Merge Action: systemAction = " + systemAction + ", inode = " + inode +
                 ", identifier = " + identifier + ", language = " + language + ", query: " + query);
 
@@ -1617,26 +1622,28 @@ public class WorkflowResource {
         final long languageId = LanguageUtil.getLanguageId(language);
         final List<SingleContentQuery> contentletsToMergeList = new ArrayList<>();
         if (UtilMethods.isNotSet(query)) { // it is single update
-            //if inode is set we use it to look up a contentlet
 
-            contentletsToMergeList.add(new SingleContentQuery(identifier, inode, languageId, IndexPolicy.WAIT_FOR)); // todo: figured out if send a IndexPolicy otherwise use Wait for
+            contentletsToMergeList.add(new SingleContentQuery(identifier, inode, languageId,
+                    MapToContentletPopulator.recoverIndexPolicy(fireActionForm.getContentletFormData(),
+                            IndexPolicyProvider.getInstance().forSingleContent(), request)));
         } else {
 
-            //  would say, if it is specified, we respect it (obvi)  - something like if the searchResults.size > 10 we defer automatically
-            //otherwise use WAIT_FOR
-            final List<ContentletSearch> contentletSearches  = this.contentletAPI.searchIndex(query, 100000, 0, null,
+            final List<ContentletSearch> contentletSearches  = this.contentletAPI.searchIndex(query, CONTENTLETS_LIMIT, offset, null,
                     initDataObject.getUser(), mode.respectAnonPerms);
+
+            final IndexPolicy indexPolicy = MapToContentletPopulator.recoverIndexPolicy(fireActionForm.getContentletFormData(),
+                    contentletSearches.size()> 10? IndexPolicy.DEFER: IndexPolicy.WAIT_FOR, request);
 
             for (final ContentletSearch contentletSearch : contentletSearches) {
 
-                // todo: missing the index policy
                 contentletsToMergeList.add(new SingleContentQuery(contentletSearch.getIdentifier(),
-                        contentletSearch.getInode(), -1));
+                        contentletSearch.getInode(), languageId, indexPolicy));
             }
         }
 
         return Response.ok(new MergeContentletStreamingOutput(contentletsToMergeList, systemAction,
-                fireActionForm, request, mode, initDataObject)).build();
+                fireActionForm, request, mode, initDataObject))
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON).build();
     } // fireMergeActionDefault.
 
 
@@ -1662,7 +1669,6 @@ public class WorkflowResource {
             this.request = request;
             this.mode = mode;
             this.initDataObject = initDataObject;
-
         }
 
         @Override
@@ -1671,7 +1677,6 @@ public class WorkflowResource {
             final ObjectMapper objectMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
             WorkflowResource.this.mergeContentletsByDefaultAction(this.contentletsToMergeList, this.systemAction, this.fireActionForm,
                     this.request, this.mode, this.initDataObject, output, objectMapper);
-
         }
     }
 
@@ -1685,13 +1690,14 @@ public class WorkflowResource {
                                                      final ObjectMapper objectMapper) {
 
         final DotSubmitter dotSubmitter = DotConcurrentFactory.getInstance().getSubmitter("workflow_submitter",
-                new DotConcurrentFactory.SubmitterConfigBuilder().poolSize(2).maxPoolSize(5).queueCapacity(100000).build());
+                new DotConcurrentFactory.SubmitterConfigBuilder().poolSize(2).maxPoolSize(5).queueCapacity(CONTENTLETS_LIMIT).build());
         final CompletionService<Map<String, Object>> completionService = new ExecutorCompletionService<>(dotSubmitter);
+        final List<Future<Map<String, Object>>> futures = new ArrayList<>();
 
         for (final SingleContentQuery singleContentQuery : contentletsToMergeList) {
 
             // this triggers the merges
-            completionService.submit(() -> {
+            final Future<Map<String, Object>> future = completionService.submit(() -> {
 
                 final Map<String, Object> resultMap = new HashMap<>();
                 final String inode      = singleContentQuery.getInode();
@@ -1717,27 +1723,63 @@ public class WorkflowResource {
                     resultMap.put(identifier, ResponseEntityView.class.cast(restResponse.getEntity()).getEntity());
                 } catch (Exception e) {
 
-                    resultMap.put(UtilMethods.isSet(identifier)?identifier:inode, UtilMethods.isSet(identifier)?
+                    final String id = UtilMethods.isSet(identifier)?identifier:inode;
+                    Logger.error(this, "Error in contentlet: " + id + ", msg: " + e.getMessage(), e);
+                    resultMap.put(id, UtilMethods.isSet(identifier)?
                             ActionFail.newInstanceById(user, identifier, e):ActionFail.newInstance(user, inode, e));
                 }
 
                 return resultMap;
             });
+
+            futures.add(future);
         }
 
-        // todo: wrap on the output stream a collection [
-        // now recover the N results
-        for (final SingleContentQuery singleContentQuery : contentletsToMergeList) {
+        printResponseEntityViewResult(outputStream, objectMapper, completionService, futures);
+    }
 
-            try {
-                final Map<String, Object> resultMap = completionService.take().get();
-                objectMapper.writeValue (outputStream, resultMap);
-            } catch (InterruptedException | ExecutionException | IOException e) {
+    private void printResponseEntityViewResult(final OutputStream outputStream,
+                                               final ObjectMapper objectMapper,
+                                               final CompletionService<Map<String, Object>> completionService,
+                                               final List<Future<Map<String, Object>>> futures) {
 
-                Logger.error(this, e.getMessage(), e);
+        try {
+
+            ResponseUtil.beginWrapResponseEntityView(outputStream, true);
+            ResponseUtil.beginWrapProperty(outputStream, "results", false);
+            outputStream.write(StringPool.OPEN_BRACKET.getBytes(StandardCharsets.UTF_8));
+            final StopWatch stopWatch = new StopWatch();
+            stopWatch.start();
+            // now recover the N results
+            for (int i = 0; i < futures.size(); i++) {
+
+                try {
+
+                    Logger.info(this, "Recovering the result " + (i + 1) + " of " + futures.size());
+                    final Map<String, Object> resultMap = completionService.take().get();
+                    objectMapper.writeValue(outputStream, resultMap);
+                    if (i < futures.size()-1) {
+                        outputStream.write(StringPool.COMMA.getBytes(StandardCharsets.UTF_8));
+                    }
+                } catch (InterruptedException | ExecutionException | IOException e) {
+
+                    Logger.error(this, e.getMessage(), e);
+                }
             }
+            stopWatch.stop();
+
+            outputStream.write(StringPool.CLOSE_BRACKET.getBytes(StandardCharsets.UTF_8));
+            outputStream.write(StringPool.COMMA.getBytes(StandardCharsets.UTF_8));
+
+            ResponseUtil.wrapProperty(outputStream, "summary",
+                    objectMapper.writeValueAsString(CollectionsUtils.map("time", stopWatch.getTime(), "affected", futures.size())));
+            outputStream.write(StringPool.COMMA.getBytes(StandardCharsets.UTF_8));
+
+            ResponseUtil.endWrapResponseEntityView(outputStream, true);
+        } catch (IOException e) {
+
+            Logger.error(this, e.getMessage(), e);
         }
-        // todo: end wrap on the output stream a collection ]
     }
 
     private Response mergeContentlet(SystemAction systemAction, FireActionForm fireActionForm, HttpServletRequest request, User user,
