@@ -1268,4 +1268,74 @@ public class UserAPITest extends IntegrationTestBase {
         assertEquals("MyFacebookId", savedUser.getAdditionalInfo().get("facebookId"));
         assertEquals("MyTwitterId", savedUser.getAdditionalInfo().get("twitterId"));
     }
+
+	/**
+	 * Method to test: {@link UserAPI#loadByUserByEmail}
+	 * Given Scenario: Given limited user
+	 * ExpectedResult: Limited user should be able to load self-user
+	 *
+	 */
+	@Test
+	public void test_loadByUserByEmail_selfUser() throws DotDataException, DotSecurityException {
+
+		final User newUser = new UserDataGen().firstName("limitedUser" + System.currentTimeMillis())
+			.nextPersisted();
+
+		userAPI.save(newUser, systemUser, false);
+
+		final User ownUser = userAPI.loadByUserByEmail(newUser.getEmailAddress(),
+				newUser, false);
+
+		assertNotNull(ownUser.getAdditionalInfo());
+		assertEquals(newUser.getUserId(), ownUser.getUserId());
+	}
+
+	/**
+	 * Method to test: {@link UserAPI#loadUserById(String, User, boolean)}
+	 * Given Scenario: Given limited user
+	 * ExpectedResult: Limited user should be able to load self-user
+	 *
+	 */
+	@Test
+	public void test_loadByUserById_selfUser() throws DotDataException, DotSecurityException {
+
+		final User newUser = new UserDataGen().firstName("limitedUser" + System.currentTimeMillis())
+				.nextPersisted();
+
+		userAPI.save(newUser, systemUser, false);
+
+		final User ownUser = userAPI.loadUserById(newUser.getUserId(),
+				newUser, false);
+
+		assertEquals(newUser.getUserId(), ownUser.getUserId());
+	}
+
+	/**
+	 * Method to test: {@link UserAPI#save(User, User, boolean)}
+	 * Given Scenario: Given limited user
+	 * ExpectedResult: Limited user should be able to save self-user
+	 *
+	 */
+	@Test
+	public void test_save_selfUser() throws DotDataException, DotSecurityException {
+
+		final User newUser = new UserDataGen().firstName("limitedUser" + System.currentTimeMillis())
+				.nextPersisted();
+
+		final String userId = newUser.getUserId();
+
+		userAPI.save(newUser, systemUser, false);
+
+		final User ownUser = userAPI.loadUserById(userId,
+				APILocator.systemUser(), false);
+
+		// let's modify the user and save it using the self-user
+		ownUser.setFirstName("modifiedLimitedUser"+ + System.currentTimeMillis());
+		userAPI.save(ownUser, ownUser, false);
+
+		final User reloadedUser = userAPI.loadUserById(userId,
+				APILocator.systemUser(), false);
+
+		assertTrue(reloadedUser.getFirstName().contains("modifiedLimitedUser"));
+	}
 }
