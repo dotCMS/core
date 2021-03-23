@@ -15,6 +15,7 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
 
+import com.liferay.util.StringPool;
 import java.io.File;
 import java.util.Optional;
 import org.apache.velocity.tools.view.tools.ViewTool;
@@ -77,15 +78,16 @@ public class FileTool implements ViewTool {
 	}
 
 	public String getURI(final Contentlet contentlet, long languageId){
+		String uri = StringPool.BLANK;
+
 		if (contentlet instanceof FileAsset) {
-			return getURI((FileAsset) contentlet, languageId);
+			uri = getURI((FileAsset) contentlet, languageId);
 		} else if (contentlet.isDotAsset()){
-			return UtilMethods.espaceForVelocity(
+			uri = UtilMethods.espaceForVelocity(
 					String.format("dA/%s", contentlet.getIdentifier())
 			);
-		} else {
-			return "";
 		}
+		return uri;
 	}
 	
 	public IFileAsset getNewFile(){
