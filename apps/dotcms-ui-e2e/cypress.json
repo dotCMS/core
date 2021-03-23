@@ -1,4 +1,10 @@
 {
+    "env": {
+        "adminUsername": "admin@dotcms.com",
+        "adminPassword": "admin",
+        "baseUrl": "http://localhost:8080"
+    },
+    "ignoreTestFiles": "**/examples/*.js",
     "fileServerFolder": ".",
     "fixturesFolder": "./src/fixtures",
     "integrationFolder": "./src/integration",
