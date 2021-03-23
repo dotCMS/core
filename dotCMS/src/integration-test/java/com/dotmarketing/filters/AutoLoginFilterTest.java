@@ -8,6 +8,7 @@ import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.filters.interceptor.FilterWebInterceptorProvider;
 import com.dotcms.filters.interceptor.SimpleWebInterceptorDelegateImpl;
 import com.dotcms.listeners.SessionMonitor;
+import com.dotcms.util.ConfigTestHelper;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.util.Config;
 import java.io.IOException;
@@ -38,7 +39,7 @@ public class AutoLoginFilterTest {
      * Should: return 200
      */
     @Test
-    public void shouldReturnOkWithLogoutRequest() throws IOException, ServletException {
+    public void shouldReturnOkWithLogoutRequest() throws Exception {
         final HttpServletRequest servletRequest = mock(HttpServletRequest.class);
         when(servletRequest.getRequestURI()).thenReturn("/dotAdmin/logout?r=" + System.currentTimeMillis());
 
@@ -47,28 +48,33 @@ public class AutoLoginFilterTest {
 
         final FilterConfig filterConfig = mock(FilterConfig.class);
 
-        Config.CONTEXT = mock(ServletContext.class);
-        when(servletRequest.getServletContext()).thenReturn(Config.CONTEXT);
-        when(filterConfig.getServletContext()).thenReturn(Config.CONTEXT);
+        try {
+            Config.CONTEXT = mock(ServletContext.class);
+            when(servletRequest.getServletContext()).thenReturn(Config.CONTEXT);
+            when(filterConfig.getServletContext()).thenReturn(Config.CONTEXT);
 
-        final FilterWebInterceptorProvider filterWebInterceptorProvider =
-                mock(FilterWebInterceptorProvider.class);
-        when(Config.CONTEXT.getAttribute(FilterWebInterceptorProvider.class.getName()))
-                .thenReturn(filterWebInterceptorProvider);
+            final FilterWebInterceptorProvider filterWebInterceptorProvider =
+                    mock(FilterWebInterceptorProvider.class);
+            when(Config.CONTEXT.getAttribute(FilterWebInterceptorProvider.class.getName()))
+                    .thenReturn(filterWebInterceptorProvider);
 
-        SimpleWebInterceptorDelegateImpl simpleWebInterceptorDelegate = new SimpleWebInterceptorDelegateImpl();
-        when(filterWebInterceptorProvider.getDelegate(AutoLoginFilter.class))
-                .thenReturn(simpleWebInterceptorDelegate);
+            SimpleWebInterceptorDelegateImpl simpleWebInterceptorDelegate = new SimpleWebInterceptorDelegateImpl();
+            when(filterWebInterceptorProvider.getDelegate(AutoLoginFilter.class))
+                    .thenReturn(simpleWebInterceptorDelegate);
 
-        final RequestDispatcher requestDispatcher =  mock(RequestDispatcher.class);
+            final RequestDispatcher requestDispatcher = mock(RequestDispatcher.class);
 
-        when(Config.CONTEXT.getRequestDispatcher("/html/portal/show-logout.jsp"))
-                .thenReturn(requestDispatcher);
+            when(Config.CONTEXT.getRequestDispatcher("/html/portal/show-logout.jsp"))
+                    .thenReturn(requestDispatcher);
 
-        final AutoLoginFilter autoLoginFilter = new AutoLoginFilter();
-        autoLoginFilter.init(filterConfig);
-        autoLoginFilter.doFilter(servletRequest, servletResponse, filterChain);
+            final AutoLoginFilter autoLoginFilter = new AutoLoginFilter();
+            autoLoginFilter.init(filterConfig);
+            autoLoginFilter.doFilter(servletRequest, servletResponse, filterChain);
 
-       verify(requestDispatcher).forward(servletRequest, servletResponse);
+            verify(requestDispatcher).forward(servletRequest, servletResponse);
+        } finally {
+            Config.CONTEXT = null;
+            ConfigTestHelper._setupFakeTestingContext();
+        }
     }
 }
