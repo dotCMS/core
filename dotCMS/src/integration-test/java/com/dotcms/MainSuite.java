@@ -20,6 +20,7 @@ import com.dotcms.enterprise.publishing.remote.bundler.LinkBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.RuleBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.TemplateBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.WorkflowBundlerTest;
+import com.dotcms.enterprise.publishing.remote.handler.ContentHandlerTest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
 import com.dotcms.junit.MainBaseSuite;
@@ -403,7 +404,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.startup.runonce.Task210316UpdateLayoutIconsTest.class,
         Task210320AddHashRefColumnStorageTableTest.class,
         Task210321RemoveOldMetadataFilesTest.class,
-        DBTimeZoneCheckTest.class
+        DBTimeZoneCheckTest.class,
+        ContentHandlerTest.class
 })
 public class MainSuite {
 
