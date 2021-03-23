@@ -26,7 +26,6 @@ package com.liferay.portal.ejb;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DBTimeZoneCheck;
-import com.dotmarketing.exception.InvalidTimeZoneException;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.Company;
@@ -197,9 +196,9 @@ public class CompanyManagerUtil {
 			boolean dottedSkins, boolean roundedSkins, java.lang.String resolution)
 	throws PortalException, SystemException,com.dotmarketing.exception.DotRuntimeException {
 		try{		
-			final CompanyManager companyManager = CompanyManagerFactory.getManager();
+			CompanyManager companyManager = CompanyManagerFactory.getManager();
 			if (!DBTimeZoneCheck.isTimeZoneValid(timeZoneId)) {
-				throw new InvalidTimeZoneException(String.format("Invalid Timezone %s", timeZoneId));
+				throw new PortalException(String.format("Invalid Timezone %s", timeZoneId));
 			}
 
 			//companyManager.updateUsers(languageId, timeZoneId, skinId, dottedSkins, roundedSkins, resolution);
@@ -208,9 +207,13 @@ public class CompanyManagerUtil {
 
 			CacheLocator.getCacheAdministrator().flushGroup(CacheLocator.getUserCache().getPrimaryGroup());
 			
-		} catch (com.liferay.portal.PortalException | com.liferay.portal.SystemException | InvalidTimeZoneException e) {
-			throw e;
-		} catch (Exception e) {
+		}catch (com.liferay.portal.PortalException pe) {
+			throw pe;
+		}
+		catch (com.liferay.portal.SystemException se) {
+			throw se;
+		}
+		catch (Exception e) {
 			throw new com.liferay.portal.SystemException(e);
 		}
 	}

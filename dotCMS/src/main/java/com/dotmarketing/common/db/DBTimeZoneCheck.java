@@ -65,7 +65,7 @@ public class DBTimeZoneCheck {
 
             return true;
         } catch (Exception e) {
-            Logger.error(DBTimeZoneCheck.class, "Timezone + '" + timezone + "' failed : " + e.getMessage());
+            Logger.error(DBTimeZoneCheck.class, "Timezone + '" + timezone + "' failed : " + e.getMessage(), e);
 
             return false;
         } finally {

@@ -91,9 +91,7 @@ var saveCompanyLocaleInfo = function () {
 
     //Getting the form values
     var companyLanguageId = dijit.byId("companyLanguageId").get("value");
-    var companyTimeZone = dijit.byId("companyTimeZoneId");
-    var companyTimeZoneId = companyTimeZone.get("value");
-    var currentCompanyTimeZoneId = document.getElementById("currentCompanyTimeZoneId").value;
+    var companyTimeZoneId = dijit.byId("companyTimeZoneId").get("value");
 
     var xhrArgs = {
         url: "/api/config/saveCompanyLocaleInfo",
@@ -112,8 +110,6 @@ var saveCompanyLocaleInfo = function () {
             showDotCMSSystemMessage(data.message, isError);
         },
         error: function (error) {
-            companyTimeZone.attr("displayedValue", currentCompanyTimeZoneId);
-            companyTimeZone.attr("value", currentCompanyTimeZoneId);
             showDotCMSSystemMessage(error.responseText, true);
         }
     };
