@@ -107,6 +107,7 @@
     //Initialization kicking the loading of users
     dojo.ready(function() {
 
+        console.log('**** dojo.ready')
         dojo.declare('dotcms.dojox.grid.DataGrid', dojox.grid.DataGrid, {
             onRowContextMenu: function(e) {
 
@@ -135,6 +136,7 @@
         //Connecting the action of clicking a user row
         dojo.connect( usersDataGrid, "onRowClick", function (evt) {
                 var id = evt.grid.getItem(evt.rowIndex).id[0];
+                getUserStarterPageData(id);
                 editUser(id);
         });
 
@@ -254,6 +256,27 @@
 		UserAjax.getUserById(userId, editUserCallback);
 	}
 
+    function getUserStarterPageData(userId) {
+        console.log('*** fetch starter page data');
+
+        var xhrArgs = {
+                url = `/api/v1/toolgroups/gettingstarted/_islayoutactive?userid=${currentUser.id}`,
+                headers: {
+                    "Accept" : "application/json",
+                    "Content-Type" : "application/json"
+                },
+                handleAs : "json",
+                load: function(data) {
+                    console.log('*** getUserStarterPageData', data.entity);
+                    
+                    // set checkbox
+                    dijit.byId("showStarter").attr('checked', data.entity.value);
+
+             }
+         };
+         dojo.xhrGet(xhrArgs);
+    }
+
 	
 	
 	function changeUserAccess(evt){
@@ -266,6 +289,30 @@
         
         
 	}
+
+    function setStarterPage(evt) {
+        if (!currentUser) return;
+        console.log('***setStarterPage', evt.checked);
+
+        var xhrArgs = {
+            headers: {
+                "Accept" : "application/json",
+                "Content-Type" : "application/json"
+            },
+            handleAs : "json"
+        }
+
+
+        if (evt.checked) {
+            // set starter
+            xhrArgs.url = `/api/v1/toolgroups/gettingstarted/_addtouser?userid=${currentUser.id}`;
+            dojo.xhrPut(xhrArgs);
+        } else {
+            // unset starter
+            xhrArgs.url = `/api/v1/toolgroups/gettingstarted/_removefromuser?userid=${currentUser.id}`;
+            dojo.xhrPut(xhrArgs);
+        }
+    }
 	
 	
 	function assignUserAccessCallback(data){
