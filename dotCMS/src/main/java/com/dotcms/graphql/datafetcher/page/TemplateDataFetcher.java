@@ -55,13 +55,8 @@ public class TemplateDataFetcher implements DataFetcher<Map<Object, Object>> {
             final User systemUser = APILocator.getUserAPI().getSystemUser();
 
             return mode.showLive ?
-                    (Template)
-                            APILocator.getVersionableAPI()
-                                    .findLiveVersion(templateId, systemUser, mode.respectAnonPerms)
-                    :
-                    (Template)
-                            APILocator.getVersionableAPI()
-                                    .findWorkingVersion(templateId, systemUser, mode.respectAnonPerms);
+                    APILocator.getTemplateAPI().findLiveTemplate(templateId,systemUser, mode.respectAnonPerms) :
+                    APILocator.getTemplateAPI().findWorkingTemplate(templateId,systemUser, mode.respectAnonPerms);
         } catch (DotSecurityException e) {
             return null;
         }

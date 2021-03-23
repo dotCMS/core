@@ -57,10 +57,10 @@ public class TemplateLoader implements DotLoader {
         VersionableAPI versionableAPI = APILocator.getVersionableAPI();
         Template template = null;
         if (key.mode.showLive) {
-            template = (Template) versionableAPI.findLiveVersion(identifier, sysUser(), true);
+            template = APILocator.getTemplateAPI().findLiveTemplate(identifier.getId(),sysUser(), true);
 
         } else {
-            template = (Template) versionableAPI.findWorkingVersion(identifier, sysUser(), true);
+            template = APILocator.getTemplateAPI().findWorkingTemplate(identifier.getId(),sysUser(), true);
         }
 
         Logger.debug(this, "DotResourceLoader:\tWriting out Template inode = " + template.getInode());
