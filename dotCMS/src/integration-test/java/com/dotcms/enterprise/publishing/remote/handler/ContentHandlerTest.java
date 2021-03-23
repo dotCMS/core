@@ -15,7 +15,7 @@ import org.junit.Test;
 
 public class ContentHandlerTest {
 
-    static final String INPUT_FILE_PATH = "/bundlers-test/file-asset/contentlet.fileAsset.xml";
+    private static final String INPUT_FILE_PATH = "/bundlers-test/file-asset/contentlet.fileAsset.xml";
 
     /**
      * Test-Method: {@Link ContentHandler#newXStreamInstance}
