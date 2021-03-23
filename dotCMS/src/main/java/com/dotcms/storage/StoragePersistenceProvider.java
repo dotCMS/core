@@ -1,21 +1,38 @@
 package com.dotcms.storage;
 
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.google.common.collect.ImmutableMap;
 import java.io.File;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 /**
  * Singleton that serves as entry point to the storage api
  */
 public final class StoragePersistenceProvider {
 
-    static final String DEFAULT_STORAGE_TYPE = "DEFAULT_STORAGE_TYPE";
-    static final String METADATA_GROUP_NAME = "METADATA_GROUP_NAME";
+    public static final String DEFAULT_STORAGE_TYPE = "DEFAULT_STORAGE_TYPE";
+    public static final String METADATA_GROUP_NAME = "METADATA_GROUP_NAME";
 
-    private final Map<StorageType, StoragePersistenceAPI> storageMap = new ConcurrentHashMap<>();
+    private final Map<StorageType, StoragePersistenceAPI> storagePersistenceInstances = new ConcurrentHashMap<>();
+    
+    private final Map<StorageType, Supplier<StoragePersistenceAPI>> initializers = ImmutableMap.of(
+            StorageType.FILE_SYSTEM, () -> {
+                final FileSystemStoragePersistenceAPIImpl fileSystemStorage = new FileSystemStoragePersistenceAPIImpl();
+                final String metadataGroupName = Config
+                        .getStringProperty(METADATA_GROUP_NAME, "dotmetadata");
+                final File assetsDir = new File(ConfigUtils.getAbsoluteAssetsRootPath());
+                if (!assetsDir.exists()) {
+                    assetsDir.mkdirs();
+                }
+                fileSystemStorage.addGroupMapping(metadataGroupName, assetsDir);
+                return fileSystemStorage;
+            },
+            StorageType.DB, DataBaseStoragePersistenceAPIImpl::new
+    );
 
     /**
      * default constructor
@@ -33,24 +50,6 @@ public final class StoragePersistenceProvider {
     }
 
     /**
-     * file system storage type
-     * @return
-     */
-    public FileSystemStoragePersistenceAPIImpl getFileSystemStorage() {
-
-        return (FileSystemStoragePersistenceAPIImpl) this.storageMap.get(StorageType.FILE_SYSTEM);
-    }
-
-    /**
-     * db storage type
-     * @return
-     */
-    public DataBaseStoragePersistenceAPIImpl getDbStorage() {
-
-        return (DataBaseStoragePersistenceAPIImpl) this.storageMap.get(StorageType.DB);
-    }
-
-    /**
      * param based storage type getter
      * @param storageType
      * @return
@@ -60,8 +59,13 @@ public final class StoragePersistenceProvider {
             storageType = getStorageType();
         }
         final StorageType finalStorageType = storageType;
-        Logger.info(this, ()-> "Retrieving from storage: " + finalStorageType);
-        return this.storageMap.get(storageType);
+        Logger.debug(this, ()-> "Retrieving from storage: " + finalStorageType);
+
+        final StoragePersistenceAPI api = storagePersistenceInstances.putIfAbsent(storageType, initializers.get(storageType).get());
+        if(null != api){
+           return api;
+        }
+        return storagePersistenceInstances.get(storageType);
     }
 
     /**
@@ -73,46 +77,19 @@ public final class StoragePersistenceProvider {
     }
 
     /**
-     * DB Storage initializer
-     * @param storageMap
+     *
      */
-    private static void initDbStorage(final Map<StorageType, StoragePersistenceAPI> storageMap) {
-        final DataBaseStoragePersistenceAPIImpl dataBaseStorage = new DataBaseStoragePersistenceAPIImpl();
-        storageMap.put(StorageType.DB, dataBaseStorage);
-    }
-
-    /**
-     * File System Storage initializer
-     * @param storageMap
-     */
-    private static void initFileSystemStorage(final Map<StorageType, StoragePersistenceAPI> storageMap) {
-        final FileSystemStoragePersistenceAPIImpl fileSystemStorage = new FileSystemStoragePersistenceAPIImpl();
-        final String metadataGroupName = Config.getStringProperty(METADATA_GROUP_NAME, "dotmetadata");
-        fileSystemStorage.addGroupMapping(metadataGroupName, new File(APILocator.getFileAssetAPI().getRealAssetsRootPath()));
-        storageMap.put(StorageType.FILE_SYSTEM, fileSystemStorage);
+    public void forceInitialize(){
+       storagePersistenceInstances.clear();
     }
 
     public enum INSTANCE {
         INSTANCE;
-        private final StoragePersistenceProvider provider = initProviders();
+        private final StoragePersistenceProvider provider = new StoragePersistenceProvider();
 
-        /**
-         * singleton instance getter
-         * @return
-         */
         public static StoragePersistenceProvider get() {
             return INSTANCE.provider;
         }
-
-        /**
-         * providers init method
-         * @return
-         */
-        private static StoragePersistenceProvider initProviders() {
-            final StoragePersistenceProvider storagePersistenceProvider = new StoragePersistenceProvider();
-            initDbStorage(storagePersistenceProvider.storageMap);
-            initFileSystemStorage(storagePersistenceProvider.storageMap);
-            return storagePersistenceProvider;
-        }
     }
+
 }
