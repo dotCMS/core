@@ -3,6 +3,7 @@ package com.dotcms;
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
+import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
@@ -395,7 +396,8 @@ import org.junit.runners.Suite.SuiteClasses;
         FolderCacheImplIntegrationTest.class,
         Task210218MigrateUserProxyTableTest.class,
         com.dotmarketing.startup.runonce.Task210316UpdateLayoutIconsTest.class,
-        DBTimeZoneCheckTest.class
+        DBTimeZoneCheckTest.class,
+        ESIndexAPITest.class
 })
 public class MainSuite {
 
