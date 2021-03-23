@@ -348,4 +348,25 @@ public interface TemplateAPI {
 	 */
 	boolean isArchived(final Template template) throws DotDataException;
 
+	/**
+	 * Check if a template is live
+	 *
+	 * @param template {@link Template}
+	 * @return true if it is live. false if not
+	 * @throws DotDataException
+	 * @throws DotStateException
+	 * @throws DotSecurityException
+	 */
+	boolean isLive(Template template) throws DotDataException, DotStateException,DotSecurityException;
+
+	/**
+	 * Set this template as the live version
+	 *
+	 * @param template Template to be set as the live version
+	 * @throws DotDataException
+	 * @throws DotStateException
+	 * @throws DotSecurityException
+	 */
+	void setLive(Template template) throws DotDataException, DotStateException,DotSecurityException;
+
 }

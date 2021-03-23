@@ -5,13 +5,29 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.rendering.velocity.services.TemplateLoader;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
-import com.dotmarketing.beans.*;
-import com.dotmarketing.business.*;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.Inode;
+import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.beans.Tree;
+import com.dotmarketing.beans.VersionInfo;
+import com.dotmarketing.beans.WebAsset;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.BaseWebAssetAPI;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
+import com.dotmarketing.business.Theme;
+import com.dotmarketing.business.VersionableAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotDataValidationException;
@@ -31,7 +47,12 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.templates.design.bean.*;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
+import com.dotmarketing.portlets.templates.design.bean.Sidebar;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutColumn;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
+import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.InodeUtils;
@@ -42,9 +63,16 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
-
 
 
 public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
@@ -217,7 +245,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 			throws DotSecurityException, DotDataException, WebAssetException {
 		final Template templateWorkingVersion = findWorkingTemplate(template.getIdentifier(),APILocator.systemUser(),false);
 		//Sets Working as Live
-		APILocator.getVersionableAPI().setLive(templateWorkingVersion);
+		setLive(template);
 		//Gets all Containers In the Template
 		final List<Container> containersInTemplate = APILocator.getTemplateAPI().getContainersInTemplate(template, APILocator.getUserAPI().getSystemUser(), false);
 		for(final Container container : containersInTemplate){
@@ -604,6 +632,17 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	}
 
 	public Template findWorkingTemplate(final String id, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		if (FileAssetTemplateUtil.getInstance().isFolderAssetTemplateId(id)) {//Check if the id is a path
+			return this.findTemplateByPath(id, user, respectFrontendRoles, false);
+		}
+
+		final Identifier identifier = this.identifierAPI.find(id);//Finds the Identifier so we can get the path
+		if (null != identifier &&
+				FileAssetTemplateUtil.getInstance().isFolderAssetTemplateId(identifier.getPath())) {
+			return this.findTemplateByPath(identifier.getPath(), user, respectFrontendRoles, false);
+		}
+
+		//For non-file based templates
 		final VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(id);
 		return (!UtilMethods.isSet(info)) ? null : find(info.getWorkingInode(), user, respectFrontendRoles);
 
@@ -631,6 +670,17 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	}
 
 	public Template findLiveTemplate(final String id, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		if (FileAssetTemplateUtil.getInstance().isFolderAssetTemplateId(id)) {//Check if the id is a path
+			return this.findTemplateByPath(id, user, respectFrontendRoles, true);
+		}
+
+		final Identifier identifier = this.identifierAPI.find(id);//Finds the Identifier so we can get the path
+		if (null != identifier &&
+				FileAssetTemplateUtil.getInstance().isFolderAssetTemplateId(identifier.getPath())) {
+			return this.findTemplateByPath(identifier.getPath(), user, respectFrontendRoles, true);
+		}
+
+		//For non-file based templates
 		VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(id);
 		return (!UtilMethods.isSet(info)) ? null : find(info.getLiveInode(), user, respectFrontendRoles);
 	}
@@ -732,5 +782,61 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	public List<Template> findTemplatesByContainerInode(final String containerInode)
 			throws DotDataException {
 		return templateFactory.findTemplatesByContainerInode(containerInode);
+	}
+
+	@Override
+	public boolean isLive(final Template template) throws DotDataException, DotStateException,DotSecurityException {
+		return template instanceof FileAssetTemplate ?
+				FileAssetTemplate.class.cast(template).isLive() :
+				this.versionableAPI.get().isLive(template);
+	}
+
+	@Override
+	public void setLive(final Template template) throws DotDataException, DotStateException,DotSecurityException{
+		this.versionableAPI.get().setLive(template instanceof FileAssetTemplate ?
+				FileAssetTemplate.class.cast(template).toContentlet() :
+				template);
+	}
+
+	private Template findTemplateByPath (final String path, final User user, final boolean respectFrontendRoles, final boolean showLive) throws DotDataException, DotSecurityException {
+
+		final FileAssetTemplateUtil fileAssetTemplateUtil =
+				FileAssetTemplateUtil.getInstance();
+		final Set<Host> hostSet = new LinkedHashSet<>();
+		String relativePath 	= path;
+
+		if (fileAssetTemplateUtil.isFullPath(path)) {
+
+			final String hostName     = fileAssetTemplateUtil.getHostName(path);
+			final Host host           = this.hostAPI.findByName(hostName, user, respectFrontendRoles);
+
+			if (null != host) {
+				relativePath = fileAssetTemplateUtil.getPathFromFullPath(hostName, path);
+				hostSet.add(host);
+			}
+		}
+
+		final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHost();
+		if (null != currentHost) {
+			hostSet.add(currentHost);
+		}
+
+		hostSet.add(APILocator.getHostAPI().findDefaultHost(user, respectFrontendRoles));
+
+		for (final Host host : hostSet) {
+			try {
+
+				final Folder folder     = APILocator.getFolderAPI().findFolderByPath(relativePath, host, user, respectFrontendRoles);
+				final Template template = this.templateFactory.getTemplateByFolder(host, folder, user, showLive);
+
+				if (template != null) {
+					return  template;
+				}
+			} catch (NotFoundInDbException | DotSecurityException e) {
+				continue;
+			}
+		}
+
+		throw new NotFoundInDbException(String.format("File Template %s not found", relativePath));
 	}
 }
