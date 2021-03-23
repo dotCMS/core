@@ -5,11 +5,9 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FileField;
 import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.graphql.DotGraphQLContext;
-import com.dotcms.storage.model.Metadata;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.BinaryToMapTransformer;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
@@ -22,9 +20,6 @@ import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 
 public class TitleImageFieldDataFetcher implements DataFetcher<Map<String, Object>> {
-
-    private static final String FILE_ASSET = FileAssetAPI.BINARY_FIELD;
-
     @Override
     public Map<String, Object> get(final DataFetchingEnvironment environment) throws Exception {
         try {
@@ -54,13 +49,13 @@ public class TitleImageFieldDataFetcher implements DataFetcher<Map<String, Objec
                 final Contentlet imageContentlet = imageContentletOptional.get();
 
                 if (imageContentlet.getTitleImage().isPresent()) {
-                    final Metadata imageFile = imageContentletOptional.get().getBinaryMetadata(FILE_ASSET);
+                    final File imageFile = imageContentletOptional.get().getBinary("fileAsset");
 
                     titleImageMap = BinaryToMapTransformer.transform(imageFile, imageContentlet, imageContentlet.getTitleImage().get());
                 }
 
 
-            } else if (imageField.get() instanceof BinaryField && contentlet.getTitleImage().isPresent()) {
+            } else if (imageField.get() instanceof BinaryField) {
                 titleImageMap = BinaryToMapTransformer.transform(contentlet.getTitleImage().get(), contentlet);
             }
 

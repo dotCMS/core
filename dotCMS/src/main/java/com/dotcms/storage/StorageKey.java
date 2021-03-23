@@ -1,8 +1,6 @@
 package com.dotcms.storage;
 
 import java.io.Serializable;
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
 
 /**
  * Encapsulates a storage key, it has the key (for instance the path)
@@ -50,15 +48,6 @@ public class StorageKey implements Serializable {
      */
     public StorageType getStorage() {
         return storage;
-    }
-
-
-    @Override
-    public String toString() {
-        return String.format(
-               "StorageKey{ storage=`%s`,\n group=`%s`, \n path=`%s` \n }",
-               storage, group, path
-        );
     }
 
     /**

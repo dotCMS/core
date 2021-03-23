@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.storage.model.Metadata;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.strategy.BinaryViewStrategy;
@@ -45,7 +44,7 @@ public class BinaryToMapTransformer implements FieldsToMapTransformer {
         return BinaryViewStrategy.transform(field, con);
     }
 
-    public static Map<String, Object> transform(final Metadata file, final Contentlet con,
+    public static Map<String, Object> transform(final File file, final Contentlet con,
             final Field field) {
         return BinaryViewStrategy.transform(file, con, field);
     }

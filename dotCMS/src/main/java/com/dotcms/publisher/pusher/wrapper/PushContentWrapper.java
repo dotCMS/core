@@ -1,7 +1,6 @@
 package com.dotcms.publisher.pusher.wrapper;
 
 import com.dotcms.publishing.PublisherConfig.Operation;
-import com.dotcms.storage.model.Metadata;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -24,7 +23,6 @@ public class PushContentWrapper implements ContentWrapper {
     private Operation operation;
     private Language language;
     private Map<String, List<Tag>> contentTags;
-    private Map<String,Metadata> contentletMetadata;
 
     public ContentletVersionInfo getInfo () {
         return info;
@@ -104,14 +102,5 @@ public class PushContentWrapper implements ContentWrapper {
 
     public void setContentTags(Map<String, List<Tag>> contentTags) {
         this.contentTags = contentTags;
-    }
-
-    public Map<String, Metadata> getBinariesMetadata() {
-        return contentletMetadata;
-    }
-
-    public void setBinariesMetadata(
-            Map<String, Metadata> binariesMetadata) {
-        this.contentletMetadata = binariesMetadata;
     }
 }

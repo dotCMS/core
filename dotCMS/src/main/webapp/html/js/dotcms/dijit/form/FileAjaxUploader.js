@@ -50,7 +50,6 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
     templatePath: dojo.moduleUrl("dotcms", "dijit/form/FileAjaxUploader.jsp"),
     widgetsInTemplate: true,
 
-    assetName:'',
     resourceLink: '',
     resourceLinkUri: '',
     resourceLinkLabel: '',
@@ -276,31 +275,30 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
     },
 
     _info: function () {
-    debugger;
         const host = location.protocol + '//' + location.host;
-        let fileInfo = {};
+        var fileInfo = {};
         fileInfo['fileName'] = this.fileName;
         fileInfo['path'] =  host + '/dA/';
-        let assetName = this.assetName !== '' ? this.assetName : this.fileName;
+
         fileInfo['path'] += this.identifier != '0' ? this.idShorty : this.inodeShorty;
         fileInfo['path'] += this.id != 'fileAsset' ? '/' + this.id : '';
-        fileInfo['path'] += '/' + assetName + '?language_id=' + this.lang;
+        fileInfo['path'] += '/' + this.fileName + '?language_id=' + this.lang;
         fileInfo['versionPath'] = this.versionPath;
         fileInfo['idPath'] = this.idPath;
-        fileInfo['versionPathLabel'] = this.versionPathLabel;
-        fileInfo['idPathLabel'] = this.idPathLabel;
-        fileInfo['resourceLink'] = this.resourceLink;
-        fileInfo['resourceLinkUri'] = this.resourceLinkUri;
-        fileInfo['resourceLinkLabel'] = this.resourceLinkLabel;
+        fileInfo['versionPathLabel'] = this.versionPathLabel
+        fileInfo['idPathLabel'] = this.idPathLabel
+        fileInfo['resourceLink'] = this.resourceLink
+        fileInfo['resourceLinkUri'] = this.resourceLinkUri
+        fileInfo['resourceLinkLabel'] = this.resourceLinkLabel
 
-        let html = dojo.replace(this._fileInfoTemplate({
+        var html = dojo.replace(this._fileInfoTemplate({
             resourceLink: this.resourceLink,
             idPath: this.idPath,
             versionPath: this.versionPath
         }), fileInfo);
 
         this.fileInfoDialog.title = this.fileName;
-        let domObj = dojo._toDom(html);
+        var domObj = dojo._toDom(html);
         this.fileInfoDialog.setContent(domObj);
         this.fileInfoDialog.show();
     },

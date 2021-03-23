@@ -1,7 +1,7 @@
 package com.dotcms.tika;
 
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.osgi.OSGIConstants;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
@@ -20,6 +20,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.liferay.util.FileUtil;
+import io.vavr.control.Try;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
+import org.apache.felix.framework.OSGIUtil;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,10 +40,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.zip.GZIPOutputStream;
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
-import org.apache.felix.framework.OSGIUtil;
 
 public class TikaUtils {
 
@@ -109,15 +110,10 @@ public class TikaUtils {
      * returns a Map of the metadata <strong>BUT this method won't try to create any metadata file
      * if does not exist or to override the existing metadata file for the given Contentlet and
      * beside that will put in memory the given file content before to parse it</strong>.
-     * @deprecated
-     *   This method is no longer acceptable to compute metadata.
-     *   <p> Use {@link Contentlet#getBinaryMetadata(Field)}
-     *   or {@link com.dotcms.storage.FileMetadataAPI#generateContentletMetadata(Contentlet)} instead.
      *
      * @param inode Contentlet owner of the file to parse
      * @param binFile File to parse the metadata from it
      */
-    @Deprecated
     public Map<String, String> getMetaDataMapForceMemory(final String inode, final File binFile) {
         return getMetaDataMap(inode, binFile, true);
     }
@@ -127,14 +123,10 @@ public class TikaUtils {
      * returns a Map of the metadata and creates a metadata file for the given
      * Contentlet if does not already exist, if already exist only the metadata is returned and no
      * file is override.
-     * @deprecated
-     *      * This method is no longer acceptable to compute metadata.
-     *      * <p> Use {@link Contentlet#getBinaryMetadata(Field)} instead.
      *
      * @param inode Contentlet owner of the file to parse
      * @param binFile File to parse the metadata from it
      */
-    @Deprecated
     public Map<String, String> getMetaDataMap(final String inode, final File binFile) {
         return getMetaDataMap(inode, binFile, false);
     }
@@ -144,15 +136,10 @@ public class TikaUtils {
      * is missing a metadata file, if the metadata does not exist this method
      * parses the file asset and generates it, <strong>this operation also implies a save
      * operation to the Contentlet in order to save the parsed metadata info</strong>.
-     * @deprecated
-     *   This method is no longer acceptable to compute metadata.
-     *   <p> Use {@link Contentlet#getBinaryMetadata(Field)}
-     *   or {@link com.dotcms.storage.FileMetadataAPI#generateContentletMetadata(Contentlet)} instead.
      *
      * @param contentlet Content parse in order to extract the metadata info
      * @return True if a metadata file was generated.
      */
-    @Deprecated
     public boolean generateMetaData(Contentlet contentlet)
             throws DotDataException, DotSecurityException {
         return generateMetaData(contentlet, false);
@@ -162,14 +149,10 @@ public class TikaUtils {
      * Verifies if the Contentlet is a File asset in order to parse it and generate a metadata
      * file for it, <strong>this operation also implies a save operation to the Contentlet
      * in order to save the parsed metadata info</strong>.
-     * @deprecated
-     *   This method is no longer acceptable to compute metadata.
-     *   <p> Use {@link Contentlet#getBinaryMetadata(Field)}
-     *   or {@link com.dotcms.storage.FileMetadataAPI#generateContentletMetadata(Contentlet)} instead.
+     *
      * @param contentlet Content parse in order to extract the metadata info
      * @return True if a metadata file was generated.
      */
-    @Deprecated
     public Map<String, Object> generateMetaDataForce(final Contentlet contentlet, final File binaryField,
                                                      final String fieldVariableName, final Set<String> metadataFields) {
 
@@ -181,15 +164,9 @@ public class TikaUtils {
      * file for it, <strong>this operation also implies a save operation to the Contentlet
      * in order to save the parsed metadata info</strong>.
      *
-     * @deprecated
-     *   This method is no longer acceptable to compute metadata.
-     *   <p> Use {@link Contentlet#getBinaryMetadata(Field)}
-     *   or {@link com.dotcms.storage.FileMetadataAPI#generateContentletMetadata(Contentlet)}
-     *   or {@link com.dotcms.storage.FileMetadataAPI#getFullMetadataNoCache(File, Supplier)} instead.
      * @param contentlet Content parse in order to extract the metadata info
      * @return True if a metadata file was generated.
      */
-    @Deprecated
     public Map<String, Object> generateMetaData(final Contentlet contentlet, final File binaryField,
                                                 final String fieldVariableName, final Set<String> metadataFields) {
 
@@ -197,7 +174,7 @@ public class TikaUtils {
     }
 
     @CloseDBIfOpened
-    private Map<String, Object> generateMetaData(final Contentlet contentlet, final File binaryField, final String fieldVariableName,
+    private Map<String, Object>  generateMetaData(final Contentlet contentlet, final File binaryField, final String fieldVariableName,
                                                  final Set<String> metadataFields, final boolean force) {
 
         //See if we have content metadata file
@@ -236,13 +213,28 @@ public class TikaUtils {
                 this.writeCompressJsonMetadataFile (contentMetaFile,
                         UtilMethods.isSet(metaDataMap)?metaDataMap:Collections.emptyMap());
             }
-
+            
+            if (contentlet.isFileAsset() && UtilMethods.isSet(metaDataMap) && !metaDataMap.isEmpty()) {
+                this.saveMetadataOnFileAsset(contentlet, metaDataMap);
+            }
+            
         } else {
 
             metaDataMap = this.readCompressedJsonMetadataFile (contentMetaFile);
         }
 
+
+
         return metaDataMap;
+    }
+
+    @WrapInTransaction
+    private void saveMetadataOnFileAsset(final Contentlet contentlet, final Map<String, Object> metaDataMap) {
+
+        final Gson gson = new GsonBuilder().disableHtmlEscaping().create();
+        contentlet.setProperty(FileAssetAPI.META_DATA_FIELD, gson.toJson(metaDataMap));
+        //Save the parsed metadata to the contentlet
+        Try.of(()->FactoryLocator.getContentletFactory().save(contentlet));
     }
 
 
@@ -292,10 +284,6 @@ public class TikaUtils {
      * Verifies if the Contentlet is a File asset in order to parse it and generate a metadata
      * file for it, <strong>this operation also implies a save operation to the Contentlet
      * in order to save the parsed metadata info</strong>.
-     * @deprecated
-     *   This method is no longer acceptable to compute metadata.
-     *   <p> Use {@link Contentlet#getBinaryMetadata(Field)}
-     *   or {@link com.dotcms.storage.FileMetadataAPI#generateContentletMetadata(Contentlet)} instead.
      *
      * @param contentlet Content parse in order to extract the metadata info
      * @param force If <strong>false</strong> we will try to parse and generate the metadata file
@@ -303,7 +291,6 @@ public class TikaUtils {
      * existing metadata file in order to force a parse and generation of the metadata file.
      * @return True if a metadata file was generated.
      */
-    @Deprecated
     @CloseDBIfOpened
     public boolean generateMetaData(Contentlet contentlet, boolean force)
             throws DotSecurityException, DotDataException {
@@ -520,7 +507,7 @@ public class TikaUtils {
      * Reads INDEX_METADATA_FIELDS from configuration
      * @return
      */
-    public static Set<String> getConfiguredMetadataFields(){
+    public Set<String> getConfiguredMetadataFields(){
         final String configFields=Config.getStringProperty("INDEX_METADATA_FIELDS", null);
 
         if (UtilMethods.isSet(configFields)) {
@@ -536,7 +523,7 @@ public class TikaUtils {
      * @param metaMap
      * @param configFieldsSet
      */
-    public static void filterMetadataFields(final Map<String, ?> metaMap, final Set<String> configFieldsSet){
+    public void filterMetadataFields(final Map<String, ? extends Object> metaMap, final Set<String> configFieldsSet){
 
         if (UtilMethods.isSet(metaMap) && UtilMethods.isSet(configFieldsSet)) {
             metaMap.entrySet()
@@ -551,14 +538,13 @@ public class TikaUtils {
      * @param configFieldsSet
      * @return
      */
-    private static boolean checkIfFieldMatches(final String key, final Set<String> configFieldsSet){
+    private boolean checkIfFieldMatches(final String key, final Set<String> configFieldsSet){
         final Predicate<String> condition = e -> key.matches(e);
         return configFieldsSet.stream().anyMatch(condition);
     }
 
     /**
      * Writes the content of a given Reader into the Contentlet metadata file
-     * TODO: Probably this won't be needed any longer consider removing it and all code using it.
      */
     private Map<String, String> writeMetadata(Reader fullText, File contentMetadataFile)
             throws IOException {

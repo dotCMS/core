@@ -1,6 +1,5 @@
 package com.dotcms.publisher.pusher.wrapper;
 
-import com.dotcms.storage.model.Metadata;
 import java.util.List;
 import java.util.Map;
 
@@ -91,10 +90,4 @@ public class HostWrapper implements ContentWrapper {
 	public void setContentTags(Map<String, List<Tag>> contentTags) {
 		this.contentTags = contentTags;
 	}
-
-	@Override
-	public Map<String, Metadata> getBinariesMetadata() {
-		return null;
-	}
-
 }
