@@ -1127,7 +1127,6 @@ public class ImportStarterUtil {
             _tablesToDelete.add("identifier");
             _tablesToDelete.add("inode");;
             _tablesToDelete.add("user_");
-            _tablesToDelete.add("user_proxy");
             
             _tablesToDelete.add("company");
             _tablesToDelete.add("counter");

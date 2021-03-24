@@ -1,6 +1,7 @@
 package com.dotcms.publisher.pusher.wrapper;
 
 import com.dotcms.publishing.PublisherConfig.Operation;
+import com.dotcms.storage.model.Metadata;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -28,5 +29,7 @@ public interface ContentWrapper {
     Language getLanguage();
 
     Map<String, List<Tag>> getContentTags();
+
+    Map<String, Metadata> getBinariesMetadata();
 
 }

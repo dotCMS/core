@@ -33,8 +33,9 @@ import com.liferay.portal.model.User;
  *
  * @author  Brian Wing Shun Chan
  * @version $Revision: 1.58 $
- *
+ * @deprecated Use {@link com.dotmarketing.business.UserFactoryImpl} instead
  */
+@Deprecated
 public class CompanyLocalManagerUtil {
 	
 	public static User createDefaultUser(Company company) throws PortalException, SystemException{

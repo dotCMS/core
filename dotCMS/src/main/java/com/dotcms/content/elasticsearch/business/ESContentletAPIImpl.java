@@ -36,12 +36,15 @@ import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.rendering.velocity.services.PageLoader;
-import com.dotcms.repackage.com.google.common.base.Preconditions;
-import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
-import com.dotcms.repackage.com.google.common.collect.Lists;
-import com.dotcms.repackage.com.google.common.collect.Maps;
-import com.dotcms.repackage.com.google.common.collect.Sets;
-import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.storage.FileMetadataAPI;
+import com.dotcms.storage.model.Metadata;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import org.apache.commons.io.FileUtils;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
@@ -235,6 +238,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private final TagAPI                tagAPI;
     private final IdentifierStripedLock lockManager;
     private final TempFileAPI           tempApi ;
+    private final FileMetadataAPI       fileMetadataAPI;
     public static final int MAX_LIMIT = 10000;
     private static final boolean INCLUDE_DEPENDENCIES = true;
 
@@ -277,6 +281,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         localSystemEventsAPI      = APILocator.getLocalSystemEventsAPI();
         lockManager = DotConcurrentFactory.getInstance().getIdentifierStripedLock();
         tempApi=  APILocator.getTempFileAPI();
+        fileMetadataAPI = APILocator.getFileMetadataAPI();
         this.esReadOnlyMonitor = esReadOnlyMonitor;
     }
 
@@ -2252,8 +2257,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         this.deleteBinaryFiles(contentletsVersion, null);
         this.deleteElementFromPublishQueueTable(contentlets);
+        this.destroyMetadata(contentlets);
 
         return noErrors;
+    }
+
+    /**
+     * at destroying/deleting time this will take care of removing all metadata entries
+     * @param contentlets
+     */
+    private void destroyMetadata(final List<Contentlet> contentlets){
+        for (final Contentlet contentlet:contentlets){
+            fileMetadataAPI.removeMetadata(contentlet);
+            Logger.debug(ESContentletAPIImpl.class,String.format("metadata removed for %s",contentlet.getIdentifier()));
+        }
+        Logger.debug(ESContentletAPIImpl.class,String.format("Done removing metadata for %d elements.",contentlets.size()));
     }
 
     private void forceUnpublishArchiveOnDestroy(final User user, final Contentlet contentlet)
@@ -2719,6 +2737,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
         CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
 
         deleteBinaryFiles(contentlets,null);
+
+        fileMetadataAPI.removeVersionMetadata(contentlet);
+
     }
 
     @WrapInTransaction
@@ -4789,8 +4810,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 
             // Binary Files
-            String newInode = contentlet.getInode();
-            String oldInode = workingContentlet.getInode();
+            final String newInode = contentlet.getInode();
+            final String oldInode = workingContentlet.getInode();
 
 
             File newDir = new File(APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator
@@ -4815,8 +4836,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         + File.separator + oldInode);
             }
 
-            // List of files that we need to delete after iterate over all the fields.
-            Set<File> fileListToDelete = Sets.newHashSet();
 
             // loop over the new field values
             // if we have a new temp file or a deleted file
@@ -4832,95 +4851,86 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                     final File binaryFieldFolder = new File(newDir.getAbsolutePath() + File.separator + velocityVarNm);
 
-                    final File metadata=(contentType instanceof FileAssetContentType) ? 
-                        APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode()) : null;
-                    
 
-                    // if the user has removed this  file via the ui
+                    // if the user has removed this file via ui
                     if (incomingFile == null  || incomingFile.getAbsolutePath().contains("-removed-")){
                         FileUtil.deltree(binaryFieldFolder);
                         contentlet.setBinary(velocityVarNm, null);
-                        if(metadata!=null && metadata.exists())
-                            metadata.delete();
-                        continue;
-                    }
 
-                    // if we have an incoming file
-                    else if (incomingFile.exists() ){
-                        //The physical file name is preserved across versions.
-                        //No need to update the name. We will only reference the file through the logical asset-name
-                        final String oldFileName  = incomingFile.getName();
-
-                        File oldFile = null;
-                        if(UtilMethods.isSet(oldInode)) {
-                            //get old file
-                            oldFile = new File(oldDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator +  oldFileName);
-
-                            // do we have an inline edited file, if so use that
-                            File editedFile = new File(tmpDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator + WebKeys.TEMP_FILE_PREFIX + oldFileName);
-                            if(editedFile.exists()){
-                                incomingFile = editedFile;
-                            }
+                        //For removed files we should cleanup any existing metadata.
+                        if(contentlet.isFileAsset()){
+                           fileMetadataAPI.removeMetadata(contentlet);
                         }
 
-                        //The file name must be preserved so it remains the same across versions.
-                        File newFile = new File(newDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator +  oldFileName);
-                        binaryFieldFolder.mkdirs();
+                    } else { // if we have an incoming file
+                        if (incomingFile.exists() ){
 
-                        // we move files that have been newly uploaded or edited
-                        if(oldFile==null || !oldFile.equals(incomingFile)){
-                            if(!createNewVersion){
-                                // If we're calling a checkinWithoutVersioning method,
-                                // then folder needs to be cleaned up in order to add the new file in it.
-                                // Otherwise we will have the old file and incoming file at the same time
-                                FileUtil.deltree(binaryFieldFolder);
-                                binaryFieldFolder.mkdirs();
-                            }
-                            // We want to copy (not move) cause the same file could be in
-                            // another field and we don't want to delete it in the first time.
-                            final boolean contentVersionHardLink = Config
-                                    .getBooleanProperty("CONTENT_VERSION_HARD_LINK", true);
-                            FileUtil.copyFile(incomingFile, newFile, contentVersionHardLink, validateEmptyFile);
+                            //If the incoming file is temp resource we need to find out if there is any metadata associated
+                            final Optional<String> tempResourceId = tempApi.getTempResourceId(incomingFile);
 
+                            //The physical file name is preserved across versions.
+                            //No need to update the name. We will only reference the file through the logical asset-name
+                            final String oldFileName  = incomingFile.getName();
 
-                            // delete old content metadata if exists
-                            if(metadata!=null && metadata.exists()){
-                                metadata.delete();
+                            File oldFile = null;
+                            if(UtilMethods.isSet(oldInode)) {
+                                //get old file
+                                oldFile = new File(oldDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator +  oldFileName);
+
+                                // do we have an inline edited file, if so use that
+                                File editedFile = new File(tmpDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator + WebKeys.TEMP_FILE_PREFIX + oldFileName);
+                                if(editedFile.exists()){
+                                    incomingFile = editedFile;
+                                }
                             }
 
-                        } else if (oldFile.exists()) {
-                            // otherwise, we copy the files as hardlinks
-                            final boolean contentVersionHardLink = Config
-                                    .getBooleanProperty("CONTENT_VERSION_HARD_LINK", true);
-                            FileUtil.copyFile(incomingFile, newFile, contentVersionHardLink, validateEmptyFile);
+                            //The file name must be preserved so it remains the same across versions.
+                            final File newFile = new File(newDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator +  oldFileName);
+                            binaryFieldFolder.mkdirs();
 
-                            // try to get the content metadata from the old version
-                            if (metadata != null) {
-                                File oldMeta = APILocator.getFileAssetAPI()
-                                        .getContentMetadataFile(oldInode);
-                                if (oldMeta.exists() && !oldMeta.equals(metadata)) {
-                                    if (metadata
-                                            .exists()) {// unlikely to happend. deleting just in case
-                                        metadata.delete();
-                                    }
-                                    metadata.getParentFile().mkdirs();
-                                    FileUtil.copyFile(oldMeta, metadata);
+                            // we move files that have been newly uploaded or edited
+                            if(oldFile==null || !oldFile.equals(incomingFile)){
+                                if(!createNewVersion){
+                                    // If we're calling a checkinWithoutVersioning method,
+                                    // then folder needs to be cleaned up in order to add the new file in it.
+                                    // Otherwise we will have the old file and incoming file at the same time
+                                    FileUtil.deltree(binaryFieldFolder);
+                                    binaryFieldFolder.mkdirs();
+                                }
+                                // We want to copy (not move) cause the same file could be in
+                                // another field and we don't want to delete it in the first time.
+                                final boolean contentVersionHardLink = Config
+                                        .getBooleanProperty("CONTENT_VERSION_HARD_LINK", true);
+                                FileUtil.copyFile(incomingFile, newFile, contentVersionHardLink, validateEmptyFile);
+
+                            } else if (oldFile.exists()) {
+                                // otherwise, we copy the files as hardlinks
+                                final boolean contentVersionHardLink = Config
+                                        .getBooleanProperty("CONTENT_VERSION_HARD_LINK", true);
+                                FileUtil.copyFile(incomingFile, newFile, contentVersionHardLink, validateEmptyFile);
+
+                                if(workingContentlet != contentlet){
+                                   //This copies the metadata from version to version so we don't lose any any custom attribute previously added
+                                   fileMetadataAPI.copyMetadata(workingContentlet, contentlet);
+                                }
+                            }
+                            contentlet.setBinary(velocityVarNm, newFile);
+
+                            //This copies the metadata associated with the temp resource passed if any.
+                            if(tempResourceId.isPresent()){
+                                final Optional<Metadata> optionalMetadata = fileMetadataAPI.getMetadata(tempResourceId.get());
+                                if(optionalMetadata.isPresent()){
+                                   final Metadata tempMeta = optionalMetadata.get();
+                                   fileMetadataAPI.putCustomMetadataAttributes(contentlet, ImmutableMap.of(velocityVarNm, tempMeta.getCustomMeta()));
                                 }
                             }
                         }
-                        contentlet.setBinary(velocityVarNm, newFile);
                     }
                 } catch (FileNotFoundException e) {
                     throw new DotContentletValidationException("Error occurred while processing the file:" + e.getMessage(),e);
                 } catch (IOException e) {
                     throw new DotContentletValidationException("Error occurred while processing the file:" + e.getMessage(),e);
                 }
-            }
-
-            // These are the incomingFiles that were copied to a new location
-            // (cause new content inode) and now we need to delete to avoid duplicates.
-            for (File fileToDelete : fileListToDelete) {
-                fileToDelete.delete();
             }
 
             // lets update identifier's syspubdate & sysexpiredate
@@ -5012,30 +5022,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             final Identifier contIdent = APILocator.getIdentifierAPI().find(contentlet);
-            if(contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET){
-                //Parse file META-DATA
-                final File binFile =  getBinaryFile(contentlet.getInode(), FileAssetAPI.BINARY_FIELD, user);
-                if(binFile != null){
-                    contentlet.setProperty(FileAssetAPI.FILE_NAME_FIELD, binFile.getName());
-                    if(!UtilMethods.isSet(contentlet.getStringProperty(FileAssetAPI.DESCRIPTION))){
-                        String desc = UtilMethods.getFileName(binFile.getName());
-                        contentlet.setProperty(FileAssetAPI.DESCRIPTION, desc);
-                    }
-                    final Map<String, String> metaMap = APILocator.getFileAssetAPI().getMetaDataMap(contentlet, binFile);
 
-                    if(metaMap != null) {
-                        final Gson gson = new GsonBuilder().disableHtmlEscaping().create();
-                        contentlet.setProperty(FileAssetAPI.META_DATA_FIELD, gson.toJson(metaMap));
-                        contentlet = contentFactory.save(contentlet);
-                        contentlet.setIndexPolicy(indexPolicy);
-                        contentlet.setIndexPolicyDependencies(indexPolicyDependencies);
-                    }
-                }
-
-                // clear possible CSS cache
-                CacheLocator.getCSSCache().remove(contIdent.getHostId(), contIdent.getURI(), true);
-                CacheLocator.getCSSCache().remove(contIdent.getHostId(), contIdent.getURI(), false);
-            }
 
             // both file & page as content might trigger a menu cache flush
             if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET

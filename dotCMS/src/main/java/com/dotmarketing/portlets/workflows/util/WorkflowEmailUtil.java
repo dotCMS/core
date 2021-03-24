@@ -61,8 +61,9 @@ public class WorkflowEmailUtil {
             }
 
             // get the host of the content
-            Host host = APILocator.getHostAPI().find(processor.getContentlet().getHost(),
-                    APILocator.getUserAPI().getSystemUser(), false);
+            Host host = APILocator
+                    .getHostAPI()
+                    .find(processor.getContentlet(), APILocator.getUserAPI().getSystemUser(), false);
             if (host.isSystemHost()) {
                 host = APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), false);
             }

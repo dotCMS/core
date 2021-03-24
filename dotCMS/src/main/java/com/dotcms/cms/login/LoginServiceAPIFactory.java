@@ -62,9 +62,10 @@ import com.liferay.util.InstancePool;
  */
 public class LoginServiceAPIFactory implements Serializable {
 
-     private static final String BACKEND_LOGIN = "backendLogin";
+    private static final String BACKEND_LOGIN = "backendLogin";
+    public static final String LOG_OUT_ATTRIBUTE = "LOG_OUT";
 
-	/**
+    /**
 	 * Used to keep the instance of the {@link LoginServiceAPI}. Should be volatile
 	 * to avoid thread-caching
 	 */
@@ -207,6 +208,7 @@ public class LoginServiceAPIFactory implements Serializable {
                 }
 
                 log.debug("Logout - Invalidating http session...");
+                session.setAttribute(LOG_OUT_ATTRIBUTE, true);
                 session.invalidate();
 
                 log.debug("Logout - Events Processor Post Logout events.");

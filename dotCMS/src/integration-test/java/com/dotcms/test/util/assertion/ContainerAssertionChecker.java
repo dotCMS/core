@@ -95,7 +95,13 @@ public class ContainerAssertionChecker implements AssertionChecker<Container> {
                 "<modDate class=\"sql-timestamp\">.*</modDate>",
                 "<lockedOn class=\"sql-timestamp\">.*</lockedOn>",
                 "<versionTs class=\"sql-timestamp\">.*</versionTs>",
-                "<liveInode>null</liveInode>"
+                "<liveInode>null</liveInode>",
+                "<owner>.*</owner>",
+                "<csList class=\"com\\.google\\.common\\.collect\\.RegularImmutableList\" resolves\\-to=\"com\\.google\\.common\\.collect\\.ImmutableList\\$SerializedForm\"><elements/></csList>",
+                "<csList/>",
+                " class=\"com.google.common.collect.RegularImmutableList\" resolves-to=\"com.google.common.collect.ImmutableList$SerializedForm\"",
+                "<elements>",
+                "</elements>"
         );
     }
 }

@@ -12,6 +12,7 @@ import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.repackage.org.jsoup.Jsoup;
@@ -22,6 +23,9 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -45,6 +49,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -60,22 +65,20 @@ public class HTMLDiffUtilTest extends IntegrationTestBase {
     private static Folder folder;
     private static User systemUser;
     private static Container container;
-    private static Language defaultLang;
+    private static Language language;
     private static String uuid;
 
     private static final String NOTHING_CHANGED = "Nothing Changed";
 
-    @BeforeClass
-    public static void prepare() throws Exception {
-
-        IntegrationTestInitService.getInstance().init();
-        LicenseTestUtil.getLicense();
+    @Before
+    public void createTestEnvironment()
+            throws DotSecurityException, WebAssetException, DotDataException {
         contentletAPI = APILocator.getContentletAPI();
         final LanguageAPI languageAPI = APILocator.getLanguageAPI();
         multiTreeAPI = APILocator.getMultiTreeAPI();
         systemUser = APILocator.systemUser();
         site = new SiteDataGen().nextPersisted();
-        defaultLang = languageAPI.getDefaultLanguage();
+        language = new LanguageDataGen().nextPersisted();
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(systemUser);
         final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
         contentGenericId = contentGenericType.id();
@@ -97,6 +100,13 @@ public class HTMLDiffUtilTest extends IntegrationTestBase {
         PublishFactory.publishAsset(template, systemUser, false, false);
     }
 
+    @BeforeClass
+    public static void prepare() throws Exception {
+
+        IntegrationTestInitService.getInstance().init();
+        LicenseTestUtil.getLicense();
+    }
+
     /**
      * Given scenario: We have a page created out of a layout and a container. The Container holds a List of items.
      * Expected Result:  We create a working copy and modify the list of items. The new items must replace the old ones.
@@ -112,7 +122,7 @@ public class HTMLDiffUtilTest extends IntegrationTestBase {
         final Set<String> coneheads = ImmutableSet.of("Thrust", "Ramjet", "Dirge");
 
         final Contentlet contentlet = new ContentletDataGen(contentGenericId)
-                .languageId(defaultLang.getId())
+                .languageId(language.getId())
                 .folder(folder)
                 .host(site)
                 .setProperty("title", "seekers")
@@ -124,7 +134,7 @@ public class HTMLDiffUtilTest extends IntegrationTestBase {
         contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(contentlet, systemUser, false);
 
-        final HTMLPageAsset pageLive = new HTMLPageDataGen(folder, template).languageId(defaultLang.getId())
+        final HTMLPageAsset pageLive = new HTMLPageDataGen(folder, template).languageId(language.getId())
                 .pageURL(pageName)
                 .friendlyName(pageName)
                 .title(pageName).nextPersisted();
@@ -160,7 +170,7 @@ public class HTMLDiffUtilTest extends IntegrationTestBase {
 
         when(request.getParameter("host_id")).thenReturn(site.getIdentifier());
         when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(site);
-        when(session.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(defaultLang.getId()+"");
+        when(session.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(language.getId()+"");
         when(session.getAttribute(WebKeys.PAGE_MODE_SESSION)).thenReturn(PageMode.PREVIEW_MODE);
 
         // Collection to store attributes keys/values
@@ -206,7 +216,7 @@ public class HTMLDiffUtilTest extends IntegrationTestBase {
         final String pageName = "seekers-expect-No-difference-page";
 
         final Contentlet contentlet = new ContentletDataGen(contentGenericId)
-                .languageId(defaultLang.getId())
+                .languageId(language.getId())
                 .folder(folder)
                 .host(site)
                 .setProperty("title", "seekers")
@@ -218,7 +228,7 @@ public class HTMLDiffUtilTest extends IntegrationTestBase {
         contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(contentlet, systemUser, false);
 
-       final HTMLPageAsset pageLive = new HTMLPageDataGen(folder, template).languageId(defaultLang.getId())
+       final HTMLPageAsset pageLive = new HTMLPageDataGen(folder, template).languageId(language.getId())
                 .pageURL(pageName)
                 .friendlyName(pageName)
                 .title(pageName).nextPersisted();
@@ -248,7 +258,7 @@ public class HTMLDiffUtilTest extends IntegrationTestBase {
 
         when(request.getParameter("host_id")).thenReturn(site.getIdentifier());
         when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(site);
-        when(session.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(defaultLang.getId()+"");
+        when(session.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(language.getId()+"");
         when(session.getAttribute(WebKeys.PAGE_MODE_SESSION)).thenReturn(PageMode.PREVIEW_MODE);
 
         // Collection to store attributes keys/values
