@@ -16,8 +16,14 @@ public class FocalPoint implements Serializable {
     }
     
     public FocalPoint(final String focalPointStr) {
-        this.x=Try.of(()-> Float.parseFloat(focalPointStr.split(StringPool.COMMA)[0])).getOrElse(0f);
-        this.y=Try.of(()-> Float.parseFloat(focalPointStr.split(StringPool.COMMA)[1])).getOrElse(0f);
+        if(focalPointStr.contains(",")) {
+            this.x=Try.of(()-> Float.parseFloat(focalPointStr.split(StringPool.COMMA)[0])).getOrElse(0f);
+            this.y=Try.of(()-> Float.parseFloat(focalPointStr.split(StringPool.COMMA)[1])).getOrElse(0f);
+        }else {
+            this.x=Try.of(()-> Float.parseFloat(focalPointStr.split(StringPool.SPACE)[0])).getOrElse(0f);
+            this.y=Try.of(()-> Float.parseFloat(focalPointStr.split(StringPool.SPACE)[1])).getOrElse(0f);
+        }
+
     }
     
     @Override
@@ -64,5 +70,7 @@ public class FocalPoint implements Serializable {
     }
 
     
-    
+    public boolean isEmpty(){
+      return this.x == 0 && this.y == 0;
+    }
 }
