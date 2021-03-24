@@ -17,6 +17,9 @@ import java.util.concurrent.Future;
  */
 public interface StoragePersistenceAPI {
 
+    String HASH_OBJECT = "hashObject";
+    String HASH_REF = "hashRef";
+
     String STORAGE_POOL = "StoragePool";
 
     /**
@@ -58,12 +61,21 @@ public interface StoragePersistenceAPI {
     int deleteGroup(final String groupName) throws DotDataException;
 
     /**
-     * Deletes the object path on the group
+     * Deletes the object and all references bound to the path on the group
      * @param groupName {@link String} group name
      * @param path   {   @link String} object path
      * @return boolean true if deletes was ok.
      */
-    boolean deleteObject(String groupName, String path) throws DotDataException;
+    boolean deleteObjectAndReferences(String groupName, String path) throws DotDataException;
+
+    /**
+     * if the Repo handles multiple references to an object via different paths this will only remove the current reference.
+     * @param groupName
+     * @param path
+     * @return
+     * @throws DotDataException
+     */
+    boolean deleteObjectReference(String groupName, String path) throws DotDataException;
 
     /**
      * List the groups, the returns a list of object since the return would depend on the implementation.
