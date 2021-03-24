@@ -6,6 +6,7 @@ import com.dotcms.saml.DotSamlProxyFactory;
 import com.dotcms.security.apps.AppSecretSavedEvent;
 import com.dotcms.security.apps.AppsKeyResetEventListener;
 import com.dotcms.system.event.local.type.security.CompanyKeyResetEvent;
+import com.dotmarketing.portlets.folders.business.ApplicationTemplateFolderListener;
 import java.util.List;
 
 import com.dotcms.config.DotInitializer;
@@ -40,6 +41,7 @@ public class LocalSystemEventSubscribersInitializer implements DotInitializer {
         APILocator.getLocalSystemEventsAPI().subscribe(ContainerStructureFinderStrategyResolver.getInstance());
 
         this.initApplicationContainerFolderListener();
+        this.initApplicationTemplateFolderListener();
 
         APILocator.getLocalSystemEventsAPI().subscribe(ContentletCheckinEvent.class, UnassignedWorkflowContentletCheckinListener.getInstance());
 
@@ -70,6 +72,28 @@ public class LocalSystemEventSubscribersInitializer implements DotInitializer {
 
             Logger.error(this, "Could not init the: " +
                     ApplicationContainerFolderListener.class.getName() + ", msg: " + e.getMessage(), e);
+        }
+    }
+
+    public void initApplicationTemplateFolderListener() {
+
+        try {
+
+            final User user  = APILocator.systemUser();
+            final List<Host> hosts = APILocator.getHostAPI().findAllFromDB(user, false);
+            final ApplicationTemplateFolderListener listener = new ApplicationTemplateFolderListener();
+            for (final Host host : hosts) {
+
+                final Folder appTemplateFolder = APILocator.getFolderAPI().findFolderByPath(Constants.TEMPLATE_FOLDER_PATH,
+                        host, user, false);
+
+                APILocator.getFolderAPI().subscribeFolderListener(appTemplateFolder, listener,
+                        childName -> null != childName && (childName.endsWith(Constants.VELOCITY_FILE_EXTENSION) || childName.endsWith(Constants.JSON_FILE_EXTENSION)));
+            }
+        } catch (DotDataException | DotSecurityException e) {
+
+            Logger.error(this, "Could not init the: " +
+                    ApplicationTemplateFolderListener.class.getName() + ", msg: " + e.getMessage(), e);
         }
     }
 

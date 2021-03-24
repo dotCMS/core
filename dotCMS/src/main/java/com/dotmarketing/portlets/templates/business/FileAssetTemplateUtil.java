@@ -62,9 +62,9 @@ public class FileAssetTemplateUtil {
 
     private static String [] DEFAULT_META_DATA_NAMES_ARRAY = new String[] { TITLE, FRIENDLY_NAME,THEME,IMAGE };
 
-    static final String LAYOUT             = "layout.json";
-    static final String BODY               = "body.vtl";
-    static final String TEMPLATE_META_INFO = "properties.vtl";
+    public static final String LAYOUT             = "layout.json";
+    public static final String BODY               = "body.vtl";
+    public static final String TEMPLATE_META_INFO = "properties.vtl";
 
     private static class SingletonHolder {
         private static final FileAssetTemplateUtil INSTANCE = new FileAssetTemplateUtil();

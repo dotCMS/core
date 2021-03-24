@@ -159,4 +159,9 @@ public final class Constants {
 	 * Extension for the velocity file: .vtl
 	 */
 	public static final String VELOCITY_FILE_EXTENSION = ".vtl";
+
+	/**
+	 * Extension for the JSON file: .json
+	 */
+	public static final String JSON_FILE_EXTENSION = ".json";
 }

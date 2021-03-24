@@ -798,6 +798,17 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 				template);
 	}
 
+	/**
+	 * Returns the Template based on the folder and host; this method is mostly used when the
+	 * template is file asset based.
+	 */
+	@Override
+	@CloseDBIfOpened
+	public Template getTemplateByFolder(final Folder folder, final Host host, final User user,
+			final boolean showLive) throws DotSecurityException, DotDataException {
+		return templateFactory.getTemplateByFolder(host,folder,user,showLive);
+	}
+
 	private Template findTemplateByPath (final String path, final User user, final boolean respectFrontendRoles, final boolean showLive) throws DotDataException, DotSecurityException {
 
 		final FileAssetTemplateUtil fileAssetTemplateUtil =
