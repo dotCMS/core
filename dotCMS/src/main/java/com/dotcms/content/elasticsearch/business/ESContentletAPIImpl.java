@@ -257,13 +257,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
     };
 
     private static final Supplier<String> ND_SUPPLIER = ()->"N/D";
-    private ESReadOnlyMonitor esReadOnlyMonitor;
+    private ElasticReadOnlyCommand elasticReadOnlyCommand;
 
     /**
      * Default class constructor.
      */
     @VisibleForTesting
-    public ESContentletAPIImpl (final ESReadOnlyMonitor esReadOnlyMonitor) {
+    public ESContentletAPIImpl (final ElasticReadOnlyCommand readOnlyCommand) {
         indexAPI = new ContentletIndexAPIImpl();
         fieldAPI = APILocator.getFieldAPI();
         contentFactory = new ESContentFactoryImpl();
@@ -277,11 +277,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         localSystemEventsAPI      = APILocator.getLocalSystemEventsAPI();
         lockManager = DotConcurrentFactory.getInstance().getIdentifierStripedLock();
         tempApi=  APILocator.getTempFileAPI();
-        this.esReadOnlyMonitor = esReadOnlyMonitor;
+        this.elasticReadOnlyCommand = readOnlyCommand;
     }
 
     public ESContentletAPIImpl () {
-        this(ESReadOnlyMonitor.getInstance());
+        this(ElasticReadOnlyCommand.getInstance());
     }
 
 
@@ -4440,7 +4440,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         if (!isCheckInSafe(contentRelationships)){
-            this.esReadOnlyMonitor.start();
+            this.elasticReadOnlyCommand.executeCheck(); // todo: should run this in another thread???
             throw new DotContentletStateException(
                     "Content cannot be saved at this moment. Reason: Elastic Search cluster is in read only mode.");
         }

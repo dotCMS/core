@@ -8,7 +8,6 @@ import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.content.elasticsearch.business.ESReadOnlyMonitor;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
@@ -587,7 +586,7 @@ public class PublishFactory {
 
 			Logger.warn(PublishFactory.class, message);
 		} catch (final  LanguageException  e) {
-			Logger.warn(ESReadOnlyMonitor.class, () -> e.getMessage());
+			Logger.warn(PublishFactory.class, () -> e.getMessage());
 		}
 	}
 }

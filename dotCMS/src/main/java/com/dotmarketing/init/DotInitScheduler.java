@@ -1,10 +1,13 @@
 package com.dotmarketing.init;
 
+import static com.dotmarketing.util.WebKeys.DOTCMS_DISABLE_ELASTIC_READONLY_MONITOR;
 import static com.dotmarketing.util.WebKeys.DOTCMS_DISABLE_WEBSOCKET_PROTOCOL;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+
+import com.dotmarketing.quartz.job.EsReadOnlyMonitorJob;
 import org.quartz.CronTrigger;
 import org.quartz.Job;
 import org.quartz.JobDetail;
@@ -42,6 +45,7 @@ public class DotInitScheduler {
 
 	private static final String DOTCMS_JOB_GROUP_NAME = "dotcms_jobs";
 	public static final String SCHEDULER_COREPOOLSIZE = "SCHEDULER_CORE_POOL_SIZE";
+	public static final String CRON_EXPRESSION_EVERY_5_MINUTES = " 0 0/5 0 ? * * *";
 
 	private static ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = null;
 
@@ -470,15 +474,17 @@ public class DotInitScheduler {
 				// Enabling the System Events Job
 				addSystemEventsJob();
 			}
-			
-			
+
 			// start the server heartbeat job
 			addServerHeartbeatJob();
-			
-			
 
 			// Enabling the Delete Old System Events Job
 			addDeleteOldSystemEvents(sched);
+
+			if ( !Config.getBooleanProperty(DOTCMS_DISABLE_ELASTIC_READONLY_MONITOR, false) ) {
+				// Enabling the Read only monitor
+				addElasticReadyOnlyMonitor(sched);
+			}
 
             //Starting the sequential and standard Schedulers
 	        QuartzUtils.startSchedulers();
@@ -526,7 +532,37 @@ public class DotInitScheduler {
 			}
 		}
 	} // addSystemEventsJob.
-	
+
+	private static void addElasticReadyOnlyMonitor (final Scheduler scheduler) {
+
+		try {
+
+			final String jobName      = "EsReadOnlyMonitorJob";
+			final String triggerName  = "trigger29";
+			final String triggerGroup = "group98";
+
+			if (Config.getBooleanProperty( "ENABLE_ELASTIC_READ_ONLY_MONITOR", true)) {
+
+					final JobBuilder deleteOldSystemEventsJob = new JobBuilder().setJobClass(EsReadOnlyMonitorJob.class)
+							.setJobName(jobName)
+							.setJobGroup(DOTCMS_JOB_GROUP_NAME)
+							.setTriggerName(triggerName)
+							.setTriggerGroup(triggerGroup)
+							.setCronExpressionProp("ELASTIC_READ_ONLY_MONITOR_CRON_EXPRESSION")
+							.setCronExpressionPropDefault(Config.getStringProperty("ELASTIC_READ_ONLY_MONITOR_CRON_EXPRESSION", CRON_EXPRESSION_EVERY_5_MINUTES))
+							.setCronMissfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+					scheduleJob(deleteOldSystemEventsJob);
+			} else {
+
+				if ((scheduler.getJobDetail(jobName, DOTCMS_JOB_GROUP_NAME)) != null) {
+					scheduler.deleteJob(jobName, DOTCMS_JOB_GROUP_NAME);
+				}
+			}
+		} catch (Exception e) {
+
+			Logger.info(DotInitScheduler.class, e.toString());
+		}
+	} // addElasticReadyOnlyMonitor.
 
    private static void addServerHeartbeatJob () {
 

@@ -197,7 +197,7 @@ public final class ElasticsearchUtil {
         try{
             return APILocator.getIndiciesAPI().loadIndicies();
         } catch (DotDataException e) {
-            Logger.error(ESReadOnlyMonitor.class, e);
+            Logger.error(ElasticsearchUtil.class, e);
             throw new DotRuntimeException(e);
         }
     }

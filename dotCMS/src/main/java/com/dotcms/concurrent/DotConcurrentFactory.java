@@ -8,10 +8,12 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.github.rjeschke.txtmark.Run;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
@@ -27,7 +29,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
 
     private static final int POOL_SIZE_VAL = 10;
     private static final int MAXPOOL_SIZE_VAL = 50;
-    private static final int QUEUE_CAPACITY_VAL = 1000;
+    private static final int QUEUE_CAPACITY_VAL = 100; // todo: change this at the end to 10000
 
 
     /**
@@ -195,7 +197,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
                         "threadPool",  dotConcurrent.getThreadPoolExecutor().toString(),
                         "maxPoolSize", dotConcurrent.getThreadPoolExecutor().getMaximumPoolSize(),
                         "keepAlive",   dotConcurrent.getThreadPoolExecutor().getKeepAliveTime(TimeUnit.MILLISECONDS),
-                        "queue",       dotConcurrent.getThreadPoolExecutor().getQueue().toString(),
+                        "queue",       toString(dotConcurrent.getThreadPoolExecutor().getQueue()),
                         "isShutdown",  dotConcurrent.shutdown
                 ):
                 map(
@@ -207,6 +209,24 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
                         "isShutdown",  false
                 );
     }
+
+    private Object toString(final BlockingQueue<Runnable> queue) {
+
+        final StringBuilder builder = new StringBuilder();
+
+        if (null != queue) {
+
+            final Iterator<Runnable> threadsOnQueue = queue.iterator();
+            while (threadsOnQueue.hasNext()) {
+
+                builder.append(threadsOnQueue.next());
+            }
+        }
+
+        return builder.toString();
+    }
+
+
 
     @Override
     public Boolean shutdown(final String name){

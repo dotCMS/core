@@ -83,6 +83,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
@@ -1628,7 +1629,8 @@ public class WorkflowResource {
                             IndexPolicyProvider.getInstance().forSingleContent(), request)));
         } else {
 
-            final List<ContentletSearch> contentletSearches  = this.contentletAPI.searchIndex(query, CONTENTLETS_LIMIT, offset, null,
+            final List<ContentletSearch> contentletSearches  = this.contentletAPI.searchIndex(query, Config.getIntProperty("", CONTENTLETS_LIMIT),
+                    offset, null,
                     initDataObject.getUser(), mode.respectAnonPerms);
 
             final IndexPolicy indexPolicy = MapToContentletPopulator.recoverIndexPolicy(fireActionForm.getContentletFormData(),

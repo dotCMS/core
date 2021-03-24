@@ -10,8 +10,7 @@ import java.util.Map;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.concurrent.DotConcurrentFactory;
-import com.dotcms.content.elasticsearch.business.ESReadOnlyMonitor;
+import com.dotcms.content.elasticsearch.business.ElasticReadOnlyCommand;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -33,14 +32,14 @@ import com.google.common.collect.ImmutableList;
 public class ReindexQueueAPIImpl implements ReindexQueueAPI {
 
     private final ReindexQueueFactory reindexQueueFactory;
-    private final ESReadOnlyMonitor esReadOnlyMonitor;
+    private final ElasticReadOnlyCommand esReadOnlyMonitor;
 
     public ReindexQueueAPIImpl() {
-        this(FactoryLocator.getReindexQueueFactory(), ESReadOnlyMonitor.getInstance());
+        this(FactoryLocator.getReindexQueueFactory(), ElasticReadOnlyCommand.getInstance());
     }
 
     @VisibleForTesting
-    public ReindexQueueAPIImpl(final ReindexQueueFactory reindexQueueFactory, final ESReadOnlyMonitor esReadOnlyMonitor) {
+    public ReindexQueueAPIImpl(final ReindexQueueFactory reindexQueueFactory, final ElasticReadOnlyCommand esReadOnlyMonitor) {
         this.reindexQueueFactory = reindexQueueFactory;
         this.esReadOnlyMonitor = esReadOnlyMonitor;
     }
@@ -244,13 +243,6 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
     @WrapInTransaction
     public void markAsFailed(final ReindexEntry idx, final String cause) throws DotDataException {
         reindexQueueFactory.markAsFailed(idx, UtilMethods.shortenString(cause, 300));
-
-        DotConcurrentFactory.getInstance()
-                .getSubmitter()
-                .submit(() -> {
-                    final String message = "Reindex failed for :" + idx + " because " + cause;
-                    esReadOnlyMonitor.start(message);
-                });
     }
 
 }
