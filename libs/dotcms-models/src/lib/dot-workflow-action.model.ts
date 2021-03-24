@@ -1,4 +1,4 @@
-import { DotCMSContentType } from '../dot-content-types';
+import { DotCMSContentType } from './dot-content-types.model';
 
 export interface DotCMSWorkflowActionEvent {
     workflow: DotCMSWorkflowAction;

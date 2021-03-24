@@ -1,6 +1,6 @@
-import { DotCMSError } from './../../models';
-import { DotCMSHttpClient } from './../../utils/DotCMSHttpClient';
-import { DotApiContent } from '../DotApiContent';
+import { DotCMSError } from '../models/DotCMSError.model';
+import { DotCMSHttpClient } from '../utils/DotCMSHttpClient'
+import { DotApiContent } from './DotApiContent';
 
 describe('DotApiContent', () => {
     let httpClient: DotCMSHttpClient;
@@ -22,7 +22,8 @@ describe('DotApiContent', () => {
     describe('Requests', () => {
         const responseExpected = {
             status: 200,
-            statusText: ''
+            statusText: '',
+            body: { stName: 'webContent', body: 'Test' }
         };
 
         beforeEach(() => {
@@ -83,7 +84,7 @@ describe('DotApiContent', () => {
             const requestParams = {
                 url: '/api/content/save/1',
                 method: 'POST',
-                body: contentParams
+                body: JSON.stringify(contentParams)
             };
             dotApiContent.save(contentParams).then((data) => {
                 expect(data).toEqual(responseExpected);
@@ -95,7 +96,7 @@ describe('DotApiContent', () => {
             const requestParams = {
                 url: '/api/content/publish/1',
                 method: 'POST',
-                body: contentParams
+                body: JSON.stringify(contentParams)
             };
             dotApiContent.publish(contentParams).then((data) => {
                 expect(data).toEqual(responseExpected);

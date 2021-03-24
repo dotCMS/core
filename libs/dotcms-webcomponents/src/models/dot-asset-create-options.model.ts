@@ -1,4 +1,4 @@
-import { DotCMSTempFile } from 'dotcms-models';
+import { DotCMSTempFile } from '@dotcms/dotcms-models';
 
 export interface DotAssetCreateOptions {
     files: DotCMSTempFile[];

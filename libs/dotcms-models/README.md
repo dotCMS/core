@@ -1,7 +1,5 @@
-# DotCMS Models
+# dotcms-models
 
-This is a library with DotCMS interfaces and models.
+Collection of DotCMS interfaces and types to use internally in our app and libs.
 
-## Documentation
-
-[Full Documentation](https://dotcms.github.io/core-web/docs/dotcms-models/globals.html)
+This library was generated with [Nx](https://nx.dev).

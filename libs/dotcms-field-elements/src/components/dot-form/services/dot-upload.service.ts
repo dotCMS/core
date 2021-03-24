@@ -1,4 +1,4 @@
-import { DotCMSTempFile } from 'dotcms-models';
+import { DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DotHttpErrorResponse } from '../../../models/dot-http-error-response.model';
 
 export class DotUploadService {

@@ -1,5 +1,6 @@
-import fetch, { Response } from 'node-fetch';
 import { DotCMSAuthorizationLoginParams, DotCMSError } from '../models';
+import fetch from 'cross-fetch';
+import { Response } from 'cross-fetch/lib.fetch';
 
 function getErrorMessage(data: { [key: string]: any }) {
     if (data.errors) {
@@ -19,6 +20,7 @@ export class DotApiAuthorization {
     /**
      * Given user, password and expiration date to get a DotCMS Autorization Token
      */
+
     getToken(params: DotCMSAuthorizationLoginParams): Promise<Response> {
         const { user, password, expirationDays, host } = params;
 

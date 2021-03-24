@@ -39,16 +39,16 @@
         "dot-layout-grid": {
             "tags": []
         },
-        "dotcms-models": {
+        "dotcms-webcomponents": {
+            "tags": []
+        },
+        "dotcms-field-elements": {
             "tags": []
         },
         "dotcms": {
             "tags": []
         },
-        "dotcms-webcomponents": {
-            "tags": []
-        },
-        "dotcms-field-elements": {
+        "dotcms-models": {
             "tags": []
         }
     }

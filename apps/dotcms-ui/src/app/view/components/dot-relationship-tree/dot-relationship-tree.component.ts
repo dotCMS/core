@@ -1,5 +1,5 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { DotCMSContentType } from 'dotcms-models';
+import { DotCMSContentType } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-relationship-tree',

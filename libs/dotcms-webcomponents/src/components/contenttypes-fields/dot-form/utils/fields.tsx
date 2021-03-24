@@ -1,5 +1,5 @@
 import { h } from '@stencil/core';
-import { DotCMSContentTypeField } from 'dotcms-models';
+import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { getFieldVariableValue, setAttributesToTag } from '../utils';
 
 export const DotFormFields = {

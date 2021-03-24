@@ -8,7 +8,7 @@ import {
     DotCMSContentTypeField,
     DotCMSTempFile,
     DotCMSContentlet
-} from 'dotcms-models';
+} from '@dotcms/dotcms-models';
 import { DotUploadService } from './services/dot-upload.service';
 import { DotHttpErrorResponse } from '../../models/dot-http-error-response.model';
 import { DotBinaryFileComponent } from '../dot-binary-file/dot-binary-file';

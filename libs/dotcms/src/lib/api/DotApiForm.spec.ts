@@ -1,10 +1,30 @@
-import { DotApiForm } from '../DotApiForm';
-import { DotCMSContentType } from 'dotcms-models';
-import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
+import { DotApiForm } from './DotApiForm';
+import { DotCMSContentType } from '@dotcms/dotcms-models';
+
+const EMPTY = {
+    contentTypeId: null,
+    dataType: null,
+    fieldTypeLabel: null,
+    fieldVariables: [],
+    fixed: null,
+    iDate: null,
+    id: null,
+    indexed: null,
+    listed: null,
+    modDate: null,
+    readOnly: null,
+    searchable: null,
+    sortOrder: null,
+    unique: null,
+    clazz: null,
+    regexCheck: null,
+    values: null,
+}
 
 const fieldReturned = [
     {
-        ...dotcmsContentTypeFieldBasicMock,
+
+        ...EMPTY,
         fieldType: 'Text',
         defaultValue: 'defaultValue1',
         hint: 'hint1',
@@ -14,7 +34,8 @@ const fieldReturned = [
         variable: 'field1'
     },
     {
-        ...dotcmsContentTypeFieldBasicMock,
+
+        ...EMPTY,
         fieldType: 'Text',
         defaultValue: 'defaultValue',
         hint: 'hint2',

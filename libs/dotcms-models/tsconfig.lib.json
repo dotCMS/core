@@ -7,13 +7,16 @@
         "declarationMap": true,
         "inlineSources": true,
         "types": [],
-        "lib": ["dom", "es2018"]
+        "lib": ["dom", "es2018"],
+        "paths": {
+            "@dotcms/*": ["dist/libs/*"]
+        }
     },
     "angularCompilerOptions": {
         "skipTemplateCodegen": true,
         "strictMetadataEmit": true,
         "enableResourceInlining": true
     },
-    "exclude": ["src/test-setup.ts", "**/*.spec.ts"],
+    "exclude": [],
     "include": ["**/*.ts"]
 }

@@ -5,7 +5,7 @@ import {
     DotCMSContentTypeLayoutRow,
     DotCMSContentTypeLayoutColumn,
     DotCMSContentTypeFieldVariable
-} from "dotcms-models";
+} from "@dotcms/dotcms-models";
 
 export const DOT_ATTR_PREFIX = "dot";
 

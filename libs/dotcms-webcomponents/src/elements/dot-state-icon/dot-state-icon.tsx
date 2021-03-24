@@ -1,5 +1,5 @@
 import { Component, h, Host, Prop } from '@stencil/core';
-import { DotContentState } from 'dotcms-models';
+import { DotContentState } from '@dotcms/dotcms-models';
 
 @Component({
     tag: 'dot-state-icon',

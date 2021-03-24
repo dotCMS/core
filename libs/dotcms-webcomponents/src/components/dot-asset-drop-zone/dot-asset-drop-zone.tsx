@@ -9,7 +9,7 @@ import '@material/mwc-icon';
 import '@material/mwc-dialog';
 import '@material/mwc-button';
 import { DotUploadService } from '../contenttypes-fields/dot-form/services/dot-upload.service';
-import { DotCMSContentlet, DotCMSTempFile } from 'dotcms-models';
+import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DotAssetService } from '../../services/dot-asset/dot-asset.service';
 import { DotHttpErrorResponse } from '../../models/dot-http-error-response.model';
 

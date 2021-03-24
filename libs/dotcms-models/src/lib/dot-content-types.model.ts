@@ -1,5 +1,4 @@
-import { DotCMSSystemActionMappings } from '../dot-workflow-action';
-import { DotCMSWorkflow } from '../dot-workflow';
+import { DotCMSSystemActionMappings, DotCMSWorkflow } from '../index';
 
 export interface DotCMSContentType {
     baseType: string;

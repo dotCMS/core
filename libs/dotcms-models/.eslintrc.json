@@ -20,10 +20,6 @@
                 ]
             }
         },
-        {
-            "files": ["*.html"],
-            "extends": ["plugin:@nrwl/nx/angular-template"],
-            "rules": {}
-        }
+        { "files": ["*.html"], "extends": ["plugin:@nrwl/nx/angular-template"], "rules": {} }
     ]
 }

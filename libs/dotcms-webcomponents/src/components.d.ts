@@ -5,7 +5,7 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { DotCMSContentlet, DotCMSContentTypeLayoutColumn, DotCMSContentTypeLayoutRow, DotContentState } from "dotcms-models";
+import { DotCMSContentlet, DotCMSContentTypeLayoutColumn, DotCMSContentTypeLayoutRow, DotContentState } from "@dotcms/dotcms-models";
 import { DotHttpErrorResponse } from "./models/dot-http-error-response.model";
 import { DotBinaryFileEvent, DotFieldStatusEvent, DotFieldValueEvent, DotInputCalendarStatusEvent, DotKeyValueField } from "./models";
 import { DotCardContentletEvent, DotCardContentletItem } from "./models/dot-card-contentlet.model";

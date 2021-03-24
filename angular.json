@@ -288,99 +288,6 @@
                 }
             }
         },
-        "dotcms-models": {
-            "projectType": "library",
-            "root": "libs/dotcms-models",
-            "sourceRoot": "libs/dotcms-models/src",
-            "prefix": "dot",
-            "architect": {
-                "build": {
-                    "builder": "@nrwl/angular:ng-packagr-lite",
-                    "options": {
-                        "tsConfig": "libs/dotcms-models/tsconfig.lib.json",
-                        "project": "libs/dotcms-models/ng-package.json"
-                    },
-                    "configurations": {
-                        "production": {
-                            "tsConfig": "libs/dotcms-models/tsconfig.lib.prod.json"
-                        }
-                    }
-                },
-                "lint": {
-                    "builder": "@nrwl/linter:eslint",
-                    "options": {
-                        "lintFilePatterns": [
-                            "libs/dotcms-models/src/**/*.ts",
-                            "libs/dotcms-models/src/**/*.html"
-                        ]
-                    }
-                },
-                "test": {
-                    "builder": "@angular-devkit/build-angular:karma",
-                    "outputs": ["coverage/libs/dotcms-models"],
-                    "options": {
-                        "main": "libs/dotcms-models/src/test.ts",
-                        "karmaConfig": "libs/dotcms-models/karma.conf.js",
-                        "tsConfig": "libs/dotcms-models/tsconfig.spec.json"
-                    }
-                },
-                "build-docs": {
-                    "builder": "@nrwl/workspace:run-commands",
-                    "options": {
-                        "commands": [
-                            {
-                                "command": "npm run build:docs:dotcms-models"
-                            }
-                        ]
-                    }
-                }
-            }
-        },
-        "dotcms": {
-            "projectType": "library",
-            "root": "libs/dotcms",
-            "sourceRoot": "libs/dotcms/src",
-            "prefix": "dot",
-            "architect": {
-                "build": {
-                    "builder": "@nrwl/angular:ng-packagr-lite",
-                    "options": {
-                        "tsConfig": "libs/dotcms/tsconfig.lib.json",
-                        "project": "libs/dotcms/ng-package.json"
-                    },
-                    "configurations": {
-                        "production": {
-                            "tsConfig": "libs/dotcms/tsconfig.lib.prod.json"
-                        }
-                    }
-                },
-                "lint": {
-                    "builder": "@nrwl/linter:eslint",
-                    "options": {
-                        "lintFilePatterns": ["libs/dotcms/src/**/*.ts", "libs/dotcms/src/**/*.html"]
-                    }
-                },
-                "test": {
-                    "builder": "@angular-devkit/build-angular:karma",
-                    "outputs": ["coverage/libs/dotcms"],
-                    "options": {
-                        "main": "libs/dotcms/src/test.ts",
-                        "karmaConfig": "libs/dotcms/karma.conf.js",
-                        "tsConfig": "libs/dotcms/tsconfig.spec.json"
-                    }
-                },
-                "build-docs": {
-                    "builder": "@nrwl/workspace:run-commands",
-                    "options": {
-                        "commands": [
-                            {
-                                "command": "npm run build:docs:dotcms"
-                            }
-                        ]
-                    }
-                }
-            }
-        },
         "dotcms-webcomponents": {
             "projectType": "library",
             "schematics": {
@@ -493,6 +400,69 @@
                         "configPath": "libs/dotcms-field-elements/stencil.config.ts",
                         "serve": true,
                         "watch": true
+                    }
+                }
+            }
+        },
+        "dotcms": {
+            "projectType": "library",
+            "root": "libs/dotcms",
+            "sourceRoot": "libs/dotcms/src",
+            "prefix": "dotcms",
+            "architect": {
+                "build": {
+                    "builder": "@angular-devkit/build-ng-packagr:build",
+                    "options": {
+                        "tsConfig": "libs/dotcms/tsconfig.lib.json",
+                        "project": "libs/dotcms/ng-package.json"
+                    },
+                    "configurations": {
+                        "production": {
+                            "tsConfig": "libs/dotcms/tsconfig.lib.prod.json"
+                        }
+                    }
+                },
+                "lint": {
+                    "builder": "@nrwl/linter:eslint",
+                    "options": {
+                        "lintFilePatterns": ["libs/dotcms/src/**/*.ts", "libs/dotcms/src/**/*.html"]
+                    }
+                },
+                "test": {
+                    "builder": "@nrwl/jest:jest",
+                    "outputs": ["coverage/libs/dotcms"],
+                    "options": {
+                        "jestConfig": "libs/dotcms/jest.config.js",
+                        "passWithNoTests": true
+                    }
+                }
+            }
+        },
+        "dotcms-models": {
+            "projectType": "library",
+            "root": "libs/dotcms-models",
+            "sourceRoot": "libs/dotcms-models/src",
+            "prefix": "dotcms",
+            "architect": {
+                "build": {
+                    "builder": "@nrwl/angular:ng-packagr-lite",
+                    "options": {
+                        "tsConfig": "libs/dotcms-models/tsconfig.lib.json",
+                        "project": "libs/dotcms-models/ng-package.json"
+                    },
+                    "configurations": {
+                        "production": {
+                            "tsConfig": "libs/dotcms-models/tsconfig.lib.prod.json"
+                        }
+                    }
+                },
+                "lint": {
+                    "builder": "@nrwl/linter:eslint",
+                    "options": {
+                        "lintFilePatterns": [
+                            "libs/dotcms-models/src/**/*.ts",
+                            "libs/dotcms-models/src/**/*.html"
+                        ]
                     }
                 }
             }
