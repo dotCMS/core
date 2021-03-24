@@ -114,12 +114,6 @@
     </portlet>
 
     <portlet>
-        <portlet-name>graphql</portlet-name>
-        <display-name>GraphQL Playground</display-name>
-        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
-    </portlet>
-
-    <portlet>
         <portlet-name>html-pages</portlet-name>
         <display-name>HTML Pages Manager</display-name>
         <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
@@ -509,6 +503,12 @@
     <portlet>
         <portlet-name>starter</portlet-name>
         <display-name>Getting Started</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+    </portlet>
+
+    <portlet>
+        <portlet-name>graphql</portlet-name>
+        <display-name>graphql</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
     </portlet>
 
