@@ -61,7 +61,7 @@
 						{
 							"key": "file",
 							"type": "file",
-							"src": "resources/image/dot_asset_image.tar.gz"
+							"src": "/resources/image/dot_asset_image.tar.gz"
 						}
 					]
 				},
