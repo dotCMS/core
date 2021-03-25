@@ -412,6 +412,10 @@ integrationTest {
                     systemProperty "databaseType", "$databaseType"
                 }
             }
+
+    if(JavaVersion.current() > JavaVersion.VERSION_1_8) {
+        jvmArgs '--add-opens=java.base/jdk.internal.loader=ALL-UNNAMED'
+    }
 }
 integrationTest.group='dotCMS tests'
 
