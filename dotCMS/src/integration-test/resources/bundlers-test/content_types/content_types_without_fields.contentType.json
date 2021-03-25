@@ -1,12 +1,12 @@
 {
   "contentType":{
-    "clazz":"com.dotcms.contenttype.model.type.ImmutableSimpleContentType",
+    "clazz":"__class__",
     "name":"__content_type_name__",
     "id":"__content_type_id__",
     "description":"__content_type_description__",
     "defaultType":false,
     "detailPage":null,
-    "fixed":false,
+    "fixed":__fixed__,
     "iDate":__content_type_idate__,
     "system":false,
     "versionable":true,

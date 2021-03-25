@@ -1,5 +1,6 @@
 package com.dotcms.storage;
 
+import com.dotcms.storage.model.Metadata;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -53,6 +54,12 @@ public class GenerateMetadataConfig {
      */
     private final boolean full;
 
+    /**
+     * if specified the generated metadata must be merged with this
+     */
+    private final Metadata mergeWithMetadata;
+
+
     private GenerateMetadataConfig(final Builder builder) {
 
         this.cache = builder.cache;
@@ -63,6 +70,7 @@ public class GenerateMetadataConfig {
         this.override = builder.override;
         this.store = builder.store;
         this.full = builder.full;
+        this.mergeWithMetadata = builder.mergeWithMetadata;
     }
 
     public StorageKey getStorageKey() {
@@ -95,6 +103,10 @@ public class GenerateMetadataConfig {
 
     public boolean isFull() {
         return full;
+    }
+
+    public Metadata getMergeWithMetadata() {
+        return mergeWithMetadata;
     }
 
     public static final class Builder {
@@ -141,6 +153,11 @@ public class GenerateMetadataConfig {
          * Cache key supplier, if cache is true
          */
         private Supplier<String> cacheKeySupplier = null;
+
+        /**
+         * if specified the generated metadata must be merged with this.
+         */
+        private Metadata mergeWithMetadata;
 
 
         public Builder storageKey(final StorageKey storageKey) {
@@ -192,6 +209,11 @@ public class GenerateMetadataConfig {
 
             this.cache = true;
             this.cacheKeySupplier = cacheKeySupplier;
+            return this;
+        }
+
+        public Builder mergeWithMetadata(final Metadata mergeWithMetadata){
+            this.mergeWithMetadata = mergeWithMetadata;
             return this;
         }
 

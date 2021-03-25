@@ -334,10 +334,6 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 
 	@CloseDBIfOpened
 	public FileAssetMap fromFileAsset(final FileAsset fileAsset) throws DotStateException {
-		if (!fileAsset.isLoaded()) {
-		    //Force to pre-load
-			fileAsset.load();
-		}
 		try {
 			final FileAssetMap fileAssetMap = new FileAssetMap(fileAsset);
 			CacheLocator.getContentletCache().add(fileAsset);
@@ -352,6 +348,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		return (con != null && con.getStructure() != null && con.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) ;
 	}
 
+    @Deprecated
 	public Map<String, String> getMetaDataMap(Contentlet contentlet, final File binFile)
 			throws DotDataException {
 		return new TikaUtils().getMetaDataMap(contentlet.getInode(), binFile);
@@ -866,7 +863,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 
 	public String getRealAssetPathTmpBinary() {
 
-		java.io.File adir=new java.io.File(getRealAssetsRootPath() +java.io.File.separator+"tmp_upload");
+		java.io.File adir=new java.io.File(getRealAssetsRootPath() + java.io.File.separator + TMP_UPLOAD);
 		if(!adir.isDirectory())
 			adir.mkdirs();
 
