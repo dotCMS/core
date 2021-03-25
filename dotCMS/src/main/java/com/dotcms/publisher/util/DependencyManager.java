@@ -61,6 +61,7 @@ import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -1368,12 +1369,14 @@ public class DependencyManager {
 	private class DependencyProcessor {
 
 		private BlockingQueue<DependencyProcessorItem> queue;
-		private Map<AssetTypes, Set<String>> assetsAlreadyProcessed;
+		private Map<AssetTypes, Set<String>> assetsRequestToProcess;
+		private AtomicInteger assetsRequestToProcessCount = new AtomicInteger(0);
+		private AtomicInteger finishReceived = new AtomicInteger(0);
 		private DotSubmitter submitter;
 
 		DependencyProcessor() {
 			queue = new LinkedBlockingDeque();
-			assetsAlreadyProcessed = new HashMap<>();
+			assetsRequestToProcess = new HashMap<>();
 		}
 
 		/**
@@ -1384,90 +1387,87 @@ public class DependencyManager {
 		 */
 		void put(final String assetKey, final AssetTypes assetType) {
 
-			final boolean isFirst = submitter == null;
-
 			if (!this.alreadyProcess(assetKey, assetType)) {
-				Logger.debug(DependencyProcessor.class, () -> String.format("%s: Putting %s in %s",
+				Logger.info(DependencyProcessor.class, () -> String.format("%s: Putting %s in %s",
 						Thread.currentThread().getName(), assetKey, assetType));
 
 				queue.add(new DependencyProcessorItem(assetKey, assetType));
 				addSet(assetKey, assetType);
 			}
-
-			if (isFirst) {
-				this.start();
-			}
 		}
 
 		private synchronized void addSet(final String assetKey, final AssetTypes assetTypes) {
-			Set<String> set = assetsAlreadyProcessed.get(assetTypes);
+			Set<String> set = assetsRequestToProcess.get(assetTypes);
 
 			if (set == null) {
 				set = new HashSet<>();
-				assetsAlreadyProcessed.put(assetTypes, set);
+				assetsRequestToProcess.put(assetTypes, set);
 			}
 
 			set.add(assetKey);
-		}
-
-		private void start(){
-			Logger.debug(DependencyProcessor.class, "starting");
-			submitter = DotConcurrentFactory.getInstance().getSubmitter("DependencyManagerSubmitter",
-					new DotConcurrentFactory.SubmitterConfigBuilder()
-							.poolSize(Config.getIntProperty("MIN_NUMBER_THREAD_TO_EXECUTE_BUNDLER", 10))
-							.maxPoolSize(Config.getIntProperty("MAX_NUMBER_THREAD_TO_EXECUTE_BUNDLER", 40))
-							.queueCapacity(Config.getIntProperty("QUEUE_CAPACITY_TO_EXECUTE_BUNDLER", 500))
-							.build()
-			);
-
-			submitter.submit(() -> {
-				while(!isFinish()) {
-					try {
-						final DependencyProcessorItem dependencyProcessorItem = queue.take();
-
-						if (!dependencyProcessorItem.equals(DependencyProcessorItem.FINISHED_DEPENDENCY_PROCESSOR_ITEM)) {
-							submitter.submit(new DependencyRunnable(dependencyProcessorItem));
-						}
-					} catch (InterruptedException e) {
-						throw new RuntimeException(e);
-					}
-				}
-
-				submitter.shutdownNow();
-			});
-		}
-
-		private synchronized void sendFinishNotification() {
-			queue.add(DependencyProcessorItem.FINISHED_DEPENDENCY_PROCESSOR_ITEM);
-		}
-
-		private boolean isFinish() {
-			return queue.isEmpty() && isAllTaskFinished();
-		}
-
-		private boolean isAllTaskFinished() {
-			return submitter.getActiveCount() <= 1;
+			assetsRequestToProcessCount.incrementAndGet();
 		}
 
 		/**
 		 * The current thread wait until all the dependencies are processed
 		 * @throws ExecutionException
 		 */
-		void waitForAll() throws ExecutionException {
-
-			if (submitter == null) {
-				return;
-			}
+		private void waitForAll() throws ExecutionException {
+			Logger.info(DependencyProcessor.class, "starting");
+			submitter = DotConcurrentFactory.getInstance().getSubmitter("DependencyManagerSubmitter",
+					new DotConcurrentFactory.SubmitterConfigBuilder()
+							.poolSize(Config.getIntProperty("MIN_NUMBER_THREAD_TO_EXECUTE_BUNDLER", 1))
+							.maxPoolSize(Config.getIntProperty("MAX_NUMBER_THREAD_TO_EXECUTE_BUNDLER", 40))
+							.queueCapacity(Config.getIntProperty("QUEUE_CAPACITY_TO_EXECUTE_BUNDLER", 500))
+							.build()
+			);
 
 			while(!isFinish()) {
-				submitter.waitForAll(5, TimeUnit.MINUTES);
+				try {
+					Logger.info(DependencyManager.class, "WAITING");
+					final DependencyProcessorItem dependencyProcessorItem = queue.take();
+					Logger.info(DependencyManager.class, "Taking one " + dependencyProcessorItem.assetKey);
+					if (!dependencyProcessorItem.equals(DependencyProcessorItem.FINISHED_DEPENDENCY_PROCESSOR_ITEM)) {
+						submitter.submit(new DependencyRunnable(dependencyProcessorItem));
+					} else {
+						finishReceived.incrementAndGet();
+					}
+					Logger.info(DependencyManager.class, "NEXT");
+				} catch (InterruptedException e) {
+					throw new RuntimeException(e);
+				}
 			}
+			Logger.info(DependencyManager.class, "Dependency procesor Finished");
 
 			submitter.shutdownNow();
 		}
 
+		private synchronized void sendFinishNotification() {
+			Logger.info(DependencyManager.class, "sendFinishNotification");
+			queue.add(DependencyProcessorItem.FINISHED_DEPENDENCY_PROCESSOR_ITEM);
+		}
+
+		private boolean isFinish() {
+			Logger.info(DependencyManager.class, "queue.size() " + queue.size());
+			return queue.isEmpty() && isAllTaskFinished();
+		}
+
+		private boolean isAllTaskFinished() {
+			final int activeCount = submitter.getActiveCount();
+			final long taskCount = submitter.getTaskCount();
+			final int nRequest = assetsRequestToProcessCount.get();
+			final int nFinishReceived = finishReceived.get();
+
+			Logger.info(DependencyManager.class, "submitter.getActiveCount() " + activeCount);
+			Logger.info(DependencyManager.class, "submitter.getTaskCount() " + taskCount);
+			Logger.info(DependencyManager.class, "assetsRequestToProcessCount.get() " + nRequest);
+			Logger.info(DependencyManager.class, "nFinishReceived " + nFinishReceived);
+
+			return taskCount == nRequest && taskCount == nFinishReceived;
+		}
+
 		public boolean alreadyProcess(final String assetKey, final AssetTypes assetTypes) {
-			final Set<String> set = assetsAlreadyProcessed.get(assetTypes);
+			final Set<String> set = assetsRequestToProcess.get(assetTypes);
 			return set != null && set.contains(assetKey);
 		}
 
@@ -1482,7 +1482,7 @@ public class DependencyManager {
 			public void run() {
 				try {
 					final AssetTypes assetTypes = dependencyProcessorItem.assetTypes;
-					Logger.debug(DependencyProcessor.class,
+					Logger.info(DependencyProcessor.class,
 							String.format("%s : We have something to process - %s %s",
 									Thread.currentThread().getName(), dependencyProcessorItem.assetKey, assetTypes));
 
