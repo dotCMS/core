@@ -52,7 +52,8 @@
                             "lodash",
                             "dragula",
                             "md5",
-                            "dom-autoscroller"
+                            "dom-autoscroller",
+                            "graphql-playground-html"
                         ],
                         "assets": [
                             "apps/dotcms-ui/src/favicon.ico",

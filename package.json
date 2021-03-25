@@ -66,6 +66,7 @@
         "cross-fetch": "^3.1.1",
         "dom-autoscroller": "^2.3.4",
         "font-awesome": "^4.7.0",
+        "graphql-playground-html": "^1.6.29",
         "lodash": "^4.17.20",
         "md5": "^2.3.0",
         "moment": "^2.29.1",
