@@ -107,7 +107,6 @@
     //Initialization kicking the loading of users
     dojo.ready(function() {
 
-        console.log('**** dojo.ready')
         dojo.declare('dotcms.dojox.grid.DataGrid', dojox.grid.DataGrid, {
             onRowContextMenu: function(e) {
 
@@ -257,20 +256,16 @@
 	}
 
     function getUserStarterPageData(userId) {
-        console.log('*** fetch starter page data');
-
         var xhrArgs = {
-                url = `/api/v1/toolgroups/gettingstarted/_islayoutactive?userid=${currentUser.id}`,
+                url: `/api/v1/toolgroups/gettingstarted/_userHasLayout?userid=${userId}`,
                 headers: {
                     "Accept" : "application/json",
                     "Content-Type" : "application/json"
                 },
                 handleAs : "json",
                 load: function(data) {
-                    console.log('*** getUserStarterPageData', data.entity);
-                    
                     // set checkbox
-                    dijit.byId("showStarter").attr('checked', data.entity.value);
+                    dijit.byId("showStarter").attr('checked', data.entity.message);
 
              }
          };
@@ -292,7 +287,6 @@
 
     function setStarterPage(evt) {
         if (!currentUser) return;
-        console.log('***setStarterPage', evt.checked);
 
         var xhrArgs = {
             headers: {
@@ -319,9 +313,6 @@
 	    
 	    dojo.byId("canLoginToConsole").innerHTML=data.user.hasConsoleAccess
 	   
-	    console.log("data", data)	    
-	
-	
 	}
 	
 	
