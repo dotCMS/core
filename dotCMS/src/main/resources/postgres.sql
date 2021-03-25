@@ -175,8 +175,9 @@ create table User_ (
 	failedLoginAttempts integer,
 	agreedToTermsOfUse bool,
 	active_ bool,
-  delete_in_progress BOOLEAN DEFAULT FALSE,
-  delete_date TIMESTAMP
+    delete_in_progress BOOLEAN DEFAULT FALSE,
+    delete_date TIMESTAMP,
+    additional_info JSONB NULL
 );
 
 create table UserTracker (
@@ -1295,54 +1296,6 @@ create table links (
    link_code text,
    primary key (inode)
 );
-create table user_proxy (
-   inode varchar(36) not null,
-   user_id varchar(255),
-   prefix varchar(255),
-   suffix varchar(255),
-   title varchar(255),
-   school varchar(255),
-   how_heard varchar(255),
-   company varchar(255),
-   long_lived_cookie varchar(255),
-   website varchar(255),
-   graduation_year int4,
-   organization varchar(255),
-   mail_subscription bool,
-   var1 varchar(255),
-   var2 varchar(255),
-   var3 varchar(255),
-   var4 varchar(255),
-   var5 varchar(255),
-   var6 varchar(255),
-   var7 varchar(255),
-   var8 varchar(255),
-   var9 varchar(255),
-   var10 varchar(255),
-   var11 varchar(255),
-   var12 varchar(255),
-   var13 varchar(255),
-   var14 varchar(255),
-   var15 varchar(255),
-   var16 varchar(255),
-   var17 varchar(255),
-   var18 varchar(255),
-   var19 varchar(255),
-   var20 varchar(255),
-   var21 varchar(255),
-   var22 varchar(255),
-   var23 varchar(255),
-   var24 varchar(255),
-   var25 varchar(255),
-   last_result int4,
-   last_message varchar(255),
-   no_click_tracking bool,
-   cquestionid varchar(255),
-   cqanswer varchar(255),
-   chapter_officer varchar(255),
-   primary key (inode),
-   unique (user_id)
-);
 create table chain_state_parameter (
    id int8 not null,
    chain_state_id int8 not null,
@@ -1602,7 +1555,6 @@ alter table analytic_summary_referer add constraint fk5bc0f3e2ed30e054 foreign k
 alter table dot_containers add constraint fk8a844125fb51eb foreign key (inode) references inode;
 alter table communication add constraint fkc24acfd65fb51eb foreign key (inode) references inode;
 alter table links add constraint fk6234fb95fb51eb foreign key (inode) references inode;
-alter table user_proxy add constraint fk7327d4fa5fb51eb foreign key (inode) references inode;
 create index idx_field_1 on field (structure_inode);
 alter table field add constraint fk5cea0fa5fb51eb foreign key (inode) references inode;
 create index idx_relationship_1 on relationship (parent_structure_inode);
@@ -2503,11 +2455,11 @@ create table storage_group (
 );
 
 create table storage (
-    path        varchar(255) not null,
+    path       varchar(255) not null,
     group_name varchar(255) not null,
     hash       varchar(64) not null,
-    metadata   text not null,
     mod_date   timestamp without time zone NOT NULL DEFAULT CURRENT_DATE,
+    hash_ref   varchar(64),
     PRIMARY KEY (path, group_name),
     FOREIGN KEY (group_name) REFERENCES storage_group (group_name)
 );
