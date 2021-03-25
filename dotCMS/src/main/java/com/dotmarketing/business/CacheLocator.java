@@ -45,8 +45,6 @@ import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.business.ContentletCacheImpl;
 import com.dotmarketing.portlets.contentlet.business.HostCache;
 import com.dotmarketing.portlets.contentlet.business.HostCacheImpl;
-import com.dotmarketing.portlets.contentlet.business.MetadataCache;
-import com.dotmarketing.portlets.contentlet.business.MetadataCacheImpl;
 import com.dotmarketing.portlets.hostvariable.bussiness.HostVariablesCache;
 import com.dotmarketing.portlets.hostvariable.bussiness.HostVariablesCacheImpl;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageCache;
@@ -314,15 +312,6 @@ public class CacheLocator extends Locator<CacheIndex>{
 	public static GraphQLSchemaCache getGraphQLSchemaCache() {
 		return (GraphQLSchemaCache) getInstance(CacheIndex.GraphQLSchemaCache);
 	}
-
-	/**
-	 * This will get you an instance of the MetadataCache singleton cache.
-	 * @return
-	 */
-	public static MetadataCache getMetadataCache() {
-		return (MetadataCache) getInstance(CacheIndex.Metadata);
-	}
-
 	/**
 	 * The legacy cache administrator will invalidate cache entries within a cluster
 	 * on a put where the non legacy one will not.
@@ -424,8 +413,7 @@ enum CacheIndex
 	ESQueryCache("ESQueryCache"),
 	KeyValueCache("Key/Value Cache"),
 	AppsCache("Apps"),
-	GraphQLSchemaCache("GraphQLSchemaCache"),
-	Metadata("Metadata");
+	GraphQLSchemaCache("GraphQLSchemaCache");
 
 	Cachable create() {
 		switch(this) {
@@ -475,7 +463,6 @@ enum CacheIndex
 			case AppsCache: return new AppsCacheImpl();
 	      	case ESQueryCache : return new com.dotcms.content.elasticsearch.ESQueryCache();
 	      	case GraphQLSchemaCache : return new GraphQLSchemaCache();
-			case Metadata: return new MetadataCacheImpl();
 
 		}
 		throw new AssertionError("Unknown Cache index: " + this);

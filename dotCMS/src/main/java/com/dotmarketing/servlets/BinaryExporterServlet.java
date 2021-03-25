@@ -3,9 +3,6 @@ package com.dotmarketing.servlets;
 import static com.liferay.util.HttpHeaders.CACHE_CONTROL;
 import static com.liferay.util.HttpHeaders.EXPIRES;
 
-import com.dotcms.storage.FileMetadataAPI;
-import com.dotcms.storage.model.Metadata;
-import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.util.PortalUtil;
 import java.io.File;
 import java.io.IOException;
@@ -104,8 +101,6 @@ public class BinaryExporterServlet extends HttpServlet {
 	private static final FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
 	private static final ShortyIdAPI shortyIdApi = APILocator.getShortyAPI();
 	private final ContentletAPI contentAPI = APILocator.getContentletAPI();
-	private final TempFileAPI tempFileAPI = APILocator.getTempFileAPI();
-	private final FileMetadataAPI fileMetadataAPI = APILocator.getFileMetadataAPI();
 
 	Map<String, BinaryContentExporter> exportersByPathMapping;
 
@@ -398,10 +393,9 @@ public class BinaryExporterServlet extends HttpServlet {
       // THIS IS WHERE THE MAGIC HAPPENS
       // this creates a temp resource using the altered file
       if (req.getParameter(WebKeys.IMAGE_TOOL_SAVE_FILES) != null && user!=null && !user.equals(APILocator.getUserAPI().getAnonymousUser())) {
-        final DotTempFile temp = tempFileAPI.createEmptyTempFile(inputFile.getName(), req);
+        final DotTempFile temp = APILocator.getTempFileAPI().createEmptyTempFile(inputFile.getName(), req);
         FileUtil.copyFile(data.getDataFile(), temp.file);
-		copyMetadata(uuid, fieldVarName, temp);
-		resp.getWriter().println(DotObjectMapperProvider.getInstance().getDefaultObjectMapper().writeValueAsString(temp));
+        resp.getWriter().println(DotObjectMapperProvider.getInstance().getDefaultObjectMapper().writeValueAsString(temp));
         resp.getWriter().close();
         resp.flushBuffer();
         return;
@@ -672,18 +666,6 @@ public class BinaryExporterServlet extends HttpServlet {
 
 		}
 		
-	}
-
-	private void copyMetadata(final String uuid, final String fieldVarName, final DotTempFile temp)
-			throws DotDataException {
-		//Basically here a new temp file is generated and we should transfer any custom generated metadata
-		if(UtilMethods.isSet(fieldVarName) && UtilMethods.isSet(uuid)){
-		   final Optional<Metadata> metadata = fileMetadataAPI.getMetadata(uuid);
-		   if(metadata.isPresent()){
-			  fileMetadataAPI.putCustomMetadataAttributes(temp.id, ImmutableMap
-					  .of(fieldVarName, metadata.get().getCustomMeta()));
-		   }
-		}
 	}
 
 	private Contentlet getContentletLiveVersion(String assetInode, User user, long lang) throws DotDataException, DotSecurityException {

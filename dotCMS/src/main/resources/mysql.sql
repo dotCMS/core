@@ -2288,8 +2288,8 @@ create table storage (
     path       varchar(255) not null,
     group_name varchar(255) not null,
     hash       varchar(64) not null,
+    metadata   text not null,
     mod_date   TIMESTAMP NOT NULL default CURRENT_TIMESTAMP,
-    hash_ref   varchar(64),
     PRIMARY KEY (path, group_name),
     FOREIGN KEY (group_name) REFERENCES storage_group (group_name)
 );

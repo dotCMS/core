@@ -4,13 +4,9 @@ import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATI
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.PERSONA_KEY_TAG;
 import static com.dotcms.contenttype.model.field.LegacyFieldTypes.CUSTOM_FIELD;
 import static com.dotcms.contenttype.model.type.PersonaContentType.PERSONA_KEY_TAG_FIELD_VAR;
-import static com.dotcms.storage.model.BasicMetadataFields.IS_IMAGE_META_KEY;
-import static com.dotcms.storage.model.BasicMetadataFields.SHA256_META_KEY;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-import static com.liferay.util.StringPool.BLANK;
-import static com.liferay.util.StringPool.PERIOD;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.ContentMappingAPI;
@@ -18,14 +14,13 @@ import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.storage.FileMetadataAPI;
-import com.dotcms.storage.model.ContentletMetadata;
-import com.dotcms.storage.model.Metadata;
+import com.dotcms.tika.TikaUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -64,14 +59,16 @@ import com.dotmarketing.util.ThreadSafeSimpleDateFormat;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Sets;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -105,40 +102,8 @@ import org.elasticsearch.common.xcontent.XContentType;
  */
 public class ESMappingAPIImpl implements ContentMappingAPI {
 
-    //This property basically tells the Metadata-API whether or not we should generate metadata upon reindexing a piece of content
-	public static final String WRITE_METADATA_ON_REINDEX = "write.metadata.on.reindex";
-
-	//If you want to skip indexing metadata dotraw fields set this prop to false
-	static final String INDEX_DOTRAW_METADATA_FIELDS = "index.dotraw.metadata.fields";
-
-	//If you want to override and specify a set of particular fields to be included in the dotRaw generation it can be accomplished through this prop.
-	static final String INCLUDE_DOTRAW_METADATA_FIELDS = "include.dotraw.metadata.fields";
-
-    //These are the fields included by default to be used as  metadata.fieldname_dotraw
-	static final String[] defaultIncludedDotRawMetadataFields = {
-			"author",
-			"contenttype",
-			"filesize",
-			"height",
-			"length",
-			"moddate",
-			"name",
-			"path",
-			"title",
-			"width"
-	};
-
-	// if you want to limit the size of the field `metadata.content`
-	// it can be accomplished by setting this property to the number of chars desired
-	// by default it'll attempt to include the whole thing returned by the FileMetadataAPI
-	public static final String INDEX_METADATA_CONTENT_LENGTH = "index.metadata.content.length";
-
 	public static final String TEXT = "_text";
-	public static final String DOTRAW = "_dotraw";
-	public static final String NO_METADATA = "NO_METADATA";
-
 	static ObjectMapper mapper = null;
-    private FileMetadataAPI fileMetadataAPI;
 
 	public ESMappingAPIImpl() {
 		if (mapper == null) {
@@ -150,7 +115,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				}
 			}
 		}
-		fileMetadataAPI = APILocator.getFileMetadataAPI();
 	}
 
     /**
@@ -248,8 +212,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		try {
 			final StringWriter sw = new StringWriter();
 			final User systemUser = APILocator.getUserAPI().getSystemUser();
-			final Map<String,Object> contentletMap = new HashMap<>();
-			final Map<String,Object> mlowered	   = new HashMap<>();
+			final Map<String,Object> contentletMap = new HashMap();
+			final Map<String,Object> mlowered	   = new HashMap();
 			loadCategories(contentlet, contentletMap);
 			loadFields(contentlet, contentletMap);
 			loadPermissions(contentlet, contentletMap);
@@ -375,10 +339,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 						//for example: when lowerCaseValue=moddate, moddate_dotraw must be created from its moddate_text if exists
 						//when the moddate_text is evaluated.
 						if (!contentletMap.containsKey(entry.getKey() + TEXT)){
-							mlowered.put(lowerCaseKey + DOTRAW, lowerCaseValue);
+							mlowered.put(lowerCaseKey + "_dotraw", lowerCaseValue);
 						}
 					}else{
-                        mlowered.put(lowerCaseKey.replace(TEXT, DOTRAW), lowerCaseValue);
+                        mlowered.put(lowerCaseKey.replace(TEXT, "_dotraw"), lowerCaseValue);
 					}
 				}
 
@@ -395,8 +359,20 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 mlowered.put(lowerCaseKey, lowerCaseValue);
 			}
 
-			writeMetadata(contentlet, sw, mlowered);
+			final Optional<Field> binaryField = this.findFirstBinaryFieldIndexable(contentlet);
+			if (binaryField.isPresent()) {
 
+				this.generateBinaryMetadata(contentlet, sw, mlowered, binaryField.get());
+
+				if (BaseContentType.FILEASSET.equals(contentlet.getContentType().baseType())) {
+					// see if we have content metadata
+					final File contentMeta = APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode());
+					if (contentMeta.exists() && contentMeta.length() > 0) {
+						final String contentData = APILocator.getFileAssetAPI().getContentMetadataAsString(contentMeta);
+						mlowered.put(FileAssetAPI.META_DATA_FIELD.toLowerCase() + StringPool.PERIOD + "content", contentData);
+					}
+				}
+			}
 			//The url is now stored under the identifier for html pages, so we need to index that also.
 			if (contentlet.getContentType().baseType().getType() == BaseContentType.HTMLPAGE.getType()) {
 				mlowered.put(contentlet.getContentType().variable().toLowerCase() + ".url", contentIdentifier.getAssetName());
@@ -414,78 +390,71 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		}
 	}
 
-	/**
-	 * Metadata generation happens here
-	 * @param contentlet
-	 * @param stringWriter
-	 * @param mapLowered
-	 * @throws IOException
-	 * @throws DotDataException
-	 */
-	private void writeMetadata(final Contentlet contentlet, final StringWriter stringWriter,
-			final Map<String, Object> mapLowered) throws IOException, DotDataException {
-		if (Config.getBooleanProperty(WRITE_METADATA_ON_REINDEX, true)) {
+	private void generateBinaryMetadata(final Contentlet contentlet,
+										final StringWriter stringWriter,
+										final Map<String, Object> mapLowered,
+										final Field field) throws Exception {
 
-			final ContentletMetadata metadata = fileMetadataAPI
-					.generateContentletMetadata(contentlet);
-			final Map<String, Metadata> fullMetadataMap = metadata
-					.getFullMetadataMap();
+		//Verify if it is enabled the option to regenerate missing metadata files on reindex
+		final boolean regenerateMissingMetadata = Config
+				.getBooleanProperty("regenerate.missing.metadata.on.reindex", true);
 
-			//Full metadata map is expected to have one single entry with everything
-			fullMetadataMap.forEach((field, metadataValues) -> {
-				if (null != metadataValues) {
+		/*
+		Verify if it is enabled the option to always regenerate metadata files on reindex,
+		enabling this could affect greatly the performance of a reindex process.
+		 */
+		final boolean alwaysRegenerateMetadata = Config
+				.getBooleanProperty("always.regenerate.metadata.on.reindex", false);
 
-					final Set<String> dotRawInclude = Sets.newHashSet(
-							Config.getStringArrayProperty(
-									INCLUDE_DOTRAW_METADATA_FIELDS,
-									defaultIncludedDotRawMetadataFields));
+		Map<String, Object> metadataMap = null;
 
-					metadataValues.getFieldsMeta().forEach((metadataKey, metadataValue) -> {
+		if (contentlet.isLive() || contentlet.isWorking()) {
 
-						final String contentData =
-								metadataValue != null ? metadataValue.toString() : BLANK;
-						final String compositeKey =
-								FileAssetAPI.META_DATA_FIELD.toLowerCase() + PERIOD + metadataKey
-										.toLowerCase();
-						final Object value = preProcessMetadataValue(compositeKey, metadataValue);
-						mapLowered.put(compositeKey, value);
+			final Optional<com.dotcms.contenttype.model.field.FieldVariable> customIndexMetaDataFieldsOpt =
+					FactoryLocator.getFieldFactory().byFieldVariableKey(field.getIdentifier(), BinaryField.INDEX_METADATA_FIELDS);
+			final TikaUtils tikaUtils = new TikaUtils();
 
-						if (Config.getBooleanProperty(INDEX_DOTRAW_METADATA_FIELDS, true)
-								&& dotRawInclude.contains(metadataKey)) {
-							mapLowered.put(compositeKey + DOTRAW, value);
-						}
+			final Set<String> metadataFields = customIndexMetaDataFieldsOpt.isPresent()?
+					new HashSet<>(Arrays.asList(customIndexMetaDataFieldsOpt.get().value().split(StringPool.COMMA))):
+					tikaUtils.getConfiguredMetadataFields();  // gets the metadata fields to filter from the tika metadata
 
-						if (metadataKey.contains(FileAssetAPI.CONTENT_FIELD)) {
-							stringWriter.append(contentData).append(' ');
-						}
+			final File binaryField = contentlet.getBinary(field.getVelocityVarName());
+			if (null != binaryField && binaryField.exists() && binaryField.canRead()) {
 
-					});
+				if (alwaysRegenerateMetadata) {
+					metadataMap = tikaUtils.generateMetaDataForce(contentlet, binaryField, field.getVelocityVarName(), metadataFields);
+				} else if (regenerateMissingMetadata) {
+					metadataMap = tikaUtils.generateMetaData(contentlet, binaryField, field.getVelocityVarName(), metadataFields);
 				}
-			});
+			}
 
+			// see if we have content metadata
+			if(null != metadataMap) {
+
+				for (final String metadataKey : metadataFields) {
+
+					final Object metadataValue = metadataMap.get(metadataKey);
+					if (null != metadataValue) {
+						mapLowered.put(FileAssetAPI.META_DATA_FIELD.toLowerCase() + StringPool.PERIOD + metadataKey.toLowerCase(), metadataValue);
+						if (metadataKey.contains(FileAssetAPI.CONTENT_FIELD)) {
+							stringWriter.append(metadataValue.toString()).append(' ');
+						}
+					}
+				}
+			}
 		}
 	}
 
-	/**
-	 * logic extract to pre-process and ensure proper value added to the index
-	 * @param compositeKey
-	 * @param value
-	 * @return
-	 */
-	private Object preProcessMetadataValue(final String compositeKey, final Object value) {
-        if ("metadata.content".equals(compositeKey)) {
-            if (null == value) {
-                //This "NO_METADATA" constant is getting relocated from tika utils
-                return NO_METADATA;
-            }
-            //This is not a dupe of META_DATA_MAX_SIZE since that one is the flag used to set the number of bytes read by tika
-            //This one allows me to set a max number of chars on the content field itself
-            final int length = Config.getIntProperty(INDEX_METADATA_CONTENT_LENGTH, 0);
-            final String string = value.toString().toLowerCase();
-            return  length > 0 ? string.substring(0, Math.min(length, string.length())) : string;
-        }
-        return value;
-    }
+	private Optional<Field> findFirstBinaryFieldIndexable(final Contentlet contentlet) {
+
+		final List<Field> fields  = new ArrayList<>(
+				FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode()));
+
+		return fields.stream().filter(Field::isIndexed)
+				.filter(field -> field.getFieldType().equals(Field.FieldType.BINARY.toString()))
+				.findFirst();
+	}
+
 
 	/**
      * Adds the current workflow task to the contentlet in order to be reindexed.
@@ -633,6 +602,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		StringBuilder keyNameBuilder;
 		String keyName;
 		String keyNameText;
+		final TikaUtils tikaUtils = new TikaUtils();
 
 		for (final Field field : fields) {
 
@@ -728,7 +698,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 									&& structure.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET;
 					if(LicenseUtil.getLevel()>= LicenseLevel.STANDARD.level) {
 
-						this.loadKeyValueField(contentletMap, keyName, field, valueObj, fileMetadata);
+						this.loadKeyValueField(contentletMap, keyName, tikaUtils, field, (String) valueObj, fileMetadata);
 					}
 				} else if(field.getFieldType().equals(Field.FieldType.TAG.toString())) {
 
@@ -803,12 +773,12 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 	private void loadKeyValueField(final Map<String, Object> contentletMap,
 								   final String keyName,
+								   final TikaUtils tikaUtils,
 								   final Field field,
-								   final Object valueObj,
+								   final String valueObj,
 								   final boolean fileMetadata) throws DotDataException, DotSecurityException {
-		@SuppressWarnings("unchecked")
-		final Map<String,Object> keyValueMap = keyValueMap(valueObj);
 
+		final Map<String,Object> keyValueMap = KeyValueFieldUtil.JSONValueToHashMap(valueObj);
 		Set<String> allowedFields = new HashSet<>();
 
 		if(fileMetadata) {
@@ -827,34 +797,18 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			}
 
 			allowedFields
-					.addAll(fileMetadataAPI.getConfiguredMetadataFields());
+					.addAll(tikaUtils.getConfiguredMetadataFields());
 
-			fileMetadataAPI.filterMetadataFields(keyValueMap, allowedFields);
+			tikaUtils.filterMetadataFields(keyValueMap, allowedFields);
 
             final String keyValuePrefix = FileAssetAPI.META_DATA_FIELD.toLowerCase();
-            keyValueMap.forEach((k, v) -> contentletMap.put(keyValuePrefix + PERIOD + k, v));
+            keyValueMap.forEach((k, v) -> contentletMap.put(keyValuePrefix + StringPool.PERIOD + k, v));
 		} else {
 			keyValueMap.forEach((k, v) -> {
 				((List)contentletMap.computeIfAbsent(keyName, key -> new ArrayList<>())).add(
 						ImmutableMap.of( "key", k, "value", v));
 			});
 		}
-	}
-
-	/**
-	 * value object must be resolved to an iterable map so the fields can be extracted
-	 * @param valueObj
-	 * @return
-	 */
-	private final Map<String,Object> keyValueMap(final Object valueObj){
-	    if(valueObj instanceof Map){
-	       return new HashMap<>((Map<String,Object>)valueObj);
-	    }
-		if(valueObj instanceof Metadata){
-			final Metadata metadata = (Metadata)valueObj;
-			return new HashMap<>(metadata.getFieldsMeta());
-		}
-		return KeyValueFieldUtil.JSONValueToHashMap((String) valueObj);
 	}
 
 	public String toJsonString(Map<String, Object> map) throws IOException{

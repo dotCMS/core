@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "cd87df22-9b12-4ee0-b05f-290155476363",
+		"_postman_id": "d76c0a3f-0631-4fe5-bec4-77362ee3d71e",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -2210,7 +2210,7 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"postmanXXY\");",
+									"    pm.expect(pm.response.text()).to.include(\"postman\");",
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
@@ -2258,7 +2258,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{ \"contentlet\" : {\n  \"stInode\" : \"f4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n  \"languageId\" : 1,\n  \"key\": \"postmanXXY{{$timestamp}}\",\n  \"value\": \"postmanXXY{{$timestamp}}\"\n}\n}"
+							"raw": "{ \"contentlet\" : {\n  \"stInode\" : \"f4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n  \"languageId\" : 1,\n  \"key\": \"postmanXXY\",\n  \"value\": \"postmanXXY\"\n}\n}"
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c80-3d88-4311-8365-187323c96436/fire",
@@ -12107,340 +12107,6 @@
 					"response": []
 				}
 			]
-		},
-		{
-			"name": "SaveActionletToAction",
-			"item": [
-				{
-					"name": "invalidateSession",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/logout",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"logout"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "pre_saveSchema",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200 \", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"pm.test(\"Response includes name\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"\\\"name\\\":\\\"REST Schema\\\"\");",
-									"});",
-									"",
-									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"saveActionletSchemeId\", jsonData.entity.id);",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\"schemeName\": \"REST Schema\", \"schemeDescription\": \"rest1\", \"schemeArchived\": \"false\"}"
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/schemes",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"schemes"
-							]
-						},
-						"description": "Creates a new scheme \n\n@Path(\"/schemes\")"
-					},
-					"response": []
-				},
-				{
-					"name": "pre_saveStep",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200 \", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"\\\"name\\\":\\\"My REST step\\\"\");",
-									"});",
-									"",
-									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"saveActionletStepId\", jsonData.entity.id);"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": " { \"schemeId\" : \"{{saveActionletSchemeId}}\", \"stepName\":\"My REST step\", \"enableEscalation\":false, \"escalationAction\":\"\", \"escalationTime\":\"0\",\"stepResolved\":false} "
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/steps",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"steps"
-							]
-						},
-						"description": "Add a new workflow step \n\n@Path(\"/steps\")"
-					},
-					"response": []
-				},
-				{
-					"name": "pre_saveAction",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200 \", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"\\\"name\\\":\\\"saveContent FROM REST NEW\\\"\");",
-									"});",
-									"",
-									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"saveActionletActionId\", jsonData.entity.id);"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n   \"stepId\": \"{{saveActionletStepId}}\",\n      \"actionName\": \"saveContent FROM REST NEW\",\n      \"schemeId\": \"{{saveActionletSchemeId}}\",\n      \"actionCondition\": \"\",\n      \"actionNextStep\": \"currentstep\",\n      \"actionNextAssign\": \"654b0931-1027-41f7-ad4d-173115ed8ec1\",\n      \"actionRoleHierarchyForAssign\": false,\n      \"actionAssignable\": false,\n      \"actionCommentable\": true,\n      \"whoCanUse\":[],\n      \"showOn\": [\n        \"UNPUBLISHED\",\n        \"NEW\",\n        \"LOCKED\",\n        \"PUBLISHED\"\n      ]\n}"
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"actions"
-							]
-						},
-						"description": "Saves an action, by default the action is associated to the schema, however if the stepId is set will be automatically associated to the step too.\n\n@Path(\"/actions\")"
-					},
-					"response": []
-				},
-				{
-					"name": "SaveActionletToAction_Success",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200 \", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n   \"actionletClass\": \"com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet\"\n}"
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/{{saveActionletActionId}}/actionlets",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"actions",
-								"{{saveActionletActionId}}",
-								"actionlets"
-							]
-						},
-						"description": "Saves an action, by default the action is associated to the schema, however if the stepId is set will be automatically associated to the step too.\n\n@Path(\"/actions\")"
-					},
-					"response": []
-				}
-			]
 		}
 	],
 	"event": [
@@ -12470,55 +12136,43 @@
 		},
 		{
 			"key": "actionId",
-			"value": "c3eb4d6a-e650-40d2-98bc-39443d9ec538"
+			"value": "47c38af4-209b-499a-9628-b2a8409cf03c"
 		},
 		{
 			"key": "schemeId",
-			"value": "1cc6966d-3ad5-45c9-927d-4807cdd68025"
+			"value": "2e96562e-495c-4a29-8cd1-0410608e9a65"
 		},
 		{
 			"key": "schemeIdShorty",
-			"value": "1cc6966d3a"
+			"value": "2e96562e49"
 		},
 		{
 			"key": "stepId",
-			"value": "d6b94ac4-6f86-4fd6-bb74-04db9c04a93d"
+			"value": "1c156cd2-eb58-4b57-986b-dc728cc3ea09"
 		},
 		{
 			"key": "stepIdShorty",
-			"value": "d6b94ac46f"
+			"value": "1c156cd2eb"
 		},
 		{
 			"key": "actionIdShorty",
-			"value": "c3eb4d6ae6"
+			"value": "47c38af420"
 		},
 		{
 			"key": "contentletIdentifier",
-			"value": "31d62578-7e96-4ded-a676-ab600ca2f410"
+			"value": "6f88e2ed-71cb-49ad-90a4-8c74d906c3fe"
 		},
 		{
 			"key": "contentletInode",
-			"value": "49071043-af6b-478a-8b90-06c6bdb35c0a"
+			"value": "94926188-341a-40a3-8422-03af9e3a3634"
 		},
 		{
 			"key": "contentletIdShorty",
-			"value": "e2d4fc75f6"
+			"value": "14c31e4294"
 		},
 		{
 			"key": "fireActionLanguageKey",
-			"value": "SucessRequest1616109977"
-		},
-		{
-			"key": "saveActionletSchemeId",
-			"value": "97226901-e32e-49ff-92c7-42382309329c"
-		},
-		{
-			"key": "saveActionletStepId",
-			"value": "039e79cc-70e1-4b4e-9102-b97f5ebc0548"
-		},
-		{
-			"key": "saveActionletActionId",
-			"value": "2e583acd-32cd-46e3-b25c-51b4327d46a6"
+			"value": "SucessRequest1615939422"
 		}
 	]
 }

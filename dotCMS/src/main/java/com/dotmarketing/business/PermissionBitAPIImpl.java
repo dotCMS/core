@@ -257,7 +257,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 	private boolean userPermissions(final UserProxy userProxy, final User userIn) {
 	    
-	    if(userProxy.getPermissionId().equals("user:"+userIn.getUserId())) {
+	    if(userProxy.getPermissionId().equals(userIn.getUserId())) {
 	        return true;
 	    }
 	    return Try.of(()-> APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("user", userIn)).getOrElse(false);

@@ -5,8 +5,6 @@ import java.util.Optional;
 
 public interface FocalPointAPI {
 
-    static final String  FOCAL_POINT = "focalPoint";
-
     /**
      * This writes a focal point for an image field for a contentlet/field variable current
      * 

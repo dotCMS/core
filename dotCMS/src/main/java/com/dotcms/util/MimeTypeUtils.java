@@ -1,6 +1,5 @@
 package com.dotcms.util;
 
-import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.tika.TikaUtils;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.util.Config;
@@ -9,7 +8,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.control.Try;
 
-import java.util.function.Supplier;
 import javax.activation.MimeType;
 import java.io.File;
 import java.nio.file.Files;
@@ -25,13 +23,9 @@ public class MimeTypeUtils {
 
     /**
      * Gets the mime type of a file.
-     * @deprecated This is no longer the way to recover the mimeType instead use
-     *   {@link com.dotmarketing.portlets.contentlet.model.Contentlet#getBinaryMetadata(Field)} or
-     *   {@link com.dotcms.storage.FileMetadataAPI#getFullMetadataNoCache(File, Supplier)}
      * @param binary {@link File}
      * @return String
      */
-    @Deprecated
     public static String getMimeType (final File binary) {
         if(binary==null) {
             return FileAsset.UNKNOWN_MIME_TYPE;

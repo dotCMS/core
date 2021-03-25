@@ -36,15 +36,12 @@ import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.storage.model.Metadata;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableMap;
@@ -63,8 +60,6 @@ import java.util.stream.Collectors;
  * If any Options marked as property is found this class gets instantiated since props are most likely to be resolved here
  */
 public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentlet> {
-
-    private static final String FILE_ASSET = FileAssetAPI.BINARY_FIELD;
 
     /**
      * Main constructor
@@ -119,7 +114,6 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
         map.put(CONTENT_TYPE_KEY, type != null ? type.variable() : NOT_APPLICABLE);
         map.put(BASE_TYPE_KEY, type != null ? type.baseType().name() : NOT_APPLICABLE);
         map.put(LANGUAGEID_KEY, contentlet.getLanguageId());
-
         final Optional<Field> titleImage = contentlet.getTitleImage();
         final boolean hasTitleImage = titleImage.isPresent();
         map.put(HAS_TITLE_IMAGE_KEY, hasTitleImage);
@@ -128,7 +122,6 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
         } else {
            map.put(TITLE_IMAGE_KEY, TITLE_IMAGE_NOT_FOUND);
         }
-
         final Host host = toolBox.hostAPI.find(contentlet.getHost(), APILocator.systemUser(), true);
         map.put(HOST_NAME, host != null ? host.getHostname() : NOT_APPLICABLE);
         map.put(HOST_KEY, host != null ? host.getIdentifier() : NOT_APPLICABLE);
@@ -186,8 +179,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
      * After the execution of this method if the BINARIES flag is turned on
      * all the binary fields will be replaced and transformed by a /dA/.. path.
      */
-    private void addBinaries(final Contentlet contentlet, final Map<String, Object> map,
-            final Set<TransformOptions> options) {
+    private void addBinaries(final Contentlet contentlet, final Map<String, Object> map, final Set<TransformOptions> options) {
 
         final List<Field> binaries = contentlet.getContentType().fields(BinaryField.class);
 
@@ -196,72 +188,44 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
         }
 
         //If we dont want any binaries making it into the final map
-        if (options.contains(FILTER_BINARIES)) {
+        if(options.contains(FILTER_BINARIES)){
             binaries.forEach(field -> {
                 map.remove(field.variable());
             });
-            Logger.info(DefaultTransformStrategy.class,
-                    () -> "Transformer was instructed to exclude binaries.");
+            Logger.info(DefaultTransformStrategy.class, ()->"Transformer was instructed to exclude binaries.");
             return;
         }
 
         // if we want to include binaries as they are (java.io.File) this is the flag you should turn on.
         if (options.contains(BINARIES)) {
-            if (contentlet.isFileAsset()) {
-                final Optional<Identifier> identifier = Optional
-                        .of(Try.of(() -> toolBox.identifierAPI.find(contentlet.getIdentifier()))
-                                .getOrNull());
-                if(identifier.isPresent()){
-                    putBinaryLinks(FILE_ASSET, identifier.get().getAssetName(), contentlet, map);
-                } else {
-                   try {
-                       final Metadata metadata = contentlet.getBinaryMetadata(FILE_ASSET);
-                       putBinaryLinks(FILE_ASSET, metadata.getName(), contentlet, map);
-                   }catch (Exception e){
-                       Logger.warn(this,
-                               "Unable to get Binary Metadata from FileAsset ");
-                   }
-                }
-            } else {
-                for (final Field field : binaries) {
-                    try {
-                        final String velocityVarName = field.variable();
-                        //Extra precaution in case we are attempting to process a contentlet that has already been transformed.
-                        if (map.get(velocityVarName) instanceof File) {
-                            final Metadata metadata = contentlet.getBinaryMetadata(velocityVarName);
-                            if (null != metadata) {
-                                putBinaryLinks(velocityVarName, metadata.getName(), contentlet, map);
-                            } else {
-                                Logger.warn(FileAssetViewStrategy.class, " Binary isn't present.");
-                            }
+            for (final Field field : binaries) {
+                try {
+                    final String velocityVarName = field.variable();
+                    //Extra precaution in case we are attempting to process a contentlet that has already been transformed.
+                    if (map.get(velocityVarName) instanceof File) {
+                        final File conBinary = (File) map.get(velocityVarName); //contentlet.getBinary(field.variable());
+                        if (null != conBinary) {
+                            //The binary-field per se. Must be replaced by file-name. We dont want to disclose any file specifics.
+                            //TODO: in a near future this must be read from a pre-cached metadata.
+                            final String dAPath = "/dA/%s/%s/%s";
+                            map.put(field.variable() + "Version",
+                                    String.format(dAPath, contentlet.getInode(),
+                                            field.variable(), conBinary.getName()));
+                            map.put(field.variable(),
+                                    String.format(dAPath, contentlet.getIdentifier(),
+                                            field.variable(), conBinary.getName()));
+                            map.put(field.variable() + "ContentAsset",
+                                    contentlet.getIdentifier() + "/" + field.variable());
+                        } else {
+                            Logger.warn(FileAssetViewStrategy.class,"We're missing a binary");
                         }
-                    } catch (Exception e) {
-                        Logger.warn(this,
-                                "Unable to get Binary Metadata from field with var " + field.variable());
                     }
+                } catch (Exception e) {
+                    Logger.warn(this,
+                            "Unable to get Binary from field with var " + field.variable());
                 }
             }
         }
-    }
-
-    /**
-     * put the version and fields specifics for the binary fields
-     * @param velocityVarName
-     * @param assetName
-     * @param contentlet
-     * @param map
-     */
-    private void putBinaryLinks(final String velocityVarName, final String assetName, final Contentlet contentlet, final Map<String, Object> map){
-         //The binary-field per se. Must be replaced by file-name. We dont want to disclose any file specifics.
-         final String dAPath = "/dA/%s/%s/%s";
-         map.put(velocityVarName + "Version",
-                 String.format(dAPath, contentlet.getInode(),
-                         velocityVarName, assetName));
-         map.put(velocityVarName,
-                 String.format(dAPath, contentlet.getIdentifier(),
-                         velocityVarName, assetName));
-         map.put(velocityVarName + "ContentAsset",
-                 contentlet.getIdentifier() + "/" + velocityVarName);
     }
 
     /**

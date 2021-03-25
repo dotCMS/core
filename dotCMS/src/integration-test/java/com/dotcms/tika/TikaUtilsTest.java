@@ -15,17 +15,20 @@ public class TikaUtilsTest{
 
     @Test
     public void testGetConfiguredMetadataFields() throws DotDataException {
-        final Set<String>  fields = TikaUtils.getConfiguredMetadataFields();
+        final TikaUtils tikaUtils = new TikaUtils();
+        final Set<String>  fields = tikaUtils.getConfiguredMetadataFields();
+
         Assert.assertNotNull(fields);
         Assert.assertTrue(!fields.isEmpty());
     }
 
     @Test
     public void test_FilterMetadataFields_WhenMapEmpty_ReturnsEmptyMap() throws DotDataException {
+        final TikaUtils tikaUtils = new TikaUtils();
         final Map<String, Object> metaMap = new HashMap<>();
         final Set<String> fields  = new HashSet<>();
         fields.add("width");
-        TikaUtils.filterMetadataFields(metaMap, fields);
+        tikaUtils.filterMetadataFields(metaMap, fields);
 
         Assert.assertNotNull(metaMap);
         Assert.assertTrue(metaMap.isEmpty());
@@ -33,19 +36,22 @@ public class TikaUtilsTest{
 
     @Test
     public void test_FilterMetadataFields_WhenFieldsArrayIsEmpty_DoesNotModifyTheMap() throws DotDataException {
+        final TikaUtils tikaUtils = new TikaUtils();
         final Map<String, Object> metaMap = new HashMap<>();
+
         metaMap.put("content", "Test to filter metadata fields");
         metaMap.put("width", "300px");
 
-        TikaUtils.filterMetadataFields(metaMap, null);
+        tikaUtils.filterMetadataFields(metaMap, null);
 
         Assert.assertNotNull(metaMap);
-        Assert.assertEquals(2, metaMap.size());
+        Assert.assertTrue(metaMap.size() == 2);
         Assert.assertTrue(metaMap.containsKey("width") && metaMap.containsKey("content"));
     }
 
     @Test
     public void test_FilterMetadataFields_WhenFieldExistsInMap_ReturnsMapWithTheField() throws DotDataException {
+        final TikaUtils tikaUtils = new TikaUtils();
         final Set<String> fields  = new HashSet<>();
         final Map<String, Object> metaMap = new HashMap<>();
 
@@ -54,16 +60,16 @@ public class TikaUtilsTest{
 
         metaMap.put("content", "Test to filter metadata fields");
         metaMap.put("width", "300px");
-        TikaUtils.filterMetadataFields(metaMap, fields);
+        tikaUtils.filterMetadataFields(metaMap, fields);
 
         Assert.assertNotNull(metaMap);
-        Assert.assertEquals(1, metaMap.size());
+        Assert.assertTrue(metaMap.size() == 1);
         Assert.assertTrue(metaMap.containsKey("width"));
     }
 
     @Test
     public void test_FilterMetadataFields_WhenFieldMatchesRegex_ReturnsMapWithTheField() throws DotDataException {
-
+        final TikaUtils tikaUtils = new TikaUtils();
         final Map<String, Object> metaMap = new HashMap<>();
         final Set<String> fields  = new HashSet<>();
 
@@ -72,16 +78,16 @@ public class TikaUtilsTest{
 
         metaMap.put("content", "Test to filter metadata fields");
         metaMap.put("width", "300px");
-        TikaUtils.filterMetadataFields(metaMap, fields);
+        tikaUtils.filterMetadataFields(metaMap, fields);
 
         Assert.assertNotNull(metaMap);
-        Assert.assertEquals(1, metaMap.size());
+        Assert.assertTrue(metaMap.size() == 1);
         Assert.assertTrue(metaMap.containsKey("width"));
     }
 
     @Test
     public void test_FilterMetadataFields_WhenFieldIsWildcard_ReturnsMapWithAllFields() throws DotDataException {
-
+        final TikaUtils tikaUtils = new TikaUtils();
         final Map<String, Object> metaMap = new HashMap<>();
         final Set<String> fields  = new HashSet<>();
 
@@ -89,10 +95,10 @@ public class TikaUtilsTest{
 
         metaMap.put("content", "Test to filter metadata fields");
         metaMap.put("width", "300px");
-        TikaUtils.filterMetadataFields(metaMap, fields);
+        tikaUtils.filterMetadataFields(metaMap, fields);
 
         Assert.assertNotNull(metaMap);
-        Assert.assertEquals(2, metaMap.size());
+        Assert.assertTrue(metaMap.size() == 2);
         Assert.assertTrue(metaMap.containsKey("content"));
         Assert.assertTrue(metaMap.containsKey("width"));
     }
