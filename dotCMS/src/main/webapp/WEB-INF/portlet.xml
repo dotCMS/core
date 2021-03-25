@@ -506,4 +506,10 @@
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
     </portlet>
 
+    <portlet>
+        <portlet-name>graphql</portlet-name>
+        <display-name>graphql</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+    </portlet>
+
 </portlet-app>
