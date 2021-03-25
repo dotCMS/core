@@ -89,7 +89,7 @@ class ElasticReadOnlyCommandImpl implements ElasticReadOnlyCommand {
         final boolean clusterInReadOnlyMode              = ElasticsearchUtil.isClusterInReadOnlyMode();
         final boolean eitherLiveOrWorkingIndicesReadOnly = ElasticsearchUtil.isEitherLiveOrWorkingIndicesReadOnly();
 
-        indexOrClusterReadOnly.set(true); // asume ready only
+        indexOrClusterReadOnly.set(true); // think it is ready only
         if (clusterInReadOnlyMode) {
             sendMessage("es.cluster.read.only.message");
             startMonitor(

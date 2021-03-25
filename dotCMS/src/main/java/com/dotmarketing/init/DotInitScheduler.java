@@ -45,7 +45,7 @@ public class DotInitScheduler {
 
 	private static final String DOTCMS_JOB_GROUP_NAME = "dotcms_jobs";
 	public static final String SCHEDULER_COREPOOLSIZE = "SCHEDULER_CORE_POOL_SIZE";
-	public static final String CRON_EXPRESSION_EVERY_5_MINUTES = " 0 0/5 0 ? * * *";
+	public static final String CRON_EXPRESSION_EVERY_5_MINUTES = "0 */5 * ? * *";
 
 	private static ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = null;
 
@@ -543,7 +543,7 @@ public class DotInitScheduler {
 
 			if (Config.getBooleanProperty( "ENABLE_ELASTIC_READ_ONLY_MONITOR", true)) {
 
-					final JobBuilder deleteOldSystemEventsJob = new JobBuilder().setJobClass(EsReadOnlyMonitorJob.class)
+					final JobBuilder elasticReadOnlyMonitorJob = new JobBuilder().setJobClass(EsReadOnlyMonitorJob.class)
 							.setJobName(jobName)
 							.setJobGroup(DOTCMS_JOB_GROUP_NAME)
 							.setTriggerName(triggerName)
@@ -551,7 +551,7 @@ public class DotInitScheduler {
 							.setCronExpressionProp("ELASTIC_READ_ONLY_MONITOR_CRON_EXPRESSION")
 							.setCronExpressionPropDefault(Config.getStringProperty("ELASTIC_READ_ONLY_MONITOR_CRON_EXPRESSION", CRON_EXPRESSION_EVERY_5_MINUTES))
 							.setCronMissfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
-					scheduleJob(deleteOldSystemEventsJob);
+					scheduleJob(elasticReadOnlyMonitorJob);
 			} else {
 
 				if ((scheduler.getJobDetail(jobName, DOTCMS_JOB_GROUP_NAME)) != null) {

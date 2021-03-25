@@ -4440,7 +4440,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         if (!isCheckInSafe(contentRelationships)){
-            this.elasticReadOnlyCommand.executeCheck(); // todo: should run this in another thread???
+            DotConcurrentFactory.getInstance().getSingleSubmitter().submit(()-> this.elasticReadOnlyCommand.executeCheck());
             throw new DotContentletStateException(
                     "Content cannot be saved at this moment. Reason: Elastic Search cluster is in read only mode.");
         }
