@@ -30,7 +30,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
 
     private static final int POOL_SIZE_VAL = 10;
     private static final int MAXPOOL_SIZE_VAL = 50;
-    private static final int QUEUE_CAPACITY_VAL = 100; // todo: change this at the end to 10000
+    private static final int QUEUE_CAPACITY_VAL = 1000;
 
 
     /**
