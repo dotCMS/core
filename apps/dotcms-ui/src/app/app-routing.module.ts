@@ -19,13 +19,6 @@ const PORTLETS_ANGULAR = [
     {
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
-        path: 'graphql',
-        loadChildren: () =>
-            import('@portlets/dot-graphql/dot-graphql.module').then((m) => m.DotGraphqlModule)
-    },
-    {
-        canActivate: [MenuGuardService],
-        canActivateChild: [MenuGuardService],
         path: 'templates',
         loadChildren: () =>
             import('@portlets/dot-templates/dot-templates.module').then((m) => m.DotTemplatesModule)
