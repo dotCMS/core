@@ -87,6 +87,7 @@ public class MapToContentletPopulator  {
         return stInode;
     }
 
+    @CloseDBIfOpened
     public String getContentTypeInode (final Map<String, Object> map) {
 
         String stInode = (String) map.get(Contentlet.STRUCTURE_INODE_KEY);
