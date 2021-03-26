@@ -13,6 +13,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
+import io.vavr.control.Try;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -86,8 +87,12 @@ class ElasticReadOnlyCommandImpl implements ElasticReadOnlyCommand {
             loadTimeToWaitAfterWriteModeSet();
         }
 
-        final boolean clusterInReadOnlyMode              = ElasticsearchUtil.isClusterInReadOnlyMode();
-        final boolean eitherLiveOrWorkingIndicesReadOnly = ElasticsearchUtil.isEitherLiveOrWorkingIndicesReadOnly();
+        final boolean clusterInReadOnlyMode              = Try.of(()-> ElasticsearchUtil.isClusterInReadOnlyMode())
+                .onFailure(e->Logger.warn(ElasticReadOnlyCommand.class,  "unable to access ES Cluster Metadata: " + e.getMessage()))
+                .getOrElse(true);
+        final boolean eitherLiveOrWorkingIndicesReadOnly = Try.of(()-> ElasticsearchUtil.isEitherLiveOrWorkingIndicesReadOnly())
+                .onFailure(e->Logger.warn(ElasticReadOnlyCommand.class,  "unable to access ES Index Metadata: " + e.getMessage()))
+                .getOrElse(true);
 
         indexOrClusterReadOnly.set(true); // think it is ready only
         if (clusterInReadOnlyMode) {
