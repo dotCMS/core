@@ -40,7 +40,7 @@ public final class ElasticsearchUtil {
      * @return
      */
     public static  boolean isAnyReadOnly(final String... indicesNames) throws IOException {
-        final GetSettingsRequest request = new GetSettingsRequest().masterNodeTimeout(TimeValue.timeValueSeconds(15))..indices(indicesNames);
+        final GetSettingsRequest request = new GetSettingsRequest().masterNodeTimeout(TimeValue.timeValueSeconds(15)).indices(indicesNames);
 
         Logger.debug(ElasticsearchUtil.class, () -> "Checking if current indices are read only");
 
