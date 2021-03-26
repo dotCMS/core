@@ -1,5 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.content.elasticsearch.business.IndiciesInfo.CLUSTER_PREFIX;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -8,11 +9,12 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
-
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.UtilMethods;
+import io.vavr.Lazy;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,23 +34,22 @@ public class ESIndexAPITest {
 
     @BeforeClass
     public static void prepare() throws Exception {
-        //Setting web app environment
+        // Setting web app environment
         IntegrationTestInitService.getInstance().init();
         esIndexAPI = APILocator.getESIndexAPI();
     }
 
     @Test
     public void test_createIndex_newIndexShouldHaveProperReplicasSetting() throws IOException {
-        final String newIndexName = "mynewindex"+ UUID.randomUUID().toString().toLowerCase();
+        final String newIndexName = "mynewindex" + UUID.randomUUID().toString().toLowerCase();
         try {
             esIndexAPI.createIndex(newIndexName);
             final String fullNewIndexName = esIndexAPI.getNameWithClusterIDPrefix(newIndexName);
             GetSettingsRequest request = new GetSettingsRequest().indices(fullNewIndexName);
-            GetSettingsResponse getSettingsResponse = RestHighLevelClientProvider.getInstance()
-                    .getClient().indices().getSettings(request, RequestOptions.DEFAULT);
+            GetSettingsResponse getSettingsResponse = RestHighLevelClientProvider.getInstance().getClient().indices()
+                            .getSettings(request, RequestOptions.DEFAULT);
 
-            String replicasSetting = getSettingsResponse
-                    .getSetting(fullNewIndexName, "index.auto_expand_replicas");
+            String replicasSetting = getSettingsResponse.getSetting(fullNewIndexName, "index.auto_expand_replicas");
 
             Assert.assertEquals("0-all", replicasSetting);
         } finally {
@@ -57,7 +58,7 @@ public class ESIndexAPITest {
     }
 
     @Test
-    public void testGetIndicesStatsWhenStatsTypeIsLongShouldPass(){
+    public void testGetIndicesStatsWhenStatsTypeIsLongShouldPass() {
 
         final Map<String, Object> jsonMap = new HashMap<>();
 
@@ -81,7 +82,7 @@ public class ESIndexAPITest {
         doReturn(jsonMap).when(indexAPI).performLowLevelRequest(any());
         when(indexAPI.hasClusterPrefix(anyString())).thenReturn(true);
 
-        final  Map<String, IndexStats> result = indexAPI.getIndicesStats();
+        final Map<String, IndexStats> result = indexAPI.getIndicesStats();
 
         assertEquals(1, result.size());
 
@@ -92,7 +93,7 @@ public class ESIndexAPITest {
     }
 
     @Test
-    public void testGetIndicesStatsWhenStatsTypeIsIntegerShouldPass(){
+    public void testGetIndicesStatsWhenStatsTypeIsIntegerShouldPass() {
 
         final Map<String, Object> jsonMap = new HashMap<>();
 
@@ -116,7 +117,7 @@ public class ESIndexAPITest {
         doReturn(jsonMap).when(indexAPI).performLowLevelRequest(any());
         when(indexAPI.hasClusterPrefix(anyString())).thenReturn(true);
 
-        final  Map<String, IndexStats> result = indexAPI.getIndicesStats();
+        final Map<String, IndexStats> result = indexAPI.getIndicesStats();
 
         assertEquals(1, result.size());
 
@@ -127,7 +128,7 @@ public class ESIndexAPITest {
     }
 
     @Test
-    public void testGetClusterStatsWhenStatsTypeIsLongShouldPass(){
+    public void testGetClusterStatsWhenStatsTypeIsLongShouldPass() {
 
         final Map<String, Object> jsonMap = new HashMap<>();
         final Map<String, Object> nodes = new HashMap<>();
@@ -147,7 +148,7 @@ public class ESIndexAPITest {
         final ESIndexAPI indexAPI = spy(ESIndexAPI.class);
         doReturn(jsonMap).when(indexAPI).performLowLevelRequest(any());
 
-        final  ClusterStats result = indexAPI.getClusterStats();
+        final ClusterStats result = indexAPI.getClusterStats();
 
         assertNotNull(result);
         assertTrue(UtilMethods.isSet(result.getNodeStats()));
@@ -158,7 +159,7 @@ public class ESIndexAPITest {
     }
 
     @Test
-    public void testGetClusterStatsWhenStatsTypeIsIntegerShouldPass(){
+    public void testGetClusterStatsWhenStatsTypeIsIntegerShouldPass() {
 
         final Map<String, Object> jsonMap = new HashMap<>();
         final Map<String, Object> nodes = new HashMap<>();
@@ -179,7 +180,7 @@ public class ESIndexAPITest {
         final ESIndexAPI indexAPI = spy(ESIndexAPI.class);
         doReturn(jsonMap).when(indexAPI).performLowLevelRequest(any());
 
-        final  ClusterStats result = indexAPI.getClusterStats();
+        final ClusterStats result = indexAPI.getClusterStats();
 
         assertNotNull(result);
         assertTrue(UtilMethods.isSet(result.getNodeStats()));
@@ -188,4 +189,41 @@ public class ESIndexAPITest {
         assertEquals(5, nodeStats.getDocCount());
         assertEquals(2000, nodeStats.getSizeRaw());
     }
+
+
+    String[] testClusterNames = {"testing_cluster_name", "testing.cluster-names", "cluster.123.ABC", "12368689060",
+            "__THIS_CLUSTER_"};
+
+
+    @Test
+    public void test_allowed_cluster_names_in_indexes() {
+
+        final String indexName = "liveindex_20210322183037";
+
+
+        for (final String clusterName : testClusterNames) {
+
+            final ESIndexAPI indexAPI = new ESIndexAPI(Lazy.of(() -> CLUSTER_PREFIX + clusterName + "."));
+
+            final String testIndexName = indexAPI.getNameWithClusterIDPrefix(indexName);
+
+            assert (indexAPI.hasClusterPrefix(testIndexName));
+
+            final String testIndexNameRecursive = indexAPI.getNameWithClusterIDPrefix(testIndexName);
+
+            assertEquals(testIndexNameRecursive, testIndexName);
+
+            final String showableIndexName = indexAPI.removeClusterIdFromName(testIndexName);
+
+            assert (!indexAPI.hasClusterPrefix(showableIndexName));
+
+            assertEquals(showableIndexName, indexName);
+
+
+        }
+
+
+    }
+
+
 }

@@ -7,6 +7,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
+import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.sql.SQLException;
@@ -24,6 +25,11 @@ public class Task210218MigrateUserProxyTable implements StartupTask {
     @Override
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
 
+        createAdditionalInfoColumn();
+        migrateDataFromUserProxyToUser();
+    }
+
+    private void migrateDataFromUserProxyToUser() throws DotDataException {
         DotConnect dotConnect = new DotConnect();
         // retrieves existing additional info from user_proxy table
         final List<Map<String, Object>> additionalInfoMaps = dotConnect.setSQL(
@@ -52,11 +58,54 @@ public class Task210218MigrateUserProxyTable implements StartupTask {
         }
     }
 
+    private void createAdditionalInfoColumn() {
+        DotConnect dotConnect = new DotConnect();
+        final String sql;
+
+        if (DbConnectionFactory.isPostgres()){
+            sql = getPostgresScript();
+        }else if (DbConnectionFactory.isMySql()){
+            sql = getMySQLScript();
+        }else if (DbConnectionFactory.isOracle()){
+            sql = getOracleScript();
+        }else{
+            sql = getMSSQLScript();
+        }
+
+        try {
+            dotConnect.executeStatement(sql);
+        } catch (SQLException exception) {
+            throw new DotRuntimeException(exception);
+        }
+
+        Logger.info(this, "additional_info column created");
+    }
+
+    private String getPostgresScript() {
+        return "alter table user_ add additional_info JSONB NULL;";
+
+    }
+
+    private String getMySQLScript() {
+        return "alter table user_ add additional_info text NULL;";
+
+    }
+
+    private String getOracleScript() {
+        return "alter table user_ add additional_info NCLOB NULL;";
+    }
+
+    private String getMSSQLScript() {
+        return  "alter table user_ add additional_info NVARCHAR(MAX) NULL;";
+    }
+
     @Override
     public boolean forceRun() {
         try {
-            return new DotDatabaseMetaData().tableExists(
+            final DotDatabaseMetaData dbMetadata = new DotDatabaseMetaData();
+            return !dbMetadata.hasColumn("user_", "additional_info") && dbMetadata.tableExists(
                     DbConnectionFactory.getConnection(), DbConnectionFactory.isOracle()? "USER_PROXY": "user_proxy");
+
         } catch (SQLException e) {
 
             return Boolean.FALSE;
