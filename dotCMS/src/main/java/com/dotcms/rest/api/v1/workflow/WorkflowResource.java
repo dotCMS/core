@@ -4,6 +4,7 @@ import static com.dotcms.rest.ResponseEntityView.OK;
 import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.util.DotLambdas.not;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -21,7 +22,6 @@ import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.EmptyHttpResponse;
-import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.MapToContentletPopulator;
 import com.dotcms.rest.PATCH;
@@ -110,7 +110,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletionService;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.Future;
@@ -1710,19 +1709,8 @@ public class WorkflowResource {
 
                 try {
 
-                    final Contentlet contentlet = this.getContentlet // this do the merge
-                            (inode, identifier, languageId,
-                                    () -> WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
-                                    fireActionForm, initDataObject, mode);
-
-                    contentlet.setIndexPolicy(indexPolicy);
-                    this.checkContentletState(contentlet, systemAction);
-
-                    final Optional<WorkflowAction> workflowActionOpt = this.workflowAPI.findActionMappedBySystemActionContentlet
-                            (contentlet, systemAction, user);
-
-                    final Response restResponse = this.mergeContentlet(systemAction, fireActionForm, request, user, contentlet, workflowActionOpt);
-                    resultMap.put(identifier, ResponseEntityView.class.cast(restResponse.getEntity()).getEntity());
+                    fireTransactionalAction(systemAction, fireActionForm, request, mode,
+                            initDataObject, resultMap, inode, identifier, languageId, user, indexPolicy);
                 } catch (Exception e) {
 
                     final String id = UtilMethods.isSet(identifier)?identifier:inode;
@@ -1738,6 +1726,32 @@ public class WorkflowResource {
         }
 
         printResponseEntityViewResult(outputStream, objectMapper, completionService, futures);
+    }
+
+    @WrapInTransaction
+    private void fireTransactionalAction(final SystemAction systemAction,
+                                         final FireActionForm fireActionForm,
+                                         final HttpServletRequest request,
+                                         final PageMode mode, InitDataObject initDataObject,
+                                         final Map<String, Object> resultMap,
+                                         final String inode, String identifier,
+                                         final long languageId,
+                                         final User user,
+                                         final IndexPolicy indexPolicy) throws DotDataException, DotSecurityException {
+
+        final Contentlet contentlet = this.getContentlet // this do the merge
+                (inode, identifier, languageId,
+                        () -> WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
+                        fireActionForm, initDataObject, mode);
+
+        contentlet.setIndexPolicy(indexPolicy);
+        this.checkContentletState(contentlet, systemAction);
+
+        final Optional<WorkflowAction> workflowActionOpt = this.workflowAPI.findActionMappedBySystemActionContentlet
+                (contentlet, systemAction, user);
+
+        final Response restResponse = this.mergeContentlet(systemAction, fireActionForm, request, user, contentlet, workflowActionOpt);
+        resultMap.put(identifier, ResponseEntityView.class.cast(restResponse.getEntity()).getEntity());
     }
 
     private void printResponseEntityViewResult(final OutputStream outputStream,
