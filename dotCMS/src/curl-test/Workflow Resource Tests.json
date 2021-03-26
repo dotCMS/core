@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "d76c0a3f-0631-4fe5-bec4-77362ee3d71e",
+		"_postman_id": "fd766073-2359-456c-99ae-2563435c67e4",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -12103,6 +12103,172 @@
 							]
 						},
 						"description": "Fires an PUBLISH default action"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "mergeAction",
+			"item": [
+				{
+					"name": "AddMergeContentlet",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"console.log(\"Running test\")",
+									"",
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.baseType).to.eql(\"CONTENT\");",
+									"    pm.expect(jsonData.entity.contentType).to.eql(\"webPageContent\");",
+									"});",
+									"",
+									"var requestcounter = pm.environment.get(\"requestcounter\");",
+									"console.log(\"requestcounter #: \" + requestcounter)",
+									"",
+									"if(!requestcounter || requestcounter > 10) {",
+									"",
+									"    pm.environment.set(\"requestcounter\", 1);",
+									"} else {",
+									"",
+									"    pm.environment.set(\"requestcounter\", requestcounter+1);",
+									"}",
+									"",
+									"if (requestcounter <= 10) {",
+									"    ",
+									"    console.log(\"Calling AddMergeContentlet again #: \" + requestcounter)",
+									"    postman.setNextRequest(\"AddMergeContentlet\");",
+									"}",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"comments\":\"Adding New Generic content\",\n\t\"contentlet\": {\n\t\t\"contentType\":\"webPageContent\",\n        \"title\":\"Test Merge Content\",\n        \"body\":\"Test Merge Body\",\n\t\t\"contentHost\":\"default\"\n\t}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/NEW",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"NEW"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "PublishMerge",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"console.log(\"Running test\")",
+									"",
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.summary.affected).to.above(9);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"comments\":\"Publish an existing Generic content\",\n    \"query\":\"+contentType:webPageContent AND title:\\\"Test Merge Content\\\"\",\n\t\"contentlet\": {\n        \"title\":\"Test Merge Content Published\"\n\t}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
 					},
 					"response": []
 				}

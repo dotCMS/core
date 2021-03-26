@@ -329,11 +329,20 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         this.submitterConfigCreatorMap.putIfAbsent(name, creator);
     }
 
+    /**
+     * Get the default single thread submitter
+     * @return DotSubmitter
+     */
     public DotSubmitter getSingleSubmitter () {
 
         return this.getSingleSubmitter(DOT_SINGLE_SYSTEM_THREAD_POOL);
     }
 
+    /**
+     * Get the default single thread submitter by name
+     * @param name {@link String} name of the {@link DotSubmitter}
+     * @return DotSubmitter
+     */
     public DotSubmitter getSingleSubmitter (final String name) {
 
         DotSubmitter submitter = null;

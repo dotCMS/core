@@ -17,7 +17,7 @@ public interface ElasticReadOnlyCommand {
     }
 
     /**
-     *
+     * returns true if the index or cluster is on read only mode
      * @return
      */
     boolean isIndexOrClusterReadOnly();
