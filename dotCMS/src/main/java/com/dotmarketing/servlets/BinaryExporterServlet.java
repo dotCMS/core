@@ -5,6 +5,7 @@ import static com.liferay.util.HttpHeaders.EXPIRES;
 
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
+import com.dotmarketing.util.UUIDUtil;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.util.PortalUtil;
 import java.io.File;
@@ -372,7 +373,7 @@ public class BinaryExporterServlet extends HttpServlet {
           DbConnectionFactory.closeSilently();
           return;
         }
-        inputFile = APILocator.getTempFileAPI().getTempFile(req, shorty.longId).get().file;
+        inputFile = tempFileAPI.getTempFile(req, shorty.longId).get().file;
       }
       
 
@@ -400,6 +401,8 @@ public class BinaryExporterServlet extends HttpServlet {
       if (req.getParameter(WebKeys.IMAGE_TOOL_SAVE_FILES) != null && user!=null && !user.equals(APILocator.getUserAPI().getAnonymousUser())) {
         final DotTempFile temp = tempFileAPI.createEmptyTempFile(inputFile.getName(), req);
         FileUtil.copyFile(data.getDataFile(), temp.file);
+        //Temp files time-mark must be updated so they can be recognized by the tempFileAPI
+        temp.file.setLastModified(System.currentTimeMillis());
 		copyMetadata(uuid, fieldVarName, temp);
 		resp.getWriter().println(DotObjectMapperProvider.getInstance().getDefaultObjectMapper().writeValueAsString(temp));
         resp.getWriter().close();
@@ -674,15 +677,34 @@ public class BinaryExporterServlet extends HttpServlet {
 		
 	}
 
-	private void copyMetadata(final String uuid, final String fieldVarName, final DotTempFile temp)
-			throws DotDataException {
+	/**
+	 *
+	 * @param uuid
+	 * @param fieldVarName
+	 * @param temp
+	 * @throws DotDataException
+	 */
+	private void copyMetadata(final String uuid, final String fieldVarName,
+			final DotTempFile temp) {
 		//Basically here a new temp file is generated and we should transfer any custom generated metadata
-		if(UtilMethods.isSet(fieldVarName) && UtilMethods.isSet(uuid)){
-		   final Optional<Metadata> metadata = fileMetadataAPI.getMetadata(uuid);
-		   if(metadata.isPresent()){
-			  fileMetadataAPI.putCustomMetadataAttributes(temp.id, ImmutableMap
-					  .of(fieldVarName, metadata.get().getCustomMeta()));
-		   }
+		if (UtilMethods.isSet(fieldVarName) && UtilMethods.isSet(uuid)) {
+			try {
+				if (UUIDUtil.isUUID(uuid)) {
+					final Contentlet content = contentAPI
+							.find(uuid, APILocator.systemUser(), false);
+					final Metadata metadata = fileMetadataAPI.getMetadata(content, fieldVarName);
+					fileMetadataAPI.putCustomMetadataAttributes(temp.id, ImmutableMap
+							.of(fieldVarName, metadata.getCustomMeta()));
+				} else {
+					final Optional<Metadata> metadata = fileMetadataAPI.getMetadata(uuid);
+					if (metadata.isPresent()) {
+						fileMetadataAPI.putCustomMetadataAttributes(temp.id, ImmutableMap
+								.of(fieldVarName, metadata.get().getCustomMeta()));
+					}
+				}
+			} catch (Exception e) {
+			   Logger.error(BinaryExporterServlet.class, "Exception copying metadata", e);
+			}
 		}
 	}
 

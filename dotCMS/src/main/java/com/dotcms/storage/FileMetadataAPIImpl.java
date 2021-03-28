@@ -641,7 +641,6 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
     public void putCustomMetadataAttributes(final String tempResourceId,
             final Map<String, Map<String,Serializable>> customAttributesByField) throws DotDataException {
 
-        final StorageType storageType = StoragePersistenceProvider.getStorageType();
         final String metadataBucketName = Config
                 .getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);
 
@@ -654,7 +653,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
                         .storageKey(
                                 new StorageKey.Builder().group(metadataBucketName)
                                         .path(tempResourcePath(tempResourceId))
-                                        .storage(storageType).build())
+                                        .storage(StorageType.FILE_SYSTEM).build())
                         .build()), customAttributes);
 
             }catch (Exception e){
