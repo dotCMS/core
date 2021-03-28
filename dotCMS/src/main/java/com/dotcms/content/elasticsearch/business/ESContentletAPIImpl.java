@@ -4908,12 +4908,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 final boolean contentVersionHardLink = Config
                                         .getBooleanProperty("CONTENT_VERSION_HARD_LINK", true);
                                 FileUtil.copyFile(incomingFile, newFile, contentVersionHardLink, validateEmptyFile);
-
-                                if(workingContentlet != contentlet){
-                                   //This copies the metadata from version to version so we don't lose any any custom attribute previously added
-                                   fileMetadataAPI.copyMetadata(workingContentlet, contentlet);
-                                }
                             }
+
+                            if(workingContentlet != contentlet){
+                                //This copies the metadata from version to version so we don't lose any any custom attribute previously added
+                                fileMetadataAPI.copyMetadata(workingContentlet, contentlet);
+                                Logger.debug(ESContentletAPIImpl.class,String.format("Metadata copied from inode: `%s` to  inode `%s` ", workingContentlet.getInode(), contentlet.getInode()));
+                            }
+
                             contentlet.setBinary(velocityVarNm, newFile);
 
                             //This copies the metadata associated with the temp resource passed if any.
@@ -4922,6 +4924,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 if(optionalMetadata.isPresent()){
                                    final Metadata tempMeta = optionalMetadata.get();
                                    fileMetadataAPI.putCustomMetadataAttributes(contentlet, ImmutableMap.of(velocityVarNm, tempMeta.getCustomMeta()));
+                                   Logger.debug(ESContentletAPIImpl.class,String.format("Metadata copied from temp resource: `%s` ", tempResourceId.get()));
                                 }
                             }
                         }

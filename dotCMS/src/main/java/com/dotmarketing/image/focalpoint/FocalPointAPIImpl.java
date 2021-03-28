@@ -58,11 +58,13 @@ public class FocalPointAPIImpl implements FocalPointAPI {
         }
 
         if(tempFileAPI.isTempResource(inode)){
+            Logger.debug(FocalPointAPIImpl.class, "Metadata writing fp under temp id "+inode);
             writeFocalPointMeta(inode, fieldVar, focalPoint);
         } else {
             final Optional<Contentlet> contentlet = findContentletByInode(inode);
             if (contentlet.isPresent()) {
                 writeFocalPointMeta(contentlet.get(), fieldVar, focalPoint);
+                Logger.debug(FocalPointAPIImpl.class, "Metadata writing fp under inode "+inode);
             } else {
                 Logger.warn(FocalPointAPIImpl.class,
                         "Unable to persist focal point info.  Couldn't find a contentlet for the given inode "
@@ -112,7 +114,7 @@ public class FocalPointAPIImpl implements FocalPointAPI {
            return parseFocalPoint(
                    (String) metadata.getCustomMeta().get(FOCAL_POINT));
        }catch (Exception e){
-          Logger.error (FocalPointAPIImpl.class,"Error retrieving focal point from custom metadata", e);
+          Logger.error (FocalPointAPIImpl.class, "Metadata Error retrieving focal point from custom metadata", e);
        }
         return Optional.empty();
     }
@@ -121,27 +123,28 @@ public class FocalPointAPIImpl implements FocalPointAPI {
     public Optional<FocalPoint> parseFocalPoint(final String focalPoint) {
 
         try {
-            final String[] value = this.fpPattern.split(focalPoint);
+            final String[] value = fpPattern.split(focalPoint);
             return Optional.of(new FocalPoint(Float.valueOf(value[0]), Float.valueOf(value[1])));
         } catch (Exception e) {
-            Logger.debug(this.getClass(), e.getMessage(), e);
+            Logger.error(FocalPointAPIImpl.class, "Error parsing FP Metadata ", e);
             return Optional.empty();
         }
     }
 
     @Override
     public Optional<FocalPoint> readFocalPoint(final String inode, final String fieldVar) {
-
+        Optional<FocalPoint> focalPoint = Optional.empty();
         if (tempFileAPI.isTempResource(inode)) {
-            return readFocalPointMeta(inode);
+            focalPoint = readFocalPointMeta(inode);
+            Logger.debug(FocalPointAPIImpl.class, "Metadata readFocalPoint from TempId "+ inode );
         } else {
             final Optional<Contentlet> optional = findContentletByInode(inode);
             if (optional.isPresent()) {
-                return readFocalPointMeta(optional.get(), fieldVar);
+                focalPoint = readFocalPointMeta(optional.get(), fieldVar);
+                Logger.debug(FocalPointAPIImpl.class, "Metadata readFocalPoint from inode "+ inode + " fieldVar " + fieldVar);
             }
         }
-
-        return Optional.empty();
+        return focalPoint;
 
     }
 
