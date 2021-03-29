@@ -1747,11 +1747,13 @@ public class WorkflowResource {
         contentlet.setIndexPolicy(indexPolicy);
         this.checkContentletState(contentlet, systemAction);
 
+        final String contentletId = null != identifier? identifier: contentlet.getIdentifier();
+
         final Optional<WorkflowAction> workflowActionOpt = this.workflowAPI.findActionMappedBySystemActionContentlet
                 (contentlet, systemAction, user);
 
         final Response restResponse = this.mergeContentlet(systemAction, fireActionForm, request, user, contentlet, workflowActionOpt);
-        resultMap.put(identifier, ResponseEntityView.class.cast(restResponse.getEntity()).getEntity());
+        resultMap.put(contentletId, ResponseEntityView.class.cast(restResponse.getEntity()).getEntity());
     }
 
     private void printResponseEntityViewResult(final OutputStream outputStream,
@@ -1766,6 +1768,8 @@ public class WorkflowResource {
             outputStream.write(StringPool.OPEN_BRACKET.getBytes(StandardCharsets.UTF_8));
             final StopWatch stopWatch = new StopWatch();
             stopWatch.start();
+            int successCount = 0;
+            int failCount    = 0;
             // now recover the N results
             for (int i = 0; i < futures.size(); i++) {
 
@@ -1774,6 +1778,13 @@ public class WorkflowResource {
                     Logger.info(this, "Recovering the result " + (i + 1) + " of " + futures.size());
                     final Map<String, Object> resultMap = completionService.take().get();
                     objectMapper.writeValue(outputStream, resultMap);
+
+                    if (isFail(resultMap)) {
+                        failCount++;
+                    } else {
+                        successCount++;
+                    }
+
                     if (i < futures.size()-1) {
                         outputStream.write(StringPool.COMMA.getBytes(StandardCharsets.UTF_8));
                     }
@@ -1788,7 +1799,10 @@ public class WorkflowResource {
             outputStream.write(StringPool.COMMA.getBytes(StandardCharsets.UTF_8));
 
             ResponseUtil.wrapProperty(outputStream, "summary",
-                    objectMapper.writeValueAsString(CollectionsUtils.map("time", stopWatch.getTime(), "affected", futures.size())));
+                    objectMapper.writeValueAsString(CollectionsUtils.map("time", stopWatch.getTime(),
+                            "affected", futures.size(),
+                            "successCount", successCount,
+                            "failCount", failCount)));
             outputStream.write(StringPool.COMMA.getBytes(StandardCharsets.UTF_8));
 
             ResponseUtil.endWrapResponseEntityView(outputStream, true);
@@ -1796,6 +1810,12 @@ public class WorkflowResource {
 
             Logger.error(this, e.getMessage(), e);
         }
+    }
+
+    private boolean isFail(final Map<String, Object> resultMap) {
+
+        final String id = resultMap.keySet().stream().findFirst().get();
+        return resultMap.get(id) instanceof ActionFail;
     }
 
     private Response mergeContentlet(SystemAction systemAction, FireActionForm fireActionForm, HttpServletRequest request, User user,
