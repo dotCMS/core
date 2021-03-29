@@ -55,8 +55,8 @@ public class JSONToolTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link JSONTool#generate(String)}
-     * Given Scenario: Parsing an plain object
-     * ExpectedResult: Expected a map with the properties
+     * Given Scenario: Parsing an plain object with new lines and spaces
+     * ExpectedResult: Expected a list of map with the properties
      * @throws DotSecurityException
      * @throws DotDataException
      */
