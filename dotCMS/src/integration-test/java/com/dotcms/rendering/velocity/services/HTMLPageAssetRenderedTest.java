@@ -8,16 +8,19 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.field.ImmutableConstantField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.model.type.WidgetContentType;
 import com.dotcms.datagen.*;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
+import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -38,6 +41,7 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
@@ -50,10 +54,14 @@ import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.FileUtil;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
@@ -691,6 +699,193 @@ public class HTMLPageAssetRenderedTest {
         }catch(HTMLPageAssetNotFoundException e) {
             //expected
         }
+    }
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When: A Page has a content that have a Image field and this content is using a FileAsset Image
+     * Should: the [field_variable]ImageURI variable should be equals to /contentAsset/raw-data/[content_id]/fileAsset?language_id=1
+     */
+    @Test
+    public void renderPageWithFileAssetImage()
+            throws DotDataException, DotSecurityException, WebAssetException {
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final Field imageField = new FieldDataGen()
+                .type(ImageField.class)
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .host(host)
+                .field(imageField)
+                .nextPersisted();
+
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+        final File image = new File(Thread.currentThread().getContextClassLoader()
+                .getResource("images/test.jpg").getFile());
+        final Contentlet imageContentlet = new FileAssetDataGen(folder, image)
+                .host(host)
+                .nextPersisted();
+        ContentletDataGen.publish(imageContentlet);
+
+        Contentlet contentlet = new ContentletDataGen(contentType)
+                .setProperty(imageField.variable(), imageContentlet.getIdentifier())
+                .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                .nextPersisted();
+
+        ContentletDataGen.publish(contentlet);
+
+        final Container container = new ContainerDataGen()
+                .withContentType(contentType,
+                        String.format("Image URI: $!{%sImageURI}", imageField.variable()))
+                .nextPersisted();
+        ContainerDataGen.publish(container);
+
+        final TemplateLayout templateLayout = new TemplateLayoutDataGen()
+                .withContainer(container, UUID)
+                .next();
+
+        final Folder folderTheme = new FolderDataGen().nextPersisted();
+        final Contentlet theme = new ThemeDataGen()
+                .site(host)
+                .themesFolder(folderTheme)
+                .nextPersisted();
+
+        final Template template = new TemplateDataGen()
+                .theme(theme)
+                .drawedBody(templateLayout)
+                .nextPersisted();
+        TemplateDataGen.publish(template);
+
+        final String pageName = "renderPageWithFileAssetImage-"+System.currentTimeMillis();
+        final HTMLPageAsset page = createHtmlPageAsset(template, pageName, 1);
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet)
+                .setInstanceID(UUID)
+                .nextPersisted();
+
+        HttpServletRequest mockRequest = new MockSessionRequest(
+                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                .request();
+        when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+        mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(systemUser)
+                        .setPageUri(page.getURI())
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequest, mockResponse);
+
+        final String imageURIExpected = String.format(
+                "/contentAsset/raw-data/%s/fileAsset?language_id=1",
+                imageContentlet.getIdentifier()
+        );
+        assertTrue(html , html.contains(String.format("Image URI: %s", imageURIExpected)));
+    }
+
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When: A Page has a content that have a Image field and this content is using a DotAsset Image
+     * Should: the [field_variable]ImageURI variable should be equals to /contentAsset/raw-data/[content_id]/fileAsset?language_id=1
+     */
+    @Test
+    public void renderPageWithDotAssetImage()
+            throws DotDataException, DotSecurityException, WebAssetException, IOException {
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final Field imageField = new FieldDataGen()
+                .type(ImageField.class)
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .host(host)
+                .field(imageField)
+                .nextPersisted();
+
+        final File image = new File(Thread.currentThread().getContextClassLoader()
+                .getResource("images/test.jpg").getFile());
+
+        final ContentType dotAssetContentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                .save(ContentTypeBuilder.builder(DotAssetContentType.class)
+                .folder(FolderAPI.SYSTEM_FOLDER)
+                .host(Host.SYSTEM_HOST)
+                .name("name" + System.currentTimeMillis())
+                .owner(APILocator.systemUser().getUserId())
+                .build());
+
+        final Contentlet imageContentlet = new ContentletDataGen(dotAssetContentType)
+            .setProperty(DotAssetContentType.ASSET_FIELD_VAR, image)
+            .nextPersisted();
+        ContentletDataGen.publish(imageContentlet);
+
+        Contentlet contentlet = new ContentletDataGen(contentType)
+                .setProperty(imageField.variable(), imageContentlet.getIdentifier())
+                .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                .nextPersisted();
+
+        ContentletDataGen.publish(contentlet);
+
+        final Container container = new ContainerDataGen()
+                .withContentType(contentType,
+                        String.format("Image URI: $!{%sImageURI}", imageField.variable()))
+                .nextPersisted();
+        ContainerDataGen.publish(container);
+
+        final TemplateLayout templateLayout = new TemplateLayoutDataGen()
+                .withContainer(container, UUID)
+                .next();
+
+        final Folder folderTheme = new FolderDataGen().nextPersisted();
+        final Contentlet theme = new ThemeDataGen()
+                .site(host)
+                .themesFolder(folderTheme)
+                .nextPersisted();
+
+        final Template template = new TemplateDataGen()
+                .theme(theme)
+                .drawedBody(templateLayout)
+                .nextPersisted();
+        TemplateDataGen.publish(template);
+
+        final String pageName = "renderPageWithFileAssetImage-"+System.currentTimeMillis();
+        final HTMLPageAsset page = createHtmlPageAsset(template, pageName, 1);
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet)
+                .setInstanceID(UUID)
+                .nextPersisted();
+
+        HttpServletRequest mockRequest = new MockSessionRequest(
+                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                .request();
+        when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+        mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(systemUser)
+                        .setPageUri(page.getURI())
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequest, mockResponse);
+
+        final String imageURIExpected = String.format(
+                "dA/%s",
+                imageContentlet.getIdentifier()
+        );
+        assertTrue(html , html.contains(String.format("Image URI: %s", imageURIExpected)));
     }
 
     /**

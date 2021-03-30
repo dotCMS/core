@@ -9,6 +9,7 @@ import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
+import com.dotmarketing.exception.InvalidTimeZoneException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
@@ -181,7 +182,6 @@ public class CMSConfigResource {
 
             //Updating the locale info
             CompanyManagerUtil.updateUsers( languageId, timeZoneId, null, false, false, null );
-            TimeZone.setDefault( TimeZone.getTimeZone( timeZoneId ) );
 
             //And prepare the response
             JSONObject jsonResponse = new JSONObject();
@@ -189,7 +189,11 @@ public class CMSConfigResource {
             jsonResponse.put( "message", LanguageUtil.get( initData.getUser().getLocale(), "you-have-successfully-updated-the-company-profile" ) );
             responseMessage.append( jsonResponse.toString() );
         } catch ( Exception e ) {
-            Logger.error( this.getClass(), "Error saving basic information for current company.", e );
+            if (e instanceof InvalidTimeZoneException) {
+                Logger.error(this.getClass(), "Error saving basic information for current company: " + e.getMessage());
+            } else {
+                Logger.error( this.getClass(), "Error saving basic information for current company.", e );
+            }
 
             if ( e.getMessage() != null ) {
                 responseMessage.append( e.getMessage() );

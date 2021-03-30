@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.Set;
 
 import com.liferay.util.StringPool;
@@ -173,6 +174,12 @@ public class ContainerStructureFinderStrategyResolver {
 
                     //Add the list to cache.
                     containerStructures = builder.build();
+                    containerStructures = containerStructures.stream().map((cs)-> {
+                        if(cs.getCode()==null) {
+                            cs.setCode(""); 
+                        }
+                        return cs;
+                    }).collect(Collectors.toList());
                     CacheLocator.getContentTypeCache().addContainerStructures(containerStructures, container.getIdentifier(), container.getInode());
                 } catch (DotHibernateException e) {
                     throw new DotStateException("cannot find container structures for : " + container);

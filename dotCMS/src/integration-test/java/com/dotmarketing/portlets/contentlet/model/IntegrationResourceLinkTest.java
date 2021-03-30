@@ -86,7 +86,7 @@ public class IntegrationResourceLinkTest extends IntegrationTestBase {
     public void test_Text_ResourceLink_Expect_Downloadable_No_Port_Number_Dot_Asset() throws Exception{
 
         final Host host = APILocator.systemHost();
-        final String mimeType = "text/plain";
+        final String mimeType = "text/plain; charset=ISO-8859-1";
         final boolean isSecure = false;
         final File file = FileUtil.createTemporaryFile("comments-list", "txt", "This is a test temporal file");
         final String htmlFileName = file.getName();
@@ -121,7 +121,7 @@ public class IntegrationResourceLinkTest extends IntegrationTestBase {
     private User mockLimitedUser(){
         final User adminUser = mock(User.class);
         when(adminUser.getUserId()).thenReturn("anonymous");
-        when(adminUser.getEmailAddress()).thenReturn("anonymous@dotcmsfakeemail.org");
+        when(adminUser.getEmailAddress()).thenReturn("anonymous@dotcms.anonymoususer");
         when(adminUser.getFirstName()).thenReturn("anonymous user");
         when(adminUser.getLastName()).thenReturn("anonymous");
         return adminUser;
@@ -139,6 +139,7 @@ public class IntegrationResourceLinkTest extends IntegrationTestBase {
         final Host host = APILocator.systemHost();
         final boolean isSecure = false;
         final File file = FileUtil.createTemporaryFile("comments-list", ".vtl", "This is a test temporal file");
+        //This test works with the filename because the contentType passed is dotAsset if it was FileAsset the expected name would be identifier.getAssetName()
         final String htmlFileName = file.getName();
 
         final User limitedUser = mockLimitedUser();

@@ -30,8 +30,9 @@ import com.liferay.portal.model.User;
  *
  * @author  Brian Wing Shun Chan
  * @version $Revision: 1.70 $
- *
+ * @deprecated Use {@link com.dotmarketing.business.UserFactoryImpl} instead
  */
+@Deprecated
 public class UserLocalManagerUtil {
 	public static com.liferay.portal.model.User addUser(
 		java.lang.String companyId, boolean autoUserId,

@@ -21,9 +21,11 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
+import io.vavr.control.Try;
 
 /**
  * @author Jason Tesser
@@ -245,12 +247,16 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
     public void markAsFailed(final ReindexEntry idx, final String cause) throws DotDataException {
         reindexQueueFactory.markAsFailed(idx, UtilMethods.shortenString(cause, 300));
 
-        DotConcurrentFactory.getInstance()
-                .getSubmitter()
-                .submit(() -> {
-                    final String message = "Reindex failed for :" + idx + " because " + cause;
-                    esReadOnlyMonitor.start(message);
-                });
+
+        Try.run(()->{
+            if (Config.getBooleanProperty("ENABLE_ES_READ_ONLY_MONITOR_ON_FAILED_REINDEX", false)) {
+    
+                    DotConcurrentFactory.getInstance().getSubmitter().submit(() -> {
+                        final String message = "Reindex failed for :" + idx + " because " + cause;
+                        esReadOnlyMonitor.start(message);
+                    });
+            }
+        }).onFailure(e->Logger.warn(ReindexQueueAPIImpl.class, e.getMessage(),e));
     }
 
 }

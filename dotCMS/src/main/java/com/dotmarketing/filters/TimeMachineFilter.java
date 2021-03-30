@@ -5,6 +5,7 @@ import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.filters.CMSFilter.IAm;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -12,6 +13,8 @@ import com.dotmarketing.util.WebKeys;
 
 import eu.bitwalker.useragentutils.Browser;
 import eu.bitwalker.useragentutils.UserAgent;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -108,8 +111,8 @@ public class TimeMachineFilter implements Filter {
 		    }
 
 		    Host host=(Host) req.getSession().getAttribute("tm_host");
-			File file = getFileFromTimeMachine(host, uri, date, langid);
-			if (file.exists()) {
+			Tuple2<File,String> file = getFileFromTimeMachine(host, uri, date, langid);
+			if (file._1().exists()) {
 				sendFile(file, request, response);
 			} else {
 				// File not found for the selected language
@@ -122,7 +125,7 @@ public class TimeMachineFilter implements Filter {
 					// default language
 					final String defaultLangId = Long.toString(APILocator.getLanguageAPI().getDefaultLanguage().getId());
 					file = getFileFromTimeMachine(host, uri, date, defaultLangId);
-					if (file.exists()) {
+					if (file._1().exists()) {
 						// It exists, so send file in the default language
 						sendFile(file, request, response);
 					} else {
@@ -160,9 +163,11 @@ public class TimeMachineFilter implements Filter {
 	 * @return The {@link File} object pointing to the resource that belongs to
 	 *         the page.
 	 */
-	private File getFileFromTimeMachine(final Host host, String uri, final Date selectedDate, final String selectedLangId) {
+	private Tuple2<File,String> getFileFromTimeMachine(final Host host, String uri, final Date selectedDate, final String selectedLangId) {
 		final StringBuilder basePath = new StringBuilder();
 		final String sep = java.io.File.separator;
+		
+		
 		// Base path (e.g., "/usr/opt/dotcms/assets/timemachine/tm_111222333/")
 		basePath.append(ConfigUtils.getTimeMachinePath()).append(sep).append("tm_").append(selectedDate.getTime())
 				.append(sep);
@@ -181,7 +186,16 @@ public class TimeMachineFilter implements Filter {
 			completePath = basePath.toString() + uri;
 			file = new File(completePath);
 		}
-		return file;
+		
+        String mimeType = APILocator.getFileAssetAPI().getMimeType(file.getName());
+        if (mimeType == null || "unknown".equals(mimeType)) {
+            mimeType = (CMSUrlUtil.getInstance().isPageAsset(uri, host, Long.parseLong(selectedLangId))) ? MediaType.TEXT_HTML : MediaType.APPLICATION_OCTET_STREAM;
+        }
+        
+        
+		
+		
+		return Tuple.of(file,mimeType);
 	}
 
 	/**
@@ -227,30 +241,18 @@ public class TimeMachineFilter implements Filter {
 	 * @param response
 	 *            - The HTTP Response object.
 	 */
-	private void sendFile(final File file, ServletRequest request, final ServletResponse response) {
+	private void sendFile(final Tuple2<File,String> file, ServletRequest request, final ServletResponse response) {
 		final HttpServletResponse resp = (HttpServletResponse) response;
-		String mimeType = APILocator.getFileAssetAPI().getMimeType(file.getName());
-		if (mimeType == null) {
-			mimeType = MediaType.APPLICATION_OCTET_STREAM;
-		}
-		if (mimeType.equalsIgnoreCase("unknown")) {
-			String userAgentInfo = ((HttpServletRequest) request).getHeader("User-Agent");
-			UserAgent agent = UserAgent.parseUserAgentString(userAgentInfo);
-			String browserName = agent.getBrowser() != null ? agent.getBrowser().getName() : "";
-			// For Microsoft Edge, all pages MIME type must be set to 
-			// application/octet-stream 
-			if (browserName.contains(Browser.EDGE.getName())) {
-				mimeType = MediaType.APPLICATION_OCTET_STREAM;
-			}
-		}
-		resp.setContentType(mimeType);
-		resp.setContentLength((int) file.length());
-		try (InputStream fis = Files.newInputStream(file.toPath())) {
+
+
+		resp.setContentType(file._2());
+		resp.setContentLength((int) file._1().length());
+		try (InputStream fis = Files.newInputStream(file._1().toPath())) {
 			IOUtils.copy(fis, resp.getOutputStream());
 		} catch (FileNotFoundException e) {
-			Logger.error(this, "Time Machine : File [" + file.getAbsolutePath() + "] cannot be found.", e);
+			Logger.error(this, "Time Machine : File [" + file._1().getAbsolutePath() + "] cannot be found.", e);
 		} catch (IOException e) {
-			Logger.error(this, "Time Machine : File [" + file.getAbsolutePath() + "] cannot be read.", e);
+			Logger.error(this, "Time Machine : File [" + file._1().getAbsolutePath() + "] cannot be read.", e);
 		}
 	}
 

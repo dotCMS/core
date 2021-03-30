@@ -11,13 +11,17 @@ import com.dotcms.saml.SamlAuthenticationService;
 import com.dotcms.saml.DotSamlException;
 import com.dotcms.saml.SamlConfigurationService;
 import com.dotcms.saml.SamlName;
+import com.dotcms.util.RedirectUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
+import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -34,6 +38,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.Serializable;
+import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -144,6 +149,7 @@ public class DotSamlResource implements Serializable {
 	@POST
 	@Path("/login/{idpConfigId}")
 	@Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_FORM_URLENCODED})
+	@Produces( { MediaType.APPLICATION_XML, "text/html" } )
 	@NoCache
 	public void processLogin(@PathParam("idpConfigId") final String idpConfigId,
 							 @Context final HttpServletRequest httpServletRequest,
@@ -218,7 +224,7 @@ public class DotSamlResource implements Serializable {
 						session.removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
 					}
 
-					httpServletResponse.sendRedirect(loginPath);
+					RedirectUtil.sendRedirectHTML(httpServletResponse, loginPath);
 					return;
 				}
 			} finally {
@@ -233,6 +239,11 @@ public class DotSamlResource implements Serializable {
 		throw new DotSamlException(message);
 	}
 
+
+	
+	
+	
+	
 	/**
 	 * Renders the XML metadata.
 	 * @param idpConfigId          {@link String} identifier config (here the host id)
@@ -286,7 +297,7 @@ public class DotSamlResource implements Serializable {
 	@NoCache
 	@Produces({MediaType.TEXT_HTML, MediaType.APPLICATION_XHTML_XML})
 	// Login configuration by id
-	public Response logoutPost(@PathParam("idpConfigId") final String idpConfigId,
+	public void logoutPost(@PathParam("idpConfigId") final String idpConfigId,
 					   @Context final HttpServletRequest httpServletRequest,
 					   @Context final HttpServletResponse httpServletResponse) throws IOException, URISyntaxException {
 
@@ -302,8 +313,9 @@ public class DotSamlResource implements Serializable {
 					final String logoutPath = this.samlConfigurationService.getConfigAsString(identityProviderConfiguration,
 							SamlName.DOT_SAML_LOGOUT_SERVICE_ENDPOINT_URL,
 							()-> "/dotAdmin/#/public/logout");
+					RedirectUtil.sendRedirectHTML(httpServletResponse, logoutPath);
 
-					return Response.temporaryRedirect(new URI(logoutPath)).build();
+
 				}
 			} finally {
 				if (null != identityProviderConfiguration) {
@@ -322,7 +334,7 @@ public class DotSamlResource implements Serializable {
 	@NoCache
 	@Produces({MediaType.TEXT_HTML, MediaType.APPLICATION_XHTML_XML})
 	// Login configuration by id
-	public Response logoutGet(@PathParam("idpConfigId") final String idpConfigId,
+	public void logoutGet(@PathParam("idpConfigId") final String idpConfigId,
 					   @Context final HttpServletRequest httpServletRequest,
 					   @Context final HttpServletResponse httpServletResponse) throws IOException, URISyntaxException {
 
@@ -339,7 +351,10 @@ public class DotSamlResource implements Serializable {
 							SamlName.DOT_SAML_LOGOUT_SERVICE_ENDPOINT_URL,
 							()-> this.buildBaseUrlFromRequest(httpServletRequest));
 
-					return Response.temporaryRedirect(new URI(logoutPath)).build();
+					
+					
+					RedirectUtil.sendRedirectHTML(httpServletResponse, logoutPath);
+
 				}
 			} finally {
 				if (null != identityProviderConfiguration) {
