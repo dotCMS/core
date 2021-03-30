@@ -354,7 +354,7 @@ public class PublisherAPIImplTest {
         createLanguageVariableIfNeeded();
         addLanguageVariableDependencies(dependencies, testCase.asset.addLanguageVariableDependencies);
 
-        final FilterDescriptor filterDescriptor = new FileDescriptorDataGen().nextPersisted();
+        final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
 
         final PublisherAPIImpl publisherAPI = new PublisherAPIImpl();
 
