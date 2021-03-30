@@ -497,7 +497,7 @@ public class PublisherTestUtil {
         final File bundleRoot = BundlerUtil.getBundleRoot( pconf );
 
         // Run bundlers
-        BundlerUtil.writeBundleXML( pconf );
+        BundlerUtil.writeBundleXML( pconf, output);
         for ( final Class<IBundler> aClass : bundlers ) {
 
             final IBundler bundler = aClass.newInstance();

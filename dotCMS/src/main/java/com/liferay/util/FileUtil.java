@@ -230,13 +230,17 @@ public class FileUtil {
         }
 
         if (!hardLinks) {
-            try (final ReadableByteChannel inputChannel = Channels.newChannel(Files.newInputStream(source.toPath()));
-                    final WritableByteChannel outputChannel = Channels.newChannel(Files.newOutputStream(destination.toPath()))){
-                FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
-            }
-        }
+			copyFile(source, Files.newOutputStream(destination.toPath()));
+		}
 
     }
+
+	public static void copyFile(final File source, final OutputStream destination) throws IOException {
+		try (final ReadableByteChannel inputChannel = Channels.newChannel(Files.newInputStream(source.toPath()));
+			 final WritableByteChannel outputChannel = Channels.newChannel(destination)){
+			FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
+		}
+	}
 
 	public static void copyFileLazy(String source, String destination)
 		throws IOException {
