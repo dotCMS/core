@@ -67,6 +67,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.commons.lang.StringUtils;
+import org.eclipse.jetty.util.ConcurrentHashSet;
 
 /**
  * The main purpose of this class is to determine all possible content
@@ -126,6 +127,8 @@ public class DependencyManager {
 	 *            to create.
 	 */
 	public DependencyManager(User user, PushPublisherConfig config) {
+		Logger.info(DependencyManager.class, () -> "init again Dependency Manager");
+
 		this.config = config;
 		// these ones store the assets that will be sent in the bundle
 		boolean isPublish=config.getOperation().equals(Operation.PUBLISH);
@@ -1370,13 +1373,14 @@ public class DependencyManager {
 
 		private BlockingQueue<DependencyProcessorItem> queue;
 		private Map<AssetTypes, Set<String>> assetsRequestToProcess;
-		private AtomicInteger assetsRequestToProcessCount = new AtomicInteger(0);
-		private AtomicInteger finishReceived = new AtomicInteger(0);
+		private AtomicInteger finishReceived;
 		private DotSubmitter submitter;
 
 		DependencyProcessor() {
+			Logger.info(DependencyProcessor.class, () -> "init again DependencyProcessor");
 			queue = new LinkedBlockingDeque();
-			assetsRequestToProcess = new HashMap<>();
+			assetsRequestToProcess = new ConcurrentHashMap<>();
+			finishReceived = new AtomicInteger(0);
 		}
 
 		/**
@@ -1385,7 +1389,7 @@ public class DependencyManager {
 		 * @param assetKey
 		 * @param assetType
 		 */
-		void put(final String assetKey, final AssetTypes assetType) {
+		synchronized void put(final String assetKey, final AssetTypes assetType) {
 
 			if (!this.alreadyProcess(assetKey, assetType)) {
 				Logger.info(DependencyProcessor.class, () -> String.format("%s: Putting %s in %s",
@@ -1396,16 +1400,15 @@ public class DependencyManager {
 			}
 		}
 
-		private synchronized void addSet(final String assetKey, final AssetTypes assetTypes) {
+		private void addSet(final String assetKey, final AssetTypes assetTypes) {
 			Set<String> set = assetsRequestToProcess.get(assetTypes);
 
 			if (set == null) {
-				set = new HashSet<>();
+				set = new ConcurrentHashSet<>();
 				assetsRequestToProcess.put(assetTypes, set);
 			}
 
 			set.add(assetKey);
-			assetsRequestToProcessCount.incrementAndGet();
 		}
 
 		/**
@@ -1414,7 +1417,8 @@ public class DependencyManager {
 		 */
 		private void waitForAll() throws ExecutionException {
 			Logger.info(DependencyProcessor.class, "starting");
-			submitter = DotConcurrentFactory.getInstance().getSubmitter("DependencyManagerSubmitter",
+			final String submitterName = "DependencyManagerSubmitter" + Thread.currentThread().getName();
+			submitter = DotConcurrentFactory.getInstance().getSubmitter(submitterName,
 					new DotConcurrentFactory.SubmitterConfigBuilder()
 							.poolSize(Config.getIntProperty("MIN_NUMBER_THREAD_TO_EXECUTE_BUNDLER", 1))
 							.maxPoolSize(Config.getIntProperty("MAX_NUMBER_THREAD_TO_EXECUTE_BUNDLER", 40))
@@ -1452,11 +1456,13 @@ public class DependencyManager {
 			return queue.isEmpty() && isAllTaskFinished();
 		}
 
-		private boolean isAllTaskFinished() {
+		private synchronized boolean isAllTaskFinished() {
 			final int activeCount = submitter.getActiveCount();
 			final long taskCount = submitter.getTaskCount();
-			final int nRequest = assetsRequestToProcessCount.get();
 			final int nFinishReceived = finishReceived.get();
+			final Integer nRequest = assetsRequestToProcess.values().stream()
+					.map(set -> set.size())
+					.reduce(0, Integer::sum);
 
 			Logger.info(DependencyManager.class, "submitter.getActiveCount() " + activeCount);
 			Logger.info(DependencyManager.class, "submitter.getTaskCount() " + taskCount);
@@ -1467,7 +1473,12 @@ public class DependencyManager {
 		}
 
 		public boolean alreadyProcess(final String assetKey, final AssetTypes assetTypes) {
+			Logger.info(DependencyManager.class, "assetTypes " + assetTypes);
 			final Set<String> set = assetsRequestToProcess.get(assetTypes);
+			Logger.info(DependencyManager.class, "assetsRequestToProcess.keySet() " + assetsRequestToProcess.keySet());
+			Logger.info(DependencyManager.class, "assetsRequestToProcess " + assetsRequestToProcess);
+			Logger.info(DependencyManager.class, "set " + set);
+			Logger.info(DependencyManager.class, "finishReceived " + finishReceived);
 			return set != null && set.contains(assetKey);
 		}
 
