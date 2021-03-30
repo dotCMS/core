@@ -702,7 +702,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 					+ APILocator.getLanguageAPI().getDefaultLanguage().getId());
 		}
 
-		final String inode = showLive && UtilMethods.isSet(contentletVersionInfo.get().getLiveInode()) ?
+		final String inode = showLive  ?
 				contentletVersionInfo.get().getLiveInode() : contentletVersionInfo.get().getWorkingInode();
 		Template template = templateCache.get(inode);
 
@@ -754,6 +754,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 	/**
 	 * Finds the list of file assets of a template based on a folder.
+	 * First search in the index then in the DB(this is because of PP)
 	 * @param folder where the files live
 	 * @param user
 	 * @param showLive get the working or the live assets
@@ -762,7 +763,17 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	 * @throws DotSecurityException
 	 */
 	private List<FileAsset> findTemplateAssets(final Folder folder, final User user, final boolean showLive) throws DotDataException, DotSecurityException {
-		return APILocator.getFileAssetAPI().findFileAssetsByFolder(folder, null, showLive, user, false);
+		List<FileAsset> assetList = APILocator.getFileAssetAPI().findFileAssetsByFolder(folder, null, showLive, user, false);
+		if(assetList.isEmpty()){
+			final List<Contentlet> dbSearch = showLive ? APILocator.getFolderAPI().getLiveContent(folder,user,false).stream()
+					.filter(contentlet -> contentlet.getBaseType().get().equals(BaseContentType.FILEASSET))
+					.collect(Collectors.toList()):
+					 APILocator.getFolderAPI().getWorkingContent(folder,user,false).stream()
+							 .filter(contentlet -> contentlet.getBaseType().get().equals(BaseContentType.FILEASSET))
+							.collect(Collectors.toList());
+			assetList = APILocator.getFileAssetAPI().fromContentlets(dbSearch);
+		}
+		return assetList;
 	}
 
 	/**

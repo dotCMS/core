@@ -42,6 +42,7 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Config;
@@ -105,6 +106,7 @@ public class DependencyManager {
 	private Set<String> contentTypesSet;
 	private final Set<String> containersSet;
 	private final Set<String> fileAssetContainersSet;
+	private final Set<String> fileAssetTemplatesSet;
 	private final Set<String> contentsSet;
 	private final Set<String> linksSet;
 	private final Set<String> ruleSet;
@@ -151,6 +153,7 @@ public class DependencyManager {
 		containersSet = new HashSet<>();
 		contentsSet = new HashSet<>();
 		fileAssetContainersSet = new HashSet<>();
+		fileAssetTemplatesSet = new HashSet<>();
 		linksSet = new HashSet<>();
 		this.ruleSet = new HashSet<>();
 		solvedContentTypes = new HashSet<>();
@@ -208,6 +211,13 @@ public class DependencyManager {
 					if(t == null || !UtilMethods.isSet(t.getIdentifier())) {
 						t = APILocator.getTemplateAPI().findWorkingTemplate(asset.getAsset(), user, false);
 					}
+
+					if(t instanceof FileAssetTemplate){
+						Logger.debug(getClass(), "FileAssetTemplate id: "+ (asset.getAsset() != null ? asset.getAsset() : "N/A") +" will be ignored");
+						fileAssetTemplatesSet.add(asset.getAsset());
+						continue;
+					}
+
 					if(t == null || !UtilMethods.isSet(t.getIdentifier())) {
 						Logger.warn(getClass(), "Template id: "+ (asset.getAsset() != null ? asset.getAsset() : "N/A") +" does NOT have working or live version, not Pushed");
 					} else {
@@ -451,8 +461,12 @@ public class DependencyManager {
 					final List<Template> templateList = APILocator.getTemplateAPI()
 							.findTemplatesAssignedTo(host);
 					for (final Template template : templateList) {
-						templates.addOrClean(template.getIdentifier(), template.getModDate());
-						templatesSet.add(template.getIdentifier());
+						if(template instanceof FileAssetTemplate){
+							fileAssetTemplatesSet.add(template.getIdentifier());
+						}else {
+							templates.addOrClean(template.getIdentifier(), template.getModDate());
+							templatesSet.add(template.getIdentifier());
+						}
 					}
 				}
 
@@ -743,9 +757,13 @@ public class DependencyManager {
 							.findLiveTemplate(workingPage.getTemplateId(), user, false);
 					// Templates dependencies
 					if (!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.TEMPLATE.getType()) && workingTemplateWP!=null) {
-						templates.addOrClean(workingPage.getTemplateId(),
-								workingTemplateWP.getModDate());
-						templatesSet.add(workingPage.getTemplateId());
+						if(workingTemplateWP instanceof FileAssetTemplate){
+							fileAssetTemplatesSet.add(workingPage.getTemplateId());
+						}else {
+							templates.addOrClean(workingPage.getTemplateId(),
+									workingTemplateWP.getModDate());
+							templatesSet.add(workingPage.getTemplateId());
+						}
 
 						if (processTemplate) {
 							setTemplateDependencies(publisherFilter, workingPage.getTemplateId());
@@ -761,8 +779,12 @@ public class DependencyManager {
 							.findLiveTemplate(livePage.getTemplateId(), user, false);
 					// Templates dependencies
 					if (!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.TEMPLATE.getType()) && liveTemplateLP!=null ) {
-						templates.addOrClean(livePage.getTemplateId(), livePage.getModDate());
-						templatesSet.add(livePage.getTemplateId());
+						if(liveTemplateLP instanceof FileAssetTemplate){
+							fileAssetTemplatesSet.add(livePage.getTemplateId());
+						}else {
+							templates.addOrClean(livePage.getTemplateId(), livePage.getModDate());
+							templatesSet.add(livePage.getTemplateId());
+						}
 					}
 				}
 
@@ -871,6 +893,12 @@ public class DependencyManager {
 				setTemplateDependencies(publisherFilter, containerList, id);
 			}
 
+			//Process FileAssetTemplates
+			final List<Folder> folders = collectFileAssetTemplate().stream().
+					map(this::collectFileAssetTemplateDependencies).flatMap(Collection::stream).
+					collect(Collectors.toList());
+			setFolderListDependencies(folders,publisherFilter);
+
 		} catch (DotSecurityException e) {
 
 			Logger.error(this, e.getMessage(),e);
@@ -955,6 +983,54 @@ public class DependencyManager {
 							e1);
 				}
 			}
+		}
+	}
+
+	/**
+	 * Function that wraps calling getWorkingTemplateById
+	 */
+	private Function<String, Template> workingTemplateById = id -> {
+		try {
+			return APILocator.getTemplateAPI().findWorkingTemplate(id, user, false);
+		} catch (DotDataException | DotSecurityException e) {
+			Logger.error(this, e.getMessage(),e);
+		}
+		return null;
+	};
+
+	/**
+	 * Aux Predicate to simplify filtering FileAssetTemplate
+	 */
+	private Predicate<Template> fileAssetTemplate = template -> template instanceof FileAssetTemplate;
+
+	/**
+	 * Utility method that takes a Template source function as param and returns FileAssetTemplate
+	 */
+	private Set<FileAssetTemplate> collectFileAssetTemplate() {
+		return fileAssetTemplatesSet.stream().map(workingTemplateById).filter(Objects::nonNull)
+				.filter(fileAssetTemplate).map(FileAssetTemplate.class::cast)
+				.collect(Collectors.toSet());
+	}
+
+	/**
+	 * Given that a FileAssetTemplate is defined by a bunch of files we need to collect the folder that enclose'em
+	 */
+	private Set<Folder> collectFileAssetTemplateDependencies(final FileAssetTemplate fileAssetTemplate) {
+		try {
+			final String path = fileAssetTemplate.getPath();
+			final Folder rootFolder = APILocator.getFolderAPI()
+					.findFolderByPath(path, fileAssetTemplate.getHost(), user, false);
+			final List<Folder> subFolders = APILocator.getFolderAPI()
+					.findSubFolders(rootFolder, user, false);
+
+			final Set<Folder> dependenciesFolders = new HashSet<>();
+			dependenciesFolders.add(rootFolder);
+			dependenciesFolders.addAll(subFolders);
+
+			return dependenciesFolders;
+		}catch (DotSecurityException | DotDataException e) {
+			Logger.error(DependencyManager.class, e);
+			return Collections.emptySet();
 		}
 	}
 
