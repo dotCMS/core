@@ -3,6 +3,8 @@ package com.dotcms;
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
+import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
+import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
@@ -405,12 +407,9 @@ import org.junit.runners.Suite.SuiteClasses;
         Task210320AddHashRefColumnStorageTableTest.class,
         Task210321RemoveOldMetadataFilesTest.class,
         DBTimeZoneCheckTest.class,
-        ContentHandlerTest.class
+        ContentHandlerTest.class,
+        ESIndexAPITest.class
 })
 public class MainSuite {
 
 }
-
-//@RunWith(Suite.class)
-
-

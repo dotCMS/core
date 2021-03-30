@@ -304,21 +304,17 @@
                 return;
             }
 
-            dojo.io.iframe.send({
-
-                form: dojo.byId("uploadPackForm"),
-                load: function(message, ioArgs) {
-                    console.log(message);
-                    licenseAdmin.refreshLayout('<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "licenses-uploaded") )%>');
-                },
-                error: function(error){
-                    //showDotCMSSystemMessage("ERROR:" + error,true);
-                licenseAdmin.refreshLayout('<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "licenses-uploaded") )%>');
-                
-                }
-            });
+            var xhr = new XMLHttpRequest();
             
-            //dojo.byId('uploadPackForm').submit();
+            xhr.open("POST", "/api/license/upload/"); 
+            
+            xhr.onload = function(event){ 	
+                console.log(event);
+                licenseAdmin.refreshLayout('<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "licenses-uploaded") )%>');
+            }; 
+            var formData = new FormData(document.getElementById("uploadPackForm")); 
+            xhr.send(formData);
+            
             return false;
         }
     });

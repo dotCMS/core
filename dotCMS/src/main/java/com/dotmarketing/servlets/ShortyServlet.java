@@ -5,6 +5,7 @@ import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FileField;
 import com.dotcms.contenttype.model.field.ImageField;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
@@ -382,7 +383,7 @@ public class ShortyServlet extends HttpServlet {
   protected final String inodePath(final Contentlet contentlet,
                                    final String tryField,
                                    final boolean live)
-            throws DotStateException, DotDataException {
+          throws DotStateException, DotDataException, DotSecurityException {
 
         final Optional<Field> fieldOpt = resolveField(contentlet, tryField);
 
@@ -400,8 +401,15 @@ public class ShortyServlet extends HttpServlet {
             if (contentletVersionInfo.isPresent()) {
                 final String inode = live ? contentletVersionInfo.get().getLiveInode()
                         : contentletVersionInfo.get().getWorkingInode();
+
+                final Contentlet  imageContentlet = APILocator.getContentletAPI()
+                        .find(inode, APILocator.systemUser(), false);
+
+                final String fieldVar = imageContentlet.isDotAsset() ?
+                        DotAssetContentType.ASSET_FIELD_VAR : FILE_ASSET_DEFAULT;
+
                 return new StringBuilder(StringPool.FORWARD_SLASH).append(inode)
-                        .append(StringPool.FORWARD_SLASH).append(FILE_ASSET_DEFAULT).toString();
+                    .append(StringPool.FORWARD_SLASH).append(fieldVar).toString();
             }
         }
 

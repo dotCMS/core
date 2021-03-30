@@ -45,7 +45,7 @@ public final class StoragePersistenceProvider {
      * @return
      */
     public static StorageType getStorageType(){
-        final String storageType = Config.getStringProperty(DEFAULT_STORAGE_TYPE, StorageType.FILE_SYSTEM.name());
+        final String storageType = Config.getStringProperty(DEFAULT_STORAGE_TYPE, StorageType.DB.name());
         return StorageType.valueOf(storageType);
     }
 

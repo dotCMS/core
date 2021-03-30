@@ -199,7 +199,7 @@ public class ContentletLoader implements DotLoader {
                 if (InodeUtils.isSet(identifierValue)) {
                     sb.append("#set($")
                             .append(field.variable())
-                            .append("Object= $filetool.getFile('")
+                            .append("Object= $filetool.getFileAsContentlet('")
                             .append(identifierValue)
                             .append("'," + mode.showLive + ",")
                             .append(content.getLanguageId())
