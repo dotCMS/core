@@ -844,10 +844,10 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 					return  template;
 				}
 			} catch (NotFoundInDbException | DotSecurityException e) {
-				continue;
+				Logger.error(this,String.format("File Template %s not found", relativePath));
+				return null;
 			}
 		}
-
-		throw new NotFoundInDbException(String.format("File Template %s not found", relativePath));
+		return null;
 	}
 }
