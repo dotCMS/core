@@ -1,7 +1,5 @@
 package com.dotcms.enterprise.publishing.remote.bundler;
 
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publishing.BundlerStatus;
@@ -13,13 +11,10 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.rules.RuleDataGen;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.FileUtil;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
@@ -79,7 +74,7 @@ public class RuleBundlerTest {
         final RuleBundler bundler = new RuleBundler();
         final File bundleRoot = FileUtil.createTemporaryDirectory("RuleBundlerTest_addRuleInBundle");
 
-        final FilterDescriptor filterDescriptor = new FileDescriptorDataGen().nextPersisted();
+        final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
 
         final PushPublisherConfig config = new PushPublisherConfig();
         config.setRules(set(rule.getId()));
