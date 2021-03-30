@@ -1,15 +1,10 @@
 package com.dotmarketing.portlets.templates.business;
 
 import com.dotcms.api.vtl.model.DotJSON;
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
-import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.Source;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.Theme;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -25,8 +20,6 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableSet;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import org.apache.commons.io.IOUtils;
@@ -46,7 +39,6 @@ import java.util.stream.Stream;
 
 import static com.dotmarketing.util.Constants.TEMPLATE_FOLDER_PATH;
 import static com.dotmarketing.util.StringUtils.builder;
-import static com.liferay.util.StringPool.FORWARD_SLASH;
 
 /**
  * This util is in charge of handling the creation of the FileAsset template based on the folder and their contains.
@@ -77,24 +69,6 @@ public class FileAssetTemplateUtil {
 
         return FileAssetTemplateUtil.SingletonHolder.INSTANCE;
     } // getInstance.
-
-    /**
-     * Determines if the template id is a path or uuid, if not any match will return UNKNOWN.
-     * @param templateIdOrPath String path or uddi
-     * @return Source (File if it is a fs template, DB if it is a db template, otherwise UNKNOWN)
-     */
-    public Source getTemplateSourceFromTemplateIdOrPath(final String templateIdOrPath) {
-
-        Source source = Source.UNKNOWN;
-
-        if (this.isFolderAssetTemplateId(templateIdOrPath)) {
-            source = Source.FILE;
-        } else if (this.isDataBaseTemplateId(templateIdOrPath)) {
-            source = Source.DB;
-        }
-
-        return source;
-    }
 
     public boolean isDataBaseTemplateId(final String templateIdentifier) {
 
@@ -142,7 +116,7 @@ public class FileAssetTemplateUtil {
 
             tmp = tmp.replaceAll(HOST_INDICATOR, StringPool.BLANK);
             tmp = tmp.substring(0, tmp.indexOf(TEMPLATE_FOLDER_PATH));
-            final String finalString = tmp;
+            final String finalString = UtilMethods.isSet(tmp) ? tmp : StringPool.NULL;
             Logger.debug(FileAssetTemplateUtil.class,
                     () -> String.format(" extracted hostName `%s`", finalString));
 
@@ -153,49 +127,6 @@ public class FileAssetTemplateUtil {
                     path), e);
             return null;
         }
-    }
-
-    public String getTemplateIdFromPath(final String fullPath) throws DotDataException {
-
-        Host host             = null;
-        String hostname = this.getHostName(fullPath);
-
-        try {
-            if (null != hostname) {
-                host = this.getHostFromHostname(hostname);
-            }
-        } catch (DotDataException | DotSecurityException e) {
-            host = null;
-        }
-
-        if (null == host) {
-
-            try {
-                host = WebAPILocator.getHostWebAPI()
-                        .getCurrentHost(HttpServletRequestThreadLocal.INSTANCE.getRequest());
-            } catch (DotSecurityException | PortalException | SystemException e) {
-                Logger.warnAndDebug(FileAssetTemplateUtil.class, e);
-                try {
-                    host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
-                } catch (DotDataException | DotSecurityException ex) {
-                    Logger.warnAndDebug(FileAssetTemplateUtil.class, e);
-                    host = APILocator.systemHost();
-                }
-            }
-
-        }
-
-        if (null == hostname) {
-
-            hostname = null != host?host.getHostname():StringPool.BLANK;
-        }
-
-        final String relativePath = this.getPathFromFullPath (hostname, fullPath);
-        final String templateUri = (relativePath.endsWith(FORWARD_SLASH)? relativePath : relativePath+FORWARD_SLASH)
-                + Constants.TEMPLATE_META_INFO_FILE_NAME;
-
-        final Identifier identifier = APILocator.getIdentifierAPI().find(host, templateUri);
-        return identifier.getId();
     }
 
     /**
@@ -286,25 +217,6 @@ public class FileAssetTemplateUtil {
 
     private boolean isLayout(final FileAsset fileAsset, final boolean showLive) {
         return isType(fileAsset, showLive, LAYOUT);
-    }
-
-    /**
-     * Wraps the file asset into the dotParse directive, this is helpful in order to fetch lazy on runtime the fileasset and also, to add multi lang capabilities
-     * @param fileAsset {@link FileAsset}
-     * @return String
-     */
-    public String wrapIntoDotParseDirective (final FileAsset fileAsset) {
-
-        try {
-
-            final Host host = APILocator.getHostAPI().find(fileAsset.getHost(), APILocator.systemUser(), false);
-            String  dotParseFilePath = "//" + host.getHostname()  + fileAsset.getPath() + fileAsset.getFileName()  ;
-            Logger.debug(FileAssetTemplateUtil.class,()->"dotParse directive file uri: " + dotParseFilePath);
-            return String.format("#dotParse(\"%s\")",dotParseFilePath);
-
-        } catch (DotSecurityException | DotDataException  e) {
-            return StringPool.BLANK;
-        }
     }
 
     private void setTemplateData(final Host                host,

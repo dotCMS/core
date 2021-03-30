@@ -631,15 +631,16 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		}
 	}
 
+	@CloseDBIfOpened
 	public Template findWorkingTemplate(final String id, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		if (FileAssetTemplateUtil.getInstance().isFolderAssetTemplateId(id)) {//Check if the id is a path
-			return this.findTemplateByPath(id, user, respectFrontendRoles, false);
+			return this.findTemplateByPath(id,null, user, respectFrontendRoles, false);
 		}
 
 		final Identifier identifier = this.identifierAPI.find(id);//Finds the Identifier so we can get the path
 		if (null != identifier &&
 				FileAssetTemplateUtil.getInstance().isFolderAssetTemplateId(identifier.getPath())) {
-			return this.findTemplateByPath(identifier.getPath(), user, respectFrontendRoles, false);
+			return this.findTemplateByPath(identifier.getPath(),identifier.getHostId(), user, respectFrontendRoles, false);
 		}
 
 		//For non-file based templates
@@ -669,15 +670,16 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 	}
 
+	@CloseDBIfOpened
 	public Template findLiveTemplate(final String id, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		if (FileAssetTemplateUtil.getInstance().isFolderAssetTemplateId(id)) {//Check if the id is a path
-			return this.findTemplateByPath(id, user, respectFrontendRoles, true);
+			return this.findTemplateByPath(id,null, user, respectFrontendRoles, true);
 		}
 
 		final Identifier identifier = this.identifierAPI.find(id);//Finds the Identifier so we can get the path
 		if (null != identifier &&
 				FileAssetTemplateUtil.getInstance().isFolderAssetTemplateId(identifier.getPath())) {
-			return this.findTemplateByPath(identifier.getPath(), user, respectFrontendRoles, true);
+			return this.findTemplateByPath(identifier.getPath(),identifier.getHostId(), user, respectFrontendRoles, true);
 		}
 
 		//For non-file based templates
@@ -809,7 +811,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		return templateFactory.getTemplateByFolder(host,folder,user,showLive);
 	}
 
-	private Template findTemplateByPath (final String path, final User user, final boolean respectFrontendRoles, final boolean showLive) throws DotDataException, DotSecurityException {
+	private Template findTemplateByPath (final String path,final String hostId, final User user, final boolean respectFrontendRoles, final boolean showLive) throws DotDataException, DotSecurityException {
 
 		final FileAssetTemplateUtil fileAssetTemplateUtil =
 				FileAssetTemplateUtil.getInstance();
@@ -825,6 +827,10 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 				relativePath = fileAssetTemplateUtil.getPathFromFullPath(hostName, path);
 				hostSet.add(host);
 			}
+		}
+
+		if(UtilMethods.isSet(hostId)){
+			hostSet.add(APILocator.getHostAPI().find(hostId,user,respectFrontendRoles));
 		}
 
 		final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHost();
