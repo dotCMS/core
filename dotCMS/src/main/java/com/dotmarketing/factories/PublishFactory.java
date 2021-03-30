@@ -34,10 +34,12 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 
+import io.vavr.API;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -357,7 +359,17 @@ public class PublishFactory {
 				}
             } else if ( asset instanceof Template ) {
                 Logger.debug( PublishFactory.class, "*****I'm an HTML Page -- Publishing Template =" + ((Template) asset).getInode() );
-                publishAsset( (Template) asset, user, respectFrontendRoles, false );
+                if(asset instanceof FileAssetTemplate){
+					//inode of the template is the inode of the properties.vtl
+					//we need to obtain the folder so publish all the files related to template as files
+					final Contentlet propertiesVTL = APILocator.getContentletAPI().find(((FileAssetTemplate) asset).getInode(),user,false);
+					final Identifier idPropertiesVTL = APILocator.getIdentifierAPI().find(propertiesVTL.getIdentifier());
+					final Folder templateFolder = APILocator.getFolderAPI().findFolderByPath(idPropertiesVTL.getParentPath(),
+							idPropertiesVTL.getHostId(),user,respectFrontendRoles);
+					publishAsset(templateFolder,user,respectFrontendRoles,false);
+				} else {
+					publishAsset((Template) asset, user, respectFrontendRoles, false);
+				}
             }
         }
 

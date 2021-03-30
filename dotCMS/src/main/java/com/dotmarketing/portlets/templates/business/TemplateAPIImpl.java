@@ -612,8 +612,10 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	public Host getTemplateHost(final Template template) throws DotDataException {
 
 		try {
-			final Host host = APILocator.getHostAPI().findParentHost(template, APILocator.getUserAPI().getSystemUser(), false);
-			return host;
+			if(template instanceof FileAssetTemplate){
+				return FileAssetTemplateUtil.getInstance().getHost(template.getIdentifier());
+			}
+			return APILocator.getHostAPI().findParentHost(template, APILocator.getUserAPI().getSystemUser(), false);
 		} catch (DotSecurityException e1) {
 			Logger.error(TemplateAPIImpl.class, e1.getMessage(), e1);
 			throw new DotRuntimeException(e1.getMessage(), e1);

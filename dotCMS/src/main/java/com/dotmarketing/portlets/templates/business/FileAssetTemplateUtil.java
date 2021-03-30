@@ -229,8 +229,8 @@ public class FileAssetTemplateUtil {
             final Optional<FileAsset> layoutAsset,
             final String              templateMetaInfo) {
 
-        template.setIdentifier (metaInfoFileAsset.getIdentifier());
-        template.setInode      (metaInfoFileAsset.getInode());
+        template.setIdentifier (buildPath(host,templateFolder,true));
+        template.setInode      (metaInfoFileAsset.getInode());//inode of the template is the inode of the properties.vtl
         template.setOwner      (metaInfoFileAsset.getOwner());
         template.setIDate      (metaInfoFileAsset.getIDate());
         template.setModDate    (metaInfoFileAsset.getModDate());

@@ -11,6 +11,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import io.vavr.control.Try;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,9 +24,6 @@ public class FileAssetTemplate extends Template {
 
     @JsonIgnore
     private transient final Map<String, Object> metaDataMap;
-
-    @JsonIgnore
-    private transient final Contentlet contentlet = new Contentlet();
 
     private long languageId;
     private Host host;
@@ -121,10 +119,8 @@ public class FileAssetTemplate extends Template {
     }
 
     public Versionable toContentlet() {
-
-        contentlet.setIdentifier(this.identifier);
-        contentlet.setInode(this.inode);
-        contentlet.setLanguageId(this.languageId);
-        return contentlet;
+        //inode of the template is the inode of the properties.vtl
+        return
+                Try.of(()->APILocator.getContentletAPI().find(this.inode,APILocator.systemUser(),false)).getOrNull();
     }
 }
