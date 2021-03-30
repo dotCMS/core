@@ -28,8 +28,17 @@ public class AssignableFromMap<T> {
     }
 
     public T get(final Class clazzToFind, final T defaultValue) {
+        return get(clazzToFind, null, false);
+    }
+
+    public T get(final Class clazzToFind, final T defaultValue, final boolean justExactlyClass) {
         try {
             final Class key = getKey(clazzToFind);
+
+            if (justExactlyClass && !key.equals(clazzToFind)) {
+                return defaultValue;
+            }
+
             return this.map.get(key);
         }catch (NotFoundException e) {
             if (defaultValue == null) {
@@ -82,5 +91,10 @@ public class AssignableFromMap<T> {
 
         newValue = (oldValue == null) ? startValue : updateFunction.apply(oldValue);
         map.put(aClass, newValue);
+    }
+
+    @Override
+    public String toString() {
+        return map.toString();
     }
 }
