@@ -1,5 +1,5 @@
 [submodule "dotCMS/src/main/enterprise"]
 	path = dotCMS/src/main/enterprise
 	url = git@github.com:dotCMS/enterprise.git
-	branch = master
+	branch = 20088-automated-vulnerability-scan
 	ignore = dirty

@@ -318,7 +318,7 @@
 							"key": "file",
 							"contentType": "image/png",
 							"type": "file",
-							"src": "/Users/jsanca/Desktop/dotcms.png"
+							"src": "resources/dotcms.png"
 						},
 						{
 							"key": "json",
@@ -386,7 +386,7 @@
 							"key": "file",
 							"contentType": "image/png",
 							"type": "file",
-							"src": "/Users/jsanca/Desktop/testpdf.pdf"
+							"src": "resources/testpdf.pdf"
 						},
 						{
 							"key": "json",
