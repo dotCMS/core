@@ -948,7 +948,7 @@
 									"key": "file",
 									"contentType": "application/tar+gzip ",
 									"type": "file",
-									"src": "/build/src/core/dotCMS/src/curl-test/resources/BundleResource/testBundle.tar.gz"
+									"src": "resources/BundleResource/testBundle.tar.gz"
 								}
 							],
 							"options": {
