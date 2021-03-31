@@ -48,6 +48,7 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Config;
@@ -232,7 +233,11 @@ public class DependencyManager {
 					if(t == null || !UtilMethods.isSet(t.getIdentifier())) {
 						Logger.warn(getClass(), "Template id: "+ (asset.getAsset() != null ? asset.getAsset() : "N/A") +" does NOT have working or live version, not Pushed");
 					} else {
-						templates.add(asset.getAsset(), t.getModDate(),true);
+						if(t instanceof FileAssetTemplate){
+							Logger.debug(getClass(), "FileAssetTemplate id: "+ (asset.getAsset() != null ? asset.getAsset() : "N/A") +" will be ignored");
+						} else {
+							templates.add(asset.getAsset(), t.getModDate(), true);
+						}
 						dependencyProcessor.put(asset.getAsset(), AssetTypes.TEMPLATES);
 					}
 
@@ -469,7 +474,9 @@ public class DependencyManager {
 				final List<Template> templateList = APILocator.getTemplateAPI()
 						.findTemplatesAssignedTo(host);
 				for (final Template template : templateList) {
-					templates.addOrClean(template.getIdentifier(), template.getModDate());
+					if(!(template instanceof FileAssetTemplate)) {
+						templates.addOrClean(template.getIdentifier(), template.getModDate());
+					}
 					dependencyProcessor.put(template.getIdentifier(), AssetTypes.TEMPLATES);
 				}
 			}
@@ -713,8 +720,10 @@ public class DependencyManager {
 						.findLiveTemplate(workingPage.getTemplateId(), user, false);
 				// Templates dependencies
 				if (!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.TEMPLATE.getType()) && workingTemplateWP!=null) {
-					templates.addOrClean(workingPage.getTemplateId(),
-							workingTemplateWP.getModDate());
+					if(!(workingTemplateWP instanceof FileAssetTemplate)) {
+						templates.addOrClean(workingPage.getTemplateId(),
+								workingTemplateWP.getModDate());
+					}
 					dependencyProcessor.put(workingPage.getTemplateId(), AssetTypes.TEMPLATES);
 				}
 			}
@@ -727,7 +736,9 @@ public class DependencyManager {
 						.findLiveTemplate(livePage.getTemplateId(), user, false);
 				// Templates dependencies
 				if (!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.TEMPLATE.getType()) && liveTemplateLP!=null ) {
-					templates.addOrClean(livePage.getTemplateId(), livePage.getModDate());
+					if(!(liveTemplateLP instanceof FileAssetTemplate)) {
+						templates.addOrClean(livePage.getTemplateId(), livePage.getModDate());
+					}
 					dependencyProcessor.put(livePage.getTemplateId(), AssetTypes.TEMPLATES);
 				}
 			}
@@ -878,12 +889,40 @@ public class DependencyManager {
 					}
 				}
 			}
+
+			if(workingTemplate instanceof FileAssetTemplate){
+				//Process FileAssetTemplate
+				final Set<Folder> folders = this.collectFileAssetTemplateDependencies(FileAssetTemplate.class.cast(workingTemplate));
+				setFolderListDependencies(folders);
+			}
 		} catch (DotSecurityException e) {
 
 			Logger.error(this, e.getMessage(),e);
 		} catch (DotDataException e) {
 
 			Logger.error(this, e.getMessage(),e);
+		}
+	}
+
+	/**
+	 * Given that a FileAssetTemplate is defined by a bunch of files we need to collect the folder that enclose'em
+	 */
+	private Set<Folder> collectFileAssetTemplateDependencies(final FileAssetTemplate fileAssetTemplate) {
+		try {
+			final String path = fileAssetTemplate.getPath();
+			final Folder rootFolder = APILocator.getFolderAPI()
+					.findFolderByPath(path, fileAssetTemplate.getHost(), user, false);
+			final List<Folder> subFolders = APILocator.getFolderAPI()
+					.findSubFolders(rootFolder, user, false);
+
+			final Set<Folder> dependenciesFolders = new HashSet<>();
+			dependenciesFolders.add(rootFolder);
+			dependenciesFolders.addAll(subFolders);
+
+			return dependenciesFolders;
+		}catch (DotSecurityException | DotDataException e) {
+			Logger.error(DependencyManager.class, e);
+			return Collections.emptySet();
 		}
 	}
 
