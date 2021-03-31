@@ -135,6 +135,7 @@
         //Connecting the action of clicking a user row
         dojo.connect( usersDataGrid, "onRowClick", function (evt) {
                 var id = evt.grid.getItem(evt.rowIndex).id[0];
+                getUserStarterPageData(id);
                 editUser(id);
         });
 
@@ -254,6 +255,23 @@
 		UserAjax.getUserById(userId, editUserCallback);
 	}
 
+    function getUserStarterPageData(userId) {
+        var xhrArgs = {
+                url: `/api/v1/toolgroups/gettingstarted/_userHasLayout?userid=${userId}`,
+                headers: {
+                    "Accept" : "application/json",
+                    "Content-Type" : "application/json"
+                },
+                handleAs : "json",
+                load: function(data) {
+                    // set checkbox
+                    dijit.byId("showStarter").attr('checked', data.entity.message);
+
+             }
+         };
+         dojo.xhrGet(xhrArgs);
+    }
+
 	
 	
 	function changeUserAccess(evt){
@@ -266,15 +284,35 @@
         
         
 	}
+
+    function setStarterPage(evt) {
+        if (!currentUser) return;
+
+        var xhrArgs = {
+            headers: {
+                "Accept" : "application/json",
+                "Content-Type" : "application/json"
+            },
+            handleAs : "json"
+        }
+
+
+        if (evt.checked) {
+            // set starter
+            xhrArgs.url = `/api/v1/toolgroups/gettingstarted/_addtouser?userid=${currentUser.id}`;
+            dojo.xhrPut(xhrArgs);
+        } else {
+            // unset starter
+            xhrArgs.url = `/api/v1/toolgroups/gettingstarted/_removefromuser?userid=${currentUser.id}`;
+            dojo.xhrPut(xhrArgs);
+        }
+    }
 	
 	
 	function assignUserAccessCallback(data){
 	    
 	    dojo.byId("canLoginToConsole").innerHTML=data.user.hasConsoleAccess
 	   
-	    console.log("data", data)	    
-	
-	
 	}
 	
 	
