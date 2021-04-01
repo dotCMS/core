@@ -6,6 +6,8 @@ import com.dotcms.datagen.*;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publishing.output.BundleOutput;
+import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -97,7 +99,7 @@ public class PublisherAPIImplTest {
 
 
     /**
-     * Method to Test: {@link PublisherAPIImpl#publish(PublisherConfig)}
+     * Method to Test: {@link PublisherAPIImpl#publish(PublisherConfig, BundleOutput)}
      * When: Add a {@link Container} in a bundle
      * Should:
      * - The file should be create in:
@@ -339,7 +341,7 @@ public class PublisherAPIImplTest {
     }
 
     /**
-     * Method to Test: {@link PublisherAPIImpl#publish(PublisherConfig)}
+     * Method to Test: {@link PublisherAPIImpl#publish(PublisherConfig, BundleOutput)}
      * When: Add different assets into a bundle
      * Should: Create all the files
      */
@@ -361,8 +363,10 @@ public class PublisherAPIImplTest {
         final PushPublisherConfig config = new PushPublisherConfig();
         config.setPublishers(list(publisher));
         config.setOperation(PublisherConfig.Operation.PUBLISH);
-
         config.setLuceneQueries(list());
+        config.setId("PublisherAPIImplTest_" + System.currentTimeMillis());
+
+        final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config);
 
         new BundleDataGen()
                 .pushPublisherConfig(config)
@@ -370,9 +374,9 @@ public class PublisherAPIImplTest {
                 .filter(filterDescriptor)
                 .nextPersisted();
 
-        publisherAPI.publish(config);
+        publisherAPI.publish(config, directoryBundleOutput);
 
-        final File bundleRoot = BundlerUtil.getBundleRoot(config);
+        final File bundleRoot = directoryBundleOutput.getFile();
 
         final Collection<File> filesExpected = new HashSet<>();
         filesExpected.addAll(

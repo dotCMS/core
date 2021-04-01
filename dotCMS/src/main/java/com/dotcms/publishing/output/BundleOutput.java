@@ -24,16 +24,24 @@ public abstract class BundleOutput implements Closeable {
 
     public abstract OutputStream addFile(String filePath) throws IOException;
 
+    public OutputStream addFile(File file) throws IOException {
+        return addFile(file.getPath());
+    }
+
     public void copyFile(File source, String destinationPath) throws IOException {
-        if (Config.getBooleanProperty("CONTENT_VERSION_HARD_LINK", true) && this.useHardLink()) {
-            FileUtil.copyFile(source, new File(destinationPath));
+        final boolean userHardLink =
+                Config.getBooleanProperty("CONTENT_VERSION_HARD_LINK", true)
+                        && this.useHardLink();
+
+        if (userHardLink) {
+            FileUtil.copyFile(source, getFile(destinationPath), true);
         } else {
             try(final OutputStream outputStream = addFile(destinationPath)) {
                 FileUtil.copyFile(source, outputStream);
             } catch(IOException e) {
-            Logger.error(FileUtil.class, e);
-            throw e;
-        }
+                Logger.error(FileUtil.class, e);
+                throw e;
+            }
         }
     }
 

@@ -195,7 +195,9 @@ public class DependencyManager {
 
 		Logger.debug(DependencyManager.class, "publisherFilter.isDependencies() " + publisherFilter.isDependencies());
 
-		setLanguageVariables();
+		if(publisherFilter.isDependencies()) {
+			setLanguageVariables();
+		}
 
 		List<PublishQueueElement> assets = config.getAssets();
 
@@ -358,7 +360,9 @@ public class DependencyManager {
 		}
 
 		try {
-			dependencyProcessor.waitForAll();
+			if(publisherFilter.isDependencies()) {
+				dependencyProcessor.startAndWait();
+			}
 
 			config.setHostSet(hosts);
 			config.setFolders(folders);
@@ -1412,7 +1416,7 @@ public class DependencyManager {
 		 * The current thread wait until all the dependencies are processed
 		 * @throws ExecutionException
 		 */
-		private void waitForAll() throws ExecutionException {
+		private void startAndWait() throws ExecutionException {
 			final String submitterName = "DependencyManagerSubmitter" + Thread.currentThread().getName();
 			submitter = DotConcurrentFactory.getInstance().getSubmitter(submitterName,
 					new DotConcurrentFactory.SubmitterConfigBuilder()

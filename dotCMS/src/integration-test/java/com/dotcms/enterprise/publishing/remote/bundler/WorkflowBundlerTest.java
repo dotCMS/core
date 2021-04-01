@@ -6,6 +6,8 @@ import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.output.BundleOutput;
+import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.exception.DotDataException;
@@ -52,7 +54,7 @@ public class WorkflowBundlerTest {
 
 
     /**
-     * Method to Test: {@link WorkflowBundler#generate(File, BundlerStatus)}
+     * Method to Test: {@link WorkflowBundler#generate(BundleOutput, BundlerStatus)}
      * When: Add a {@link WorkflowScheme} in a bundle
      * Should:
      * - The file should be create in: <bundle_root_path>/<workflow_id>.workflow.xml
@@ -67,13 +69,14 @@ public class WorkflowBundlerTest {
 
         final BundlerStatus status = mock(BundlerStatus.class);
         final WorkflowBundler bundler = new WorkflowBundler();
-        final File bundleRoot = FileUtil.createTemporaryDirectory("WorkflowBundlerTest.addWorkflowInBundle");
 
         final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
 
         final PushPublisherConfig config = new PushPublisherConfig();
         config.setWorkflows(set(workflowScheme.getId()));
         config.setOperation(PublisherConfig.Operation.PUBLISH);
+
+        final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config);
 
         new BundleDataGen()
                 .pushPublisherConfig(config)
@@ -82,9 +85,9 @@ public class WorkflowBundlerTest {
                 .nextPersisted();
 
         bundler.setConfig(config);
-        bundler.generate(bundleRoot, status);
+        bundler.generate(directoryBundleOutput, status);
 
-        FileTestUtil.assertBundleFile(bundleRoot, workflowScheme, testCase.expectedFilePath);
+        FileTestUtil.assertBundleFile(directoryBundleOutput.getFile(), workflowScheme, testCase.expectedFilePath);
     }
 
     private static class TestCase {

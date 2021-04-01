@@ -2,6 +2,7 @@ package com.dotcms.publishing.output;
 
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.PublisherConfig;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.FileUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -20,6 +21,12 @@ public class DirectoryBundleOutput extends BundleOutput {
     public DirectoryBundleOutput(final PublisherConfig publisherConfig) {
         super(publisherConfig);
         directoryRootPath = BundlerUtil.getBundleRoot( publisherConfig );
+    }
+
+    @VisibleForTesting
+    public DirectoryBundleOutput(final PublisherConfig publisherConfig, final File directoryPath) {
+        super(publisherConfig);
+        directoryRootPath = directoryPath;
     }
 
     @Override
@@ -46,7 +53,7 @@ public class DirectoryBundleOutput extends BundleOutput {
     @Override
     public OutputStream addFile(final String filePath) throws IOException {
         final File fileAbsolute = getRealFile(filePath);
-        fileAbsolute.getParentFile().mkdir();
+        fileAbsolute.getParentFile().mkdirs();
 
         if (!fileAbsolute.exists()) {
             fileAbsolute.createNewFile();
