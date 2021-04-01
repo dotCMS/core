@@ -397,8 +397,6 @@ dependencies {
     compile group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.56'
     compile group: 'org.bouncycastle', name: 'bcpkix-jdk15on', version: '1.56'
 
-//    compile group: 'com.beust', name: 'jcommander', version: '1.48'
-
     /**
      * Order matters here: JUNIT must come after hamcrest.
      */
