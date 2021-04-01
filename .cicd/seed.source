@@ -1,2 +1,2 @@
 # Override values
-export DOT_CICD_BRANCH="19756-java-11"
+export DOT_CICD_BRANCH="19756-java-11" 
