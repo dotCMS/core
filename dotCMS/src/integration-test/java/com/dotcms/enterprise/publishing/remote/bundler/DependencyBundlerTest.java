@@ -1,17 +1,11 @@
 package com.dotcms.enterprise.publishing.remote.bundler;
 
-import com.dotcms.contenttype.model.field.CategoryField;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.transform.contenttype.ContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.*;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
-import com.dotcms.publishing.BundlerStatus;
-import com.dotcms.publishing.DotBundleException;
-import com.dotcms.publishing.FilterDescriptor;
-import com.dotcms.publishing.PublisherAPIImplTest;
+import com.dotcms.publisher.util.DependencyManager;
+import com.dotcms.publishing.*;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -30,13 +24,13 @@ import com.dotmarketing.portlets.rules.RuleDataGen;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.FileUtil;
+import com.dotmarketing.util.Logger;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -46,7 +40,6 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.*;
 
 import static com.dotcms.publishing.PublisherAPIImplTest.getLanguagesVariableDependencies;
@@ -74,19 +67,19 @@ public class DependencyBundlerTest {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
 
-        filterDescriptorAllDependencies = new FileDescriptorDataGen().nextPersisted();
-        filterDescriptorNotDependencies = new FileDescriptorDataGen()
+        filterDescriptorAllDependencies = new FilterDescriptorDataGen().next();
+        filterDescriptorNotDependencies = new FilterDescriptorDataGen()
                 .dependencies(false)
-                .nextPersisted();
+                .next();
 
-        filterDescriptorNotRelationship = new FileDescriptorDataGen()
+        filterDescriptorNotRelationship = new FilterDescriptorDataGen()
                 .relationships(false)
-                .nextPersisted();
+                .next();
 
-        filterDescriptorNotDependenciesRelationship = new FileDescriptorDataGen()
+        filterDescriptorNotDependenciesRelationship = new FilterDescriptorDataGen()
                 .relationships(false)
                 .dependencies(false)
-                .nextPersisted();
+                .next();
     }
 
     @Before
@@ -112,7 +105,6 @@ public class DependencyBundlerTest {
         all.addAll(createLanguageTestCase());
         all.addAll(createRuleTestCase());
         all.addAll(createContentTestCase());
-
         all.addAll(createContentTypeWithThirdPartyTestCase());
         all.addAll(createTemplateWithThirdPartyTestCase());
         all.addAll(createContainerWithThirdPartyTestCase());
@@ -149,7 +141,9 @@ public class DependencyBundlerTest {
                 .setProperty(contentType.variable(), list(contentletChild))
                 .nextPersisted();
 
-        final List<Object> dependencies = list(host, language, contentType, contentletChild, contentTypeChild);
+        final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
+
+        final List<Object> dependencies = list(host, language, contentType, contentletChild, systemFolder, contentTypeChild);
         dependencies.addAll(contentTypeWithDependencies.dependenciesToAssert);
 
         final TestData folderWithDependencies = createFolderWithDependencies();
@@ -231,7 +225,8 @@ public class DependencyBundlerTest {
 
         final ContentType folderContentType = new StructureTransformer(folderStructure).from();
 
-        final List<Object> dependencies = list(host, folderContentType);
+        final Host systemHost = APILocator.getHostAPI().findSystemHost();
+        final List<Object> dependencies = list(host, folderContentType, systemHost);
         dependencies.addAll(contentTypeWithDependencies.dependenciesToAssert);
 
         return list(
@@ -324,9 +319,13 @@ public class DependencyBundlerTest {
                 .folder(contentTypeFolder)
                 .nextPersisted();
 
+        final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
+        final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
+
         return list(
-                new TestData(contentType, list(host), filterDescriptorAllDependencies),
-                new TestData(contentTypeWithFolder, list(folderHost, contentTypeFolder), filterDescriptorAllDependencies)
+                new TestData(contentType, list(host, systemWorkflowScheme, systemFolder), filterDescriptorAllDependencies),
+                new TestData(contentTypeWithFolder, list(folderHost, contentTypeFolder, systemWorkflowScheme),
+                        filterDescriptorAllDependencies)
         );
     }
 
@@ -462,9 +461,8 @@ public class DependencyBundlerTest {
                 .parent(contentTypeParent)
                 .nextPersisted();
 
-        final Language languageChild = new LanguageDataGen().nextPersisted();
         final Contentlet contentletChild =  new ContentletDataGen(contentTypeChild.id())
-                .languageId(languageChild.getId())
+                .languageId(language.getId())
                 .host(host)
                 .nextPersisted();
 
@@ -498,34 +496,39 @@ public class DependencyBundlerTest {
 
         final Contentlet htmlPageAsset = new HTMLPageDataGen(host, template).host(host).languageId(defaultLanguage.getId()).nextPersisted();
         final ContentType htmlPageAssetContentType = htmlPageAsset.getContentType();
-        final Host systemHost = APILocator.getHostAPI().findSystemHost();
 
+        final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
+
+        final Host systemHost = APILocator.systemHost();
+        final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
         return list(
-                new TestData(contentlet, list(host, contentType, systemHost, language), filterDescriptorAllDependencies),
+                new TestData(contentlet, list(host, contentType, language, systemFolder, systemWorkflowScheme), filterDescriptorAllDependencies),
                 new TestData(contentlet, list(), filterDescriptorNotDependencies),
                 new TestData(contentlet, list(), filterDescriptorNotRelationship),
                 new TestData(contentlet, list(), filterDescriptorNotDependenciesRelationship),
 
-                new TestData(contentletWithFolder, list(host, contentType, systemHost, language, folder),
+                new TestData(contentletWithFolder, list(host, contentType, language, folder, systemWorkflowScheme, systemFolder),
                         filterDescriptorAllDependencies),
                 new TestData(contentletWithFolder, list(), filterDescriptorNotDependencies),
                 new TestData(contentletWithFolder, list(), filterDescriptorNotRelationship),
                 new TestData(contentletWithFolder, list(), filterDescriptorNotDependenciesRelationship),
 
                 new TestData(contentletWithRelationship,
-                        list(host, contentTypeParent, systemHost, language, contentletChild, contentTypeChild, languageChild),
-                        filterDescriptorAllDependencies),
+                        list(host, contentTypeParent, language, contentletChild, contentTypeChild,
+                                systemFolder, systemWorkflowScheme), filterDescriptorAllDependencies),
                 new TestData(contentletWithRelationship, list(), filterDescriptorNotDependencies),
                 new TestData(contentletWithRelationship, list(), filterDescriptorNotRelationship),
                 new TestData(contentletWithRelationship, list(), filterDescriptorNotDependenciesRelationship),
 
-                new TestData(contentWithCategory, list(host, contentTypeWithCategory, systemHost, language, category), filterDescriptorAllDependencies),
+                new TestData(contentWithCategory, list(host, contentTypeWithCategory, language, category, systemFolder, systemWorkflowScheme),
+                        filterDescriptorAllDependencies),
                 new TestData(contentWithCategory, list(), filterDescriptorNotDependencies),
                 new TestData(contentWithCategory, list(), filterDescriptorNotRelationship),
                 new TestData(contentWithCategory, list(), filterDescriptorNotDependenciesRelationship),
 
-                new TestData(htmlPageAsset, list(host, defaultHost, contentTypeToPage, systemHost, defaultLanguage,
-                        container, template, htmlPageAssetContentType), filterDescriptorAllDependencies),
+                new TestData(htmlPageAsset, list(host, defaultHost, contentTypeToPage, defaultLanguage,
+                        container, template, htmlPageAssetContentType, systemFolder, systemWorkflowScheme, systemHost),
+                        filterDescriptorAllDependencies),
                 new TestData(htmlPageAsset, list(), filterDescriptorNotDependencies),
                 new TestData(htmlPageAsset, list(), filterDescriptorNotRelationship),
                 new TestData(htmlPageAsset, list(), filterDescriptorNotDependenciesRelationship)
@@ -912,24 +915,31 @@ public class DependencyBundlerTest {
     public void addAssetInBundle(final TestData testData)
             throws IOException, DotBundleException, DotDataException, DotSecurityException {
 
-        final Set<Object> languagesVariableDependencies = getLanguagesVariableDependencies(
-                true, false, false);
-
-        if (filterDescriptorAllDependencies == testData.filterDescriptor) {
-            testData.dependenciesToAssert.addAll(languagesVariableDependencies);
-        }
+        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
+        APILocator.getPublisherAPI().addFilterDescriptor(testData.filterDescriptor);
 
         final PushPublisherConfig config = new PushPublisherConfig();
+
         new BundleDataGen()
                 .pushPublisherConfig(config)
                 .addAssets(set(testData.assetsToAddInBundle))
                 .filter(testData.filterDescriptor)
                 .nextPersisted();
 
-        bundler.setConfig(config);
-                bundler.generate(bundleRoot, status);
+        final Set<Object> languagesVariableDependencies = getLanguagesVariableDependencies(
+                true, false, false);
 
-        assertAll(config, testData.dependenciesToAssert, testData.filterDescriptor);
+        final Set<Object> dependencies = new HashSet<>();
+
+        if (filterDescriptorAllDependencies == testData.filterDescriptor) {
+            dependencies.addAll(testData.dependenciesToAssert);
+            dependencies.addAll(languagesVariableDependencies);
+        }
+
+        bundler.setConfig(config);
+        bundler.generate(bundleRoot, status);
+
+        assertAll(config, dependencies, testData.filterDescriptor);
     }
 
     @Test
@@ -941,7 +951,7 @@ public class DependencyBundlerTest {
 
             PublisherAPIImplTest.createLanguageVariableIfNeeded();
 
-            final FilterDescriptor filterDescriptor = new FileDescriptorDataGen().nextPersisted();
+            final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
             new BundleDataGen()
                     .pushPublisherConfig(config)
                     .filter(filterDescriptor)
@@ -964,25 +974,31 @@ public class DependencyBundlerTest {
 
     private void assertAll(final PushPublisherConfig config, final Collection<Object> dependenciesToAssert, final FilterDescriptor filterDescriptor) {
         AssignableFromMap<Integer> counts = new AssignableFromMap<>();
+        Set<String> alreadyCounts = new HashSet<>();
 
         for (Object asset : dependenciesToAssert) {
-
-            Class assetClass = (Contentlet.class == asset.getClass()) && ((Contentlet) asset).isHost() ? Host.class : asset.getClass();
-            final BundleDataGen.MetaData metaData = BundleDataGen.howAddInBundle.get(assetClass);
+            final boolean justExactlyClass = Host.class == asset.getClass() || Folder.class == asset.getClass();
+            final BundleDataGen.MetaData metaData = BundleDataGen.howAddInBundle.get(asset.getClass(), null, justExactlyClass);
 
             final String assetId = metaData.dataToAdd.apply(asset);
-           assertTrue(String.format("Not Contain %s in %s", assetId, asset.getClass()),
-                    metaData.collection.apply(config).contains(assetId));
 
-            final Class key = BundleDataGen.howAddInBundle.getKey(asset.getClass());
-            counts.addOrUpdate(key, 1, (Integer value) -> value + 1);
+            if (!alreadyCounts.contains(assetId)) {
+                assertTrue(String.format("Not Contain %s in %s Class %s", assetId, metaData.collection.apply(config), asset.getClass()),
+                        metaData.collection.apply(config).contains(assetId));
+
+                final Class key = BundleDataGen.howAddInBundle.getKey(asset.getClass());
+                counts.addOrUpdate(key, 1, (Integer value) -> value + 1);
+                alreadyCounts.add(assetId);
+            }
         }
 
         if (filterDescriptorAllDependencies == filterDescriptor) {
             for (Class clazz : BundleDataGen.howAddInBundle.keySet()) {
-                final Integer expectedCount = counts.get(clazz, 0);
+                final boolean justExactlyClass = Host.class == clazz || Folder.class == clazz;
 
-                final BundleDataGen.MetaData metaData = BundleDataGen.howAddInBundle.get(clazz);
+                final Integer expectedCount = counts.get(clazz, 0, justExactlyClass);
+
+                final BundleDataGen.MetaData metaData = BundleDataGen.howAddInBundle.get(clazz, null, justExactlyClass);
                 final int count = metaData.collection.apply(config).size();
 
                 assertEquals(String.format("Expected %d not %d to %s: ", expectedCount, count, clazz.getSimpleName(),

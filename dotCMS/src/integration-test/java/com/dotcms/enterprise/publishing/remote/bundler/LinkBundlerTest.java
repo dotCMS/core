@@ -9,11 +9,8 @@ import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.util.FileUtil;
@@ -83,7 +80,7 @@ public class LinkBundlerTest {
         final LinkBundler bundler = new LinkBundler();
         final File bundleRoot = FileUtil.createTemporaryDirectory("LinkBundlerTest_addLinkInBundle");
 
-        final FilterDescriptor filterDescriptor = new FileDescriptorDataGen().nextPersisted();
+        final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
 
         final PushPublisherConfig config = new PushPublisherConfig();
         config.setLinks(set( links.get(0).getIdentifier()));
