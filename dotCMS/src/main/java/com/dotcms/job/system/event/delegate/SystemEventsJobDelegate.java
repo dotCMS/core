@@ -1,6 +1,7 @@
 package com.dotcms.job.system.event.delegate;
 
 import com.dotcms.api.system.event.SystemEvent;
+import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.job.system.event.AbstractJobDelegate;
@@ -61,7 +62,13 @@ public class SystemEventsJobDelegate extends AbstractJobDelegate {
 				// the owner server does not need to send the message again!
 				if (!SERVER_ID.equals(event.getServerId())) {
 
-					webSocketEndPoint.sendSystemEvent(event);
+					if (this.isLocalEventWrapped(event)) {
+
+						this.notifyLocalSystemEvent(event);
+					} else {
+
+						webSocketEndPoint.sendSystemEvent(event);
+					}
 				} else {
 
 					Logger.info(this, "The event: " + event.getId() +
@@ -70,5 +77,15 @@ public class SystemEventsJobDelegate extends AbstractJobDelegate {
 			}
 		}
 	} // executeDelegate.
+
+	private void notifyLocalSystemEvent(final SystemEvent event) {
+
+		APILocator.getLocalSystemEventsAPI().asyncNotify(event.getPayload().getData());
+	}
+
+	private boolean isLocalEventWrapped(final SystemEvent event) {
+
+		return event.getEventType() == SystemEventType.LOCAL_SYSTEM_EVENT;
+	}
 
 }

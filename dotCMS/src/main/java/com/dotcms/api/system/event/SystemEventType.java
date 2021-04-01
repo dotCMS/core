@@ -26,6 +26,8 @@ package com.dotcms.api.system.event;
  */
 public enum SystemEventType {
 
+	LOCAL_SYSTEM_EVENT,
+
 	NOTIFICATION,
 
 	SAVE_SITE,
