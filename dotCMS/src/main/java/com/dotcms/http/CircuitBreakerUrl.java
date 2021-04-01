@@ -169,13 +169,13 @@ public class CircuitBreakerUrl {
                         try (CloseableHttpClient httpclient = HttpClientBuilder.create().setDefaultRequestConfig(config).build()) {
                             HttpResponse response = httpclient.execute(this.request);
                             this.response = response.getStatusLine().getStatusCode();
-                            if(this.response>=200 && this.response < 300){
-                                IOUtils.copy(response.getEntity().getContent(), out);
-                                return;
-                            }
-        
-                            throw new BadRequestException("got invalid response for url: " + this.proxyUrl + " response: " + this.response);
                             
+                            IOUtils.copy(response.getEntity().getContent(), out);
+                            
+                            // throw an error if the request is bad
+                            if(this.response<200 || this.response>299){
+                                throw new BadRequestException("got invalid response for url: " + this.proxyUrl + " response: " + this.response);
+                            }
                         }
                     });
         } catch (FailsafeException ee) {
@@ -205,7 +205,7 @@ public class CircuitBreakerUrl {
     }
     
     public enum Method {
-        GET, POST, PUT, DELETE
+        GET, POST, PUT, DELETE, PATCH;
 
     }
 
