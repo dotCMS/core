@@ -33,9 +33,9 @@ public class Task210319CreateStorageTableTest {
         final DotConnect dotConnect = new DotConnect();
         final DotDatabaseMetaData metaData = new DotDatabaseMetaData();
         metaData.dropIndex("storage","idx_storage_hash");
-        dotConnect.executeStatement("DROP TABLE storage_x_data;\n"
-                                        + "DROP TABLE storage_data;\n"
-                                        + "DROP TABLE storage;\n"
-                                        + "DROP TABLE storage_group;\n");
+        dotConnect.executeStatement("DROP TABLE storage_x_data");
+        dotConnect.executeStatement("DROP TABLE storage_data");
+        dotConnect.executeStatement("DROP TABLE storage");
+        dotConnect.executeStatement("DROP TABLE storage_group");
     }
 }
