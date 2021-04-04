@@ -652,7 +652,7 @@
                         name: 'close',
                         data: {
                             redirectUrl: data['htmlPageReferer'].split('?')[0],
-                            languageId
+                            languageId:languageId
                         }
                     };
                 }
