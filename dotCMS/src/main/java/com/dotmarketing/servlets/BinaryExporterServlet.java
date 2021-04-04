@@ -679,24 +679,25 @@ public class BinaryExporterServlet extends HttpServlet {
 
 	/**
 	 *
-	 * @param uuid
+	 * @param id
 	 * @param fieldVarName
 	 * @param temp
 	 * @throws DotDataException
 	 */
-	private void copyMetadata(final String uuid, final String fieldVarName,
+	private void copyMetadata(final String id, final String fieldVarName,
 			final DotTempFile temp) {
 		//Basically here a new temp file is generated and we should transfer any custom generated metadata
-		if (UtilMethods.isSet(fieldVarName) && UtilMethods.isSet(uuid)) {
+		if (UtilMethods.isSet(fieldVarName) && UtilMethods.isSet(id)) {
 			try {
-				if (UUIDUtil.isUUID(uuid)) {
+				if (UUIDUtil.isUUID(id)) {
 					final Contentlet content = contentAPI
-							.find(uuid, APILocator.systemUser(), false);
+							.find(id, APILocator.systemUser(), false);
 					final Metadata metadata = fileMetadataAPI.getMetadata(content, fieldVarName);
 					fileMetadataAPI.putCustomMetadataAttributes(temp.id, ImmutableMap
 							.of(fieldVarName, metadata.getCustomMeta()));
 				} else {
-					final Optional<Metadata> metadata = fileMetadataAPI.getMetadata(uuid);
+				    //Temp resource id
+					final Optional<Metadata> metadata = fileMetadataAPI.getMetadata(id);
 					if (metadata.isPresent()) {
 						fileMetadataAPI.putCustomMetadataAttributes(temp.id, ImmutableMap
 								.of(fieldVarName, metadata.get().getCustomMeta()));
