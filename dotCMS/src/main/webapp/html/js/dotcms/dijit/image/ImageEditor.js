@@ -407,10 +407,10 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     },
 
     _removeFocalPoint: function(){
-        console.log("_removeFocalPoint:")
+        console.log("_removeFocalPoint:");
         let img = new Image();
         img.src=this.baseFilterUrl + "/filter/FocalPoint/fp/." + 0 + ",." + 0 + "/overwrite/" +  _rand();
-        let ifrm =  window.frames['imageToolIframe']
+        let ifrm =  window.frames['imageToolIframe'];
         ifrm.contentDocument.getElementById("focalPointValueSpan").innerHTML="0 , 0";
         let newDiv = ifrm.contentDocument.getElementById("focalPointDot");
         if(newDiv != undefined){
@@ -532,7 +532,6 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
      */
 
     saveImage : function(){
-        debugger;
         if(this.binaryFieldId != null && this.binaryFieldId.length > 0){
             this.saveBinaryImage(this.activeEditor);
         }
@@ -579,7 +578,6 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
      *
      */
     saveBinaryImage: function(activeEditor){
-        debugger;
 
         let field = this.binaryFieldId;
         if(this.fieldContentletId.length>0) {
