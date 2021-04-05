@@ -761,25 +761,20 @@ public class FileMetadataAPITest {
     }
 
     /**
+     * This Method uses the file system to store metadata linked to a temp file.
      * Method to test: {@link FileMetadataAPIImpl#putCustomMetadataAttributes(String, Map)}
      * Given scenario: We create a temp file to get a valid temp-resource-id we attach some random meta
      * Expected result: When we request such info using the same id the results we get must match the originals
-     * @param storageType
      * @throws Exception
      */
     @Test
-    @UseDataProvider("getStorageType")
-    public void Test_Add_Then_Recover_Temp_Resource_Metadata(final StorageType storageType) throws Exception {
+    public void Test_Add_Then_Recover_Temp_Resource_Metadata() throws Exception {
         prepareIfNecessary();
-        final String stringProperty = Config.getStringProperty(DEFAULT_STORAGE_TYPE);
         //disconnect the MD generation on indexing so we can test directly here.
         final boolean defaultValue = Config.getBooleanProperty(WRITE_METADATA_ON_REINDEX, true);
         try {
             Config.setProperty(WRITE_METADATA_ON_REINDEX, false);
-            Config.setProperty(DEFAULT_STORAGE_TYPE, storageType.name());
-
             final HttpServletRequest request = mockHttpServletRequest();
-
             final DotTempFile dotTempFile = tempFileAPI.createEmptyTempFile("temp", request);
             fileMetadataAPI.putCustomMetadataAttributes(dotTempFile.id,
                     ImmutableMap.of("fieldXYZ", ImmutableMap.of("foo", "bar", "bar", "foo")));
@@ -790,7 +785,6 @@ public class FileMetadataAPITest {
             final Map<String, Serializable> customMeta = metadata.getCustomMeta();
             validateCustomMetadata(customMeta);
         }finally {
-            Config.setProperty(DEFAULT_STORAGE_TYPE, stringProperty);
             Config.setProperty(WRITE_METADATA_ON_REINDEX, defaultValue);
         }
     }

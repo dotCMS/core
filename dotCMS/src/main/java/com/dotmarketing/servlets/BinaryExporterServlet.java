@@ -679,7 +679,7 @@ public class BinaryExporterServlet extends HttpServlet {
 	}
 
 	/**
-	 *
+	 * This does transfer the custom metadata from temp files into the target inode and viceversa
 	 * @param id
 	 * @param fieldVarName
 	 * @param temp
@@ -687,27 +687,23 @@ public class BinaryExporterServlet extends HttpServlet {
 	 */
 	private void copyMetadata(final String id, final String fieldVarName,
 			final DotTempFile temp) {
-		//Basically here a new temp file is generated and we should transfer any custom generated metadata
+		//Basically here when a new temp file has been generated and we transfer any custom generated metadata
 		if (UtilMethods.isSet(fieldVarName) && UtilMethods.isSet(id)) {
 			try {
 				if (UUIDUtil.isUUID(id)) {
-                   /*
-					final Contentlet content = contentAPI
-							.find(id, APILocator.systemUser(), false);
-					final Metadata metadata = fileMetadataAPI.getMetadata(content, fieldVarName);
-                    */
-					final Optional<Metadata> metadata = fileMetadataAPI.getMetadata( TMP +  id);
-
-					if (metadata.isPresent()) {
+                    // FocalPointImageFilter does prepend a 'TMP::' to the inodes to avoid setting the metadata directly to the inode
+                    // leaving that work to the check-in process.
+					final Optional<Metadata> optionalMetadata = fileMetadataAPI.getMetadata( TMP +  id);
+					if (optionalMetadata.isPresent()) {
 						fileMetadataAPI.putCustomMetadataAttributes(temp.id, ImmutableMap
-								.of(fieldVarName, metadata.get().getCustomMeta()));
+								.of(fieldVarName, optionalMetadata.get().getCustomMeta()));
 					}
 				} else {
 				    //Temp resource id
-					final Optional<Metadata> metadata = fileMetadataAPI.getMetadata(id);
-					if (metadata.isPresent()) {
+					final Optional<Metadata> optionalMetadata = fileMetadataAPI.getMetadata(id);
+					if (optionalMetadata.isPresent()) {
 						fileMetadataAPI.putCustomMetadataAttributes(temp.id, ImmutableMap
-								.of(fieldVarName, metadata.get().getCustomMeta()));
+								.of(fieldVarName, optionalMetadata.get().getCustomMeta()));
 					}
 				}
 			} catch (Exception e) {
