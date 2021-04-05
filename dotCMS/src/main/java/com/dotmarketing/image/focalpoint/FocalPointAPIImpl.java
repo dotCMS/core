@@ -7,23 +7,23 @@ import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
+import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
-
-import com.liferay.util.StringPool;
 import javax.servlet.http.HttpServletRequest;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.Logger;
-import io.vavr.control.Try;
 
 public class FocalPointAPIImpl implements FocalPointAPI {
 
@@ -66,7 +66,7 @@ public class FocalPointAPIImpl implements FocalPointAPI {
           return;
         }
 
-        if(tempFileAPI.isTempResource(inode) || isSet(inode) && inode.startsWith(TMP)) {
+        if(isTempResourceId(inode)) {
             Logger.debug(FocalPointAPIImpl.class, "Metadata writing fp under temp id "+inode);
             writeFocalPointMeta(inode, fieldVar, focalPoint);
         } else {
@@ -143,7 +143,7 @@ public class FocalPointAPIImpl implements FocalPointAPI {
     @Override
     public Optional<FocalPoint> readFocalPoint(final String inode, final String fieldVar) {
         Optional<FocalPoint> focalPoint = Optional.empty();
-        if (tempFileAPI.isTempResource(inode)) {
+        if (isTempResourceId(inode)) {
             focalPoint = readFocalPointMeta(inode);
             Logger.debug(FocalPointAPIImpl.class, "Metadata readFocalPoint from TempId "+ inode );
         } else {
@@ -189,6 +189,16 @@ public class FocalPointAPIImpl implements FocalPointAPI {
      */
     private Optional<Contentlet> findContentletByInode(final String inode){
       return Optional.ofNullable(Try.of(()->contentletAPI.find(inode, currentUserSupplier.get(), false)).getOrNull());
+    }
+
+    /**
+     * Temp AssetID validator
+     * @param assetId
+     * @return
+     */
+    private boolean isTempResourceId(final String assetId){
+
+        return isSet(assetId) && (tempFileAPI.isTempResource(assetId) || (assetId.startsWith(TMP) && UUIDUtil.isUUID(assetId.substring(TMP.length()))));
     }
 
 }

@@ -1,22 +1,31 @@
 package com.dotmarketing.image.focalpoint;
 
 import static com.dotcms.datagen.TestDataUtils.getFileAssetContent;
+import static com.dotcms.rest.api.v1.temp.TempFileAPITest.mockHttpServletRequest;
+import static com.dotmarketing.image.focalpoint.FocalPointAPIImpl.TMP;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestDataUtils.TestFile;
+import com.dotcms.rest.api.v1.temp.DotTempFile;
+import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.ImmutableMap;
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.Map;
 import java.util.Optional;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.RandomStringUtils;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -128,6 +137,44 @@ public class FocalPointAPITest {
         params = ImmutableMap.of("fp", new String[] {fp1});
         test= focalPointAPI.parseFocalPointFromParams(params);
         assertTrue("we have no  focal point", !test.isPresent());
+
+    }
+
+    /**
+     * Method to test: {@link FocalPointAPI#writeFocalPoint(String, String, FocalPoint)} and {@link FocalPointAPI#readFocalPoint(String, String)}
+     * Test scenario: create a FocalPoint using various id formats
+     * Expected: read FocalPoint successfully for every valid format and fail for a made-up id.
+     * @throws DotSecurityException
+     * @throws IOException
+     */
+    @Test
+    public void Test_Write_Focal_Point_From_Temp_Asset_Id() throws Exception {
+        final Contentlet fileAssetContent = TestDataUtils
+                .getFileAssetContent(true, 1L, TestFile.GIF);
+        final FocalPoint focalPointSrc = new FocalPoint(1.1f, 1.2f);
+        focalPointAPI.writeFocalPoint(fileAssetContent.getInode(),"fileAsset", focalPointSrc);
+        final Optional<FocalPoint> focalPoint1 = focalPointAPI.readFocalPoint(fileAssetContent.getInode(), "fileAsset");
+        assertTrue(focalPoint1.isPresent());
+        assertEquals(focalPoint1.get(),focalPointSrc);
+
+        focalPointAPI.writeFocalPoint(TMP + fileAssetContent.getInode(),"fileAsset", focalPointSrc);
+        final Optional<FocalPoint> focalPoint2 = focalPointAPI.readFocalPoint(TMP + fileAssetContent.getInode(), "fileAsset");
+        assertTrue(focalPoint2.isPresent());
+        assertEquals(focalPoint2.get(),focalPointSrc);
+
+        final HttpServletRequest request = mockHttpServletRequest();
+        final DotTempFile dotTempFile = APILocator.getTempFileAPI().createEmptyTempFile("temp", request);
+        assertTrue(dotTempFile.file.createNewFile());
+        assertTrue(dotTempFile.file.setLastModified(System.currentTimeMillis()));
+        assertTrue(dotTempFile.file.exists());
+
+        focalPointAPI.writeFocalPoint(dotTempFile.id,"fileAsset", focalPointSrc);
+        assertTrue(focalPointAPI.readFocalPoint(dotTempFile.id, "fileAsset").isPresent());
+
+        //Not Everything can be used as a valid identifier
+        final String invalidAssetID =  TMP + RandomStringUtils.randomAlphanumeric(10);
+        focalPointAPI.writeFocalPoint(invalidAssetID,"fileAsset", focalPointSrc);
+        assertFalse(focalPointAPI.readFocalPoint(invalidAssetID, "fileAsset").isPresent());
 
     }
     
