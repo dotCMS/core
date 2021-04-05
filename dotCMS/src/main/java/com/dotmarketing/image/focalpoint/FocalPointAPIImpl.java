@@ -27,7 +27,13 @@ import io.vavr.control.Try;
 
 public class FocalPointAPIImpl implements FocalPointAPI {
 
+    //Focal point can be associated with temp files and/or inodes
+    //If we work directly with an inode we would be associating the focal point metadata with the contentlet when clicking on the image
+    //While there is workflow that needs to be followed for that.
+    //The Metadata should be stored only if we Hit save and then Publish
+    //Some of that logic takes place in BinaryExporterServlet and then in ESContentletAPIImpl
     public static final String TMP = "tmp::";
+
     private final Pattern         fpPattern = Pattern.compile(StringPool.COMMA);
     private final FileMetadataAPI fileMetadataAPI;
     private final TempFileAPI tempFileAPI;

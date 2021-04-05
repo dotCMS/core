@@ -170,7 +170,7 @@ public interface FileMetadataAPI {
 
 
     /**
-     * Write custom metadata to a temporary file
+     * Write custom metadata to linked to a temporary file
      * @param tempResourceId
      * @param customAttributesByField
      * @throws DotDataException
