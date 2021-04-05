@@ -647,12 +647,14 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
         customAttributesByField.forEach((fieldName, customAttributes) -> {
 
             try {
+                final String tempResourcePath = tempResourcePath(tempResourceId);
                 fileStorageAPI.putCustomMetadataAttributes((new FetchMetadataParams.Builder()
                         .projectionMapForCache(this::filterNonCacheableMetadataFields)
+                        .cache(() -> tempResourcePath)
                         .forceInsert(true)
                         .storageKey(
                                 new StorageKey.Builder().group(metadataBucketName)
-                                        .path(tempResourcePath(tempResourceId))
+                                        .path(tempResourcePath)
                                         .storage(StorageType.FILE_SYSTEM).build())
                         .build()), customAttributes);
 

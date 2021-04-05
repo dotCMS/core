@@ -482,6 +482,8 @@ public class FileStorageAPIImpl implements FileStorageAPI {
                 if(null != fetchMetadataParams.getCacheKeySupplier()){
                     final String cacheKey = fetchMetadataParams.getCacheKeySupplier().get();
                     putIntoCache(cacheKey, newMetadataMap);
+                } else {
+                    Logger.warn(FileStorageAPIImpl.class, "No Cache Key has been provided for stored object "+storageKey);
                 }
             } else {
                 Logger.warn(FileStorageAPIImpl.class, String.format("Unable to locate object: `%s` ",storageKey));
