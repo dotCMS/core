@@ -7,6 +7,7 @@ import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.FilterDescriptor;
+import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -41,7 +42,7 @@ public class BundleDataGen extends AbstractDataGen<Bundle> {
 
         howAddInBundle.put(ContentType.class, new MetaData(
                 (PushPublisherConfig config) -> config.getStructures(),
-                (Object asset) -> ((ContentType) asset).id(),
+                (Object asset) -> ((ContentType) asset).inode(),
                 PusheableAsset.CONTENT_TYPE
             )
         );

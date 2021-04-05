@@ -145,7 +145,7 @@ public class DependencySet extends HashSet<String> {
 		return addOrClean( assetId, assetModDate, true, false);
 	}
 
-	private boolean addOrClean ( final String assetId, final Date assetModDate, final boolean cleanForUnpublish, final boolean isContentExplicitlyAdded) {
+	private synchronized boolean addOrClean ( final String assetId, final Date assetModDate, final boolean cleanForUnpublish, final boolean isContentExplicitlyAdded) {
 
 		if ( !isPublish ) {
 
