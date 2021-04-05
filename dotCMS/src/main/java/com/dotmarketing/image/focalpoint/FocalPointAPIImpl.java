@@ -1,5 +1,7 @@
 package com.dotmarketing.image.focalpoint;
 
+import static com.dotmarketing.util.StringUtils.isSet;
+
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
@@ -25,6 +27,7 @@ import io.vavr.control.Try;
 
 public class FocalPointAPIImpl implements FocalPointAPI {
 
+    public static final String TMP = "tmp::";
     private final Pattern         fpPattern = Pattern.compile(StringPool.COMMA);
     private final FileMetadataAPI fileMetadataAPI;
     private final TempFileAPI tempFileAPI;
@@ -57,7 +60,7 @@ public class FocalPointAPIImpl implements FocalPointAPI {
           return;
         }
 
-        if(tempFileAPI.isTempResource(inode)){
+        if(tempFileAPI.isTempResource(inode) || isSet(inode) && inode.startsWith(TMP)) {
             Logger.debug(FocalPointAPIImpl.class, "Metadata writing fp under temp id "+inode);
             writeFocalPointMeta(inode, fieldVar, focalPoint);
         } else {

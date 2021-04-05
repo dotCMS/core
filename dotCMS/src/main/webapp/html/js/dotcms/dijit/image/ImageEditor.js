@@ -290,7 +290,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     },
 
     modFocalPointEvent: function(e){
-        console.log("modFocalPointEvent:", e);
+        //console.log("modFocalPointEvent:", e);
         let coord = dojo.coords(this.iframe.dojo.byId("me"));
 
         let x = e.offsetX / coord.w;
@@ -302,7 +302,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
 
     modFocalPointStr: function(xy, filterCallback){
-        console.log("modFocalPointStr:" + xy);
+        //console.log("modFocalPointStr:" + xy);
 
         let fp = xy.split(",");
         x=parseFloat(fp[0]);
@@ -312,7 +312,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     },
 
     modFocalPoint: function(x,y, filterCallback){
-        console.log("modFocalPoint:" + x + "," + y);
+        //console.log("modFocalPoint:" + x + "," + y);
         if(!Number(x) && x!=0){
             console.log("modFocalPoint: X is not a number", x);
             return;
@@ -338,12 +338,12 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
         if (filterCallback) {
                 let img = new Image();
-                img.src = this.baseFilterUrl + "/filter/FocalPoint/fp/" + x + "," + y + "/?overwrite=" + _rand();
                 img.onload = filterCallback;
+                img.src = this.baseFilterUrl + "/filter/FocalPoint/fp/" + x + "," + y + "/?overwrite=" + _rand();
                 console.log("img", img);
         }
 
-        let ifrm =  window.frames['imageToolIframe']
+        let ifrm =  window.frames['imageToolIframe'];
         if(ifrm==undefined){
             return;
         }
@@ -369,9 +369,9 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
 
         let ifrm =  window.frames['imageToolIframe']
-        console.log("_drawFocalPoint:" + x + "," + y)
+        //console.log("_drawFocalPoint:" + x + "," + y)
         let coord = dojo.coords(ifrm.contentDocument.getElementById("me"));
-        console.log("_drawFocalPoint:coord:",coord)
+        //console.log("_drawFocalPoint:coord:",coord)
 
         let newDiv = ifrm.contentDocument.getElementById("focalPointDot");
         if(newDiv != undefined){
@@ -407,7 +407,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     },
 
     _removeFocalPoint: function(){
-        console.log("_removeFocalPoint:");
+        //console.log("_removeFocalPoint:");
         let img = new Image();
         img.src=this.baseFilterUrl + "/filter/FocalPoint/fp/." + 0 + ",." + 0 + "/overwrite/" +  _rand();
         let ifrm =  window.frames['imageToolIframe'];
@@ -600,12 +600,12 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
                 xhr.onload = (self => {
                     return () => {
                         if (xhr.status == 200) {
+                            console.log(xhr.responseText);
                             let dataJson = JSON.parse(xhr.responseText);
                             self.tempId=dataJson.id;
                             if(window.document.getElementById(self.binaryFieldId + "ValueField")){
                                 window.document.getElementById(self.binaryFieldId + "ValueField").value=dataJson.id;
                             }
-
                         } else {
                             alert("Error! Upload failed");
                         }
