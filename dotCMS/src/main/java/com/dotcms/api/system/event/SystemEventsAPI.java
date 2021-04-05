@@ -55,6 +55,7 @@ public interface SystemEventsAPI {
 
 	/**
 	 * Pushes an event with a payload in a separate task.
+	 * This sends the event in the current node and queue to the rest of the nodes in the same cluster.
 	 * @param event {@link SystemEventType}
 	 * @param payload {@link Payload}
 	 * @throws DotDataException
@@ -113,5 +114,13 @@ public interface SystemEventsAPI {
 	 *             An error occurred when deleting the events.
 	 */
 	public void deleteAll() throws DotDataException;
+
+	/**
+	 * Offer a system event into the db queue, it is similar to {@link #pushAsync(SystemEventType, Payload)}
+	 * but do not send the message to the current node.
+	 * @param event    {@link SystemEvent}
+	 * @param payload  {@link Payload}
+	 */
+    void queue(SystemEventType event, Payload payload);
 
 }
