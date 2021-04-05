@@ -7,6 +7,9 @@ import com.dotmarketing.util.Logger;
 import java.sql.SQLException;
 import java.util.List;
 
+/**
+ * Upgrade task used to create tables: `storage_group`, `storage`, `storage_data` and `storage_x_data`
+ */
 public class Task210319CreateStorageTable extends AbstractJDBCStartupTask {
 
     @Override
