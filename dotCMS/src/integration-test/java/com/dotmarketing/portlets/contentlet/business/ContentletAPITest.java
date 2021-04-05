@@ -24,6 +24,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.datagen.*;
+import com.dotcms.datagen.TestDataUtils.TestFile;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.mock.response.BaseResponse;
@@ -31,6 +32,9 @@ import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.storage.FileMetadataAPI;
+import com.dotcms.storage.FileMetadataAPIImpl;
+import com.dotcms.storage.model.Metadata;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
@@ -102,6 +106,7 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
@@ -118,6 +123,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Serializable;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
@@ -7232,4 +7238,46 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Check that the copy Contentlet is published
         assertTrue(copyContentletArchived.isArchived());
     }
+
+    /**
+     * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}
+     * Given scenario: We create a file asset add some custom attributes to it then we create a new version
+     * Expected result: After creating a newer version the custom meta is still there.
+     * @throws Exception
+     */
+    @Test
+    public void Test_Copy_Metadata_On_CheckIn()
+            throws DotDataException, DotSecurityException {
+
+        final String fileAsset = FileAssetAPI.BINARY_FIELD;
+        final FileMetadataAPI fileMetadataAPI = APILocator.getFileMetadataAPI();
+        //Create Contentlet
+        final Contentlet originalContentlet = TestDataUtils.getFileAssetContent(true,1L, TestFile.GIF );
+
+        fileMetadataAPI.putCustomMetadataAttributes(originalContentlet,
+                ImmutableMap.of(fileAsset,
+                      ImmutableMap.of("focalPoint","2.66,2.44", "foo","bar", "bar", "foo")
+                )
+        );
+
+        final Contentlet checkout1 = contentletAPI
+                .checkout(originalContentlet.getInode(), user, false);
+
+        //Force a change
+        checkout1.setStringProperty(FileAssetAPI.TITLE_FIELD, "v2");
+
+        final Contentlet v2 = contentletAPI.checkin(checkout1, user, false);
+        assertNotEquals(originalContentlet.getInode(), v2.getInode());
+
+        final Metadata metadata1 = v2.getBinaryMetadata(fileAsset);
+        assertNotNull(metadata1);
+        final Map<String, Serializable> customMeta = metadata1.getCustomMeta();
+        assertEquals(customMeta.get("focalPoint"),"2.66,2.44");
+        assertEquals(customMeta.get("foo"),"bar");
+        assertEquals(customMeta.get("bar"),"foo");
+        
+
+    }
+
+
 }
