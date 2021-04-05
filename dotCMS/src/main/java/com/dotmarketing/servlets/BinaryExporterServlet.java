@@ -1,5 +1,6 @@
 package com.dotmarketing.servlets;
 
+import static com.dotmarketing.image.focalpoint.FocalPointAPIImpl.TMP;
 import static com.liferay.util.HttpHeaders.CACHE_CONTROL;
 import static com.liferay.util.HttpHeaders.EXPIRES;
 
@@ -690,11 +691,17 @@ public class BinaryExporterServlet extends HttpServlet {
 		if (UtilMethods.isSet(fieldVarName) && UtilMethods.isSet(id)) {
 			try {
 				if (UUIDUtil.isUUID(id)) {
+                   /*
 					final Contentlet content = contentAPI
 							.find(id, APILocator.systemUser(), false);
 					final Metadata metadata = fileMetadataAPI.getMetadata(content, fieldVarName);
-					fileMetadataAPI.putCustomMetadataAttributes(temp.id, ImmutableMap
-							.of(fieldVarName, metadata.getCustomMeta()));
+                    */
+					final Optional<Metadata> metadata = fileMetadataAPI.getMetadata( TMP +  id);
+
+					if (metadata.isPresent()) {
+						fileMetadataAPI.putCustomMetadataAttributes(temp.id, ImmutableMap
+								.of(fieldVarName, metadata.get().getCustomMeta()));
+					}
 				} else {
 				    //Temp resource id
 					final Optional<Metadata> metadata = fileMetadataAPI.getMetadata(id);
