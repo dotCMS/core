@@ -85,7 +85,7 @@ public class GenericBundleActivatorTest {
 
 
         assert (dotSAML.isPresent());
-        assertEquals(dotSAML.get().getState(), Bundle.ACTIVE);
+        assertEquals(Bundle.ACTIVE, dotSAML.get().getState());
 
     }
 
