@@ -127,20 +127,6 @@ public class SystemEventsFactory implements Serializable {
 		 */
 		private void push(final SystemEvent systemEvent, final boolean forceNewTransaction) throws DotDataException {
 
-			this.push(systemEvent, forceNewTransaction, true);
-		}
-
-		/**
-		 * Method that will save a given system event
-		 *
-		 * @param systemEvent         SystemEvent to save
-		 * @param forceNewTransaction true when is required to create a new transaction, this value must be sent as true
-		 *                            when this push is called inside a thread
-		 * @param sendThroughSocket   boolean true if wants to send through the socket.
-		 * @throws DotDataException
-		 */
-		private void push(final SystemEvent systemEvent, final boolean forceNewTransaction, final boolean sendThroughSocket) throws DotDataException {
-
 			if (!UtilMethods.isSet(systemEvent)) {
 				final String msg = "System Event object cannot be null.";
 				Logger.error(this, msg);
@@ -154,6 +140,8 @@ public class SystemEventsFactory implements Serializable {
 
 			try {
 
+				// CLUSTER WIDE EVENTS are not being sent by the socket, just propagated locally in each node.
+				final boolean sendThroughSocket = systemEvent.getEventType() != SystemEventType.CLUSTER_WIDE_EVENT; //
 				// sends straight to the socket, the server id is sent to the queue in order to avoid to send twice the event.
 				if (sendThroughSocket && null != webSocketEndPoint) {
 
@@ -227,25 +215,6 @@ public class SystemEventsFactory implements Serializable {
 					} catch (DotDataException e) {
 						Logger.info(this, e.getMessage());
 					}
-				});
-			}
-		}
-
-		// says that do not want to send a message through the socket on the local node.
-		private static final boolean DO_NOT_SEND_THROUGH_SOCKET = false;
-
-		@Override
-		public void queue(final SystemEventType event, final Payload payload) {
-
-			final DotSubmitter dotSubmitter = this.concurrentFactory.getSubmitter(EVENTS_THREAD_POOL_SUBMITTER_NAME);
-			// if by any reason the submitter couldn't be created, sends the message syn
-			if (null != dotSubmitter) {
-
-				dotSubmitter.execute(() -> {
-
-					Logger.debug(this, ()->"Queue a message: " + event);
-					Try.run(()->push(new SystemEvent(event, payload),
-							true, DO_NOT_SEND_THROUGH_SOCKET)).onFailure(e -> Logger.info(SystemEventsFactory.this, e.getMessage()));
 				});
 			}
 		}

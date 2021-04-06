@@ -115,12 +115,4 @@ public interface SystemEventsAPI {
 	 */
 	public void deleteAll() throws DotDataException;
 
-	/**
-	 * Offer a system event into the db queue, it is similar to {@link #pushAsync(SystemEventType, Payload)}
-	 * but do not send the message to the current node.
-	 * @param event    {@link SystemEvent}
-	 * @param payload  {@link Payload}
-	 */
-    void queue(SystemEventType event, Payload payload);
-
 }

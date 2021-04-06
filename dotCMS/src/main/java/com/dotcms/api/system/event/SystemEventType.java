@@ -3,6 +3,7 @@ package com.dotcms.api.system.event;
 /**
  * A System Event can be generated for a variety of reasons, such as:
  * <ul>
+ * <li>A cluster wide event triggered on the server nodes <b>NOTIFICATION</b>.</li>
  * <li>A notification for the user <b>NOTIFICATION</b>.</li>
  * <li>A site change: <b>SAVE_SITE, UPDATE_SITE, ARCHIVE_SITE, UN_ARCHIVE_SITE, UPDATE_SITE_PERMISSIONS</b>.</li>
  * <li>A content type change: <b>SAVE_BASE_CONTENT_TYPE, UPDATE_BASE_CONTENT_TYPE, DELETE_BASE_CONTENT_TYPE</b>.</li>
@@ -26,67 +27,219 @@ package com.dotcms.api.system.event;
  */
 public enum SystemEventType {
 
-	LOCAL_SYSTEM_EVENT,
+	/**
+	 * This event type propagate a Local System Event cluster wide (except the node that push the message)
+	 * Note: this do not push a message on the web socket to the UI
+	 */
+	CLUSTER_WIDE_EVENT,
 
+	/**
+	 * A notification for the user, this is being showed on the UI bell.
+	 */
 	NOTIFICATION,
 
-	SAVE_SITE,
-	PUBLISH_SITE,
-	UPDATE_SITE,
+	/**
+	 * When a site is saved
+	 */
+	SAVE_SITE, // todo: not used
+
+	/**
+	 * When a site is published
+	 */
+	PUBLISH_SITE, // todo: not used
+
+	/**
+	 * When a site is updated
+	 */
+	UPDATE_SITE, // todo: not used
+
+	/**
+	 * When a site is archived
+	 */
 	ARCHIVE_SITE,
+
+	/**
+	 * When a site is unarchived
+	 */
 	UN_ARCHIVE_SITE,
+
+	/**
+	 * When removes, saves or assign permissions for a site
+	 */
 	UPDATE_SITE_PERMISSIONS,
+
+	/**
+	 * When a site is being switched
+	 */
 	SWITCH_SITE,
-	
+
+	/**
+	 * When saving a content type
+	 */
 	SAVE_BASE_CONTENT_TYPE,
+
+	/**
+	 * When updates a content type
+	 */
 	UPDATE_BASE_CONTENT_TYPE,
+
+	/**
+	 * When deletes a content type
+	 */
 	DELETE_BASE_CONTENT_TYPE,
 
+	/**
+	 * When saving a folder
+	 */
 	SAVE_FOLDER,
+
+	/**
+	 * When updates an existing folder
+	 */
 	UPDATE_FOLDER,
+
+	/**
+	 * When deletes a folder
+	 */
 	DELETE_FOLDER,
 
-	SAVE_PAGE_ASSET,
-	UPDATE_PAGE_ASSET,
-	ARCHIVE_PAGE_ASSET,
-	UN_ARCHIVE_PAGE_ASSET,
-	DELETE_PAGE_ASSET,
-	PUBLISH_PAGE_ASSET,
-	UN_PUBLISH_PAGE_ASSET,
+	/**
+	 * When saving a page
+	 */
+	SAVE_PAGE_ASSET,  // todo: not used
 
-	SAVE_FILE_ASSET,
-	UPDATE_FILE_ASSET,
-	ARCHIVE_FILE_ASSET,
-	UN_ARCHIVE_FILE_ASSET,
-	DELETE_FILE_ASSET,
-	PUBLISH_FILE_ASSET,
-	UN_PUBLISH_FILE_ASSET,
+	/**
+	 * When updates a page
+	 */
+	UPDATE_PAGE_ASSET, // todo: not used
 
+	/**
+	 * When archive a page
+	 */
+	ARCHIVE_PAGE_ASSET, // todo: not used
+
+	/**
+	 * When un archives a page
+	 */
+	UN_ARCHIVE_PAGE_ASSET,  // todo: not used
+
+	/**
+	 * When deletes a page
+	 */
+	DELETE_PAGE_ASSET,  // todo: not used
+
+	/**
+	 * When published a page
+	 */
+	PUBLISH_PAGE_ASSET,  // todo: not used
+
+	/**
+	 * When unpublish a page
+	 */
+	UN_PUBLISH_PAGE_ASSET, // todo: not used
+
+	SAVE_FILE_ASSET, // todo: not used
+	UPDATE_FILE_ASSET, // todo: not used
+	ARCHIVE_FILE_ASSET,  // todo: not used
+	UN_ARCHIVE_FILE_ASSET,  // todo: not used
+	DELETE_FILE_ASSET,  // todo: not used
+	PUBLISH_FILE_ASSET,   // todo: not used
+	UN_PUBLISH_FILE_ASSET,   // todo: not used
+
+	/**
+	 * When creates a link
+	 */
 	SAVE_LINK,
+
+	/**
+	 * When updates a link
+	 */
 	UPDATE_LINK,
+
+	/**
+	 * When archives a link
+	 */
 	ARCHIVE_LINK,
-	UN_ARCHIVE_LINK,
+	UN_ARCHIVE_LINK,  // todo: not used
+
+	/**
+	 * When moves a link
+	 */
 	MOVE_LINK,
+
+	/**
+	 * When copies a link
+	 */
 	COPY_LINK,
+
+	/**
+	 * When deletes a link
+	 */
 	DELETE_LINK,
+
+	/**
+	 * When publish a link
+	 */
 	PUBLISH_LINK,
+
+	/**
+	 * When unpublish a link
+	 */
 	UN_PUBLISH_LINK,
 
+	/**
+	 * When move a folder
+	 */
 	MOVE_FOLDER,
-	COPY_FOLDER,
-	MOVE_FILE_ASSET,
-	COPY_FILE_ASSET,
-	MOVE_PAGE_ASSET,
-	COPY_PAGE_ASSET,
 
-	SESSION_CREATED,
+	/**
+	 * When copy a folder
+	 */
+	COPY_FOLDER,
+
+	/**
+	 * Move the file asset
+	 */
+	MOVE_FILE_ASSET,
+
+	COPY_FILE_ASSET,  // todo: not used
+
+	/**
+	 * When move a page
+	 */
+	MOVE_PAGE_ASSET,
+
+	COPY_PAGE_ASSET,  // todo: not used
+
+	SESSION_CREATED,   // todo: not used
+
+	/**
+	 * When the session is being destroyed
+	 */
 	SESSION_DESTROYED,
 
+	/**
+	 * When updates the layouts
+	 */
 	UPDATE_PORTLET_LAYOUTS,
+
+	/**
+	 * When deletes the layouts
+	 */
 	DELETE_PORTLET_LAYOUTS,
 
+	/**
+	 * Represents a simple toast
+	 */
 	MESSAGE,
+
+	/**
+	 * Represents a large toast
+	 */
 	LARGE_MESSAGE,
 
+	/**
+	 * When deletes a bundle.
+	 */
 	DELETE_BUNDLE
 }

@@ -10,6 +10,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -143,13 +144,12 @@ public class LoggerResource {
                 }
             }
 
-            // queue the change logger level to trigger the local event on the rest of the cluster
-            APILocator.getSystemEventsAPI().
-                    queue(SystemEventType.LOCAL_SYSTEM_EVENT,
+            Try.run(()->APILocator.getSystemEventsAPI().
+                    pushAsync(SystemEventType.CLUSTER_WIDE_EVENT,
                             new Payload(
                                     new ChangeLoggerLevelEvent(
                                             changeLoggerForm.getName(), changeLoggerForm.getLevel()
-                                    )));
+                                    )))).onFailure(e -> Logger.error(LoggerResource.this, e.getMessage()));
             return Response.ok(new ResponseEntityView(loggerViewList)).build();
         }
 
