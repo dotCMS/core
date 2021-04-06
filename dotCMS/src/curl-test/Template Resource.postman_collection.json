@@ -3981,10 +3981,6 @@
 									"",
 									"var jsonData = pm.response.json();",
 									"",
-									"pm.test(\"Size must be 1\", function () {",
-									"    pm.expect(jsonData.entity.length).to.be.eql(1);",
-									"});",
-									"",
 									"pm.test(\"Identifier must contains path\", function () {",
 									"    pm.expect(jsonData.entity[0].identifier).contains(\"/application/templates/\");",
 									"});"
@@ -4021,7 +4017,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/templates?filter=system",
+							"raw": "{{serverURL}}/api/v1/templates?filter=system&host=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -4034,6 +4030,10 @@
 								{
 									"key": "filter",
 									"value": "system"
+								},
+								{
+									"key": "host",
+									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
 								}
 							]
 						},
