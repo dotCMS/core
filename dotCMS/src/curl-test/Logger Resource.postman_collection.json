@@ -422,6 +422,9 @@
 							"    var jsonData = pm.response.json();",
 							"    pm.expect(jsonData.entity.length).to.eq(2);",
 							"    pm.expect(jsonData.entity[0].name).to.eq('com.dotmarketing.common.db.DotConnect');",
+							"    pm.expect(jsonData.entity[0].level).to.eq('DEBUG');",
+							"    pm.expect(jsonData.entity[1].name).to.eq('com.dotcms.listeners.SessionMonitor');",
+							"    pm.expect(jsonData.entity[1].level).to.eq('DEBUG');",
 							"});",
 							"",
 							""
