@@ -220,10 +220,10 @@ public class BinaryExporterServletTest {
     }
 
     private HttpServletResponse mockServletResponse(final TmpBinaryFile tmpTargetFile) {
-        try (OutputStream outputStream = new FileOutputStream(tmpTargetFile.getFile())) {
+        try {
             return new MockHttpStatusResponse(new MockHttpCaptureResponse(
-                    new BaseResponse().response(), outputStream));
-        } catch (IOException e) {
+                    new BaseResponse().response(), new FileOutputStream(tmpTargetFile.getFile())));
+        } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
     }

@@ -103,4 +103,9 @@ public class DirectoryBundleOutput extends BundleOutput {
         final File realFile = getRealFile(filePath);
         return realFile.exists();
     }
+
+    public void mkdirs(String path) {
+        final File realFile = getRealFile(path);
+         realFile.mkdirs();
+    }
 }
