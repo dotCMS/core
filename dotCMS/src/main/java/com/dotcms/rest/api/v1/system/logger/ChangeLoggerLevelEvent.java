@@ -1,5 +1,10 @@
 package com.dotcms.rest.api.v1.system.logger;
 
+/**
+ * Event to notify when a level has changed
+ * Note: this event is mostly to notify cluster wide, rather than the current node.
+ * @author jsanca
+ */
 public class ChangeLoggerLevelEvent {
 
     /**
