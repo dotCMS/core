@@ -25,7 +25,7 @@ public class Input {
     private final boolean hidden;
 
     private Input(final char[] value, final boolean hidden) {
-        this.value = value;
+        this.value = trim(value);
         this.hidden = hidden;
     }
 
@@ -55,13 +55,62 @@ public class Input {
 
         @Override
         public Input deserialize(final JsonParser jsonParser, final DeserializationContext context)
-                throws IOException, JsonProcessingException {
+                throws IOException {
             final JsonNode jsonNode = jsonParser.readValueAsTree();
             final JsonNode value = jsonNode.get("value");
             final JsonNode hidden = jsonNode.get("hidden");
-            return newInputParam(value.asText().toCharArray(),
+            return newInputParam(value.asText().trim().toCharArray(),
                     hidden != null && hidden.asBoolean());
         }
+    }
+
+    /**
+     * Removes leading and trailing whitespaces from a char array
+     * @param value char[] to go over
+     * @return
+     */
+    private char[] trim(final char[] value){
+        final int leftPosition = getTrimLeftPosition(value);
+        final int rightPosition = getTrimRightPosition(value);
+        return Arrays.copyOfRange(value, leftPosition, rightPosition + 1);
+    }
+
+    /**
+     * Finds the last position (from left to right) where a whitespace is found in a char array
+     * before the first non-whitespace character
+     * @param value char[] to go over
+     * @return
+     */
+    private int getTrimLeftPosition(final char[] value){
+        int position = 0;
+        if(value == null){
+            return position;
+        }
+
+        while(position < value.length && value[position] == ' ') {
+            position++;
+        }
+
+        return position;
+    }
+
+    /**
+     * Finds the last position (from right to left) where a whitespace is found in a char array
+     * before the first non-whitespace character
+     * @param value char[] to go over
+     * @return
+     */
+    private int getTrimRightPosition(final char[] value){
+        int position = value.length - 1;
+        if(value == null){
+            return position;
+        }
+
+        while(position >= 0 && value[position] == ' ') {
+            position--;
+        }
+
+        return position;
     }
 
 }
