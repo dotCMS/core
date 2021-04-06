@@ -410,8 +410,6 @@ public class DependencyManagerTest {
         DependencyManager dependencyManager = new DependencyManager(user, config);
         dependencyManager.setDependencies();
 
-        assertTrue("html: " + htmlPageAsset.getIdentifier() + "Contents: " +dependencyManager.getContents().toString(),dependencyManager.getContents().contains(htmlPageAsset.getIdentifier()));
-
         final String path = fileAssetTemplate.getPath();
         final Folder rootFolder = APILocator.getFolderAPI()
                 .findFolderByPath(path, fileAssetTemplate.getHost(), user, false);
@@ -453,8 +451,6 @@ public class DependencyManagerTest {
 
         DependencyManager dependencyManager = new DependencyManager(user, config);
         dependencyManager.setDependencies();
-
-        assertTrue("html: " + htmlPageAsset.getIdentifier() + "Contents: " +dependencyManager.getContents().toString(),dependencyManager.getContents().contains(htmlPageAsset.getIdentifier()));
 
         final String path = fileAssetTemplate.getPath();
         final Folder rootFolder = APILocator.getFolderAPI()
