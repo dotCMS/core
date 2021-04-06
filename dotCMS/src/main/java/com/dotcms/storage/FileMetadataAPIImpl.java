@@ -48,6 +48,7 @@ import java.util.stream.Stream;
  */
 public class FileMetadataAPIImpl implements FileMetadataAPI {
 
+    public static final String META_TMP = ".meta.tmp";
     private static final String METADATA_GROUP_NAME = "METADATA_GROUP_NAME";
     private static final String DEFAULT_STORAGE_TYPE = "DEFAULT_STORAGE_TYPE";
     private static final String DOT_METADATA = "dotmetadata";
@@ -629,7 +630,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
     * Build a tmp resource path so that temp files will get created under a more suitable location
     */
     private String tempResourcePath(final String tempResourceId){
-        return File.separator + FileAssetAPI.TMP_UPLOAD + File.separator + tempResourceId + File.separator + tempResourceId;
+        return File.separator + FileAssetAPI.TMP_UPLOAD + File.separator + tempResourceId + File.separator +  tempResourceId + META_TMP;
     }
 
     /**

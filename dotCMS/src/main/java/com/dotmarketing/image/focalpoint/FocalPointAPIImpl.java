@@ -32,7 +32,7 @@ public class FocalPointAPIImpl implements FocalPointAPI {
     //While there is workflow that needs to be followed for that.
     //The Metadata should be stored only if we Hit save and then Publish
     //Some of that logic takes place in BinaryExporterServlet and then in ESContentletAPIImpl
-    public static final String TMP = "tmp::";
+    public static final String TMP = "temp_";
 
     private final Pattern         fpPattern = Pattern.compile(StringPool.COMMA);
     private final FileMetadataAPI fileMetadataAPI;
