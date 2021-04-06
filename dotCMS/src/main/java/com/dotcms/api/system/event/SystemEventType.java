@@ -3,7 +3,7 @@ package com.dotcms.api.system.event;
 /**
  * A System Event can be generated for a variety of reasons, such as:
  * <ul>
- * <li>A cluster wide event triggered on the server nodes <b>NOTIFICATION</b>.</li>
+ * <li>A cluster wide event triggered on the server nodes <b>CLUSTER_WIDE_EVENT</b>.</li>
  * <li>A notification for the user <b>NOTIFICATION</b>.</li>
  * <li>A site change: <b>SAVE_SITE, UPDATE_SITE, ARCHIVE_SITE, UN_ARCHIVE_SITE, UPDATE_SITE_PERMISSIONS</b>.</li>
  * <li>A content type change: <b>SAVE_BASE_CONTENT_TYPE, UPDATE_BASE_CONTENT_TYPE, DELETE_BASE_CONTENT_TYPE</b>.</li>
