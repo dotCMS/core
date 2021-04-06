@@ -235,7 +235,7 @@ public class FileAssetTemplateUtil {
         template.setIDate      (metaInfoFileAsset.getIDate());
         template.setModDate    (metaInfoFileAsset.getModDate());
         template.setModUser    (metaInfoFileAsset.getModUser());
-        template.setShowOnMenu (metaInfoFileAsset.isShowOnMenu());
+        template.setShowOnMenu (true);
         template.setSortOrder  (templateFolder.getSortOrder());
         template.setTitle      (templateFolder.getTitle());
         template.setLanguage(metaInfoFileAsset.getLanguageId());

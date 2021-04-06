@@ -1,6 +1,7 @@
 package com.dotcms.publisher.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -409,7 +410,7 @@ public class DependencyManagerTest {
         DependencyManager dependencyManager = new DependencyManager(user, config);
         dependencyManager.setDependencies();
 
-        assertTrue(dependencyManager.getContents().contains(htmlPageAsset.getIdentifier()));
+        assertTrue("html: " + htmlPageAsset.getIdentifier() + "Contents: " +dependencyManager.getContents().toString(),dependencyManager.getContents().contains(htmlPageAsset.getIdentifier()));
 
         final String path = fileAssetTemplate.getPath();
         final Folder rootFolder = APILocator.getFolderAPI()
@@ -419,7 +420,7 @@ public class DependencyManagerTest {
                 .findFileAssetsByFolder(rootFolder, APILocator.systemUser(), false);
 
         for (final FileAsset fileAsset : fileAssetsByFolder) {
-            assertTrue(dependencyManager.getContents().contains(fileAsset.getIdentifier()));
+            assertTrue("fileAsset: " + fileAsset.getIdentifier() + "Contents: " +dependencyManager.getContents().toString(),dependencyManager.getContents().contains(htmlPageAsset.getIdentifier()));
         }
 
     }
@@ -453,7 +454,7 @@ public class DependencyManagerTest {
         DependencyManager dependencyManager = new DependencyManager(user, config);
         dependencyManager.setDependencies();
 
-        assertTrue(dependencyManager.getContents().contains(htmlPageAsset.getIdentifier()));
+        assertTrue("html: " + htmlPageAsset.getIdentifier() + "Contents: " +dependencyManager.getContents().toString(),dependencyManager.getContents().contains(htmlPageAsset.getIdentifier()));
 
         final String path = fileAssetTemplate.getPath();
         final Folder rootFolder = APILocator.getFolderAPI()
@@ -463,7 +464,7 @@ public class DependencyManagerTest {
                 .findFileAssetsByFolder(rootFolder, APILocator.systemUser(), false);
 
         for (final FileAsset fileAsset : fileAssetsByFolder) {
-            assertTrue(dependencyManager.getContents().contains(fileAsset.getIdentifier()));
+            assertTrue("fileAsset: " + fileAsset.getIdentifier() + "Contents: " +dependencyManager.getContents().toString(),dependencyManager.getContents().contains(htmlPageAsset.getIdentifier()));
         }
 
     }
