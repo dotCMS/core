@@ -16,6 +16,7 @@ or
 import { initDotCMS } from 'dotcms';
 
 const dotcms = initDotCMS({
+    hostId: 'DOTCMS_SITE_IDENTIFIER',
     host: 'YOUR_DOTCMS_INSTANCE',
     token: 'YOUR AUTH TOKEN'
 });
