@@ -1,6 +1,9 @@
 package com.dotcms.rest.api.v1.temp;
 
+import static com.dotcms.storage.FileMetadataAPIImpl.*;
+
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.storage.FileMetadataAPIImpl;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
@@ -368,8 +371,9 @@ public class TempFileAPI {
     @Override
     public boolean accept(final File pathname) {
       return !pathname.getName().equalsIgnoreCase(WHO_CAN_USE_TEMP_FILE) &&
-             !pathname.getName().startsWith(".")
-          
+             !pathname.getName().startsWith(".") &&
+             !pathname.getName().endsWith(META_TMP)
+
           ;
     }
   };
