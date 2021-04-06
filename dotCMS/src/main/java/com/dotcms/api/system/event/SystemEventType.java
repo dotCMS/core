@@ -39,6 +39,10 @@ public enum SystemEventType {
 	NOTIFICATION,
 
 	/**
+	 * When a site is created
+	 */
+	CREATED_SITE,
+	/**
 	 * When a site is saved
 	 */
 	SAVE_SITE, // todo: not used
