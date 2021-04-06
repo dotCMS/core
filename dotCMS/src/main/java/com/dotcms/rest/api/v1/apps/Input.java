@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.apps;
 
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonParser;
@@ -25,7 +26,7 @@ public class Input {
     private final boolean hidden;
 
     private Input(final char[] value, final boolean hidden) {
-        this.value = trim(value);
+        this.value = UtilMethods.trimCharArray(value);
         this.hidden = hidden;
     }
 
@@ -63,54 +64,4 @@ public class Input {
                     hidden != null && hidden.asBoolean());
         }
     }
-
-    /**
-     * Removes leading and trailing whitespaces from a char array
-     * @param value char[] to go over
-     * @return
-     */
-    private char[] trim(final char[] value){
-        final int leftPosition = getTrimLeftPosition(value);
-        final int rightPosition = getTrimRightPosition(value);
-        return Arrays.copyOfRange(value, leftPosition, rightPosition + 1);
-    }
-
-    /**
-     * Finds the last position (from left to right) where a whitespace is found in a char array
-     * before the first non-whitespace character
-     * @param value char[] to go over
-     * @return
-     */
-    private int getTrimLeftPosition(final char[] value){
-        int position = 0;
-        if(value == null){
-            return position;
-        }
-
-        while(position < value.length && value[position] == ' ') {
-            position++;
-        }
-
-        return position;
-    }
-
-    /**
-     * Finds the last position (from right to left) where a whitespace is found in a char array
-     * before the first non-whitespace character
-     * @param value char[] to go over
-     * @return
-     */
-    private int getTrimRightPosition(final char[] value){
-        int position = value.length - 1;
-        if(value == null){
-            return position;
-        }
-
-        while(position >= 0 && value[position] == ' ') {
-            position--;
-        }
-
-        return position;
-    }
-
 }
