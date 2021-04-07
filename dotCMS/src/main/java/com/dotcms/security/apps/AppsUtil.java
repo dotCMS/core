@@ -404,7 +404,7 @@ public class AppsUtil {
      * that can be mapped from a saved  AppSecrets or an incoming SecretForm
      * if the param isn't included in the map it means it wasn't sent..
      * if the param was sent empty that would be represented as an empty optional.
-     * I'm using optional since null vales on map triggers warnings
+     * I'm using optional since null values on map triggers warnings
      * @param params
      * @param appDescriptor
      */
