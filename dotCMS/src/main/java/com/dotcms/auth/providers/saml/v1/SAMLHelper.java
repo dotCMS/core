@@ -29,6 +29,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.Encryptor;
@@ -91,38 +92,47 @@ public class SAMLHelper {
         return user;
     }
 
-
-
-    // Gets the attributes from the Assertion, based on the attributes
-    // see if the user exists return it from the dotCMS records, if does not
-    // exist then, tries to create it.
-    // the existing or created user, will be updated the roles if they present
-    // on the assertion.
+    /**
+     * Attempts to find an existing dotCMS user based on the user {@link Attributes} -- user information -- coming from
+     * the SAML Assertion. The verification process involves finding an existing user based on the User ID first. If no
+     * result is returned, the Email Address will be used instead. If no result is returned either, then a brand new
+     * dotCMS User will be created along with any valid Roles indicated in the SAML Assertion.
+     *
+     * @param attributes                    User information coming from the SAML Assertion.
+     * @param identityProviderConfiguration Configuration parameters for the specific IdP setup.
+     *
+     * @return Either the already existing, or a brand new dotCMS User.
+     */
     protected User resolveUser(final Attributes attributes,
                              final IdentityProviderConfiguration identityProviderConfiguration) {
-
-        User user       = null;
+        if (null == attributes || !UtilMethods.isSet(attributes.getNameID())) {
+            throw new DotSamlException("Failed to resolve user because Attributes or NameID are null");
+        }
+        final String nameId = this.samlAuthenticationService.getValue(attributes.getNameID());
+        User user;
         User systemUser = null;
         try {
-
-            Logger.debug(this, ()-> "Validating user - " + attributes);
-
+            Logger.debug(this, () -> "Resolving user with Attributes: " + attributes);
             systemUser             = this.userAPI.getSystemUser();
-            final Company company  = companyAPI.getDefaultCompany();
+            final Company company  = this.companyAPI.getDefaultCompany();
             final String  authType = company.getAuthType();
-            user                   = Company.AUTH_TYPE_ID.equals(authType)?
-                    this.loadUserById(this.samlAuthenticationService.getValue(attributes.getNameID()),      systemUser):
-                    this.userAPI.loadByUserByEmail(this.samlAuthenticationService.getValue(attributes.getNameID()), systemUser, false);
-        } catch (NoSuchUserException e) {
-
-            Logger.error(this, "No user matches ID '" +
-                    this.samlAuthenticationService.getValue(attributes.getNameID()) + "'. Creating one...", e);
-            user = null;
-        } catch (Exception e) {
-
-            Logger.error(this, "An error occurred when loading user with ID '" +
-                    (null != attributes && null != attributes.getNameID()?
-                    this.samlAuthenticationService.getValue(attributes.getNameID()): "null") + "'", e);
+            user                   = Company.AUTH_TYPE_ID.equals(authType) ?
+                    this.loadUserById(nameId, systemUser) :
+                    this.userAPI.loadByUserByEmail(nameId, systemUser, false);
+        } catch (final NoSuchUserException e) {
+            final String email = this.samlAuthenticationService.getValue(attributes.getEmail());
+            Logger.warn(this, String.format("No user matches ID '%s'. Checking for email match with '%s' instead...",
+                    nameId, email));
+            try {
+                user = this.userAPI.loadByUserByEmail(email, systemUser, false);
+            } catch (final DotDataException | DotSecurityException | NoSuchUserException ex) {
+                Logger.error(this, "An error occurred when resolving user with email '" + (UtilMethods.isSet(email) ?
+                        email : "-null-") + "'", e);
+                user = null;
+            }
+        } catch (final Exception e) {
+            Logger.error(this, String.format("An error occurred when resolving user with ID '%s': %s", nameId, e
+                    .getMessage()), e);
             user = null;
         }
 
