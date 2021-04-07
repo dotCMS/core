@@ -65,5 +65,5 @@ public abstract class BundleOutput implements Closeable {
 
     public abstract void setLastModified(String myFile, long timeInMillis);
 
-    public void mkdirs(String path) {}
+    public abstract void mkdirs(String path);
 }

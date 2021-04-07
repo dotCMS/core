@@ -2,6 +2,7 @@ package com.dotcms.publishing.output;
 
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.ConfigUtils;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
@@ -71,6 +72,17 @@ public class TarGzipBundleOutput extends BundleOutput {
     @Override
     public void setLastModified(String myFile, long timeInMillis){
 
+    }
+
+    public void mkdirs(final String path) {
+        final TarArchiveEntry tarArchiveEntry = new TarArchiveEntry(path);
+
+        try {
+            tarArchiveOutputStream.putArchiveEntry(tarArchiveEntry);
+            tarArchiveOutputStream.closeArchiveEntry();
+        } catch (IOException e) {
+            throw new DotRuntimeException(e);
+        }
     }
 
     private class TarGzipPublisherOutputStream extends ByteArrayOutputStream {
