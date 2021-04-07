@@ -457,4 +457,20 @@ public class DateUtilTest extends UnitTestBase {
                     defaultTimeZone.getRawOffset(), calendar.getTimeZone().getRawOffset());
         }
     }
+
+    /**
+     * Method to test: convert Date
+     * Given Scenario: Passing a Date without any formats
+     * ExpectedResult: The date is converted using one of the time zone on the formats.
+     *
+     */
+    @Test()
+    public void test_time_zone_string_no_formats() throws ParseException {
+
+        final Date date1 = DateUtil.convertDate("2015-02-04 GMT +1400");
+
+        assertNotNull(date1);
+        assertEquals("Year should be 2015", 115,date1.getYear());
+        assertEquals("Month should be Feb", Calendar.FEBRUARY, date1.getMonth());
+    }
 }
