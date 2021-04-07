@@ -58,7 +58,7 @@ DOTCMS_HOME=`cd "$PRGDIR/../$HOME_FOLDER" ; pwd`
 
 #JAVA_OPTS="$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=8000,server=y,suspend=n"
 
-#JAVA_OPTS="$JAVA_OPTS -Djava.awt.headless=true -Xverify:none -Dfile.encoding=UTF8 -Xmx1G -XX:+UseG1GC -javaagent:$DOTCMS_HOME/WEB-INF/lib/byte-buddy-agent-1.6.12.jar"
+#JAVA_OPTS="$JAVA_OPTS -Djava.awt.headless=true -Xverify:none -Dfile.encoding=UTF8 -Xmx1G -XX:+UseG1GC -javaagent:$DOTCMS_HOME/WEB-INF/lib/byte-buddy-agent-1.9.0.jar"
 JAVA_OPTS="$JAVA_OPTS -Djava.awt.headless=true -Xverify:none -Dfile.encoding=UTF8 -server -XX:+DisableExplicitGC"
 
 # Set Memory sizing
@@ -68,7 +68,7 @@ JAVA_OPTS="$JAVA_OPTS -XX:MaxMetaspaceSize=512m -Xmx1G"
 JAVA_OPTS="$JAVA_OPTS -XX:+UseG1GC"
 
 # Set agent opts
-JAVA_OPTS="$JAVA_OPTS -javaagent:$DOTCMS_HOME/WEB-INF/lib/byte-buddy-agent-1.6.12.jar"
+JAVA_OPTS="$JAVA_OPTS -javaagent:$DOTCMS_HOME/WEB-INF/lib/byte-buddy-agent-1.9.0.jar"
 
 # Set encoding
 JAVA_OPTS="$JAVA_OPTS -Dsun.jnu.encoding=UTF-8"

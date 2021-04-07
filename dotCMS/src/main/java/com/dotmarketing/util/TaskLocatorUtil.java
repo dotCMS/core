@@ -294,7 +294,7 @@ public class TaskLocatorUtil {
         .add(Task201014UpdateColumnsValuesInIdentifierTable.class)
 		.add(Task210218MigrateUserProxyTable.class)
 		.add(Task210316UpdateLayoutIcons.class)
-		.add(Task210320AddHashRefColumnStorageTable.class)
+        .add(Task210319CreateStorageTable.class)
 		.add(Task210321RemoveOldMetadataFiles.class)
         .build();
         
