@@ -24,8 +24,6 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashSet;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.set;
@@ -100,7 +98,7 @@ public class ContainerBundlerTest {
         final ContainerBundler bundler = new ContainerBundler();
         final File bundleRoot = FileUtil.createTemporaryDirectory("ContentTypeBundlerTest_addContentTypeInBundle_");
 
-        final FilterDescriptor filterDescriptor = new FileDescriptorDataGen().nextPersisted();
+        final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
 
         final PushPublisherConfig config = new PushPublisherConfig();
         config.setContainers(set(container.getIdentifier()));

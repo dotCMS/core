@@ -219,7 +219,7 @@ public class DbConnectionFactory {
         } catch (Exception e) {
             Logger.error(DbConnectionFactory.class, "---------- DBConnectionFactory: error : " + e);
             Logger.debug(DbConnectionFactory.class, "---------- DBConnectionFactory: error ", e);
-            throw new DotRuntimeException(e.toString());
+            throw new DotRuntimeException(e.getMessage(), e);
         }
     }
 

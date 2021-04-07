@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render;
 
 
-import com.beust.jcommander.internal.Maps;
 import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotmarketing.business.APILocator;
@@ -11,6 +10,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.VelocityUtil;
+import com.google.common.collect.Maps;
 import org.apache.velocity.context.Context;
 
 import java.util.Collection;

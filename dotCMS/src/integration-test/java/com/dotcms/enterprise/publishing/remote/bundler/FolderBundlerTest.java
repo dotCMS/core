@@ -12,7 +12,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.FileUtil;
 import com.liferay.portal.model.User;
@@ -82,7 +81,7 @@ public class FolderBundlerTest {
         final FolderBundler bundler = new FolderBundler();
         final File bundleRoot = FileUtil.createTemporaryDirectory("FolderBundlerTest_addFolderInBundle_");
 
-        final FilterDescriptor filterDescriptor = new FileDescriptorDataGen().nextPersisted();
+        final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
 
         final PushPublisherConfig config = new PushPublisherConfig();
         config.setFolders(set(folder.getIdentifier()));

@@ -40,7 +40,10 @@ public class PushPublisherConfig extends PublisherConfig {
 		CATEGORIES,
 		WORKFLOWS,
 		LANGUAGES,
-		RULES
+		RULES,
+		HOST,
+		FOLDER,
+		CONTENT_TYPE
 	}
 
 	private List<PublishingEndPoint> endpoints;
