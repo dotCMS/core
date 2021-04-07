@@ -493,12 +493,16 @@ class AppsHelper {
             final AppDescriptor appDescriptor)
             throws IllegalArgumentException {
 
-        final Map<String, Input> params = form.getInputParams();
-        if (!UtilMethods.isSet(params)) {
+        if (!UtilMethods.isSet(form.getInputParams())) {
             throw new IllegalArgumentException("Required Params aren't set.");
         }
 
-        AppsUtil.validateForSave(mapForValidation(form), appDescriptor);
+        final Map<String, Input> params = form.getInputParams().entrySet().stream()
+                .collect(Collectors.toMap(stringInputEntry -> stringInputEntry.getKey().trim(),
+                        Entry::getValue));
+
+
+        AppsUtil.validateForSave(mapForValidation(params), appDescriptor);
 
         return params;
     }
@@ -508,8 +512,8 @@ class AppsHelper {
      * used by {@link com.dotcms.security.apps.AppsUtil#validateForSave(Map, AppDescriptor)}
      * @return
      */
-    private Map<String, Optional<char[]>> mapForValidation(final SecretForm form) {
-        return form.getInputParams().entrySet().stream()
+    private Map<String, Optional<char[]>> mapForValidation(final Map<String, Input> params) {
+        return params.entrySet().stream()
             .collect(Collectors.toMap(Entry::getKey, stringInputEntry -> {
                 final Input input = stringInputEntry.getValue();
                 return input == null ? Optional.empty() : Optional.of(input.getValue());
