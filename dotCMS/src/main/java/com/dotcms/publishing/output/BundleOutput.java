@@ -65,7 +65,5 @@ public abstract class BundleOutput implements Closeable {
 
     public abstract void setLastModified(String myFile, long timeInMillis);
 
-    public void mkdirs(String path) {
-        throw new UnsupportedOperationException();
-    }
+    public void mkdirs(String path) {}
 }

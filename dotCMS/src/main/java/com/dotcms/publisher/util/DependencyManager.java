@@ -559,7 +559,6 @@ public class DependencyManager {
 			final Folder parentFolder = APILocator.getFolderAPI().findParentFolder(folder, user, false);
 			if(UtilMethods.isSet(parentFolder)) {
 				folders.addOrClean( parentFolder.getInode(), parentFolder.getModDate());
-				dependencyProcessor.put(parentFolder.getInode(), AssetTypes.FOLDER);
 			}
 
 			setFolderListDependencies(folder);
@@ -864,15 +863,12 @@ public class DependencyManager {
 					try {
 						final Folder themeFolder = folderAPI.find(workingTemplate.getTheme(), user, false);
 						if (themeFolder != null && InodeUtils.isSet(themeFolder.getInode())) {
-							final Folder parentFolder = APILocator.getFolderAPI()
-									.findParentFolder(themeFolder, user, false);
-							if (UtilMethods.isSet(parentFolder)) {
-								folders.addOrClean(parentFolder.getInode(), parentFolder.getModDate());
-								dependencyProcessor.put(parentFolder.getInode(), AssetTypes.FOLDER);
-							}
+
 							final List<Folder> folderList = new ArrayList<Folder>();
 							folderList.add(themeFolder);
-							setFolderListDependencies(folderList);
+
+							folders.addOrClean(themeFolder.getInode(), themeFolder.getModDate());
+							dependencyProcessor.put(themeFolder.getInode(), AssetTypes.FOLDER);
 						}
 					} catch (DotDataException e1) {
 						Logger.error(DependencyManager.class,
