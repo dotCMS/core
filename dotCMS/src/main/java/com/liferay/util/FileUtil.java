@@ -42,6 +42,7 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
@@ -789,12 +790,12 @@ public class FileUtil {
         final ByteBuffer buffer = ByteBuffer.allocateDirect(5 * 1024);
 
         while (src.read(buffer) != -1) {
-            buffer.flip();
+			((Buffer)buffer).flip();
             dest.write(buffer);
             buffer.compact();
         }
 
-        buffer.flip();
+		((Buffer)buffer).flip();
 
         while (buffer.hasRemaining()) {
             dest.write(buffer);

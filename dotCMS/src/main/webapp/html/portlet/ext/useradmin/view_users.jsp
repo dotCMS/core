@@ -267,6 +267,10 @@
                                        </span>
                                        </td>
                                    </tr>
+                                   <tr>
+                                       <th><%= LanguageUtil.get(pageContext, "starter.show.getting.started") %>:</th>
+                                       <td><input type="checkbox" id="showStarter" onclick="setStarterPage(this)" value="true" dojoType="dijit.form.CheckBox"></td>
+                                   </tr>
                                </table>
                             </div>
                             

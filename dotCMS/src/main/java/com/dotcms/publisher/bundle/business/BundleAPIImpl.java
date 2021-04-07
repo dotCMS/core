@@ -226,6 +226,7 @@ public class BundleAPIImpl implements BundleAPI {
 		return new BundleDeleteResult(bundlesFailed.build(), bundlesDeleted.build());
 	}
 
+	@CloseDBIfOpened
 	private Stream<String> getOlderBundleIds(final Date olderThan, final String userId, final boolean isAdmin)
 			throws IOException {
 
