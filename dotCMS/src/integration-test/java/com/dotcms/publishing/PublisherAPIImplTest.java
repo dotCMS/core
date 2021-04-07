@@ -6,8 +6,10 @@ import com.dotcms.datagen.*;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.receiver.BundlePublisher;
 import com.dotcms.publishing.output.BundleOutput;
 import com.dotcms.publishing.output.DirectoryBundleOutput;
+import com.dotcms.publishing.output.TarGzipBundleOutput;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -39,6 +41,14 @@ import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.jetbrains.annotations.Nullable;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -132,7 +142,8 @@ public class PublisherAPIImplTest {
 
         for (final Class<? extends Publisher> publisher : publishers) {
             for (TestAsset asset : assets) {
-                cases.add(new TestCase(publisher, asset));
+                cases.add(new TestCase(publisher, asset, true));
+                cases.add(new TestCase(publisher, asset, false));
             }
         }
 
@@ -366,7 +377,8 @@ public class PublisherAPIImplTest {
         config.setLuceneQueries(list());
         config.setId("PublisherAPIImplTest_" + System.currentTimeMillis());
 
-        final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config);
+        final BundleOutput output = testCase.useTarGzipOutput ? new TarGzipBundleOutput(config) :
+                new DirectoryBundleOutput(config);
 
         new BundleDataGen()
                 .pushPublisherConfig(config)
@@ -374,17 +386,31 @@ public class PublisherAPIImplTest {
                 .filter(filterDescriptor)
                 .nextPersisted();
 
-        publisherAPI.publish(config, directoryBundleOutput);
+        publisherAPI.publish(config, output);
+        output.close();
 
-        final File bundleRoot = directoryBundleOutput.getFile();
+        File bundleRoot = output.getFile();
 
+        if (TarGzipBundleOutput.class.isInstance(output)) {
+            final File extractHere = new File(bundleRoot.getParent() + File.separator + config.getName());
+            extractTarArchive(bundleRoot, extractHere);
+            bundleRoot = extractHere;
+        }
+
+        assertBundle(testAsset, dependencies, bundleRoot);
+    }
+
+    private void assertBundle(TestAsset testAsset, Collection<Object> dependencies, File bundleRoot)
+            throws IOException {
         final Collection<File> filesExpected = new HashSet<>();
         filesExpected.addAll(
-                FileTestUtil.assertBundleFile(bundleRoot, testAsset.asset, testAsset.fileExpectedPath)
+                FileTestUtil.assertBundleFile(bundleRoot, testAsset.asset,
+                        testAsset.fileExpectedPath)
         );
 
         for (Object assetToAssert : dependencies) {
-            final Collection<File> files = FileTestUtil.assertBundleFile(bundleRoot, assetToAssert);
+            final Collection<File> files = FileTestUtil
+                    .assertBundleFile(bundleRoot, assetToAssert);
             filesExpected.addAll(files);
         }
 
@@ -403,13 +429,18 @@ public class PublisherAPIImplTest {
         int numberFilesExpected = filesExpected.size() + 1;
         final int numberFiles = files.size();
 
-        final List<String> filesExpectedPath = filesExpected.stream().map(file -> file.getAbsolutePath()).collect(Collectors.toList());
-        final List<String> filePaths = files.stream().map(file -> file.getAbsolutePath()).collect(Collectors.toList());
+        final List<String> filesExpectedPath = filesExpected.stream()
+                .map(file -> file.getAbsolutePath()).collect(Collectors.toList());
+        final List<String> filePaths = files.stream().map(file -> file.getAbsolutePath())
+                .collect(Collectors.toList());
 
-        List<String> differences = getDifferences(numberFilesExpected, numberFiles, filesExpectedPath, filePaths);
+        List<String> differences = getDifferences(numberFilesExpected, numberFiles,
+                filesExpectedPath, filePaths);
 
-        assertEquals(String.format("Expected %d but get %d in %s\nExpected %s\nExisting %s\ndifference %s\n",
-                    numberFilesExpected, numberFiles, bundleRoot, filesExpectedPath, filePaths, differences),
+        assertEquals(String.format(
+                "Expected %d but get %d in %s\nExpected %s\nExisting %s\ndifference %s\n",
+                numberFilesExpected, numberFiles, bundleRoot, filesExpectedPath, filePaths,
+                differences),
                 numberFilesExpected, numberFiles);
     }
 
@@ -430,13 +461,14 @@ public class PublisherAPIImplTest {
     private static class TestCase {
         Class<? extends Publisher> publisher;
         TestAsset asset;
-
+        boolean useTarGzipOutput;
         public TestCase(
                 final Class<? extends Publisher> publisher,
-                TestAsset asset) {
+                TestAsset asset, final boolean useTarGzipOutput) {
 
             this.publisher = publisher;
             this.asset = asset;
+            this.useTarGzipOutput =useTarGzipOutput;
         }
     }
 
@@ -566,6 +598,39 @@ public class PublisherAPIImplTest {
             this.addLanguageVariableDependencies = addLanguageVariableDependencies;
 
 
+        }
+    }
+
+    public static void extractTarArchive(File file, File folder) throws IOException {
+        folder.mkdirs();
+        try (FileInputStream fis = new FileInputStream(file);
+                BufferedInputStream bis = new BufferedInputStream(fis);
+                GzipCompressorInputStream gzip = new GzipCompressorInputStream(bis);
+                TarArchiveInputStream tar = new TarArchiveInputStream(gzip)) {
+
+            TarArchiveEntry entry;
+            while ((entry = (TarArchiveEntry) tar.getNextEntry()) != null) {
+
+                final String path = folder.getAbsolutePath() + File.separator + entry.getName();
+                final File entryFile = new File(path);
+
+                if (entry.isDirectory()) {
+                    entryFile.mkdirs();
+                    continue;
+                }
+
+                entryFile.getParentFile().mkdirs();
+
+                byte[] buf = new byte[1024];
+
+                try (OutputStream outputStream = Files.newOutputStream(entryFile.toPath())) {
+
+                    int bytesRead;
+                    while ((bytesRead = tar.read(buf, 0, 1024)) > -1) {
+                        outputStream.write(buf, 0, bytesRead);
+                    }
+                }
+            }
         }
     }
 }
