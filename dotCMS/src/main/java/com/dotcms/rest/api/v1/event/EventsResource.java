@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.event;
 import com.dotcms.api.system.event.SystemEvent;
 import com.dotcms.api.web.WebSessionContext;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import javax.servlet.http.HttpSession;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -143,8 +144,8 @@ public class EventsResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .rejectWhenNoUser(true).init();
 
-        //final AppContext appContext =  new SimpleMapAppContext();
-        final AppContext appContext   =  WebSessionContext.getInstance(httpServletRequest);
+        final AppContext appContext   = new EventAppContentWrapper(
+                WebSessionContext.getInstance(httpServletRequest), httpServletRequest, asyncResponse);
 
         try {
 
@@ -197,6 +198,45 @@ public class EventsResource implements Serializable {
                     new ResponseEntityView(Arrays.asList(new ErrorEntity("operation-timeout", message)))).build();
 
             asyncResponse.resume(response);
+        }
+    }
+
+    private static class EventAppContentWrapper implements AppContext {
+
+        private final AppContext appContext;
+        private final HttpServletRequest request;
+        private final AsyncResponse response;
+
+        public EventAppContentWrapper(final AppContext appContext,
+                final HttpServletRequest request, final AsyncResponse response) {
+            this.appContext = appContext;
+            this.request = request;
+            this.response = response;
+        }
+
+        @Override
+        public <T> T getAttribute(String attributeName) {
+            if (request.isRequestedSessionIdValid()) {
+                HttpSession httpSession = request.getSession(false);
+                if (httpSession != null) {
+                    return appContext.getAttribute(attributeName);
+                }
+            }
+            if (SystemEventsDelegate.RESPONSE.equals(attributeName)) {
+                return (T) response;
+            } else {
+                return null;
+            }
+        }
+
+        @Override
+        public <T> void setAttribute(String attributeName, T attributeValue) {
+            if (request.isRequestedSessionIdValid()) {
+                HttpSession httpSession = request.getSession(false);
+                if (httpSession != null) {
+                    appContext.setAttribute(attributeName, attributeValue);
+                }
+            }
         }
     }
 } // E:O:F:EventsResource.
