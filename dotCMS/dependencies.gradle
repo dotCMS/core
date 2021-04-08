@@ -490,7 +490,7 @@ dependencies {
     compile 'com.jayway.jsonpath:json-path:2.4.0'
     compile 'com.sun.activation:javax.activation:1.2.0'
     compile 'jakarta.xml.bind:jakarta.xml.bind-api:2.3.3'
-    compile 'com.sun.xml.ws:jaxws-ri:2.3.3'
+    compile 'com.sun.xml.ws:jaxws-ri:2.3.2'
 
     //https://www.oracle.com/database/technologies/appdev/jdbc-downloads.html
     providedCompile (group: 'com.oracle.jdbc', name: 'ojdbc8', version: '19.3') {
