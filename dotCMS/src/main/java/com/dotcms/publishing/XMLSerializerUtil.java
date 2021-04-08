@@ -14,7 +14,7 @@ import java.io.OutputStreamWriter;
 public class XMLSerializerUtil {
 
     private static final XMLSerializerUtil instance= new XMLSerializerUtil();
-    static XStream xmlSerializer = null;
+    private XStream xmlSerializer = null;
 
 
     /**
