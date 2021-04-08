@@ -189,12 +189,12 @@ public interface FileMetadataAPI {
             throws DotDataException;
 
     /**
-     * Given a source contentlet this will grab all current meta and copy it into the destination contentlet
+     * Given a source contentlet this will grab all custom meta and copy it into the destination contentlet
      * assuming both are of the same CT
      * @param source
      * @param destination
      */
-    void copyMetadata(Contentlet source, Contentlet destination) throws DotDataException;
+    void copyCustomMetadata(Contentlet source, Contentlet destination) throws DotDataException;
 
     /**
      * This forces the metadata into a contentlet. No validation type is performed
