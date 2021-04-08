@@ -3,6 +3,7 @@ package com.dotcms.publishing.output;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
@@ -13,10 +14,14 @@ import java.nio.file.Files;
 import java.util.Collection;
 import java.util.zip.GZIPOutputStream;
 
+/**
+ * {@link BundleOutput} implementation to create a bundle in a tar.gzip file
+ */
 public class TarGzipBundleOutput extends BundleOutput {
     private File tarGzipFile;
     private TarArchiveOutputStream tarArchiveOutputStream;
-    private int GZIP_OUTPUT_STREAM_BUFFER_SIZE = 65536;
+    private int GZIP_OUTPUT_STREAM_BUFFER_SIZE = Config
+            .getIntProperty("GZIP_OUTPUT_STREAM_BUFFER_SIZE", 65536);
 
     public TarGzipBundleOutput(final PublisherConfig publisherConfig) throws IOException {
         super(publisherConfig);

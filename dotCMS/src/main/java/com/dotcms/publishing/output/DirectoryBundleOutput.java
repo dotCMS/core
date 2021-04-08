@@ -13,6 +13,9 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.Collection;
 
+/**
+ * {@link BundleOutput} implementation to create a bundle in a File System's directory
+ */
 public class DirectoryBundleOutput extends BundleOutput {
     private String lastFilePath;
     private File lastFile;
@@ -30,7 +33,7 @@ public class DirectoryBundleOutput extends BundleOutput {
     }
 
     @Override
-    public boolean useHardLink() {
+    public boolean useHardLinkByDefault() {
         return true;
     }
 
@@ -62,7 +65,6 @@ public class DirectoryBundleOutput extends BundleOutput {
         return Files.newOutputStream( fileAbsolute.toPath());
     }
 
-    @NotNull
     private File getRealFile(final String path) {
         if (path.equals(lastFilePath)) {
             return this.lastFile;

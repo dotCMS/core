@@ -3,6 +3,7 @@ package com.dotcms.publishing;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publishing.output.BundleOutput;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -166,12 +167,8 @@ public class BundlerUtil {
     }
 
     public static void objectToXML(final Object obj, final OutputStream outputStream) {
-        if (xmlSerializer == null) {
-            xmlSerializer = new XStream(new DomDriver("UTF-8"));
-        }
-
         HierarchicalStreamWriter xmlWriter = new DotPrettyPrintWriter(new OutputStreamWriter(outputStream));
-        xmlSerializer.marshal(obj, xmlWriter);
+        XMLSerializerUtil.getInstance().marshal(obj, xmlWriter);
     }
 
     /**
@@ -195,7 +192,7 @@ public class BundlerUtil {
         if ( removeFirst && f.exists() )
             f.delete();
 
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
 
         try {
             if ( !f.exists() ){
@@ -221,8 +218,6 @@ public class BundlerUtil {
 
         try {
             mapper.writeValue(outputStream, obj);
-        } catch ( FileNotFoundException e ) {
-            Logger.error( PublisherUtil.class, e.getMessage(), e );
         } catch ( IOException e ) {
             Logger.error( PublisherUtil.class, e.getMessage(), e );
         }

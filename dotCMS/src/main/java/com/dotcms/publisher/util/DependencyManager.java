@@ -1422,23 +1422,27 @@ public class DependencyManager {
 							.build()
 			);
 
-			while(!isFinish()) {
-				try {
-					Logger.debug(DependencyManager.class, () -> "Waiting for more assets");
-					final DependencyProcessorItem dependencyProcessorItem = queue.take();
-					Logger.debug(DependencyProcessor.class, () -> "Taking one " + dependencyProcessorItem.assetKey);
-					if (!dependencyProcessorItem.equals(DependencyProcessorItem.FINISHED_DEPENDENCY_PROCESSOR_ITEM)) {
-						submitter.submit(new DependencyRunnable(dependencyProcessorItem));
-					} else {
-						finishReceived.incrementAndGet();
+			try {
+				while (!isFinish()) {
+					try {
+						Logger.debug(DependencyManager.class, () -> "Waiting for more assets");
+						final DependencyProcessorItem dependencyProcessorItem = queue.take();
+						Logger.debug(DependencyProcessor.class,
+								() -> "Taking one " + dependencyProcessorItem.assetKey);
+						if (!dependencyProcessorItem
+								.equals(DependencyProcessorItem.FINISHED_DEPENDENCY_PROCESSOR_ITEM)) {
+							submitter.submit(new DependencyRunnable(dependencyProcessorItem));
+						} else {
+							finishReceived.incrementAndGet();
+						}
+					} catch (InterruptedException e) {
+						throw new RuntimeException(e);
 					}
-				} catch (InterruptedException e) {
-					throw new RuntimeException(e);
 				}
+				Logger.debug(DependencyProcessor.class, "DependencyProcessor Finished");
+			} finally {
+				submitter.shutdownNow();
 			}
-			Logger.debug(DependencyProcessor.class, "DependencyProcessor Finished");
-
-			submitter.shutdownNow();
 		}
 
 		private synchronized void sendFinishNotification() {
