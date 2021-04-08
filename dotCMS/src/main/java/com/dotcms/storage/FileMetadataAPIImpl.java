@@ -153,7 +153,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
                     final Metadata metadata = fullMetadata.get(binaryFieldName);
 
                     // if it is included on the full keys, we only have to store the meta in the cache.
-                    metadataMap = filterNonCacheableMetadataFields(metadata.getMap());
+                    metadataMap = filterNonBasicMetadataFields(metadata.getMap());
                     metadataCache.addMetadataMap(contentlet.getInode() + StringPool.COLON + binaryFieldName, metadataMap);
 
                 } else {
@@ -172,6 +172,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
                                     .metaDataKeyFilter(filterBasicMetadataKey)
                                     .storageKey(new StorageKey.Builder().group(metadataBucketName).path(metadataPath).storage(storageType).build())
                                     .mergeWithMetadata(mergeWithMetadata)
+                                    .getIfOnlyHasCustomMetadata(this::getIfOnlyHasCustomMetadata)
                                     .build()
                     );
                 }
@@ -223,6 +224,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
                                     || metadataFields.contains(metadataKey))
                             .storageKey(new StorageKey.Builder().group(metadataBucketName).path(metadataPath).storage(storageType).build())
                             .mergeWithMetadata(mergeWithMetadata)
+                            .getIfOnlyHasCustomMetadata(this::getIfOnlyHasCustomMetadata)
                             .build()
                         );
 
@@ -341,7 +343,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
 
             Map<String, Serializable> metadataMap = fileStorageAPI.retrieveMetaData(
                     new FetchMetadataParams.Builder()
-                            .projectionMapForCache(this::filterNonCacheableMetadataFields)
+                            .projectionMapForCache(this::filterNonBasicMetadataFields)
                             .cache(() -> contentlet.getInode() + StringPool.COLON
                                     + fieldVariableName)
                             .storageKey(new StorageKey.Builder().group(metadataBucketName)
@@ -434,10 +436,35 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @param originalMap
      * @return
      */
-    private Map<String, Serializable> filterNonCacheableMetadataFields(final Map<String, Serializable> originalMap) {
+    private Map<String, Serializable> filterNonBasicMetadataFields(final Map<String, Serializable> originalMap) {
         final Set<String> basicMetadataFieldsSet = BasicMetadataFields.keyMap().keySet();
         return originalMap.entrySet().stream().filter(entry -> basicMetadataFieldsSet
                 .contains(entry.getKey()) || entry.getKey().startsWith(Metadata.CUSTOM_PROP_PREFIX) ).collect(
+                Collectors.toMap(Entry::getKey, Entry::getValue));
+    }
+
+    /**
+     * filters exclude non-custom metadata fields
+     * @param originalMap
+     * @return
+     */
+    private Map<String, Serializable> filterNonCustomMetadataFields(final Map<String, Serializable> originalMap) {
+        return originalMap.entrySet().stream().filter(entry -> entry.getKey().startsWith(Metadata.CUSTOM_PROP_PREFIX) ).collect(
+                Collectors.toMap(Entry::getKey, Entry::getValue));
+    }
+
+    /**
+     * This method gets you all the custom metadata but only the originalMap only has custom metadata
+     * @param originalMap
+     * @return
+     */
+    private Map<String, Serializable> getIfOnlyHasCustomMetadata(final Map<String, Serializable> originalMap) {
+        //Filter all non custom metadata
+        if(filterNonCustomMetadataFields(originalMap).isEmpty()){
+           return ImmutableMap.of();
+        }
+        //If after having filtered all non-custom metadata we still have something it means we only have custom metadata.
+        return originalMap.entrySet().stream().filter(entry -> entry.getKey().startsWith(Metadata.CUSTOM_PROP_PREFIX) ).collect(
                 Collectors.toMap(Entry::getKey, Entry::getValue));
     }
 
@@ -611,7 +638,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
            try {
                 fileStorageAPI.putCustomMetadataAttributes((new FetchMetadataParams.Builder()
                         .cache(() -> contentlet.getInode() + StringPool.COLON + fieldName)
-                        .projectionMapForCache(this::filterNonCacheableMetadataFields)
+                        .projectionMapForCache(this::filterNonBasicMetadataFields)
                         .forceInsert(true)
                         .storageKey(
                                 new StorageKey.Builder().group(metadataBucketName)
@@ -650,7 +677,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
             try {
                 final String tempResourcePath = tempResourcePath(tempResourceId);
                 fileStorageAPI.putCustomMetadataAttributes((new FetchMetadataParams.Builder()
-                        .projectionMapForCache(this::filterNonCacheableMetadataFields)
+                        .projectionMapForCache(this::filterNonBasicMetadataFields)
                         .cache(() -> tempResourcePath)
                         .forceInsert(true)
                         .storageKey(
@@ -680,7 +707,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
             final String resourcePath = tempResourcePath(tempResourceId);
             Map<String, Serializable> metadataMap = fileStorageAPI.retrieveMetaData(
                     new FetchMetadataParams.Builder()
-                        .projectionMapForCache(this::filterNonCacheableMetadataFields)
+                        .projectionMapForCache(this::filterNonBasicMetadataFields)
                         .cache(() -> resourcePath)
                         .storageKey(
                             new StorageKey.Builder().group(metadataBucketName)
@@ -702,7 +729,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @param destination
      * @throws DotDataException
      */
-    public void copyMetadata(final Contentlet source, final Contentlet destination)
+    public void copyCustomMetadata(final Contentlet source, final Contentlet destination)
             throws DotDataException {
         if (!source.getContentType().baseType().equals(destination.getContentType().baseType())) {
             throw new DotDataException("Source and destination contentlet are not the same type.");
@@ -732,18 +759,26 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
             );
 
             if (null != metadataMap) {
-
                 final String destMetadataPath = getFileName(destination, binaryFieldName);
-
-                fileStorageAPI.setMetadata(new FetchMetadataParams.Builder()
-                        .cache(() -> destination.getInode() + StringPool.COLON + binaryFieldName)
-                        .projectionMapForCache(this::filterNonCacheableMetadataFields)
-                        .storageKey(
-                                new StorageKey.Builder().group(metadataBucketName)
-                                        .path(destMetadataPath)
-                                        .storage(storageType).build())
-                        .build(), metadataMap);
-
+                // We're copying only custom metadata attributes
+                final Map<String, Serializable> filteredMap = filterNonCustomMetadataFields(metadataMap);
+                if(filteredMap.isEmpty()) {
+                    fileStorageAPI.removeMetaData(
+                            new FetchMetadataParams.Builder()
+                                    .storageKey(new StorageKey.Builder().group(metadataBucketName)
+                                            .path(destMetadataPath).storage(storageType).build()).build()
+                    );
+                } else {
+                    fileStorageAPI.setMetadata(new FetchMetadataParams.Builder()
+                            .cache(() -> destination.getInode() + StringPool.COLON
+                                    + binaryFieldName)
+                            .projectionMapForCache(this::filterNonBasicMetadataFields)
+                            .storageKey(
+                                    new StorageKey.Builder().group(metadataBucketName)
+                                            .path(destMetadataPath)
+                                            .storage(storageType).build())
+                            .build(), filteredMap);
+                }
             }
         }
 
@@ -770,7 +805,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
                 final String destMetadataPath = getFileName(contentlet, validField.variable());
                 fileStorageAPI.setMetadata(new FetchMetadataParams.Builder()
                         .cache(() -> contentlet.getInode() + StringPool.COLON + validField.variable())
-                        .projectionMapForCache(this::filterNonCacheableMetadataFields)
+                        .projectionMapForCache(this::filterNonBasicMetadataFields)
                         .storageKey(
                                 new StorageKey.Builder().group(metadataBucketName)
                                         .path(destMetadataPath)
