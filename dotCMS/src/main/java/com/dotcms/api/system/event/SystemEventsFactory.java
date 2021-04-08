@@ -22,6 +22,7 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+import io.vavr.control.Try;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -117,7 +118,7 @@ public class SystemEventsFactory implements Serializable {
 		private final WebSocketContainerAPI webSocketContainerAPI = APILocator.getWebSocketContainerAPI();
 
 		/**
-		 * Method that will save a given system event
+		 * Method that will save a given system event, also sends the message through the socket
 		 *
 		 * @param systemEvent         SystemEvent to save
 		 * @param forceNewTransaction true when is required to create a new transaction, this value must be sent as true
@@ -139,8 +140,10 @@ public class SystemEventsFactory implements Serializable {
 
 			try {
 
+				// CLUSTER WIDE EVENTS are not being sent by the socket, just propagated locally in each node.
+				final boolean sendThroughSocket = systemEvent.getEventType() != SystemEventType.CLUSTER_WIDE_EVENT; //
 				// sends straight to the socket, the server id is sent to the queue in order to avoid to send twice the event.
-				if (null != webSocketEndPoint) {
+				if (sendThroughSocket && null != webSocketEndPoint) {
 
 					webSocketEndPoint.sendSystemEvent(systemEvent);
 				}

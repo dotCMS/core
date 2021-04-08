@@ -2,9 +2,11 @@ package com.dotcms.system.event.local.business;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.publishing.listener.PushPublishKeyResetEventListener;
+import com.dotcms.rest.api.v1.system.logger.ChangeLoggerLevelEvent;
 import com.dotcms.saml.DotSamlProxyFactory;
 import com.dotcms.security.apps.AppSecretSavedEvent;
 import com.dotcms.security.apps.AppsKeyResetEventListener;
+import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.system.event.local.type.security.CompanyKeyResetEvent;
 import com.dotmarketing.portlets.folders.business.ApplicationTemplateFolderListener;
 import java.util.List;
@@ -43,14 +45,27 @@ public class LocalSystemEventSubscribersInitializer implements DotInitializer {
         this.initApplicationContainerFolderListener();
         this.initApplicationTemplateFolderListener();
 
-        APILocator.getLocalSystemEventsAPI().subscribe(ContentletCheckinEvent.class, UnassignedWorkflowContentletCheckinListener.getInstance());
+        APILocator.getLocalSystemEventsAPI().subscribe(ContentletCheckinEvent.class,  UnassignedWorkflowContentletCheckinListener.getInstance());
 
-        APILocator.getLocalSystemEventsAPI().subscribe(CompanyKeyResetEvent.class, PushPublishKeyResetEventListener.INSTANCE.get());
+        APILocator.getLocalSystemEventsAPI().subscribe(CompanyKeyResetEvent.class,    PushPublishKeyResetEventListener.INSTANCE.get());
 
-        APILocator.getLocalSystemEventsAPI().subscribe(CompanyKeyResetEvent.class, AppsKeyResetEventListener.INSTANCE.get());
+        APILocator.getLocalSystemEventsAPI().subscribe(CompanyKeyResetEvent.class,    AppsKeyResetEventListener.INSTANCE.get());
 
-        APILocator.getLocalSystemEventsAPI().subscribe(AppSecretSavedEvent.class,  DotSamlProxyFactory.getInstance());
+        APILocator.getLocalSystemEventsAPI().subscribe(AppSecretSavedEvent.class,     DotSamlProxyFactory.getInstance());
 
+        APILocator.getLocalSystemEventsAPI().subscribe(ChangeLoggerLevelEvent.class, new EventSubscriber<ChangeLoggerLevelEvent>() {
+
+            @Override
+            public String getId() {
+                return Logger.class.getName();
+            }
+
+            @Override
+            public void notify(final ChangeLoggerLevelEvent event) {
+
+                Logger.onChangeLoggerLevelEventHandler (event);
+            }
+        });
     }
 
     public void initApplicationContainerFolderListener() {

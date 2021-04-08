@@ -55,6 +55,7 @@ public interface SystemEventsAPI {
 
 	/**
 	 * Pushes an event with a payload in a separate task.
+	 * This sends the event in the current node and queue to the rest of the nodes in the same cluster.
 	 * @param event {@link SystemEventType}
 	 * @param payload {@link Payload}
 	 * @throws DotDataException
