@@ -1,4 +1,3 @@
-import { AccountService, AccountUser } from '@services/account-service';
 
 import {
     Component,
@@ -18,8 +17,9 @@ import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotcmsConfigService, LoginService, User, Auth } from '@dotcms/dotcms-js';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotMenuService } from '@services/dot-menu.service';
+import { DotAccountUser, DotAccountService } from '@services/dot-account-service';
 
-interface AccountUserForm extends AccountUser {
+interface AccountUserForm extends DotAccountUser {
     confirmPassword?: string;
 }
 @Component({
@@ -37,7 +37,7 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
     emailRegex: string;
     passwordMatch: boolean;
 
-    accountUser: AccountUser = {
+    dotAccountUser: DotAccountUser = {
         currentPassword: '',
         email: '',
         givenName: '',
@@ -55,7 +55,7 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
 
     constructor(
         private dotMessageService: DotMessageService,
-        private accountService: AccountService,
+        private dotAccountService: DotAccountService,
         private dotcmsConfigService: DotcmsConfigService,
         private loginService: LoginService,
         private dotRouterService: DotRouterService,
@@ -116,9 +116,9 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
             this.message = null;
         }
         this.passwordMatch =
-            this.accountUser.newPassword !== '' &&
+            this.dotAccountUser.newPassword !== '' &&
             this.passwordConfirm !== '' &&
-            this.accountUser.newPassword === this.passwordConfirm;
+            this.dotAccountUser.newPassword === this.passwordConfirm;
     }
 
     toggleChangePasswordOption(): void {
@@ -132,9 +132,9 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
      */
     setShowStarter(): void {
         if (this.showStarter) {
-            this.accountService.addStarterPage().subscribe();
+            this.dotAccountService.addStarterPage().subscribe();
         } else {
-            this.accountService.removeStarterPage().subscribe();
+            this.dotAccountService.removeStarterPage().subscribe();
         }
     }
 
@@ -143,7 +143,7 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
     }
 
     save(): void {
-        this.accountService.updateUser(this.accountUser).subscribe(
+        this.dotAccountService.updateUser(this.dotAccountUser).subscribe(
             (response) => {
                 // TODO: replace the alert with a Angular components
                 alert(this.dotMessageService.get('message.createaccount.success'));
@@ -168,11 +168,11 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
 
     private loadUser(auth: Auth): void {
         const user: User = auth.user;
-        this.accountUser.email = user.emailAddress;
-        this.accountUser.givenName = user.firstName;
-        this.accountUser.surname = user.lastName;
-        this.accountUser.userId = user.userId;
-        this.accountUser.newPassword = null;
+        this.dotAccountUser.email = user.emailAddress;
+        this.dotAccountUser.givenName = user.firstName;
+        this.dotAccountUser.surname = user.lastName;
+        this.dotAccountUser.userId = user.userId;
+        this.dotAccountUser.newPassword = null;
         this.passwordConfirm = null;
     }
 }

@@ -11,7 +11,6 @@ import {
     UserModel
 } from '@dotcms/dotcms-js';
 import { LoginServiceMock, mockUser } from '@tests/login-service.mock';
-import { AccountService } from '@services/account-service';
 import { StringFormat } from '@dotcms/app/api/util/stringFormat';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -28,12 +27,19 @@ import { MockDotRouterService } from '@tests/dot-router-service.mock';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { DotMenuService } from '@services/dot-menu.service';
+import { DotAccountService, DotAccountUser } from '@services/dot-account-service';
+
+class DotAccountServiceMock {
+    addStarterPage() {}
+    removeStarterPage() {}
+    updateUser(user: DotAccountUser) {}
+}
 
 describe('DotMyAccountComponent', () => {
     let fixture: ComponentFixture<DotMyAccountComponent>;
     let comp: DotMyAccountComponent;
     let de: DebugElement;
-    let accountService: AccountService;
+    let dotAccountService: DotAccountService;
     let loginService: LoginService;
     let dotRouterService: DotRouterService;
     let dotMenuService: DotMenuService;
@@ -77,7 +83,7 @@ describe('DotMyAccountComponent', () => {
                         useClass: LoginServiceMock
                     },
                     { provide: DotMessageService, useValue: messageServiceMock },
-                    AccountService,
+                    { provide: DotAccountService, useClass: DotAccountServiceMock },
                     StringFormat,
                     { provide: DotRouterService, useClass: MockDotRouterService },
                     { provide: CoreWebService, useClass: CoreWebServiceMock },
@@ -92,7 +98,7 @@ describe('DotMyAccountComponent', () => {
             fixture = TestBed.createComponent(DotMyAccountComponent);
             comp = fixture.componentInstance;
             de = fixture.debugElement;
-            accountService = TestBed.inject(AccountService);
+            dotAccountService = TestBed.inject(DotAccountService);
             loginService = TestBed.inject(LoginService);
             dotRouterService = TestBed.inject(DotRouterService);
             dotMenuService = TestBed.inject(DotMenuService);
@@ -227,8 +233,8 @@ describe('DotMyAccountComponent', () => {
 
     it(`should call to add starter method in account service`, async () => {
         spyOn<any>(dotMenuService, 'isPortletInMenu').and.returnValue(of(false));
-        spyOn<any>(accountService, 'addStarterPage').and.returnValue(of({ entity: {} }));
-        spyOn<any>(accountService, 'updateUser').and.returnValue(
+        spyOn<any>(dotAccountService, 'addStarterPage').and.returnValue(of({ entity: {} }));
+        spyOn<any>(dotAccountService, 'updateUser').and.returnValue(
             of({ entity: { user: mockUser() } })
         );
         fixture.detectChanges();
@@ -248,13 +254,13 @@ describe('DotMyAccountComponent', () => {
         ).nativeElement.click();
         fixture.detectChanges();
         de.query(By.css('.dialog__button-accept')).triggerEventHandler('click', {});
-        expect(accountService.addStarterPage).toHaveBeenCalledTimes(1);
+        expect(dotAccountService.addStarterPage).toHaveBeenCalledTimes(1);
     });
 
     it(`should call to remove starter method in account service`, async () => {
         spyOn<any>(dotMenuService, 'isPortletInMenu').and.returnValue(of(true));
-        spyOn<any>(accountService, 'removeStarterPage').and.returnValue(of({ entity: {} }));
-        spyOn<any>(accountService, 'updateUser').and.returnValue(
+        spyOn<any>(dotAccountService, 'removeStarterPage').and.returnValue(of({ entity: {} }));
+        spyOn<any>(dotAccountService, 'updateUser').and.returnValue(
             of({ entity: { user: mockUser() } })
         );
         fixture.detectChanges();
@@ -274,11 +280,13 @@ describe('DotMyAccountComponent', () => {
         ).nativeElement.click();
         fixture.detectChanges();
         de.query(By.css('.dialog__button-accept')).triggerEventHandler('click', {});
-        expect(accountService.removeStarterPage).toHaveBeenCalledTimes(1);
+        expect(dotAccountService.removeStarterPage).toHaveBeenCalledTimes(1);
     });
 
     it(`should SAVE form and sethAuth when no reauthentication`, async () => {
-        spyOn<any>(accountService, 'updateUser').and.returnValue(
+        spyOn<any>(dotAccountService, 'addStarterPage').and.returnValue(of({}));
+        spyOn<any>(dotAccountService, 'removeStarterPage').and.returnValue(of({}));
+        spyOn<any>(dotAccountService, 'updateUser').and.returnValue(
             of({ entity: { user: mockUser() } })
         );
         spyOn(loginService, 'setAuth');
@@ -307,7 +315,7 @@ describe('DotMyAccountComponent', () => {
         save.triggerEventHandler('click', {});
         fixture.detectChanges();
         expect(comp.close.emit).toHaveBeenCalledTimes(1);
-        expect(accountService.updateUser).toHaveBeenCalledWith(comp.accountUser);
+        expect(dotAccountService.updateUser).toHaveBeenCalledWith(comp.dotAccountUser);
         expect(loginService.setAuth).toHaveBeenCalledWith({
             loginAsUser: null,
             user: mockUser()
@@ -315,7 +323,9 @@ describe('DotMyAccountComponent', () => {
     });
 
     it(`should SAVE form and reauthenticate`, async () => {
-        spyOn<any>(accountService, 'updateUser').and.returnValue(
+        spyOn<any>(dotAccountService, 'addStarterPage').and.returnValue(of({}));
+        spyOn<any>(dotAccountService, 'removeStarterPage').and.returnValue(of({}));
+        spyOn<any>(dotAccountService, 'updateUser').and.returnValue(
             of({ entity: { reauthenticate: true } })
         );
         spyOn(comp.close, 'emit');
@@ -342,7 +352,7 @@ describe('DotMyAccountComponent', () => {
         save.triggerEventHandler('click', {});
         fixture.detectChanges();
         expect(comp.close.emit).toHaveBeenCalledTimes(1);
-        expect(accountService.updateUser).toHaveBeenCalledWith(comp.accountUser);
+        expect(dotAccountService.updateUser).toHaveBeenCalledWith(comp.dotAccountUser);
         expect(dotRouterService.doLogOut).toHaveBeenCalledTimes(1);
     });
 });

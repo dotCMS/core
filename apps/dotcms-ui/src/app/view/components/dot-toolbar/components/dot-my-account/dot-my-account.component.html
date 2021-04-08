@@ -19,7 +19,7 @@
                 id="dot-my-account-first-name-input"
                 #firstNameInput="ngModel"
                 name="givenName"
-                [(ngModel)]="accountUser.givenName"
+                [(ngModel)]="dotAccountUser.givenName"
                 (keyup)="message = ''"
                 required
             />
@@ -35,7 +35,7 @@
                 id="dot-my-account-last-name-input"
                 #lastNameInput="ngModel"
                 name="surname"
-                [(ngModel)]="accountUser.surname"
+                [(ngModel)]="dotAccountUser.surname"
                 (keyup)="message = ''"
                 required
             />
@@ -51,7 +51,7 @@
                 id="dot-my-account-email-input"
                 #emailInput="ngModel"
                 name="email"
-                [(ngModel)]="accountUser.email"
+                [(ngModel)]="dotAccountUser.email"
                 type="email"
                 required
                 (keyup)="message = ''"
@@ -87,7 +87,7 @@
                 #currentPasswordInput="ngModel"
                 name="password"
                 [feedback]="false"
-                [(ngModel)]="accountUser.currentPassword"
+                [(ngModel)]="dotAccountUser.currentPassword"
                 type="password"
                 (keyup)="message = ''"
                 required
@@ -109,7 +109,7 @@
                 id="dot-my-account-new-password-input"
                 #passwordInput="ngModel"
                 name="newPassword"
-                [(ngModel)]="accountUser.newPassword"
+                [(ngModel)]="dotAccountUser.newPassword"
                 (keyup)="checkPasswords()"
                 type="password"
                 [disabled]="!changePasswordOption"
