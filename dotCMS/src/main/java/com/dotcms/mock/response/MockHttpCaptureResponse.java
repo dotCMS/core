@@ -1,6 +1,7 @@
 package com.dotcms.mock.response;
 
 import java.io.File;
+import java.io.OutputStream;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
@@ -13,12 +14,12 @@ import javax.servlet.http.HttpServletResponseWrapper;
 public class MockHttpCaptureResponse extends HttpServletResponseWrapper implements MockResponse {
 
     final HttpServletResponse base;
-    final File file;
+    final OutputStream outputStream;
     ServletOutputStream out = null;
-    public MockHttpCaptureResponse(HttpServletResponse response, File file) {
+    public MockHttpCaptureResponse(final HttpServletResponse response, final OutputStream outputStream) {
         super(response);
         base = response;
-        this.file = file;
+        this.outputStream = outputStream;
     }
 
 
@@ -31,7 +32,7 @@ public class MockHttpCaptureResponse extends HttpServletResponseWrapper implemen
     @Override
     public ServletOutputStream getOutputStream(){
       if(out==null){
-          out =  new MockServletOutputStream(file);
+          out =  new MockServletOutputStream(outputStream);
       }
       return out;
       

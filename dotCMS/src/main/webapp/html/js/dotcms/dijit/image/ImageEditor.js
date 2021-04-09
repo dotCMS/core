@@ -191,19 +191,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 	}
 	return x;
 
-
-
     },
-
-
-    setFocalPointTag:function(){
-        var tagField = document.querySelector(".tagsWrapper input[type='hidden']");
-
-        alert(tagField)
-
-
-    },
-
 
 
     setThumbnail: function(){
@@ -293,10 +281,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
             var isScrolling;
             viewPort.onscroll= function(){
-                this.modFocalPointStr(this.focalPoint)
-
-
-
+                this.modFocalPointStr(this.focalPoint);
             }.bind(this);
 
         }
@@ -316,17 +301,17 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
 
 
-    modFocalPointStr: function(xy){
-        console.log("modFocalPointStr:" + xy)
+    modFocalPointStr: function(xy, filterCallback){
+        console.log("modFocalPointStr:" + xy);
 
         let fp = xy.split(",");
         x=parseFloat(fp[0]);
         y=parseFloat(fp[1]);
-        this.modFocalPoint(x,y);
+        this.modFocalPoint(x,y, filterCallback);
 
     },
 
-    modFocalPoint: function(x,y){
+    modFocalPoint: function(x,y, filterCallback){
         console.log("modFocalPoint:" + x + "," + y);
         if(!Number(x) && x!=0){
             console.log("modFocalPoint: X is not a number", x);
@@ -349,14 +334,16 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         console.log("modFocalPoint old:" + this.focalPoint);
         console.log("modFocalPoint new:" + newFocalPoint);
 
-        if(this.focalPoint != newFocalPoint){
-            this.focalPoint = newFocalPoint
-            let img = new Image();
-            img.src=this.baseFilterUrl + "/filter/FocalPoint/fp/" + x + "," + y + "/?overwrite=" +  _rand();
-            console.log("img", img)
+        this.focalPoint = newFocalPoint;
+
+        if (filterCallback) {
+                let img = new Image();
+                img.onload = filterCallback;
+                img.src = this.baseFilterUrl + "/filter/FocalPoint/fp/" + x + "," + y + "/?overwrite=" + _rand();
+                console.log("img", img);
         }
 
-        let ifrm =  window.frames['imageToolIframe']
+        let ifrm =  window.frames['imageToolIframe'];
         if(ifrm==undefined){
             return;
         }
@@ -369,13 +356,13 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     },
 
     isFloat:function(n){
-        return n !=undefined && Number(n) === n && n % 1 !== 0;
+        return n !==undefined && Number(n) === n && n % 1 !== 0;
     },
 
     _drawFocalPoint: function(x,y){
 
         if(x==0 && y==0){
-            this._removeFocalPoint;
+            this._removeFocalPoint();
             return;
         }
 
@@ -420,10 +407,10 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     },
 
     _removeFocalPoint: function(){
-        console.log("_removeFocalPoint:")
+        //console.log("_removeFocalPoint:");
         let img = new Image();
         img.src=this.baseFilterUrl + "/filter/FocalPoint/fp/." + 0 + ",." + 0 + "/overwrite/" +  _rand();
-        let ifrm =  window.frames['imageToolIframe']
+        let ifrm =  window.frames['imageToolIframe'];
         ifrm.contentDocument.getElementById("focalPointValueSpan").innerHTML="0 , 0";
         let newDiv = ifrm.contentDocument.getElementById("focalPointDot");
         if(newDiv != undefined){
@@ -450,7 +437,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
             var bic = dojo.coords(baseImage);
 
             var x = Math.round(sic.w / bic.w *100);
-            this.zoomValue = 0
+            this.zoomValue = 0;
             if(!isNaN(x)){
                 this.zoomValue =x;
             }
@@ -591,9 +578,10 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
      *
      */
     saveBinaryImage: function(activeEditor){
-        var field = this.binaryFieldId;
+
+        let field = this.binaryFieldId;
         if(this.fieldContentletId.length>0) {
-            field=this.fieldContentletId;
+            field = this.fieldContentletId;
         }
 
         let url = this.cleanUrl(this.currentUrl);
@@ -601,27 +589,36 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         if (activeEditor) {
             this._sendImageToEditor(activeEditor, url);
         } else {
-            url = url.indexOf("?") > -1 ? url + "&" : url + "?";
-            url += field.length > 0 ? "&binaryFieldId=" + field : "";
-            url += "&_imageToolSaveFile=true";
-            var xhr = new XMLHttpRequest();
-            xhr.onload = (self => {
-                return () => {
-                    if (xhr.status == 200) {
-                        var dataJson = JSON.parse(xhr.responseText);
-                        self.tempId=dataJson.id;
-                        if(window.document.getElementById(self.binaryFieldId + "ValueField")){
-                            window.document.getElementById(self.binaryFieldId + "ValueField").value=dataJson.id;
-                        }
 
-                    } else {
-                        alert("Error! Upload failed");
-                    }
-                };
-            })(this);
-            xhr.open("GET", url, true);
-            xhr.send();
+            let thisRef = this;
+            this.modFocalPointStr(this.focalPoint, function () {
+
+                url = url.indexOf("?") > -1 ? url + "&" : url + "?";
+                url += field.length > 0 ? "&binaryFieldId=" + field : "";
+                url += "&_imageToolSaveFile=true";
+                let xhr = new XMLHttpRequest();
+                xhr.onload = (self => {
+                    return () => {
+                        if (xhr.status == 200) {
+                            let dataJson = JSON.parse(xhr.responseText);
+                            self.tempId=dataJson.id;
+                            if(window.document.getElementById(self.binaryFieldId + "ValueField")){
+                                window.document.getElementById(self.binaryFieldId + "ValueField").value=dataJson.id;
+                            }
+                        } else {
+                            alert("Error! Upload failed");
+                        }
+                    };
+                })(thisRef);
+                xhr.open("GET", url, true);
+                xhr.send();
+
+
+
+            });
+
             this.setThumbnail();
+
         }
         // close without wiping out the saved value
         this.closeImageWindow();
@@ -1148,11 +1145,6 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     },
 
 
-
-
-
-
-
      _removeFilter:function(filterName){
         if(this.filters == undefined || this.filters.length ==0){
             return;
@@ -1331,10 +1323,6 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         this.currentUrl = url;
         this.iframe.dijit.byId("viewingUrl").set("value", (url.includes("://") ? url : location.protocol +"//"+  location.host + url), false);
         this.iframe.dojo.byId("showLink").href =  url.includes("://") ? url : location.protocol +"//"+  location.host + url;
-
-
-        return;
-
 
 
     },

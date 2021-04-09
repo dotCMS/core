@@ -21,8 +21,8 @@
 	String fieldName = (UtilMethods.isSet(request.getParameter("fieldName"))) ? request.getParameter("fieldName") : "fileAsset";
 	String baseImage =  "/contentAsset/image/" + id + "/" + fieldName + "/" ;
 
-    Optional<FocalPoint> focalPoint =APILocator.getFocalPointAPI().readFocalPoint(id, fieldName);
-    String fpStr = focalPoint.isPresent() ? focalPoint.toString() :".0,.0";
+    final Optional<FocalPoint> focalPoint =APILocator.getFocalPointAPI().readFocalPoint(id, fieldName);
+    final String fpStr = focalPoint.isPresent() ? focalPoint.get().toString() :".0,.0";
 	String hostId = null;
 	if (request.getParameter("host_id") != null) {
 		hostId = request.getParameter("host_id");

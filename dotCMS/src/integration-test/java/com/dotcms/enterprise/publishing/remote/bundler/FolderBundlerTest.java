@@ -6,6 +6,8 @@ import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.output.BundleOutput;
+import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -64,7 +66,7 @@ public class FolderBundlerTest {
 
 
     /**
-     * Method to Test: {@link FolderBundler#generate(File, BundlerStatus)}
+     * Method to Test: {@link FolderBundler#generate(BundleOutput, BundlerStatus)}
      * When: Add a {@link Folder} in a bundle
      * Should:
      * - The file should be create in:
@@ -79,7 +81,6 @@ public class FolderBundlerTest {
 
         final BundlerStatus status = mock(BundlerStatus.class);
         final FolderBundler bundler = new FolderBundler();
-        final File bundleRoot = FileUtil.createTemporaryDirectory("FolderBundlerTest_addFolderInBundle_");
 
         final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
 
@@ -93,13 +94,15 @@ public class FolderBundlerTest {
                 .filter(filterDescriptor)
                 .nextPersisted();
 
+        final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config);
+
         bundler.setConfig(config);
-        bundler.generate(bundleRoot, status);
+        bundler.generate(directoryBundleOutput, status);
 
         final User systemUser = APILocator.systemUser();
 
         while(folder != null && !folder.isSystemFolder()) {
-            FileTestUtil.assertBundleFile(bundleRoot, folder, testCase.expectedFilePath);
+            FileTestUtil.assertBundleFile(directoryBundleOutput.getFile(), folder, testCase.expectedFilePath);
 
             folder = APILocator.getFolderAPI().findParentFolder(folder, systemUser, false);
         }
