@@ -1,16 +1,20 @@
 package com.dotcms.http;
 
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
+import io.vavr.control.Try;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
+import java.util.HashMap;
 import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
 import net.jodah.failsafe.CircuitBreaker;
@@ -165,12 +169,12 @@ public class CircuitBreakerUrl {
                         try (CloseableHttpClient httpclient = HttpClientBuilder.create().setDefaultRequestConfig(config).build()) {
                             HttpResponse response = httpclient.execute(this.request);
                             this.response = response.getStatusLine().getStatusCode();
-                            switch (this.response){
-                                case 200:
-                                    IOUtils.copy(response.getEntity().getContent(), out);
-                                    break;
-                                default:
-                                    throw new BadRequestException("got invalid response for url: " + this.proxyUrl + " response:" + this.response);
+                            
+                            IOUtils.copy(response.getEntity().getContent(), out);
+                            
+                            // throw an error if the request is bad
+                            if(this.response<200 || this.response>299){
+                                throw new BadRequestException("got invalid response for url: " + this.proxyUrl + " response: " + this.response);
                             }
                         }
                     });
@@ -193,9 +197,15 @@ public class CircuitBreakerUrl {
         return "CircuitBreakerUrl [proxyUrl=" + proxyUrl + ", timeoutMs=" + timeoutMs + ", circuitBreaker=" + circuitBreaker + "]";
     }
 
+    final static TypeReference<HashMap<String,Object>> typeRef = new TypeReference<HashMap<String,Object>>() {};
 
+
+    public Map<String,Object> doMap() {
+        return (Map<String,Object>) Try.of(()-> DotObjectMapperProvider.getInstance().getDefaultObjectMapper().readValue(doString(), typeRef)).onFailure(e->Logger.warnAndDebug(CircuitBreakerUrl.class,  e)).getOrElse(HashMap::new);
+    }
+    
     public enum Method {
-        GET, POST, PUT, DELETE
+        GET, POST, PUT, DELETE, PATCH;
 
     }
 
