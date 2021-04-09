@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "119a9b2f-5830-4776-b221-2356b7f6c080",
+		"_postman_id": "bea4dc47-91f4-4d8a-b065-19dc1cb1969e",
 		"name": "ApiToken Resource",
 		"description": "Tests for the api token",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -59,7 +59,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ae38f13a-896d-4ab6-96be-a9235b8c1320",
 								"exec": [
 									"pm.test(\"Status code should be 403\", function () {",
 									"    pm.response.to.have.status(403);",
@@ -170,7 +169,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "7245c128-2edf-40f1-97bb-7e474d1747c0",
 								"exec": [
 									"pm.test(\"Status code should be 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -244,7 +242,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f2fce2d6-7f78-4835-a0f3-5b8624958cd8",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -278,7 +275,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "aa174419-e52c-4d2c-8f32-3c39eedd0b00",
 								"exec": [
 									"pm.test(\"Status code should be 401\", function () {",
 									"    pm.response.to.have.status(401);",
@@ -345,7 +341,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "50c34efb-61f9-4402-a501-81c04e05e9ec",
 								"exec": [
 									"pm.test(\"Status code should be 404\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -412,7 +407,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "c2850ee2-cc0f-4522-bbee-bad997cf9981",
 								"exec": [
 									"pm.test(\"Status code should be 404\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -479,7 +473,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "a79624d0-ecec-486b-b22e-321f85895c8c",
 								"exec": [
 									"pm.test(\"Status code should be 401\", function () {",
 									"    pm.response.to.have.status(401);",
@@ -545,7 +538,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "842610cd-fa51-4d9e-92b2-c84c64ba1821",
 								"exec": [
 									"pm.test(\"Status code should be 400\", function () {",
 									"    pm.response.to.have.status(400);",
@@ -611,7 +603,6 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "f36d9071-7ea3-45f1-87d6-33d37b423b0f",
 						"type": "text/javascript",
 						"exec": [
 							"serverURL = pm.environment.get(\"serverURL\");",
@@ -643,15 +634,13 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "461604be-2aa9-42c7-b1c5-3adac0e348e7",
 						"type": "text/javascript",
 						"exec": [
 							""
 						]
 					}
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "createToken",
@@ -659,7 +648,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "e3936c4c-6564-42ee-a559-f98614b6f2e1",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -731,7 +719,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "280b07b4-dcc5-4872-a9a0-8c2e621ac966",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -803,7 +790,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "fbce1137-83a6-4d0e-bf54-0ff7ed1dfc08",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function() {",
 							"    pm.response.to.have.status(200);",
@@ -860,7 +846,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "d535d114-0bff-40bf-82ff-37a14a118554",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function() {",
 							"    pm.response.to.have.status(200);",
@@ -910,7 +895,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "eea3d323-5c3f-424d-b28b-b13d48f7da44",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function() {",
 							"    pm.response.to.have.status(200);",
@@ -960,7 +944,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "30b90c51-6bd6-498a-9566-dcba8f52a82d",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function() {",
 							"    pm.response.to.have.status(200);",
@@ -1009,7 +992,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "6bd73cb0-e338-4747-a63f-cc1669179e05",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function() {",
 							"    pm.response.to.have.status(200);",
@@ -1020,6 +1002,21 @@
 				}
 			],
 			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
 				"method": "PUT",
 				"header": [],
 				"url": {
@@ -1045,7 +1042,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "07b7d382-48ce-4e94-8992-b447436eb510",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function() {",
 							"    pm.response.to.have.status(200);",
@@ -1056,6 +1052,21 @@
 				}
 			],
 			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
 				"method": "PUT",
 				"header": [],
 				"url": {
@@ -1077,20 +1088,16 @@
 	],
 	"variable": [
 		{
-			"id": "644ff987-b617-434b-a7d6-2b1cdb400c05",
 			"key": "tokenid",
-			"value": "api3fbf172c-2187-4388-9555-45f46eeeaf8c"
+			"value": "apiec1d0bc7-4122-499a-8b29-1006684c9059"
 		},
 		{
-			"id": "ccfd3ee5-ec2e-40aa-b15e-02692d72d463",
 			"key": "remoteTokenHost",
 			"value": "localhost"
 		},
 		{
-			"id": "701fdc4b-01c7-473d-8fc5-f0faf33f1d4d",
 			"key": "remoteTokenPort",
 			"value": "8080"
 		}
-	],
-	"protocolProfileBehavior": {}
+	]
 }
