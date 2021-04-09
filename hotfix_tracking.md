@@ -107,3 +107,5 @@ This maintenance release includes the following code fixes:
 51. https://github.com/dotCMS/core/issues/19319	: Allow shutdown from backend of dotCMS
 
 52. https://github.com/dotCMS/core/issues/19620	: Push Publish Batch Button selects all assets
+
+53. https://github.com/dotCMS/core/issues/20189 : [SAML] : Authentication process must check for both User ID and Email
