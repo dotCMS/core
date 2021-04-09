@@ -1,10 +1,12 @@
 package com.dotmarketing.servlets;
 
+import static com.dotmarketing.image.focalpoint.FocalPointAPIImpl.TMP;
 import static com.liferay.util.HttpHeaders.CACHE_CONTROL;
 import static com.liferay.util.HttpHeaders.EXPIRES;
 
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
+import com.dotmarketing.util.UUIDUtil;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.util.PortalUtil;
 import java.io.File;
@@ -372,7 +374,7 @@ public class BinaryExporterServlet extends HttpServlet {
           DbConnectionFactory.closeSilently();
           return;
         }
-        inputFile = APILocator.getTempFileAPI().getTempFile(req, shorty.longId).get().file;
+        inputFile = tempFileAPI.getTempFile(req, shorty.longId).get().file;
       }
       
 
@@ -400,6 +402,8 @@ public class BinaryExporterServlet extends HttpServlet {
       if (req.getParameter(WebKeys.IMAGE_TOOL_SAVE_FILES) != null && user!=null && !user.equals(APILocator.getUserAPI().getAnonymousUser())) {
         final DotTempFile temp = tempFileAPI.createEmptyTempFile(inputFile.getName(), req);
         FileUtil.copyFile(data.getDataFile(), temp.file);
+        //Temp files time-mark must be updated so they can be recognized by the tempFileAPI
+        temp.file.setLastModified(System.currentTimeMillis());
 		copyMetadata(uuid, fieldVarName, temp);
 		resp.getWriter().println(DotObjectMapperProvider.getInstance().getDefaultObjectMapper().writeValueAsString(temp));
         resp.getWriter().close();
@@ -674,15 +678,37 @@ public class BinaryExporterServlet extends HttpServlet {
 		
 	}
 
-	private void copyMetadata(final String uuid, final String fieldVarName, final DotTempFile temp)
-			throws DotDataException {
-		//Basically here a new temp file is generated and we should transfer any custom generated metadata
-		if(UtilMethods.isSet(fieldVarName) && UtilMethods.isSet(uuid)){
-		   final Optional<Metadata> metadata = fileMetadataAPI.getMetadata(uuid);
-		   if(metadata.isPresent()){
-			  fileMetadataAPI.putCustomMetadataAttributes(temp.id, ImmutableMap
-					  .of(fieldVarName, metadata.get().getCustomMeta()));
-		   }
+	/**
+	 * This does transfer the custom metadata from temp files into the target inode and viceversa
+	 * @param id
+	 * @param fieldVarName
+	 * @param temp
+	 * @throws DotDataException
+	 */
+	private void copyMetadata(final String id, final String fieldVarName,
+			final DotTempFile temp) {
+		//Basically here when a new temp file has been generated and we transfer any custom generated metadata
+		if (UtilMethods.isSet(fieldVarName) && UtilMethods.isSet(id)) {
+			try {
+				if (UUIDUtil.isUUID(id)) {
+                    // FocalPointImageFilter does prepend a 'TMP::' to the inodes to avoid setting the metadata directly to the inode
+                    // leaving that work to the check-in process.
+					final Optional<Metadata> optionalMetadata = fileMetadataAPI.getMetadata( TMP +  id);
+					if (optionalMetadata.isPresent()) {
+						fileMetadataAPI.putCustomMetadataAttributes(temp.id, ImmutableMap
+								.of(fieldVarName, optionalMetadata.get().getCustomMeta()));
+					}
+				} else {
+				    //Temp resource id
+					final Optional<Metadata> optionalMetadata = fileMetadataAPI.getMetadata(id);
+					if (optionalMetadata.isPresent()) {
+						fileMetadataAPI.putCustomMetadataAttributes(temp.id, ImmutableMap
+								.of(fieldVarName, optionalMetadata.get().getCustomMeta()));
+					}
+				}
+			} catch (Exception e) {
+			   Logger.error(BinaryExporterServlet.class, "Exception copying metadata", e);
+			}
 		}
 	}
 

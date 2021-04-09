@@ -7,7 +7,7 @@ import static com.dotcms.datagen.TestDataUtils.getFileAssetContent;
 import static com.dotcms.datagen.TestDataUtils.getMultipleBinariesContent;
 import static com.dotcms.datagen.TestDataUtils.getMultipleImageBinariesContent;
 import static com.dotcms.datagen.TestDataUtils.removeAnyMetadata;
-import static com.dotcms.rest.api.v1.temp.TempFileAPITest.*;
+import static com.dotcms.rest.api.v1.temp.TempFileAPITest.mockHttpServletRequest;
 import static com.dotcms.storage.StoragePersistenceProvider.DEFAULT_STORAGE_TYPE;
 import static com.dotcms.storage.model.Metadata.CUSTOM_PROP_PREFIX;
 import static org.junit.Assert.assertEquals;
@@ -16,16 +16,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.datagen.TestDataUtils.TestFile;
-import com.dotcms.mock.request.MockSession;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
-import com.dotcms.rest.api.v1.temp.TempFileAPITest;
 import com.dotcms.storage.model.BasicMetadataFields;
 import com.dotcms.storage.model.ContentletMetadata;
 import com.dotcms.storage.model.Metadata;
@@ -37,9 +33,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.ImmutableMap;
-import com.liferay.portal.util.WebKeys;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -59,7 +53,6 @@ import org.apache.commons.io.FilenameUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 
 @RunWith(DataProviderRunner.class)
 public class FileMetadataAPITest {
@@ -659,9 +652,9 @@ public class FileMetadataAPITest {
     }
 
     /**
-     * Method to test: {@link FileMetadataAPIImpl#copyMetadata(Contentlet, Contentlet)}
+     * Method to test: {@link FileMetadataAPIImpl#copyCustomMetadata(Contentlet, Contentlet)}
      * Given scenario: We have 2 contentlets we copy the md into the destination contentlet
-     * Expected Resilt: expect the destination contentlet to have the same md as the source contentlet where we copied them.
+     * Expected Result: expect the destination contentlet to have the same custom-metadata as the source contentlet where we took it from.
      * @param storageType
      * @throws Exception
      */
@@ -688,14 +681,32 @@ public class FileMetadataAPITest {
             assertNull("Expect no metadata ",fileMetadataAPI.getMetadata(dest,FILE_ASSET_1));
             assertNull("Expect no metadata ",fileMetadataAPI.getMetadata(dest,FILE_ASSET_2));
 
-            fileMetadataAPI.copyMetadata(source, dest);
+            fileMetadataAPI.copyCustomMetadata(source, dest);
 
-            //Verify through getMetadata since it does return null if it doesnt exist and doesnt force it's generation
-            assertNotNull(fileMetadataAPI.getMetadata(dest,FILE_ASSET_1));
-            assertNotNull(fileMetadataAPI.getMetadata(dest,FILE_ASSET_2));
+            //Verify through getMetadata since it does return null if it doesn't exist and doesnt force it's generation.
+            //Both still lack meta
+            assertNull(fileMetadataAPI.getMetadata(dest,FILE_ASSET_1));
+            assertNull(fileMetadataAPI.getMetadata(dest,FILE_ASSET_2));
+            //Put on some custom metadata attributes
+            fileMetadataAPI.putCustomMetadataAttributes(source,ImmutableMap.of(FILE_ASSET_1, ImmutableMap.of("foo","bar", "bar","foo")));
+            //Copy them
+            fileMetadataAPI.copyCustomMetadata(source, dest);
+            //Verify the metadata gets copied
+            assertNotNull(dest.getBinaryMetadata(FILE_ASSET_1));
+            validateCustomMetadata(dest.getBinaryMetadata(FILE_ASSET_1).getCustomMeta());
+            //Now lets try adding some more custom attributes and verify they get there.
+            fileMetadataAPI.putCustomMetadataAttributes(dest,ImmutableMap.of(FILE_ASSET_1, ImmutableMap.of("foo","bar", "bar","foo","lol", "kek")));
+            validateCustomMetadata(dest.getBinaryMetadata(FILE_ASSET_1).getCustomMeta());
+            assertEquals(dest.getBinaryMetadata(FILE_ASSET_1).getCustomMeta().get("lol"),"kek");
+            //Now lets try setting an empty map and verify the're gone.
+            fileMetadataAPI.putCustomMetadataAttributes(dest,ImmutableMap.of(FILE_ASSET_1, ImmutableMap.of()));
+            assertTrue(dest.getBinaryMetadata(FILE_ASSET_1).getMap().isEmpty());
+            //And last
+            fileMetadataAPI.putCustomMetadataAttributes(source,ImmutableMap.of(FILE_ASSET_1, ImmutableMap.of("foo","bar", "bar","foo")));
+            fileMetadataAPI.copyCustomMetadata(source, dest);
+            fileMetadataAPI.generateContentletMetadata(dest);
+            validateCustomMetadata(dest.getBinaryMetadata(FILE_ASSET_1).getCustomMeta());
 
-            assertEquals(source.getBinaryMetadata(FILE_ASSET_1), dest.getBinaryMetadata(FILE_ASSET_1));
-            assertEquals(source.getBinaryMetadata(FILE_ASSET_2), dest.getBinaryMetadata(FILE_ASSET_2));
 
         } finally {
             Config.setProperty(DEFAULT_STORAGE_TYPE, stringProperty);
@@ -761,25 +772,20 @@ public class FileMetadataAPITest {
     }
 
     /**
+     * This Method uses the file system to store metadata linked to a temp file.
      * Method to test: {@link FileMetadataAPIImpl#putCustomMetadataAttributes(String, Map)}
      * Given scenario: We create a temp file to get a valid temp-resource-id we attach some random meta
      * Expected result: When we request such info using the same id the results we get must match the originals
-     * @param storageType
      * @throws Exception
      */
     @Test
-    @UseDataProvider("getStorageType")
-    public void Test_Add_Then_Recover_Temp_Resource_Metadata(final StorageType storageType) throws Exception {
+    public void Test_Add_Then_Recover_Temp_Resource_Metadata() throws Exception {
         prepareIfNecessary();
-        final String stringProperty = Config.getStringProperty(DEFAULT_STORAGE_TYPE);
         //disconnect the MD generation on indexing so we can test directly here.
         final boolean defaultValue = Config.getBooleanProperty(WRITE_METADATA_ON_REINDEX, true);
         try {
             Config.setProperty(WRITE_METADATA_ON_REINDEX, false);
-            Config.setProperty(DEFAULT_STORAGE_TYPE, storageType.name());
-
             final HttpServletRequest request = mockHttpServletRequest();
-
             final DotTempFile dotTempFile = tempFileAPI.createEmptyTempFile("temp", request);
             fileMetadataAPI.putCustomMetadataAttributes(dotTempFile.id,
                     ImmutableMap.of("fieldXYZ", ImmutableMap.of("foo", "bar", "bar", "foo")));
@@ -790,7 +796,6 @@ public class FileMetadataAPITest {
             final Map<String, Serializable> customMeta = metadata.getCustomMeta();
             validateCustomMetadata(customMeta);
         }finally {
-            Config.setProperty(DEFAULT_STORAGE_TYPE, stringProperty);
             Config.setProperty(WRITE_METADATA_ON_REINDEX, defaultValue);
         }
     }
@@ -807,7 +812,6 @@ public class FileMetadataAPITest {
          StorageType.DB
         };
     }
-
     @Test
     public void TestMetadataModel() {
 
@@ -820,10 +824,19 @@ public class FileMetadataAPITest {
         );
 
         final Metadata metadata = new Metadata("lol", inputMap);
-        //The view returned by this method removes the prefix
+
+        //Both custom metadata are the same. The second variant only includes the prefix. The first one does not.
+        assertEquals(metadata.getCustomMeta().size(),metadata.getCustomMetaWithPrefix().size());
+
+        //The view object returned by this method removes the prefix
         metadata.getCustomMeta().forEach((key, serializable) -> {
             assertFalse(key.startsWith(CUSTOM_PROP_PREFIX));
         });
+        //The view object returned by this method keeps the prefix
+        metadata.getCustomMetaWithPrefix().forEach((key, serializable) -> {
+            assertTrue(key.startsWith(CUSTOM_PROP_PREFIX));
+        });
+
         //None of the main properties should contain the prefix either
         final Map<String, Serializable> fieldsMeta = metadata.getFieldsMeta();
 
