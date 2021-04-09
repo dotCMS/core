@@ -258,7 +258,8 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
                     if(null != configuration.getMergeWithMetadata()){
 
-                        final Map<String, Serializable> patchMap = configuration.getMergeWithMetadata().getCustomMeta();
+                        final Map<String, Serializable> patchMap = configuration.getMergeWithMetadata().getCustomMetaWithPrefix();
+                        //we need to include the prefix since we're saving it directly into persistence
                         if(!patchMap.isEmpty()){
                             //This is necessary since metadataMap is immutable.
                             metadataMap = new HashMap<>(metadataMap);
@@ -266,8 +267,9 @@ public class FileStorageAPIImpl implements FileStorageAPI {
                         }
 
                     } else {
-                        //Carry on we
+                        //Carry the custom metata
                         if(!onlyHasCustomMetadataMap.isEmpty()){
+                            //This metadata is expected to have prefix that's fine.
                             //This is necessary since metadataMap is immutable.
                             metadataMap = new HashMap<>(metadataMap);
                             onlyHasCustomMetadataMap.forEach(metadataMap::putIfAbsent);
@@ -488,11 +490,24 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
         this.checkBucket(storageKey, storage);
         if (storage.existsObject(storageKey.getGroup(), storageKey.getPath())) {
-
             final Map<String, Serializable> retrievedMetadata = retrieveMetadata(storageKey, storage);
             if(null != retrievedMetadata){
                 final Map<String,Serializable> newMetadataMap = new HashMap<>(retrievedMetadata);
-                newMetadataMap.putAll(prefixedCustomAttributes);
+
+                if(prefixedCustomAttributes.isEmpty()){
+                   //Delete all custom attributes
+                    newMetadataMap.keySet().removeAll(newMetadataMap.entrySet().stream()
+                            .filter(entry -> entry.getKey().startsWith(Metadata.CUSTOM_PROP_PREFIX))
+                            .map(Entry::getKey).collect(Collectors.toSet()));
+                } else {
+                    //merge maps
+                    prefixedCustomAttributes.forEach((key, serializable) -> {
+                        if (!newMetadataMap.containsKey(key)) {
+                            newMetadataMap.remove(key);
+                        }
+                    });
+                    newMetadataMap.putAll(prefixedCustomAttributes);
+                }
 
                 checkOverride(storage, fetchMetadataParams.getStorageKey(), true);
                 storeMetadata(storageKey, storage, newMetadataMap);

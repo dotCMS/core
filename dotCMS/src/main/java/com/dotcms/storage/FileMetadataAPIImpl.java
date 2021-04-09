@@ -631,7 +631,6 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
         final StorageType storageType = StoragePersistenceProvider.getStorageType();
         final String metadataBucketName = Config
                 .getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);
-
        customAttributesByField.forEach((fieldName, customAttributes) -> {
 
            final String metadataPath = getFileName(contentlet, fieldName);
