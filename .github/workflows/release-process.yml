@@ -29,12 +29,13 @@ jobs:
       - name: Set Common Vars
         run: |
           BRANCH=$(basename "${{ github.ref }}")
-
-          if [[ ${BRANCH} =~ ^test-new-release-step.*|^v[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$ ]]; then
+          echo "BRANCH=${BRANCH}"
+               
+#          if [[ ${BRANCH} =~ test-new-release-step ]]; then
             IS_RELEASE='true'
-          else
-            IS_RELEASE='false'
-          fi
+#          else
+#            IS_RELEASE='false'
+#          fi
 
           echo "BRANCH=${BRANCH}" >> $GITHUB_ENV
           echo "EE_BRANCH=${BRANCH}" >> $GITHUB_ENV
