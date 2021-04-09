@@ -45,6 +45,3 @@ jobs:
       - name: Run DotCMS Release Docker Image
         run: |
           dotcicd/library/pipeline.sh runRelease
-      - name: Publish Docker Multiarch Image
-        run: |
-          dotcicd/library/pipeline.sh publishDockerImage ${{ env.GITHUB_USER }} ${{ secrets.USER_TOKEN }} ${{ env.BRANCH }} ${{ env.IS_RELEASE }} ${{ secrets.DOCKER_USERNAME }} ${{ secrets.DOCKER_TOKEN }}
