@@ -3,9 +3,9 @@ package com.dotcms.publishing;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchConfig;
 import com.dotcms.enterprise.publishing.timemachine.TimeMachineConfig;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publishing.output.BundleOutput;
 import com.dotmarketing.util.Constants;
 
-import java.io.File;
 import java.io.FileFilter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,11 +30,12 @@ public interface IBundler {
      * Generates depending of the type of content this Bundler handles parts and objects that will be add it later
      * to a Bundle.
      *
-     * @param bundleRoot Where the Bundle we are creating will live.
-     * @param status     Object to keep track of the generation process inside this Bundler
-     * @throws DotBundleException If there is an exception while this Bundles is generating the Bundle content
+     *
+	 * @param output
+	 * @param status     Object to keep track of the generation process inside this Bundler
+	 * @throws DotBundleException If there is an exception while this Bundles is generating the Bundle content
      */
-    void generate ( File bundleRoot, BundlerStatus status ) throws DotBundleException;
+    void generate (BundleOutput output, BundlerStatus status ) throws DotBundleException;
 
     FileFilter getFileFilter ();
 

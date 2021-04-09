@@ -1,6 +1,5 @@
 package com.dotcms.publishing;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -10,6 +9,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
+import com.dotcms.publishing.output.BundleOutput;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.pushpublish.PushPublishEndEvent;
 import com.dotcms.system.event.local.type.pushpublish.PushPublishStartEvent;
@@ -33,14 +33,14 @@ public class PublisherAPIImpl implements PublisherAPI {
 
 
     @Override
-    final public PublishStatus publish ( PublisherConfig config ) throws DotPublishingException {
+    final public PublishStatus publish ( PublisherConfig config , BundleOutput output) throws DotPublishingException {
 
-        return publish( config, new PublishStatus() );
+        return publish( config, new PublishStatus(), output );
     }
 
     @CloseDBIfOpened
     @Override
-    final public PublishStatus publish ( PublisherConfig config, PublishStatus status ) throws DotPublishingException {
+    final public PublishStatus publish ( PublisherConfig config, PublishStatus status, BundleOutput output) throws DotPublishingException {
 
         PushPublishLogger.log( this.getClass(), "Started Publishing Task", config.getId() );
 
@@ -55,8 +55,8 @@ public class PublisherAPIImpl implements PublisherAPI {
             // init publishers
             for ( Class<Publisher> c : config.getPublishers() ) {
                 // Process config
-                Publisher p = c.newInstance();
-                config = p.init( config );
+                Publisher publisher = c.newInstance();
+                config = publisher.init( config );
 
                 if ( config.isIncremental() && config.getEndDate() == null && config.getStartDate() == null ) {
                     // if its incremental and start/end dates aren't se we take it from latest bundle
@@ -82,7 +82,6 @@ public class PublisherAPIImpl implements PublisherAPI {
                 final boolean bundleExists = BundlerUtil.bundleExists(config);
 
                 // Run bundlers
-                File bundleRoot = BundlerUtil.getBundleRoot( config );
 
                 if (config.isStatic()) {
                     //If static we just want to save the things that we need,
@@ -92,10 +91,10 @@ public class PublisherAPIImpl implements PublisherAPI {
                 	pcClone.setStatic(true);
                 	pcClone.setOperation(config.getOperation());
                     Logger.info(this, "Writing bundle.xml file");
-                	BundlerUtil.writeBundleXML( pcClone );
+                	BundlerUtil.writeBundleXML( pcClone, output );
                 } else {
                     Logger.info(this, "Writing bundle.xml file");
-                    BundlerUtil.writeBundleXML( config );
+                    BundlerUtil.writeBundleXML( config, output );
                 }
 
                 // If the bundle exists and we are retrying to push the bundle
@@ -111,16 +110,16 @@ public class PublisherAPIImpl implements PublisherAPI {
                         }
                     }
 
-                    for ( Class<IBundler> clazz : p.getBundlers() ) {
+                    for ( Class<IBundler> clazz : publisher.getBundlers() ) {
                         IBundler bundler = clazz.newInstance();
                         confBundlers.add( bundler );
                         bundler.setConfig( config );
-                        bundler.setPublisher(p);
+                        bundler.setPublisher(publisher);
                         BundlerStatus bs = new BundlerStatus( bundler.getClass().getName() );
                         status.addToBs( bs );
                         //Generate the bundler
                         Logger.info(this, "Start of Bundler: " + clazz.getSimpleName());
-                        bundler.generate( bundleRoot, bs );
+                        bundler.generate(output, bs );
                         Logger.info(this, "End of Bundler: " + clazz.getSimpleName());
                     }
 
@@ -136,7 +135,7 @@ public class PublisherAPIImpl implements PublisherAPI {
                             + ", we don't need to run bundlers again");
                 }
 
-                p.process( status );
+                publisher.process( status );
             }
 
             config.setBundlers( confBundlers );
