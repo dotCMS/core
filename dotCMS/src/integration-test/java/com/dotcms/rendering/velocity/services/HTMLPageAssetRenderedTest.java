@@ -1857,7 +1857,7 @@ public class HTMLPageAssetRenderedTest {
 
     /**
      * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
-     * When: A page has a template that is a file template advanced
+     * When: A page has a template that is a file template design
      * Should: render the page
      */
     @Test

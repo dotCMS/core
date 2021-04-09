@@ -166,12 +166,11 @@ public class FileAssetTemplateUtil {
      * @param host {@link Host} the host of the Template
      * @param templateFolder {@link Folder} this folder represents the Template
      * @param assets {@link List} of {@link FileAsset} has all meta info such as properties.vtl, body.vtl, layout.vtl.
-     * @param showLive {@link Boolean} true if only want published assets
      * @return Template
      * @throws DotDataException
      */
     public Template fromAssets(final Host host, final Folder templateFolder,
-            final List<FileAsset> assets, final boolean showLive) throws DotDataException {
+            final List<FileAsset> assets) throws DotDataException {
 
         final FileAssetTemplate template   = new FileAssetTemplate();
         Optional<String> body              = Optional.empty();
@@ -183,19 +182,19 @@ public class FileAssetTemplateUtil {
 
         for (final FileAsset fileAsset : assets) {
 
-            if (this.isBody(fileAsset, showLive)) {
+            if (this.isBody(fileAsset)) {
 
                 bodyAsset = Optional.of(fileAsset);
                 body      = Optional.of(this.toString(fileAsset)); continue;
             }
 
-            if (this.isTemplateMetaInfo(fileAsset, showLive)) {
+            if (this.isTemplateMetaInfo(fileAsset)) {
 
                 metaInfoFileAsset = fileAsset;
                 templateMetaInfo = Optional.of(this.toString(fileAsset)); continue;
             }
 
-            if (this.isLayout(fileAsset, showLive)) {
+            if (this.isLayout(fileAsset)) {
 
                 layoutAsset = Optional.of(fileAsset);
                 layout = Optional.of(this.toString(fileAsset)); continue;
@@ -215,8 +214,8 @@ public class FileAssetTemplateUtil {
         return template;
     }
 
-    private boolean isLayout(final FileAsset fileAsset, final boolean showLive) {
-        return isType(fileAsset, showLive, LAYOUT);
+    private boolean isLayout(final FileAsset fileAsset) {
+        return UtilMethods.isSet(fileAsset.getFileName()) && LAYOUT.equalsIgnoreCase(fileAsset.getFileName());
     }
 
     private void setTemplateData(final Host                host,
@@ -263,15 +262,15 @@ public class FileAssetTemplateUtil {
                 templateFolder.getPath();
     }
 
-    private boolean isTemplateMetaInfo(final FileAsset fileAsset, final boolean showLive) {
+    private boolean isTemplateMetaInfo(final FileAsset fileAsset) {
 
-        return isType(fileAsset, showLive, TEMPLATE_META_INFO)
+        return UtilMethods.isSet(fileAsset.getFileName()) && TEMPLATE_META_INFO.equalsIgnoreCase(fileAsset.getFileName())
                 && fileAsset.getLanguageId() == APILocator.getLanguageAPI().getDefaultLanguage().getId();
     }
 
-    private boolean isBody(final FileAsset fileAsset, final boolean showLive) {
+    private boolean isBody(final FileAsset fileAsset) {
 
-        return isType(fileAsset, showLive, BODY);
+        return UtilMethods.isSet(fileAsset.getFileName()) && BODY.equalsIgnoreCase(fileAsset.getFileName());
     }
 
     private void setMetaInfo(final String metaInfoVTLContent, final FileAssetTemplate template) {
@@ -314,23 +313,6 @@ public class FileAssetTemplateUtil {
         }
     }
 
-    private boolean isType(final FileAsset fileAsset, final boolean showLive, final String type) {
-
-        final String fileName = fileAsset.getFileName();
-        final boolean isMode  = this.isMode(fileAsset, showLive);
-
-        return UtilMethods.isSet(fileName) && type.equalsIgnoreCase(fileName) && isMode;
-    }
-
-    private boolean isMode (final FileAsset fileAsset, final boolean showLive) {
-
-        try {
-            return showLive? fileAsset.isLive():fileAsset.isWorking();
-        } catch (DotDataException | DotSecurityException e) {
-            return false;
-        }
-    }
-
     private String toString (final FileAsset fileAsset) {
 
         try (InputStream fileAssetStream = fileAsset.getInputStream()) {
@@ -367,7 +349,7 @@ public class FileAssetTemplateUtil {
                     .isSet(parentFolder.getPath()) && parentFolder.getPath()
                     .startsWith(TEMPLATE_FOLDER_PATH));
         } catch (Exception e) {
-            Logger.error(FileAssetTemplateUtil.class, "Unable to determine if contentlet is a fileAssetTemplate ", e);
+            Logger.error(FileAssetTemplateUtil.class, "Unable to determine if contentlet: "+ contentlet.getIdentifier() +" is a fileAssetTemplate ", e);
         }
         return false;
     }

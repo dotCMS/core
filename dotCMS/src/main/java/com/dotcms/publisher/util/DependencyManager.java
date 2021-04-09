@@ -893,7 +893,7 @@ public class DependencyManager {
 			if(workingTemplate instanceof FileAssetTemplate){
 				//Process FileAssetTemplate
 				final Set<Folder> folders = this.collectFileAssetTemplateDependencies(FileAssetTemplate.class.cast(workingTemplate));
-				setFolderListDependencies(folders);
+				folders.stream().forEach(folder -> dependencyProcessor.put(folder.getInode(),AssetTypes.FOLDER));
 			}
 		} catch (DotSecurityException e) {
 
@@ -921,7 +921,7 @@ public class DependencyManager {
 
 			return dependenciesFolders;
 		}catch (DotSecurityException | DotDataException e) {
-			Logger.error(DependencyManager.class, e);
+			Logger.error(DependencyManager.class, "Error Collecting the Folder of the File Asset Template: " + fileAssetTemplate.getIdentifier(), e);
 			return Collections.emptySet();
 		}
 	}

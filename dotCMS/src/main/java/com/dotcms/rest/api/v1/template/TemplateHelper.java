@@ -68,8 +68,7 @@ public class TemplateHelper {
                 .name(template.getName())
                 .friendlyName(template.getFriendlyName())
                 .title(template.getTitle())
-                .identifier(FileAssetTemplateUtil.getInstance().isFileAssetTemplate(template)?
-                        FileAssetTemplateUtil.getInstance().getFullPath(FileAssetTemplate.class.cast(template)):template.getIdentifier())
+                .identifier(template.getIdentifier())
                 .image(template.getImage())
                 .selectedimage(template.getSelectedimage())
                 .inode(template.getInode())

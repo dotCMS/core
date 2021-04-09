@@ -359,17 +359,7 @@ public class PublishFactory {
 				}
             } else if ( asset instanceof Template ) {
                 Logger.debug( PublishFactory.class, "*****I'm an HTML Page -- Publishing Template =" + ((Template) asset).getInode() );
-                if(asset instanceof FileAssetTemplate){
-					//inode of the template is the inode of the properties.vtl
-					//we need to obtain the folder so publish all the files related to template as files
-					final Contentlet propertiesVTL = APILocator.getContentletAPI().find(((FileAssetTemplate) asset).getInode(),user,false);
-					final Identifier idPropertiesVTL = APILocator.getIdentifierAPI().find(propertiesVTL.getIdentifier());
-					final Folder templateFolder = APILocator.getFolderAPI().findFolderByPath(idPropertiesVTL.getParentPath(),
-							idPropertiesVTL.getHostId(),user,respectFrontendRoles);
-					publishAsset(templateFolder,user,respectFrontendRoles,false);
-				} else {
-					publishAsset((Template) asset, user, respectFrontendRoles, false);
-				}
+                APILocator.getTemplateAPI().publishTemplate(Template.class.cast(asset),user,respectFrontendRoles);
             }
         }
 

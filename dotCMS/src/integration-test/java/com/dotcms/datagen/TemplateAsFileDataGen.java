@@ -12,6 +12,7 @@ import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.util.Constants;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.FileUtil;
 import java.io.IOException;
@@ -96,6 +97,7 @@ public class TemplateAsFileDataGen extends AbstractDataGen<FileAssetTemplate> {
 
             return toFileAssetTemplate(object,templateFolder,metaData,templateCode);
         } catch (DotDataException | DotSecurityException | IOException e) {
+            Logger.warnAndDebug(TemplateAsFileDataGen.class,e.getMessage(),e);
             throw new RuntimeException(e);
         }
     }

@@ -713,7 +713,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 				if(template==null || !InodeUtils.isSet(template.getInode())) {
 
 					template = FileAssetTemplateUtil.getInstance().fromAssets (site, folder,
-							this.findTemplateAssets(folder, user, showLive), showLive);
+							this.findTemplateAssets(folder, user, showLive));
 					if(template != null && InodeUtils.isSet(template.getInode())) {
 
 						templateCache.add(inode, template);

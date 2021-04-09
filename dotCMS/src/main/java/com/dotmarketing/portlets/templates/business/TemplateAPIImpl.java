@@ -247,20 +247,35 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	 */
 	private void publishTemplate(final Template template,final User user)
 			throws DotSecurityException, DotDataException, WebAssetException {
-		final Template templateWorkingVersion = findWorkingTemplate(template.getIdentifier(),APILocator.systemUser(),false);
+		final Template templateWorkingVersion = findWorkingTemplate(template.getIdentifier(),
+				APILocator.systemUser(), false);
 		//Sets Working as Live
 		setLive(template);
-		//Gets all Containers In the Template
-		final List<Container> containersInTemplate = APILocator.getTemplateAPI().getContainersInTemplate(template, APILocator.getUserAPI().getSystemUser(), false);
-		for(final Container container : containersInTemplate){
-			Logger.debug(PublishFactory.class, "*****I'm a Template -- Publishing my Container Child= " + container.getInode());
-			if(!container.isLive()){
-				PublishFactory.publishAsset(container,user, false);
+		if(template.getIdentifier().contains(Constants.TEMPLATE_FOLDER_PATH)){
+			//inode of the template is the inode of the properties.vtl
+			//we need to obtain the folder so publish all the files related to template as files
+			final Contentlet propertiesVTL = APILocator.getContentletAPI().find(template.getInode(),user,false);
+			final Identifier idPropertiesVTL = APILocator.getIdentifierAPI().find(propertiesVTL.getIdentifier());
+			final Folder templateFolder = APILocator.getFolderAPI().findFolderByPath(idPropertiesVTL.getParentPath(),
+					idPropertiesVTL.getHostId(),user,false);
+			PublishFactory.publishAsset(templateFolder,user,false,false);
+		} else {
+			//Gets all Containers In the Template
+			final List<Container> containersInTemplate = APILocator.getTemplateAPI()
+					.getContainersInTemplate(template, APILocator.getUserAPI().getSystemUser(),
+							false);
+			for (final Container container : containersInTemplate) {
+				Logger.debug(PublishFactory.class,
+						"*****I'm a Template -- Publishing my Container Child= " + container
+								.getInode());
+				if (!container.isLive()) {
+					PublishFactory.publishAsset(container, user, false);
+				}
 			}
+			templateWorkingVersion.setModDate(new java.util.Date());
+			templateWorkingVersion.setModUser(user.getUserId());
+			templateFactory.save(template);
 		}
-		templateWorkingVersion.setModDate(new java.util.Date());
-		templateWorkingVersion.setModUser(user.getUserId());
-		templateFactory.save(template);
 		//Clean-up the cache for this template
 		CacheLocator.getTemplateCache().remove(template.getInode());
 		//writes the template to a live directory under velocity folder
@@ -856,7 +871,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 					return  template;
 				}
 			} catch (NotFoundInDbException | DotSecurityException e) {
-				Logger.error(this,String.format("File Template %s not found", relativePath));
+				Logger.debug(this,String.format("File Template %s not found", relativePath));
 				return null;
 			}
 		}
