@@ -36,7 +36,10 @@ import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.io.Closeable;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -217,8 +220,12 @@ public class BinaryExporterServletTest {
     }
 
     private HttpServletResponse mockServletResponse(final TmpBinaryFile tmpTargetFile) {
-        return new MockHttpStatusResponse(new MockHttpCaptureResponse(
-                new BaseResponse().response(), tmpTargetFile.getFile()));
+        try {
+            return new MockHttpStatusResponse(new MockHttpCaptureResponse(
+                    new BaseResponse().response(), new FileOutputStream(tmpTargetFile.getFile())));
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void sendRequest(final HttpServletRequest request, final HttpServletResponse response)

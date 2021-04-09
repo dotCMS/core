@@ -195,7 +195,9 @@ public class DependencyManager {
 
 		Logger.debug(DependencyManager.class, "publisherFilter.isDependencies() " + publisherFilter.isDependencies());
 
-		setLanguageVariables();
+		if(publisherFilter.isDependencies()) {
+			setLanguageVariables();
+		}
 
 		List<PublishQueueElement> assets = config.getAssets();
 
@@ -358,7 +360,9 @@ public class DependencyManager {
 		}
 
 		try {
-			dependencyProcessor.waitForAll();
+			if(publisherFilter.isDependencies()) {
+				dependencyProcessor.startAndWait();
+			}
 
 			config.setHostSet(hosts);
 			config.setFolders(folders);
@@ -555,7 +559,6 @@ public class DependencyManager {
 			final Folder parentFolder = APILocator.getFolderAPI().findParentFolder(folder, user, false);
 			if(UtilMethods.isSet(parentFolder)) {
 				folders.addOrClean( parentFolder.getInode(), parentFolder.getModDate());
-				dependencyProcessor.put(parentFolder.getInode(), AssetTypes.FOLDER);
 			}
 
 			setFolderListDependencies(folder);
@@ -860,15 +863,12 @@ public class DependencyManager {
 					try {
 						final Folder themeFolder = folderAPI.find(workingTemplate.getTheme(), user, false);
 						if (themeFolder != null && InodeUtils.isSet(themeFolder.getInode())) {
-							final Folder parentFolder = APILocator.getFolderAPI()
-									.findParentFolder(themeFolder, user, false);
-							if (UtilMethods.isSet(parentFolder)) {
-								folders.addOrClean(parentFolder.getInode(), parentFolder.getModDate());
-								dependencyProcessor.put(parentFolder.getInode(), AssetTypes.FOLDER);
-							}
+
 							final List<Folder> folderList = new ArrayList<Folder>();
 							folderList.add(themeFolder);
-							setFolderListDependencies(folderList);
+
+							folders.addOrClean(themeFolder.getInode(), themeFolder.getModDate());
+							dependencyProcessor.put(themeFolder.getInode(), AssetTypes.FOLDER);
 						}
 					} catch (DotDataException e1) {
 						Logger.error(DependencyManager.class,
@@ -1412,33 +1412,37 @@ public class DependencyManager {
 		 * The current thread wait until all the dependencies are processed
 		 * @throws ExecutionException
 		 */
-		private void waitForAll() throws ExecutionException {
+		private void startAndWait() throws ExecutionException {
 			final String submitterName = "DependencyManagerSubmitter" + Thread.currentThread().getName();
 			submitter = DotConcurrentFactory.getInstance().getSubmitter(submitterName,
 					new DotConcurrentFactory.SubmitterConfigBuilder()
-							.poolSize(Config.getIntProperty("MIN_NUMBER_THREAD_TO_EXECUTE_BUNDLER", 1))
+							.poolSize(Config.getIntProperty("MIN_NUMBER_THREAD_TO_EXECUTE_BUNDLER", 10))
 							.maxPoolSize(Config.getIntProperty("MAX_NUMBER_THREAD_TO_EXECUTE_BUNDLER", 40))
-							.queueCapacity(Config.getIntProperty("QUEUE_CAPACITY_TO_EXECUTE_BUNDLER", 500))
+							.queueCapacity(Config.getIntProperty("QUEUE_CAPACITY_TO_EXECUTE_BUNDLER", Integer.MAX_VALUE))
 							.build()
 			);
 
-			while(!isFinish()) {
-				try {
-					Logger.debug(DependencyManager.class, () -> "Waiting for more assets");
-					final DependencyProcessorItem dependencyProcessorItem = queue.take();
-					Logger.debug(DependencyProcessor.class, () -> "Taking one " + dependencyProcessorItem.assetKey);
-					if (!dependencyProcessorItem.equals(DependencyProcessorItem.FINISHED_DEPENDENCY_PROCESSOR_ITEM)) {
-						submitter.submit(new DependencyRunnable(dependencyProcessorItem));
-					} else {
-						finishReceived.incrementAndGet();
+			try {
+				while (!isFinish()) {
+					try {
+						Logger.debug(DependencyManager.class, () -> "Waiting for more assets");
+						final DependencyProcessorItem dependencyProcessorItem = queue.take();
+						Logger.debug(DependencyProcessor.class,
+								() -> "Taking one " + dependencyProcessorItem.assetKey);
+						if (!dependencyProcessorItem
+								.equals(DependencyProcessorItem.FINISHED_DEPENDENCY_PROCESSOR_ITEM)) {
+							submitter.submit(new DependencyRunnable(dependencyProcessorItem));
+						} else {
+							finishReceived.incrementAndGet();
+						}
+					} catch (InterruptedException e) {
+						throw new RuntimeException(e);
 					}
-				} catch (InterruptedException e) {
-					throw new RuntimeException(e);
 				}
+				Logger.debug(DependencyProcessor.class, "DependencyProcessor Finished");
+			} finally {
+				submitter.shutdownNow();
 			}
-			Logger.debug(DependencyProcessor.class, "DependencyProcessor Finished");
-
-			submitter.shutdownNow();
 		}
 
 		private synchronized void sendFinishNotification() {
