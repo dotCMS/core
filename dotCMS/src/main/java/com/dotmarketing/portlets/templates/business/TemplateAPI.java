@@ -347,7 +347,7 @@ public interface TemplateAPI {
 	 * @return true if template is archived, false if not.
 	 * @throws DotDataException
 	 */
-	boolean isArchived(final Template template) throws DotDataException;
+	boolean isArchived(final Template template) throws DotDataException, DotStateException,DotSecurityException;
 
 	/**
 	 * Check if a template is live

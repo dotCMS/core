@@ -388,8 +388,10 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		templateFactory.save(template);
 	}
 
-	public boolean isArchived(final Template template) throws DotDataException {
-		return APILocator.getVersionableAPI().isDeleted(template);
+	public boolean isArchived(final Template template) throws DotDataException, DotStateException,DotSecurityException {
+		return template instanceof FileAssetTemplate ?
+				FileAssetTemplate.class.cast(template).isDeleted() :
+				this.versionableAPI.get().isDeleted(template);
 	}
 
 	@WrapInTransaction
