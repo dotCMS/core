@@ -30,13 +30,7 @@ jobs:
         run: |
           BRANCH=$(basename "${{ github.ref }}")
           echo "BRANCH=${BRANCH}"
-               
-#          if [[ ${BRANCH} =~ test-new-release-step ]]; then
-            IS_RELEASE='true'
-#          else
-#            IS_RELEASE='false'
-#          fi
-
+          IS_RELEASE='true'
           echo "BRANCH=${BRANCH}" >> $GITHUB_ENV
           echo "EE_BRANCH=${BRANCH}" >> $GITHUB_ENV
           echo "BASE_FOLDER=$(pwd)" >> $GITHUB_ENV
