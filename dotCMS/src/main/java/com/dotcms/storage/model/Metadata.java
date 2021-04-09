@@ -60,6 +60,13 @@ public class Metadata implements Serializable {
                         ), Entry::getValue))).build();
     }
 
+    public Map<String, Serializable> getCustomMetaWithPrefix() {
+        return new ImmutableSortedMap.Builder<String, Serializable>(
+                Comparator.naturalOrder()).putAll(fieldsMeta.entrySet().stream()
+                .filter(entry -> entry.getKey().startsWith(CUSTOM_PROP_PREFIX))
+                .collect(Collectors.toMap(Entry::getKey, Entry::getValue))).build();
+    }
+
     public Map<String, Serializable> getMap() {
         return new ImmutableSortedMap.Builder<String, Serializable>(Comparator.naturalOrder()).putAll(fieldsMeta).build();
     }

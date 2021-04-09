@@ -7,7 +7,7 @@ import static com.dotcms.datagen.TestDataUtils.getFileAssetContent;
 import static com.dotcms.datagen.TestDataUtils.getMultipleBinariesContent;
 import static com.dotcms.datagen.TestDataUtils.getMultipleImageBinariesContent;
 import static com.dotcms.datagen.TestDataUtils.removeAnyMetadata;
-import static com.dotcms.rest.api.v1.temp.TempFileAPITest.*;
+import static com.dotcms.rest.api.v1.temp.TempFileAPITest.mockHttpServletRequest;
 import static com.dotcms.storage.StoragePersistenceProvider.DEFAULT_STORAGE_TYPE;
 import static com.dotcms.storage.model.Metadata.CUSTOM_PROP_PREFIX;
 import static org.junit.Assert.assertEquals;
@@ -16,7 +16,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
 
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.contenttype.model.field.Field;
@@ -52,7 +51,6 @@ import java.util.SortedSet;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -87,7 +85,6 @@ public class FileMetadataAPITest {
      * Expected Results: we should get full and basic md for every type. Basic metadata must be included within the fm
      * @throws IOException
      */
-    @Ignore
     @Test
     @UseDataProvider("getFileAssetMetadataTestCases")
     public void Test_Generate_Metadata_From_FileAssets(final TestCase testCase) throws Exception {
@@ -137,7 +134,6 @@ public class FileMetadataAPITest {
      * @param testCase
      * @throws Exception
      */
-    @Ignore
     @Test
     @UseDataProvider("getFileAssetMetadataTestCases")
     public void Test_Force_Set_Metadata(final TestCase testCase) throws Exception {
@@ -310,7 +306,6 @@ public class FileMetadataAPITest {
      * Expected Results:
      * @throws IOException
      */
-    @Ignore
     @Test
     @UseDataProvider("getStorageType")
     public void Test_Generate_Metadata_From_ContentType_With_Multiple_Binary_Fields(final StorageType storageType) throws Exception {
@@ -377,7 +372,6 @@ public class FileMetadataAPITest {
      * Expected Results: After calling findBinaryFields I should get a tuple with one file
      * candidate for the full MD generation and the rest in the second component of the tuple
      */
-    @Ignore
     @Test
     public void Test_Get_First_Indexed_Binary_Field() throws Exception {
         prepareIfNecessary();
@@ -408,7 +402,6 @@ public class FileMetadataAPITest {
      * @param storageType
      * @throws IOException
      */
-    @Ignore
     @Test
     @UseDataProvider("getStorageType")
     public void Test_Get_Metadata_No_Cache(final StorageType storageType) throws Exception {
@@ -460,7 +453,6 @@ public class FileMetadataAPITest {
      * @param storageType
      * @throws IOException
      */
-    @Ignore
     @Test
     @UseDataProvider("getStorageType")
     public void Test_Get_Metadata_No_Cache_Force_Generate(final StorageType storageType) throws Exception {
@@ -509,7 +501,6 @@ public class FileMetadataAPITest {
      * @param storageType
      * @throws IOException
      */
-    @Ignore
     @Test
     @UseDataProvider("getStorageType")
     public void Test_GetMetadata(final StorageType storageType) throws Exception {
@@ -556,7 +547,6 @@ public class FileMetadataAPITest {
      * @param storageType
      * @throws IOException
      */
-    @Ignore
     @Test
     @UseDataProvider("getStorageType")
     public void Test_GetMetadata_ForceGenerate(final StorageType storageType) throws Exception {
@@ -604,7 +594,6 @@ public class FileMetadataAPITest {
      * @param storageType
      * @throws IOException
      */
-    @Ignore
     @Test
     @UseDataProvider("getStorageType")
     public void Test_Add_Custom_Attributes_FileAssets(final StorageType storageType)
@@ -665,11 +654,10 @@ public class FileMetadataAPITest {
     /**
      * Method to test: {@link FileMetadataAPIImpl#copyCustomMetadata(Contentlet, Contentlet)}
      * Given scenario: We have 2 contentlets we copy the md into the destination contentlet
-     * Expected Resilt: expect the destination contentlet to have the same md as the source contentlet where we copied them.
+     * Expected Result: expect the destination contentlet to have the same custom-metadata as the source contentlet where we took it from.
      * @param storageType
      * @throws Exception
      */
-    @Ignore
     @Test
     @UseDataProvider("getStorageType")
     public void Test_Copy_Metadata(final StorageType storageType) throws Exception {
@@ -695,12 +683,30 @@ public class FileMetadataAPITest {
 
             fileMetadataAPI.copyCustomMetadata(source, dest);
 
-            //Verify through getMetadata since it does return null if it doesnt exist and doesnt force it's generation
-            assertNotNull(fileMetadataAPI.getMetadata(dest,FILE_ASSET_1));
-            assertNotNull(fileMetadataAPI.getMetadata(dest,FILE_ASSET_2));
+            //Verify through getMetadata since it does return null if it doesn't exist and doesnt force it's generation.
+            //Both still lack meta
+            assertNull(fileMetadataAPI.getMetadata(dest,FILE_ASSET_1));
+            assertNull(fileMetadataAPI.getMetadata(dest,FILE_ASSET_2));
+            //Put on some custom metadata attributes
+            fileMetadataAPI.putCustomMetadataAttributes(source,ImmutableMap.of(FILE_ASSET_1, ImmutableMap.of("foo","bar", "bar","foo")));
+            //Copy them
+            fileMetadataAPI.copyCustomMetadata(source, dest);
+            //Verify the metadata gets copied
+            assertNotNull(dest.getBinaryMetadata(FILE_ASSET_1));
+            validateCustomMetadata(dest.getBinaryMetadata(FILE_ASSET_1).getCustomMeta());
+            //Now lets try adding some more custom attributes and verify they get there.
+            fileMetadataAPI.putCustomMetadataAttributes(dest,ImmutableMap.of(FILE_ASSET_1, ImmutableMap.of("foo","bar", "bar","foo","lol", "kek")));
+            validateCustomMetadata(dest.getBinaryMetadata(FILE_ASSET_1).getCustomMeta());
+            assertEquals(dest.getBinaryMetadata(FILE_ASSET_1).getCustomMeta().get("lol"),"kek");
+            //Now lets try setting an empty map and verify the're gone.
+            fileMetadataAPI.putCustomMetadataAttributes(dest,ImmutableMap.of(FILE_ASSET_1, ImmutableMap.of()));
+            assertTrue(dest.getBinaryMetadata(FILE_ASSET_1).getMap().isEmpty());
+            //And last
+            fileMetadataAPI.putCustomMetadataAttributes(source,ImmutableMap.of(FILE_ASSET_1, ImmutableMap.of("foo","bar", "bar","foo")));
+            fileMetadataAPI.copyCustomMetadata(source, dest);
+            fileMetadataAPI.generateContentletMetadata(dest);
+            validateCustomMetadata(dest.getBinaryMetadata(FILE_ASSET_1).getCustomMeta());
 
-            assertEquals(source.getBinaryMetadata(FILE_ASSET_1), dest.getBinaryMetadata(FILE_ASSET_1));
-            assertEquals(source.getBinaryMetadata(FILE_ASSET_2), dest.getBinaryMetadata(FILE_ASSET_2));
 
         } finally {
             Config.setProperty(DEFAULT_STORAGE_TYPE, stringProperty);
@@ -772,7 +778,6 @@ public class FileMetadataAPITest {
      * Expected result: When we request such info using the same id the results we get must match the originals
      * @throws Exception
      */
-    @Ignore
     @Test
     public void Test_Add_Then_Recover_Temp_Resource_Metadata() throws Exception {
         prepareIfNecessary();
@@ -804,10 +809,9 @@ public class FileMetadataAPITest {
     public static Object[] getStorageType() throws Exception {
         return new Object[]{
          StorageType.FILE_SYSTEM,
-         //StorageType.DB
+         StorageType.DB
         };
     }
-    @Ignore
     @Test
     public void TestMetadataModel() {
 
@@ -820,10 +824,19 @@ public class FileMetadataAPITest {
         );
 
         final Metadata metadata = new Metadata("lol", inputMap);
-        //The view returned by this method removes the prefix
+
+        //Both custom metadata are the same. The second variant only includes the prefix. The first one does not.
+        assertEquals(metadata.getCustomMeta().size(),metadata.getCustomMetaWithPrefix().size());
+
+        //The view object returned by this method removes the prefix
         metadata.getCustomMeta().forEach((key, serializable) -> {
             assertFalse(key.startsWith(CUSTOM_PROP_PREFIX));
         });
+        //The view object returned by this method keeps the prefix
+        metadata.getCustomMetaWithPrefix().forEach((key, serializable) -> {
+            assertTrue(key.startsWith(CUSTOM_PROP_PREFIX));
+        });
+
         //None of the main properties should contain the prefix either
         final Map<String, Serializable> fieldsMeta = metadata.getFieldsMeta();
 
