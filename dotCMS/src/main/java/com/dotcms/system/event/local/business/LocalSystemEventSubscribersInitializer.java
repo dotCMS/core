@@ -9,6 +9,7 @@ import com.dotcms.security.apps.AppsKeyResetEventListener;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.system.event.local.type.security.CompanyKeyResetEvent;
 import com.dotmarketing.portlets.folders.business.ApplicationTemplateFolderListener;
+import io.vavr.API;
 import java.util.List;
 
 import com.dotcms.config.DotInitializer;
@@ -66,6 +67,9 @@ public class LocalSystemEventSubscribersInitializer implements DotInitializer {
                 Logger.onChangeLoggerLevelEventHandler (event);
             }
         });
+
+        APILocator.getLocalSystemEventsAPI().subscribe(APILocator.getTemplateAPI());
+        APILocator.getLocalSystemEventsAPI().subscribe(APILocator.getContainerAPI());
     }
 
     public void initApplicationContainerFolderListener() {
