@@ -49,7 +49,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
  * The goal of this unit test is to try some scenarios for the json web token interceptor.
  * @author jsanca
  */
-@PowerMockIgnore({"javax.management.*", "javax.crypto.*"})
+@PowerMockIgnore({"javax.management.*", "javax.crypto.*", "jdk.internal.reflect.*"})
 @PrepareForTest({ClusterFactory.class})
 @RunWith(PowerMockRunner.class)
 public class JsonWebTokenInterceptorTest extends UnitTestBase {

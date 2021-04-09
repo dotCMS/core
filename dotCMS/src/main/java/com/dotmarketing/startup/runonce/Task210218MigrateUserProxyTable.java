@@ -92,7 +92,7 @@ public class Task210218MigrateUserProxyTable implements StartupTask {
     }
 
     private String getOracleScript() {
-        return "alter table user_ add additional_info NCLOB NULL;";
+        return "alter table user_ add additional_info NCLOB NULL";
     }
 
     private String getMSSQLScript() {
