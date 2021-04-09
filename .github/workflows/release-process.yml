@@ -19,7 +19,7 @@ jobs:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       SSH_RSA_KEY: ${{ secrets.EE_RSA_KEY }}
-      DEBUG: false
+      DEBUG: true
     steps:
       - name: GITHUB CONTEXT
         env:
