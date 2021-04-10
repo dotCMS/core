@@ -6,6 +6,8 @@ import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.output.BundleOutput;
+import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -60,7 +62,7 @@ public class LinkBundlerTest {
 
 
     /**
-     * Method to Test: {@link LinkBundler#generate(File, BundlerStatus)}
+     * Method to Test: {@link LinkBundler#generate(BundleOutput, BundlerStatus)}
      * When: Add a {@link Link} in a bundle
      * Should:
      * - The file should be create in:
@@ -78,13 +80,14 @@ public class LinkBundlerTest {
 
         final BundlerStatus status = mock(BundlerStatus.class);
         final LinkBundler bundler = new LinkBundler();
-        final File bundleRoot = FileUtil.createTemporaryDirectory("LinkBundlerTest_addLinkInBundle");
 
         final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
 
         final PushPublisherConfig config = new PushPublisherConfig();
         config.setLinks(set( links.get(0).getIdentifier()));
         config.setOperation(PublisherConfig.Operation.PUBLISH);
+
+        final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config);
 
         new BundleDataGen()
                 .pushPublisherConfig(config)
@@ -93,10 +96,10 @@ public class LinkBundlerTest {
                 .nextPersisted();
 
         bundler.setConfig(config);
-        bundler.generate(bundleRoot, status);
+        bundler.generate(directoryBundleOutput, status);
 
         for (final Link link : links) {
-            FileTestUtil.assertBundleFile(bundleRoot, link, testCase.expectedFilePath);
+            FileTestUtil.assertBundleFile(directoryBundleOutput.getFile(), link, testCase.expectedFilePath);
         }
     }
 

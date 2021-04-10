@@ -6,6 +6,8 @@ import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.output.BundleOutput;
+import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -77,7 +79,7 @@ public class TemplateBundlerTest {
 
 
     /**
-     * Method to Test: {@link TemplateBundler#generate(File, BundlerStatus)}
+     * Method to Test: {@link TemplateBundler#generate(BundleOutput, BundlerStatus)}
      * When: Add a {@link Template} in a bundle
      * Should:
      * - The file should be create in:
@@ -95,13 +97,14 @@ public class TemplateBundlerTest {
 
         final BundlerStatus status = mock(BundlerStatus.class);
         final TemplateBundler bundler = new TemplateBundler();
-        final File bundleRoot = FileUtil.createTemporaryDirectory("TemplateBundlerTest_addTemplateInBundle_");
 
         final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
 
         final PushPublisherConfig config = new PushPublisherConfig();
         config.setTemplates(set(template.getIdentifier()));
         config.setOperation(PublisherConfig.Operation.PUBLISH);
+
+        final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config);
 
         new BundleDataGen()
                 .pushPublisherConfig(config)
@@ -110,19 +113,19 @@ public class TemplateBundlerTest {
                 .nextPersisted();
 
         bundler.setConfig(config);
-        bundler.generate(bundleRoot, status);
+        bundler.generate(directoryBundleOutput, status);
 
         final User systemUser = APILocator.systemUser();
 
         final Template workingTemplate = APILocator.getTemplateAPI().findWorkingTemplate(
                 template.getIdentifier(), systemUser, false);
 
-        FileTestUtil.assertBundleFile(bundleRoot, workingTemplate, testCase.expectedFilePath);
+        FileTestUtil.assertBundleFile(directoryBundleOutput.getFile(), workingTemplate, testCase.expectedFilePath);
 
         final Template liveTemplate = APILocator.getTemplateAPI().findLiveTemplate(template.getIdentifier(), systemUser, false);
 
         if (liveTemplate != null && !liveTemplate.getInode().equals(workingTemplate.getInode())) {
-            FileTestUtil.assertBundleFile(bundleRoot, liveTemplate, testCase.expectedFilePath);
+            FileTestUtil.assertBundleFile(directoryBundleOutput.getFile(), liveTemplate, testCase.expectedFilePath);
         }
     }
 
