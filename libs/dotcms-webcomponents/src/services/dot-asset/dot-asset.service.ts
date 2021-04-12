@@ -1,4 +1,4 @@
-import { DotCMSContentlet, DotCMSTempFile } from 'dotcms-models';
+import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DotHttpErrorResponse } from '../../models/dot-http-error-response.model';
 import { fallbackErrorMessages } from '../../components/contenttypes-fields/dot-form/services/dot-upload.service';
 import { DotAssetCreateOptions } from '../../models/dot-asset-create-options.model';

@@ -1,4 +1,4 @@
-import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from 'dotcms-models';
+import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
 import { DotContentletItem } from '../models/dot-contentlet-item.model';
 
 export const basicField: DotCMSContentTypeField = {

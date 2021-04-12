@@ -1,6 +1,6 @@
 import { Component, Prop } from '@stencil/core';
 import { fieldMap, shouldShowField } from '../../utils';
-import { DotCMSContentTypeLayoutColumn, DotCMSContentTypeField } from 'dotcms-models';
+import { DotCMSContentTypeLayoutColumn, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 @Component({
     tag: 'dot-form-column',

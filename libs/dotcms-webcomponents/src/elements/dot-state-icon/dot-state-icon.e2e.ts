@@ -1,5 +1,5 @@
 import { E2EPage, newE2EPage } from '@stencil/core/testing';
-import { DotContentState } from 'dotcms-models';
+import { DotContentState } from '@dotcms/dotcms-models';
 import { E2EElement } from '@stencil/core/testing/puppeteer/puppeteer-declarations';
 
 describe('dot-state-icon', () => {

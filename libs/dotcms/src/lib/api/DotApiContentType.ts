@@ -1,6 +1,6 @@
 import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
 import { DotCMSError } from '../models';
-import { DotCMSContentTypeLayoutRow, DotCMSContentType } from 'dotcms-models';
+import { DotCMSContentTypeLayoutRow, DotCMSContentType } from '@dotcms/dotcms-models';
 
 /**
  * Get the information of DotCMS contentTypes

@@ -1,5 +1,5 @@
 import { DotApiForm } from '../DotApiForm';
-import { DotCMSContentType } from 'dotcms-models';
+import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
 
 const fieldReturned = [

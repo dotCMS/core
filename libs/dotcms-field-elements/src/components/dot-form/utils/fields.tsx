@@ -1,4 +1,4 @@
-import { DotCMSContentTypeField } from 'dotcms-models';
+import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { getFieldVariableValue, setAttributesToTag } from '.';
 import { h } from '@stencil/core';
 
