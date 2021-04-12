@@ -22,6 +22,8 @@
     .dot-theme-item__image,
     .dot-theme-item__image--fallback {
         border-radius: $border-radius;
+        width: 3.43rem;
+        height: 3.43rem;
     }
     .dot-theme-item__image--fallback {
         background: $bg-highlight;

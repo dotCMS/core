@@ -176,14 +176,31 @@ describe('DotThemeSelectorComponent', () => {
         });
 
         it('should show theme image when available', () => {
-            spyOn(paginatorService, 'getWithOffset').and.returnValue(of(mockDotThemes));
+            const systemTheme = {
+                name: 'system Theme',
+                title: 'Theme tittle',
+                inode: '1',
+                themeThumbnail: '/system/theme/url',
+                identifier: 'SYSTEM_THEME',
+                hostId: '1',
+                host: {
+                    hostName: 'Test',
+                    inode: '3',
+                    identifier: '345'
+                }
+            };
+
+            spyOn(paginatorService, 'getWithOffset').and.returnValue(
+                of([...mockDotThemes, systemTheme])
+            );
             component.siteChange(mockSites[0]);
             fixture.detectChanges();
-            const themeImage: DebugElement = fixture.debugElement.query(
-                By.css('.dot-theme-iteme__image')
+            const themeImages = de.queryAll(By.css('[data-testId="themeImage"]'));
+            console.log(themeImages[0]);
+            expect(themeImages[0].nativeElement.src).toContain(
+                `/dA/${mockDotThemes[2].themeThumbnail}/130w/130h/thumbnail.png`
             );
-
-            expect(themeImage).not.toBeNull();
+            expect(themeImages[1].nativeElement.src).toContain(systemTheme.themeThumbnail);
         });
     });
 

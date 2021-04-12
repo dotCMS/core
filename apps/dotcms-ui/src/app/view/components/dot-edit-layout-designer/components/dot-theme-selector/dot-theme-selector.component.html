@@ -67,7 +67,12 @@
                     <img
                         *ngIf="theme?.themeThumbnail"
                         class="dot-theme-iteme__image"
-                        src="/dA/{{ theme.themeThumbnail }}/130w/130h/thumbnail.png"
+                        data-testId="themeImage"
+                        [src]="
+                            theme.identifier === 'SYSTEM_THEME'
+                                ? theme.themeThumbnail
+                                : '/dA/' + theme.themeThumbnail + '/130w/130h/thumbnail.png'
+                        "
                     />
                     <h5 class="dot-theme-item__name">{{ theme.name }}</h5>
                 </div>
