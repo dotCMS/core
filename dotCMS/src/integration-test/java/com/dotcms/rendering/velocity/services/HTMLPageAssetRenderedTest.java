@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.services;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -52,6 +53,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
+import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
@@ -1851,6 +1853,77 @@ public class HTMLPageAssetRenderedTest {
         final int thirdIndex = html.indexOf(toFind, secondIndex + toFind.length());
 
         assertTrue(firstIndex != -1 && secondIndex != -1 && firstIndex != secondIndex && thirdIndex == -1);
+    }
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When: A page has a template that is a file template design
+     * Should: render the page
+     */
+    @Test
+    public void pageWithFileTemplateDesignShouldRender() throws Exception{
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final FileAssetTemplate fileAssetTemplate = new TemplateAsFileDataGen()
+                .host(host)
+                .nextPersisted();
+
+        final String pageName = "test_page_with_filetemplatedesign-"+System.currentTimeMillis();
+        final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(host,fileAssetTemplate, pageName, 1);
+
+        //request page ENG version
+        HttpServletRequest mockRequest = new MockSessionRequest(
+                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                .request();
+        when(mockRequest.getParameter("host_id")).thenReturn(host.getIdentifier());
+        mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(systemUser)
+                        .setPageUri(pageEnglishVersion.getURI())
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequest, mockResponse);
+
+        assertNotNull(html);
+    }
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When: A page has a template that is a file template advanced
+     * Should: render the page
+     */
+    @Test
+    public void pageWithFileTemplateAdvancedShouldRender() throws Exception{
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final FileAssetTemplate fileAssetTemplate = new TemplateAsFileDataGen()
+                .designTemplate(false)
+                .host(host)
+                .nextPersisted();
+
+        final String pageName = "test_page_with_filetemplateadvanced-"+System.currentTimeMillis();
+        final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(host,fileAssetTemplate, pageName, 1);
+
+        //request page ENG version
+        HttpServletRequest mockRequest = new MockSessionRequest(
+                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                .request();
+        when(mockRequest.getParameter("host_id")).thenReturn(host.getIdentifier());
+        mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(systemUser)
+                        .setPageUri(pageEnglishVersion.getURI())
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequest, mockResponse);
+
+        assertNotNull(html);
     }
 
     /**

@@ -210,8 +210,8 @@ public class HTMLPageAssetRenderedBuilder {
             final User systemUser = APILocator.getUserAPI().getSystemUser();
 
             return mode.showLive ?
-                    (Template) this.versionableAPI.findLiveVersion(htmlPageAsset.getTemplateId(), systemUser, mode.respectAnonPerms) :
-                    (Template) this.versionableAPI.findWorkingVersion(htmlPageAsset.getTemplateId(), systemUser, mode.respectAnonPerms);
+                    APILocator.getTemplateAPI().findLiveTemplate(htmlPageAsset.getTemplateId(),systemUser, mode.respectAnonPerms) :
+                    APILocator.getTemplateAPI().findWorkingTemplate(htmlPageAsset.getTemplateId(),systemUser, mode.respectAnonPerms);
         } catch (DotSecurityException e) {
             return null;
         }
