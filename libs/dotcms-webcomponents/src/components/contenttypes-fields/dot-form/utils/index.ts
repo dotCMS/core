@@ -5,7 +5,7 @@ import {
     DotCMSContentTypeLayoutRow,
     DotCMSContentTypeLayoutColumn,
     DotCMSContentTypeFieldVariable
-} from "dotcms-models";
+} from '@dotcms/dotcms-models';
 
 export const DOT_ATTR_PREFIX = "dot";
 
@@ -31,12 +31,12 @@ export function setAttributesToTag(
 const pipedValuesToObject = (values: string): { [key: string]: string } => {
     return isStringType(values)
         ? values.split(",").reduce((acc, item) => {
-              const [key, value] = item.split("|");
-              return {
-                  ...acc,
-                  [key]: value
-              };
-          }, {})
+            const [key, value] = item.split("|");
+            return {
+                ...acc,
+                [key]: value
+            };
+        }, {})
         : null;
 };
 
