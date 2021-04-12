@@ -20,6 +20,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.util.HostNameComparator;
@@ -69,6 +70,7 @@ import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -100,7 +102,7 @@ public class BrowserAjax {
 	String activeHostId = "";
     volatile String activeFolderInode = "";
     private static String SELECTED_BROWSER_PATH_OBJECT = "SELECTED_BROWSER_PATH_OBJECT";
-    List<String> openFolders = new ArrayList<String> ();
+	Set<String> openFolders = new LinkedHashSet<>();
 
     String lastSortBy = "name";
     boolean lastSortDirectionDesc = false;
@@ -252,6 +254,27 @@ public class BrowserAjax {
         return getFoldersTree (f, roles);
     }
 
+    public void setCurrentOpenFolder(final String parentInode, final String hostId, final User usr) throws DotDataException, DotSecurityException {
+
+    	openFolders.clear();
+		final Folder leafFolder = APILocator.getFolderAPI().find(parentInode, usr, false);
+
+		if (null != leafFolder) {
+
+			activeHostId = hostId;
+			openFolders.clear();
+			openFolders.add(parentInode);
+			Permissionable parent = leafFolder.getParentPermissionable();
+			while (parent != null) {
+
+				if (parent instanceof Folder) {
+					openFolders.add(Folder.class.cast(parent).getInode());
+				}
+				parent = parent.getParentPermissionable();
+			}
+		}
+	}
+
     /**
      * Action called everytime a user closes a folder using the - (left hand side)
      * @param parentInode Parent folder to be opened
@@ -265,7 +288,17 @@ public class BrowserAjax {
     @SuppressWarnings("unchecked")
 	public List<Map<String, Object>> openFolderContent (String parentInode, String sortBy, boolean showArchived, long languageId) throws DotHibernateException, DotSecurityException, DotDataException {
 
-        activeFolderInode = parentInode;
+		final WebContext ctx         = WebContextFactory.get();
+		final HttpSession session    = ctx.getSession();
+		String siteBrowserActiveFolderInode = null;
+
+		if (null != session && null != session.getAttribute("siteBrowserActiveFolderInode")) {
+			siteBrowserActiveFolderInode = (String)session.getAttribute("siteBrowserActiveFolderInode");
+			session.removeAttribute("siteBrowserActiveFolderInode");
+		}
+
+        activeFolderInode = null != siteBrowserActiveFolderInode?siteBrowserActiveFolderInode:parentInode;
+
         this.lastSortBy = sortBy;
 
     	if (sortBy != null && UtilMethods.isSet(sortBy)) {
