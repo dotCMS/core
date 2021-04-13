@@ -6,6 +6,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.browsertree.BrowserTreeHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -24,6 +25,7 @@ import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -54,7 +56,36 @@ public class BrowserResource {
     }
 
     /**
-     * Set the logic into the site browser to opens a folder tree
+     * Set the select folder into the site browser, next time the site browser is opened will expand to selected folder
+     * @param request  {@link HttpServletRequest}
+     * @param response {@link HttpServletResponse}
+     * @return Response
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Path("/selectfolder")
+    @GET
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response getSelectFolder(@Context final HttpServletRequest request,
+                                 @Context final HttpServletResponse response) throws DotSecurityException, DotDataException {
+
+        final InitDataObject initDataObject = new WebResource.InitBuilder()
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true).init();
+
+        final User user = initDataObject.getUser();
+
+        final Optional<String> selectedPathOpt = BrowserTreeHelper.getInstance().findSelectedFolder(request);
+        return selectedPathOpt.isPresent()?
+                Response.ok(new ResponseEntityView(APILocator.getFolderAPI().find(selectedPathOpt.get(), user, false))).build():
+                Response.status(Response.Status.NOT_FOUND).build();
+    }
+    /**
+     * Set the select folder into the site browser, next time the site browser is opened will expand to selected folder
      * @param request  {@link HttpServletRequest}
      * @param response {@link HttpServletResponse}
      * @param openFolderForm {@link OpenFolderForm}
@@ -62,12 +93,12 @@ public class BrowserResource {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    @Path("/currentfolder")
+    @Path("/selectfolder")
     @PUT
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Response setCurrentFolder(@Context final HttpServletRequest request,
+    public Response selectFolder(@Context final HttpServletRequest request,
                                      @Context final HttpServletResponse response,
                                      final OpenFolderForm openFolderForm) throws DotSecurityException, DotDataException {
 
@@ -80,29 +111,12 @@ public class BrowserResource {
         final User user = initData.getUser();
         final boolean respectFrontendRoles = PageMode.get(request).respectAnonPerms;
         final String folderPath      = openFolderForm.getPath();
-        final Optional<Host> hostOpt = HostUtil.getHostFromPathOrCurrentHost(folderPath, StringPool.FORWARD_SLASH);
-        final Host host = hostOpt.isPresent()? hostOpt.get(): APILocator.getHostAPI().findDefaultHost(user, respectFrontendRoles);
-        final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-        final Folder folder =  APILocator.getFolderAPI().findFolderByPath(folderPath, host, user, respectFrontendRoles);
-        if (null != folder && null != host) {
+        final BrowserTreeHelper browserTreeHelper = BrowserTreeHelper.getInstance();
 
-            if (null == currentHost || !host.getIdentifier().equals(currentHost.getIdentifier())) {
+        Logger.debug(this, ()-> "Selecting the folder on the site browser: " + folderPath);
+        browserTreeHelper.selectFolder(request, folderPath, user, respectFrontendRoles);
 
-                request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
-                request.getSession().setAttribute(WebKeys.CMS_SELECTED_HOST_ID, host.getIdentifier());
-            }
-
-            final BrowserAjax browserAjax = (BrowserAjax)request.getSession().getAttribute("BrowserAjax");
-            if (null != browserAjax) {
-
-                browserAjax.setCurrentOpenFolder(folder.getInode(), host.getIdentifier(), user);
-            }
-
-            request.getSession().setAttribute("siteBrowserActiveFolderInode", folder.getInode());
-            return Response.ok(new ResponseEntityView(Boolean.TRUE)).build();
-        }
-
-        throw new IllegalArgumentException("The path seems to be not valid: " + folderPath);
+        return Response.ok(new ResponseEntityView(Boolean.TRUE)).build();
     }
 
     /**
