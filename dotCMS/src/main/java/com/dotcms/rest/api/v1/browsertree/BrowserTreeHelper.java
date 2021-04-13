@@ -120,12 +120,14 @@ public class BrowserTreeHelper {
                 request.getSession().setAttribute(WebKeys.CMS_SELECTED_HOST_ID, host.getIdentifier());
             }
 
-            final BrowserAjax browserAjax = (BrowserAjax)request.getSession().getAttribute("BrowserAjax");
-            if (null != browserAjax) {
+            BrowserAjax browserAjax = (BrowserAjax)request.getSession().getAttribute("BrowserAjax");
+            if (null == browserAjax) {
 
-                browserAjax.setCurrentOpenFolder(folder.getInode(), host.getIdentifier(), user);
+                browserAjax = new BrowserAjax();
+                request.getSession().setAttribute("BrowserAjax", browserAjax);
             }
 
+            browserAjax.setCurrentOpenFolder(folder.getInode(), host.getIdentifier(), user);
             request.getSession().setAttribute("siteBrowserActiveFolderInode", folder.getInode());
         } else {
 
