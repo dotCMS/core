@@ -254,6 +254,14 @@ public class BrowserAjax {
         return getFoldersTree (f, roles);
     }
 
+	/**
+	 * Set the logic to select next time the site browser is open to select a folder
+	 * @param parentInode {@link String}
+	 * @param hostId {@link String}
+	 * @param usr {@link User}
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
     public void setCurrentOpenFolder(final String parentInode, final String hostId, final User usr) throws DotDataException, DotSecurityException {
 
     	openFolders.clear();

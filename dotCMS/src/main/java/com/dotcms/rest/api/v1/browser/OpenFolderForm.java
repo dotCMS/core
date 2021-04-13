@@ -1,12 +1,12 @@
 package com.dotcms.rest.api.v1.browser;
 
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
-import java.util.ArrayList;
-import java.util.List;
-
+/**
+ * Form to set the open folder on the site browser.
+ * @author jsanca
+ */
 @JsonDeserialize(builder = OpenFolderForm.Builder.class)
 public class OpenFolderForm {
 
