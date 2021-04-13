@@ -69,14 +69,14 @@
                             }
                         ],
                         "styles": [
-                            "apps/dotcms-ui/src/styles.scss",
+                            "libs/dot-primeng-theme-styles/src/scss/styles.scss",
                             "node_modules/primeicons/primeicons.css",
                             "node_modules/primeflex/primeflex.css",
                             "node_modules/primeng/resources/primeng.min.css"
                         ],
                         "scripts": ["node_modules/marked/lib/marked.js"],
                         "stylePreprocessorOptions": {
-                            "includePaths": ["apps/dotcms-ui/src/styles"]
+                            "includePaths": ["libs/dot-primeng-theme-styles/src/scss"]
                         }
                     },
                     "configurations": {
@@ -144,10 +144,10 @@
                         "tsConfig": "apps/dotcms-ui/tsconfig.spec.json",
                         "karmaConfig": "apps/dotcms-ui/karma.conf.js",
                         "polyfills": "apps/dotcms-ui/src/polyfills.ts",
-                        "styles": ["apps/dotcms-ui/src/styles.scss"],
+                        "styles": ["libs/dot-primeng-theme-styles/src/scss/styles.scss"],
                         "scripts": [],
                         "stylePreprocessorOptions": {
-                            "includePaths": ["apps/dotcms-ui/src/styles"]
+                            "includePaths": ["libs/dot-primeng-theme-styles/src/scss"]
                         }
                     }
                 },
@@ -463,6 +463,143 @@
                             "libs/dotcms-models/src/**/*.ts",
                             "libs/dotcms-models/src/**/*.html"
                         ]
+                    }
+                }
+            }
+        },
+        "dot-primeng-theme-styles": {
+            "projectType": "library",
+            "root": "libs/dot-primeng-theme-styles",
+            "sourceRoot": "libs/dot-primeng-theme-styles/src",
+            "prefix": "dotcms",
+            "architect": {
+                "lint": {
+                    "builder": "@nrwl/linter:eslint",
+                    "options": {
+                        "lintFilePatterns": [
+                            "libs/dot-primeng-theme-styles/src/**/*.ts",
+                            "libs/dot-primeng-theme-styles/src/**/*.html"
+                        ]
+                    }
+                }
+            }
+        },
+        "dot-cdn": {
+            "projectType": "application",
+            "root": "apps/dot-cdn",
+            "sourceRoot": "apps/dot-cdn/src",
+            "prefix": "dotcms",
+            "architect": {
+                "build": {
+                    "builder": "@angular-devkit/build-angular:browser",
+                    "options": {
+                        "outputPath": "dist/apps/dot-cdn",
+                        "index": "apps/dot-cdn/src/index.html",
+                        "main": "apps/dot-cdn/src/main.ts",
+                        "polyfills": "apps/dot-cdn/src/polyfills.ts",
+                        "tsConfig": "apps/dot-cdn/tsconfig.app.json",
+                        "aot": true,
+                        "assets": ["apps/dot-cdn/src/favicon.ico", "apps/dot-cdn/src/assets"],
+                        "styles": [
+                            "libs/dot-primeng-theme-styles/src/scss/styles.scss",
+                            "node_modules/primeicons/primeicons.css",
+                            "node_modules/primeflex/primeflex.css",
+                            "node_modules/primeng/resources/primeng.min.css",
+                            "apps/dot-cdn/src/styles.scss"
+                        ],
+                        "stylePreprocessorOptions": {
+                            "includePaths": ["libs/dot-primeng-theme-styles/src/scss"]
+                        }
+                    },
+                    "configurations": {
+                        "production": {
+                            "fileReplacements": [
+                                {
+                                    "replace": "apps/dot-cdn/src/environments/environment.ts",
+                                    "with": "apps/dot-cdn/src/environments/environment.prod.ts"
+                                }
+                            ],
+                            "optimization": true,
+                            "outputHashing": "all",
+                            "sourceMap": false,
+                            "namedChunks": false,
+                            "extractLicenses": true,
+                            "vendorChunk": false,
+                            "buildOptimizer": true,
+                            "budgets": [
+                                {
+                                    "type": "initial",
+                                    "maximumWarning": "2mb",
+                                    "maximumError": "5mb"
+                                },
+                                {
+                                    "type": "anyComponentStyle",
+                                    "maximumWarning": "6kb",
+                                    "maximumError": "10kb"
+                                }
+                            ]
+                        }
+                    }
+                },
+                "serve": {
+                    "builder": "@angular-devkit/build-angular:dev-server",
+                    "options": {
+                        "browserTarget": "dot-cdn:build",
+                        "proxyConfig": "apps/dotcms-ui/proxy.conf.json"
+                    },
+                    "configurations": {
+                        "production": {
+                            "browserTarget": "dot-cdn:build:production"
+                        }
+                    }
+                },
+                "extract-i18n": {
+                    "builder": "@angular-devkit/build-angular:extract-i18n",
+                    "options": {
+                        "browserTarget": "dot-cdn:build"
+                    }
+                },
+                "lint": {
+                    "builder": "@nrwl/linter:eslint",
+                    "options": {
+                        "lintFilePatterns": [
+                            "apps/dot-cdn/src/**/*.ts",
+                            "apps/dot-cdn/src/**/*.html"
+                        ]
+                    }
+                },
+                "test": {
+                    "builder": "@nrwl/jest:jest",
+                    "outputs": ["coverage/apps/dot-cdn"],
+                    "options": {
+                        "jestConfig": "apps/dot-cdn/jest.config.js",
+                        "passWithNoTests": true
+                    }
+                }
+            }
+        },
+        "dot-cdn-e2e": {
+            "root": "apps/dot-cdn-e2e",
+            "sourceRoot": "apps/dot-cdn-e2e/src",
+            "projectType": "application",
+            "architect": {
+                "e2e": {
+                    "builder": "@nrwl/cypress:cypress",
+                    "options": {
+                        "cypressConfig": "apps/dot-cdn-e2e/cypress.json",
+                        "tsConfig": "apps/dot-cdn-e2e/tsconfig.e2e.json",
+                        "devServerTarget": "dot-cdn:serve"
+                    },
+                    "configurations": {
+                        "production": {
+                            "devServerTarget": "dot-cdn:serve:production"
+                        }
+                    }
+                },
+                "lint": {
+                    "builder": "@nrwl/linter:eslint",
+                    "options": {
+                        "lintFilePatterns": ["apps/dot-cdn-e2e/**/*.{js,ts}"]
                     }
                 }
             }

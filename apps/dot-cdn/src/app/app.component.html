@@ -1,0 +1,9 @@
+<input type="text" pInputText />
+
+<p-dropdown [options]="cities"  optionLabel="name" optionValue="code"></p-dropdown>
+
+<ul>
+    <li *ngFor="let item of content$ | async; index as i">
+      {{ item.name }}
+    </li>
+  </ul>

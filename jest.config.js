@@ -1,3 +1,3 @@
 module.exports = {
-    projects: ['<rootDir>/libs/dotcms']
+    projects: ['<rootDir>/libs/dotcms', '<rootDir>/apps/dot-cdn']
 };
