@@ -2,7 +2,9 @@
     {{ site.name }}
 </div>
 
-<div class="dot-apps-configuration-list__host-key">{{ 'apps.key' | dm }} {{ site.id }}</div>
+<div class="dot-apps-configuration-list__host-key" (click)="$event.stopPropagation()">
+    {{ 'apps.key' | dm }} <dot-copy-button [copy]="site.id" [label]="site.id"></dot-copy-button>
+</div>
 
 <ng-container *ngIf="site.configured; else noConfigurations">
     <dot-icon
@@ -11,7 +13,10 @@
         pTooltip="{{ site.secretsWithWarnings + ' ' + ('apps.invalid.secrets' | dm) }}"
         size="18"
     ></dot-icon>
-    <dot-icon-button icon="vertical_align_bottom" (click)="exportConfiguration($event, site)"></dot-icon-button>
+    <dot-icon-button
+        icon="vertical_align_bottom"
+        (click)="exportConfiguration($event, site)"
+    ></dot-icon-button>
     <dot-icon-button icon="delete_outline" (click)="confirmDelete($event, site)"></dot-icon-button>
     <dot-icon-button icon="edit" (click)="editConfigurationSite($event, site)"></dot-icon-button>
 </ng-container>

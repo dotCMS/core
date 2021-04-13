@@ -6,9 +6,17 @@ import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-ico
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 import { TooltipModule } from 'primeng/tooltip';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotCopyButtonModule } from '@dotcms/app/view/components/dot-copy-button/dot-copy-button.module';
 
 @NgModule({
-    imports: [CommonModule, DotIconButtonModule, DotIconModule, TooltipModule, DotPipesModule],
+    imports: [
+        CommonModule,
+        DotIconButtonModule,
+        DotCopyButtonModule,
+        DotIconModule,
+        TooltipModule,
+        DotPipesModule
+    ],
     declarations: [DotAppsConfigurationItemComponent],
     exports: [DotAppsConfigurationItemComponent]
 })

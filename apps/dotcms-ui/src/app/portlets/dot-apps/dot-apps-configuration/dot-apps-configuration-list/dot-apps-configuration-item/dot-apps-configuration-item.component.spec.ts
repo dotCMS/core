@@ -11,6 +11,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ConfirmationService } from 'primeng/api';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotCopyButtonModule } from '@dotcms/app/view/components/dot-copy-button/dot-copy-button.module';
 
 const messages = {
     'apps.key': 'Key',
@@ -52,6 +53,7 @@ describe('DotAppsConfigurationItemComponent', () => {
             TestBed.configureTestingModule({
                 imports: [
                     CommonModule,
+                    DotCopyButtonModule,
                     DotIconButtonModule,
                     DotIconModule,
                     TooltipModule,
@@ -96,6 +98,12 @@ describe('DotAppsConfigurationItemComponent', () => {
             expect(buttons[0].componentInstance.icon).toBe('vertical_align_bottom');
             expect(buttons[1].componentInstance.icon).toBe('delete_outline');
             expect(buttons[2].componentInstance.icon).toBe('edit');
+        });
+
+        it('should DotCopy with right properties', () => {
+            const dotCopy = fixture.debugElement.query(By.css('dot-copy-button')).componentInstance;
+            expect(dotCopy.label).toBe(component.site.id);
+            expect(dotCopy.copy).toBe(component.site.id);
         });
 
         it('should have warning icon', () => {
