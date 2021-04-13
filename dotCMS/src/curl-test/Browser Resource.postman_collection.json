@@ -160,7 +160,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/browser/selectfolder",
+					"raw": "{{serverURL}}/api/v1/browser/selectedfolder",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -168,7 +168,7 @@
 						"api",
 						"v1",
 						"browser",
-						"selectfolder"
+						"selectedfolder"
 					]
 				}
 			},
@@ -220,7 +220,7 @@
 					}
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/browser/selectfolder",
+					"raw": "{{serverURL}}/api/v1/browser/selectedfolder",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -228,7 +228,7 @@
 						"api",
 						"v1",
 						"browser",
-						"selectfolder"
+						"selectedfolder"
 					]
 				}
 			},

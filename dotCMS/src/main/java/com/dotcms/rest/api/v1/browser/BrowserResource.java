@@ -56,14 +56,14 @@ public class BrowserResource {
     }
 
     /**
-     * Set the select folder into the site browser, next time the site browser is opened will expand to selected folder
+     * Get the select folder into the site browser
      * @param request  {@link HttpServletRequest}
      * @param response {@link HttpServletResponse}
      * @return Response
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    @Path("/selectfolder")
+    @Path("/selectedfolder")
     @GET
     @JSONP
     @NoCache
@@ -93,7 +93,7 @@ public class BrowserResource {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    @Path("/selectfolder")
+    @Path("/selectedfolder")
     @PUT
     @JSONP
     @NoCache
