@@ -50,5 +50,4 @@ jobs:
           SLACK_WEBHOOK: ${{ secrets.SLACK_BOT_TOKEN }}
           SLACK_USERNAME: dotcms-automation-script
           SLACK_ICON: https://avatars.slack-edge.com/2020-09-21/1362682893351_5b474f175640cf5f5912_72.png
-          SLACK_COLOR: good
           SLACK_MESSAGE: "This automated script is excited to announce the release of a new version of dotCMS - dotCMS "${{env.BRANCH}}
