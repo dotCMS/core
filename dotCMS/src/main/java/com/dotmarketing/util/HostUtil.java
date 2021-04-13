@@ -22,7 +22,7 @@ import java.util.function.Supplier;
 
 public class HostUtil {
 
-	private static final String HOST_INDICATOR     = "//";
+	public static final String HOST_INDICATOR     = "//";
 
 	public static String hostNameUtil(ActionRequest req, User user) throws DotDataException, DotSecurityException {
 
