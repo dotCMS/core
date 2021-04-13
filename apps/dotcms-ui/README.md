@@ -1,10 +1,12 @@
 # DotCMS UI
+
 Main UI application for DotCMS admin.
 
 [![Publish to NPM](https://github.com/dotCMS/core-web/actions/workflows/publish.yml/badge.svg)](https://github.com/dotCMS/core-web/actions/workflows/publish.yml)
 [![DotCMS/core-web Tests](https://github.com/dotCMS/core-web/actions/workflows/main.yml/badge.svg)](https://github.com/dotCMS/core-web/actions/workflows/main.yml)
 
 ## Requirements
+
 [Nodejs and npm](https://nodejs.org/en/)
 
 Don't forget to run `npm install`

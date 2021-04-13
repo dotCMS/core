@@ -18,12 +18,11 @@ const EMPTY = {
     unique: null,
     clazz: null,
     regexCheck: null,
-    values: null,
-}
+    values: null
+};
 
 const fieldReturned = [
     {
-
         ...EMPTY,
         fieldType: 'Text',
         defaultValue: 'defaultValue1',
@@ -34,7 +33,6 @@ const fieldReturned = [
         variable: 'field1'
     },
     {
-
         ...EMPTY,
         fieldType: 'Text',
         defaultValue: 'defaultValue',

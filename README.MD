@@ -2,12 +2,13 @@
 [![DotCMS/core-web Tests](https://github.com/dotCMS/core-web/actions/workflows/main.yml/badge.svg)](https://github.com/dotCMS/core-web/actions/workflows/main.yml)
 
 # DotCMS Frontend
+
 This repository contains the frontend infrastructure for the DotCMS admin system, includes the main app and all the internal libraries.
 
 ## Content
 
 | Name                                                                                               | Type | Location                     | Build with | Description                                  |
-|----------------------------------------------------------------------------------------------------|------|------------------------------|------------|----------------------------------------------|
+| -------------------------------------------------------------------------------------------------- | ---- | ---------------------------- | ---------- | -------------------------------------------- |
 | [dotcms-ui](https://github.com/dotCMS/core-web/tree/master/apps/dotcms-ui)                         | app  | `apps/dotcms-ui`             | Angular    | Main UI application                          |
 | [dotcms](https://github.com/dotCMS/core-web/tree/master/libs/dotcms)                               | lib  | `libs/dotcms`                | Typescript | JavaScript SDK for DotCMS API's              |
 | [dot-layout-grid](https://github.com/dotCMS/core-web/tree/master/libs/dot-layout-grid)             | lib  | `libs/dot-layout-grid`       | Angular    | Components for layout editor                 |
@@ -16,8 +17,8 @@ This repository contains the frontend infrastructure for the DotCMS admin system
 | [dotcms-js](https://github.com/dotCMS/core-web/tree/master/libs/dotcms-js)                         | lib  | `libs/dotcms-js`             | Angular    | Angular @injectables for DotCMS API          |
 | [dotcms-models](https://github.com/dotCMS/core-web/tree/master/libs/dotcms-models)                 | lib  | `libs/dotcms-models`         | Typescript | DotCMS interfaces and types                  |
 
-
 ## NX Monorepo
+
 This project was generated using [Nx](https://nx.dev).
 
 🔎 **Nx is a set of Extensible Dev Tools for Monorepos.**
@@ -38,18 +39,18 @@ These capabilities include generating applications, libraries, etc as well as th
 
 Below are our core plugins:
 
-- [Angular](https://angular.io)
-  - `ng add @nrwl/angular`
-- [React](https://reactjs.org)
-  - `ng add @nrwl/react`
-- Web (no framework frontends)
-  - `ng add @nrwl/web`
-- [Nest](https://nestjs.com)
-  - `ng add @nrwl/nest`
-- [Express](https://expressjs.com)
-  - `ng add @nrwl/express`
-- [Node](https://nodejs.org)
-  - `ng add @nrwl/node`
+-   [Angular](https://angular.io)
+    -   `ng add @nrwl/angular`
+-   [React](https://reactjs.org)
+    -   `ng add @nrwl/react`
+-   Web (no framework frontends)
+    -   `ng add @nrwl/web`
+-   [Nest](https://nestjs.com)
+    -   `ng add @nrwl/nest`
+-   [Express](https://expressjs.com)
+    -   `ng add @nrwl/express`
+-   [Node](https://nodejs.org)
+    -   `ng add @nrwl/node`
 
 There are also many [community plugins](https://nx.dev/nx-community) you could add.
 

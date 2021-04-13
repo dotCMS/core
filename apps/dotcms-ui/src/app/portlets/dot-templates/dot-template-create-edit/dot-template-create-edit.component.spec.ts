@@ -67,7 +67,8 @@ export class DotPortletBaseMockComponent {
 
 @Component({
     selector: 'dot-portlet-toolbar',
-    template: '<div><div class="left"><ng-content select="[left]"></ng-content></div><ng-content></ng-content></div>'
+    template:
+        '<div><div class="left"><ng-content select="[left]"></ng-content></div><ng-content></ng-content></div>'
 })
 export class DotPortletToolbarMockComponent {
     @Input() title;

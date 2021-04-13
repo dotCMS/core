@@ -33,17 +33,14 @@ describe('DotApiPage', () => {
 
     it('should make request with the correct params when come a language code', async () => {
         try {
-            await dotApiPage.get({ url: '/test', language: 'en' })
+            await dotApiPage.get({ url: '/test', language: 'en' });
             expect(httpClient.request).toHaveBeenCalledWith({
                 url: '/api/v1/page/json/test',
                 language: '1'
             });
         } catch (error) {
-            console.log(error)
+            console.log(error);
         }
-
-
-
     });
 
     it('should make request with the correct params when come the language id', async () => {
@@ -54,30 +51,27 @@ describe('DotApiPage', () => {
                 language: '2'
             });
         } catch (error) {
-            console.log(error)
+            console.log(error);
         }
-
     });
 
     it('should make request with the correct format', async () => {
         try {
-            await dotApiPage.get({ url: '/test' }, DotCMSPageFormat.JSON)
+            await dotApiPage.get({ url: '/test' }, DotCMSPageFormat.JSON);
             expect(httpClient.request).toHaveBeenCalledWith({
                 url: '/api/v1/page/json/test'
             });
         } catch (error) {
-            console.log(error)
-
+            console.log(error);
         }
 
         try {
-            dotApiPage.get({ url: '/test' }, DotCMSPageFormat.Render)
+            dotApiPage.get({ url: '/test' }, DotCMSPageFormat.Render);
             expect(httpClient.request).toHaveBeenCalledWith({
                 url: '/api/v1/page/render/test'
             });
         } catch (error) {
-            console.log(error)
-
+            console.log(error);
         }
     });
 });

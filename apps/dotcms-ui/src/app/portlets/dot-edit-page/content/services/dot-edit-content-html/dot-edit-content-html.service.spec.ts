@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed, waitForAsync } from '@angular/core/testing';
 
-import { of, Observable } from 'rxjs';
+import { of, Observable, throwError } from 'rxjs';
 import { ConfirmationService } from 'primeng/api';
 
 import { DotEditContentHtmlService } from './dot-edit-content-html.service';
@@ -26,6 +26,10 @@ import { DotPageContent } from '@portlets/dot-edit-page/shared/models';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { DotPageContainer } from '@models/dot-page-container/dot-page-container.model';
 import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
+import { DotGlobalMessageService } from '@dotcms/app/view/components/_common/dot-global-message/dot-global-message.service';
+import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
+import { mockResponseView } from '@dotcms/app/test/response-view.mock';
 
 @Injectable()
 class MockDotLicenseService {
@@ -62,6 +66,7 @@ describe('DotEditContentHtmlService', () => {
         </head>
         <body>
             <div class="row-1">
+            
                 <div data-dot-object="container" data-dot-identifier="123" data-dot-uuid="456" data-dot-can-add="CONTENT">
                     <div
                         data-dot-object="contentlet"
@@ -89,6 +94,20 @@ describe('DotEditContentHtmlService', () => {
                         </div>
                     </div>
                 </div>
+
+                
+
+                <div data-dot-object="contentlet" data-dot-type="Banner" data-field-name="title">
+                    <div class="dotedit-contentlet__toolbar">
+                        <div data-dot-inode="123" data-dot-url="banner.vtl" data-dot-can-read="true" data-dot-can-edit="true">
+                            <div>
+                                <h1 data-test-id="inline-edit-element-title" data-mode="minimal" data-inode="123" data-field-name="title" data-language="1">Hello World</h1>
+                                <h2 data-test-id="inline-edit-element-subtitle" data-mode="minimal" data-inode="123" data-field-name="caption" data-language="1">Hello Subtitle</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
 
                 <div data-dot-object="container" data-dot-identifier="321" data-dot-uuid="654" data-dot-can-add="CONTENT">
                     <div
@@ -137,7 +156,8 @@ describe('DotEditContentHtmlService', () => {
         'editpage.content.container.action.add': 'Add',
         'editpage.content.container.menu.content': 'Content',
         'editpage.content.container.menu.widget': 'Widget',
-        'editpage.content.container.menu.form': 'Form'
+        'editpage.content.container.menu.form': 'Form',
+        'editpage.inline.error': 'An error ocurred'
     });
 
     let service: DotEditContentHtmlService;
@@ -160,6 +180,9 @@ describe('DotEditContentHtmlService', () => {
                     StringUtils,
                     DotAlertConfirmService,
                     ConfirmationService,
+                    DotGlobalMessageService,
+                    DotEventsService,
+                    DotWorkflowActionsFireService,
                     { provide: DotMessageService, useValue: messageServiceMock },
                     { provide: DotLicenseService, useClass: MockDotLicenseService }
                 ]
@@ -770,6 +793,131 @@ describe('DotEditContentHtmlService', () => {
                 type: 'NewsWidgets',
                 baseType: 'CONTENT'
             });
+        });
+    });
+
+    describe('inline editing', () => {
+        let dotWorkflowActionsFireService: DotWorkflowActionsFireService;
+        let dotGlobalMessageService: DotGlobalMessageService;
+
+        beforeEach(() => {
+            dotWorkflowActionsFireService = TestBed.inject(DotWorkflowActionsFireService);
+            dotGlobalMessageService = TestBed.inject(DotGlobalMessageService);
+        });
+
+        it('should return the content if an error occurs', () => {
+            const fakeElem: HTMLElement = fakeDocument.querySelector(
+                '[data-test-id="inline-edit-element-title"]'
+            );
+
+            const error404 = mockResponseView(404);
+            spyOn(dotWorkflowActionsFireService, 'saveContentlet').and.returnValue(
+                throwError(error404)
+            );
+
+            const events = ['focus', 'blur'];
+            events.forEach((event) => {
+                service.contentletEvents$.next({
+                    name: 'inlineEdit',
+                    data: {
+                        eventType: event,
+                        innerHTML: event === 'focus' ? fakeElem.innerHTML : '<div>hello</div>',
+                        isNotDirty: false,
+                        dataset: {
+                            fieldName: 'title',
+                            inode: '999',
+                            language: '1',
+                            mode: 'full'
+                        },
+                        element: fakeElem
+                    }
+                });
+            });
+
+            expect(fakeElem.innerHTML).toBe('Hello World');
+        });
+
+        it('should call saveContentlet and save the content', () => {
+            spyOn(dotWorkflowActionsFireService, 'saveContentlet').and.returnValue(of({}));
+            const fakeElem: HTMLElement = fakeDocument.querySelector(
+                '[data-test-id="inline-edit-element-title"]'
+            );
+
+            service.contentletEvents$.next({
+                name: 'inlineEdit',
+                data: {
+                    eventType: 'blur',
+                    innerHTML: '<div>hello</div>',
+                    isNotDirty: false,
+                    dataset: {
+                        fieldName: 'title',
+                        inode: '999',
+                        language: '1',
+                        mode: 'full'
+                    },
+                    element: fakeElem
+                }
+            });
+
+            expect(dotWorkflowActionsFireService.saveContentlet).toHaveBeenCalledWith('Banner', {
+                title: '<div>hello</div>',
+                inode: '999'
+            });
+        });
+
+        it('should not call saveContentlet if isNotDirty is true', () => {
+            spyOn(dotWorkflowActionsFireService, 'saveContentlet').and.returnValue(of({}));
+            const fakeElem: HTMLElement = fakeDocument.querySelector(
+                '[data-test-id="inline-edit-element-title"]'
+            );
+
+            service.contentletEvents$.next({
+                name: 'inlineEdit',
+                data: {
+                    eventType: 'blur',
+                    innerHTML: '<div>hello</div>',
+                    isNotDirty: true,
+                    dataset: {
+                        fieldName: 'title',
+                        inode: '999',
+                        language: '1',
+                        mode: 'full'
+                    },
+                    element: fakeElem
+                }
+            });
+
+            expect(dotWorkflowActionsFireService.saveContentlet).not.toHaveBeenCalled();
+        });
+
+        it('should display a toast on error', () => {
+            const error404 = mockResponseView(404);
+            spyOn(dotWorkflowActionsFireService, 'saveContentlet').and.returnValue(
+                throwError(error404)
+            );
+            spyOn(dotGlobalMessageService, 'error').and.callThrough();
+
+            const fakeElem: HTMLElement = fakeDocument.querySelector(
+                '[data-test-id="inline-edit-element-title"]'
+            );
+
+            service.contentletEvents$.next({
+                name: 'inlineEdit',
+                data: {
+                    eventType: 'blur',
+                    innerHTML: '<div>hello</div>',
+                    isNotDirty: false,
+                    dataset: {
+                        fieldName: 'title',
+                        inode: '999',
+                        language: '1',
+                        mode: 'full'
+                    },
+                    element: fakeElem
+                }
+            });
+
+            expect(dotGlobalMessageService.error).toHaveBeenCalledWith('An error ocurred');
         });
     });
 

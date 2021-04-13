@@ -55,7 +55,7 @@ export class DotStateIcon {
         return 'draft'; // empty
     }
 
-    private isTrue(value: string|boolean): boolean {
+    private isTrue(value: string | boolean): boolean {
         return value ? value.toString() === 'true' : false;
     }
 }

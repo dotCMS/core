@@ -1,4 +1,4 @@
-import { Component, h, Element, Prop, Event, EventEmitter , Method } from '@stencil/core';
+import { Component, h, Element, Prop, Event, EventEmitter, Method } from '@stencil/core';
 import {
     DotCardContentletItem,
     DotCardContentletEvent
@@ -87,7 +87,10 @@ export class DotCardContentlet {
                     </div>
                     <div class="extra">
                         <div class="state">
-                            <dot-contentlet-state-icon state={this.getContentState(contentlet)} size="16px" />
+                            <dot-contentlet-state-icon
+                                state={this.getContentState(contentlet)}
+                                size="16px"
+                            />
                             <dot-badge bordered={true}>{contentlet.language}</dot-badge>
                             {contentlet.locked === 'true' ? (
                                 <dot-contentlet-lock-icon locked={JSON.parse(contentlet.locked)} />
@@ -108,7 +111,12 @@ export class DotCardContentlet {
         );
     }
 
-    private getContentState ({ live, working, deleted, hasLiveVersion}: DotContentletItem): DotContentState {
-        return {live, working, deleted, hasLiveVersion}
+    private getContentState({
+        live,
+        working,
+        deleted,
+        hasLiveVersion
+    }: DotContentletItem): DotContentState {
+        return { live, working, deleted, hasLiveVersion };
     }
 }

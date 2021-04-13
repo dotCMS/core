@@ -17,8 +17,14 @@ class DotTemplates {
         Page.assertElementContainsText('.p-breadcrumb > ul > :nth-child(3)', `Templates`); // Header
         Page.assertElementSize('p-table', 1); // Table
         Page.assertElementSize('.action-header__global-search input[type="text"]', 1); // Global Search Input
-        Page.assertElementContainsText('.template-listing__header-options p-checkbox', `Show Archived`); // Show Archived button
-        Page.assertElementContainsText('.template-listing__header-options .p-button-label', `Actions`); // BulkAction button
+        Page.assertElementContainsText(
+            '.template-listing__header-options p-checkbox',
+            `Show Archived`
+        ); // Show Archived button
+        Page.assertElementContainsText(
+            '.template-listing__header-options .p-button-label',
+            `Actions`
+        ); // BulkAction button
         Page.assertElementContainsText(CREATE_TEMPLATE_BUTTON, `add`); // Action button
     }
 

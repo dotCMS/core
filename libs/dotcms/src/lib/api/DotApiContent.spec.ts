@@ -1,5 +1,5 @@
 import { DotCMSError } from '../models/DotCMSError.model';
-import { DotCMSHttpClient } from '../utils/DotCMSHttpClient'
+import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
 import { DotApiContent } from './DotApiContent';
 
 describe('DotApiContent', () => {

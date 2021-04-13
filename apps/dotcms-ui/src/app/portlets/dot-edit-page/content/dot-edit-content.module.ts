@@ -28,6 +28,8 @@ import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { CheckboxModule } from 'primeng/checkbox';
 import { TooltipModule } from 'primeng/tooltip';
+import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
+import { DotLicenseService } from '@services/dot-license/dot-license.service';
 
 const routes: Routes = [
     {
@@ -68,7 +70,9 @@ const routes: Routes = [
         DotPageRenderService,
         DotWorkflowService,
         IframeOverlayService,
-        DotCustomEventHandlerService
+        DotCustomEventHandlerService,
+        DotWorkflowActionsFireService,
+        DotLicenseService
     ]
 })
 export class DotEditContentModule {}

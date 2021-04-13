@@ -5,7 +5,7 @@
         "outDir": "../../dist/out-tsc",
         "allowJs": true,
         "types": ["cypress", "node"],
-        "paths": { 
+        "paths": {
             "@e2e/pages/*": ["apps/dotcms-ui-e2e/src/pages/*"],
             "@e2e/shared/*": ["apps/dotcms-ui-e2e/src/support/shared/*"]
         }
