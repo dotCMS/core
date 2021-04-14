@@ -104,7 +104,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
         final boolean alwaysRegenerateMetadata = Config
                 .getBooleanProperty(ALWAYS_REGENERATE_METADATA_ON_REINDEX, false);
 
-        Logger.info(this, ()-> "Generating the metadata for contentlet, id = " + contentlet.getIdentifier());
+        Logger.debug(this, ()-> "Generating the metadata for contentlet, id = " + contentlet.getIdentifier());
 
         // Full MD is stored in disc (FS or DB)
         final Map<String, Metadata> fullMetadata = generateFullMetadata(contentlet,
