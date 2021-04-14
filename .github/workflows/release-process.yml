@@ -46,6 +46,6 @@ jobs:
         if: success()
         uses: rtCamp/action-slack-notify@master
         env:
-          SLACK_CHANNEL: falcon
-          SLACK_WEBHOOK: ${{ secrets.SLACK_BOT_TOKEN }}
-          SLACK_USERNAME: dotcms-automation-script
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_USERNAME: dotcms-bot
+          SLACK_MESSAGE: "This automated script is excited to announce the release of a new version of dotCMS - dotCMS v.xxxx"
