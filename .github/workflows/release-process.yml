@@ -48,4 +48,4 @@ jobs:
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_USERNAME: dotcms-bot
-          SLACK_MESSAGE: "This automated script is excited to announce the release of a new version of dotCMS - dotCMS "${BRANCH}
+          SLACK_MESSAGE: "This automated script is excited to announce the release of a new version of dotCMS - dotCMS "${{ env.BRANCH }}
