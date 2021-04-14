@@ -338,9 +338,13 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
 
         if(reindexTimeElapsedInLong()<Config.getLongProperty("REINDEX_THREAD_MINIMUM_RUNTIME_IN_SEC", 30)*1000) {
-          Logger.info(this.getClass(), "Reindex has been running only " +reindexTimeElapsed().get() + ". Letting the reindex settle.");
-          ThreadUtils.sleep(3000);
-          return false;
+            if(reindexTimeElapsed().isPresent()){
+                Logger.info(this.getClass(), "Reindex has been running only " +reindexTimeElapsed().get() + ". Letting the reindex settle.");
+            }else{
+                Logger.info(this.getClass(), "Reindex Time Elapsed not set.");
+            }
+            ThreadUtils.sleep(3000);
+            return false;
         }
         try {
             final IndiciesInfo oldInfo = APILocator.getIndiciesAPI().loadIndicies();
