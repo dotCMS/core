@@ -107,6 +107,31 @@ public class HostUtil {
 		return Tuple.of(path, null == host? hostAPI.findDefaultHost(user, false): host);
 	}
 
+	/**
+	 * Switch a site based on the id on session
+	 * @param req {@link HttpServletRequest}
+	 * @param hostId {@link String}
+	 */
+	public static void switchSite(final HttpServletRequest req, final String hostId) {
+		final HttpSession session = req.getSession();
 
+		session.removeAttribute(WebKeys.CMS_SELECTED_HOST_ID); // we do this in order to get a properly behaviour of the SwichSiteListener
+		session.setAttribute(WebKeys.CMS_SELECTED_HOST_ID, hostId);
+		session.removeAttribute(WebKeys.CONTENTLET_LAST_SEARCH);
+	}
+
+	/**
+	 * Switch a site based on the host on session
+	 * @param req {@link HttpServletRequest}
+	 * @param host {@link HttpServletRequest}
+	 */
+	public static void switchSite(final HttpServletRequest req, final Host host) {
+
+		switchSite(req, host.getIdentifier());
+
+		final HttpSession session = req.getSession();
+		session.removeAttribute(WebKeys.CURRENT_HOST);
+		session.setAttribute(WebKeys.CURRENT_HOST, host);
+	}
 
 }

@@ -153,8 +153,7 @@ public class BrowserTreeHelper {
 
             if (null == currentHost || !host.getIdentifier().equals(currentHost.getIdentifier())) {
 
-                request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
-                request.getSession().setAttribute(WebKeys.CMS_SELECTED_HOST_ID, host.getIdentifier());
+                HostUtil.switchSite(request, host);
             }
 
             BrowserAjax browserAjax = (BrowserAjax)request.getSession().getAttribute("BrowserAjax");
