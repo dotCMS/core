@@ -4,8 +4,8 @@ on:
     types: [published]
 jobs:
   release-process:
-    name: Release Process Automation Test
-    runs-on: ubuntu-18.04
+    name: Release Process Automation
+    runs-on: master
     env:
       DOT_CICD_BRANCH: 19969-release-automation-pending-steps
       DOT_CICD_CLOUD_PROVIDER: github
@@ -19,7 +19,7 @@ jobs:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       SSH_RSA_KEY: ${{ secrets.EE_RSA_KEY }}
-      DEBUG: true
+      DEBUG: false
     steps:
       - name: GITHUB CONTEXT
         env:
@@ -29,8 +29,11 @@ jobs:
       - name: Set Common Vars
         run: |
           BRANCH=$(basename "${{ github.ref }}")
-          echo "BRANCH=${BRANCH}"
-          IS_RELEASE='true'
+          if [[ ${BRANCH} =~ ^release-.*|^v[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$ ]]; then
+            IS_RELEASE='true'
+          else
+            IS_RELEASE='false'
+          fi
           echo "BRANCH=${BRANCH}" >> $GITHUB_ENV
           echo "EE_BRANCH=${BRANCH}" >> $GITHUB_ENV
           echo "BASE_FOLDER=$(pwd)" >> $GITHUB_ENV
@@ -42,6 +45,12 @@ jobs:
         run: |
           dotcicd/library/pipeline.sh buildRelease
         if: env.IS_RELEASE != 'true'
+      - name: Run DotCMS Release Docker Image
+        run: |
+          dotcicd/library/pipeline.sh runRelease
+      - name: Publish Docker Multiarch Image
+        run: |
+          dotcicd/library/pipeline.sh publishDockerImage ${{ env.GITHUB_USER }} ${{ secrets.USER_TOKEN }} ${{ env.BRANCH }} ${{ env.IS_RELEASE }} ${{ secrets.DOCKER_USERNAME }} ${{ secrets.DOCKER_TOKEN }}
       - name: Slack Notification
         if: success()
         uses: rtCamp/action-slack-notify@master
