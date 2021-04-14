@@ -53,4 +53,4 @@ jobs:
           MSG_MINIMAL: true
           SLACK_FOOTER: ""
           SLACK_ICON: https://avatars.slack-edge.com/2021-02-18/1760490973606_047c511fc4610eab31e5_88.png
-          SLACK_MESSAGE: "This automated script is excited to announce the release of a new version of dotCMS - dotCMS ${{ env.BRANCH }} :tada:"
+          SLACK_MESSAGE: "@channel This automated script is excited to announce the release of a new version of dotCMS - dotCMS ${{ env.BRANCH }} :tada:"
