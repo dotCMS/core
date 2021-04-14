@@ -32,7 +32,7 @@ public class RedirectUtil {
         Try.run(() -> {
             response.getWriter().write(finalTemplate);
             response.getWriter().flush();
-        }).onFailure(e->Logger.warn(DotSamlResource.class,"Unable to redirect to :" + redirectUrl+ " cause:"+e.getMessage()));
+        }).onFailure(e->Logger.warn(RedirectUtil.class,"Unable to redirect to :" + redirectUrl+ " cause:"+e.getMessage()));
         
 
         
