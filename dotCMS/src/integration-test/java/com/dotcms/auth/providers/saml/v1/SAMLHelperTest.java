@@ -123,6 +123,7 @@ public class SAMLHelperTest extends IntegrationTestBase {
         when(companyAPI.getDefaultCompany()).thenReturn(company);
 
         // no want to sync roles
+        when(identityProviderConfiguration.containsOptionalProperty(SamlName.DOT_SAML_ALLOW_USER_SYNCHRONIZATION.getPropertyName())).thenReturn(false);
         when(identityProviderConfiguration.containsOptionalProperty(SamlName.DOTCMS_SAML_BUILD_ROLES.getPropertyName())).thenReturn(true);
         when(identityProviderConfiguration.getOptionalProperty(SamlName.DOTCMS_SAML_BUILD_ROLES.getPropertyName())).thenReturn(DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_NONE_VALUE);
 
