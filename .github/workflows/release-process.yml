@@ -19,7 +19,7 @@ jobs:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       SSH_RSA_KEY: ${{ secrets.EE_RSA_KEY }}
-      DEBUG: true
+      DEBUG: false
     steps:
       - name: GITHUB CONTEXT
         env:
@@ -35,7 +35,7 @@ jobs:
           else
             IS_RELEASE='false'
           fi
-          
+
           echo "BRANCH=${BRANCH}" >> $GITHUB_ENV
           echo "EE_BRANCH=${BRANCH}" >> $GITHUB_ENV
           echo "BASE_FOLDER=$(pwd)" >> $GITHUB_ENV
