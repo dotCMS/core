@@ -8,6 +8,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Optional;
 import java.util.StringTokenizer;
 
 import javax.servlet.http.Cookie;
@@ -383,14 +384,20 @@ public class WebAPI implements ViewTool {
 		try{
           if(path == null ) return null;
 		  Identifier ident = identAPI.find(host, path);
-		  ContentletVersionInfo cvi;
+		  Optional<ContentletVersionInfo> cvi;
 		  
 		  // Language Fall Back
 		  cvi = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), langId);
-		  if(cvi ==null && defaultLang != langId){
+
+		  if(!cvi.isPresent() && defaultLang != langId){
 		    cvi = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), defaultLang);
 		  }
-		  String conInode = (PREVIEW_MODE && EDIT_MODE) ? cvi.getWorkingInode() : cvi.getLiveInode();
+
+		  if(!cvi.isPresent()) {
+		  	throw new DotDataException("Can't find Contentlet-version-info. Identifier: " + ident.getId() + ". Lang:" + defaultLang);
+		  }
+		  String conInode = PREVIEW_MODE && EDIT_MODE ? cvi.get().getWorkingInode()
+				  : cvi.get().getLiveInode();
 		  FileAsset file  = APILocator.getFileAssetAPI().fromContentlet(APILocator.getContentletAPI().find(conInode,  user, true));
 		  
 		  return APILocator.getFileAssetAPI().getRealAssetPath(conInode, file.getUnderlyingFileName());
@@ -741,36 +748,6 @@ public class WebAPI implements ViewTool {
 
 
 
-	public User getUserByLongLiveCookie() {
-
-		String _dotCMSID = "";
-		if(!UtilMethods.isSet(UtilMethods.getCookieValue(request.getCookies(),
-				com.dotmarketing.util.WebKeys.LONG_LIVED_DOTCMS_ID_COOKIE))) {
-			Cookie idCookie = CookieUtil.createCookie();
-		}
-		_dotCMSID = UtilMethods.getCookieValue(request.getCookies(),
-				com.dotmarketing.util.WebKeys.LONG_LIVED_DOTCMS_ID_COOKIE);
-		UserProxy up;
-		try {
-			up = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxyByLongLiveCookie(_dotCMSID,APILocator.getUserAPI().getSystemUser(), false);
-		} catch (Exception e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotRuntimeException(e.getMessage(), e);
-		}
-
-		if (UtilMethods.isSet(up) &&  UtilMethods.isSet(up.getUserId())) {
-			try {
-				return APILocator.getUserAPI().loadUserById(up.getUserId(),APILocator.getUserAPI().getSystemUser(),false);
-			} catch (Exception e) {
-				Logger.error(this, e.getMessage(),e);
-				return null;
-			}
-		}
-		else {
-			return null;
-		}
-
-	}
 
 	public Object getCategoriesByNonLoggedUser() {
 
@@ -877,8 +854,8 @@ public class WebAPI implements ViewTool {
 	
 	public boolean contentHasLiveVersion(String identifier) throws Exception {
 	    long lang=Long.parseLong((String)request.getSession().getAttribute(WebKeys.HTMLPAGE_LANGUAGE));
-	    ContentletVersionInfo cvi=APILocator.getVersionableAPI().getContentletVersionInfo(identifier, lang);
-	    return UtilMethods.isSet(cvi.getLiveInode());
+	    Optional<ContentletVersionInfo> cvi=APILocator.getVersionableAPI().getContentletVersionInfo(identifier, lang);
+	    return cvi.isPresent() && UtilMethods.isSet(cvi.get().getLiveInode());
 	}
 	
 }

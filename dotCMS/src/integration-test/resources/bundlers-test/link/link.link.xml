@@ -1,0 +1,43 @@
+<com.dotcms.publisher.pusher.wrapper.LinkWrapper>
+    <linkId>
+        <id>__id__</id>
+        <assetName>__asset_name__</assetName>
+        <assetType>links</assetType>
+        <parentPath>__parent_path__</parentPath>
+        <hostId>__host_id__</hostId>
+        <owner>system</owner>
+        <createDate class="sql-timestamp">2021-01-25 16:41:59.431</createDate>
+    </linkId>
+    <links>
+        <com.dotmarketing.portlets.links.model.Link>
+            <iDate class="sql-timestamp">2021-01-25 16:41:59.431</iDate>
+            <type>links</type>
+            <owner>system</owner>
+            <inode>__inode__</inode>
+            <identifier>__id__</identifier>
+            <source>DB</source>
+            <title>__title__</title>
+            <friendlyName>__friendly_name__</friendlyName>
+            <modDate class="sql-timestamp">2021-01-25 16:41:59.431</modDate>
+            <modUser>system</modUser>
+            <sortOrder>__sort_order__</sortOrder>
+            <showOnMenu>false</showOnMenu>
+            <parent>__parent_path__</parent>
+            <protocal>https://</protocal>
+            <url>www.google.com</url>
+            <target>_blank</target>
+            <internalLinkIdentifier></internalLinkIdentifier>
+            <linkType>EXTERNAL</linkType>
+            <linkCode></linkCode>
+            <hostId>__host_id__</hostId>
+        </com.dotmarketing.portlets.links.model.Link>
+    </links>
+    <vi class="com.dotmarketing.portlets.links.model.LinkVersionInfo">
+        <identifier>__id__</identifier>
+        <workingInode>__inode__</workingInode>
+        <lockedOn class="sql-timestamp">2021-01-25 16:41:59.447</lockedOn>
+        <deleted>false</deleted>
+        <versionTs class="sql-timestamp">2021-01-25 16:41:59.447</versionTs>
+    </vi>
+    <operation>PUBLISH</operation>
+</com.dotcms.publisher.pusher.wrapper.LinkWrapper>

@@ -1,0 +1,29 @@
+{
+  "contentType":{
+    "clazz":"__class__",
+    "name":"__content_type_name__",
+    "id":"__content_type_id__",
+    "description":"__content_type_description__",
+    "defaultType":false,
+    "detailPage":null,
+    "fixed":__fixed__,
+    "iDate":__content_type_idate__,
+    "system":false,
+    "versionable":true,
+    "multilingualable":false,
+    "variable":"__content_type_variable__",
+    "urlMapPattern":null,
+    "publishDateVar":null,
+    "expireDateVar":null,
+    "owner":"system",
+    "modDate":__content_type_mod_date__,
+    "host":"__host__",
+    "folder":"__folder_id__"
+  },
+  "fields":[],
+  "workflowSchemaIds":[__workflows_ids__],
+  "workflowSchemaNames":[__workflows_names__],
+  "operation":"PUBLISH",
+  "fieldVariables":[],
+  "systemActionMappings":[]
+}

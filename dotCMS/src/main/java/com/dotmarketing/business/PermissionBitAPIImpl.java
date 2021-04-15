@@ -23,6 +23,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.PermissionableProxy;
+import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -88,7 +89,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 	/**
 	 * Sets a Permission Factory for this API
-	 * @param PermissionFactory service reference
+	 * @param permissionFactory service reference
 	 * @return Nothing
 	 */
 	public void setPermissionFactory(PermissionFactory permissionFactory) {
@@ -153,7 +154,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 	/**
 	 * This is not intended to be used to check permission because it doesn't check for cms administrator privileges
-	 * @param user
+	 * @param userRoleIDs
 	 * @param permissions
 	 * @param requiredPermissionType
 	 * @return If the user has the required permission for the collection of permissions passed in
@@ -254,33 +255,47 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		return doesUserHavePermission(permissionable, permissionType, user, true);
 	}
 
+	private boolean userPermissions(final UserProxy userProxy, final User userIn) {
+	    
+	    if(userProxy.getPermissionId().equals("user:"+userIn.getUserId())) {
+	        return true;
+	    }
+	    return Try.of(()-> APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("user", userIn)).getOrElse(false);
+	}
+	
+	
+	
 	@CloseDBIfOpened
 	@Override
 	public boolean doesUserHavePermission(final Permissionable permissionable, int permissionType, final User userIn, final boolean respectFrontendRoles) throws DotDataException {
 	    
+	    User user = (userIn==null || userIn.getUserId()==null) ? APILocator.getUserAPI().getAnonymousUser() : userIn;
 	    
-	    final User user = (userIn==null || userIn.getUserId()==null) ? APILocator.getUserAPI().getAnonymousUser() : userIn;
-	    
-	    
-	    
-	    
-        if(user.getUserId().equals(APILocator.getUserAPI().getSystemUser().getUserId())){
+        if(user.getUserId().equals(APILocator.systemUser().getUserId())){
             return true;
         }
         
-		// if we have bad data
-		if ((permissionable == null) || (!InodeUtils.isSet(permissionable.getPermissionId()))) {
-			if(permissionable != null){
-				Logger.debug(this.getClass(), "Trying to get permissions on null inode of type :" + permissionable.getPermissionType()) ;
-				Logger.debug(this.getClass(), "Trying to get permissions on null inode of class :" + permissionable.getClass()) ;
-			}
-			if(permissionable == null){
-				Logger.error(this, "Permissionable object is null");
-				throw new NullPointerException("Permissionable object is null");
-			}
-			return false;
-		}
+        if(user.isAdmin()) {
+            return true;
+        }
+        
+        if (permissionable == null) {
+            Logger.warn(this, "Permissionable object is null");
+            throw new NullPointerException("Permissionable object is null");
+        }
+        
+        if(UtilMethods.isEmpty(permissionable.getPermissionId())){
+            Logger.debug(this.getClass(), "Trying to get permissions on null inode of type :" + permissionable.getPermissionType()) ;
+            Logger.debug(this.getClass(), "Trying to get permissions on null inode of class :" + permissionable.getClass()) ;
+            return false;
+            
+        }
 
+        // short circut for UserProxy
+        if(permissionable instanceof UserProxy) {
+            return userPermissions((UserProxy) permissionable, user);
+        }
+		
 
 		
 		// Folders do not have PUBLISH, use EDIT instead
@@ -375,7 +390,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
      */
     private boolean isLiveContentlet(Permissionable permissionable) {
         return permissionable!=null && permissionable instanceof Contentlet
-                && Sneaky.sneak(()->((Contentlet) permissionable).isLive());
+                && Try.of(()->((Contentlet) permissionable).isLive()).getOrElse(false);
     }
 
     @WrapInTransaction
@@ -545,7 +560,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
     /**
      * Saves passed in permission
-	 * @param Permission to save
+	 * @param permission to save
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
@@ -1415,24 +1430,39 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 	@Override
     public boolean doesUserHavePermissions(PermissionableType permType, int permissionType, User user) throws DotDataException {
-    	if(user==null) return false;
+    	return doesUserHavePermissions(null,permType,permissionType,user);
+    }
 
-    	if(APILocator.getUserAPI().isCMSAdmin(user)) return true;
+	@Override
+	public boolean doesUserHavePermissions(final String assetId, final PermissionableType permType, final int permissionType, final User user) throws DotDataException {
+		if(user==null) {
+			return false;
+		}
 
-    	Boolean hasPerm = false;
-    	RoleAPI roleAPI = APILocator.getRoleAPI();
-		List<com.dotmarketing.business.Role> roles = roleAPI.loadRolesForUser(user.getUserId(), false);
-		for(com.dotmarketing.business.Role r : roles) {
-			List<Permission> perms = APILocator.getPermissionAPI().getPermissionsByRole(r, false);
-			for (Permission p : perms) {
-				if(p.getType().equals(permType.getCanonicalName())) {
-					hasPerm = hasPerm | p.getPermission()>=permissionType;
+		if(APILocator.getUserAPI().isCMSAdmin(user)){
+			return true;
+		}
+
+		Boolean hasPerm = false;
+		final RoleAPI roleAPI = APILocator.getRoleAPI();
+		final List<com.dotmarketing.business.Role> roles = roleAPI.loadRolesForUser(user.getUserId(), false);
+		for(final com.dotmarketing.business.Role role : roles) {
+			List<Permission> perms = APILocator.getPermissionAPI().getPermissionsByRole(role, false);
+			if(UtilMethods.isSet(assetId)) {
+				perms = perms.stream()
+						.filter(permission -> permission.getInode().equalsIgnoreCase(assetId))
+						.collect(
+								Collectors.toList());
+			}
+			for (final Permission permission : perms) {
+				if(permission.getType().equals(permType.getCanonicalName())) {
+					hasPerm = hasPerm | permission.getPermission()>=permissionType;
 				}
 			}
 		}
 
 		return hasPerm;
-    }
+	}
 
     /**
      * @Deprecated: use permissionIndividually(Permissionable parent, Permissionable permissionable,

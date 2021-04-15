@@ -88,6 +88,6 @@ public class AppsCacheImplTest {
      * @return
      */
     private AppDescriptor createDescriptor(final String key){
-        return new AppDescriptorImpl(key + ".yml", key, key,null,false, null);
+        return new AppDescriptorImpl(key + ".yml", false, key, key,null,false, null);
     }
 }

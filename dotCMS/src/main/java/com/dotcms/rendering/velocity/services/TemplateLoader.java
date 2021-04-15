@@ -15,6 +15,8 @@ import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.StringPool;
 import java.io.InputStream;
 
 import org.apache.velocity.runtime.resource.ResourceManager;
@@ -52,15 +54,19 @@ public class TemplateLoader implements DotLoader {
     @Override
     public InputStream writeObject(final VelocityResourceKey key) throws DotDataException, DotSecurityException {
 
-        Identifier identifier = APILocator.getIdentifierAPI()
-            .find(key.id1);
-        VersionableAPI versionableAPI = APILocator.getVersionableAPI();
+        String templateId = key.id1;
+        //if the key.id1 is not set means that the template that is being used is a FileAssetTemplate
+        //we need to get the identifier from the path
+        if(UtilMethods.isNotSet(templateId)){
+            templateId = key.path.replaceAll(StringPool.FORWARD_SLASH + key.mode.name() + StringPool.FORWARD_SLASH ,"")
+                    .replaceAll(StringPool.PERIOD + "templatelayout","");
+        }
         Template template = null;
         if (key.mode.showLive) {
-            template = (Template) versionableAPI.findLiveVersion(identifier, sysUser(), true);
+            template = APILocator.getTemplateAPI().findLiveTemplate(templateId,sysUser(), true);
 
         } else {
-            template = (Template) versionableAPI.findWorkingVersion(identifier, sysUser(), true);
+            template = APILocator.getTemplateAPI().findWorkingTemplate(templateId,sysUser(), true);
         }
 
         Logger.debug(this, "DotResourceLoader:\tWriting out Template inode = " + template.getInode());

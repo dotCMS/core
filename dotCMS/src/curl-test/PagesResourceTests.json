@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "5ca31711-c63c-4116-a0fa-85bae897a396",
+		"_postman_id": "467aef97-8193-4d1e-a3c1-08e9b01bc5f3",
 		"name": "Page API - [api/v1/page]",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -14,7 +14,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "c1be4522-30db-40f1-9703-aa4810fd7728",
+								"id": "6ceb004f-c477-409f-9a1d-8c7bee1f5350",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -22,7 +22,7 @@
 									"    var jsonData = pm.response.json();",
 									"    console.log(jsonData);",
 									"",
-									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"pages.tar.gz\");",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"assets.tar.gz\");",
 									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
 									"});"
 								],
@@ -65,7 +65,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "/build/src/core/dotCMS/src/curl-test/resources/PageResource/pages.tar.gz"
+									"src": "resources/GraphQL/assets.tar.gz"
 								}
 							],
 							"options": {
@@ -103,7 +103,7 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "3745b616-0ecd-4a17-b58a-f2239ce1f6bd",
+						"id": "50f00108-83ec-4a2b-8304-ed81942b73c0",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -113,7 +113,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "a8340c4b-d183-4116-8ab7-9efa129bb4b6",
+						"id": "4afcb734-0af1-495f-a366-7717d14f6777",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -132,7 +132,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "b973ed43-58f3-41b1-b9ad-bd0855f023d8",
+								"id": "8cf66b1c-0003-4610-8e96-c1b38e2aaf27",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -165,7 +165,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "b126da97-3ad9-41f2-a476-490e2e1969aa",
+								"id": "118b41c4-c724-48cf-89af-d20c89d2f3cf",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 401, Need credentials\", function () {",
@@ -213,7 +213,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d07bf3be-4467-489e-ba82-b92b85baa9a9",
+								"id": "a5a07df6-57f7-4ec5-80a3-c8e452773b73",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 200\", function () {",
@@ -343,7 +343,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "cf6d7282-2169-4a64-a386-f5ac2385ef24",
+								"id": "0050f56c-6806-48f1-8140-522ebfe3476b",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -376,7 +376,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "b78040ce-5647-4c38-92c3-b65c327fb9de",
+								"id": "91f5ac16-ef60-48bd-bbe6-9fb751962c4b",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 404\", function () {",
@@ -438,7 +438,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "3ebef232-3df5-44b4-8785-bd7b9f0254a1",
+								"id": "10f6e94d-6a0e-4cc2-84ed-21c458f26126",
 								"exec": [
 									"pm.test(\"No errors\", function () {",
 									"    ",
@@ -556,7 +556,7 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "1fc4897b-8ef0-4dbb-a52a-6ffc7de3bf71",
+						"id": "19700d59-0a68-4594-a323-45ba94108915",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -566,7 +566,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "a673228c-dfaf-4a44-b77c-40444e15329e",
+						"id": "51981d37-7ad1-47b3-a322-63f72aea3e62",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -585,7 +585,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "5e71f885-b1c3-4476-887b-4f08d33d0e41",
+								"id": "ce4a7239-5543-4571-9a78-66f75c502601",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -618,7 +618,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "e6574938-ad43-40b3-b217-fa8b36ba63e4",
+								"id": "aac23bda-c2f5-400f-9700-72ffd0398b95",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 401, Need credentials\", function () {",
@@ -665,7 +665,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "6632cbd5-7f5d-425e-bec1-800c4b969fde",
+								"id": "132942c5-35ae-4a57-a4f2-045c5c483058",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 200\", function () {",
@@ -788,7 +788,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d5759ce1-3a25-431e-85b9-11aa88dab4c9",
+								"id": "f376d622-1c54-4b00-8713-4cfb68f69692",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 404\", function () {",
@@ -847,7 +847,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "06301ae6-fad1-420c-90f9-a806e3a87b73",
+								"id": "5caf7a93-f793-4f75-a1f0-d2178bd4b350",
 								"exec": [
 									"pm.test(\"No errors\", function () {",
 									"    ",
@@ -982,7 +982,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "861780bc-af3d-4b95-a22b-e1461d916cc2",
+								"id": "9be95091-e3a8-4497-970d-726befd7191d",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1015,7 +1015,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "b1bbc805-5276-4397-be65-3596f11803f2",
+								"id": "7027be93-a9c5-4b06-a258-d17b0f6d1bc8",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 401, Need credentials\", function () {",
@@ -1071,7 +1071,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "916aeb70-c49b-47ff-a9f3-f2bf9066ba21",
+								"id": "561037e7-8cb8-459c-b602-05aa9357dc61",
 								"exec": [
 									"pm.test(\"Response code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1188,7 +1188,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "6eceebfa-248f-4531-8a44-0148daf18879",
+								"id": "8f51f28c-97cd-4242-9441-028d65110363",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 404\", function () {",
@@ -1257,7 +1257,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "1508e187-d710-4767-afe5-70a61649d81b",
+								"id": "1214f122-f772-4fa2-9d32-323761993dc7",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 400\", function () {",
@@ -1326,7 +1326,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "fb3a9d53-0ecb-4ae4-a928-60570d2ba8fb",
+								"id": "ff40a3fa-4c77-4169-b30f-f0d6daeeadee",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 400\", function () {",
@@ -1394,7 +1394,7 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "3dded212-c89a-4c19-864f-0b65e054c34e",
+						"id": "0ede8298-d750-4861-a630-94ab13f4aa01",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -1404,7 +1404,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "87ac19c1-e797-48b0-b42c-a0859da6de7a",
+						"id": "0b775efe-c719-44a3-8ee2-1899eb16bbd5",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -1423,7 +1423,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "3782d2a6-bd25-47de-8103-6cd148b1e279",
+								"id": "def1169a-c6b8-43fd-9c73-c5b03f9aefaf",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1456,7 +1456,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d3f0d16e-dd52-4e6f-908a-1ecdd36d1140",
+								"id": "9a46bac9-2486-419e-b665-57554d5084a1",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 401, Need credentials\", function () {",
@@ -1512,7 +1512,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "53b371f7-dfc0-4f70-8a2d-3fbcd4e66ebd",
+								"id": "6fb9f84a-1ea2-4c83-87d3-0457a56cff6e",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1580,7 +1580,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "cd5a463a-6263-446d-bd58-66d4fbdcb3b4",
+								"id": "751c8de8-764c-4a9d-be86-ec00f79800c0",
 								"exec": [
 									"pm.test(\"Status code is 404\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -1649,7 +1649,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "8ca5b74e-e655-4f5c-aa17-fcc398270917",
+								"id": "59a98246-f925-418b-a44e-5a815f83803e",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 400\", function () {",
@@ -1718,7 +1718,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "5850f8ff-4735-4a75-acd1-2ef2b1451771",
+								"id": "541d2bb1-8f85-4d12-95fb-c9f6cce6ce70",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 400\", function () {",
@@ -1787,7 +1787,7 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "b1029e1b-7342-49f9-8815-b3400a0acff9",
+						"id": "3e52e9e7-4c7a-49c7-b6dc-98c0d723166f",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -1797,7 +1797,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "28bfec6a-6d50-4b71-9300-9a1e4c39c153",
+						"id": "2af39cb2-ef94-499b-adff-b3e530a1a2e2",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -1816,7 +1816,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "76e28d5e-67bc-4d1f-a5cc-1bba9fc9df58",
+								"id": "ae617066-c1b0-4d10-8711-61aa9de44acb",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1849,7 +1849,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "28e63333-7dc0-474f-bd04-9f0f43f9d0cd",
+								"id": "cf356d37-b7eb-4ee5-a42c-c8238d07191d",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 401, Need credentials\", function () {",
@@ -1892,12 +1892,177 @@
 					"response": []
 				},
 				{
+					"name": "pre_ImportBundleWithDemoHost",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "1a4e07ba-e1eb-487d-a3f6-e24a62315f50",
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"demo.dotcms.com.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/demo.dotcms.com.tar.gz"
+								}
+							],
+							"options": {
+								"formdata": {}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* Imports demo.dotcms.com"
+					},
+					"response": []
+				},
+				{
+					"name": "Switch site to 'demo.dotcms.com'",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "9e987f4f-2900-43d1-a10c-851802c0138b",
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    var jsonData = pm.response.json();",
+									"",
+									"    pm.expect(jsonData.entity.hostSwitched).equal(true);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site/switch/48190c8c-42c4-46af-8d1a-0cd5db894797",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site",
+								"switch",
+								"48190c8c-42c4-46af-8d1a-0cd5db894797"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "SuccessRequest",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "f8af4d19-91af-46e3-ad5f-9dba0780fd3f",
+								"id": "b330ae54-53bb-4714-9e94-72df072c10aa",
 								"exec": [
 									"",
 									"",
@@ -1961,7 +2126,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "e5b59bea-f6c1-4b49-9a87-06a17b89a7ae",
+								"id": "f5f1f95a-0009-4f18-995f-e8231305579b",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 404\", function () {",
@@ -2025,7 +2190,7 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "897c5bc3-687c-42dd-9cf6-e2373e0507df",
+						"id": "2cad31a6-5e3b-4d96-890a-c065fe37e5ed",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -2035,7 +2200,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "015bd781-395f-4e0a-a2b8-2b8dbad9aec2",
+						"id": "95ee9761-ac29-4f0a-9dcb-9e30ae15cee2",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -2050,7 +2215,7 @@
 		{
 			"listen": "prerequest",
 			"script": {
-				"id": "3f2366fc-0e8c-45e3-95a5-6ab044b919e1",
+				"id": "f75c5da0-665f-420f-9870-35c5b163ac5c",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -2060,7 +2225,7 @@
 		{
 			"listen": "test",
 			"script": {
-				"id": "f7a5496c-90c7-4a9b-8ff6-06b3f33fa97e",
+				"id": "3ec395f1-18cf-4f65-828a-d9df7d9426e1",
 				"type": "text/javascript",
 				"exec": [
 					""

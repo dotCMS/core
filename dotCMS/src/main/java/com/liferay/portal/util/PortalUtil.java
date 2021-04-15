@@ -19,6 +19,8 @@
 
 package com.liferay.portal.util;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.api.web.RequestThreadLocalListener;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
@@ -393,6 +395,11 @@ public class PortalUtil {
     return new UploadPortletRequest(uploadReq, getPortletNamespace(actionReq.getPortletName()));
   }
 
+  public static User getUser() {
+      final HttpServletRequest req = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+      return req==null ? null : getUser(req);
+  }
+  
   public static User getUser(HttpServletRequest req) {
     User user = (User) req.getAttribute(WebKeys.USER);
     if (user == null) {

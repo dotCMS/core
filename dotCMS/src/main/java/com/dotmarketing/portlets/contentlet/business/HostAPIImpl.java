@@ -39,6 +39,7 @@ import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import org.apache.commons.lang.StringUtils;
 
@@ -75,7 +76,7 @@ public class HostAPIImpl implements HostAPI {
      * @throws DotSecurityException, DotDataException
      */
     @Override
-    @WrapInTransaction
+    @CloseDBIfOpened
     public Host findDefaultHost(User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
         Host host;
@@ -317,6 +318,19 @@ public class HostAPIImpl implements HostAPI {
         return host;
     }
 
+    @Override
+    @CloseDBIfOpened
+    public Host find(final Contentlet contentlet,
+                     final User user,
+                     final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        return find(
+                org.apache.commons.lang3.StringUtils.defaultIfBlank(
+                        contentlet.getHost(),
+                        contentlet.getContentType().host()),
+                user,
+                respectFrontendRoles);
+    }
+
     /**
      * Retrieves the list of all hosts in the system
      * @throws DotSecurityException
@@ -376,6 +390,17 @@ public class HostAPIImpl implements HostAPI {
         return hosts;
     }
 
+    @Override
+    public List<Host> findAllFromCache(final User user,
+            final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        Set<Host> cachedSites = hostCache.getAllSites();
+        if(null == cachedSites){
+            final List<Host> allFromDB = findAllFromDB(user, respectFrontendRoles);
+            hostCache.addAll(allFromDB);
+            cachedSites = hostCache.getAllSites();
+        }
+        return ImmutableList.copyOf(cachedSites);
+    }
 
     /**
      * @throws DotSecurityException
@@ -1005,14 +1030,13 @@ public class HostAPIImpl implements HostAPI {
 
         Host host = null;
 
-        final ContentletVersionInfo vinfo = HibernateUtil.load(ContentletVersionInfo.class,
-                "from "+ContentletVersionInfo.class.getName()+" where identifier=?", id);
+        final Optional<ContentletVersionInfo> vinfo = APILocator.getVersionableAPI().getContentletVersionInfo(id, APILocator.getLanguageAPI()
+                .getDefaultLanguage().getId());
 
-        if(vinfo!=null && UtilMethods.isSet(vinfo.getIdentifier())) {
-
+        if(vinfo.isPresent()) {
             User systemUser = APILocator.systemUser();
 
-            String hostInode=vinfo.getWorkingInode();
+            String hostInode=vinfo.get().getWorkingInode();
             final Contentlet cont= APILocator.getContentletAPI().find(hostInode, systemUser, respectFrontendRoles);
             final ContentType type =APILocator.getContentTypeAPI(systemUser, respectFrontendRoles).find(Host.HOST_VELOCITY_VAR_NAME);
             if(cont.getStructureInode().equals(type.inode())) {

@@ -3612,6 +3612,13 @@ public class WorkflowAPITest extends IntegrationTestBase {
                         .workflowActionId(action.getId()) //Return for Editing
                         .workflowActionComments(comment)
                         .workflowAssignKey(workflowAssignKey)
+                        .workflowPublishDate("2020-08-11")
+                        .workflowPublishTime("10-35")
+                        .workflowExpireDate("2020-08-12")
+                        .workflowExpireTime("18-35")
+                        .workflowFilterKey("Yaml File")
+                        .workflowWhereToSend("environment")
+                        .workflowIWantTo("publish")
                         .categories(Collections.emptyList())
                         .generateSystemEvent(Boolean.FALSE).build());
 
@@ -3857,6 +3864,67 @@ public class WorkflowAPITest extends IntegrationTestBase {
         List<Map<String, String>> result = dotConnect.loadResults();
 
         return Integer.parseInt(result.get(0).get("count"));
+    }
+
+    /**
+     * Copy Properties: The idea is to check if the transient variables on the contentlet such as workflow attributes are being copied after save
+     * Given Scenario: Create a content, fires a save and checks if the new checkout still having the workflow attributes
+     * ExpectedResult: The workflow attributes still there after the save
+     *
+     */
+    @Test
+    public void fireWorkflowAction_checkPropertiesAreCopied_successfully()
+            throws DotDataException, DotSecurityException, AlreadyExistException, ExecutionException, InterruptedException {
+        WorkflowScheme workflowScheme = null;
+        ContentType contentType = null;
+        try {
+
+            contentType = generateContentTypeAndAssignPermissions("KeepWfTaskStatus",
+                    BaseContentType.CONTENT, editPermission, contributor.getId());
+
+            // Create testing workflows
+            workflowScheme = createDocumentManagentReplica(
+                    DOCUMENT_MANAGEMENT_WORKFLOW_NAME + "_5_" + UtilMethods
+                            .dateToHTMLDate(new Date(), DATE_FORMAT));
+
+            final Set<String> schemeIds = new HashSet<>();
+            schemeIds.add(workflowScheme.getId());
+            workflowAPI.saveSchemeIdsForContentType(contentType, schemeIds);
+
+            //Add Workflow Task
+            //Contentlet1 on published step
+            Contentlet contentlet = createContent("testCacheFindStepsByContentlet", contentType);
+
+            List<WorkflowAction> actions = workflowAPI
+                    .findAvailableActions(contentlet, joeContributor);
+            final WorkflowAction saveAsDraft = actions.get(0);
+
+            //As Contributor - Save as Draft
+            final ContentletRelationships contentletRelationships = APILocator.getContentletAPI()
+                    .getAllRelationships(contentlet);
+            //save as Draft
+            contentlet = fireWorkflowAction(contentlet, contentletRelationships, saveAsDraft,
+                    StringPool.BLANK, StringPool.BLANK, joeContributor);
+
+            Assert.assertTrue(UtilMethods.isSet(contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE)));
+            Assert.assertTrue(UtilMethods.isSet(contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME)));
+            Assert.assertTrue(UtilMethods.isSet(contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE)));
+            Assert.assertTrue(UtilMethods.isSet(contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME)));
+            Assert.assertTrue(UtilMethods.isSet(contentlet.getStringProperty(Contentlet.WHERE_TO_SEND)));
+            Assert.assertTrue(UtilMethods.isSet(contentlet.getStringProperty(Contentlet.FILTER_KEY)));
+            Assert.assertTrue(UtilMethods.isSet(contentlet.getStringProperty(Contentlet.I_WANT_TO)));
+            Assert.assertTrue(UtilMethods.isNotSet(contentlet.getStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY)));
+            Assert.assertTrue(UtilMethods.isNotSet(contentlet.getStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY)));
+
+        } finally {
+            //clean test
+            //delete content type
+            contentTypeAPI.delete(contentType);
+
+            workflowScheme.setArchived(true);
+            workflowAPI.saveScheme(workflowScheme, user);
+            workflowAPI.deleteScheme(workflowScheme, user).get();
+        }
     }
 
 }

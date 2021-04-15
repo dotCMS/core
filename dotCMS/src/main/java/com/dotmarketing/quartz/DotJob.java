@@ -36,7 +36,7 @@ public abstract class DotJob implements Job {
 		QuartzUtils.addTaskMessage(context.getJobDetail().getName(), context.getJobDetail().getGroup(), newMessage);
 	}
 	
-	public void execute(JobExecutionContext jobContext) throws JobExecutionException {
+	public final void execute(JobExecutionContext jobContext) throws JobExecutionException {
 		context = jobContext;
 		QuartzUtils.initializeTaskRuntimeValues(context.getJobDetail().getName(), context.getJobDetail().getGroup());
 		this.run(jobContext);

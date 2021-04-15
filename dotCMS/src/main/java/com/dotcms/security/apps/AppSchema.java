@@ -3,6 +3,7 @@ package com.dotcms.security.apps;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.annotations.VisibleForTesting;
+import java.io.Serializable;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -25,7 +26,7 @@ import java.util.Objects;
  *  required: false
  *
  */
-public class AppSchema {
+public class AppSchema implements Serializable{
 
     protected final String name;
 
@@ -110,7 +111,7 @@ public class AppSchema {
         return new LinkedHashMap<>(params);
     }
 
-    public void addParam(final String name, final String value, final boolean hidden,
+    public void addParam(final String name, final Object value, final boolean hidden,
             final Type type, final String label, final String hint, final boolean required) {
         params.put(name, ParamDescriptor.newParam(value, hidden, type, label, hint, required));
     }

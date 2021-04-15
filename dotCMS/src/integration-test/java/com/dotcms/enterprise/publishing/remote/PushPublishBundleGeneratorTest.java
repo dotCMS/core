@@ -16,6 +16,7 @@ import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.publisher.assets.bean.PushedAsset;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.bundle.business.BundleAPI;
 import com.dotcms.publisher.business.DotPublisherException;
@@ -32,7 +33,9 @@ import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.IBundler;
 import com.dotcms.publishing.Publisher;
+import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.publishing.PublisherConfig.Operation;
+import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.MultiTree;
@@ -50,12 +53,14 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -81,6 +86,8 @@ public class PushPublishBundleGeneratorTest extends IntegrationTestBase {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
         LicenseTestUtil.getLicense();
+
+        createFilter();
 
         systemUser = APILocator.getUserAPI().getSystemUser();
         createFilterDescriptor(defaultFilterKey,true,true,false,null,null,null,null,true);
@@ -141,6 +148,7 @@ public class PushPublishBundleGeneratorTest extends IntegrationTestBase {
         if(UtilMethods.isSet(excludeDependencyQuery)) {
             filtersMap.put("excludeDependencyQuery", excludeDependencyQuery);
         }
+
         APILocator.getPublisherAPI().addFilterDescriptor(new FilterDescriptor(key,key,filtersMap,defaultFilter,"DOTCMS_BACK_END_USER"));
     }
 
@@ -187,8 +195,10 @@ public class PushPublishBundleGeneratorTest extends IntegrationTestBase {
 
         final File bundleRoot = BundlerUtil.getBundleRoot(pconf);
 
+        final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(pconf, bundleRoot);
+
         // Run bundlers
-        BundlerUtil.writeBundleXML(pconf);
+        BundlerUtil.writeBundleXML(pconf, directoryBundleOutput);
         for (final Class<IBundler> aClass : bundlers) {
 
             final IBundler bundler = aClass.newInstance();
@@ -198,7 +208,7 @@ public class PushPublishBundleGeneratorTest extends IntegrationTestBase {
             final BundlerStatus bundlerStatus = new BundlerStatus(bundler.getClass().getName());
             //Generate the bundler
             Logger.info(PushPublishBundleGeneratorTest.class, "Start of Bundler: " + aClass.getSimpleName());
-            bundler.generate(bundleRoot, bundlerStatus);
+            bundler.generate(directoryBundleOutput, bundlerStatus);
             Logger.info(PushPublishBundleGeneratorTest.class, "End of Bundler: " + aClass.getSimpleName());
         }
 
@@ -490,6 +500,7 @@ public class PushPublishBundleGeneratorTest extends IntegrationTestBase {
         final String filterKey = "TestFilterWithDependenciesFalse.yml";
         createFilterDescriptor(filterKey,false,true,false,
                 null,null,null,null,false);
+
         //Create bundle with New filter
         final Bundle bundleWithNewFilter = createBundle("TestBundle"+System.currentTimeMillis(),false,filterKey);
         //Add assets to the bundle
@@ -679,6 +690,56 @@ public class PushPublishBundleGeneratorTest extends IntegrationTestBase {
             Config.setProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", allowZeroLengthFilesDefault);
         }
 
+    }
+
+    /**
+     * Given Scenario: If a content is explicitly added to a bundle, it should be added to the bundle regardless the last push_date,
+     *                  even though that forcePush is set to false.
+     *                  Create a Content and Add it to a bundle.
+     *                  Insert a pushed asset to mimic that the content was already pushed
+     *                  Generate the bundle, after running all the bundlers, the content must be on the generated bundle.
+     * ExpectedResult: Content Explicitly Added to the Bundle Must Be In the Generated Bundle Regardless Push_Date
+     */
+    @Test
+    public void testGenerateBundle_FilterDependenciesAndForcePushFalse_ContentExplicitlyAddedMustBePushedRegardlessPushDate()
+            throws DotDataException, IllegalAccessException, DotBundleException, DotPublishingException, InstantiationException, DotPublisherException, IOException {
+        //Create Content Type
+        final ContentType contentType = TestDataUtils.getWikiLikeContentType();
+        //Create contentlet
+        final Contentlet contentlet = TestDataUtils.getWikiContent(true,APILocator.getLanguageAPI().getDefaultLanguage().getId(),contentType.id());
+
+        //Create filter
+        final String filterKey = "TestFilterDependenciesAndForcePushFalse.yml";
+        createFilterDescriptor(filterKey,false,false,false,
+                null,null,null,null,false);
+        //Create bundle with New filter
+        final Bundle bundleWithNewFilter = createBundle("TestBundle"+System.currentTimeMillis(),false,filterKey);
+        //Add assets to the bundle
+        PublisherAPI.getInstance().saveBundleAssets(Arrays.asList(contentlet.getIdentifier()),bundleWithNewFilter.getId(),
+                systemUser);
+
+        //Insert the pushed asset to mimic that the asset was already pushed
+        final PushedAsset
+                assetToPush =
+                new PushedAsset(bundleWithNewFilter.getId(), contentlet.getIdentifier(), contentlet.getType(), new Date(), "", "", "");
+
+        APILocator.getPushedAssetsAPI().savePushedAsset(assetToPush);
+
+        //Generate Bundle, will return several dependencySet with the assets that will be added to the bundle
+        final PushPublisherConfig listOfAssetsWithNewFilter = generateBundle(bundleWithNewFilter.getId(), Operation.PUBLISH);
+        Assert.assertNotNull(listOfAssetsWithNewFilter);
+        //Must Contains the contentlet, even though the last push_date of it is after the last mod_date, because was added explicitly
+        Assert.assertFalse(listOfAssetsWithNewFilter.getContentlets().isEmpty());
+        Assert.assertTrue(listOfAssetsWithNewFilter.getContentlets().contains(contentlet.getIdentifier()));
+    }
+
+    private static void createFilter() {
+        final Map<String, Object> filtersMap =
+                ImmutableMap.of("dependencies", true, "relationships", true);
+        final FilterDescriptor filterDescriptor =
+                new FilterDescriptor("filterTestAPI.yml", "Filter Test Title", filtersMap, true,
+                        "Reviewer,dotcms.org.2789");
+        APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor);
     }
 
 }

@@ -1,30 +1,29 @@
 package com.dotcms.publishing;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
+import com.dotcms.publishing.output.BundleOutput;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.pushpublish.PushPublishEndEvent;
 import com.dotcms.system.event.local.type.pushpublish.PushPublishStartEvent;
-import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.system.event.local.type.staticpublish.StaticPublishEndEvent;
 import com.dotcms.system.event.local.type.staticpublish.StaticPublishStartEvent;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class PublisherAPIImpl implements PublisherAPI {
 
@@ -34,14 +33,14 @@ public class PublisherAPIImpl implements PublisherAPI {
 
 
     @Override
-    public PublishStatus publish ( PublisherConfig config ) throws DotPublishingException {
+    final public PublishStatus publish ( PublisherConfig config , BundleOutput output) throws DotPublishingException {
 
-        return publish( config, new PublishStatus() );
+        return publish( config, new PublishStatus(), output );
     }
 
     @CloseDBIfOpened
     @Override
-    public PublishStatus publish ( PublisherConfig config, PublishStatus status ) throws DotPublishingException {
+    final public PublishStatus publish ( PublisherConfig config, PublishStatus status, BundleOutput output) throws DotPublishingException {
 
         PushPublishLogger.log( this.getClass(), "Started Publishing Task", config.getId() );
 
@@ -56,8 +55,8 @@ public class PublisherAPIImpl implements PublisherAPI {
             // init publishers
             for ( Class<Publisher> c : config.getPublishers() ) {
                 // Process config
-                Publisher p = c.newInstance();
-                config = p.init( config );
+                Publisher publisher = c.newInstance();
+                config = publisher.init( config );
 
                 if ( config.isIncremental() && config.getEndDate() == null && config.getStartDate() == null ) {
                     // if its incremental and start/end dates aren't se we take it from latest bundle
@@ -83,7 +82,6 @@ public class PublisherAPIImpl implements PublisherAPI {
                 final boolean bundleExists = BundlerUtil.bundleExists(config);
 
                 // Run bundlers
-                File bundleRoot = BundlerUtil.getBundleRoot( config );
 
                 if (config.isStatic()) {
                     //If static we just want to save the things that we need,
@@ -93,10 +91,10 @@ public class PublisherAPIImpl implements PublisherAPI {
                 	pcClone.setStatic(true);
                 	pcClone.setOperation(config.getOperation());
                     Logger.info(this, "Writing bundle.xml file");
-                	BundlerUtil.writeBundleXML( pcClone );
+                	BundlerUtil.writeBundleXML( pcClone, output );
                 } else {
                     Logger.info(this, "Writing bundle.xml file");
-                    BundlerUtil.writeBundleXML( config );
+                    BundlerUtil.writeBundleXML( config, output );
                 }
 
                 // If the bundle exists and we are retrying to push the bundle
@@ -112,16 +110,16 @@ public class PublisherAPIImpl implements PublisherAPI {
                         }
                     }
 
-                    for ( Class<IBundler> clazz : p.getBundlers() ) {
+                    for ( Class<IBundler> clazz : publisher.getBundlers() ) {
                         IBundler bundler = clazz.newInstance();
                         confBundlers.add( bundler );
                         bundler.setConfig( config );
-                        bundler.setPublisher(p);
+                        bundler.setPublisher(publisher);
                         BundlerStatus bs = new BundlerStatus( bundler.getClass().getName() );
                         status.addToBs( bs );
                         //Generate the bundler
                         Logger.info(this, "Start of Bundler: " + clazz.getSimpleName());
-                        bundler.generate( bundleRoot, bs );
+                        bundler.generate(output, bs );
                         Logger.info(this, "End of Bundler: " + clazz.getSimpleName());
                     }
 
@@ -137,7 +135,7 @@ public class PublisherAPIImpl implements PublisherAPI {
                             + ", we don't need to run bundlers again");
                 }
 
-                p.process( status );
+                publisher.process( status );
             }
 
             config.setBundlers( confBundlers );
@@ -201,26 +199,26 @@ public class PublisherAPIImpl implements PublisherAPI {
         final String filterKey = APILocator.getBundleAPI().getBundleById(bundleId).getFilterKey();
         final FilterDescriptor filterDescriptor = this.getFilterDescriptorByKey(filterKey);
 
-        final PublisherFilterImpl publisherFilter = new PublisherFilterImpl((Boolean)filterDescriptor.getFilters().getOrDefault("dependencies",true),
-                (Boolean)filterDescriptor.getFilters().getOrDefault("relationships",true));
+        final PublisherFilterImpl publisherFilter = new PublisherFilterImpl((Boolean)filterDescriptor.getFilters().getOrDefault(FilterDescriptor.DEPENDENCIES_KEY,true),
+                (Boolean)filterDescriptor.getFilters().getOrDefault(FilterDescriptor.RELATIONSHIPS_KEY,true));
 
-        if(filterDescriptor.getFilters().containsKey("excludeClasses")){
-            List.class.cast(filterDescriptor.getFilters().get("excludeClasses")).stream().forEach(type -> publisherFilter.addTypeToExcludeClassesSet(type.toString()));
+        if(filterDescriptor.getFilters().containsKey(FilterDescriptor.EXCLUDE_CLASSES_KEY)){
+            List.class.cast(filterDescriptor.getFilters().get(FilterDescriptor.EXCLUDE_CLASSES_KEY)).stream().forEach(type -> publisherFilter.addTypeToExcludeClassesSet(type.toString()));
 
         }
 
-        if(filterDescriptor.getFilters().containsKey("excludeDependencyClasses")){
-            List.class.cast(filterDescriptor.getFilters().get("excludeDependencyClasses")).stream().forEach(type -> publisherFilter.addTypeToExcludeDependencyClassesSet(type.toString()));
+        if(filterDescriptor.getFilters().containsKey(FilterDescriptor.EXCLUDE_DEPENDENCY_CLASSES_KEY)){
+            List.class.cast(filterDescriptor.getFilters().get(FilterDescriptor.EXCLUDE_DEPENDENCY_CLASSES_KEY)).stream().forEach(type -> publisherFilter.addTypeToExcludeDependencyClassesSet(type.toString()));
         }
 
-        if(filterDescriptor.getFilters().containsKey("excludeQuery")){
-            final String query = filterDescriptor.getFilters().get("excludeQuery").toString();
+        if(filterDescriptor.getFilters().containsKey(FilterDescriptor.EXCLUDE_QUERY_KEY)){
+            final String query = filterDescriptor.getFilters().get(FilterDescriptor.EXCLUDE_QUERY_KEY).toString();
             APILocator.getContentletAPI().search(query, 0, 0, "moddate", APILocator.systemUser(), false)
                 .stream().forEach(contentlet -> publisherFilter.addContentletIdToExcludeQueryAssetIdSet(contentlet.getIdentifier()));
         }
 
-        if(filterDescriptor.getFilters().containsKey("excludeDependencyQuery")){
-            final String query = filterDescriptor.getFilters().get("excludeDependencyQuery").toString();
+        if(filterDescriptor.getFilters().containsKey(FilterDescriptor.EXCLUDE_DEPENDENCY_QUERY_KEY)){
+            final String query = filterDescriptor.getFilters().get(FilterDescriptor.EXCLUDE_DEPENDENCY_QUERY_KEY).toString();
             APILocator.getContentletAPI().search(query, 0, 0, "moddate", APILocator.systemUser(), false)
                 .stream().forEach(contentlet -> publisherFilter.addContentletIdToExcludeDependencyQueryAssetIdSet(contentlet.getIdentifier()));
         }

@@ -47,13 +47,26 @@ public class FileAssetContainer extends Container {
     private String postLoopAsset = null;
 
     @JsonIgnore
+    private transient FileAsset defaultContainerLayoutAsset = null;
+
+    @JsonIgnore
     public FileAsset getPostLoopAsset() {
         return loadAsset(postLoopAsset);
+    }
+
+    @JsonIgnore
+    public FileAsset getDefaultContainerLayoutAsset() {
+        return defaultContainerLayoutAsset;
     }
 
     public void setPostLoopAsset(final FileAsset postLoopAsset) {
         this.postLoopAsset = postLoopAsset.getInode();
     }
+
+    public void setDefaultContainerLayoutAsset(final FileAsset defaultContainerLayoutAsset) {
+        this.defaultContainerLayoutAsset = defaultContainerLayoutAsset;
+    }
+
 
     @JsonIgnore
     private String preLoopAsset = null;

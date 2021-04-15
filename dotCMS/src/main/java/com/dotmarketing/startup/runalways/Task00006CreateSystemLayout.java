@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runalways;
 
+import com.dotmarketing.startup.runonce.Task04355SystemEventAddServerIdColumn;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,6 +45,15 @@ public class Task00006CreateSystemLayout implements StartupTask {
 	}
 
 	public boolean forceRun() {
+		try {
+			final Task04355SystemEventAddServerIdColumn systemEventAddServerIdColumn = new Task04355SystemEventAddServerIdColumn();
+			if (systemEventAddServerIdColumn.forceRun()) {
+				systemEventAddServerIdColumn.executeUpgrade();
+			}
+		} catch (Exception e) {
+			Logger.error(Task00006CreateSystemLayout.class,
+					"Error Applying upgrade task from Task00006CreateSystemLayout.", e);
+		}
 		return true;
 	}
 

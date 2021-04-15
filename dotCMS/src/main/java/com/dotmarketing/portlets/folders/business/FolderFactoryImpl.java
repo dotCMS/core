@@ -44,7 +44,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import java.util.stream.Collectors;
+import io.vavr.control.Try;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.oro.text.regex.Pattern;
@@ -210,44 +210,39 @@ public class FolderFactoryImpl extends FolderFactory {
 	}
 
 	@Override
-	protected Folder findFolderByPath(String path, final Host host) throws DotDataException {
+	protected Folder findFolderByPath(String path, final Host site) throws DotDataException {
 	  
 		final String originalPath = path;
-		Folder folder=null;
+		Folder folder;
 		List<Folder> result;
 
-		if(host == null || path == null){
+		if(site == null || path == null){
 			return null;
 		}
+		// replace nasty double //
+		path=path.replaceAll(StringPool.DOUBLE_SLASH, StringPool.SLASH);
 
 		if(path.equals("/") || path.equals(SYSTEM_FOLDER_PARENT_PATH)) {
-			folder = folderCache.getFolderByPathAndHost(path, APILocator.getHostAPI().findSystemHost());
+			folder = this.findSystemFolder();
 		} else{
-			folder = folderCache.getFolderByPathAndHost(path, host);
+			folder = folderCache.getFolderByPathAndHost(path, site);
 		}
 
 		if(folder == null){
 			String parentPath;
 			String assetName;
-			String hostId;
+			String siteId;
 
 			try{
-				if(path.equals("/") || path.equals(SYSTEM_FOLDER_PARENT_PATH)) {
-					parentPath = SYSTEM_FOLDER_PARENT_PATH;
-					assetName = SYSTEM_FOLDER_ASSET_NAME;
-					hostId = "SYSTEM_HOST";
+				// trailing / is removed
+				if (path.endsWith("/")){
+					path = path.substring(0, path.length()-1);
 				}
-				else {
-					// trailing / is removed
-					if (path.endsWith("/")){
-						path = path.substring(0, path.length()-1);
-					}
-					// split path into parent and asset name
-					int idx = path.lastIndexOf('/');
-					parentPath = path.substring(0,idx+1);
-					assetName = path.substring(idx+1);
-					hostId = host.getIdentifier();
-				}
+				// split path into parent and asset name
+				int idx = path.lastIndexOf('/');
+				parentPath = path.substring(0,idx+1);
+				assetName = path.substring(idx+1);
+				siteId = site.getIdentifier();
 
 				DotConnect dc = new DotConnect();
 				dc.setSQL("select folder.*, folder_1_.* from " + Type.FOLDER.getTableName() + " folder, inode folder_1_, identifier i where i.full_path_lc = ? and "
@@ -255,7 +250,7 @@ public class FolderFactoryImpl extends FolderFactory {
 
 				dc.addParam((parentPath + assetName).toLowerCase());
 
-				dc.addParam(hostId);
+				dc.addParam(siteId);
 
 
 				result = TransformerLocator.createFolderTransformer(dc.loadObjectResults()).asList();
@@ -269,7 +264,7 @@ public class FolderFactoryImpl extends FolderFactory {
 
 				// if it is found add it to folder cache
 				if(UtilMethods.isSet(folder) && UtilMethods.isSet(folder.getInode())) {
-					Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
+					final Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
 					folderCache.addFolder(folder, id);
 				} else {
 					String parentFolder = originalPath;
@@ -304,7 +299,7 @@ public class FolderFactoryImpl extends FolderFactory {
 							+ " and folder.identifier = i.id"
 							+ " and i.host_inode = ?");
 					dc.addParam((parentPath + parentFolder).toLowerCase());
-					dc.addParam(hostId);
+					dc.addParam(siteId);
 
 
 					result = TransformerLocator.createFolderTransformer(dc.loadObjectResults())
@@ -321,11 +316,11 @@ public class FolderFactoryImpl extends FolderFactory {
 						folderCache.addFolder(folder, id);
 					}
 				}
+			} catch (final Exception e) {
+				final String errorMsg = String.format("An error occurred when finding path '%s' in Site '%s' [%s]: " +
+						"%s", path, site.getHostname(), site.getIdentifier(), e.getMessage());
+				throw new DotDataException(errorMsg, e);
 			}
-			catch(Exception e){
-				throw new DotDataException(e.getMessage(),e);
-			}
-
 		}
 		return folder;
 	}
@@ -1225,14 +1220,25 @@ public class FolderFactoryImpl extends FolderFactory {
 
 	@Override
 	protected void save(Folder folderInode) throws DotDataException {
-		validateFolderName(folderInode);
+        if (SYSTEM_FOLDER.equals(folderInode.getInode()) && !Host.SYSTEM_HOST.equals(folderInode.getHostId())) {
+            throw new DotRuntimeException(String.format("Host ID for SYSTEM_FOLDER must always be SYSTEM_HOST. Value " +
+                    "'%s' was set.", folderInode.getHostId()));
+        }
+        validateFolderName(folderInode);
 
 		HibernateUtil.getSession().clear();
 		HibernateUtil.saveOrUpdate(folderInode);
+		
+		// try clearing cache
+		Try.run(()->folderCache.removeFolder(folderInode, APILocator.getIdentifierAPI().find(folderInode.getIdentifier())));
 	}
 
 	@Override
 	protected void save(Folder folderInode, String existingId) throws DotDataException {
+        if (SYSTEM_FOLDER.equals(folderInode.getInode()) && !Host.SYSTEM_HOST.equals(folderInode.getHostId())) {
+            throw new DotRuntimeException(String.format("Host ID for SYSTEM_FOLDER must always be SYSTEM_HOST. Value " +
+                    "'%s' was set.", folderInode.getHostId()));
+        }
 		validateFolderName(folderInode);
 
 		if(existingId==null){

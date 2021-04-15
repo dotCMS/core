@@ -1,5 +1,7 @@
 package com.dotmarketing.util;
 
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -120,18 +122,21 @@ public class ImportStarterUtil {
 
         classesWithIdentity.add("Permission");
         classesWithIdentity.add("UsersToDelete");
+        classesWithIdentity.add("UserPreference");
         tableNames = new HashMap<String, String>();
         tableNames.put("Permission", "permission");
         tableNames.put("UsersToDelete", "users_to_delete");
+        tableNames.put("UserPreference", "user_preferences");
 
         if (DbConnectionFactory.isPostgres() || DbConnectionFactory.isOracle()) {
             sequences = new HashMap<String, String>();
             sequences.put("permission", "permission_seq");
             sequences.put("users_to_delete", "user_to_delete_seq");
+            sequences.put("user_preferences", "user_preferences_seq");
             tableIDColumns = new HashMap<String, String>();
             tableIDColumns.put("permission", "id");
             tableIDColumns.put("users_to_delete", "id");
-
+            tableIDColumns.put("user_preferences", "id");
         }
     }
 
@@ -140,7 +145,6 @@ public class ImportStarterUtil {
      * all current data. This method cannot currently be run in a transaction. For performance reasons
      * with DB drivers and connections it closes the session every so often.
      *
-     * @param out - A print writer for output.
      * @throws IOException
      * @throws Exception
      */
@@ -324,6 +328,11 @@ public class ImportStarterUtil {
         for (File file : contains("com.dotmarketing.beans.ContainerStructure_")) {
             doXMLFileImport(file);
         }
+
+        // need Categories before Tree so it imports all the tree values
+        for (File file : contains("com.dotmarketing.portlets.categories.model.Category_")) {
+            doXMLFileImport(file);
+        }
         
         for (File file : contains("com.dotmarketing.beans.Tree_")) {
             doXMLFileImport(file);
@@ -365,7 +374,7 @@ public class ImportStarterUtil {
         for (File file : contains("com.dotmarketing.tag.model.Tag_")) {
             doXMLFileImport(file);
         }
-        // Image, Portlet, Multitree, category
+        // Image, Portlet, Multitree
         for (File file : endsWith(".xml")) {
             doXMLFileImport(file);
         }
@@ -435,8 +444,6 @@ public class ImportStarterUtil {
      * This method takes an XML file and will try to import it via XStream and Hibernate.
      *
      * @param f - File to be parsed and imported.
-     * @param out - Printwriter to write responses to Reponse Printwriter so this method can write to
-     *        screen.
      */
     private void doXMLFileImport(File f) throws Exception {
         doXMLFileImport(f, null);
@@ -449,8 +456,6 @@ public class ImportStarterUtil {
      * This method takes an XML file and will try to import it via XStream and Hibernate.
      *
      * @param f - File to be parsed and imported.
-     * @param out - Printwriter to write responses to Reponse Printwriter so this method can write to
-     *        screen.
      * @param filter
      * @throws DotDataException
      * @throws HibernateException
@@ -667,9 +672,11 @@ public class ImportStarterUtil {
 
             else {
                 String id;
-                if (_importClass.equals(Relationship.class)) {
+                if (_importClass.equals(Relationship.class) || _importClass.equals(Template.class)) {
                     id = "inode";
-                } else {
+                } else if(_importClass.equals(ContentletVersionInfo.class)) {
+                    id = "identifier";
+                }else {
                     _dh = new HibernateUtil(_importClass);
                     id = HibernateUtil.getSession().getSessionFactory().getClassMetadata(_importClass)
                                     .getIdentifierPropertyName();
@@ -718,7 +725,13 @@ public class ImportStarterUtil {
                                         APILocator.getRelationshipAPI().save(Relationship.class.cast(obj), rel.getInode());
                                     }
 
-                                } else {
+                                } else if (obj instanceof ContentletVersionInfo) {
+                                    ContentletVersionInfo cvi = (ContentletVersionInfo) obj;
+                                    APILocator.getVersionableAPI().saveContentletVersionInfo(cvi);
+                                } else if (obj instanceof Template) {
+                                    final Template template = Template.class.cast(obj);
+                                    FactoryLocator.getTemplateFactory().save(template, template.getInode());
+                                } else{
 
                                     Logger.debug(this, "Saving the object: " + obj.getClass() + ", with the id: " + prop);
                                     HibernateUtil.saveWithPrimaryKey(obj, prop);
@@ -888,7 +901,6 @@ public class ImportStarterUtil {
 
     /**
      *
-     * @param zipFile
      * @return
      */
     public boolean validateZipFile() {
@@ -944,7 +956,6 @@ public class ImportStarterUtil {
     /**
      *
      * @param contentlet
-     * @param out
      */
     private void changeDateForSQLServer(com.dotmarketing.portlets.contentlet.business.Contentlet contentlet) {
         if (!validateDate(contentlet.getDate1())) {
@@ -1116,7 +1127,6 @@ public class ImportStarterUtil {
             _tablesToDelete.add("identifier");
             _tablesToDelete.add("inode");;
             _tablesToDelete.add("user_");
-            _tablesToDelete.add("user_proxy");
             
             _tablesToDelete.add("company");
             _tablesToDelete.add("counter");

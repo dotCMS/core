@@ -327,7 +327,6 @@
             }
 
         }
-
         return formData;
 
     }
@@ -643,16 +642,19 @@
 
             if((data["referer"] != null && data["referer"] != '' && !data["contentletLocked"])) {
                 if (data['isHtmlPage'] && workingContentletInode.length === 0 && !data["referer"].includes("relend")) {
-                    customEventDetail = {
-                        name: 'close'
-                    };
                     var params = data['htmlPageReferer'].split('?')[1].split('&');
                     var languageQueryParam = params.find(function(queryParam) {
                         return queryParam.startsWith('com.dotmarketing.htmlpage.language');
                     });
                     var languageId = languageQueryParam.split('=')[1];
-                    
-                    window.top.location = '/dotAdmin/#/edit-page/content?url=' + data['htmlPageReferer'].split('?')[0] + '&language_id=' + languageId;
+
+                    customEventDetail = {	
+                        name: 'close',
+                        data: {
+                            redirectUrl: data['htmlPageReferer'].split('?')[0],
+                            languageId
+                        }
+                    };
                 }
             }
         } else {
@@ -674,7 +676,6 @@
                 });
             }
         }
-
         var customEvent = document.createEvent('CustomEvent');
         customEvent.initCustomEvent('ng-event', false, false, customEventDetail);
         document.dispatchEvent(customEvent);
@@ -744,9 +745,6 @@
             dojo.empty(myDiv);
         }
         var hideRulePushOptions = false
-        <%if(contentlet.getStructure().isHTMLPageAsset()){%>
-        hideRulePushOptions=true;
-        <%}%>
         myCp = new dojox.layout.ContentPane({
             id : "contentletRulezDivCp",
             style: "height:100%",
@@ -801,10 +799,8 @@
                     expireDate:expireDate,
                     structInode:structInode
                 };
-
                 var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Workflow-Action")%>');
-                pushHandler.showWorkflowEnabledDialog(workflow, saveAssignCallBack);
-                return;
+                pushHandler.showWorkflowEnabledDialog(workflow, saveAssignCallBack, false, true);
 
             } else{
                 dojo.byId("wfActionId").value=wfId;
@@ -813,6 +809,25 @@
 
         }
     });
+
+    function saveAssignCallBackAngular (actionId, formData) {
+        // END: PUSH PUBLISHING ACTIONLET
+        dojo.byId("wfActionAssign").value = formData.assign;
+        dojo.byId("wfActionComments").value = formData.comments;
+        dojo.byId("wfActionId").value = actionId;
+
+        // BEGIN: PUSH PUBLISHING ACTIONLET
+        dojo.byId("wfPublishDate").value = formData.publishDate;
+        dojo.byId("wfPublishTime").value = formData.publishTime;
+        dojo.byId("wfExpireDate").value = formData.expireDate;
+        dojo.byId("wfExpireTime").value = formData.expireTime;
+        dojo.byId("wfWhereToSend").value = formData.whereToSend;
+        dojo.byId("wfiWantTo").value = formData.iWantTo;
+        dojo.byId("wfFilterKey").value = formData.filterKey;
+        // END: PUSH PUBLISHING ACTIONLET
+
+        saveContent(false);
+    }
 
 
     function saveAssignCallBack(actionId, formData) {

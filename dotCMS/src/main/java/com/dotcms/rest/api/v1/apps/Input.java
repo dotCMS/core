@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.apps;
 
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonParser;
@@ -25,7 +26,7 @@ public class Input {
     private final boolean hidden;
 
     private Input(final char[] value, final boolean hidden) {
-        this.value = value;
+        this.value = UtilMethods.trimCharArray(value);
         this.hidden = hidden;
     }
 
@@ -55,13 +56,12 @@ public class Input {
 
         @Override
         public Input deserialize(final JsonParser jsonParser, final DeserializationContext context)
-                throws IOException, JsonProcessingException {
+                throws IOException {
             final JsonNode jsonNode = jsonParser.readValueAsTree();
             final JsonNode value = jsonNode.get("value");
             final JsonNode hidden = jsonNode.get("hidden");
-            return newInputParam(value.asText().toCharArray(),
+            return newInputParam(value.asText().trim().toCharArray(),
                     hidden != null && hidden.asBoolean());
         }
     }
-
 }

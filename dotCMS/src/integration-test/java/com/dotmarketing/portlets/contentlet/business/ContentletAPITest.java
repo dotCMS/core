@@ -9,7 +9,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -25,6 +24,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.datagen.*;
+import com.dotcms.datagen.TestDataUtils.TestFile;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.mock.response.BaseResponse;
@@ -32,6 +32,9 @@ import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.storage.FileMetadataAPI;
+import com.dotcms.storage.FileMetadataAPIImpl;
+import com.dotcms.storage.model.Metadata;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
@@ -63,6 +66,7 @@ import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -102,6 +106,7 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
@@ -118,6 +123,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Serializable;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
@@ -1647,8 +1653,8 @@ public class ContentletAPITest extends ContentletBaseTest {
         // create 20 versions
         for(int i=1; i<=20; i++) {
             file = contentletAPI.findContentletByIdentifier(ident, false, defLang, user, false);
+            file.setIndexPolicy(IndexPolicy.FORCE);
             APILocator.getFileAssetAPI().renameFile(file, "hello"+i, user, false);
-            contentletAPI.isInodeIndexed(APILocator.getVersionableAPI().getContentletVersionInfo(ident, defLang).getWorkingInode());
         }
         
         file = contentletAPI.findContentletByIdentifier(ident, false, defLang, user, false);
@@ -2005,6 +2011,76 @@ public class ContentletAPITest extends ContentletBaseTest {
             ContentletDataGen.remove(contentInSpanish);
             HTMLPageDataGen.remove(englishPage);
             HTMLPageDataGen.remove(spanishPage);
+            TemplateDataGen.remove(template);
+            ContainerDataGen.remove(container);
+            StructureDataGen.remove(structure);
+            FolderDataGen.remove(folder);
+
+            HibernateUtil.closeAndCommitTransaction();
+        } catch (Exception e) {
+            HibernateUtil.rollbackTransaction();
+            throw e;
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentletAPI#getContentletReferences(Contentlet, User, boolean)}
+     * Test case: Checks that the fallback page is returned by the method when there is no page for the source content in its language (Spanish)
+     * Expected result: The page in the fallback language (English) should be returned for the Spanish content
+     */
+    @Test
+    public void getContentletReferencesForMonolingualPages() throws Exception {
+        int english = 1;
+        long spanish = spanishLanguage.getId();
+
+        try {
+            HibernateUtil.startTransaction();
+            final String UUID = UUIDGenerator.generateUuid();
+            Structure structure = new StructureDataGen().nextPersisted();
+            Container container = new ContainerDataGen().withStructure(structure, "").nextPersisted();
+            Template template = new TemplateDataGen().withContainer(container.getIdentifier(),UUID).nextPersisted();
+            Folder folder = new FolderDataGen().nextPersisted();
+
+            HTMLPageDataGen htmlPageDataGen = new HTMLPageDataGen(folder, template);
+            HTMLPageAsset englishPage = htmlPageDataGen.languageId(english).nextPersisted();
+
+            ContentletDataGen contentletDataGen = new ContentletDataGen(structure.getInode());
+            Contentlet contentInEnglish = contentletDataGen.languageId(english).nextPersisted();
+            Contentlet contentInSpanish = contentletDataGen.languageId(spanish).nextPersisted();
+
+            // let's add the English content to the page in English (create the page-container-content relationship)
+            MultiTree multiTreeEN = new MultiTree(englishPage.getIdentifier(), container.getIdentifier(),
+                    contentInEnglish.getIdentifier(),UUID,0);
+            APILocator.getMultiTreeAPI().saveMultiTree(multiTreeEN);
+
+            // let's add the Spanish content to the page in English (create the page-container-content relationship)
+            MultiTree multiTreeSP = new MultiTree(englishPage.getIdentifier(), container.getIdentifier(),
+                    contentInSpanish.getIdentifier(),UUID,0);
+            APILocator.getMultiTreeAPI().saveMultiTree(multiTreeSP);
+
+            // let's get the references for english content
+            List<Map<String, Object>> references = contentletAPI.getContentletReferences(contentInEnglish, user, false);
+
+            assertNotNull(references);
+            assertTrue(!references.isEmpty());
+            // let's check if the referenced page is in the expected language
+            assertEquals(((IHTMLPage) references.get(0).get("page")).getLanguageId(), english);
+            // let's check the referenced container is the expected
+            assertEquals(((Container) references.get(0).get("container")).getInode(), container.getInode());
+
+            // let's get the references for spanish content
+            references = contentletAPI.getContentletReferences(contentInSpanish, user, false);
+
+            assertNotNull(references);
+            assertTrue(!references.isEmpty());
+            // let's check if the referenced page is in the expected language
+            assertEquals(english, ((IHTMLPage) references.get(0).get("page")).getLanguageId());
+            // let's check the referenced container is the expected
+            assertEquals(container.getInode(),((Container) references.get(0).get("container")).getInode());
+
+            ContentletDataGen.remove(contentInEnglish);
+            ContentletDataGen.remove(contentInSpanish);
+            HTMLPageDataGen.remove(englishPage);
             TemplateDataGen.remove(template);
             ContainerDataGen.remove(container);
             StructureDataGen.remove(structure);
@@ -4978,11 +5054,17 @@ public class ContentletAPITest extends ContentletBaseTest {
     }
 
     @DataProvider
-    public static Object[] testCasesUniqueTextField() throws Exception{
+    public static Object[] testCasesUniqueTextField() {
         return new Object[]{
                 new testCaseUniqueTextField("diffLang"),//test for same value diff lang
-                new testCaseUniqueTextField("\"A+\" Student"),//test for special chars
-                new testCaseUniqueTextField("CASEINSENSITIVE")//test for case insensitive
+                new testCaseUniqueTextField("A+ Student"),
+                new testCaseUniqueTextField("\"A+” student"),
+                new testCaseUniqueTextField("aaa-bbb-ccc"),
+                new testCaseUniqueTextField("valid - field"),
+                new testCaseUniqueTextField("with \" quotes"),
+                new testCaseUniqueTextField("with special characters + [ ] { } * ( ) : && ! | ^ ~ ?"),
+                new testCaseUniqueTextField("CASEINSENSITIVE"),
+                new testCaseUniqueTextField("with chinese characters 好 心 面")
         };
     }
 
@@ -6227,9 +6309,12 @@ public class ContentletAPITest extends ContentletBaseTest {
                             .get(HTMLPageAssetAPI.TEMPLATE_FIELD));
 
             //Verify that a new English version with the Spanish template was created
-            final String newEnglishInode = APILocator.getVersionableAPI()
+            Optional<ContentletVersionInfo> info = APILocator.getVersionableAPI()
                     .getContentletVersionInfo(englishPage.getIdentifier(),
-                            englishPage.getLanguageId()).getWorkingInode();
+                            englishPage.getLanguageId());
+
+            assertTrue(info.isPresent());
+            final String newEnglishInode = info.get().getWorkingInode();
 
             assertEquals(spanishPage.get(HTMLPageAssetAPI.TEMPLATE_FIELD),
                     contentletAPI.find(newEnglishInode, user, false)
@@ -6316,9 +6401,13 @@ public class ContentletAPITest extends ContentletBaseTest {
                             .get(HTMLPageAssetAPI.TEMPLATE_FIELD));
 
             //Verify that a new English version with the Spanish template was created
-            final String newEnglishInode = APILocator.getVersionableAPI()
+            Optional<ContentletVersionInfo> info = APILocator.getVersionableAPI()
                     .getContentletVersionInfo(englishPage.getIdentifier(),
-                            englishPage.getLanguageId()).getWorkingInode();
+                            englishPage.getLanguageId());
+
+            assertTrue(info.isPresent());
+
+            final String newEnglishInode = info.get().getWorkingInode();
 
             assertEquals(spanishPage.get(HTMLPageAssetAPI.TEMPLATE_FIELD),
                     contentletAPI.find(newEnglishInode, user, false)
@@ -7149,4 +7238,46 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Check that the copy Contentlet is published
         assertTrue(copyContentletArchived.isArchived());
     }
+
+    /**
+     * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}
+     * Given scenario: We create a file asset add some custom attributes to it then we create a new version
+     * Expected result: After creating a newer version the custom meta is still there.
+     * @throws Exception
+     */
+    @Test
+    public void Test_Copy_Metadata_On_CheckIn()
+            throws DotDataException, DotSecurityException {
+
+        final String fileAsset = FileAssetAPI.BINARY_FIELD;
+        final FileMetadataAPI fileMetadataAPI = APILocator.getFileMetadataAPI();
+        //Create Contentlet
+        final Contentlet originalContentlet = TestDataUtils.getFileAssetContent(true,1L, TestFile.GIF );
+
+        fileMetadataAPI.putCustomMetadataAttributes(originalContentlet,
+                ImmutableMap.of(fileAsset,
+                      ImmutableMap.of("focalPoint","2.66,2.44", "foo","bar", "bar", "foo")
+                )
+        );
+
+        final Contentlet checkout1 = contentletAPI
+                .checkout(originalContentlet.getInode(), user, false);
+
+        //Force a change
+        checkout1.setStringProperty(FileAssetAPI.TITLE_FIELD, "v2");
+
+        final Contentlet v2 = contentletAPI.checkin(checkout1, user, false);
+        assertNotEquals(originalContentlet.getInode(), v2.getInode());
+
+        final Metadata metadata1 = v2.getBinaryMetadata(fileAsset);
+        assertNotNull(metadata1);
+        final Map<String, Serializable> customMeta = metadata1.getCustomMeta();
+        assertEquals(customMeta.get("focalPoint"),"2.66,2.44");
+        assertEquals(customMeta.get("foo"),"bar");
+        assertEquals(customMeta.get("bar"),"foo");
+        
+
+    }
+
+
 }

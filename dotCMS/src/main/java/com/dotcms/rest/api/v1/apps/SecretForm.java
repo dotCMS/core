@@ -17,6 +17,7 @@ public class SecretForm extends Validated {
 
     @JsonCreator
     public SecretForm(final Map<String, Input> inputParams) {
+        super();
         this.inputParams = inputParams;
     }
 

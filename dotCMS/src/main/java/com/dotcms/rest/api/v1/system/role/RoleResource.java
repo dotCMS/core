@@ -10,20 +10,31 @@ import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.user.ajax.UserAjax;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import java.io.Serializable;
@@ -50,6 +61,7 @@ public class RoleResource implements Serializable {
 	private final WebResource webResource;
 	private final RoleAPI roleAPI;
 	private final RoleHelper roleHelper = new RoleHelper();
+	private final UserAPI userAPI     = APILocator.getUserAPI();
 
 	/**
 	 * Default class constructor.
@@ -213,5 +225,73 @@ public class RoleResource implements Serializable {
 		return Response.ok(new ResponseEntityView(
 				layoutAPI.loadLayoutsForRole(role)
 		)).build();
+	}
+
+	/**
+	 * Load the user and roles by role id.
+	 * @param request   {@link HttpServletRequest}
+	 * @param response  {@link HttpServletResponse}
+	 * @param roleId    {@link String} role
+	 * @param roleHierarchyForAssign {@link Boolean} true if want to include the hierarchy, false by default
+	 * @param roleNameToFilter {@link String} prefix role name, if you want to filter the results
+	 * @return Response
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	@GET
+	@Path("/{roleid}/rolehierarchyanduserroles")
+	@Produces("application/json")
+	@SuppressWarnings("unchecked")
+	public Response loadUsersAndRolesByRoleId(@Context final HttpServletRequest request,
+			@Context final HttpServletResponse response,
+			@PathParam   ("roleid") final String roleId,
+			@DefaultValue("false") @QueryParam("roleHierarchyForAssign") final boolean roleHierarchyForAssign,
+			@QueryParam  ("name") final String roleNameToFilter) throws DotDataException, DotSecurityException {
+
+		new WebResource.InitBuilder(this.webResource).requiredBackendUser(true)
+				.requiredFrontendUser(false).requestAndResponse(request, response)
+				.rejectWhenNoUser(true).init();
+
+		final Role role = this.roleAPI.loadRoleById(roleId);
+
+		if (null == role || !UtilMethods.isSet(role.getId())) {
+
+			throw new DoesNotExistException("The role: " + roleId + " does not exists");
+		}
+
+		final List<Role> roleList = new ArrayList<>();
+		final List<User> userList = new ArrayList<>();
+
+		Logger.debug(this, ()->"loading users and roles by role: " + roleId);
+
+		if (!role.isUser()) {
+
+			userList.addAll(this.roleAPI.findUsersForRole(role, roleHierarchyForAssign));
+			roleList.addAll(roleHierarchyForAssign? this.roleAPI.findRoleHierarchy(role): Arrays.asList(role));
+		} else {
+
+			userList.add(this.userAPI.loadUserById(role.getRoleKey(), APILocator.systemUser(), false));
+		}
+
+		for (final User user : userList) {
+
+			final Role roleToTest = this.roleAPI.getUserRole(user);
+			if (roleToTest != null && UtilMethods.isSet(roleToTest.getId())) {
+
+				roleList.add(roleToTest);
+			}
+		}
+
+		return Response.ok(new ResponseEntityView(
+				null != roleNameToFilter? this.filterRoleList(roleNameToFilter, roleList):roleList)).build();
+	}
+
+	private final List<Role> filterRoleList(final String roleNameToFilter, final List<Role> roleList) {
+
+		final String roleNameToFilterClean = roleNameToFilter.toLowerCase().replaceAll( "\\*", StringPool.BLANK);
+		return UtilMethods.isSet(roleNameToFilterClean)?
+				roleList.stream().filter(myRole -> myRole.getName().toLowerCase()
+						.startsWith(roleNameToFilterClean)).collect(Collectors.toList()):
+				roleList;
 	}
 }

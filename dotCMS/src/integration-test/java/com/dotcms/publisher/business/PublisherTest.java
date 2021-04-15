@@ -18,6 +18,7 @@ import com.dotcms.publisher.receiver.BundlePublisher;
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.DotPublishingException;
+import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.Operation;
@@ -34,6 +35,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.portal.struts.MultiMessageResourcesFactory;
@@ -73,6 +75,8 @@ public class PublisherTest extends IntegrationTestBase {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
         LicenseTestUtil.getLicense();
+
+        createFilter();
 
         when(Config.CONTEXT.getAttribute(Globals.MESSAGES_KEY))
                 .thenReturn(new MultiMessageResources( MultiMessageResourcesFactory.createFactory(),""));
@@ -389,5 +393,14 @@ public class PublisherTest extends IntegrationTestBase {
             this.folder = folder;
             this.page = page;
         }
+    }
+
+    private static void createFilter() {
+        final Map<String, Object> filtersMap =
+                ImmutableMap.of("dependencies", true, "relationships", true);
+        final FilterDescriptor filterDescriptor =
+                new FilterDescriptor("filterTestAPI.yml", "Filter Test Title", filtersMap, true,
+                        "Reviewer,dotcms.org.2789");
+        APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor);
     }
 }

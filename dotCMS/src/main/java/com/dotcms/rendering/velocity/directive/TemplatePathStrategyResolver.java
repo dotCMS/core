@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.directive;
 
+import static com.dotcms.rendering.velocity.services.ContainerLoader.*;
 import static com.dotmarketing.util.StringUtils.builder;
 import static com.liferay.util.StringPool.FORWARD_SLASH;
 import static com.liferay.util.StringPool.PERIOD;
@@ -139,9 +140,21 @@ public class TemplatePathStrategyResolver {
 
         private String getPath(final RenderParams params, final String path, final String uid) {
             try {
-                return FileAssetContainerUtil.getInstance().isFullPath(path) ?
-                        getContainerResourcePathFromFullPath(params, path, uid) :
-                        getContainerResourceFromRelativePath(params, path, uid);
+                String fileContainerPathToVelocityPath = null;
+
+                if (FileAssetContainerUtil.getInstance().isFullPath(path)) {
+                    fileContainerPathToVelocityPath =
+                            path.replaceAll(FORWARD_SLASH, FILE_CONTAINER_PATH_SEPARATOR_IN_VELOCITY_KEY)
+                                    .replaceAll("\\" + PERIOD, HOST_NAME_SEPARATOR_IN_VELOCITY_KEY);
+                } else {
+                    final String fullPath = FileAssetContainerUtil.getInstance().getFullPath(path);
+                    fileContainerPathToVelocityPath = RESOLVE_RELATIVE + FILE_CONTAINER_PATH_SEPARATOR_IN_VELOCITY_KEY +
+                            fullPath.replaceAll(FORWARD_SLASH, FILE_CONTAINER_PATH_SEPARATOR_IN_VELOCITY_KEY)
+                                    .replaceAll("\\" + PERIOD, HOST_NAME_SEPARATOR_IN_VELOCITY_KEY);
+                }
+
+                return builder(FORWARD_SLASH, params.mode.name(), FORWARD_SLASH, fileContainerPathToVelocityPath,
+                        FORWARD_SLASH, uid, PERIOD, VelocityType.CONTAINER.fileExtension).toString();
             } catch (Exception e) {
 
                 Logger.warn(this.getClass(), " - unable to resolve " + path + " getting this: "+ e.getMessage() );
@@ -150,40 +163,6 @@ public class TemplatePathStrategyResolver {
                 }
                 throw new DotStateException(e);
             }
-        }
-
-        private String getContainerResourceFromRelativePath(
-                final RenderParams params,
-                final String path,
-                final String uid) {
-
-            return builder(FORWARD_SLASH, params.mode.name(), FORWARD_SLASH, HOST_INDICATOR,
-                    params.currentHost.getHostname(), path.startsWith(FORWARD_SLASH)? StringPool.BLANK:FORWARD_SLASH,
-                    path, FORWARD_SLASH, uid, PERIOD, VelocityType.CONTAINER.fileExtension).toString();
-        }
-
-        private String getContainerResourcePathFromFullPath(
-                final RenderParams params,
-                final String path,
-                final String uid) {
-
-            return builder(FORWARD_SLASH, params.mode.name(), FORWARD_SLASH,
-                path, FORWARD_SLASH, uid, PERIOD, VelocityType.CONTAINER.fileExtension).toString();
-        }
-
-        private Host getHost(final Host host) {
-
-            if (null == host) {
-
-                try {
-                    return APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
-                } catch (DotDataException  | DotSecurityException e) {
-
-                    return APILocator.systemHost();
-                }
-            }
-
-            return host;
         }
     } // PathTemplatePathStrategyImpl.
 

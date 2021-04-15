@@ -98,7 +98,6 @@
                   "match_mapping_type": "string",
                   "mapping": {
                       "analyzer": "my_analyzer",
-                      "store": "false",
                       "type": "text"
                   }
               }

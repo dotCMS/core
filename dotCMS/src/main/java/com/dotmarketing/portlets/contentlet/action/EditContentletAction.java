@@ -15,7 +15,9 @@ import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.ContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
@@ -109,6 +111,7 @@ import com.liferay.util.FileUtil;
 import com.liferay.util.LocaleUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
+import java.util.Optional;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 
@@ -140,7 +143,6 @@ import java.util.stream.Collectors;
 
 import static com.dotmarketing.portlets.calendar.action.EventFormUtils.editEvent;
 import static com.dotmarketing.portlets.calendar.action.EventFormUtils.setEventDefaults;
-import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isFieldTypeAllowedOnImportExport;
 import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isNewFieldTypeAllowedOnImportExport;
 
 /**
@@ -1324,8 +1326,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		}
 		else if(perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user) && workingContentlet.isLocked()){
 
-			String lockedUserId = APILocator.getVersionableAPI().getLockedBy(workingContentlet);
-			if(user.getUserId().equals(lockedUserId)){
+			Optional<String> lockedUserId = APILocator.getVersionableAPI().getLockedBy(workingContentlet);
+			if(lockedUserId.isPresent() && user.getUserId().equals(lockedUserId.get())){
 				req.setAttribute(WebKeys.CONTENT_EDITABLE, true);
 			}else{
 				req.setAttribute(WebKeys.CONTENT_EDITABLE, false);
@@ -1377,11 +1379,12 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	private void unLockIfNecessary(final Contentlet content, final User user) {
 		try {
 			if (content.isLocked()) {
-				ContentletVersionInfo contentletVersionInfo =
+				Optional<ContentletVersionInfo> contentletVersionInfo =
 						APILocator.getVersionableAPI().getContentletVersionInfo(content.getIdentifier(), content.getLanguageId());
 
-				if (user.getUserId().equals(contentletVersionInfo.getLockedBy())) {
-						conAPI.unlock(content, user, false);
+				if (contentletVersionInfo.isPresent()
+						&& user.getUserId().equals(contentletVersionInfo.get().getLockedBy())) {
+					conAPI.unlock(content, user, false);
 				}
 			}
 		} catch (DotDataException|DotSecurityException e) {
@@ -1943,10 +1946,17 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			}
 
 			List<Structure> structures = StructureFactory.getStructuresWithWritePermissions(user, false);
-			if(!structures.contains(structure)) {
-				structures.add(structure);
+
+			//Add the structure to the collection if not exists.
+            //In case of PERSONA AND FORM, the structure will be included only if the license is enterprise
+            if (!structures.contains(structure) &&
+                    APILocator.getContentTypeAPI(user)
+                            .isContentTypeAllowed(new StructureTransformer(structure).from())) {
+                    //avoid exception if the list is immutable
+                    structures = new ArrayList<>(structures);
+                    structures.add(structure);
 			}
-			contentletForm.setAllStructures(structures);
+			contentletForm.setAllStructures(ImmutableList.of(structures));
 
 			String cmd = req.getParameter(Constants.CMD);
 			if ((cmd.equals("new") || !InodeUtils.isSet(contentletForm.getStructure().getInode())) && contentletForm.isAllowChange()) {

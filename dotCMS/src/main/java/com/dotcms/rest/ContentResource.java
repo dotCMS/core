@@ -1,8 +1,5 @@
 package com.dotcms.rest;
 
-import static com.dotmarketing.util.NumberUtil.toInt;
-import static com.dotmarketing.util.NumberUtil.toLong;
-
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -55,28 +52,10 @@ import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.DomDriver;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLDecoder;
-import java.nio.file.Files;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import org.glassfish.jersey.media.multipart.BodyPart;
+import org.glassfish.jersey.media.multipart.ContentDisposition;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
@@ -91,10 +70,33 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.glassfish.jersey.media.multipart.BodyPart;
-import org.glassfish.jersey.media.multipart.ContentDisposition;
-import org.glassfish.jersey.media.multipart.FormDataMultiPart;
-import org.jetbrains.annotations.NotNull;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.nio.file.Files;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static com.dotmarketing.util.NumberUtil.toInt;
+import static com.dotmarketing.util.NumberUtil.toLong;
 
 @Path("/content")
 public class ContentResource {
@@ -112,6 +114,97 @@ public class ContentResource {
 
     private final WebResource webResource = new WebResource();
     private final ContentHelper contentHelper = ContentHelper.getInstance();
+
+    /**
+     *
+     * Do a search, parameter are received by post and returns the json with the search info and contentlet results
+     *
+     * Example call using curl:
+     * curl --location --request POST 'http://localhost:8080/api/content/_search' \
+     * --header 'Content-Type: application/json' \
+     * --data-raw '{
+     *      	 "query": "+structurename:webpagecontent",
+     *       	 "sort":"modDate",
+     *       	 "limit":20,
+     *       	 "offset":0,
+     *           "userId":"dotcms.org.1"
+     * }'
+     *
+     * @param request {@link HttpServletRequest} object
+     * @param response {@link HttpServletResponse} object
+     * @param searchForm {@link SearchForm}
+     * @return json array of objects. each object with inode and identifier
+     */
+    @POST
+    @Path("/_search")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response search(@Context HttpServletRequest request,
+                           @Context final HttpServletResponse response,
+                           final SearchForm searchForm) throws DotSecurityException, DotDataException {
+
+        final InitDataObject initData = this.webResource.init
+                (null, request, response, false, null);
+
+        final User   user    = initData.getUser();
+        final String query   = searchForm.getQuery(); // default value = ""
+        final String sort    = searchForm.getSort(); // default value = ""
+        final int    limit   = searchForm.getLimit();  // default value = 20
+        final int    offset  = searchForm.getOffset(); // default value = 0
+        final String render  = searchForm.getRender();
+        final int depth      = searchForm.getDepth(); // default value = -1
+        final long language  = searchForm.getLanguageId();
+        final PageMode pageMode         = PageMode.get(request);
+        final String userToPullID       = searchForm.getUserId();
+        final boolean allCategoriesInfo = searchForm.isAllCategoriesInfo();
+        User   userForPull              = user;
+        List<Contentlet> contentlets    = Collections.emptyList();
+        long resultsSize                = 0;
+        long startAPISearchPull         = 0;
+        long afterAPISearchPull         = 0;
+        long startAPIPull               = 0;
+        long afterAPIPull               = 0;
+        JSONObject resultJson           = new JSONObject();
+        final String tmDate = (String) request.getSession().getAttribute("tm_date");
+
+        if (depth > 3) {
+            throw new IllegalArgumentException("Invalid depth: " + depth);
+        }
+
+        Logger.debug(this, ()-> "Searching contentlets by: " + searchForm);
+
+        //If the user is an admin can send an user to filter the search
+        if(null != user && user.isAdmin()){
+
+            if(UtilMethods.isSet(userToPullID)) {
+
+                userForPull = APILocator.getUserAPI().loadUserById(userToPullID, APILocator.systemUser(),true);
+            }
+        }
+
+        if (UtilMethods.isSet(query)) {
+
+            startAPISearchPull = Calendar.getInstance().getTimeInMillis();
+            resultsSize        = APILocator.getContentletAPI().indexCount(query, userForPull, pageMode.respectAnonPerms);
+            afterAPISearchPull = Calendar.getInstance().getTimeInMillis();
+
+            startAPIPull       = Calendar.getInstance().getTimeInMillis();
+            contentlets        = ContentUtils.pull(processQuery(query), offset, limit, sort, userForPull, tmDate, pageMode.respectAnonPerms);
+            resultJson = getJSONObject(contentlets, request, response, render, user, depth,
+                    pageMode.respectAnonPerms, language, pageMode.showLive, allCategoriesInfo);
+
+            afterAPIPull       = Calendar.getInstance().getTimeInMillis();
+
+            if(contentlets.isEmpty() && offset <= resultsSize ){
+                resultsSize = 0;
+            }
+        }
+
+        final long queryTook     = afterAPISearchPull-startAPISearchPull;
+        final long contentTook   = afterAPIPull-startAPIPull;
+
+        return Response.ok(new ResponseEntityView(
+                new SearchView(resultsSize, queryTook, contentTook, new JsonObjectView(resultJson)))).build();
+    }
 
     /**
      * performs a call to APILocator.getContentletAPI().searchIndex() with the specified parameters.
@@ -329,12 +422,15 @@ public class ContentResource {
                 }
                 jo.put("canLock", canLock);
                 jo.put("locked", contentlet.isLocked());
-                ContentletVersionInfo cvi = APILocator.getVersionableAPI()
+
+                Optional<ContentletVersionInfo> cvi = APILocator.getVersionableAPI()
                         .getContentletVersionInfo(id, contentlet.getLanguageId());
-                if (contentlet.isLocked()) {
-                    jo.put("lockedBy", cvi.getLockedBy());
-                    jo.put("lockedOn", cvi.getLockedOn());
-                    jo.put("lockedByName", APILocator.getUserAPI().loadUserById(cvi.getLockedBy()));
+
+                if (contentlet.isLocked() && cvi.isPresent()) {
+                    jo.put("lockedBy", cvi.get().getLockedBy());
+                    jo.put("lockedOn", cvi.get().getLockedOn());
+                    jo.put("lockedByName", APILocator.getUserAPI().loadUserById(cvi.get()
+                            .getLockedBy()));
 
 
                 }
@@ -547,7 +643,7 @@ public class ContentResource {
             return ExceptionMapperUtil.createResponse(new DotStateException("No Permissions"), Response.Status.FORBIDDEN);
         } catch (Exception e) {
             if (idPassed) {
-                Logger.warnAndDebug(this.getClass(), "Can't find Content with Identifier: " + id, e);
+                Logger.warnAndDebug(this.getClass(), "Can't find Content with Identifier: " + id + " " + e.getMessage(), e);
             } else if (queryPassed || UtilMethods.isSet(related)) {
                 Logger.warn(this, "Error searching Content : " + e.getMessage());
             } else if (inodePassed) {
@@ -586,7 +682,6 @@ public class ContentResource {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    @NotNull
     private List<Contentlet> getPullRelated(User user, int limit,
             String orderBy, String tmDate, String luceneQuery, String relationshipValue, long language, boolean live)
             throws DotSecurityException, DotDataException {
@@ -795,7 +890,9 @@ public class ContentResource {
             if (addedRelationships.contains(relationship)) {
                 continue;
             }
-            addedRelationships.add(relationship);
+            if (!relationship.getParentStructureInode().equals(relationship.getChildStructureInode())) {
+                addedRelationships.add(relationship);
+            }
 
             final boolean isChildField = relationshipAPI.isChildField(relationship, field);
 
@@ -959,6 +1056,31 @@ public class ContentResource {
             final HttpServletResponse response, final String render, final User user,
             final int depth, final boolean respectFrontendRoles, final long language,
             final boolean live, final boolean allCategoriesInfo){
+        final JSONObject json = this.getJSONObject(cons, request, response, render, user,
+                depth, respectFrontendRoles, language, live, allCategoriesInfo);
+        return json.toString();
+    }
+
+    /**
+     * Creates a json object (as string) of a list of contentlets
+     * @param cons
+     * @param request
+     * @param response
+     * @param render
+     * @param user
+     * @param depth
+     * @param respectFrontendRoles
+     * @param language
+     * @param live
+     * @param allCategoriesInfo
+     * @return
+     * @throws IOException
+     * @throws DotDataException
+     */
+    private JSONObject getJSONObject(final List<Contentlet> cons, final HttpServletRequest request,
+                           final HttpServletResponse response, final String render, final User user,
+                           final int depth, final boolean respectFrontendRoles, final long language,
+                           final boolean live, final boolean allCategoriesInfo){
         final JSONObject json = new JSONObject();
         final JSONArray jsonCons = new JSONArray();
 
@@ -985,7 +1107,7 @@ public class ContentResource {
             Logger.debug(this.getClass(), "unable to create JSONObject", e);
         }
 
-        return json.toString();
+        return json;
     }
 
     /**
@@ -1043,7 +1165,9 @@ public class ContentResource {
             if (addedRelationships.contains(relationship)){
                 continue;
             }
-            addedRelationships.add(relationship);
+            if (!relationship.getParentStructureInode().equals(relationship.getChildStructureInode())) {
+                addedRelationships.add(relationship);
+            }
 
             final boolean isChildField = relationshipAPI.isChildField(relationship, field);
 

@@ -1,5 +1,6 @@
 package com.dotmarketing.util;
 
+import com.dotmarketing.startup.runalways.Task00050LoadAppsSecrets;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -31,7 +32,6 @@ import com.dotmarketing.startup.runalways.Task00004LoadStarter;
 import com.dotmarketing.startup.runalways.Task00005LoadFixassets;
 import com.dotmarketing.startup.runalways.Task00006CreateSystemLayout;
 import com.dotmarketing.startup.runalways.Task00007RemoveSitesearchQuartzJob;
-import com.dotmarketing.startup.runalways.Task00030ClusterInitialize;
 import com.dotmarketing.startup.runalways.Task00040CheckAnonymousUser;
 import com.dotmarketing.startup.runonce.*;
 
@@ -183,6 +183,7 @@ public class TaskLocatorUtil {
 		.add(Task01096CreateContainerStructuresTable.class)
 		.add(Task03005CreateModDateForFieldIfNeeded.class)
 		.add(Task03010AddContentletIdentifierIndex.class)
+		.add(Task201102UpdateColumnSitelicTable.class)
 		.add(Task03015CreateClusterConfigModel.class)
 		.add(Task03020PostgresqlIndiciesFK.class)
 		.add(Task03025CreateFoundationForNotificationSystem.class)
@@ -283,6 +284,18 @@ public class TaskLocatorUtil {
         .add(Task05300UpdateIndexNameLength.class)
         .add(Task05305AddPushPublishFilterColumn.class)
 		.add(Task05350AddDotSaltClusterColumn.class)
+		.add(Task05370AddAppsPortletToLayout.class)
+		.add(Task05370AddAppsPortletToLayout.class)
+    	.add(Task05380ChangeContainerPathToAbsolute.class)
+    	.add(Task05390MakeRoomForLongerJobDetail.class)
+		.add(Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTables.class)
+		//New task date-based naming convention starts here
+        .add(Task201013AddNewColumnsToIdentifierTable.class)
+        .add(Task201014UpdateColumnsValuesInIdentifierTable.class)
+		.add(Task210218MigrateUserProxyTable.class)
+		.add(Task210316UpdateLayoutIcons.class)
+        .add(Task210319CreateStorageTable.class)
+		.add(Task210321RemoveOldMetadataFiles.class)
         .build();
         
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
@@ -317,6 +330,7 @@ public class TaskLocatorUtil {
 		ret.add(Task00002LoadClusterLicenses.class);
 		//ret.add(Task00030ClusterInitialize.class);
 		ret.add(Task00040CheckAnonymousUser.class);
+		ret.add(Task00050LoadAppsSecrets.class);
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 

@@ -14,7 +14,6 @@ import java.util.Optional;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 
 public interface ContentletIndexAPI {
@@ -139,7 +138,7 @@ public interface ContentletIndexAPI {
 
     void stopFullReindexationAndSwitchover() throws DotDataException;
 
-    void reindexSwitchover(boolean forceSwitch) throws DotDataException;
+    boolean reindexSwitchover(boolean forceSwitch) throws DotDataException;
 
     void stopFullReindexation() throws DotDataException;
 

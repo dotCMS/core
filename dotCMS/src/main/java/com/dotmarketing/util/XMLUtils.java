@@ -1,18 +1,24 @@
 package com.dotmarketing.util;
 
+import com.dotmarketing.exception.DotRuntimeException;
+import org.apache.commons.io.IOUtils;
+import org.xml.sax.InputSource;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.SequenceInputStream;
+import java.io.StringReader;
 import java.nio.file.Files;
 import java.util.regex.Pattern;
-import org.apache.commons.io.IOUtils;
-import com.dotmarketing.exception.DotRuntimeException;
 
 public class XMLUtils {
+
+    private static final DocumentBuilderFactory factory  = DocumentBuilderFactory.newInstance();
 
 	/**
 	 * This will take the three pre-defined entities in XML 1.0 (used
@@ -60,18 +66,36 @@ public class XMLUtils {
 	
     public static String toXML10(final String input) {
         return xml10pattern.matcher(input).replaceAll("");
-        
-        
     }
     
     public static String toXML11(final String input) {
         return xml11pattern.matcher(input).replaceAll("");
-        
-        
     }
-    
-	
-	
+
+    /**
+     * Returns true if the XML is schemeless valid
+     * @param xml {@link String}
+     * @return boolean
+     */
+	public static boolean isValidXML (final String xml) {
+
+	    if (UtilMethods.isNotSet(xml)) {
+	        return false;
+        }
+
+        try {
+
+            final DocumentBuilder documentBuilder = factory.newDocumentBuilder();
+            documentBuilder.parse(new InputSource(new StringReader(xml)));
+        } catch (Exception e) {
+
+            Logger.error(XMLUtils.class, e.getMessage(), e);
+            return false;
+        }
+
+        return true;
+    }
+
 	private static String readFirstLine(File file) {
 	    try(BufferedReader fileReader = new BufferedReader(Files.newBufferedReader(file.toPath()))){
 	        return fileReader.readLine().trim();

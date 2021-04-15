@@ -6,13 +6,10 @@
         </Console>
     </Appenders>
     <Loggers>
-        <Logger name="io.lettuce.core" level="fatal" additivity="false">
-            <AppenderRef ref="Console"/>
-        </Logger>
         <Root level="info">
             <AppenderRef ref="Console" />
         </Root>
-        <logger name="com.zaxxer.hikari" level="debug" additivity="false">
+        <logger name="com.zaxxer.hikari" level="warn" additivity="false">
             <AppenderRef ref="Console"/>
         </logger>
     </Loggers>

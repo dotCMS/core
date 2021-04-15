@@ -1,6 +1,7 @@
 package com.dotmarketing.business;
 
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.cms.factories.PublicAddressFactory;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
@@ -38,9 +39,10 @@ import org.apache.logging.log4j.util.Strings;
 
 /**
  * @author Jason Tesser
- *
+ * @deprecated Use {@link UserFactory } instead
  */
-public class UserFactoryLiferayImpl extends UserFactory {
+@Deprecated
+public class UserFactoryLiferayImpl extends UserFactoryLiferay {
 
 	private UserCache uc;
 
@@ -117,7 +119,7 @@ public class UserFactoryLiferayImpl extends UserFactory {
 			try{
 				u = UserLocalManagerUtil.getUserById(userId);
 			}catch (com.liferay.portal.NoSuchUserException e) {
-				throw new NoSuchUserException(e.getMessage(), e);
+				throw new NoSuchUserException("No Such User Exception: " + e.getMessage(), e);
 			}catch (Exception e) {
 				throw new DotDataException(e.getMessage(), e);
 			}

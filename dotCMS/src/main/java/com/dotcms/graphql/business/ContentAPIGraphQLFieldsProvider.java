@@ -39,7 +39,8 @@ enum ContentAPIGraphQLFieldsProvider implements GraphQLFieldsProvider {
         List<GraphQLFieldDefinition> fieldDefinitions = new ArrayList<>();
 
         contentTypeList.forEach((type) -> {
-            fieldDefinitions.add(createCollectionField(type));
+            fieldDefinitions.add(createCollectionField(type, TypeUtil.collectionizedName(type.variable())));
+            fieldDefinitions.add(createCollectionField(type, TypeUtil.oldCollectionizedName(type.variable())));
         });
 
         // Each BaseType as query'able collection field
@@ -60,10 +61,10 @@ enum ContentAPIGraphQLFieldsProvider implements GraphQLFieldsProvider {
      * @return the field definition representing the collection
      */
 
-    private GraphQLFieldDefinition createCollectionField(ContentType type) {
+    private GraphQLFieldDefinition createCollectionField(final ContentType type, final String name) {
         try {
             return newFieldDefinition()
-                    .name(TypeUtil.collectionizedName(type.variable()))
+                    .name(name)
                     .argument(GraphQLArgument.newArgument()
                             .name("query")
                             .type(GraphQLString)

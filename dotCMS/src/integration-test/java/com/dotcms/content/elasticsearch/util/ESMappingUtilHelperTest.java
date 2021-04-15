@@ -3,6 +3,7 @@ package com.dotcms.content.elasticsearch.util;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
@@ -23,6 +24,7 @@ import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.model.field.RadioField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.SelectField;
+import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -42,9 +44,11 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -109,8 +113,7 @@ public class ESMappingUtilHelperTest {
                 {"textmapping", new String[]{"host.hostname"}, "keyword"},
                 {"strings_as_dates", new String[]{"calendarevent.originalstartdate",
                         "calendarevent.recurrencestart", "calendarevent.recurrenceend"}, "date"},
-                {"permissions", new String[]{"permissions"}, "text"},
-                {"hostname", new String[]{"host.hostname_text"}, "text"}
+                {"permissions", new String[]{"permissions"}, "text"}
         };
     }
 
@@ -128,7 +131,7 @@ public class ESMappingUtilHelperTest {
                 {"geomapping", new String[]{"mylatlon"}, "geo_point"},
                 {"geomapping_2", new String[]{"latlong"}, "geo_point"},
                 {"keywordmapping", new String[]{"categories", "tags", "conhost", "conhostname",
-                        "wfstep", "structurename", "contenttype", "parentpath", "path", "urlmap",
+                        "wfstep", "structurename", "contenttype", "parentpath", "path",
                         "moduser", "owner"}, "keyword"}
         };
     }
@@ -144,47 +147,52 @@ public class ESMappingUtilHelperTest {
     public static Object[][] dataProviderAddMappingForFields() {
         return new Object[][] {
                 {  "strings_as_dates", DateField.class, DataTypes.DATE,
-                        new String[] {"originalstartdate", "recurrencestart", "recurrenceend"},  "date" },
+                        new String[] {"originalstartdate", "recurrencestart", "recurrenceend"},  "date", false },
 
                 {  "strings_as_date_times", DateTimeField.class, DataTypes.DATE,
-                        new String[] {"originalstartdate", "recurrencestart", "recurrenceend"},  "date" },
+                        new String[] {"originalstartdate", "recurrencestart", "recurrenceend"},  "date", false },
 
                 {  "dates_as_text", TextField.class, DataTypes.TEXT,
-                        new String[] {"originalstartdate", "recurrencestart", "recurrenceend"},  "text" },
+                        new String[] {"originalstartdate", "recurrencestart", "recurrenceend"},  "text", false },
 
                 {  "keywordmapping", TextField.class, DataTypes.TEXT,
                         new String[] {"categories", "tags", "conhost",
                                 "wfstep", "structurename", "contenttype", "parentpath",
-                                "path", "urlmap", "moduser", "owner"},  "text" },
+                                "path", "urlmap", "moduser", "owner"},  "text", false },
 
                 {  "geomapping", TextField.class, DataTypes.TEXT,
-                        new String[] {"mylatlong", "mylatlon"},  null },
+                        new String[] {"mylatlong", "mylatlon"},  null, false },
 
-                {  "permissions", TextField.class, DataTypes.TEXT, new String[] {"permissions"},  "text" },
+                {  "permissions", TextField.class, DataTypes.TEXT, new String[] {"permissions"},  "text", false },
 
                 {  "radio_as_boolean", RadioField.class, DataTypes.BOOL,
-                        new String[] {"MyRadioAsBoolean"},  "boolean" },
+                        new String[] {"MyRadioAsBoolean"},  "boolean", false },
 
                 {  "radio_as_float", RadioField.class, DataTypes.FLOAT,
-                        new String[] {"MyRadioAsFloat"},  "float" },
+                        new String[] {"MyRadioAsFloat"},  "double", false },
 
                 {  "radio_as_integer", RadioField.class, DataTypes.INTEGER,
-                        new String[] {"MyRadioAsInteger"},  "integer" },
+                        new String[] {"MyRadioAsInteger"},  "long", false },
 
                 {  "select_as_boolean", SelectField.class, DataTypes.BOOL,
-                        new String[] {"MySelectAsBoolean"},  "boolean" },
+                        new String[] {"MySelectAsBoolean"},  "boolean", false },
 
                 {  "select_as_float", SelectField.class, DataTypes.FLOAT,
-                        new String[] {"MySelectAsFloat"},  "float" },
+                        new String[] {"MySelectAsFloat"},  "double", false },
 
                 {  "select_as_integer", SelectField.class, DataTypes.INTEGER,
-                        new String[] {"MySelectAsInteger"},  "integer" },
+                        new String[] {"MySelectAsInteger"},  "long", false  },
 
                 {  "text_as_float", TextField.class, DataTypes.FLOAT,
-                        new String[] {"MyTextAsFloat"},  "float" },
+                        new String[] {"MyTextAsFloat"},  "double", false  },
 
                 {  "text_as_integer", TextField.class, DataTypes.INTEGER,
-                        new String[] {"MyTextAsInteger"},  "integer" }
+                        new String[] {"MyTextAsInteger"},  "long", false  },
+
+                {  "tags", TagField.class, DataTypes.TEXT,
+                        new String[] {"MyTagField"},  "keyword", false },
+
+                {  "uniqueField", TextField.class, DataTypes.TEXT, new String[] {"MyUniqueField"},  "keyword", true },
         };
     }
 
@@ -206,7 +214,7 @@ public class ESMappingUtilHelperTest {
     @Test
     public void testAddMappingForFields(final String testCase, final Class fieldType,
             final DataTypes type,
-            final String[] fields, final String expectedResult)
+            final String[] fields, final String expectedResult, final boolean isUnique)
             throws IOException, DotIndexException, DotSecurityException, DotDataException {
 
         Logger.info(ESMappingUtilHelperTest.class,
@@ -222,13 +230,14 @@ public class ESMappingUtilHelperTest {
             for (final String field : fields) {
                 final Field newField = FieldBuilder.builder(fieldType)
                         .name(field).variable(field).dataType(type).contentTypeId(contentType.id())
-                        .indexed(true).build();
+                        .indexed(true).unique(isUnique).build();
                 fieldAPI.save(newField, user);
             }
 
             workingIndex = new ESIndexAPI().getNameWithClusterIDPrefix(
                     IndexType.WORKING.getPrefix() + "_" + timestamp);
 
+            Config.setProperty("CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS", true);
             //Create a working index
             boolean result = contentletIndexAPI.createContentIndex(workingIndex);
             //Validate
@@ -246,10 +255,37 @@ public class ESMappingUtilHelperTest {
                                             .toLowerCase()).get(field.toLowerCase());
                     assertTrue(UtilMethods.isSet(mapping.get("type")));
                     assertEquals(expectedResult, mapping.get("type"));
+
+                    //validate _dotraw fields
+                    mapping = (Map<String, String>) esMappingAPI
+                            .getFieldMappingAsMap(workingIndex,
+                                    (contentType.variable() + StringPool.PERIOD + field)
+                                            .toLowerCase() + "_dotraw").get(field.toLowerCase() + "_dotraw");
+                    assertTrue(UtilMethods.isSet(mapping.get("type")));
+                    assertEquals("keyword", mapping.get("type"));
+
+                    //validate _sha256 mapping for unique fields
+                    if (isUnique){
+                        mapping = (Map<String, String>) esMappingAPI
+                                .getFieldMappingAsMap(workingIndex,
+                                        (contentType.variable() + StringPool.PERIOD + field)
+                                                .toLowerCase() + ESUtils.SHA_256).get(field.toLowerCase() + ESUtils.SHA_256);
+                        assertTrue(UtilMethods.isSet(mapping.get("type")));
+                        assertEquals("keyword", mapping.get("type"));
+                    }
+
+                    //validate _text fields
+                    mapping = (Map<String, String>) esMappingAPI
+                            .getFieldMappingAsMap(workingIndex,
+                                    (contentType.variable() + StringPool.PERIOD + field)
+                                            .toLowerCase() + ESMappingAPIImpl.TEXT).get(field.toLowerCase() + ESMappingAPIImpl.TEXT);
+                    assertTrue(UtilMethods.isSet(mapping.get("type")));
+                    assertEquals("text", mapping.get("type"));
                 }
             }
 
         } finally {
+            Config.setProperty("CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS", false);
             if (workingIndex != null) {
                 contentletIndexAPI.delete(workingIndex);
             }
@@ -283,8 +319,12 @@ public class ESMappingUtilHelperTest {
 
             //Adding fields
             Field ageField = FieldBuilder.builder(TextField.class)
-                    .name("age").contentTypeId(parentContentType.id()).indexed(false).build();
+                    .name("age").contentTypeId(parentContentType.id()).indexed(true).build();
             ageField = fieldAPI.save(ageField, user);
+
+            Field nonIndexedField = FieldBuilder.builder(TextField.class)
+                    .name("nonIndexedField").contentTypeId(parentContentType.id()).indexed(false).build();
+            nonIndexedField = fieldAPI.save(nonIndexedField, user);
 
             Field relationshipField = FieldBuilder.builder(RelationshipField.class)
                     .name("relationshipField")
@@ -341,6 +381,9 @@ public class ESMappingUtilHelperTest {
             final JSONObject contentTypeJSON = (JSONObject) ((JSONObject) propertiesJSON
                     .get(parentContentType.variable().toLowerCase())).get("properties");
 
+            //validate no mapping is added for non-indexed fields
+            assertFalse(contentTypeJSON.has(nonIndexedField.variable().toLowerCase()));
+
             //validate age mapping results
             final Map ageMapping = ((JSONObject) contentTypeJSON
                     .get(ageField.variable().toLowerCase())).getAsMap();
@@ -393,7 +436,10 @@ public class ESMappingUtilHelperTest {
     public void testValidateNewsLikeMapping(final String testCase, final String[] fields, final String expectedResult)
             throws DotDataException, IOException, DotSecurityException {
         final ContentType newsContentType = TestDataUtils.getNewsLikeContentType();
-        fieldAPI.save( FieldBuilder.builder(TextField.class).contentTypeId(newsContentType.id()).name("mylatlon").variable("mylatlon").indexed(true).build(), user);
+        fieldAPI.save(FieldBuilder.builder(TextField.class).contentTypeId(newsContentType.id())
+                .name("mylatlon").variable("mylatlon").indexed(true).build(), user);
+
+
         Contentlet newsContent = null;
         try {
             final String categoryName = "myCategory" + System.currentTimeMillis();
@@ -476,7 +522,7 @@ public class ESMappingUtilHelperTest {
             } catch(NotFoundInDbException e){
                 final List<Field> eventFields = new ArrayList<>();
                 eventFields
-                        .add(new FieldDataGen().name("Title").velocityVarName("title").indexed(true)
+                        .add(new FieldDataGen().type(TextField.class).name("Title").velocityVarName("title").indexed(true)
                                 .next());
                 eventFields.add(new FieldDataGen().type(DateField.class).name("StartDate").defaultValue(null)
                         .velocityVarName("startDate").indexed(true).next());
@@ -500,6 +546,17 @@ public class ESMappingUtilHelperTest {
                     .setProperty("recurrenceEnd", new Date()).nextPersisted();
 
             validateMappingForFields(testCase, null, fields, expectedResult);
+
+            //verifies analyzer for common text fields
+            final Map<String, String> mapping = (Map<String, String>) esMappingAPI
+                    .getFieldMappingAsMap(APILocator.getIndiciesAPI().loadIndicies().getWorking(),
+                            "calendarevent.title").entrySet().iterator()
+                    .next().getValue();
+            assertTrue(UtilMethods.isSet(mapping.get("type")));
+            assertEquals("text", mapping.get("type"));
+
+            assertTrue(UtilMethods.isSet(mapping.get("analyzer")));
+            assertEquals("my_analyzer", mapping.get("analyzer"));
         }finally {
             if (event != null){
                 ContentletDataGen.destroy(event);

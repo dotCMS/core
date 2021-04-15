@@ -43,6 +43,7 @@ import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -53,6 +54,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Random;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
@@ -1754,9 +1756,9 @@ public class UtilMethods {
     public static boolean isUrlLive(String url, String hostId) throws Exception {
       
       Identifier id = APILocator.getIdentifierAPI().find(APILocator.getHostAPI().find(hostId, APILocator.systemUser(), true), url);
-      ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( id.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId() );
+      Optional<ContentletVersionInfo> cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( id.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId() );
 
-      return (cinfo !=null && cinfo.getLiveInode() !=null);
+      return (cinfo.isPresent() && cinfo.get().getLiveInode() !=null);
     }
 
     public static boolean isUrlPreview(String url, Host host) throws Exception {
@@ -1765,9 +1767,8 @@ public class UtilMethods {
 
     public static boolean isUrlPreview(String url, String hostId) throws Exception {
       Identifier id = APILocator.getIdentifierAPI().find(APILocator.getHostAPI().find(hostId, APILocator.systemUser(), true), url);
-      ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( id.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId() );
-
-      return (cinfo !=null && cinfo.getWorkingInode() !=null);
+      Optional<ContentletVersionInfo> cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( id.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId() );
+      return (cinfo.isPresent() && cinfo.get().getWorkingInode() !=null);
     }
 
     public static String stripUnicode(String x) {
@@ -3544,5 +3545,58 @@ public class UtilMethods {
             }
         }
         return adminMode;
+    }
+
+    /**
+     * Removes leading and trailing whitespaces from a char array
+     * @param myArray char[] to go over
+     * @return
+     */
+    public static char[] trimCharArray(final char[] myArray){
+        if (myArray == null || myArray.length == 0){
+            return myArray;
+        }
+
+        final int leftPosition = getTrimLeftPosition(myArray);
+        final int rightPosition = getTrimRightPosition(myArray);
+        return Arrays.copyOfRange(myArray, leftPosition, rightPosition + 1);
+    }
+
+    /**
+     * Finds the last position (from left to right) where a whitespace is found in a char array
+     * before the first non-whitespace character
+     * @param value char[] to go over
+     * @return
+     */
+    private static int getTrimLeftPosition(final char[] value){
+        int position = 0;
+        if(value == null){
+            return position;
+        }
+
+        while(position < value.length && value[position] == ' ') {
+            position++;
+        }
+
+        return position;
+    }
+
+    /**
+     * Finds the last position (from right to left) where a whitespace is found in a char array
+     * before the first non-whitespace character
+     * @param value char[] to go over
+     * @return
+     */
+    private static int getTrimRightPosition(final char[] value){
+        int position = value.length - 1;
+        if(value == null){
+            return position;
+        }
+
+        while(position >= 0 && value[position] == ' ') {
+            position--;
+        }
+
+        return position;
     }
 }

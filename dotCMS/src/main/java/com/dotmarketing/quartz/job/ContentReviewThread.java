@@ -37,6 +37,7 @@ import java.util.Set;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
+@Deprecated
 public class ContentReviewThread implements Runnable, Job {
 
 	private ContentletAPI conAPI = APILocator.getContentletAPI();

@@ -1,20 +1,18 @@
 package com.dotmarketing.business.cache.provider.caffine;
 
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
 import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
+import com.dotmarketing.business.cache.provider.CacheSizingUtil;
 import com.dotmarketing.business.cache.provider.CacheStats;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -22,6 +20,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.ImmutableSet;
+import io.vavr.control.Try;
 
 
 public class CaffineCache extends CacheProvider {
@@ -39,12 +38,12 @@ public class CaffineCache extends CacheProvider {
 
     @Override
     public String getName() {
-        return "Caffeine Memory Cache";
+        return "Caffine Memory Cache";
     }
 
     @Override
     public String getKey() {
-        return "LocalCaffeineMem";
+        return "LocalCaffineMem";
     }
 
     @Override
@@ -176,8 +175,13 @@ public class CaffineCache extends CacheProvider {
         currentGroups.addAll(getGroups());
         NumberFormat nf = DecimalFormat.getInstance();
         DecimalFormat pf = new DecimalFormat("##.##%");
+        
+        CacheSizingUtil sizer = new CacheSizingUtil();
+        
+        
+        
         for (String group : currentGroups) {
-            CacheStats stats = new CacheStats();
+            final CacheStats stats = new CacheStats();
 
             final Cache<String, Object> foundCache = getCache(group);
 
@@ -185,25 +189,13 @@ public class CaffineCache extends CacheProvider {
             final boolean isDefault = (Config.getIntProperty("cache." + group + ".size", -1) == -1);
 
 
-            final int configured = isDefault ? Config.getIntProperty("cache." + DEFAULT_CACHE + ".size", 1000)
+            final int configured = isDefault ? Config.getIntProperty("cache." + DEFAULT_CACHE + ".size")
                 : (Config.getIntProperty("cache." + group + ".size", -1) != -1)
-                  ? Config.getIntProperty("cache." + group + ".size", -1)
-                      : Config.getIntProperty("cache." + DEFAULT_CACHE + ".size", 1000);
+                  ? Config.getIntProperty("cache." + group + ".size")
+                      : Config.getIntProperty("cache." + DEFAULT_CACHE + ".size");
 
 
-            final com.github.benmanes.caffeine.cache.stats.CacheStats cstats = foundCache.stats();
-            
-            final Set<Long> size=new HashSet<>();
-
-            final long numberToSample = Math.min(Config.getIntProperty("CAFFIENE_CACHE_SIZING_SAMPLE_SIZE", 10), foundCache.estimatedSize());
-            if(numberToSample>0) {
-                for(int i=0;i<numberToSample;i++) {
-                    Object entry = randEntry(foundCache.asMap());
-                    size.add(getObjectSize(entry));
-                }
-            }
-            final String sizePerObject = (size.size()<=0) ? "n/a" : UtilMethods.prettyByteify(size.stream().mapToLong(Long::longValue).filter(l->l>0).sum() / size.size()) ;
-            
+            com.github.benmanes.caffeine.cache.stats.CacheStats cstats = foundCache.stats();
             stats.addStat(CacheStats.REGION, group);
             stats.addStat(CacheStats.REGION_DEFAULT, isDefault + "");
             stats.addStat(CacheStats.REGION_CONFIGURED_SIZE, nf.format(configured));
@@ -213,8 +205,12 @@ public class CaffineCache extends CacheProvider {
             stats.addStat(CacheStats.REGION_HIT_RATE, pf.format(cstats.hitRate()));
             stats.addStat(CacheStats.REGION_AVG_LOAD_TIME, nf.format(cstats.averageLoadPenalty()/1000000) + " ms");
             stats.addStat(CacheStats.REGION_EVICTIONS, nf.format(cstats.evictionCount()));
-            stats.addStat(CacheStats.REGION_MEM_PER_OBJECT_PRETTY, sizePerObject );
-
+            
+            long averageObjectSize = Try.of(()-> sizer.averageSize(foundCache.asMap())).getOrElse(-1L);
+            long totalObjectSize = averageObjectSize * foundCache.estimatedSize();
+            
+            stats.addStat(CacheStats.REGION_MEM_PER_OBJECT, "<div class='hideSizer'>" + String.format("%010d", averageObjectSize) + "</div>" + UtilMethods.prettyByteify(averageObjectSize));
+            stats.addStat(CacheStats.REGION_MEM_TOTAL_PRETTY, "<div class='hideSizer'>" + String.format("%010d", totalObjectSize) + "</div>" + UtilMethods.prettyByteify(totalObjectSize));
             ret.addStatRecord(stats);
         }
 
@@ -279,34 +275,5 @@ public class CaffineCache extends CacheProvider {
 
         return cache;
     }
-    
-    Object randEntry(Map<String,Object> map ) {
-        int index = (int) (Math.random() * map.size());
-        Iterator<String> it = map.keySet().iterator();
-        
-        while (index > 0 && it.hasNext()) {
-            it.next();
-            index--;
-        }
-        return map.get(it.next());
-    }
-    
 
-    
-    
-    private long getObjectSize(Object object) {
-        if(object instanceof Optional && ! ((Optional)object).isPresent() || ! (object  instanceof Serializable )) {
-            return -1;
-        }
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); ObjectOutputStream oos = new ObjectOutputStream(baos)) {
-            Serializable ser = (Serializable) object;
-            oos.writeObject(ser);
-            return baos.size();
-        } catch (Exception e) {
-            Logger.warnAndDebug(this.getClass(), "Unable to serialize:" + object + " " + e, e);
-        }
-        return -1;
-
-    }
-    
 }

@@ -72,6 +72,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -459,7 +460,8 @@ public class BrowserAjax {
 
 		// Examine only the pages with more than 1 assigned language
 		for (Map<String, Object> content : results) {
-			if ((boolean) content.get("isContentlet")) {
+		    
+			if(Try.of(()->(boolean) content.get("isContentlet")).getOrElse(false)) {
 				String ident = (String) content.get("identifier");
 				if (contentLangCounter.containsKey(ident)) {
 					int counter = contentLangCounter.get(ident);
@@ -629,13 +631,19 @@ public class BrowserAjax {
 		}
 
 		if(ident!=null && InodeUtils.isSet(ident.getId()) && ident.getAssetType().equals("contentlet")) {
-		    ContentletVersionInfo vinfo=versionAPI.getContentletVersionInfo(ident.getId(), languageId);
+		    Optional<ContentletVersionInfo> vinfo=versionAPI.getContentletVersionInfo(ident.getId(), languageId);
 
-			if(vinfo==null && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)) {
+			if(!vinfo.isPresent() && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)) {
 				languageId = languageAPI.getDefaultLanguage().getId();
 				vinfo=versionAPI.getContentletVersionInfo(ident.getId(), languageId);
 			}
-		    boolean live = respectFrontendRoles || vinfo.getLiveInode()!=null;
+
+			if(!vinfo.isPresent()) {
+				throw new DotDataException("Can't find ContentletVersionInfo. Identifier: "
+						+ ident.getId() + ". Lang: " + languageId);
+			}
+
+		    boolean live = respectFrontendRoles || vinfo.get().getLiveInode()!=null;
 			Contentlet cont = contentletAPI.findContentletByIdentifier(ident.getId(),live, languageId , user, respectFrontendRoles);
 			if(cont.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
     			FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(cont);

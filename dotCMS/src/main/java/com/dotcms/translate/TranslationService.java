@@ -29,7 +29,7 @@ public interface TranslationService {
 	 * language specified.
 	 *
 	 * @param src               content to translate
-	 * @param translateTo       language to translate te content to
+	 * @param lang       language to translate te content to
 	 * @param fieldsToTranslate list of fields to translate
 	 * @return the translated un-persisted content
 	 */
@@ -40,6 +40,11 @@ public interface TranslationService {
 
 	List<ServiceParameter> getServiceParameters();
 
-	void setServiceParameters(List<ServiceParameter> params);
+	/**
+	 * Set the Service Parameters, the host could be pass in order to get the configuration from the apps if exists.
+	 * @param params {@link List}  parameters
+	 * @param hostId {@link String}  hostId of the contentlet, to get config from apps.
+	 */
+	void setServiceParameters(List<ServiceParameter> params, final String hostId);
 
 }

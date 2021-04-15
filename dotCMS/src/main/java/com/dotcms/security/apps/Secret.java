@@ -16,9 +16,11 @@ public final class Secret extends AbstractProperty<char[]> {
 
     @JsonCreator
     public static Secret newSecret(@JsonProperty("value") final char[] value,
-            @JsonProperty("type") final Type type,
-            @JsonProperty("hidden") final boolean hidden) {
-        return new Secret(value, type, hidden);
+                                   @JsonProperty("type") final Type type,
+                                   @JsonProperty("hidden") final boolean hidden) {
+        
+        final char[] defensiveCopy = Arrays.copyOf(value, value.length);
+        return new Secret(defensiveCopy, type, hidden);
     }
 
     public void destroy(){

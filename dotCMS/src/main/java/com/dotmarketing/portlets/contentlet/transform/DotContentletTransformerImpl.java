@@ -4,11 +4,17 @@ import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformO
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_NAME;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.COMMON_PROPS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CONSTANTS;
+
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.KEY_VALUE_VIEW;
+
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.TAGS;
+
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
 import static com.dotmarketing.util.UtilMethods.isSet;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.strategy.StrategyResolver;
@@ -31,7 +37,9 @@ import java.util.stream.Collectors;
 class DotContentletTransformerImpl implements DotContentletTransformer {
 
     static final Set<TransformOptions> defaultOptions = EnumSet.of(
-            COMMON_PROPS, CONSTANTS, VERSION_INFO, BINARIES, CATEGORIES_NAME
+
+            COMMON_PROPS, CONSTANTS, VERSION_INFO, BINARIES, CATEGORIES_NAME, TAGS
+
     );
 
     private final User user;
@@ -51,9 +59,10 @@ class DotContentletTransformerImpl implements DotContentletTransformer {
             final StrategyResolver strategyResolver,
             final Set<TransformOptions> options,
             final User user) {
-        if(!isSet(contentlets)){
-           throw new DotRuntimeException("At least 1 contentlet must be set.");
-        }
+
+        DotPreconditions.checkArgument(contentlets!=null, "List of contentlets can't be null",
+                IllegalArgumentException.class);
+
         this.contentlets = contentlets;
         this.strategyResolver = strategyResolver;
         this.options = options;

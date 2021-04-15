@@ -1,11 +1,12 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
+import com.dotmarketing.exception.DotDataException;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import javax.mail.internet.InternetAddress;
+import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -27,6 +28,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Mailer;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
+import org.apache.commons.lang3.StringUtils;
 
 public class EmailActionlet extends WorkFlowActionlet {
 
@@ -99,8 +101,10 @@ public class EmailActionlet extends WorkFlowActionlet {
 
         try {
             // get the host of the content
-            Host host = APILocator.getHostAPI().find(processor.getContentlet().getHost(),
-                    APILocator.getUserAPI().getSystemUser(), false);
+            Host host = APILocator.getHostAPI().find(
+                    processor.getContentlet(),
+                    APILocator.getUserAPI().getSystemUser(),
+                    false);
             if (host.isSystemHost()) {
                 host = APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), false);
             }
@@ -204,8 +208,13 @@ public class EmailActionlet extends WorkFlowActionlet {
                             }
 
                             Identifier id = APILocator.getIdentifierAPI().find(fileHost, filename);
-                            ContentletVersionInfo vinfo = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(),processor.getContentlet().getLanguageId());
-                            Contentlet cont = APILocator.getContentletAPI().find(vinfo.getLiveInode(), processor.getUser(), true);
+                            Optional<ContentletVersionInfo> vinfo = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(),processor.getContentlet().getLanguageId());
+
+                            if(!vinfo.isPresent()) {
+                                throw new DotDataException("Unable to find version info for attachment. Identifier: " + id.getId() + ", lang: " + processor.getContentlet().getLanguageId());
+                            }
+
+                            Contentlet cont = APILocator.getContentletAPI().find(vinfo.get().getLiveInode(), processor.getUser(), true);
                             FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(cont);
                             f = fileAsset.getFileAsset();
                         }

@@ -36,8 +36,9 @@ import java.util.Date;
  *
  * @author  Brian Wing Shun Chan
  * @version $Revision: 1.112 $
- *
+ * @deprecated Use {@link com.dotmarketing.business.UserAPI} instead
  */
+@Deprecated
 public class UserUtil {
 	public static String PERSISTENCE = GetterUtil.get(PropsUtil.get(
 				"value.object.persistence.com.liferay.portal.model.User"),

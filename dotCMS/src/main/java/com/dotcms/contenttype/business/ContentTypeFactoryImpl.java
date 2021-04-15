@@ -6,10 +6,13 @@ import com.dotcms.contenttype.business.sql.ContentTypeSql;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.model.type.*;
 import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
@@ -23,17 +26,19 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.util.*;
 import com.google.common.collect.ImmutableSet;
+import io.vavr.control.Try;
 import org.apache.commons.lang.time.DateUtils;
 
 import java.util.*;
 import java.util.Calendar;
+import java.util.stream.Collectors;
 
 public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   final ContentTypeSql contentTypeSql;
   final ContentTypeCache2 cache;
 
-  
+
   public static final Set<String> reservedContentTypeVars = ImmutableSet.<String>builder()
                   .add("basetype")
                   .add("categories")
@@ -153,7 +158,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   @Override
   public List<ContentType> search(String search, String orderBy, int limit, int offset) throws DotDataException {
-    
+
     return search(search, BaseContentType.ANY, orderBy, limit, offset);
   }
 
@@ -321,10 +326,9 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
   }
 
   private ContentType dbSaveUpdate(final ContentType saveType) throws DotDataException {
-
-
-    ContentTypeBuilder builder =
-        ContentTypeBuilder.builder(saveType).modDate(DateUtils.round(new Date(), Calendar.SECOND));
+    final ContentTypeBuilder builder = ContentTypeBuilder
+            .builder(saveType)
+            .modDate(DateUtils.round(new Date(), Calendar.SECOND));
 
     boolean isNew = false;
     if (saveType.id() == null) {
@@ -353,14 +357,15 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
             if(doesTypeWithVariableExist(saveType.variable())) {
               throw new IllegalArgumentException("Invalid content type variable: " + saveType.variable());
             }
+
     		builder.variable(saveType.variable());
     	} else {
     		final String generatedVar = suggestVelocityVar(saveType.name());
 
-    		if(!generatedVar.matches(
-                  TYPES_AND_FIELDS_VALID_VARIABLE_REGEX)) {
+    		if (!generatedVar.matches(TYPES_AND_FIELDS_VALID_VARIABLE_REGEX)) {
               throw new IllegalArgumentException("Invalid content type variable: " + generatedVar);
             }
+
     		builder.variable(generatedVar);
     	}
     } else {
@@ -393,29 +398,71 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     	retType = new ImplClassContentTypeTransformer(retType).from();
     }
 
-    // set up default fields
-    if (oldContentType == null) {
-    	List<Field> fields = new ArrayList<Field>(saveType.fields());
-
-        for (Field ff : retType.requiredFields()) {
-          Optional<Field> optional = fields.stream().filter(x -> ff.variable().equalsIgnoreCase(x.variable())).findFirst();
-          if (!optional.isPresent()) {
-            fields.add(ff);
-          }
-        }
-
-        FieldAPI fapi = APILocator.getContentTypeFieldAPI();
-        for (Field f : fields) {
-          f = FieldBuilder.builder(f).contentTypeId(retType.id()).build();
-          try {
-            fapi.save(f, APILocator.systemUser());
-          } catch (DotSecurityException e) {
-            throw new DotStateException(e);
-          }
+    final List<Field> fields = new ArrayList<>(saveType.fields());
+    for (final Field requiredField : retType.requiredFields()) {
+        Optional<Field> foundField = fields
+                .stream()
+                .filter(x -> requiredField.variable().equalsIgnoreCase(x.variable()))
+                .findFirst();
+        if (!foundField.isPresent()) {
+            fields.add(requiredField);
         }
     }
 
+    final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
+    // set up default fields
+    for (Field field : fields) {
+        final List<FieldVariable> fieldVariables = field.fieldVariables();
+
+        if (oldContentType == null) {
+            field = FieldBuilder.builder(field).contentTypeId(retType.id()).build();
+            try {
+                field = fapi.save(field, APILocator.systemUser());
+            } catch (DotSecurityException e) {
+                Logger.error(this, String.format("Could not save field %s", field.id()), e);
+                throw new DotStateException(e);
+            }
+        }
+
+        saveFieldVariables(field, fieldVariables);
+    }
+
     return retType;
+  }
+
+  /**
+   * For each field provided variable try to create one not before resetting the whole list
+   *
+   * @param field field variables belong to
+   * @param fieldVariables original field variables
+   */
+  private void saveFieldVariables(final Field field, List<FieldVariable> fieldVariables) {
+      if (field.id() == null) {
+          Logger.warn(getClass(), String.format("Not saving field variables. Found null id at field %s", field.name()));
+          return;
+      }
+
+      final FieldAPI fieldApi = APILocator.getContentTypeFieldAPI();
+      try {
+          // delete variables
+          for(final FieldVariable fieldVariable : fieldApi.loadVariables(field)) {
+              fieldApi.delete(fieldVariable);
+          }
+
+          // add provided variables
+          for(final FieldVariable fieldVariable : fieldVariables) {
+              fieldApi.save(
+                      ImmutableFieldVariable
+                              .builder()
+                              .from(fieldVariable)
+                              .fieldId(field.id())
+                              .id(null)
+                              .build(),
+                      APILocator.systemUser());
+          }
+      } catch (DotDataException | DotSecurityException e) {
+          throw new DotStateException(e);
+      }
   }
 
   private boolean doesTypeWithVariableExist(String variable) throws DotDataException {
@@ -536,13 +583,16 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     return true;
   }
 
+  final boolean LOAD_FROM_CACHE=Config.getBooleanProperty("LOAD_CONTENTTYPE_DETAILS_FROM_CACHE", true);
+
   private List<ContentType> dbSearch(String search, int baseType, String orderBy, int limit, int offset)
       throws DotDataException {
-    int bottom = (baseType == 0) ? 0 : baseType;
-    int top = (baseType == 0) ? 100000 : baseType;
+    final int bottom = (baseType == 0) ? 0 : baseType;
+    final int top = (baseType == 0) ? 100000 : baseType;
     if (limit == 0)
       throw new DotDataException("limit param must be more than 0");
     limit = (limit < 0) ? 10000 : limit;
+
     // our legacy code passes in raw sql conditions and so we need to detect
     // and handle those
     SearchCondition searchCondition = new SearchCondition(search);
@@ -551,7 +601,12 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     	orderBy = "mod_date";
     }
     DotConnect dc = new DotConnect();
-    dc.setSQL( String.format( this.contentTypeSql.SELECT_QUERY_CONDITION, SQLUtil.sanitizeCondition( searchCondition.condition ), orderBy ) );
+
+    if(LOAD_FROM_CACHE) {
+        dc.setSQL( String.format( this.contentTypeSql.SELECT_INODE_ONLY_QUERY_CONDITION, SQLUtil.sanitizeCondition( searchCondition.condition ), orderBy ) );
+    }else {
+        dc.setSQL( String.format( this.contentTypeSql.SELECT_QUERY_CONDITION, SQLUtil.sanitizeCondition( searchCondition.condition ), orderBy ) );
+    }
     dc.setMaxRows(limit);
     dc.setStartRow(offset);
     dc.addParam( searchCondition.search );
@@ -559,17 +614,31 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     dc.addParam( searchCondition.search );
     dc.addParam(bottom);
     dc.addParam(top);
-    
-    Logger.debug(this, "QUERY " + dc.getSQL());
 
-    return new DbContentTypeTransformer(dc.loadObjectResults()).asList();
+    Logger.debug(this, ()-> "QUERY " + dc.getSQL());
 
+    if(LOAD_FROM_CACHE) {
+        return dc.loadObjectResults()
+                    .stream()
+                    .map(m-> Try.of(()->find((String) m.get("inode")))
+                            .onFailure(e->Logger.warnAndDebug(ContentTypeFactoryImpl.class,e))
+                            .getOrNull())
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+    }else {
+        return new DbContentTypeTransformer(dc.loadObjectResults()).asList();
+    }
   }
 
   private int dbCount(String search, int baseType) throws DotDataException {
     int bottom = (baseType == 0) ? 0 : baseType;
     int top = (baseType == 0) ? 100000 : baseType;
 
+    search = LicenseManager.getInstance().isCommunity() 
+                    ? search + " and structuretype <> " + BaseContentType.FORM.getType() +" and structuretype <> " + BaseContentType.PERSONA.getType() 
+                    : search;
+    
+    
     SearchCondition searchCondition = new SearchCondition(search);
 
     DotConnect dc = new DotConnect();
@@ -644,7 +713,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   /**
    * parses legacy conditions passed in as raw sql
-   * 
+   *
    * @author root
    *
    */
@@ -652,18 +721,24 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     final String search;
     final String condition;
 
+
+    final String appendCondition = LicenseManager.getInstance().isCommunity() 
+                    ? " and structuretype <> " + BaseContentType.FORM.getType() + " and structuretype <> " + BaseContentType.PERSONA.getType() 
+                    : "";
+    
+    
     SearchCondition(final String searchOrCondition) {
       if (!UtilMethods.isSet(searchOrCondition) || searchOrCondition.equals("%")) {
-        this.condition = "";
+        this.condition = appendCondition;
         this.search = "%";
       } else if (searchOrCondition.contains("<") || searchOrCondition.contains("=") || searchOrCondition.contains("<")
           || searchOrCondition.contains(" like ") || searchOrCondition.contains(" is ")) {
         this.search = "%";
         this.condition =
-            (searchOrCondition.toLowerCase().trim().startsWith("and")) ? searchOrCondition : "and " + searchOrCondition;
+            (searchOrCondition.toLowerCase().trim().startsWith("and")) ? searchOrCondition : "and " + searchOrCondition + appendCondition;
 
       } else {
-        this.condition = "";
+        this.condition = appendCondition;
         this.search = "%" + searchOrCondition + "%";
 
       }
@@ -721,7 +796,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
       }
     }
-    
+
   }
 
  @Override
@@ -732,7 +807,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 	 dbUpdateModDate(type);
 	 cache.remove(type);
  }
- 
+
  private void dbUpdateModDate(ContentType type) throws DotDataException{
 	 DotConnect dc = new DotConnect();
 	 dc.setSQL(this.contentTypeSql.UPDATE_TYPE_MOD_DATE_BY_INODE);

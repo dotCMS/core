@@ -760,7 +760,10 @@ public class WorkflowHelper {
                 throw new IllegalArgumentException("Missing required parameter inode.");
             }
 
-            final Contentlet contentlet = this.contentletAPI.find(inode, user, true);
+            final Optional<ShortyId> shortyIdOptional = APILocator.getShortyAPI().getShorty(inode);
+            final String longInode = shortyIdOptional.isPresent()? shortyIdOptional.get().longId:inode;
+
+            final Contentlet contentlet = this.contentletAPI.find(longInode, user, true);
             if(contentlet == null){
                throw new DoesNotExistException(String.format("Contentlet identified by inode '%s' was Not found.",inode));
             }

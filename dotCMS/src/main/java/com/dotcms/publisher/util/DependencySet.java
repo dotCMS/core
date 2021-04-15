@@ -115,7 +115,21 @@ public class DependencySet extends HashSet<String> {
 	}
 
 	public boolean add(final String assetId, final Date assetModDate) {
-		return addOrClean( assetId, assetModDate, false);
+		return addOrClean( assetId, assetModDate, false,false);
+	}
+
+	/**
+	 *
+	 * When isContentExplicitlyAdded set to true, is a way to skip the last push_date verification
+	 * when an element is explicitly added to the bundle.
+	 * So in that way we assure that the element will be in the bundle.
+	 * @param assetId id of the element (template, container, link, content, etc)
+	 * @param assetModDate modDate of the element
+	 * @param isContentExplicitlyAdded boolean true - will skip last push_date verification
+	 * @return
+	 */
+	public boolean add(final String assetId, final Date assetModDate, final boolean isContentExplicitlyAdded) {
+		return addOrClean( assetId, assetModDate, false, isContentExplicitlyAdded);
 	}
 
 	/**
@@ -128,10 +142,10 @@ public class DependencySet extends HashSet<String> {
 	 * @return
 	 */
 	public boolean addOrClean ( final String assetId, final Date assetModDate) {
-		return addOrClean( assetId, assetModDate, true);
+		return addOrClean( assetId, assetModDate, true, false);
 	}
 
-	private boolean addOrClean ( final String assetId, final Date assetModDate, final Boolean cleanForUnpublish) {
+	private synchronized boolean addOrClean ( final String assetId, final Date assetModDate, final boolean cleanForUnpublish, final boolean isContentExplicitlyAdded) {
 
 		if ( !isPublish ) {
 
@@ -172,41 +186,60 @@ public class DependencySet extends HashSet<String> {
 
 		if ( !isForcePush && !isDownload && isPublish ) {
 			for (Environment env : envs) {
-				final PushedAsset asset;
-				try {
-					//Search the last pushed entry register of the pushed asset by asset Id, environment Id and endpoints Ids
-					asset = APILocator.getPushedAssetsAPI().getLastPushForAsset(assetId, env.getId(), environmentsEndpointsAndPublisher.get(env.getId()+ENDPOINTS_SUFFIX));
+				//If content was explicitly added to the bundle, there is no need to check last push_date
+				if(!isContentExplicitlyAdded) {
+					final PushedAsset asset;
+					try {
+						//Search the last pushed entry register of the pushed asset by asset Id, environment Id and endpoints Ids
+						asset = APILocator.getPushedAssetsAPI()
+								.getLastPushForAsset(assetId, env.getId(),
+										environmentsEndpointsAndPublisher
+												.get(env.getId() + ENDPOINTS_SUFFIX));
 
-				} catch (DotDataException e1) {
-					// Asset does not exist in db or cache, return true;
-					return true;
-				}
+					} catch (DotDataException e1) {
+						// Asset does not exist in db or cache, return true;
+						return true;
+					}
 
-				modifiedOnCurrentEnv = (asset==null || (assetModDate!=null && asset.getPushDate().before(assetModDate)));
+					modifiedOnCurrentEnv = (asset == null || (assetModDate != null && asset
+							.getPushDate().before(assetModDate)));
 
-				try {
-					if(!modifiedOnCurrentEnv && assetType.equals("content")) {
-						// check for versionInfo TS on content
-						for(Language lang : APILocator.getLanguageAPI().getLanguages()) {
-							ContentletVersionInfo info=APILocator.getVersionableAPI().getContentletVersionInfo(assetId, lang.getId());
-							if(info!=null && InodeUtils.isSet(info.getIdentifier())) {
-								modifiedOnCurrentEnv = modifiedOnCurrentEnv || (null == info.getVersionTs()) || asset.getPushDate().before(info.getVersionTs());
+					try {
+						if (!modifiedOnCurrentEnv && assetType.equals("content")) {
+							// check for versionInfo TS on content
+							for (Language lang : APILocator.getLanguageAPI().getLanguages()) {
+								Optional<ContentletVersionInfo> info = APILocator
+										.getVersionableAPI()
+										.getContentletVersionInfo(assetId, lang.getId());
+
+								if (info.isPresent()) {
+									modifiedOnCurrentEnv = modifiedOnCurrentEnv
+											|| null == info.get().getVersionTs()
+											|| asset.getPushDate()
+											.before(info.get().getVersionTs());
+								}
 							}
 						}
-					}
-					if(!modifiedOnCurrentEnv && (assetType.equals("template") || assetType.equals("links") || assetType.equals("container") || assetType.equals("htmlpage"))) {
-						// check for versionInfo TS
-						VersionInfo info=APILocator.getVersionableAPI().getVersionInfo(assetId);
-						if(info!=null && InodeUtils.isSet(info.getIdentifier())) {
-							modifiedOnCurrentEnv = asset.getPushDate().before(info.getVersionTs());
+						if (!modifiedOnCurrentEnv && (assetType.equals("template") || assetType
+								.equals("links") || assetType.equals("container") || assetType
+								.equals("htmlpage"))) {
+							// check for versionInfo TS
+							VersionInfo info = APILocator.getVersionableAPI()
+									.getVersionInfo(assetId);
+							if (info != null && InodeUtils.isSet(info.getIdentifier())) {
+								modifiedOnCurrentEnv = asset.getPushDate()
+										.before(info.getVersionTs());
+							}
 						}
+					} catch (Exception e) {
+						Logger.warn(getClass(),
+								"Error checking versionInfo for assetType:" + assetType
+										+ " assetId:" + assetId +
+										" process continues without checking versionInfo.ts", e);
 					}
-				} catch (Exception e) {
-					Logger.warn(getClass(), "Error checking versionInfo for assetType:"+assetType+" assetId:"+assetId+
-							" process continues without checking versionInfo.ts",e);
-				}
+				}//end if isContentExplicitlyAdded
 
-                if (modifiedOnCurrentEnv) {
+                if (modifiedOnCurrentEnv || isContentExplicitlyAdded) {
                     savePushedAsset(assetId, env);
                     //If the asset was modified at least in one environment, set this to true
                     modifiedOnAtLeastOneEnv = true;

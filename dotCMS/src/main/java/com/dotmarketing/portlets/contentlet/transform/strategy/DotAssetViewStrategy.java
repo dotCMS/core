@@ -15,6 +15,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ResourceLink;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 import java.io.File;
 import java.util.Map;
 import java.util.Set;
@@ -25,6 +26,7 @@ import java.util.Set;
 public class DotAssetViewStrategy extends WebAssetStrategy<Contentlet> {
 
     private static final String ASSET = "asset";
+    private static final String UNKNOWN = "unknown";
 
     /**
      * Main constructor
@@ -50,18 +52,28 @@ public class DotAssetViewStrategy extends WebAssetStrategy<Contentlet> {
             final Set<TransformOptions> options, final User user)
             throws DotDataException, DotSecurityException {
 
-        String fileName = "unknown";
-        long fileSize = 0L;
-        try {
+        String fileName;
+        long fileSize;
             //TODO: in a near future this must be read from a pre-cached metadata.
-            final File asset = dotAsset.getBinary(ASSET);
-            fileName = asset.getName();
-            fileSize = asset.length();
-        }catch (Exception e){
-            Logger.warn(DotAssetViewStrategy.class, "dotAsset does not have a binary ", e);
-        }
-        map.put(MIMETYPE_FIELD, toolBox.fileAssetAPI.getMimeType(fileName));
+            final Object asset = dotAsset.get(ASSET);
+            if(asset instanceof File ){
+                final File file = (File)asset;
+                fileName = file.getName();
+                fileSize = file.length();
+            } else {
+                //There are scenarios on which a contentlet is pushed back into the transformers pipeline to add extra stuff etc..
+                //We're probably looking at contantlet that has already been transformed
+                //so we still have an "asset" but it's not java.io.File it's a string
+                //So lets try to get these attributes from the already transformed contentlet
 
+                //unknown is a fallback.
+                //if we're seeing it something has gone wrong.
+                fileName = Try.of(() -> (String)dotAsset.get("name")).getOrElse(UNKNOWN);
+                fileSize = Try.of(() -> (long)dotAsset.get("size")).getOrElse(0L);
+            }
+
+        map.put(MIMETYPE_FIELD, toolBox.fileAssetAPI.getMimeType(fileName));
+        map.put("isContentlet", true);
         map.put(TITLE_FIELD, fileName);
         map.put("type", "dotasset");
         map.put("path", ResourceLink.getPath(dotAsset));

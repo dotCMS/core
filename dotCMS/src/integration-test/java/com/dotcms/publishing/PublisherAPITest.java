@@ -28,6 +28,7 @@ import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.PublisherConfig.Operation;
+import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -215,8 +216,10 @@ public class PublisherAPITest extends IntegrationTestBase {
             publisherConfig.setStartDate(new Date(new Date().getTime() - 24*3600*1000));
             publisherConfig.setPublishers(Lists.newArrayList(PushPublisher.class));
 
+            DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(
+                    publisherConfig);
             // Push Publish.
-            publisherAPI.publish(publisherConfig);
+            publisherAPI.publish(publisherConfig, directoryBundleOutput);
             /* Get the date of a file. */
             final String bundlePath =
                     ConfigUtils.getBundlePath() + File.separator + publisherConfig.getName();
@@ -253,7 +256,8 @@ public class PublisherAPITest extends IntegrationTestBase {
             publisherConfig.setStartDate(new Date());
             publisherConfig.setPublishers(Lists.newArrayList(PushPublisher.class));
 
-            publisherAPI.publish(publisherConfig);
+            directoryBundleOutput = new DirectoryBundleOutput(publisherConfig);
+            publisherAPI.publish(publisherConfig, directoryBundleOutput);
 
             /* Check the file dates */
             final long bundleTarGzSecondDate = bundleTarGz.lastModified();

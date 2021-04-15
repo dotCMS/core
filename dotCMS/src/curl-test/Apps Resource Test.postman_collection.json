@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "423987b3-9e86-45ef-998d-e85d613647ab",
+		"_postman_id": "3b9e2ff2-e53e-4739-a3af-fc28673914aa",
 		"name": "Apps",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -14,7 +14,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "0e88b529-a3f2-43e0-bbb3-347ff8ece06b",
+								"id": "ab91ad29-8053-4774-bd23-d801ce276c0c",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -83,7 +83,8 @@
 								"apps",
 								""
 							]
-						}
+						},
+						"description": "This will import and create an App by uploading a yml. App descriptor."
 					},
 					"response": []
 				},
@@ -93,7 +94,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "94ead9fb-80ca-45cb-abdf-44ca3f692d59",
+								"id": "467f03e1-1351-4df5-b6ef-b79b0a806709",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -172,7 +173,8 @@
 								"apps",
 								""
 							]
-						}
+						},
+						"description": "This will call the endpoint that brings back the whole list of available Apps. So it can be verified the new one was imported. "
 					},
 					"response": []
 				},
@@ -182,7 +184,7 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "459b626d-ee13-46ac-85c4-dc0d4f4b6341",
+								"id": "55627bce-0714-44f2-b1c8-ab695a274d94",
 								"exec": [
 									""
 								],
@@ -192,7 +194,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "1821aedd-75f3-424d-8a3f-09c4a308e3a1",
+								"id": "9a4d1cbc-88bb-45b7-a7b1-9e23c47e0b3b",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -266,7 +268,8 @@
 								"apps",
 								"{{key}}"
 							]
-						}
+						},
+						"description": "This tests the endpoint that brings back one specific App given the App-key."
 					},
 					"response": []
 				}
@@ -282,7 +285,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "917e3da8-3ed7-4122-a52b-3e6f203f0388",
+								"id": "8b533b0e-e7da-4442-81d8-25277eb263aa",
 								"exec": [
 									"pm.test(\"Status code is 400\", function () {",
 									"    pm.response.to.have.status(400);",
@@ -344,7 +347,8 @@
 								"{{key}}",
 								"{{site_id}}"
 							]
-						}
+						},
+						"description": "This tests the endpoint that brings back one specific App given the App-key."
 					},
 					"response": []
 				},
@@ -354,7 +358,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "917e3da8-3ed7-4122-a52b-3e6f203f0388",
+								"id": "c6219a1e-2d5a-40bc-8e1e-af1694089534",
 								"exec": [
 									"pm.test(\"Status code is 400\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -416,7 +420,8 @@
 								"{{key}}",
 								"any-thing-but-a-valid-site-id"
 							]
-						}
+						},
+						"description": "This tests the endpoint that brings back one specific App given the App-key Using an in valid (non-existing-site) Key."
 					},
 					"response": []
 				},
@@ -426,7 +431,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "917e3da8-3ed7-4122-a52b-3e6f203f0388",
+								"id": "cca539ce-fc7b-4e81-9d39-cca75dabb9f1",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -486,7 +491,8 @@
 								"{{key}}",
 								"{{site_id}}"
 							]
-						}
+						},
+						"description": "This tests the endpoint that brings back one specific App/integration given the App-key followed by the site-id"
 					},
 					"response": []
 				},
@@ -496,7 +502,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "917e3da8-3ed7-4122-a52b-3e6f203f0388",
+								"id": "f8cc1734-0091-43bf-8c9c-d7ebfc8a9177",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -556,7 +562,8 @@
 								"{{key}}",
 								"{{site_id}}"
 							]
-						}
+						},
+						"description": "This tests the endpoint that updates a specific param for a given App/integration. "
 					},
 					"response": []
 				},
@@ -566,7 +573,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "917e3da8-3ed7-4122-a52b-3e6f203f0388",
+								"id": "321afd4d-f234-48cb-8c97-c3dd42f10da2",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -643,7 +650,8 @@
 								"{{key}}",
 								"{{site_id}}"
 							]
-						}
+						},
+						"description": "This tests the endpoint that updates a specific hidden param for a given App/integration was successful and the new val is returned protected by stars. "
 					},
 					"response": []
 				},
@@ -653,7 +661,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "917e3da8-3ed7-4122-a52b-3e6f203f0388",
+								"id": "dc549bd7-7904-436a-aeb6-d3ef7ab3a968",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -713,7 +721,8 @@
 								"{{key}}",
 								"{{site_id}}"
 							]
-						}
+						},
+						"description": "This creates a scenario for a single value update."
 					},
 					"response": []
 				},
@@ -723,7 +732,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "917e3da8-3ed7-4122-a52b-3e6f203f0388",
+								"id": "caa0d66b-1a00-42fa-a018-f38a12804639",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -801,7 +810,166 @@
 								"{{key}}",
 								"{{site_id}}"
 							]
+						},
+						"description": "This tests that updates were performed correctly on a non-protected field."
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "import-export",
+			"item": [
+				{
+					"name": "{{serverURL}}/api/v1/apps/export",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "74cec224-d4b3-4672-afa4-8891a89b8701",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
 						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotCMS.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \n      \"password\":\"12345678123456781234567812345678\",\n      \"exportAll\":true,\n      \"appKeysBySite\":{           \n      }\n      \n}\n"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apps/export",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apps",
+								"export"
+							]
+						},
+						"description": "This tests the export generation."
+					},
+					"response": []
+				},
+				{
+					"name": "{{serverURL}}/api/v1/apps/import",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "1d30d8c8-8d28-4444-8c80-71c7917d88b5",
+								"exec": [
+									"pm.test.skip(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotCMS.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "/Users/fabrizzio/Desktop/appSecrets.export"
+								},
+								{
+									"key": "json",
+									"value": "{ \"password\":\"12345678123456781234567812345678\"\n}",
+									"contentType": "application/json",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apps/import",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apps",
+								"import"
+							]
+						},
+						"description": "This tests the file import. "
 					},
 					"response": []
 				}
@@ -817,7 +985,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "bfb9ebe4-12d7-4a93-9151-e27d00171879",
+								"id": "304e42bd-aa03-4200-b496-b915d75b73d3",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -876,7 +1044,8 @@
 								"apps",
 								"{{key}}"
 							]
-						}
+						},
+						"description": "This tests param deletion for a given configuration. "
 					},
 					"response": []
 				},
@@ -886,7 +1055,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "917e3da8-3ed7-4122-a52b-3e6f203f0388",
+								"id": "2cc28a5d-62a9-46e3-9078-d3e2877c10ea",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -962,7 +1131,8 @@
 								"{{key}}",
 								"{{site_id}}"
 							]
-						}
+						},
+						"description": "This verifies the para is no longer there.. "
 					},
 					"response": []
 				},
@@ -972,7 +1142,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "c7f86063-649b-4703-ad01-343be9d4023a",
+								"id": "125af322-affd-45a7-bdd6-2adad660e720",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1031,7 +1201,8 @@
 								"apps",
 								"{{key}}"
 							]
-						}
+						},
+						"description": "This tests a delete operation performed on the whole integration at once. "
 					},
 					"response": []
 				},
@@ -1041,7 +1212,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "917e3da8-3ed7-4122-a52b-3e6f203f0388",
+								"id": "f3ae53c2-f4cf-49de-9ada-09f945a0afb0",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1105,7 +1276,8 @@
 								"{{key}}",
 								"{{site_id}}"
 							]
-						}
+						},
+						"description": "This verifies the configuration is gone. "
 					},
 					"response": []
 				},
@@ -1115,7 +1287,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "fc16be18-0766-4241-b8c9-0505c45c83b7",
+								"id": "19d3eeb1-f2a7-485b-9427-ff4e7384f2b7",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1180,7 +1352,8 @@
 									"value": "true"
 								}
 							]
-						}
+						},
+						"description": "This does delete an App Descriptor. "
 					},
 					"response": []
 				},
@@ -1190,7 +1363,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "917e3da8-3ed7-4122-a52b-3e6f203f0388",
+								"id": "ccffc4c3-8985-40c6-bcac-14a0a94e1905",
 								"exec": [
 									"pm.test(\"Status code is 404\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -1253,7 +1426,8 @@
 								"apps",
 								"{{key}}"
 							]
-						}
+						},
+						"description": "This tests that the delete operation performed on the descriptor was successful. "
 					},
 					"response": []
 				}
@@ -1265,7 +1439,7 @@
 		{
 			"listen": "prerequest",
 			"script": {
-				"id": "4d9d93a6-742a-4071-853a-4fcb16121f07",
+				"id": "55f42be1-b2ec-4dfe-929f-226a36f12497",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -1275,7 +1449,7 @@
 		{
 			"listen": "test",
 			"script": {
-				"id": "f76d335c-9dfc-4553-b519-f31e9db9c938",
+				"id": "53d0070e-faea-46b0-bf5a-d69123019241",
 				"type": "text/javascript",
 				"exec": [
 					""

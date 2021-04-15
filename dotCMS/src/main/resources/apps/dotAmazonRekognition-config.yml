@@ -1,0 +1,33 @@
+name: "Amazon Rekognition"
+iconUrl: "https://static.dotcms.com/assets/icons/apps/amazon_rekognition.png"
+allowExtraParameters: false
+description: "Amazon Rekognition provides automated classification and tagging of images.  This App allows you to configure the Rekognition Workflow Actionlet. The actionlet can be added to any workflow action and will post the related image and add the resulting tags to the image."
+params:
+  accessKey:
+    value: ""
+    hidden: true
+    type: "STRING"
+    label: "AWS Access Key"
+    hint: "The AWS access key, used to identify the user interacting with AWS."
+    required: true
+  secretAccessKey:
+    value: ""
+    hidden: true
+    type: "STRING"
+    label: "AWS Secret Access Key"
+    hint: "The AWS secret access key, used to authenticate the user interacting with AWS."
+    required: true
+  maxLabels:
+    value: "15"
+    hidden: false
+    type: "STRING"
+    label: "Max Labels"
+    hint: "Maximum number of labels you want the rekognition to return in the response. The service returns the specified number of highest confidence labels."
+    required: true
+  minConfidence:
+    value: "75"
+    hidden: false
+    type: "STRING"
+    label: "Min Confidence"
+    hint: "Specifies the minimum confidence level for the labels to return. Amazon Rekognition will not return any labels with confidence lower than this specified value."
+    required: true

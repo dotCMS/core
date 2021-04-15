@@ -1,5 +1,7 @@
 package com.dotcms.graphql.business;
 
+import static graphql.Scalars.GraphQLInt;
+import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLList.list;
 import static graphql.schema.GraphQLNonNull.nonNull;
@@ -18,6 +20,7 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
+import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLTypeReference;
@@ -83,6 +86,22 @@ class RelationshipFieldGenerator implements GraphQLFieldGenerator {
 
         return newFieldDefinition()
                 .name(field.variable())
+                .argument(GraphQLArgument.newArgument()
+                        .name("query")
+                        .type(GraphQLString)
+                        .build())
+                .argument(GraphQLArgument.newArgument()
+                        .name("limit")
+                        .type(GraphQLInt)
+                        .build())
+                .argument(GraphQLArgument.newArgument()
+                        .name("offset")
+                        .type(GraphQLInt)
+                        .build())
+                .argument(GraphQLArgument.newArgument()
+                        .name("sortBy")
+                        .type(GraphQLString)
+                        .build())
                 .type(field.required() ? nonNull(outputType) : outputType)
                 .dataFetcher(new RelationshipFieldDataFetcher()).build();
     }

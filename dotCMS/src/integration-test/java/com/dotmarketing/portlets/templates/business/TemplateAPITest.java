@@ -2,12 +2,22 @@ package com.dotmarketing.portlets.templates.business;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateAsFileDataGen;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -21,12 +31,14 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
+import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.util.Map;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -36,6 +48,10 @@ import java.util.List;
 
 import static org.junit.Assert.*;
 
+/**
+ * Note: If you dont find a test over here, check {@link com.dotcms.rest.api.v1.template.TemplateResourceTest}
+ * several tests were created over there, since the Resource calls the api.
+ */
 public class TemplateAPITest extends IntegrationTestBase {
 
     private static ContainerAPI containerAPI;
@@ -188,54 +204,172 @@ public class TemplateAPITest extends IntegrationTestBase {
         assertEquals(0, containerUUIDS.size());
     }
 
+    /**
+     * Method to test: saveTemplate
+     * Given Scenario: Create a template and save it
+     * ExpectedResult: Template should be save successfully
+     *
+     */
     @Test
-    public void saveTemplate() throws Exception {
-        final Host host= hostAPI.findDefaultHost(user, false);
-        String body="<html><body> I'm mostly empty </body></html>";
-        String title="empty test template "+UUIDGenerator.generateUuid();
+    public void test_saveTemplate_newTemplate() throws Exception {
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHostA = new SiteDataGen().nextPersisted();
+        final String body="<html><body> I'm mostly empty </body></html>";
 
         Template template=new Template();
         template.setTitle(title);
         template.setBody(body);
-        template= templateAPI.saveTemplate(template, host, user, false);
+        template = templateAPI.saveTemplate(template, newHostA, user, false);
         assertTrue(UtilMethods.isSet(template.getInode()));
         assertTrue(UtilMethods.isSet(template.getIdentifier()));
         assertEquals(template.getBody(), body);
         assertEquals(template.getTitle(), title);
+    }
 
-        // now testing with existing inode and identifier
-        String inode=UUIDGenerator.generateUuid();
-        String identifier=UUIDGenerator.generateUuid();
-        template=new Template();
+    /**
+     * Method to test: saveTemplate
+     * Given Scenario: Create a template and save it, update the body and save it again.
+     * ExpectedResult: Template should be save successfully
+     *
+     */
+    @Test
+    public void test_saveTemplate_editExistingTemplate() throws Exception {
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHostA = new SiteDataGen().nextPersisted();
+        final String body="<html><body> I'm mostly empty </body></html>";
+
+        Template template=new Template();
         template.setTitle(title);
         template.setBody(body);
-        template.setInode(inode);
-        template.setIdentifier(identifier);
-        template= templateAPI.saveTemplate(template, host, user, false);
+        template = templateAPI.saveTemplate(template, newHostA, user, false);
         assertTrue(UtilMethods.isSet(template.getInode()));
         assertTrue(UtilMethods.isSet(template.getIdentifier()));
+        final String templateInode = template.getInode();
+        final String templateIdentifier = template.getIdentifier();
         assertEquals(template.getBody(), body);
         assertEquals(template.getTitle(), title);
-        assertEquals(template.getInode(),inode);
-        assertEquals(template.getIdentifier(),identifier);
 
-        template= templateAPI.findWorkingTemplate(identifier, user, false);
-        assertTrue(template!=null);
-        assertEquals(template.getInode(),inode);
-        assertEquals(template.getIdentifier(),identifier);
+        final String updatedBody = "updated body!";
+        template = templateAPI.findWorkingTemplate(template.getIdentifier(), user, false);
+        template.setBody(updatedBody);
+        template.setInode("");
+        template = templateAPI.saveTemplate(template, newHostA, user, false);
+        assertTrue(UtilMethods.isSet(template.getInode()));
+        assertTrue(UtilMethods.isSet(template.getIdentifier()));
+        assertEquals(templateIdentifier, template.getIdentifier());
+        assertNotEquals(templateInode, template.getInode());
+        assertEquals(updatedBody,template.getBody());
+        assertEquals(title,template.getTitle());
+    }
 
-        // now update with existing inode
-        template.setBody("updated body!");
-        String newInode=UUIDGenerator.generateUuid();
-        template.setInode(newInode);
-        template= templateAPI.saveTemplate(template, host, user, false);
+    /**
+     * Method to test: publishTemplate
+     * Given Scenario: Create a template, publish it
+     * ExpectedResult: Template should be live true
+     *
+     */
+    @Test
+    public void publishTemplate_expects_live_true() throws Exception {
 
-        // same identifier now new inode
-        template= templateAPI.findWorkingTemplate(identifier, user, false);
-        assertTrue(template!=null);
-        assertEquals(template.getInode(),newInode);
-        assertEquals(template.getIdentifier(),identifier);
-        assertEquals(template.getBody(),"updated body!"); // make sure it took our changes
+        final Host host    = hostAPI.findDefaultHost(user, false);
+        final String body  = "<html><body> I'm mostly empty </body></html>";
+        final String title = "empty test template "+UUIDGenerator.generateUuid();
+        final Template template = new Template();
+        template.setTitle(title);
+        template.setBody(body);
+        final Template templateSaved = templateAPI.saveTemplate(template, host, user, false);
+        assertTrue(UtilMethods.isSet(templateSaved.getInode()));
+        assertTrue(UtilMethods.isSet(templateSaved.getIdentifier()));
+        assertEquals(templateSaved.getBody(), body);
+        assertEquals(templateSaved.getTitle(), title);
+        assertFalse(templateSaved.isLive());
+
+        templateAPI.publishTemplate(templateSaved, user, false);
+        assertTrue(templateSaved.isLive());
+    }
+
+    /**
+     * Method to test: unpublishTemplate
+     * Given Scenario: Create a template, publish and unpublish it
+     * ExpectedResult: Template should be live false at the end
+     *
+     */
+    @Test
+    public void unpublishTemplate_expects_live_false() throws Exception {
+
+        final Host host    = hostAPI.findDefaultHost(user, false);
+        final String body  = "<html><body> I'm mostly empty </body></html>";
+        final String title = "empty test template "+UUIDGenerator.generateUuid();
+        final Template template = new Template();
+        template.setTitle(title);
+        template.setBody(body);
+        final Template templateSaved = templateAPI.saveTemplate(template, host, user, false);
+        assertTrue(UtilMethods.isSet(templateSaved.getInode()));
+        assertTrue(UtilMethods.isSet(templateSaved.getIdentifier()));
+        assertEquals(templateSaved.getBody(), body);
+        assertEquals(templateSaved.getTitle(), title);
+        assertFalse(templateSaved.isLive());
+
+        templateAPI.publishTemplate(templateSaved, user, false);
+        assertTrue(templateSaved.isLive());
+
+        templateAPI.unpublishTemplate(templateSaved, user, false);
+        assertFalse(templateSaved.isLive());
+    }
+
+    /**
+     * Method to test: archive
+     * Given Scenario: Create a template, archive
+     * ExpectedResult: Template should be archive true
+     *
+     */
+    @Test
+    public void archiveTemplate_expects_archive_true() throws Exception {
+
+        final Host host    = hostAPI.findDefaultHost(user, false);
+        final String body  = "<html><body> I'm mostly empty </body></html>";
+        final String title = "empty test template "+UUIDGenerator.generateUuid();
+        final Template template = new Template();
+        template.setTitle(title);
+        template.setBody(body);
+        final Template templateSaved = templateAPI.saveTemplate(template, host, user, false);
+        assertTrue(UtilMethods.isSet(templateSaved.getInode()));
+        assertTrue(UtilMethods.isSet(templateSaved.getIdentifier()));
+        assertEquals(templateSaved.getBody(), body);
+        assertEquals(templateSaved.getTitle(), title);
+        assertFalse(templateSaved.isLive());
+
+        templateAPI.archive(templateSaved, user, false);
+        assertTrue(templateSaved.isArchived());
+    }
+
+    /**
+     * Method to test:  unarchive
+     * Given Scenario: Create a template, archive and unarchive
+     * ExpectedResult: Template should be archive false
+     *
+     */
+    @Test
+    public void archiveTemplate_expects_unarchive_true() throws Exception {
+
+        final Host host    = hostAPI.findDefaultHost(user, false);
+        final String body  = "<html><body> I'm mostly empty </body></html>";
+        final String title = "empty test template "+UUIDGenerator.generateUuid();
+        final Template template = new Template();
+        template.setTitle(title);
+        template.setBody(body);
+        final Template templateSaved = templateAPI.saveTemplate(template, host, user, false);
+        assertTrue(UtilMethods.isSet(templateSaved.getInode()));
+        assertTrue(UtilMethods.isSet(templateSaved.getIdentifier()));
+        assertEquals(templateSaved.getBody(), body);
+        assertEquals(templateSaved.getTitle(), title);
+        assertFalse(templateSaved.isLive());
+
+        templateAPI.archive(templateSaved, user, false);
+        assertTrue(templateSaved.isArchived());
+
+        templateAPI.unarchive(templateSaved,user);
+        assertFalse(templateSaved.isArchived());
     }
 
     @Test
@@ -336,6 +470,12 @@ public class TemplateAPITest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Method to test: {@link TemplateAPI#findLiveTemplate(String, User, boolean)}
+     * Given Scenario: Saves a new template and checks if is Live (false), then publish the template
+     * and check again if is live (true).
+     * ExpectedResult: template after been published should be live = true
+     */
     @Test
     public void findLiveTemplate() throws Exception {
 
@@ -346,56 +486,71 @@ public class TemplateAPITest extends IntegrationTestBase {
 
         Template live = templateAPI
                 .findLiveTemplate(template.getIdentifier(), user, false);
-        assertTrue(live==null || !InodeUtils.isSet(live.getInode()));
+        assertNull(live);//template has not been published
 
+        //Publish template
         versionableAPI.setLive(template);
 
         live = templateAPI.findLiveTemplate(template.getIdentifier(), user, false);
-        assertTrue(live!=null && InodeUtils.isSet(live.getInode()));
-        assertEquals(template.getInode(),live.getInode());
+        assertNotNull(live);//template has been published
+        assertEquals(template.getInode(),live.getInode());//inode live is the template inode
+        assertFalse(live.getOwner().isEmpty());//check owner was pulled
+        assertFalse(live.getIDate().toString().isEmpty());//check idate was pulled
 
         templateAPI.delete(template, user, false);
     }
 
+    /**
+     * Method to test: {@link TemplateAPI#findTemplates(User, boolean, Map, String, String, String, String, int, int, String)}
+     * Given Scenario: Saves a new template and finds all the templates the user can use
+     * ExpectedResult: list of templates the user can use, it must contain the template created for this test
+     */
     @Test
     public void testFindTemplates() throws DotDataException, DotSecurityException {
+        final String title = "testTemplate_" + System.currentTimeMillis();
+        final Template template = new TemplateDataGen().title(title).nextPersisted();
+
         final List<Template> result = templateAPI
                 .findTemplates(user, false, null, host.getIdentifier(), null, null, null, 0, -1,
                         null);
 
         assertNotNull(result);
-        assertTrue(!result.isEmpty());
+        assertFalse(result.isEmpty());
+        assertTrue(result.contains(template));
+        assertFalse(result.get(0).getOwner().isEmpty());//check owner was pulled
+        assertFalse(result.get(0).getIDate().toString().isEmpty());//check idate was pulled
+
     }
 
+    /**
+     * Method to test: {@link TemplateFactory#findWorkingTemplateByName(String, Host)}
+     * Given Scenario: Saves a new template and find the working version of it using the template.title and host
+     * ExpectedResult: working version of the template
+     */
     @Test
     public void testFindWorkingTemplateByName() throws Exception {
-        Template template = new Template();
-        final TemplateFactory templateFactory = new TemplateFactoryImpl();
-        template.setTitle("empty test template " + UUIDGenerator.generateUuid());
-        template.setBody("<html><body> I'm mostly empty </body></html>");
-        template.setOwner("template's owner");
+        final String title = "testTemplate_" + System.currentTimeMillis();
+        final Template template_version1 = new TemplateDataGen().title(title).host(host).nextPersisted();
+        Thread.sleep(1000);
+        template_version1.setTitle(title + "_1");
+        template_version1.setInode("");
+        final Template template_version2 = TemplateDataGen.save(template_version1);
 
-        try {
-            template = templateAPI.saveTemplate(template, host, user, false);
-
-            final Template result = templateFactory.findWorkingTemplateByName(template.getTitle(), host);
-
-            assertNotNull(result);
-            assertEquals(template.getInode(), result.getInode());
-            assertTrue(template.getOwner()!=null && template.getOwner().equals(result.getOwner()));
-        } finally {
-            if (template.getInode() != null) {
-                templateAPI.delete(template, user, false);
-            }
-        }
+        final Template result = FactoryLocator.getTemplateFactory().findWorkingTemplateByName(title + "_1", host);
+        assertNotNull(result);
+        assertEquals(template_version2.getInode(), result.getInode());
+        assertFalse(result.getOwner().isEmpty());//check owner was pulled
+        assertFalse(result.getIDate().toString().isEmpty());//check idate was pulled
     }
 
-    
-    
+
+    /**
+     * Method to test: {@link TemplateAPI#findWorkingTemplate(String, User, boolean)}
+     * Given Scenario: Tries to find a non-existent working template
+     * ExpectedResult: null template
+     */
     @Test
     public void testFindWorkingTemplateNoNPE() throws DotDataException, DotSecurityException {
-
-
         try {
             final Template template = templateAPI.findWorkingTemplate("NO_TEMPLATE",
                     APILocator.getUserAPI().getSystemUser(), false);
@@ -404,11 +559,16 @@ public class TemplateAPITest extends IntegrationTestBase {
 
         }
         catch(NullPointerException e) {
-            Logger.error(this, "getting non-existant template should not throw an NPE", e);
-            assertTrue("getting non-existant template should not throw an NPE", false);
+            Logger.error(this, "getting non-existent template should not throw an NPE", e);
+            assertTrue("getting non-existent template should not throw an NPE", false);
         }
     }
 
+    /**
+     * Method to test: {@link TemplateAPI#findWorkingTemplate(String, User, boolean)}
+     * Given Scenario: Tries to find a non-existent live template
+     * ExpectedResult: null template
+     */
     @Test
     public void testFindLiveTemplateNoNPE() throws DotDataException, DotSecurityException {
 
@@ -421,19 +581,34 @@ public class TemplateAPITest extends IntegrationTestBase {
             
         }
         catch(NullPointerException e) {
-            Logger.error(this, "getting non-existant template should not throw an NPE", e);
-            assertTrue("getting non-existant template should not throw an NPE", false);
+            Logger.error(this, "getting non-existent template should not throw an NPE", e);
+            assertTrue("getting non-existent template should not throw an NPE", false);
         }
     }
-    
-    @Test
-    public void testFindTemplatesAssignedTo() throws DotDataException, DotSecurityException {
-        final List<Template> result = templateAPI.findTemplatesAssignedTo(host);
 
+    /**
+     * Method to test: {@link TemplateAPI#findTemplatesAssignedTo(Host,boolean)}
+     * Given Scenario: Finds all templates under a host
+     * ExpectedResult: list of templates that live under a host
+     */
+    @Test
+    public void testFindTemplatesAssignedTo() throws DotDataException {
+        final String title = "testTemplate_" + System.currentTimeMillis();
+        final Template template = new TemplateDataGen().title(title).nextPersisted();
+
+        final List<Template> result = templateAPI.findTemplatesAssignedTo(host);
         assertNotNull(result);
-        assertTrue(!result.isEmpty());
+        assertFalse(result.isEmpty());
+        assertTrue(result.contains(template));
+        assertFalse(result.get(0).getOwner().isEmpty());//check owner was pulled
+        assertFalse(result.get(0).getIDate().toString().isEmpty());//check idate was pulled
     }
 
+    /**
+     * Method to test: {@link TemplateAPI#copy(Template, User)}
+     * Given Scenario: Creates a template and then a copy of it
+     * ExpectedResult: template copied successfully
+     */
     @Test
     public void copyTemplate() throws Exception {
         Template oldTemplate = null;
@@ -481,7 +656,7 @@ public class TemplateAPITest extends IntegrationTestBase {
             template = templateAPI.saveTemplate(template, host, user, false);
 
             layout = new Template();
-            //No title, this is a layout
+            layout.setTitle(Template.ANONYMOUS_PREFIX + System.currentTimeMillis());
             layout.setBody("<html><body> Empty Layout </body></html>");
             layout = templateAPI.saveTemplate(layout, host, user, false);
 
@@ -513,6 +688,11 @@ public class TemplateAPITest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Method to test: {@link TemplateAPI#findTemplatesUserCanUse(User, String, String, boolean, int, int)}
+     * Given Scenario: Finds all the templates an user can use that matches the filter
+     * ExpectedResult: list of templates that live under a host
+     */
     @Test
     public void testFindTemplatesUserCanUse_IncludeUniqueFilter_ShouldListOnlyOneResult() throws Exception {
         Template template = null;
@@ -535,6 +715,8 @@ public class TemplateAPITest extends IntegrationTestBase {
 
             assertEquals(1, filteredTemplates.size());
             assertEquals(uniqueTitle, filteredTemplates.get(0).getTitle());
+            assertFalse(filteredTemplates.get(0).getOwner().isEmpty());//check owner was pulled
+            assertFalse(filteredTemplates.get(0).getIDate().toString().isEmpty());//check idate was pulled
 
         } finally {
             if (template != null) {
@@ -544,5 +726,242 @@ public class TemplateAPITest extends IntegrationTestBase {
                 templateAPI.delete(anotherTemplate, user, false);
             }
         }
+    }
+
+    /**
+     * Method to test: {@link TemplateAPI#find(String, User, boolean)}
+     * Given Scenario: find a template by inode
+     * ExpectedResult: the template of the specific inode
+     */
+    @Test
+    public void test_find_success() throws Exception{
+        final String title = "testFindTemplate_" + System.currentTimeMillis();
+        final Template template = new TemplateDataGen().title(title).nextPersisted();
+
+        //Remove template cache so it's has to search in the DB
+        CacheLocator.getTemplateCache().clearCache();
+
+        final Template templateFound = templateAPI.find(template.getInode(),user,false);
+
+        assertEquals(title,templateFound.getTitle());
+        assertFalse(templateFound.getOwner().isEmpty());//check owner was pulled
+        assertFalse(templateFound.getIDate().toString().isEmpty());//check idate was pulled
+    }
+
+    /**
+     * Method to test: {@link TemplateAPI#find(String, User, boolean)}
+     * Given Scenario: tries to find a template, but the inode does not exists.
+     * ExpectedResult: null
+     */
+    @Test
+    public void test_find_inode_not_exist_return_Null() throws Exception{
+       final Template templateFound = templateAPI.find(UUIDGenerator.generateUuid(),user,false);
+       assertNull(templateFound);
+    }
+
+    /**
+     * Method to test: {@link TemplateAPI#findAllVersions(Identifier, User, boolean)}
+     * Given Scenario: brings all the versions of a template, using the identifier as reference
+     * ExpectedResult: list of templates, the size must be 3 since its the amount of versions
+     */
+    @Test
+    public void test_findAllVersions_success() throws Exception {
+        final String title = "testFindTemplate_" + System.currentTimeMillis();
+        Template template = new TemplateDataGen().title(title).nextPersisted();
+        template.setTitle(title + "_1");
+        template.setInode("");
+        template = TemplateDataGen.save(template);
+        template.setTitle(title + "_2");
+        template.setInode("");
+        template = TemplateDataGen.save(template);
+
+        final Identifier identifier = APILocator.getIdentifierAPI().find(template.getIdentifier());
+        final List<Template> templateAllVersions = templateAPI.findAllVersions(identifier,user,false);
+        assertNotNull(templateAllVersions);
+        assertEquals(3,templateAllVersions.size());
+        assertFalse(templateAllVersions.get(0).getOwner().isEmpty());//check owner was pulled
+        assertFalse(templateAllVersions.get(0).getIDate().toString().isEmpty());//check idate was pulled
+    }
+
+    /**
+     * Method to test: {@link TemplateAPI#findAllVersions(Identifier, User, boolean)}
+     * Given Scenario: brings all the versions of a template, using the identifier as reference,
+     * since the identifier does not belong to any template, the list must be empty
+     * ExpectedResult: empty list of templates
+     */
+    @Test
+    public void test_findAllVersions_IdentifierNotBelongToTemplate_returnEmptyList() throws Exception {
+        final Identifier identifier = new Identifier();
+        identifier.setId(UUIDGenerator.generateUuid());
+        final List<Template> templateAllVersions = templateAPI.findAllVersions(identifier,user,false);
+        assertTrue(templateAllVersions.isEmpty());
+    }
+
+    /**
+     * Method to test: {@link TemplateAPI#saveTemplate(Template, Host, User, boolean)}
+     * Given Scenario: Saves a new template and checks that the owner and create_date
+     * is being save on the identifier table
+     * ExpectedResult: owner and create_date columns on the identifier tables must have values
+     */
+    @Test
+    public void test_newTemplate_checkIfSavesOwnerAndCreateDateOnIdentifier() throws Exception {
+        final String title = "testTemplate_" + System.currentTimeMillis();
+        final Template template = new TemplateDataGen().title(title).nextPersisted();
+        final Identifier identifier = APILocator.getIdentifierAPI().find(template.getIdentifier());
+        assertNotNull(identifier);
+        assertNotNull(identifier.getOwner());
+        assertNotNull(identifier.getCreateDate());
+        assertFalse(identifier.getOwner().isEmpty());
+        assertFalse(identifier.getCreateDate().toString().isEmpty());
+    }
+
+    /**
+     * Method to test: {@link TemplateAPI#saveTemplate(Template, Host, User, boolean)}
+     * Given Scenario: Tries to save a new template using a limited user that does not have the required permissions
+     * ExpectedResult: template is not saved and a DotSecurityException is thrown.
+     */
+    @Test(expected = DotSecurityException.class)
+    public void test_saveTemplate_limitedUser_noEnoughPermissions_fail() throws Exception{
+        //Create the limited user
+        final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
+        APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
+
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHostA = new SiteDataGen().nextPersisted();
+        //Create template
+        Template templateA = new TemplateDataGen().title(title).next();
+        templateA = APILocator.getTemplateAPI().saveTemplate(templateA,newHostA,limitedUser,false);
+    }
+
+    /**
+     * Method to test: {@link TemplateAPI#saveTemplate(Template, Host, User, boolean)}
+     * Given Scenario: Tries to save a new template using a limited user that have the required permissions
+     * ExpectedResult: template is saved.
+     */
+    @Test
+    public void test_saveTemplate_limitedUser_success() throws Exception{
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHostA = new SiteDataGen().nextPersisted();
+
+        //Create the limited user
+        final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
+        APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
+
+        //Give Permissions Over the Host Can Add children
+        Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                newHostA.getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, true);
+        APILocator.getPermissionAPI().save(permissions, newHostA, user, false);
+        //Give Permissions Over the Host READ/EDIT Templates
+        permissions = new Permission(PermissionableType.TEMPLATES.getCanonicalName(),
+                newHostA.getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true);
+        APILocator.getPermissionAPI().save(permissions, newHostA, user, false);
+
+        //Create template
+        Template templateA = new TemplateDataGen().title(title).next();
+        templateA = APILocator.getTemplateAPI().saveTemplate(templateA,newHostA,limitedUser,false);
+
+        assertEquals(1,templateAPI.findTemplatesAssignedTo(newHostA).size());
+        assertEquals(title,templateAPI.findTemplatesAssignedTo(newHostA).get(0).getTitle());
+    }
+
+    /**
+     * Method to test: {@link TemplateAPI#getTemplateHost(Template)}
+     * Given Scenario: Saves a new template as a File and tries to get the Host of it.
+     * ExpectedResult: host where the template lives.
+     */
+    @Test
+    public void getTemplateHost_fileTemplate_success() throws Exception {
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final FileAssetTemplate fileAssetTemplate = new TemplateAsFileDataGen()
+                .host(host)
+                .nextPersisted();
+
+        final FileAssetTemplate template = FileAssetTemplate.class.cast(APILocator.getTemplateAPI()
+                .findWorkingTemplate(fileAssetTemplate.getIdentifier(),user,false));
+
+        assertTrue(template.getIdentifier().contains(Constants.TEMPLATE_FOLDER_PATH));
+
+        final Host templateHost = templateAPI.getTemplateHost(template);
+
+        assertNotNull(templateHost);
+        assertEquals(host.getIdentifier(),templateHost.getIdentifier());
+        assertEquals(fileAssetTemplate.getIdentifier(),template.getIdentifier());
+    }
+
+    /**
+     * Method to test: {@link TemplateAPI#findWorkingTemplate(String, User, boolean)}
+     * Given Scenario: Saves a new template as a File and tries to get the working version of it.
+     * ExpectedResult: working version of a fileTemplate
+     */
+    @Test
+    public void findWorkingTemplate_fileTemplate_success() throws Exception {
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final FileAssetTemplate fileAssetTemplate = new TemplateAsFileDataGen()
+                .host(host)
+                .nextPersisted();
+
+        final Template template = templateAPI
+                .findWorkingTemplate(fileAssetTemplate.getIdentifier(),user,false);
+
+        assertNotNull(template);
+        assertTrue(template.getIdentifier().contains(Constants.TEMPLATE_FOLDER_PATH));
+        assertEquals(fileAssetTemplate.getIdentifier(),template.getIdentifier());
+    }
+
+    /**
+     * Method to test: {@link TemplateAPI#findLiveTemplate(String, User, boolean)}
+     * Given Scenario: Saves a new template as a File, make it live and tries to get the live version of it.
+     * ExpectedResult: live version of a fileTemplate
+     */
+    @Test
+    public void findLiveTemplate_fileTemplate_success() throws Exception {
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final FileAssetTemplate fileAssetTemplate = new TemplateAsFileDataGen()
+                .host(host)
+                .nextPersisted();
+        templateAPI.setLive(fileAssetTemplate);
+
+        final Template template = templateAPI
+                .findLiveTemplate(fileAssetTemplate.getIdentifier(),user,false);
+
+        assertNotNull(template);
+        assertTrue(template.getIdentifier().contains(Constants.TEMPLATE_FOLDER_PATH));
+        assertEquals(fileAssetTemplate.getIdentifier(),template.getIdentifier());
+    }
+
+    /**
+     * Method to test: {@link TemplateAPI#getTemplateByFolder(Folder, Host, User, boolean)}
+     * Given Scenario: Saves a new template as a File, and tries to get the template using the folder
+     * where the files lives.
+     * ExpectedResult: the fileTemplate created
+     */
+    @Test
+    public void getTemplateByFolder_fileTemplate_success() throws Exception {
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final FileAssetTemplate fileAssetTemplate = new TemplateAsFileDataGen()
+                .host(host)
+                .nextPersisted();
+
+        final Folder templateFolder = APILocator.getFolderAPI()
+                .findFolderByPath(fileAssetTemplate.getPath(), host, user, false);
+
+        final Template template = templateAPI
+                .getTemplateByFolder(templateFolder,host,user,false);
+
+        assertNotNull(template);
+        assertTrue(template.getIdentifier().contains(Constants.TEMPLATE_FOLDER_PATH));
+        assertEquals(fileAssetTemplate.getIdentifier(),template.getIdentifier());
     }
 }

@@ -3,16 +3,24 @@
  */
 package com.dotmarketing.business;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import com.dotcms.business.WrapInTransaction;
+import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.cluster.bean.Server;
+import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
+import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.transport.CacheTransportException;
 import com.dotmarketing.business.jgroups.NullTransport;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
 /**
  * Cache administrator that uses the CacheProviders infrastructure (Cache chains)
@@ -36,6 +44,39 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 
 
 
+    @WrapInTransaction
+    public void setCluster(Server localServer) throws Exception {
+        Logger.info(this, "***\t Starting Cluster Setup");
+
+        ServerAPI serverAPI = APILocator.getServerAPI();
+
+        String cacheProtocol, bindAddr, bindPort, cacheTCPInitialHosts, mCastAddr, mCastPort, preferIPv4;
+
+        if (ClusterUtils.isTransportAutoWire()) {
+            Logger.info(this, "Using automatic port placement as AUTOWIRE_CLUSTER_TRANSPORT is ON");
+
+            String bindAddressFromProperty = Config.getStringProperty("CACHE_BINDADDRESS", null);
+
+            if (UtilMethods.isSet(bindAddressFromProperty)) {
+                try {
+                    InetAddress addr = InetAddress.getByName(bindAddressFromProperty);
+                    if (ClusterFactory.isValidIP(bindAddressFromProperty)) {
+                        bindAddressFromProperty = addr.getHostAddress();
+                    } else {
+                        Logger.info(ClusterFactory.class,
+                                "Address provided in CACHE_BINDADDRESS property is not " + "valid: " + bindAddressFromProperty);
+                        bindAddressFromProperty = null;
+                    }
+                } catch (UnknownHostException e) {
+                    Logger.info(ClusterFactory.class,
+                            "Address provided in CACHE_BINDADDRESS property is not " + " valid: " + bindAddressFromProperty);
+                    bindAddressFromProperty = null;
+                }
+            }
+
+        }
+        
+    }
 
 
 

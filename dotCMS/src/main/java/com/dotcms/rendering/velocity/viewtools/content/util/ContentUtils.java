@@ -2,9 +2,11 @@ package com.dotcms.rendering.velocity.viewtools.content.util;
 
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.rendering.velocity.viewtools.content.PaginatedContentList;
+import com.dotcms.util.TimeMachineUtil;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -23,6 +25,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 /**
@@ -187,15 +190,9 @@ public class ContentUtils {
 
 		public static PaginatedArrayList<Contentlet> pull(final String query, final int offset, final int limit,
 														  final String sort, final User user, final boolean respectFrontendRoles) {
-			final String tmDate = getTimeMachine().orElse(null);
+			final String tmDate = TimeMachineUtil.getTimeMachineDate().orElse(null);
 			return pull(query, offset, limit, sort, user, tmDate, respectFrontendRoles);
 		}
-
-	private static Optional<String> getTimeMachine() {
-		final HttpSession session = HttpServletRequestThreadLocal.INSTANCE.getRequest().getSession();
-		final Object timeMachineObject = session != null ? session.getAttribute("tm_date") : null;
-		return Optional.ofNullable(timeMachineObject != null ? timeMachineObject.toString() : null);
-	}
 
 	public static PaginatedArrayList<Contentlet> pull(String query, final int offset, final int limit, final String sort, final User user, final String tmDate, final boolean respectFrontendRoles){
 		    final PaginatedArrayList<Contentlet> ret = new PaginatedArrayList<>();
@@ -557,7 +554,7 @@ public class ContentUtils {
 
                 final StringBuilder pullQuery = new StringBuilder();
 
-                if (language != -1){
+                if (language != -1 && !condition.contains("languageId")){
                     pullQuery.append(" ").append("+languageId:").append(language).append(" ");
                 }
                 if (!user.isBackendUser()){
@@ -679,5 +676,34 @@ public class ContentUtils {
         return getPullResults(relationship, contentletIdentifier, condition, limit, offset, sort,
                 user, tmDate, pullParents, -1, null);
     }
+
+	public static String addDefaultsToQuery(String query, final boolean editOrPreviewMode, final
+			HttpServletRequest request){
+		String q = "";
+
+		if(query != null)
+			q = query;
+		else
+			query = q;
+
+		if(!query.contains("languageId")){
+			q += " +languageId:" + WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
+		}
+
+		if(!(query.contains("live:") || query.contains("working:") )){
+			if(editOrPreviewMode && !TimeMachineUtil.isRunning()){
+				q +=" +working:true ";
+			}else{
+				q +=" +live:true ";
+			}
+
+		}
+
+
+		if(!UtilMethods.contains(query,"deleted:")){
+			q+=" +deleted:false ";
+		}
+		return q;
+	}
 		
 }

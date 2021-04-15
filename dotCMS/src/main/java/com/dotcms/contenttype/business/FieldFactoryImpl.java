@@ -29,7 +29,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
-import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -290,18 +289,15 @@ public class FieldFactoryImpl implements FieldFactory {
    * @return the field variable for the field to be saved
    * @throws DotDataException in case that the field variable is not valid
    */
-  private String getFieldVariable(final Field throwAwayField, List<String> takenFieldVars)
+  private String getFieldVariable(Field throwAwayField, List<String> takenFieldVars)
           throws DotDataException {
 
     String variable;
 
     if(throwAwayField.variable() == null) {
       variable = suggestVelocityVar(throwAwayField.name(), throwAwayField, takenFieldVars);
-    } else if(ContentAPIGraphQLTypesProvider.INSTANCE.isFieldVariableGraphQLCompatible(throwAwayField.variable(), throwAwayField)) {
-       variable = throwAwayField.variable();
     } else {
-        ContentType type = Try.of(()->APILocator.getContentTypeAPI(APILocator.systemUser()).find(throwAwayField.contentTypeId())).getOrNull();
-      throw new DotDataException("Field variable not compatible with GraphQL. Field variable:" + throwAwayField.variable() + " on :" +  type);
+       variable = throwAwayField.variable();
     }
     return variable;
   }

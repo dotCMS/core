@@ -7,7 +7,6 @@ import static com.liferay.util.StringPool.FORWARD_SLASH;
 import com.dotcms.api.vtl.model.DotJSON;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.beans.Host;
@@ -33,6 +32,7 @@ import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.util.StringPool;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
@@ -42,6 +42,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.context.Context;
@@ -62,11 +63,11 @@ public class FileAssetContainerUtil {
     private static String [] DEFAULT_META_DATA_NAMES_ARRAY
             = new String[] { TITLE, DESCRIPTION, MAX_CONTENTLETS, NOTES};
 
-    static final String CODE                 = "container_code.vtl";
-    static final String PRE_LOOP             = "preloop.vtl";
-    static final String POST_LOOP            = "postloop.vtl";
-    static final String CONTAINER_META_INFO  = "container.vtl";
-
+    static final String CODE                     = "container_code.vtl";
+    static final String PRE_LOOP                 = "preloop.vtl";
+    static final String POST_LOOP                = "postloop.vtl";
+    static final String CONTAINER_META_INFO      = "container.vtl";
+    static final String DEFAULT_CONTAINER_LAYOUT = "default_container.vtl";
 
 
     private static class SingletonHolder {
@@ -213,6 +214,11 @@ public class FileAssetContainerUtil {
         return -1 != indexOf? fullPath.substring(indexOf + hostname.length()): fullPath;
     }
 
+    public String getRelativePath(final String path) {
+        final String hostName = this.getHostName(path);
+        return this.getPathFromFullPath(hostName, path);
+    }
+
     /**
      * Return true if path is a Container full path, otherwise return false
      * @return
@@ -244,16 +250,15 @@ public class FileAssetContainerUtil {
 
         final ImmutableList.Builder<FileAsset> containerStructures =
                 new ImmutableList.Builder<>();
-        final FileAssetContainer container =
-                new FileAssetContainer();
-        Optional<String> preLoop           = Optional.empty();
-        Optional<String> postLoop          = Optional.empty();
-        Optional<String> codeScript        = Optional.empty();
-        Optional<FileAsset> preLoopAsset   = Optional.empty();
-        Optional<FileAsset> postLoopAsset  = Optional.empty();
-        Optional<String> containerMetaInfo = Optional.empty();
-        FileAsset metaInfoFileAsset        =  null;
-
+        final FileAssetContainer container = new FileAssetContainer();
+        Optional<String> preLoop                    = Optional.empty();
+        Optional<String> postLoop                   = Optional.empty();
+        Optional<String> codeScript                 = Optional.empty();
+        Optional<FileAsset> preLoopAsset            = Optional.empty();
+        Optional<FileAsset> postLoopAsset           = Optional.empty();
+        Optional<FileAsset> defaultContainerLayout  = Optional.empty();
+        Optional<String> containerMetaInfo          = Optional.empty();
+        FileAsset metaInfoFileAsset                 =  null;
 
         for (final FileAsset fileAsset : assets) {
 
@@ -284,6 +289,11 @@ public class FileAssetContainerUtil {
             if (this.isValidContentType(showLive, fileAsset)) {
                 containerStructures.add(fileAsset);
             }
+
+            if (this.isDefaultContainerLayout(showLive, fileAsset)) {
+
+                defaultContainerLayout = Optional.of(fileAsset);
+            }
         }
 
         if (null == metaInfoFileAsset) {
@@ -294,7 +304,7 @@ public class FileAssetContainerUtil {
         }
 
         this.setContainerData(host, containerFolder, metaInfoFileAsset, containerStructures.build(), container,
-                preLoop, postLoop, preLoopAsset, postLoopAsset, containerMetaInfo.get(), codeScript);
+                preLoop, postLoop, preLoopAsset, postLoopAsset, containerMetaInfo.get(), codeScript, defaultContainerLayout);
 
         return container;
     }
@@ -309,6 +319,11 @@ public class FileAssetContainerUtil {
         } catch (DotDataException | DotSecurityException e) {
             return false;
         }
+    }
+
+    private boolean isDefaultContainerLayout(final boolean showLive, final FileAsset fileAsset) {
+
+        return isType(fileAsset, showLive, DEFAULT_CONTAINER_LAYOUT);
     }
 
     /**
@@ -340,7 +355,8 @@ public class FileAssetContainerUtil {
                                   final Optional<FileAsset> preLoopAsset,
                                   final Optional<FileAsset> postLoopAsset,
                                   final String containerMetaInfo,
-                                  final Optional<String> codeScript) {
+                                  final Optional<String> codeScript,
+                                  final Optional<FileAsset> defaultContainerLayoutAsset) {
 
         container.setIdentifier (metaInfoFileAsset.getIdentifier());
         container.setInode      (metaInfoFileAsset.getInode());
@@ -364,6 +380,7 @@ public class FileAssetContainerUtil {
         container.setContainerStructuresAssets(containerStructures);
         preLoopAsset.ifPresent (asset -> container.setPreLoopAsset (asset));
         postLoopAsset.ifPresent(asset -> container.setPostLoopAsset(asset));
+        defaultContainerLayoutAsset.ifPresent(asset -> container.setDefaultContainerLayoutAsset(asset));
         codeScript.ifPresent(script -> container.setCode(script));
     }
 
@@ -519,7 +536,11 @@ public class FileAssetContainerUtil {
         }
     }
 
-    private String getFullPath(final Host host, final String containerPath) {
-        return builder(HOST_INDICATOR, host.getHostname(), containerPath).toString();
+    public String getFullPath(final Host host, final String containerPath) {
+        return getFullPath(host.getHostname(), containerPath);
+    }
+
+    public String getFullPath(final String hostName, final String containerPath) {
+        return builder(HOST_INDICATOR, hostName, containerPath).toString();
     }
 }

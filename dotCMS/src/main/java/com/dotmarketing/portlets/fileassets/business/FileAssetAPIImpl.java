@@ -127,16 +127,16 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 			final Folder parentFolder,
 			final User user,
 			final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-		List<Contentlet> contentlets = null;
 
 		try{
-			contentlets = contAPI.search(
+		    return fromContentlets(contAPI.search(
 					"+structureType:" + Structure.STRUCTURE_TYPE_FILEASSET + " +conFolder:" + parentFolder.getInode(),
-					-1, 0, null, user, respectFrontendRoles);
+					-1, 0, null, user, respectFrontendRoles));
 		} catch (DotRuntimeException e) {
 			if ( ExceptionUtil.causedBy(e, ConnectException.class)) {
 				Logger.warnEveryAndDebug(FileAssetAPIImpl.class, e.getMessage(), e, 5000);
-				contentlets = getFileAssetsByFolderInDB(parentFolder, user, respectFrontendRoles);
+				
+				return findFileAssetsByDB(FileAssetSearcher.builder().folder(parentFolder).user(user).respectFrontendRoles(respectFrontendRoles).build());
 			} else {
 				throw e;
 			}
@@ -147,17 +147,21 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 			throw new DotRuntimeException(e.getMessage(), e);
 		}
 
-		return fromContentlets(perAPI.filterCollection(contentlets, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
-
 	}
 
-	private synchronized List<Contentlet> getFileAssetsByFolderInDB(
-			final Folder parentFolder,
-			final User user,
-			final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+    @Override
+    @CloseDBIfOpened
+    public List<FileAsset> findFileAssetsByDB(FileAssetSearcher searcher) {
 
-		return this.fileAssetFactory.findFileAssetsByFolderInDB(parentFolder, user, respectFrontendRoles);
-	}
+        return Try.of(() -> fromContentlets(fileAssetFactory.findByDB(searcher)))
+                        .getOrElseThrow(e -> e instanceof RuntimeException ? (RuntimeException) e : new DotRuntimeException(e));
+
+    }
+	
+	
+
+	
+
 
 	@CloseDBIfOpened
 	public List<FileAsset> findFileAssetsByHost(Host parentHost, User user, boolean respectFrontendRoles) throws DotDataException,
@@ -165,6 +169,9 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		List<FileAsset> assets = null;
 		try{
 			Folder parentFolder = APILocator.getFolderAPI().find(FolderAPI.SYSTEM_FOLDER, user, false);
+			
+			
+			
 			assets = fromContentlets(perAPI.filterCollection(contAPI.search("+conHost:" +parentHost.getIdentifier() +" +structureType:" + Structure.STRUCTURE_TYPE_FILEASSET+" +conFolder:" + parentFolder.getInode(), -1, 0, null , user, respectFrontendRoles),
 					PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
 		} catch (Exception e) {
@@ -327,10 +334,6 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 
 	@CloseDBIfOpened
 	public FileAssetMap fromFileAsset(final FileAsset fileAsset) throws DotStateException {
-		if (!fileAsset.isLoaded()) {
-		    //Force to pre-load
-			fileAsset.load();
-		}
 		try {
 			final FileAssetMap fileAssetMap = new FileAssetMap(fileAsset);
 			CacheLocator.getContentletCache().add(fileAsset);
@@ -345,6 +348,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		return (con != null && con.getStructure() != null && con.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) ;
 	}
 
+    @Deprecated
 	public Map<String, String> getMetaDataMap(Contentlet contentlet, final File binFile)
 			throws DotDataException {
 		return new TikaUtils().getMetaDataMap(contentlet.getInode(), binFile);
@@ -804,8 +808,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
         final String inode = fileAsset.getInode();
         if (UtilMethods.isSet(inode)) {
             final String realAssetPath = getRealAssetsRootPath();
-            java.io.File tumbnailDir = new java.io.File(realAssetPath + java.io.File.separator
-                    + "dotGenerated" + java.io.File.separator + inode.charAt(0)
+            java.io.File tumbnailDir = new java.io.File(ConfigUtils.getDotGeneratedPath() + java.io.File.separator + inode.charAt(0)
                     + java.io.File.separator + inode.charAt(1));
             if (tumbnailDir != null) {
                 java.io.File[] files = tumbnailDir.listFiles();
@@ -860,7 +863,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 
 	public String getRealAssetPathTmpBinary() {
 
-		java.io.File adir=new java.io.File(getRealAssetsRootPath() +java.io.File.separator+"tmp_upload");
+		java.io.File adir=new java.io.File(getRealAssetsRootPath() + java.io.File.separator + TMP_UPLOAD);
 		if(!adir.isDirectory())
 			adir.mkdirs();
 

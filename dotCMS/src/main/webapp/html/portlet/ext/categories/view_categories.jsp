@@ -1,21 +1,25 @@
 <%@page import="com.dotmarketing.util.UtilMethods"%>
-<%@page import="com.dotmarketing.util.InodeUtils"%>
-<%@page import="com.dotmarketing.portlets.categories.model.Category"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
-<%@page import="com.dotmarketing.portlets.categories.business.CategoryAPI"%>
+<%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint" %>
 <%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI" %>
 <%@ page import="com.dotcms.enterprise.LicenseUtil" %>
 <%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@include file="/html/portlet/ext/categories/init.jsp"%>
 <%@ include file="/html/portlet/ext/remotepublish/init.jsp" %>
+<%@ page import="com.dotmarketing.business.PermissionAPI.PermissionableType" %>
 
 <%
+    final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 	boolean enterprise = LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level;
 
 	PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
 	List<PublishingEndPoint> sendingEndpointsList = pepAPI.getReceivingEndPoints();
-	boolean sendingEndpoints = UtilMethods.isSet(sendingEndpointsList) && !sendingEndpointsList.isEmpty();
+    boolean sendingEndpoints = UtilMethods.isSet(sendingEndpointsList) && !sendingEndpointsList.isEmpty();
+
+	boolean hasViewPermision = permissionAPI.doesUserHavePermissions(APILocator.systemHost().getIdentifier(),
+			PermissionableType.CATEGORY,
+			PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user);
 %>
 
 <%  String dojoPath = Config.getStringProperty("path.to.dojo"); %>
@@ -520,12 +524,15 @@
         var velVar = grid.store.getValue(grid.getItem(index), 'category_velocity_var_name');
         var key = grid.store.getValue(grid.getItem(index), 'category_key');
         var keywords = grid.store.getValue(grid.getItem(index), 'keywords');
+        var permissionsTab = dojo.byId("TabThree");
 
         prepareCrumbs(inode, name);
         dojo.byId("propertiesNA").style.display = "none";
         dojo.byId("propertiesDiv").style.display = "block";
-        dojo.byId("permissionNA").style.display = "none";
-        dojo.byId("permissionDiv").style.display = "block";
+        if(permissionsTab) {
+			dojo.byId("permissionNA").style.display = "none";
+			dojo.byId("permissionDiv").style.display = "block";
+		}
 
         currentCatName = name;
 
@@ -546,17 +553,22 @@
         actions = "breadcrums";
 
         prepareCrumbs(inode, name);
+		var permissionsTab = dojo.byId("TabThree");
 
         if(currentInodeOrIdentifier == "" || currentInodeOrIdentifier == "0"){
             dojo.byId("propertiesNA").style.display = "block";
             dojo.byId("propertiesDiv").style.display = "none";
-            dojo.byId("permissionNA").style.display = "block";
-            dojo.byId("permissionDiv").style.display = "none";
+            if(permissionsTab) {
+				dojo.byId("permissionNA").style.display = "block";
+				dojo.byId("permissionDiv").style.display = "none";
+			}
         }else{
             dojo.byId("propertiesNA").style.display = "none";
             dojo.byId("propertiesDiv").style.display = "block";
-            dojo.byId("permissionNA").style.display = "none";
-            dojo.byId("permissionDiv").style.display = "block";
+			if(permissionsTab) {
+				dojo.byId("permissionNA").style.display = "none";
+				dojo.byId("permissionDiv").style.display = "block";
+			}
         }
 
         CategoryAjax.getCategoryMap(inode,getCategoryMapCallback);
@@ -694,7 +706,9 @@
                         message = `<%= LanguageUtil.get(pageContext, "message.category.permission.error") %>`;
                         messageStyle = "color:red; font-size:11px;";
                         error = true;
-                        clearAddDialog();
+						if(!save) {
+							showDotCMSSystemMessage(message);
+						}
                         break;
                     case 2:
                         message = `<%= LanguageUtil.get(pageContext, "error.category.folder.taken") %>`;
@@ -1003,7 +1017,8 @@
 			</div>
 			<!-- END Properties Tab -->
 
-			<!-- START Permission Tab -->
+            <!-- START Permission Tab -->
+            <% if (hasViewPermision) { %>
 			<div id="TabThree" dojoType="dijit.layout.ContentPane" title="<%=LanguageUtil.get(pageContext, "permissions")%>" >
 				<div id="permissionNA" style="height: 300px; text-align: center;  position:relative">
 					<span style="position:absolute; top:50%; left: 50%; height:10em; margin-top:-2em; margin-left:-10em"><%= LanguageUtil.get(pageContext, "message.category.toplevel.na") %></span>
@@ -1011,9 +1026,10 @@
 				<div id="permissionDiv" style="display: none">
 					<%@ include file="/html/portlet/ext/common/edit_permissions_tab_inc_ajax.jsp" %>
 				</div>
-				<!-- END Permission Tab -->
+            </div>
+            <% } %>
+			<!-- END Permission Tab -->
 
-			</div>
 		</div>
 		<!-- END Tabs -->
 	</div>

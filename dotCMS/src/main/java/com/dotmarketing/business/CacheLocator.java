@@ -4,9 +4,6 @@ import com.dotcms.auth.providers.jwt.factories.ApiTokenCache;
 import com.dotcms.business.SystemCache;
 import com.dotcms.cache.KeyValueCache;
 import com.dotcms.cache.KeyValueCacheImpl;
-
-import com.dotcms.vanityurl.cache.VanityUrlCache;
-import com.dotcms.vanityurl.cache.VanityUrlCacheImpl;
 import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.business.IndiciesCache;
 import com.dotcms.content.elasticsearch.business.IndiciesCacheImpl;
@@ -14,8 +11,7 @@ import com.dotcms.contenttype.business.ContentTypeCache2;
 import com.dotcms.contenttype.business.ContentTypeCache2Impl;
 import com.dotcms.csspreproc.CSSCache;
 import com.dotcms.csspreproc.CSSCacheImpl;
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.license.LicenseManager;
+import com.dotcms.graphql.business.GraphQLSchemaCache;
 import com.dotcms.notifications.business.NewNotificationCache;
 import com.dotcms.notifications.business.NewNotificationCacheImpl;
 import com.dotcms.publisher.assets.business.PushedAssetsCache;
@@ -25,13 +21,11 @@ import com.dotcms.publisher.endpoint.business.PublishingEndPointCacheImpl;
 import com.dotcms.rendering.velocity.services.DotResourceCache;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavToolCache;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavToolCacheImpl;
-
 import com.dotcms.security.apps.AppsCache;
 import com.dotcms.security.apps.AppsCacheImpl;
-
-
+import com.dotcms.vanityurl.cache.VanityUrlCache;
+import com.dotcms.vanityurl.cache.VanityUrlCacheImpl;
 import com.dotmarketing.business.cache.transport.CacheTransport;
-import com.dotmarketing.business.jgroups.NullTransport;
 import com.dotmarketing.business.portal.PortletCache;
 import com.dotmarketing.cache.ContentTypeCache;
 import com.dotmarketing.cache.FolderCache;
@@ -51,6 +45,8 @@ import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.business.ContentletCacheImpl;
 import com.dotmarketing.portlets.contentlet.business.HostCache;
 import com.dotmarketing.portlets.contentlet.business.HostCacheImpl;
+import com.dotmarketing.portlets.contentlet.business.MetadataCache;
+import com.dotmarketing.portlets.contentlet.business.MetadataCacheImpl;
 import com.dotmarketing.portlets.hostvariable.bussiness.HostVariablesCache;
 import com.dotmarketing.portlets.hostvariable.bussiness.HostVariablesCacheImpl;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageCache;
@@ -76,8 +72,6 @@ import com.dotmarketing.tag.business.TagInodeCacheImpl;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
-import com.google.common.annotations.VisibleForTesting;
-import io.vavr.control.Try;
 
 
 
@@ -95,18 +89,33 @@ public class CacheLocator extends Locator<CacheIndex>{
 
 
 	private static CacheLocator instance;
-	private final DotCacheAdministrator adminCache;
-    private CacheTransport eeTransport;
-    private final CacheTransport nullTransport= new NullTransport();
+	private static DotCacheAdministrator adminCache;
 
-	private CacheLocator(){
-	    super();
+	private CacheLocator() {
+		super();
+	}
+
+	public synchronized static void init(){
 		long start = System.currentTimeMillis();
-		eeTransport = loadCacheTransport();
-		adminCache = loadCacheAdministrator();
-        adminCache.initProviders();
-        
-        System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_CACHE, String.valueOf(System.currentTimeMillis() - start));
+		if(instance != null)
+			return;
+
+		String clazz = Config.getStringProperty("cache.locator.class", ChainableCacheAdministratorImpl.class.getCanonicalName());
+		Logger.info(CacheLocator.class, "loading cache administrator: "+clazz);
+		try{
+			adminCache = new CommitListenerCacheWrapper((DotCacheAdministrator) Class.forName(clazz).newInstance());
+
+			String cTransClass = Config.getStringProperty("CACHE_INVALIDATION_TRANSPORT_CLASS","com.dotmarketing.business.jgroups.JGroupsCacheTransport");
+			CacheTransport cTrans = (CacheTransport)Class.forName(cTransClass).newInstance();
+			adminCache.setTransport(cTrans);
+
+		}
+		catch(Exception e){
+			Logger.fatal(CacheLocator.class, "Unable to load Cache Admin:" + clazz, e);
+		}
+
+		instance = new CacheLocator();
+
 		/*
 		Initializing the Cache Providers:
 
@@ -114,45 +123,9 @@ public class CacheLocator extends Locator<CacheIndex>{
 		 license level, and the license level needs an already created instance of the CacheLocator
 		 to work.
 		 */
-        instance=this;
-
+		adminCache.initProviders();
+		System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_CACHE, String.valueOf(System.currentTimeMillis() - start));
 	}
-	
-	@VisibleForTesting
-    public CacheLocator(DotCacheAdministrator cacheAdministrator, CacheTransport transport) {
-        super();
-        long start = System.currentTimeMillis();
-        this.eeTransport = transport;
-        this.adminCache = cacheAdministrator;
-        this.adminCache.initProviders();
-
-        System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_CACHE, String.valueOf(System.currentTimeMillis() - start));
-        /*
-         * Initializing the Cache Providers:
-         * 
-         * It needs to be initialized in a different call as the providers depend on the license level, and
-         * the license level needs an already created instance of the CacheLocator to work.
-         */
-
-        instance = this;
-    }
-	
-	
-	
-	
-	private CacheTransport loadCacheTransport(){
-        String cTransClass = Config.getStringProperty("CACHE_INVALIDATION_TRANSPORT_CLASS","com.dotmarketing.business.jgroups.JGroupsCacheTransport");
-        return Try.of(()-> (CacheTransport)Class.forName(cTransClass).newInstance()).onFailure(e->Logger.warnAndDebug(CacheLocator.class, e)).getOrElse(nullTransport);
-
-	    
-	}
-   private DotCacheAdministrator loadCacheAdministrator(){
-       String clazz = Config.getStringProperty("cache.locator.class", ChainableCacheAdministratorImpl.class.getCanonicalName());
-       
-       Logger.info(CacheLocator.class, "loading cache administrator: "+clazz);
-       return Try.of(()->new CommitListenerCacheWrapper((DotCacheAdministrator) Class.forName(clazz).newInstance())).getOrElseThrow(e->new DotRuntimeException(e));
-    }
-	
 
 	public static SystemCache getSystemCache() {
 		return (SystemCache)getInstance(CacheIndex.System);
@@ -208,10 +181,6 @@ public class CacheLocator extends Locator<CacheIndex>{
 
 	public static UserCache getUserCache() {
 		return (UserCache)getInstance(CacheIndex.User);
-	}
-
-	public static UserProxyCache getUserProxyCache() {
-		return (UserProxyCache)getInstance(CacheIndex.Userproxy);
 	}
 
 	public static LayoutCache getLayoutCache() {
@@ -339,39 +308,40 @@ public class CacheLocator extends Locator<CacheIndex>{
 	}
 
 	/**
+	 * This will get you an instance of the singleton GraphQL Schema cache.
+	 * @return
+	 */
+	public static GraphQLSchemaCache getGraphQLSchemaCache() {
+		return (GraphQLSchemaCache) getInstance(CacheIndex.GraphQLSchemaCache);
+	}
+
+	/**
+	 * This will get you an instance of the MetadataCache singleton cache.
+	 * @return
+	 */
+	public static MetadataCache getMetadataCache() {
+		return (MetadataCache) getInstance(CacheIndex.Metadata);
+	}
+
+	/**
 	 * The legacy cache administrator will invalidate cache entries within a cluster
 	 * on a put where the non legacy one will not.
 	 * @return
 	 */
 	public static DotCacheAdministrator getCacheAdministrator(){
-		return getInstance().adminCache;
+		return adminCache;
 	}
-	
 
-   public static CacheTransport getCacheTransport(){
-       return LicenseManager.getInstance().getLevel() > 200  ? getInstance().eeTransport :getInstance().nullTransport;
-   }
-   
-    private static CacheLocator getInstance() {
-        if (instance == null) {
-            synchronized (CacheLocator.class) {
-                instance = instance!=null ? instance : new CacheLocator();
-            }
-            if (instance == null) {
-                Logger.fatal(CacheLocator.class, "CACHE IS NOT INITIALIZED : THIS SHOULD NEVER HAPPEN");
-                throw new DotRuntimeException("CACHE IS NOT INITIALIZED : THIS SHOULD NEVER HAPPEN");
-            }
-        }
-        return instance;
-    }
-	
-    public static void init(){
-        CacheLocator.getInstance();
-    }
-	
 	private static Object getInstance(CacheIndex index) {
+		if(instance == null){
+			init();
+			if(instance == null){
+				Logger.fatal(CacheLocator.class, "CACHE IS NOT INITIALIZED : THIS SHOULD NEVER HAPPEN");
+				throw new DotRuntimeException("CACHE IS NOT INITIALIZED : THIS SHOULD NEVER HAPPEN");
+			}
+		}
 
-		Object serviceRef = getInstance().getServiceInstance(index);
+		Object serviceRef = instance.getServiceInstance(index);
 
 		Logger.debug(CacheLocator.class, instance.audit(index));
 
@@ -453,7 +423,9 @@ enum CacheIndex
 	PortletCache("PortletCache"),
 	ESQueryCache("ESQueryCache"),
 	KeyValueCache("Key/Value Cache"),
-	AppsCache("Apps");
+	AppsCache("Apps"),
+	GraphQLSchemaCache("GraphQLSchemaCache"),
+	Metadata("Metadata");
 
 	Cachable create() {
 		switch(this) {
@@ -470,7 +442,7 @@ enum CacheIndex
 	      	case Plugin : return new PluginCacheImpl();
 	      	case Language : return new LanguageCacheImpl();
 	      	case User : return new UserCacheImpl();
-	      	case Userproxy : return new UserProxyCacheImpl();
+
 	      	case Layout : return new LayoutCacheImpl();
 	      	case CMSRole : return new com.dotmarketing.business.RoleCacheImpl();
 	      	case HTMLPage : return new HTMLPageCacheImpl();
@@ -502,7 +474,9 @@ enum CacheIndex
 	      	case PortletCache : return new PortletCache();
 			case AppsCache: return new AppsCacheImpl();
 	      	case ESQueryCache : return new com.dotcms.content.elasticsearch.ESQueryCache();
-	      	
+	      	case GraphQLSchemaCache : return new GraphQLSchemaCache();
+			case Metadata: return new MetadataCacheImpl();
+
 		}
 		throw new AssertionError("Unknown Cache index: " + this);
 	}

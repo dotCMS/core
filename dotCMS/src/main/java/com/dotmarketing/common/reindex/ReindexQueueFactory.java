@@ -93,6 +93,9 @@ public class ReindexQueueFactory {
         } catch (Exception e) {
             throw new DotDataException(e.getMessage(), e);
         }
+        if (!Config.getBooleanProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false)) {
+            ReindexThread.unpause();
+        }
     }
 
     protected void addStructureReindexEntries(String structureInode) throws DotDataException {
@@ -107,6 +110,9 @@ public class ReindexQueueFactory {
 
         } catch (Exception ex) {
             Logger.fatal(this, "Error  unlocking the reindex journal table" + ex);
+        }
+        if (!Config.getBooleanProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false)) {
+            ReindexThread.unpause();
         }
     }
 
@@ -146,9 +152,11 @@ public class ReindexQueueFactory {
      */
     protected boolean hasReindexRecords() throws DotDataException {
         DotConnect dc = new DotConnect();
-        String sql = (DbConnectionFactory.isMsSql()) 
-                        ? "SELECT TOP 1 from dist_reindex_journal where priority >= ? and  priority < ?"
-                                : "select 1 from dist_reindex_journal where priority >= ? and  priority < ? limit 1";
+        String sql = DbConnectionFactory.isMsSql()
+                ? "SELECT TOP 1 id from dist_reindex_journal where priority >= ? and  priority < ?"
+                : DbConnectionFactory.isOracle() ?
+                        "select 1 from dist_reindex_journal where priority >= ? and  priority < ? and rownum=1"
+                        : "select 1 from dist_reindex_journal where priority >= ? and  priority < ? limit 1";
         dc.setSQL(sql);
         
         dc.addParam(Priority.REINDEX.dbValue());
@@ -252,6 +260,9 @@ public class ReindexQueueFactory {
         dc.addParam(cause);
         dc.addParam(idx.getId());
         dc.loadResult();
+        if (!Config.getBooleanProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false)) {
+            ReindexThread.unpause();
+        }
     }
 
     
@@ -362,6 +373,9 @@ public class ReindexQueueFactory {
         String folderPath = APILocator.getIdentifierAPI().find(folder).getPath();
         dc.addParam(folderPath + "%");
         dc.loadResult();
+        if (!Config.getBooleanProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false)) {
+            ReindexThread.unpause();
+        }
     }
 
     protected void refreshContentUnderFolderPath(String hostId, String folderPath) throws DotDataException {
@@ -376,6 +390,9 @@ public class ReindexQueueFactory {
         dc.addParam(hostId);
         dc.addParam(folderPath + "%");
         dc.loadResult();
+        if (!Config.getBooleanProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false)) {
+            ReindexThread.unpause();
+        }
     }
 
     protected void addIdentifierReindex(final String identifier, final int priority) throws DotDataException {
@@ -415,6 +432,10 @@ public class ReindexQueueFactory {
                     .addParam(ReindexAction.REINDEX.ordinal()).addParam(date).loadResult();
 
         }
+        if (!Config.getBooleanProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false)){
+            ReindexThread.unpause();
+        }
+
         return identifiers.size();
     }
     protected int addIdentifierDelete(final Collection<String> identifiers, final int prority) throws DotDataException {
@@ -429,6 +450,10 @@ public class ReindexQueueFactory {
             new DotConnect().setSQL(REINDEX_JOURNAL_INSERT).addParam(identifier).addParam(identifier).addParam(prority)
                     .addParam(ReindexAction.DELETE.ordinal()).addParam(date).loadResult();
 
+        }
+
+        if (!Config.getBooleanProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false)) {
+            ReindexThread.unpause();
         }
         return identifiers.size();
     }
@@ -451,6 +476,9 @@ public class ReindexQueueFactory {
         dc.addParam(ReindexAction.REINDEX.ordinal());
         dc.addParam(host.getIdentifier());
         dc.loadResult();
+        if (!Config.getBooleanProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false)) {
+            ReindexThread.unpause();
+        }
     }
 
     static long lastTimeIRequedRecords = 0;
@@ -463,6 +491,7 @@ public class ReindexQueueFactory {
             return true;
         }
         return false;
+
     }
 
     @WrapInTransaction
@@ -473,7 +502,9 @@ public class ReindexQueueFactory {
                 .setSQL("UPDATE dist_reindex_journal SET serverid=NULL where time_entered<? and serverid is not null and priority < ?").addParam(olderThan).addParam(Priority.ERROR.dbValue());
 
         dc.loadResult();
-
+        if (!Config.getBooleanProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false)) {
+            ReindexThread.unpause();
+        }
     }
 
 }

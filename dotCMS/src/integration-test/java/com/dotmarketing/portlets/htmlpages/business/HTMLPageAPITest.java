@@ -61,6 +61,7 @@ import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -471,10 +472,12 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 						page.getURI());
 		final String identifierId = id.getId();
 
-		ContentletVersionInfo cvi = APILocator.getVersionableAPI()
+		Optional<ContentletVersionInfo> cvi = APILocator.getVersionableAPI()
 				.getContentletVersionInfo(id.getId(), 1);
+
+		assertTrue(cvi.isPresent());
 		Contentlet contentlet = APILocator.getContentletAPI()
-				.checkout(cvi.getWorkingInode(), APILocator.systemUser(), true);
+				.checkout(cvi.get().getWorkingInode(), APILocator.systemUser(), true);
 		//Validations
 		assertNotNull(contentlet);
 		assertNotNull(contentlet.getStringProperty(URL_FIELD));

@@ -1,13 +1,6 @@
 package com.dotmarketing.portlets.workflows.business;
 
 import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isHost;
-import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.FORCE_PUSH;
-import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_EXPIRE_DATE;
-import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_EXPIRE_TIME;
-import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_NEVER_EXPIRE;
-import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_PUBLISH_DATE;
-import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_PUBLISH_TIME;
-import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WHERE_TO_SEND;
 
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.business.CloseDBIfOpened;
@@ -19,6 +12,7 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.event.ContentTypeDeletedEvent;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.rekognition.actionlet.RekognitionActionlet;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.api.v1.workflow.ActionFail;
@@ -77,6 +71,7 @@ import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.LuceneQueryUtils;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UUIDUtil;
@@ -219,7 +214,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				VelocityScriptActionlet.class,
 				LargeMessageActionlet.class,
 				SendFormEmailActionlet.class,
-				ResetApproversActionlet.class
+				ResetApproversActionlet.class,
+				RekognitionActionlet.class
 		));
 
 		refreshWorkFlowActionletMap();
@@ -1525,10 +1521,18 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 
 		return this.fillActionsInfo(this.workflowActionUtils
-                .filterActions(actions.build(), user, RESPECT_FRONTEND_ROLES, permissionable)) ;
+                .filterActions(actions.build(), user, PageMode.get().respectAnonPerms, permissionable)) ;
 	}
 
-    private List<WorkflowAction> fillActionsInfo(final List<WorkflowAction> workflowActions) throws DotDataException {
+	@Override
+	@CloseDBIfOpened
+	public List<WorkflowAction> findActions(final WorkflowScheme scheme, final User user, final
+	Predicate<WorkflowAction> actionFilter) throws DotDataException, DotSecurityException {
+		final List<WorkflowAction> unfilteredActions = this.findActions(scheme, user);
+		return unfilteredActions.stream().filter(actionFilter).collect(Collectors.toList());
+	}
+
+	private List<WorkflowAction> fillActionsInfo(final List<WorkflowAction> workflowActions) throws DotDataException {
 
 	    for (final WorkflowAction action : workflowActions) {
 
@@ -2035,7 +2039,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					List<WorkFlowActionlet> actionletList = new ArrayList<WorkFlowActionlet>();
 
 					// get the dotmarketing-config.properties actionlet classes
-					String customActionlets = Config.getStringProperty(WebKeys.WORKFLOW_ACTIONLET_CLASSES);
+					String customActionlets = Config.getStringProperty(WebKeys.WORKFLOW_ACTIONLET_CLASSES, "");
 
 					StringTokenizer st = new StringTokenizer(customActionlets, ",");
 					while (st.hasMoreTokens()) {
@@ -2885,13 +2889,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	private Contentlet applyAdditionalParams(final AdditionalParamsBean additionalParamsBean, Contentlet contentlet){
 		if(UtilMethods.isSet(additionalParamsBean) && UtilMethods.isSet(additionalParamsBean.getPushPublishBean()) ){
 			final PushPublishBean pushPublishBean = additionalParamsBean.getPushPublishBean();
-			contentlet.setStringProperty(WF_PUBLISH_DATE, pushPublishBean.getPublishDate());
-			contentlet.setStringProperty(WF_PUBLISH_TIME, pushPublishBean.getPublishTime());
-			contentlet.setStringProperty(WF_EXPIRE_DATE, pushPublishBean.getExpireDate());
-			contentlet.setStringProperty(WF_EXPIRE_TIME, pushPublishBean.getExpireTime());
-			contentlet.setStringProperty(WF_NEVER_EXPIRE, pushPublishBean.getNeverExpire());
-			contentlet.setStringProperty(WHERE_TO_SEND, pushPublishBean.getWhereToSend());
-			contentlet.setStringProperty(FORCE_PUSH, pushPublishBean.getForcePush());
+			contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE, pushPublishBean.getPublishDate());
+			contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME, pushPublishBean.getPublishTime());
+			contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE, pushPublishBean.getExpireDate());
+			contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME, pushPublishBean.getExpireTime());
+			contentlet.setStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE, pushPublishBean.getNeverExpire());
+			contentlet.setStringProperty(Contentlet.WHERE_TO_SEND, pushPublishBean.getWhereToSend());
+			contentlet.setStringProperty(Contentlet.FILTER_KEY, pushPublishBean.getFilterKey());
+			contentlet.setStringProperty(Contentlet.I_WANT_TO, pushPublishBean.getIWantTo());
 		}
 		return contentlet;
 	}
@@ -3005,17 +3010,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			);
 		}
 
-		if(UtilMethods.isSet(dependencies.getWorkflowActionId())){
-			contentlet.setActionId(dependencies.getWorkflowActionId());
-		}
-
-		if(UtilMethods.isSet(dependencies.getWorkflowActionComments())){
-			contentlet.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, dependencies.getWorkflowActionComments());
-		}
-
-		if(UtilMethods.isSet(dependencies.getWorkflowAssignKey())){
-			contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, dependencies.getWorkflowAssignKey());
-		}
+		setWorkflowPropertiesToContentlet(contentlet, dependencies);
 
 		this.validateActionStepAndWorkflow(contentlet, dependencies.getModUser());
 		this.checkShorties (contentlet);
@@ -3037,6 +3032,54 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		return processor.getContentlet();
 	} // fireContentWorkflow
+
+	private void setWorkflowPropertiesToContentlet(final Contentlet contentlet,
+			final ContentletDependencies dependencies) {
+
+		if(UtilMethods.isSet(dependencies.getWorkflowActionId())){
+			contentlet.setActionId(dependencies.getWorkflowActionId());
+		}
+
+		if(UtilMethods.isSet(dependencies.getWorkflowActionComments())){
+			contentlet.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, dependencies.getWorkflowActionComments());
+		}
+
+		if(UtilMethods.isSet(dependencies.getWorkflowAssignKey())){
+			contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, dependencies.getWorkflowAssignKey());
+		}
+
+		if(UtilMethods.isSet(dependencies.getWorkflowPublishDate())){
+			contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE, dependencies.getWorkflowPublishDate());
+		}
+
+		if(UtilMethods.isSet(dependencies.getWorkflowPublishTime())){
+			contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME, dependencies.getWorkflowPublishTime());
+		}
+
+		if(UtilMethods.isSet(dependencies.getWorkflowExpireDate())){
+			contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE, dependencies.getWorkflowExpireDate());
+		}
+
+		if(UtilMethods.isSet(dependencies.getWorkflowExpireTime())){
+			contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME, dependencies.getWorkflowExpireTime());
+		}
+
+		if(UtilMethods.isSet(dependencies.getWorkflowNeverExpire())){
+			contentlet.setStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE, dependencies.getWorkflowNeverExpire());
+		}
+
+		if(UtilMethods.isSet(dependencies.getWorkflowWhereToSend())){
+			contentlet.setStringProperty(Contentlet.WHERE_TO_SEND, dependencies.getWorkflowWhereToSend());
+		}
+
+		if(UtilMethods.isSet(dependencies.getWorkflowFilterKey())){
+			contentlet.setStringProperty(Contentlet.FILTER_KEY, dependencies.getWorkflowFilterKey());
+		}
+
+		if(UtilMethods.isSet(dependencies.getWorkflowIWantTo())){
+			contentlet.setStringProperty(Contentlet.I_WANT_TO, dependencies.getWorkflowIWantTo());
+		}
+	}
 
 
 	@WrapInTransaction
@@ -3364,11 +3407,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					this.findActions(step, user);
 
 			for (final WorkflowAction action : actionSteps) {
-
-				final String stepId   = steps.get(step.getId()).getId();
-				final String actionId = actions.get(action.getId()).getId();
-
-				this.saveAction(actionId, stepId, user, actionOrder++);
+				if (steps.containsKey(step.getId()) && actions.containsKey(action.getId())) {
+					final String stepId = steps.get(step.getId()).getId();
+					final String actionId = actions.get(action.getId()).getId();
+					this.saveAction(actionId, stepId, user, actionOrder++);
+				}
 			}
 		}
 

@@ -1,13 +1,9 @@
 package com.dotmarketing.cms.urlmap;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import org.jetbrains.annotations.NotNull;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotmarketing.beans.Host;
@@ -21,10 +17,10 @@ import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.structure.StructureUtil;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 import com.dotmarketing.util.Logger;
@@ -32,11 +28,19 @@ import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
- * {@link URLMapAPI} implementation
+ * Implementation for the {@link URLMapAPI}.
  *
- * {@inheritDoc}
  */
 public class URLMapAPIImpl implements URLMapAPI {
 
@@ -45,11 +49,14 @@ public class URLMapAPIImpl implements URLMapAPI {
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     private final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
     private final ContentTypeAPI typeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+
+    @Override
     public boolean isUrlPattern(final UrlMapContext urlMapContext)
             throws DotDataException, DotSecurityException {
-        return matchingUrlPattern(urlMapContext.getUri()) && getContentlet(urlMapContext) != null;
+        return getContentlet(urlMapContext) != null;
     }
 
+    @Override
     public Optional<URLMapInfo> processURLMap(final UrlMapContext context)
             throws DotSecurityException, DotDataException {
 
@@ -68,12 +75,11 @@ public class URLMapAPIImpl implements URLMapAPI {
     }
 
     /**
-     * Return the {@link Contentlet} the match the {@link UrlMapContext#getUri()} value, if not
-     * exists any {@link com.dotcms.contenttype.model.type.UrlMapable} matching with the URI then a
-     * {@link DotRuntimeException} is thrown
+     * Returns the {@link Contentlet} object that matches the {@link UrlMapContext#getUri()} of a specific URL Map.
      *
-     * @param urlMapContext
-     * @return
+     * @param urlMapContext The instance of the URL Map Context.
+     *
+     * @return The Contentlet matching the URL Map. If no match is found, a {@code null} object is returned.
      */
     private Contentlet getContentlet(final UrlMapContext urlMapContext) throws DotSecurityException {
 
@@ -96,9 +102,9 @@ public class URLMapAPIImpl implements URLMapAPI {
                 }
 
             }
-        } catch (DotDataException e) {
-            Logger.error(this.getClass(),
-                    String.format("Error processing URL [%s]", urlMapContext.getUri()), e);
+        } catch (final DotDataException e) {
+            Logger.error(this.getClass(), String.format("An error occurred when finding contentlet matches for URL " +
+                    "Map [%s]", urlMapContext.getUri()), e);
             return null;
         }
 
@@ -114,7 +120,7 @@ public class URLMapAPIImpl implements URLMapAPI {
             final Identifier identifier = this.identifierAPI.find(contentType.detailPage());
             if (identifier == null || !UtilMethods.isSet(identifier.getId())) {
                 Logger.info(this.getClass(),
-                        "No valid detail page for structure '" + contentType.name()
+                        "No valid detail page for Content Type '" + contentType.name()
                                 + "'. Looking for detail page id=" + contentType
                                 .detailPage());
                 return Optional.empty();
@@ -129,8 +135,8 @@ public class URLMapAPIImpl implements URLMapAPI {
             final Identifier myHostIdentifier = this.identifierAPI.find(currentHost, identifier.getPath());
             if (myHostIdentifier == null || !UtilMethods.isSet(myHostIdentifier.getId())) {
                 Logger.info(this.getClass(),
-                        "No valid detail page for structure '" + contentType.name()
-                                + "'. Looking for a detail page=" + identifier.getPath() + " on host " + currentHost.getHostname());
+                        "No valid detail page for Content Type '" + contentType.name()
+                                + "'. Looking for a detail page=" + identifier.getPath() + " on Site " + currentHost.getHostname());
                 return Optional.empty();
             }
 
@@ -191,35 +197,66 @@ public class URLMapAPIImpl implements URLMapAPI {
         return foundMatches;
     }
 
-    private boolean matchingUrlPattern(final String uri) throws DotDataException {
-        final List<Matches> foundMatches = findMatch(uri);
-        return !foundMatches.isEmpty();
-    }
-
-
-    private String buildFields(final ContentType structure,
+    /**
+     * Builds the part of the Lucene query that specifies what fields from the given {@link ContentType} are being
+     * referenced by the URL Map.
+     *
+     * @param contentType The Content Type that the URL Map belongs to.
+     * @param matches     The fields that are referenced byt the URL Map.
+     *
+     * @return The fields from the Content Type that match the fields referenced in the URL Map.
+     */
+    private String buildFields(final ContentType contentType,
             final Matches matches) {
 
         final StringBuilder query = new StringBuilder();
         final List<RegExMatch> groups = matches.getMatches().get(0).getGroups();
         final List<String> fieldMatches = matches.getPatternChange().getFieldMatches();
-
         int counter = 0;
+        final Map<String, Field> fieldMap = contentType.fieldMap();
+
         for (final RegExMatch regExMatch : groups) {
 
             String value = regExMatch.getMatch();
             if (value.endsWith("/")) {
                 value = value.substring(0, value.length() - 1);
             }
-            query.append('+').append(structure.variable()).append('.')
-                    .append(fieldMatches.get(counter)).append("_dotRaw").append(':')
-                    .append(ESUtils.escapeExcludingSlashIncludingSpace(value)).append(' ');
+            query.append('+')
+                    .append(contentType.variable()).append('.');
+
+            final String variableName = fieldMatches.get(counter);
+            final Field field = fieldMap.get(variableName);
+            if (null == field || null == field.dataType()) {
+                // The field in the URL Map doesn't belong to any field in the Content Type. Just move on
+                continue;
+            }
+            if (field.dataType().equals(DataTypes.INTEGER) || field.dataType().equals(DataTypes.FLOAT)){
+                query.append(variableName);
+            } else {
+                query.append(variableName).append("_dotRaw");
+            }
+
+            query.append(':')
+                .append(ESUtils.escapeExcludingSlashIncludingSpace(value)).append(' ');
             counter++;
         }
 
         return query.toString();
     }
 
+    /**
+     * Based on the valid matches, this method will find any {@link Contentlet} of the specified {@link ContentType}
+     * that matches referenced fields in the URL Map.
+     *
+     * @param matches
+     * @param contentType The Content Type that the URL Map belongs to.
+     * @param context     The instance of the URL Map Context.
+     *
+     * @return The Contentlet that matches the URL Map.
+     *
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException
+     */
     private Contentlet getContentlet(
             final Matches matches,
             final ContentType contentType,
@@ -246,7 +283,15 @@ public class URLMapAPIImpl implements URLMapAPI {
             checkContentPermission(context, contentlet);
         }
 
-        return contentlet;
+       final Contentlet finalContentlet = contentlet;
+
+        if(context.isGraphQL()) {
+            return Try.of(() -> new DotTransformerBuilder().
+                    graphQLDataFetchOptions().content(finalContentlet).build().hydrate().get(0)).getOrNull();
+        } else {
+            return Try.of(() -> new DotTransformerBuilder().
+                    defaultOptions().content(finalContentlet).build().hydrate().get(0)).getOrNull();
+        }
     }
 
     private void checkContentPermission(final UrlMapContext context, final Contentlet contentlet)
@@ -260,33 +305,38 @@ public class URLMapAPIImpl implements URLMapAPI {
         }
     }
 
+    /**
+     * Builds the Lucene query used to find the specific {@link Contentlet} that matches a given URL Map for a
+     * Content Type.
+     *
+     * @param matches     The set of URL Maps that match a specific Content Type.
+     * @param contentType The Content Type that matches the URL Map.
+     * @param context     The instance of the URL Map Context.
+     *
+     * @return The Lucene query that will return a potential match for the URL Map.
+     */
     private String buildContentQuery(
             final Matches matches,
-            final ContentType structure,
+            final ContentType contentType,
             final UrlMapContext context) {
 
         final StringBuilder query = new StringBuilder();
 
         query.append("+contentType:")
-            .append(structure.variable())
+            .append(contentType.variable())
             .append(" +deleted:false ")
             .append(" +(conhost:")
                 .append(context.getHost().getIdentifier())
                 .append(" OR conhost:")
                 .append(Host.SYSTEM_HOST)
             .append(")");
-        
-
         if (context.getMode().showLive) {
             query.append(" +live:true ");
         } else {
             query.append(" +working:true ");
         }
-
-
-
         query.append(" ");
-        query.append(this.buildFields(structure, matches));
+        query.append(this.buildFields(contentType, matches));
         
         // score the current language higher
         query.append(" languageId:").append(context.getLanguageId());
@@ -294,6 +344,15 @@ public class URLMapAPIImpl implements URLMapAPI {
         return query.toString();
     }
 
+    /**
+     * Determines whether the official list of URL Map Patterns must be reloaded based on any of the following conditions:
+     * <ol>
+     *     <li>The cached master RegEx is null.</li>
+     *     <li>The list of cached patterns is empty.</li>
+     * </ol>
+     *
+     * @return If the list of patterns must be reloaded, returns {@code true}. Otherwise, returns {@code false}.
+     */
     private boolean shouldLoadPatterns() {
         String mastRegEx = null;
 
@@ -359,7 +418,7 @@ public class URLMapAPIImpl implements URLMapAPI {
     @NotNull
     private List<String> getFieldMatches(final SimpleStructureURLMap urlMap) {
         final List<RegExMatch> fieldMatches = RegEX.find(urlMap.getURLMapPattern(), "{([^{}]+)}");
-        final List<String> fields = new ArrayList<String>();
+        final List<String> fields = new ArrayList<>();
         for (final RegExMatch regExMatch : fieldMatches) {
             fields.add(regExMatch.getGroups().get(0).getMatch());
         }
@@ -383,4 +442,5 @@ public class URLMapAPIImpl implements URLMapAPI {
             return matches;
         }
     }
+
 }

@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.index;
 
+import com.dotcms.content.elasticsearch.util.ESMappingUtilHelper;
 import com.liferay.portal.language.LanguageUtil;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -274,6 +275,7 @@ public class ESIndexResource {
             indexName = (live) ? "live_" + indexName : "working_" + indexName;
 
             APILocator.getContentletIndexAPI().createContentIndex(indexName, shards);
+            ESMappingUtilHelper.getInstance().addCustomMapping(indexName);
 
             return Response.ok(indexName).build();
         } catch (Exception de) {

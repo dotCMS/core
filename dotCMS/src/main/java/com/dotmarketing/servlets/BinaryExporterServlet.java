@@ -1,22 +1,25 @@
 package com.dotmarketing.servlets;
 
+import static com.dotmarketing.image.focalpoint.FocalPointAPIImpl.TMP;
 import static com.liferay.util.HttpHeaders.CACHE_CONTROL;
 import static com.liferay.util.HttpHeaders.EXPIRES;
 
+import com.dotcms.storage.FileMetadataAPI;
+import com.dotcms.storage.model.Metadata;
+import com.dotmarketing.util.UUIDUtil;
+import com.google.common.collect.ImmutableMap;
+import com.liferay.portal.util.PortalUtil;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -103,6 +106,8 @@ public class BinaryExporterServlet extends HttpServlet {
 	private static final FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
 	private static final ShortyIdAPI shortyIdApi = APILocator.getShortyAPI();
 	private final ContentletAPI contentAPI = APILocator.getContentletAPI();
+	private final TempFileAPI tempFileAPI = APILocator.getTempFileAPI();
+	private final FileMetadataAPI fileMetadataAPI = APILocator.getFileMetadataAPI();
 
 	Map<String, BinaryContentExporter> exportersByPathMapping;
 
@@ -239,12 +244,12 @@ public class BinaryExporterServlet extends HttpServlet {
 			boolean isTempBinaryImage = tempBinaryImageInodes.contains(assetInode);
 
 
-			User user = userWebAPI.getLoggedInUser(req);
+			final User user = PortalUtil.getUser(req);
 
-			PageMode mode = PageMode.get(req);
+			final PageMode mode = PageMode.get(req);
 
 			String downloadName = "file_asset";
-			long lang = WebAPILocator.getLanguageWebAPI().getLanguage(req).getId();
+			final long lang = WebAPILocator.getLanguageWebAPI().getLanguage(req).getId();
 
 
 			if (isContent){
@@ -265,12 +270,7 @@ public class BinaryExporterServlet extends HttpServlet {
 						}
 					}
 				} else {
-				    boolean live=userWebAPI.isLoggedToFrontend(req);
-
-					//GIT-4506
-					if(WebAPILocator.getUserWebAPI().isLoggedToBackend(req)){
-					    live = mode.showLive;
-					}
+				    boolean live=mode.showLive;
 
 				    if (req.getSession(false) != null && req.getSession().getAttribute("tm_date")!=null) {
 				        live=true;
@@ -374,7 +374,7 @@ public class BinaryExporterServlet extends HttpServlet {
           DbConnectionFactory.closeSilently();
           return;
         }
-        inputFile = APILocator.getTempFileAPI().getTempFile(req, shorty.longId).get().file;
+        inputFile = tempFileAPI.getTempFile(req, shorty.longId).get().file;
       }
       
 
@@ -400,9 +400,12 @@ public class BinaryExporterServlet extends HttpServlet {
       // THIS IS WHERE THE MAGIC HAPPENS
       // this creates a temp resource using the altered file
       if (req.getParameter(WebKeys.IMAGE_TOOL_SAVE_FILES) != null && user!=null && !user.equals(APILocator.getUserAPI().getAnonymousUser())) {
-        final DotTempFile temp = APILocator.getTempFileAPI().createEmptyTempFile(inputFile.getName(), req);
+        final DotTempFile temp = tempFileAPI.createEmptyTempFile(inputFile.getName(), req);
         FileUtil.copyFile(data.getDataFile(), temp.file);
-        resp.getWriter().println(DotObjectMapperProvider.getInstance().getDefaultObjectMapper().writeValueAsString(temp));
+        //Temp files time-mark must be updated so they can be recognized by the tempFileAPI
+        temp.file.setLastModified(System.currentTimeMillis());
+		copyMetadata(uuid, fieldVarName, temp);
+		resp.getWriter().println(DotObjectMapperProvider.getInstance().getDefaultObjectMapper().writeValueAsString(temp));
         resp.getWriter().close();
         resp.flushBuffer();
         return;
@@ -673,6 +676,40 @@ public class BinaryExporterServlet extends HttpServlet {
 
 		}
 		
+	}
+
+	/**
+	 * This does transfer the custom metadata from temp files into the target inode and viceversa
+	 * @param id
+	 * @param fieldVarName
+	 * @param temp
+	 * @throws DotDataException
+	 */
+	private void copyMetadata(final String id, final String fieldVarName,
+			final DotTempFile temp) {
+		//Basically here when a new temp file has been generated and we transfer any custom generated metadata
+		if (UtilMethods.isSet(fieldVarName) && UtilMethods.isSet(id)) {
+			try {
+				if (UUIDUtil.isUUID(id)) {
+                    // FocalPointImageFilter does prepend a 'TMP::' to the inodes to avoid setting the metadata directly to the inode
+                    // leaving that work to the check-in process.
+					final Optional<Metadata> optionalMetadata = fileMetadataAPI.getMetadata( TMP +  id);
+					if (optionalMetadata.isPresent()) {
+						fileMetadataAPI.putCustomMetadataAttributes(temp.id, ImmutableMap
+								.of(fieldVarName, optionalMetadata.get().getCustomMeta()));
+					}
+				} else {
+				    //Temp resource id
+					final Optional<Metadata> optionalMetadata = fileMetadataAPI.getMetadata(id);
+					if (optionalMetadata.isPresent()) {
+						fileMetadataAPI.putCustomMetadataAttributes(temp.id, ImmutableMap
+								.of(fieldVarName, optionalMetadata.get().getCustomMeta()));
+					}
+				}
+			} catch (Exception e) {
+			   Logger.error(BinaryExporterServlet.class, "Exception copying metadata", e);
+			}
+		}
 	}
 
 	private Contentlet getContentletLiveVersion(String assetInode, User user, long lang) throws DotDataException, DotSecurityException {

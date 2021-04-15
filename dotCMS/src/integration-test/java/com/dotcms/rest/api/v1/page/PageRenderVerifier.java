@@ -72,7 +72,7 @@ public final class PageRenderVerifier {
             throws DotDataException, DotSecurityException {
 
         for (final ContainerRaw pageContainer : pageContainers) {
-            final Map<String, List<Map<String, Object>>> contentlets = pageContainer.getContentlets();
+            final Map<String, List<Contentlet>> contentlets = pageContainer.getContentlets();
             final Container container = pageContainer.getContainer();
             final List<Structure> structures = APILocator.getContainerAPI().getStructuresInContainer(container);
 
@@ -84,7 +84,7 @@ public final class PageRenderVerifier {
             }
 
             int nPageViewContents = 0;
-            for (final List<Map<String, Object>> pageViewContents : contentlets.values()) {
+            for (final List<Contentlet> pageViewContents : contentlets.values()) {
                 nPageViewContents += pageViewContents.size();
             }
 

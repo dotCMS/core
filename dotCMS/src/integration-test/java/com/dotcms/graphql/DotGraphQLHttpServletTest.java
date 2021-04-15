@@ -75,4 +75,23 @@ public class DotGraphQLHttpServletTest {
         assertEquals(response.getHeader("access-control-expose-headers"), "Content-Type,Cache-Control");
     }
 
+    @Test
+    public void testing_OPTIONSRequestToGraphQLServer_returnResponseWithExpectedHeaders()
+            throws ServletException, IOException {
+
+        MockHttpRequest request = new MockHttpRequest("localhost", "/");
+        MockHeaderResponse response = new MockHeaderResponse(new MockHttpResponse());
+        DotGraphQLHttpServlet graphQLHttpServlet = new DotGraphQLHttpServlet();
+        graphQLHttpServlet.init(null);
+        graphQLHttpServlet.doOptions(request.request(), response);
+
+        assertEquals(response.getHeader("access-control-allow-origin"), "*");
+        assertEquals(response.getHeader("access-control-allow-credentials"), "true");
+        assertEquals(response.getHeader("access-control-allow-headers"), "*");
+        assertEquals(response.getHeader("access-control-allow-methods"), "GET,PUT,POST,DELETE,HEAD,OPTIONS,PATCH");
+
+        // this property is specifically overriden for graphql
+        assertEquals(response.getHeader("access-control-expose-headers"), "Content-Type,Cache-Control");
+    }
+
 }

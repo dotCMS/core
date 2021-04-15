@@ -107,10 +107,10 @@ public class CategoryDataGen extends AbstractDataGen<Category> {
                 }
              }
 
+            return APILocator.getCategoryAPI().findByKey(object.getKey(), APILocator.systemUser(), false);
         } catch (DotDataException | DotSecurityException e) {
             throw new RuntimeException("Error persisting Category", e);
         }
-        return object;
     }
 
 }

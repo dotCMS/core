@@ -1,247 +1,339 @@
 /*
- *  UtilMethods.java
+ * UtilMethods.java
  *
- *  Created on March 4, 2002, 2:56 PM
+ * Created on March 4, 2002, 2:56 PM
  */
 package com.dotmarketing.util;
 
-import com.dotcms.business.expiring.ExpiringMap;
-import com.dotcms.business.expiring.ExpiringMapBuilder;
-import com.dotmarketing.loggers.Log4jUtil;
-import com.google.common.base.Objects;
-import com.google.common.hash.HashCode;
 import java.io.File;
-import java.util.WeakHashMap;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.api.v1.system.logger.ChangeLoggerLevelEvent;
+import com.dotcms.rest.api.v1.system.logger.LoggerView;
+import com.dotmarketing.business.APILocator;
+import com.liferay.util.StringPool;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.velocity.servlet.VelocityServlet;
 import org.apache.velocity.tools.view.tools.ViewTool;
+import com.dotcms.business.expiring.ExpiringMap;
+import com.dotcms.business.expiring.ExpiringMapBuilder;
+import com.dotmarketing.loggers.Log4jUtil;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.RemovalCause;
+import com.github.benmanes.caffeine.cache.RemovalListener;
+import com.google.common.base.Objects;
+import io.vavr.Lazy;
+import io.vavr.control.Try;
+
+import javax.ws.rs.core.Response;
 
 /**
- *@author     David Torres
+ * @author David Torres
  */
-public class Logger{
+public class Logger {
 
-	static {
-		Log4jUtil.configureDefaultSystemProperties();
-	}
-	private static WeakHashMap<Class, org.apache.logging.log4j.Logger> map = new WeakHashMap<>();
+    static {
+        Log4jUtil.configureDefaultSystemProperties();
+    }
 
-	public static void clearLoggers(){
-		map.clear();
-	}
+    /**
+     * Caffeine Cache is going to be much more performant concurrently than a hashmap
+     */
+    private final static Cache<String, org.apache.logging.log4j.Logger> loggerMap =  
+                    Caffeine.newBuilder()
+                        .maximumSize(10000)
+                        .expireAfterAccess(6,TimeUnit.HOURS)
+                        .removalListener(new RemovalListener<String, org.apache.logging.log4j.Logger>() {
+                            @Override
+                            public void onRemoval(String key, org.apache.logging.log4j.Logger value, RemovalCause cause) {
+                                System.out.println("removing Logger :" + key + " due to " + cause);
+                            }
+                        })
+                        .build();
 
-    public static org.apache.logging.log4j.Logger clearLogger ( Class clazz ) {
-        return map.remove( clazz );
-	}
-	
+    public static void clearLoggers() {
+        loggerMap.invalidateAll();
+    }
 
-	/**
-	 * This class is syncrozned.  It shouldn't be called. It is exposed so that 
-	 * @param cl
-	 * @return
-	 */
-	private synchronized static org.apache.logging.log4j.Logger loadLogger(Class cl){
-		if(map.get(cl) == null){
-			org.apache.logging.log4j.Logger logger = LogManager.getLogger(cl);
-			map.put(cl, logger);
-		}
-		return map.get(cl);
-	}
+    public static void clearLogger(Class clazz) {
+        final String className = Try.of(() -> clazz.getName()).getOrElse(String.valueOf(clazz));
+        clearLogger(className);
+    }
 
-	public static void info(Class clazz, final Supplier<String> message) {
-		if (isInfoEnabled(clazz)) {
-			info(clazz, message.get());
-		}
-	}
+    public static void clearLogger(String className) {
+        loggerMap.invalidate(className);
+    }
 
-	public static void info(final Object ob, final Supplier<String> message) {
-		if (isInfoEnabled(ob.getClass())) {
-			info(ob.getClass(), message.get());
-		}
-	}
+
+    private static org.apache.logging.log4j.Logger loadLogger(final String className) {
+        if (UtilMethods.isEmpty(className)) {
+            return loadLogger("dotCMSLogger");
+        }
+
+        return loggerMap.get(className, c ->  LogManager.getLogger(c) );
+    }
+
+    private static org.apache.logging.log4j.Logger loadLogger(final Class clazz) {
+        final String className = Try.of(() -> clazz.getName()).getOrElse(String.valueOf(clazz));
+        return loadLogger(className);
+    }
+
+    public static void info(Class clazz, final Supplier<String> message) {
+        if (isInfoEnabled(clazz)) {
+            info(clazz, message.get());
+        }
+    }
+
+    public static void info(final Object ob, final Supplier<String> message) {
+        if (isInfoEnabled(ob.getClass())) {
+            info(ob.getClass(), message.get());
+        }
+    }
 
     public static void info(Object ob, String message) {
         info(ob.getClass(), message);
     }
 
     public static void info(Class cl, String message) {
-    	if(isVelocityMessage(cl)){
-    		velocityInfo(cl, message);
-    		return;
-    	}
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
-    	if(logger == null){
-    		logger = loadLogger(cl);	
-    	}
-        logger.info(message);
+        if (isVelocityMessage(cl)) {
+            velocityInfo(cl, message);
+            return;
+        }
+        loadLogger(cl).info(message);
     }
 
-	public static void debug(final Object ob, final Supplier<String> message) {
-		if (isDebugEnabled(ob.getClass())) {
-			debug(ob.getClass(), message.get());
-		}
-	}
+    public static void info(String cl, String message) {
+        loadLogger(cl).info(message);
+    }
+
+    public static void debug(final Object ob, final Supplier<String> message) {
+        if (isDebugEnabled(ob.getClass())) {
+            debug(ob.getClass(), message.get());
+        }
+    }
+
+    public static void debug(final String className, final Supplier<String> message) {
+        if (isDebugEnabled(className)) {
+            debug(className, message.get());
+        }
+    }
+
+    public static void debug(final Object ob, final Throwable throwable, final Supplier<String> message) {
+        if (isDebugEnabled(ob.getClass())) {
+            debug(ob.getClass(), message.get(), throwable);
+        }
+    }
 
     public static void debug(Object ob, String message) {
-    	debug(ob.getClass(), message);
+        debug(ob.getClass(), message);
     }
 
     public static void debug(Object ob, String message, Throwable ex) {
-    	debug(ob.getClass(), message,ex);
+        debug(ob.getClass(), message, ex);
     }
 
     public static void debug(Class cl, String message) {
-    	if(isVelocityMessage(cl)){
-    		velocityDebug(cl, message);
-    		return;
-    	}
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
-    	if(logger == null){
-    		logger = loadLogger(cl);	
-    	}
-        logger.debug(message);
+        if (isVelocityMessage(cl)) {
+            velocityDebug(cl, message);
+            return;
+        }
+        loadLogger(cl).debug(message);
+    }
+
+    public static void debug(String cl, String message) {
+        loadLogger(cl).debug(message);
     }
 
     public static void debug(Class cl, String message, Throwable ex) {
-    	if(isVelocityMessage(cl)){
-    		velocityDebug(cl, message, ex);
-    		return;
-    	}
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
-    	if(logger == null){
-    		logger = loadLogger(cl);	
-    	}
-        logger.debug(message, ex);
+        if (isVelocityMessage(cl)) {
+            velocityDebug(cl, message, ex);
+            return;
+        }
+        loadLogger(cl).debug(message, ex);
     }
-    
+
     public static void error(Object ob, Throwable ex) {
-      error(ob.getClass(), ex.getMessage(), ex);
+        error(ob.getClass(), ex.getMessage(), ex);
     }
+
     public static void error(Object ob, String message) {
-    	error(ob.getClass(), message);
+        error(ob.getClass(), message);
     }
 
     public static void error(Object ob, String message, Throwable ex) {
-    	error(ob.getClass(), message, ex);
+        error(ob.getClass(), message, ex);
     }
 
     public static void error(Class cl, String message) {
-    	if(isVelocityMessage(cl)){
-    		velocityError(cl, message);
-    		return;
-    	}
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
-    	if(logger == null){
-    		logger = loadLogger(cl);	
-    	}
+        if (isVelocityMessage(cl)) {
+            velocityError(cl, message);
+            return;
+        }
+        loadLogger(cl).error(message);
+    }
 
-        logger.error(message);
+    public static void error(String cl, String message) {
+        loadLogger(cl).error(message);
     }
 
     public static void error(Class cl, String message, Throwable ex) {
-    	if(isVelocityMessage(cl)){
-    		velocityError(cl, message, ex);
-    		return;
-    	}
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
-    	if(logger == null){
-    		logger = loadLogger(cl);	
-    	}
-    	try{
-    	    logger.error(message, ex);
-    	}
-    	catch(java.lang.IllegalStateException e){
-    	    ex.printStackTrace();
-    	}
-    }
-    /**
-     * a map with a 5 minute max lifespan
-     */
-    static ExpiringMap<Long, Long> logMap = new ExpiringMapBuilder().ttl(600*1000).size(2000).build();
-
-	/**
-	 * this method will print the message at WARN level every millis set
-	 * and print the message plus whole stack trace if at DEGUG level
-	 * @param cl
-	 * @param message
-	 * @param ex
-	 * @param warnEveryMillis
-	 */
-	public static void warnEveryAndDebug(final Class cl, final String message, final Throwable ex, final int warnEveryMillis) {
-        if(ex==null) {
-			return;
-		}
-        final org.apache.logging.log4j.Logger logger = loadLogger(cl);    
-        final StackTraceElement ste = ex.getStackTrace()[0];
-
-        final Long hash=new Long(Objects.hashCode(ste,message.substring(0, Math.min(message.length(), 10)),cl));
-        final Long expireWhen = logMap.get(hash);
-        
-        if(expireWhen == null || expireWhen < System.currentTimeMillis()) {
-            logMap.put(hash, System.currentTimeMillis() + warnEveryMillis );
-            logger.warn(message + " (every "+warnEveryMillis + " millis)");
-            
+        if (isVelocityMessage(cl)) {
+            velocityError(cl, message, ex);
+            return;
         }
-        logger.debug(()->message, ex);
-    }
-    
-    /**
-     * this method will print the message at WARN level every millis set
-     * and print the message plus whole stack trace if at DEGUG level
-     * @param cl
-     * @param message
-     * @param ex
-     * @param warnEveryMillis
-     */
-    public static void infoEvery(final Class cl, final String message, final int warnEveryMillis) {
-
-        final org.apache.logging.log4j.Logger logger = loadLogger(cl);    
-
-
-        final Long hash=new Long(Objects.hashCode(cl.getName(),message.substring(0, Math.min(message.length(), 10)),cl));
-        final Long expireWhen = logMap.get(hash);
-        
-        if(expireWhen == null || expireWhen < System.currentTimeMillis()) {
-            logMap.put(hash, System.currentTimeMillis() + warnEveryMillis );
-            logger.info(message + " (every "+warnEveryMillis + " millis)");
-            
+        try {
+            loadLogger(cl).error(message, ex);
+        } catch (java.lang.IllegalStateException e) {
+            ex.printStackTrace();
         }
-        logger.debug(()->message);
     }
-	
-	
-	
-    public static void warnEveryAndDebug(final Class cl, final Throwable ex, final int ttlMillis) {
-        warnEveryAndDebug(cl,ex.getMessage(), ex, ttlMillis );
-    }
-    
-    
-    
-    /**
-     * this method will print the message if at the WARN level
-     * and print the message + whole stack trace if at the DEGUG LEVEL
-     * @param cl
-     * @param message
-     * @param ex
-     */
-    public static void warnAndDebug(Class cl, String message, Throwable ex) {
-        org.apache.logging.log4j.Logger logger = map.get(cl);
-        if(logger == null){
-            logger = loadLogger(cl);    
-        }
-        try{
-            logger.warn(message);
-            logger.debug(()-> message, ex);
-        }
-        catch(java.lang.IllegalStateException e){
+
+    public static void error(String cl, String message, Throwable ex) {
+
+        try {
+            loadLogger(cl).error(message, ex);
+        } catch (java.lang.IllegalStateException e) {
             ex.printStackTrace();
         }
     }
 
     /**
-     * this method will print the message if at the WARN level
-     * and print the message + whole stack trace if at the DEGUG LEVEL
+     * a map with a 5 minute max lifespan
+     */
+    static Lazy<ExpiringMap<Long, Long>> logMap =
+                    Lazy.of(() -> new ExpiringMapBuilder().ttl(600 * 1000).size(2000).build());
+
+    /**
+     * this method will print the message at WARN level every millis set and print the message plus
+     * whole stack trace if at DEGUG level
+     * 
+     * @param cl
+     * @param message
+     * @param ex
+     * @param warnEveryMillis
+     */
+    public static void warnEveryAndDebug(final Class cl, final String message, final Throwable ex,
+                    final int warnEveryMillis) {
+        warnEveryAndDebug(cl.getName(), message, ex, warnEveryMillis);
+    }
+
+
+    /**
+     * this method will print the message at WARN level every millis set and print the message plus
+     * whole stack trace if at DEGUG level
+     * 
+     * @param cl
+     * @param message
+     * @param ex
+     * @param warnEveryMillis
+     */
+    public static void warnEveryAndDebug(final String cl, final String message, final Throwable ex,
+                    final int warnEveryMillis) {
+        if (ex == null) {
+            return;
+        }
+        final org.apache.logging.log4j.Logger logger = loadLogger(cl);
+        final StackTraceElement ste = ex.getStackTrace()[0];
+
+        final Long hash = new Long(Objects.hashCode(ste, message.substring(0, Math.min(message.length(), 10)), cl));
+        final Long expireWhen = logMap.get().get(hash);
+
+        if (expireWhen == null || expireWhen < System.currentTimeMillis()) {
+            logMap.get().put(hash, System.currentTimeMillis() + warnEveryMillis, warnEveryMillis,
+                            TimeUnit.MILLISECONDS);
+            logger.warn(message + " (every " + warnEveryMillis + " millis)");
+
+        }
+        logger.debug(() -> message, ex);
+    }
+
+    /**
+     * this method will print the message at WARN level every millis set and print the message plus
+     * whole stack trace if at DEGUG level
+     * 
+     * @param cl
+     * @param message
+     * @param ex
+     * @param warnEveryMillis
+     */
+    public static void infoEvery(final String cl, final String message, final int warnEveryMillis) {
+
+        final org.apache.logging.log4j.Logger logger = loadLogger(cl);
+
+
+        final Long hash = new Long(Objects.hashCode(cl, message.substring(0, Math.min(message.length(), 10)), cl));
+        final Long expireWhen = logMap.get().get(hash);
+
+        if (expireWhen == null || expireWhen < System.currentTimeMillis()) {
+            logMap.get().put(hash, System.currentTimeMillis() + warnEveryMillis, warnEveryMillis,
+                            TimeUnit.MILLISECONDS);
+            logger.info(message + " (every " + warnEveryMillis + " millis)");
+
+        }
+        logger.debug(() -> message);
+    }
+
+    public static void infoEvery(final Class cl, final String message, final int warnEveryMillis) {
+        infoEvery(cl.getName(), message, warnEveryMillis);
+
+    }
+
+    public static void warnEveryAndDebug(final Class cl, final Throwable ex, final int ttlMillis) {
+        warnEveryAndDebug(cl.getName(), ex.getMessage(), ex, ttlMillis);
+    }
+
+
+    /**
+     * this method will print the message if at the WARN level and print the message + whole stack trace
+     * if at the DEGUG LEVEL
+     * 
+     * @param cl
+     * @param message
+     * @param ex
+     */
+    public static void warnAndDebug(Class cl, String message, Throwable ex) {
+        warnAndDebug(cl.getName(), message, ex);
+    }
+
+    /**
+     * this method will print the message if at the WARN level and print the message + whole stack trace
+     * if at the DEGUG LEVEL
+     * 
+     * @param cl
+     * @param message
+     * @param ex
+     */
+    public static void warnAndDebug(String clazz, String message, Throwable ex) {
+        org.apache.logging.log4j.Logger logger = loadLogger(clazz);
+        try {
+            logger.warn(message);
+            // we don't want to eat the real message - EVER
+            logger.warn(ex.getMessage());
+            try {
+                logger.warn(ex.getStackTrace()[0]);
+            } catch (Throwable t) {
+                logger.debug(() -> t);
+            }
+            logger.debug(() -> message, ex);
+        } catch (java.lang.IllegalStateException e) {
+            ex.printStackTrace();
+        }
+    }
+
+    /**
+     * this method will print the message if at the WARN level and print the message + whole stack trace
+     * if at the DEGUG LEVEL
+     * 
      * @param cl
      * @param message
      * @param ex
@@ -250,238 +342,256 @@ public class Logger{
         warnAndDebug(cl, ex.getMessage(), ex);
     }
 
-    
+
     public static void fatal(Object ob, String message) {
-    	fatal(ob.getClass(), message);
+        fatal(ob.getClass(), message);
     }
 
     public static void fatal(Object ob, String message, Throwable ex) {
-    	fatal(ob.getClass(), message, ex);
+        fatal(ob.getClass(), message, ex);
     }
 
     public static void fatal(Class cl, String message) {
-    	if(isVelocityMessage(cl)){
-    		velocityFatal(cl, message);
-    		return;
-    	}
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
-    	if(logger == null){
-    		logger = loadLogger(cl);	
-    	}
-        logger.fatal(message);
+        if (isVelocityMessage(cl)) {
+            velocityFatal(cl, message);
+            return;
+        }
+        loadLogger(cl).fatal(message);
     }
 
     public static void fatal(Class cl, String message, Throwable ex) {
-    	if(isVelocityMessage(cl)){
-    		velocityFatal(cl, message, ex);
-    		return;
-    	}
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
-    	if(logger == null){
-    		logger = loadLogger(cl);	
-    	}
-        logger.fatal(message, ex);
+        if (isVelocityMessage(cl)) {
+            velocityFatal(cl, message, ex);
+            return;
+        }
+        loadLogger(cl).fatal(message, ex);
     }
 
-	public static void warn(final Object ob, final Supplier<String> message) {
-		if (isWarnEnabled(ob.getClass())) {
-			warn(ob.getClass(), message.get());
-		}
-	}
+    public static void warn(final Object ob, final Supplier<String> message) {
+        if (isWarnEnabled(ob.getClass())) {
+            warn(ob.getClass(), message.get());
+        }
+    }
 
-	public static void warn(Class clazz, final Supplier<String> message) {
-		if (isWarnEnabled(clazz)) {
-			warn(clazz, message.get());
-		}
-	}
+    public static void warn(final String className, final Supplier<String> message) {
+        if (isWarnEnabled(className)) {
+            warn(className, message.get());
+        }
+    }
+
+    public static void warn(Class clazz, final Supplier<String> message) {
+        if (isWarnEnabled(clazz)) {
+            warn(clazz, message.get());
+        }
+    }
 
     public static void warn(Object ob, String message) {
-    	warn(ob.getClass(), message);
+        warn(ob.getClass(), message);
     }
 
     public static void warn(Object ob, String message, Throwable ex) {
-    	warn(ob.getClass(), message, ex);
+        warn(ob.getClass(), message, ex);
     }
 
     public static void warn(Class cl, String message) {
-    	if(isVelocityMessage(cl)){
-    		velocityWarn(cl, message);
-    		return;
-    	}
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
-    	if(logger == null){
-    		logger = loadLogger(cl);	
-    	}
+        if (isVelocityMessage(cl)) {
+            velocityWarn(cl, message);
+            return;
+        }
+        loadLogger(cl).warn(message);
+    }
 
-        logger.warn(message);
+    public static void warn(String cl, String message) {
+
+        loadLogger(cl).warn(message);
     }
 
     public static void warn(Class cl, String message, Throwable ex) {
-    	if(isVelocityMessage(cl)){
-    		velocityWarn(cl, message, ex);
-    		return;
-    	}
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
-    	if(logger == null){
-    		logger = loadLogger(cl);	
-    	}
-
-        logger.warn(message, ex);
+        if (isVelocityMessage(cl)) {
+            velocityWarn(cl, message, ex);
+            return;
+        }
+        loadLogger(cl).warn(message, ex);
     }
-    public static boolean isDebugEnabled(Class cl) {
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
-    	if(logger == null){
-    		logger = loadLogger(cl);	
-    	}
-        return logger.isDebugEnabled();
 
+    public static boolean isDebugEnabled(Class cl) {
+
+        return loadLogger(cl).isDebugEnabled();
+    }
+
+    public static boolean isDebugEnabled(String cl) {
+
+        return loadLogger(cl).isDebugEnabled();
     }
 
     public static boolean isInfoEnabled(Class cl) {
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
-    	if(logger == null){
-    		logger = loadLogger(cl);	
-    	}
-        return logger.isInfoEnabled();
+        return loadLogger(cl).isInfoEnabled();
 
     }
+
     public static boolean isWarnEnabled(Class cl) {
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
-    	if(logger == null){
-    		logger = loadLogger(cl);	
-    	}
-        return logger.isWarnEnabled();
+
+        return loadLogger(cl).isWarnEnabled();
 
     }
+
+    public static boolean isWarnEnabled(String cl) {
+
+        return loadLogger(cl).isWarnEnabled();
+
+    }
+
     public static boolean isErrorEnabled(Class cl) {
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
-    	if(logger == null){
-    		logger = loadLogger(cl);	
-    	}
-        return logger.isErrorEnabled();
+
+        return loadLogger(cl).isErrorEnabled();
 
     }
-    
+
+    public static org.apache.logging.log4j.Logger getLogger(final String className) {
+
+        return loadLogger(className);
+    }
+
     public static org.apache.logging.log4j.Logger getLogger(Class cl) {
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
-    	if(logger == null){
-    		logger = loadLogger(cl);	
-    	}
-        return logger;
-    }
-    
-    
-    
-    public static void velocityError(Class cl, String message, Throwable thr){
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
-    	if(logger == null){
-    		logger = loadLogger(cl);	
-    	}
-		logger.error(message + " @ " +  Thread.currentThread().getName(), thr);
-    }
-    
-    public static void velocityWarn(Class cl, String message, Throwable thr){
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
-    	if(logger == null){
-    		logger = loadLogger(cl);	
-    	}
-		logger.warn(message + " @ " +  Thread.currentThread().getName(), thr);
-    }
-    
-    public static void velocityInfo(Class cl, String message, Throwable thr){
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
-    	if(logger == null){
-    		logger = loadLogger(cl);	
-    	}
-		logger.info(message + " @ " +  Thread.currentThread().getName(), thr);
-    }
-    public static void velocityFatal(Class cl, String message, Throwable thr){
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
-    	if(logger == null){
-    		logger = loadLogger(cl);	
-    	}
-		logger.fatal(message + " @ " +  Thread.currentThread().getName(), thr);
-	}
-    public static void velocityDebug(Class cl, String message, Throwable thr){
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
-    	if(logger == null){
-    		logger = loadLogger(cl);	
-    	}
-		logger.debug(message + " @ " +   Thread.currentThread().getName(), thr);
-	}
 
-    public static void velocityError(Class cl, String message){
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
-    	if(logger == null){
-    		logger = loadLogger(cl);	
-    	}
-		logger.error(message + " @ " +  Thread.currentThread().getName());
-	}
-	
-	public static void velocityWarn(Class cl, String message){
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
-    	if(logger == null){
-    		logger = loadLogger(cl);	
-    	}
-		logger.warn(message + " @ " +  Thread.currentThread().getName());
-	}
-	
-	public static void velocityInfo(Class cl, String message){
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
-    	if(logger == null){
-    		logger = loadLogger(cl);	
-    	}
-		logger.info(message + " @ " +  Thread.currentThread().getName());
-	}
-	public static void velocityFatal(Class cl, String message){
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
-    	if(logger == null){
-    		logger = loadLogger(cl);	
-    	}
-		logger.fatal(message + " @ " +  Thread.currentThread().getName());
-	}
-	public static void velocityDebug(Class cl, String message){
-    	org.apache.logging.log4j.Logger logger = map.get(cl);
-    	if(logger == null){
-    		logger = loadLogger(cl);	
-    	}
-		logger.debug(message + " @ " +  Thread.currentThread().getName());
-	}
-    
-    
-    
-    private static String normalizeTemplate(Object t){
-    	if(t ==null){
-    		return null;
-    	}
-		String x = t.toString();
-		x = x.replace(File.separatorChar, '/');
-		x = (x.indexOf("assets") > -1) ? x.substring(x.lastIndexOf("assets"), x.length()) : x;
-		x = (x.startsWith("/")) ?  x : "/" + x;
-
-		return x;
+        return loadLogger(cl);
     }
-    
-    
-    private static boolean isVelocityMessage(Object obj){
-    	if(obj==null)return false;
-    	return isVelocityMessage(obj.getClass());
+
+
+    public static void velocityError(Class cl, String message, Throwable thr) {
+        loadLogger(cl).error(message + " @ " + Thread.currentThread().getName(), thr);
     }
-    
-    private static boolean isVelocityMessage(Class clazz){
-    	boolean ret = false;
-    	if(clazz!=null && clazz.getName()!=null){
-        	String name = clazz.getName().toLowerCase();
-        	ret= name.contains("velocity") || name.contains("viewtool");
 
-        	if(!ret){
-					ret= ViewTool.class.isAssignableFrom(clazz);
-        	}
-        	if(!ret){
-					ret= VelocityServlet.class.isAssignableFrom(clazz);
-        	}
-    	}
-    	return ret;
+    public static void velocityWarn(Class cl, String message, Throwable thr) {
+        loadLogger(cl).warn(message + " @ " + Thread.currentThread().getName(), thr);
+    }
 
+    public static void velocityInfo(Class cl, String message, Throwable thr) {
+        loadLogger(cl).info(message + " @ " + Thread.currentThread().getName(), thr);
+    }
+
+    public static void velocityFatal(Class cl, String message, Throwable thr) {
+        loadLogger(cl).fatal(message + " @ " + Thread.currentThread().getName(), thr);
+    }
+
+    public static void velocityDebug(Class cl, String message, Throwable thr) {
+        loadLogger(cl).debug(message + " @ " + Thread.currentThread().getName(), thr);
+    }
+
+    public static void velocityError(Class cl, String message) {
+        loadLogger(cl).error(message + " @ " + Thread.currentThread().getName());
+    }
+
+    public static void velocityWarn(Class cl, String message) {
+        loadLogger(cl).warn(message + " @ " + Thread.currentThread().getName());
+    }
+
+    public static void velocityInfo(Class cl, String message) {
+        loadLogger(cl).info(message + " @ " + Thread.currentThread().getName());
+    }
+
+    public static void velocityFatal(Class cl, String message) {
+        loadLogger(cl).fatal(message + " @ " + Thread.currentThread().getName());
+    }
+
+    public static void velocityDebug(Class cl, String message) {
+        loadLogger(cl).debug(message + " @ " + Thread.currentThread().getName());
+    }
+
+
+    private static String normalizeTemplate(Object t) {
+        if (t == null) {
+            return null;
+        }
+        String x = t.toString();
+        x = x.replace(File.separatorChar, '/');
+        x = (x.indexOf("assets") > -1) ? x.substring(x.lastIndexOf("assets"), x.length()) : x;
+        x = (x.startsWith("/")) ? x : "/" + x;
+
+        return x;
+    }
+
+
+    private static boolean isVelocityMessage(Object obj) {
+        if (obj == null)
+            return false;
+        return isVelocityMessage(obj.getClass());
+    }
+
+    private static boolean isVelocityMessage(Class clazz) {
+        boolean ret = false;
+        if (clazz != null && clazz.getName() != null) {
+            String name = clazz.getName().toLowerCase();
+            ret = name.contains("velocity") || name.contains("viewtool");
+
+            if (!ret) {
+                ret = ViewTool.class.isAssignableFrom(clazz);
+            }
+            if (!ret) {
+                ret = VelocityServlet.class.isAssignableFrom(clazz);
+            }
+        }
+        return ret;
+
+    }
+
+    /**
+     * Set the Level of the logger; if the logger does not exists or can not set, return null
+     * 
+     * @param loggerName {@link String} logger name
+     * @param level {@link String} logger level
+     * @return Object
+     */
+    public static Object setLevel(final String loggerName, final String level) {
+
+        final Object logger = getLogger(loggerName);
+        if (null != logger) {
+
+            if (logger instanceof org.apache.logging.log4j.core.Logger) {
+
+                final Level logLevel = Level.getLevel(level);
+                org.apache.logging.log4j.core.Logger.class.cast(logger).setLevel(logLevel);
+                return logger;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Determinate if the level is a valid one
+     * 
+     * @param level {@link String}
+     * @return boolean
+     */
+    public static boolean isValidLevel(final String level) {
+
+        return null != Level.getLevel(level);
+    }
+
+    /**
+     * Get the list of current collection on cache app
+     * 
+     * @return List
+     */
+    public static List<Object> getCurrentLoggers() {
+
+        return loggerMap.asMap().values().stream().collect(Collectors.toList());
+    }
+
+    /**
+     * Handler when the log change the level on another cluster node
+     * @param event {@link ChangeLoggerLevelEvent}
+     */
+    public static void onChangeLoggerLevelEventHandler(final ChangeLoggerLevelEvent event) {
+
+        final String [] loggerNames = null != event.getName()?
+                event.getName().split(StringPool.COMMA):new String[]{};
+        final String level          = event.getLevel();
+
+        if (Logger.isValidLevel(level) && UtilMethods.isSet(loggerNames)) {
+
+            Stream.of(loggerNames).forEach(loggerName -> Logger.setLevel(loggerName, level));
+        }
     }
 }

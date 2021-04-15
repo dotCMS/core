@@ -27,7 +27,7 @@ public class Task05350AddDotSaltClusterColumn implements StartupTask {
     @Override
     public boolean forceRun() {
         try {
-            return !new DotDatabaseMetaData().getColumnNames(DbConnectionFactory.getConnection(), "dot_cluster").contains("cluster_salt");
+            return !new DotDatabaseMetaData().hasColumn("dot_cluster", "cluster_salt");
         } catch (SQLException e) {
             Logger.error(this, e.getMessage(),e);
             return false;

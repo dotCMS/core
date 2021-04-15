@@ -77,3 +77,4 @@ docker/tests/integration/license
 docker/tests/integration/backup
 
 dot-cicd/
+tmp/

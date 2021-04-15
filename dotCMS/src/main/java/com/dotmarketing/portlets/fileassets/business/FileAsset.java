@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.fileassets.business;
 
-import com.dotcms.util.Loadable;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.storage.model.Metadata;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -11,24 +12,23 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.util.ImageUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import io.vavr.Lazy;
+import io.vavr.control.Try;
 import java.awt.Dimension;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.nio.file.Files;
 import java.util.Date;
 import java.util.Map;
 
-public class FileAsset extends Contentlet implements IFileAsset, Loadable {
-
-	private String metaData;
+public class FileAsset extends Contentlet implements IFileAsset {
 
     private File file;
 
@@ -48,31 +48,27 @@ public class FileAsset extends Contentlet implements IFileAsset, Loadable {
 		super(contentlet);
 		final File file = contentlet.getFileAsset();
 		setBinary(FileAssetAPI.BINARY_FIELD, file);
-		this.fileDimension = contentlet.fileDimension;
-		this.underlyingFileName = contentlet.underlyingFileName;
-		this.fileSizeInternal = contentlet.fileSizeInternal;
 	}
 
-	public String getMetaData(){
-		if(metaData ==null){
-			metaData=(String) super.get(FileAssetAPI.META_DATA_FIELD);
-		}
-		return metaData;
+	/**
+	 * Metadata as map getter. Use to get a compiled view including MD for all binaries
+	 * @return
+	 */
+    public Map<String, Serializable> getMetaDataMap() {
+        return Try.of(() -> getMetadata().getFieldsMeta())
+                .getOrElse(ImmutableMap.of());
+    }
 
+	public Metadata getMetadata() throws DotDataException {
+		return super.getBinaryMetadata(FileAssetAPI.BINARY_FIELD);
 	}
-	
+
 	public long getLanguageId(){
 		return super.getLanguageId();
 	}
 
-
-
-	public void setMetaData(String metaData) {
-		this.metaData = metaData;
-	}
-
 	public void setMenuOrder(int sortOrder) {
-		setLongProperty(FileAssetAPI.SORT_ORDER, new Long(sortOrder));
+		setLongProperty(FileAssetAPI.SORT_ORDER, (long) sortOrder);
 
 	}
 
@@ -100,71 +96,28 @@ public class FileAsset extends Contentlet implements IFileAsset, Loadable {
 		} else {
 			return getFolder();
 		}
-
 	}
-
-	private long fileSizeInternal = 0;
 
 	public long getFileSize() {
-		if(this.fileSizeInternal == 0) {
-		   this.fileSizeInternal = computeFileSize(getFileAsset());
-		}
-		return this.fileSizeInternal > 0 ? this.fileSizeInternal : 0;
+		return 	Try.of(() -> getMetadata().getSize()).getOrElse(0);
 	}
 
-    private long computeFileSize(final File fileAsset){
-	   return (fileSizeInternal = fileAsset == null ? 0 : fileAsset.length());
-    }
-
-	private Dimension fileDimension = null;
-
 	public int getHeight() {
-		final Dimension fileDimension = lazyComputeDimensions.get();
-		return fileDimension == null ? 0 : fileDimension.height;
+        return  Try.of(()-> getMetadata().getHeight()).getOrElse(0);
 	}
 
 	public int getWidth() {
-		final Dimension fileDimension = lazyComputeDimensions.get();
-		return fileDimension == null ? 0 : fileDimension.width;
+		return  Try.of(()-> getMetadata().getWidth()).getOrElse(0);
 	}
 
-	private Dimension computeFileDimension(final File file) {
-		if (fileDimension == null) {
-			try {
-    				return (fileDimension = ImageUtil.getInstance().getDimension(file));
-			} catch (Exception e) {
-				Logger.debug(this,
-						"Error computing dimensions for file asset with id: " + getIdentifier(), e);
-			}
-		}
-		return null;
-	}
-
-    //Lazy Suppliers are memoized. Meaning that this truly guarantees the computation takes place once.
-    private transient final Lazy<Dimension> lazyComputeDimensions = Lazy.of(() -> computeFileDimension(getFileAsset()));
 
   /**
-   * This access the physical file on disk
-   * 
+   * This gives you access to the physical file on disk.
    * @return
    */
-  private  String underlyingFileName = null;
-
   public String getUnderlyingFileName() {
-	 if (underlyingFileName != null) {
-		return underlyingFileName;
-	 }
-	 this.underlyingFileName = computeUnderlyingFileName(getFileAsset());
-	 return this.underlyingFileName;
-  }
-
-	/**
-	 *
-	 * @param fileAsset
-	 * @return
-	 */
-  private String computeUnderlyingFileName(final File fileAsset){
-	  return (this.underlyingFileName = fileAsset != null ? fileAsset.getName() : null);
+	  return Try.of(() -> getMetadata().getName())
+			  .getOrNull();
   }
 
 	/***
@@ -182,17 +135,30 @@ public class FileAsset extends Contentlet implements IFileAsset, Loadable {
 	}
 
 	public String getMimeType() {
-		String mimeType = APILocator.getFileAssetAPI().getMimeType(getUnderlyingFileName());
 
+		String mimeType = Try.of(() -> getMetadata().getContentType()).getOrNull();
+		if(null != mimeType){
+		   return mimeType;
+		}
+
+		mimeType = APILocator.getFileAssetAPI().getMimeType(getUnderlyingFileName());
 
 		if (mimeType == null || UNKNOWN_MIME_TYPE.equals(mimeType)){
 			mimeType = "application/octet-stream";
 		}
 
-		
 		return mimeType;
 	}
 
+	/**
+	 *
+	 * @deprecated
+	 * This method is Here for compatibility purposes.
+	 *    <p> Use {@link Contentlet#getBinaryMetadata(Field)} }
+	 *    or {@link FileAsset#getMetaDataMap()} instead.
+	 * @param mimeType
+	 */
+	@Deprecated
 	public void setMimeType(String mimeType) {
 
 	}
@@ -359,29 +325,6 @@ public class FileAsset extends Contentlet implements IFileAsset, Loadable {
 	@Override
 	public String toString() {
 		return this.getFileName();
-	}
-
-	@Override
-	public boolean isLoaded() {
-		return null != fileDimension && null != underlyingFileName && fileSizeInternal > 0;
-	}
-
-	@Override
-	public void load() {
-		if (!isLoaded()) {
-			final File file = getFileAsset();
-			if (null != file) {
-				if (null == fileDimension) {
-					computeFileDimension(file);
-				}
-				if (null == underlyingFileName) {
-					computeUnderlyingFileName(file);
-				}
-				if (0 == fileSizeInternal) {
-					computeFileSize(file);
-				}
-			}
-		}
 	}
 
 }
