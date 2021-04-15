@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -1521,102 +1522,133 @@ public class PermissionBitAPIImpl implements PermissionAPI {
     /**
      * Retrieves all the parent permissions in order to be applied to the permissionable.
      */
-    private List<Permission> getNewPermissions(Permissionable parent, Permissionable permissionable,
-            User user) throws DotDataException, DotSecurityException {
+	private List<Permission> getNewPermissions(Permissionable parent, Permissionable permissionable,
+			User user) throws DotDataException, DotSecurityException {
 
-        ImmutableList.Builder<Permission> immutablePermissionList = new Builder<>();
-        List<Permission> newSetOfPermissions = new ArrayList<>();
+		final ImmutableList.Builder<Permission> builder = new Builder<>();
+		final List<Permission> newSetOfPermissions = new ArrayList<>();
 
-        if (!doesUserHavePermission(permissionable, PermissionAPI.PERMISSION_EDIT_PERMISSIONS,
-                user)) {
-            throw new DotSecurityException("User id: " + user.getUserId()
-                    + " does not have permission to alter permissions on asset " + permissionable
-                    .getPermissionId());
-        }
+		if (!doesUserHavePermission(permissionable, PermissionAPI.PERMISSION_EDIT_PERMISSIONS,
+				user)) {
+			throw new DotSecurityException("User id: " + user.getUserId()
+					+ " does not have permission to alter permissions on asset " + permissionable
+					.getPermissionId());
+		}
 
-        if (parent.isParentPermissionable()) {
+		if (parent.isParentPermissionable()) {
 
-            String type = permissionable.getPermissionType();
-            immutablePermissionList.addAll(permissionFactory.getInheritablePermissions(parent));
-            immutablePermissionList.addAll(permissionFactory.getPermissions(parent, true));
-            List<Permission> permissionList = immutablePermissionList.build();
+			builder.addAll(permissionFactory.getInheritablePermissions(parent))
+					.addAll(permissionFactory.getPermissions(parent, true));
 
-            Host host = APILocator.getHostAPI()
-                    .find(permissionable.getPermissionId(), APILocator.getUserAPI().getSystemUser(),
-                            false);
-            if (host != null) {
-                type = Host.class.getCanonicalName();
-            }
+			final List<Permission> permissionList = builder.build();
 
-            final Set<String> classesToIgnoreFolder = Sets
-                    .newHashSet(Template.class.getCanonicalName(),
-                            Container.class.getCanonicalName(),
-                            Category.class.getCanonicalName(),
-                            Host.class.getCanonicalName());
+			String permissionableType = permissionable.getPermissionType();
 
-            final Set<String> classesToIgnoreHost = Sets
-                    .newHashSet(Category.class.getCanonicalName());
+			final Host host = APILocator.getHostAPI()
+					.find(permissionable.getPermissionId(), APILocator.systemUser(), false);
+			if (host != null) {
+				permissionableType = Host.class.getCanonicalName();
+			}
 
-            for (Permission permission : permissionList) {
+			final Set<String> classesToIgnoreFolder = Sets.newHashSet(
+					Template.class.getCanonicalName(),
+					Container.class.getCanonicalName(),
+					Category.class.getCanonicalName(),
+					Host.class.getCanonicalName()
+			);
 
-                if (type.equals(Folder.class.getCanonicalName()) && classesToIgnoreFolder
-                        .contains(permission.getType())) {
-                    continue;
-                }
+			final Set<String> classesToIgnoreHost = Sets
+					.newHashSet(Category.class.getCanonicalName());
 
-                if (type.equals(Host.class.getCanonicalName()) && classesToIgnoreHost
-                        .contains(permission.getType())) {
-                    continue;
-                }
+            //Organize permission by role
+			final Map<String, List<Permission>> permissionsByRole = permissionList.stream()
+					.collect(Collectors.groupingBy(Permission::getRoleId));
 
-                if (type.equals(permission.getType()) || permission.isIndividualPermission()) {
-                    Permission duplicatedPermission = null;
-                    ImmutableList.Builder<Permission> immutableDuplicatedList = new Builder<>();
+			final String finalPermissionableType = permissionableType;
+			permissionsByRole.forEach((roleId, permissions) -> {
 
-                    for (Permission newPermission : newSetOfPermissions) {
-                        if (newPermission.isIndividualPermission() && newPermission.getRoleId()
-                                .equals(permission.getRoleId())
-                                && newPermission.getPermission() > permission
-                                .getPermission()) {
-                            duplicatedPermission = newPermission;
-                            break;
-                        } else if (newPermission.isIndividualPermission() && newPermission
-                                .getRoleId()
-                                .equals(permission.getRoleId())) {
-                            immutableDuplicatedList.add(newPermission);
-                        }
-                    }
-                    List<Permission> duplicatedPermissionList = immutableDuplicatedList.build();
-                    if (duplicatedPermission == null) {
-                        newSetOfPermissions.removeAll(duplicatedPermissionList);
-                        if (permission.isIndividualPermission()) {
-                            newSetOfPermissions.add(new Permission(permission.getType(),
-                                    permissionable.getPermissionId(), permission.getRoleId(),
-                                    permission.getPermission(), true));
-                            continue;
-                        } else {
-                            newSetOfPermissions.add(new Permission(permissionable.getPermissionId(),
-                                    permission.getRoleId(), permission.getPermission(), true));
-                        }
-                    }
-                    if (!permission.isIndividualPermission()) {
-                        newSetOfPermissions
-                                .add(new Permission(permission.getType(),
-                                        permissionable.getPermissionId(),
-                                        permission.getRoleId(), permission.getPermission(), true));
-                    }
-                } else {
-                    newSetOfPermissions
-                            .add(new Permission(permission.getType(),
-                                    permissionable.getPermissionId(),
-                                    permission.getRoleId(), permission.getPermission(), true));
-                }
-            }
+                //Then find out if the group of role permissions we're looking at has at least one perm type matching the permissionable type that has been passed
+				final Optional<Permission> hasRolesMatchingParentPermissionable = permissions
+						.stream()
+						.filter(permission -> finalPermissionableType
+								.equals(permission.getType())).findAny();
+
+				if (hasRolesMatchingParentPermissionable.isPresent()) {
+
+					for (final Permission permission : permissions) {
+
+						if (finalPermissionableType.equals(Folder.class.getCanonicalName())
+								&& classesToIgnoreFolder.contains(permission.getType())) {
+							continue;
+						}
+
+						if (finalPermissionableType.equals(Host.class.getCanonicalName())
+								&& classesToIgnoreHost.contains(permission.getType())) {
+							continue;
+						}
+
+						if (finalPermissionableType.equals(permission.getType()) || permission
+								.isIndividualPermission()) {
+							Permission duplicatedPermission = null;
+							ImmutableList.Builder<Permission> dupsListBuilder = new Builder<>();
+
+							for (final Permission newPermission : newSetOfPermissions) {
+								if (newPermission.isIndividualPermission() && newPermission
+										.getRoleId().equals(permission.getRoleId())
+										&& newPermission.getPermission() > permission
+										.getPermission()) {
+									duplicatedPermission = newPermission;
+									break;
+								} else if (newPermission.isIndividualPermission() && newPermission
+										.getRoleId().equals(permission.getRoleId())) {
+									dupsListBuilder.add(newPermission);
+								}
+							}
+
+							final List<Permission> dupsPermissionList = dupsListBuilder
+									.build();
+							if (duplicatedPermission == null) {
+								newSetOfPermissions.removeAll(dupsPermissionList);
+								if (permission.isIndividualPermission()) {
+									newSetOfPermissions.add(new Permission(permission.getType(),
+											permissionable.getPermissionId(),
+											permission.getRoleId(), permission.getPermission(),
+											true));
+									continue;
+								} else {
+									//inheritable non-dupe perm added as individual perm
+									newSetOfPermissions
+											.add(new Permission(permissionable.getPermissionId(),
+													permission.getRoleId(),
+													permission.getPermission(), true));
+								}
+							}
+
+							if (!permission.isIndividualPermission()) {
+								//inheritable non-dupe perm
+								newSetOfPermissions.add(new Permission(permission.getType(),
+										permissionable.getPermissionId(), permission.getRoleId(),
+										permission.getPermission(), true));
+							}
+
+						} else {
+							//Any other inheritable permission different from the permissionable type ends here.
+							newSetOfPermissions.add(new Permission(permission.getType(),
+									permissionable.getPermissionId(), permission.getRoleId(),
+									permission.getPermission(), true));
+						}
+					}
 
 
-        }
-        return newSetOfPermissions;
-    }
+				}
+
+
+			});
+
+
+		}
+		return newSetOfPermissions;
+	}
 
     @CloseDBIfOpened
     @Override
