@@ -109,3 +109,5 @@ This maintenance release includes the following code fixes:
 52. https://github.com/dotCMS/core/issues/19620	: Push Publish Batch Button selects all assets
 
 53. https://github.com/dotCMS/core/issues/20189 : [SAML] : Authentication process must check for both User ID and Email
+
+54. https://github.com/dotCMS/core/issues/20156 : User is logged out when accessing content if the Role does not have the 'Content' portlet tool group 

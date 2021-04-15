@@ -80,7 +80,6 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
@@ -292,7 +291,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		
 		User user = _getUser(req);
 
-		if(user ==null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(reqImpl.getPortletName(), user)){
+		if(user ==null || !user.isBackendUser()){
 		  Logger.warn(this.getClass(), "User is not set or user does not have access to portlet:" + reqImpl.getPortletName());
 		  _sendToReferral(req, res, "/api/v1/logout");
 		  return;
