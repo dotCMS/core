@@ -85,6 +85,7 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
         } catch (Exception e) {
             Logger.warnAndDebug(getClass(), e);
             if (!shutdown) {
+                Logger.warn(getClass(), "waiting 1 second to retry postgres pub/sub connection");
                 Try.run(() -> Thread.sleep(1000));
                 listen();
             }
