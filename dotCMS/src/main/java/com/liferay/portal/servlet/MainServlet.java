@@ -165,15 +165,6 @@ public class MainServlet extends ActionServlet {
         throw new DotRuntimeException(e);
       }
 
-      // Check web settings
-
-      try {
-        String xml = Http.URLtoString(ctx.getResource("/WEB-INF/web.xml"));
-
-        _checkWebSettings(xml);
-      } catch (Exception e) {
-        Logger.error(this, e.getMessage(), e);
-      }
 
       // Scheduler
 
@@ -479,26 +470,7 @@ public class MainServlet extends ActionServlet {
     super.destroy();
   }
 
-  private void _checkWebSettings(String xml) throws DocumentException {
-    SAXReader reader = new SAXReader();
-    reader.setEntityResolver(null);
 
-    Document doc = reader.read(new StringReader(xml));
-
-    Element root = doc.getRootElement();
-
-    int timeout = GetterUtil.getInteger(PropsUtil.get(PropsUtil.SESSION_TIMEOUT));
-
-    Element sessionConfig = root.element("session-config");
-
-    if (sessionConfig != null) {
-      String sessionTimeout = sessionConfig.elementText("session-timeout");
-
-      timeout = GetterUtil.get(sessionConfig.elementText("session-timeout"), timeout);
-    }
-
-    PropsUtil.set(PropsUtil.SESSION_TIMEOUT, Integer.toString(timeout));
-  }
 
   private static final Log _log = LogFactory.getLog(MainServlet.class);
 
