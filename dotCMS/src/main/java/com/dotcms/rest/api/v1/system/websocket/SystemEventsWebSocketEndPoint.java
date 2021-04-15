@@ -37,7 +37,8 @@ import java.util.concurrent.TimeoutException;
  *
  */
 @SuppressWarnings("serial")
-@ServerEndpoint(value = SystemEventsWebSocketEndPoint.API_WS_V1_SYSTEM_EVENTS, encoders = { SystemEventEncoder.class }, configurator = DotCmsWebSocketConfigurator.class)
+// Just removing this annotation to avoid the web sockets
+//@ServerEndpoint(value = SystemEventsWebSocketEndPoint.API_WS_V1_SYSTEM_EVENTS, encoders = { SystemEventEncoder.class }, configurator = DotCmsWebSocketConfigurator.class)
 public class SystemEventsWebSocketEndPoint implements Serializable {
 
 	public static final String ID 				= "userId";
