@@ -123,7 +123,7 @@ public class FocalPointAPIImpl implements FocalPointAPI {
            return parseFocalPoint(
                    (String) metadata.getCustomMeta().get(FOCAL_POINT));
        }catch (Exception e){
-          Logger.error (FocalPointAPIImpl.class, "Metadata Error retrieving focal point from custom metadata", e);
+          Logger.debug (FocalPointAPIImpl.class, "Metadata Error retrieving focal point from custom metadata", e);
        }
         return Optional.empty();
     }
@@ -135,7 +135,7 @@ public class FocalPointAPIImpl implements FocalPointAPI {
             final String[] value = fpPattern.split(focalPoint);
             return Optional.of(new FocalPoint(Float.valueOf(value[0]), Float.valueOf(value[1])));
         } catch (Exception e) {
-            Logger.error(FocalPointAPIImpl.class, "Error parsing FP Metadata ", e);
+            Logger.debug(FocalPointAPIImpl.class, "Error parsing FP Metadata ", e);
             return Optional.empty();
         }
     }
