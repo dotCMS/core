@@ -110,4 +110,6 @@ This maintenance release includes the following code fixes:
 
 53. https://github.com/dotCMS/core/issues/20189 : [SAML] : Authentication process must check for both User ID and Email
 
-54. https://github.com/dotCMS/core/issues/20156 : User is logged out when accessing content if the Role does not have the 'Content' portlet tool group 
+54. https://github.com/dotCMS/core/issues/20156 : User is logged out when accessing content if the Role does not have the 'Content' portlet tool group
+
+55. https://github.com/dotCMS/core/issues/20122 : Cluster Ids cannot contain underscores.
