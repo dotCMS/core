@@ -104,3 +104,5 @@ This release includes the following code fixes:
 49. https://github.com/dotCMS/core/issues/19319	: Allow shutdown from backend of dotCMS
 
 50. https://github.com/dotCMS/core/issues/20053 : Anonymous users cannot fire actions when specified by their identifier
+
+51. https://github.com/dotCMS/core/issues/20156 : User is logged out when accessing content if the Role does not have the 'Content' portlet tool group
