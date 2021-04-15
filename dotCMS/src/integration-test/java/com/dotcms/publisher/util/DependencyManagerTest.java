@@ -16,6 +16,7 @@ import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.FilterDescriptor;
+import com.dotcms.publishing.PublisherAPIImplTest;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
@@ -289,7 +290,8 @@ public class DependencyManagerTest {
             DependencyManager dependencyManager = new DependencyManager(DependencyManagerTest.user, config);
             dependencyManager.setDependencies();
 
-//            assertEquals(4, dependencyManager.getContents().size());
+            final List<Contentlet> languageVariables = PublisherAPIImplTest.getLanguageVariables();
+            assertEquals(languageVariables.size() + 4, dependencyManager.getContents().size());
             assertTrue(dependencyManager.getContents().contains(htmlPageAsset_1.getIdentifier()));
             assertTrue(dependencyManager.getContents().contains(htmlPageAsset_2.getIdentifier()));
             assertTrue(dependencyManager.getContents().contains(theme_1.getIdentifier()));
