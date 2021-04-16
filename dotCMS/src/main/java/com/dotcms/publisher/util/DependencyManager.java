@@ -1106,10 +1106,13 @@ public class DependencyManager {
 
 				contentsToProcess.add(contentlet);
 
+				Logger.info(DependencyManager.class, "publisherFilter.isRelationships() " + publisherFilter.isRelationships());
 				// Relationships Dependencies
 				if(publisherFilter.isRelationships()) {
 					final Map<Relationship, List<Contentlet>> contentRelationshipsMap =
 							APILocator.getContentletAPI().findContentRelationships(contentlet, user);
+
+					Logger.info(DependencyManager.class, "contentRelationshipsMap " + contentRelationshipsMap);
 
 					for (final Relationship relationship : contentRelationshipsMap.keySet()) {
 						contentsToProcess.addAll(contentRelationshipsMap.get(relationship));
@@ -1119,8 +1122,15 @@ public class DependencyManager {
 						 * We need the relationships in which the single related content is involved.
 						 *
 						 */
-						if (contentRelationshipsMap.get(relationship).size() > 0)
-							relationships.addOrClean(relationship.getInode(), relationship.getModDate());
+						Logger.info(DependencyManager.class, "contentRelationshipsMap.get(relationship).size() " + contentRelationshipsMap.get(relationship).size());
+
+						if (contentRelationshipsMap.get(relationship).size() > 0) {
+							Logger.info(DependencyManager.class, "relationships 1 " + relationships.size());
+							relationships
+									.addOrClean(relationship.getInode(), relationship.getModDate());
+
+							Logger.info(DependencyManager.class, "relationships 2 " + relationships.size());
+						}
 					}
 				}
 			}
