@@ -30,6 +30,7 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -71,7 +72,7 @@ public class DependencyManagerTest {
 
     @BeforeClass
     public static void prepare() throws Exception {
-
+        Logger.info(DependencyManagerTest.class, "prepare");
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
 
@@ -95,7 +96,7 @@ public class DependencyManagerTest {
     @Test
     public void test_dependencyManager_shouldIncludeSelfRelationships()
             throws DotSecurityException, DotBundleException, DotDataException {
-
+        Logger.info(DependencyManagerTest.class, "test_dependencyManager_shouldIncludeSelfRelationships");
         final PushPublisherConfig config = new PushPublisherConfig();
         final ContentType contentType = getContentTypeWithSelfJoinRelationship();
         final ContentletDataGen dataGen = new ContentletDataGen(contentType.id());
@@ -146,6 +147,8 @@ public class DependencyManagerTest {
 
         //The dependency manager should include parent and child contentlets in the bundle
         validateDependencies(blogContentParent, blogContentChild, relationship, dependencyManager);
+
+        Logger.info(DependencyManagerTest.class, "end test_dependencyManager_shouldIncludeSelfRelationships");
     }
 
     /**
@@ -160,6 +163,7 @@ public class DependencyManagerTest {
     public void test_dependencyManager_shouldIncludeRelationships()
             throws DotSecurityException, DotBundleException, DotDataException {
 
+        Logger.info(DependencyManagerTest.class, "test_dependencyManager_shouldIncludeRelationships");
         final PushPublisherConfig config = new PushPublisherConfig();
 
         final ContentType blogContentType = TestDataUtils.getBlogLikeContentType();
@@ -219,6 +223,8 @@ public class DependencyManagerTest {
 
         //The dependency manager should include parent and child contentlets in the bundle
         validateDependencies(blogContentParent, commentContentChild, relationship, dependencyManager);
+
+        Logger.info(DependencyManagerTest.class, "end test_dependencyManager_shouldIncludeRelationships");
     }
 
     /**
@@ -411,13 +417,18 @@ public class DependencyManagerTest {
      * Validates the dependency manager includes relationship and both contentlets
      */
     private void validateDependencies(final Contentlet parentContent, final Contentlet childContent,
-            final Relationship relationship, final DependencyManager dependencyManager) {
+            final Relationship relationship, final DependencyManager dependencyManager)
+            throws DotSecurityException, DotDataException {
         assertNotNull(dependencyManager.getRelationships());
         assertEquals(1, dependencyManager.getRelationships().size());
         assertEquals(relationship.getInode(),
                 dependencyManager.getRelationships().iterator().next());
         assertNotNull(dependencyManager.getContents());
-//        assertEquals(2, dependencyManager.getContents().size());
+
+
+        final List<Contentlet> languageVariables = PublisherAPIImplTest.getLanguageVariables();
+        assertEquals(languageVariables.size() + 2, dependencyManager.getContents().size());
+
         assertTrue(dependencyManager.getContents().contains(parentContent.getIdentifier())
                 && dependencyManager.getContents().contains(childContent.getIdentifier()));
     }
