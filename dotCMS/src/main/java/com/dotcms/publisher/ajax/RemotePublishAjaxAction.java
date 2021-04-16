@@ -338,7 +338,9 @@ public class RemotePublishAjaxAction extends AjaxAction {
             }
 
             //We will be able to retry failed and successfully bundles
-            if ( !(status.getStatus().equals( Status.FAILED_TO_PUBLISH ) || status.getStatus().equals( Status.SUCCESS )) ) {
+            if (!(status.getStatus().equals(Status.FAILED_TO_PUBLISH) || status.getStatus()
+                    .equals(Status.SUCCESS) || status.getStatus()
+                    .equals(Status.SUCCESS_WITH_WARNINGS))) {
                 appendMessage( responseMessage, "publisher_retry.error.only.failed.publish", bundleId, true );
                 continue;
             }
@@ -432,7 +434,8 @@ public class RemotePublishAjaxAction extends AjaxAction {
 					appendMessage(responseMessage, "publisher_retry.error.not.found", bundleId, true);
 					continue;
 				}
-				if (status.getStatus().equals(Status.SUCCESS)) {
+                if (status.getStatus().equals(Status.SUCCESS) || status.getStatus()
+                        .equals(Status.SUCCESS_WITH_WARNINGS)) {
 					bundle.setForcePush(Boolean.TRUE);
 				} else {
 					bundle.setForcePush(isForcePush);
