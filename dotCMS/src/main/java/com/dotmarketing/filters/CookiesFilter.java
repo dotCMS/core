@@ -42,7 +42,9 @@ public class CookiesFilter implements Filter {
   public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException {
 
     HttpServletRequest req = (HttpServletRequest) request;
-    HttpServletResponse res = new CookieServletResponse(response);
+
+    boolean isSecure = req.isSecure();
+    HttpServletResponse res = new CookieServletResponse(response, isSecure);
     CookieUtil.setCookiesSecurityHeaders(req, res);
     try {
       filterChain.doFilter(req, res);

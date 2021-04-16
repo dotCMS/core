@@ -115,3 +115,5 @@ This maintenance release includes the following code fixes:
 55. https://github.com/dotCMS/core/issues/20122 : Cluster Ids cannot contain underscores.
 
 56. https://github.com/dotCMS/core/issues/20068 : Allow portal.properties to be overridden by environmental variables
+
+57. https://github.com/dotCMS/core/issues/20063 : Send Cookies Secure and HttpOnly
