@@ -1,5 +1,8 @@
 package com.dotmarketing.image.filter;
 
+import static com.dotmarketing.image.focalpoint.FocalPointAPIImpl.TMP;
+
+import com.dotmarketing.util.UUIDUtil;
 import java.io.File;
 import java.util.Map;
 import java.util.Optional;
@@ -34,8 +37,8 @@ public class FocalPointImageFilter extends ImageFilter {
 
         final String inode = parameters.get("assetInodeOrIdentifier")[0];
         final String fieldVar = parameters.get("fieldVarName")[0];
-
-        this.util.writeFocalPoint(inode, fieldVar, focalPoint.get());
+        final String assetId = UUIDUtil.isUUID(inode) ? TMP + inode : inode;
+        this.util.writeFocalPoint(assetId, fieldVar, focalPoint.get());
 
         return file;
     }

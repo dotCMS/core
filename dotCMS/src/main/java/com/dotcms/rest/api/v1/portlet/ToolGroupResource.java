@@ -3,14 +3,16 @@ package com.dotcms.rest.api.v1.portlet;
 import static com.dotcms.util.CollectionsUtils.map;
 
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import java.io.Serializable;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -49,71 +51,134 @@ public class ToolGroupResource implements Serializable {
 
 
     /**
-     * This method removes a toolgroup to the current user, using the id as key to find the toolgroup.
+     * This method removes a toolgroup to the specified user, using the id as key to find the toolgroup.
      * If the layoutId is gettingStarted it will remove the gettingStartedLayout to the user.
+     * In case the user is not sent, the operation will be performed over the current user
      */
     @PUT
-    @Path("/{layoutId}/_removefromcurrentuser")
+    @Path("/{layoutId}/_removefromuser")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response deleteToolGroupFromUser(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("layoutId") final String layoutId) throws DotDataException {
+            @PathParam("layoutId") final String layoutId, @QueryParam("userid") final String userid)
+            throws DotDataException, DotSecurityException {
 
-        final User user = new WebResource.InitBuilder(webResource)
+        User user = null;
+
+        final User loggedInUser = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init()
                 .getUser();
 
-        Layout layoutToRemove = null;
-        if(layoutId.equalsIgnoreCase("gettingstarted")){
-            layoutToRemove = APILocator.getLayoutAPI().findGettingStartedLayout();
-        }else{
-            layoutToRemove = APILocator.getLayoutAPI().findLayout(layoutId);
+        if (null != userid){
+            user = APILocator.getUserAPI().loadUserById(userid, loggedInUser, true);
         }
 
-        APILocator.getRoleAPI().removeLayoutFromRole(layoutToRemove, user.getUserRole());
-        return Response.ok(new ResponseEntityView(map("message", layoutId + " removed from " + user.getUserId())))
+        Layout layoutToRemove = getLayout(layoutId);
+
+        APILocator.getRoleAPI().removeLayoutFromRole(layoutToRemove,
+                null == userid ? loggedInUser.getUserRole() : user.getUserRole());
+        return Response.ok(new ResponseEntityView(map("message",
+                layoutId + " removed from " + (null == userid ? loggedInUser.getUserId()
+                        : userid))))
                 .build();
 
     }
 
 
     /**
-     * This method adds a toolgroup to the current user, using the id as key to find the toolgroup.
+     * This method adds a toolgroup to the specified user, using the id as key to find the toolgroup.
      * If the layoutId is gettingStarted it will add the gettingStartedLayout to the user.
+     * In case the user is not sent, the operation will be performed over the current user
      */
     @PUT
-    @Path("/{layoutId}/_addtocurrentuser")
+    @Path("/{layoutId}/_addtouser")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response addToolGroupToUser(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("layoutId") final String layoutId) throws DotDataException {
+            @PathParam("layoutId") final String layoutId, @QueryParam("userid") final String userid)
+            throws DotDataException, DotSecurityException {
 
-        final User user = new WebResource.InitBuilder(webResource)
+        User user = null;
+
+        final User loggedInUser = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init()
                 .getUser();
 
-        Layout layoutToAdd = null;
-        if(layoutId.equalsIgnoreCase("gettingstarted")){
-            layoutToAdd = APILocator.getLayoutAPI().findGettingStartedLayout();
-        }else{
-            layoutToAdd = APILocator.getLayoutAPI().findLayout(layoutId);
+        if (null != userid){
+            user = APILocator.getUserAPI().loadUserById(userid, loggedInUser, true);
         }
 
-        APILocator.getLayoutAPI().addLayoutForUser(layoutToAdd, user);
-            return Response.ok(new ResponseEntityView(map("message", layoutId + " added to " + user.getUserId())))
-                            .build();
+        final Layout layoutToAdd = getLayout(layoutId);
+
+        APILocator.getLayoutAPI()
+                .addLayoutForUser(layoutToAdd, null == userid ? loggedInUser : user);
+        return Response.ok(new ResponseEntityView(map("message",
+                layoutId + " added to " + (null == userid ? loggedInUser.getUserId()
+                        : userid))))
+                .build();
     }
 
+    /**
+     * Given a userId, this method returns a json object with a boolean indicating if the user's role
+     * has associated the specified layout.
+     * In case the user is not sent, the operation will be performed over the current user
+     * @param request
+     * @param response
+     * @param layoutId
+     * @param userid
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @GET
+    @Path("/{layoutId}/_userHasLayout")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response userHasLayout(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("layoutId") final String layoutId, @QueryParam("userid") final String userid)
+            throws DotDataException, DotSecurityException {
 
+        User user = null;
+
+        final User loggedInUser = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init()
+                .getUser();
+
+        if (null != userid){
+            user = APILocator.getUserAPI().loadUserById(userid, loggedInUser, true);
+        }
+
+        final Layout layout = getLayout(layoutId);
+
+        return Response.ok(new ResponseEntityView(map("message", APILocator.getRoleAPI()
+                .roleHasLayout(layout,
+                        null == userid ? loggedInUser.getUserRole() : user.getUserRole()))))
+                .build();
+    }
+
+    private Layout getLayout(final String layoutId) throws DotDataException {
+        final Layout layoutToAdd;
+        if (layoutId.equalsIgnoreCase("gettingstarted")) {
+            layoutToAdd = APILocator.getLayoutAPI().findGettingStartedLayout();
+        } else {
+            layoutToAdd = APILocator.getLayoutAPI().findLayout(layoutId);
+        }
+        return layoutToAdd;
+    }
 
 }

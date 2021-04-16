@@ -333,12 +333,12 @@ public class BundlePublisher extends Publisher {
                   SecurityLogger.logInfo(this.getClass(),  " Evil entry"  + entry );
                   throw new DotPublishingException("Bundle contains a symlink:" + fileOrDir);
                 }
-                
-                
-                
+
+                fileOrDir.getParentFile().mkdirs();
+
                 // write to file
                 byte[] buf = new byte[1024];
-                outputStream = Files.newOutputStream(Paths.get(pathWithoutName + entry.getName()));
+                outputStream = Files.newOutputStream(fileOrDir.toPath());
                 while ((bytesRead = inputStream.read(buf, 0, 1024)) > -1) {
                     outputStream.write(buf, 0, bytesRead);
                 }

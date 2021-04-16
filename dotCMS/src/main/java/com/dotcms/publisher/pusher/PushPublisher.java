@@ -143,7 +143,7 @@ public class PushPublisher extends Publisher {
 		PublishAuditHistory currentStatusHistory = null;
 		try {
 			//Compressing bundle
-			File bundleRoot = BundlerUtil.getBundleRoot(this.config);
+			File bundleRoot = BundlerUtil.getBundleRoot(this.config.getName(), false);
 			ArrayList<File> list = new ArrayList<File>(1);
 			list.add(bundleRoot);
 			File bundleFile = new File(bundleRoot+File.separator+".."+File.separator+this.config.getId()+".tar.gz");

@@ -13,6 +13,7 @@ import java.util.Set;
 
 import com.dotcms.enterprise.publishing.timemachine.TimeMachineConfig;
 import com.dotcms.publishing.PublishStatus;
+import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -51,8 +52,12 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
                 } else {
                 	timeMachineConfig.setId("timeMachineBundle_" +currentDate.getTime() + "_" + language.getId());
                 }
-                
-                publishStatusList.add(APILocator.getPublisherAPI().publish(timeMachineConfig));
+
+                try(final DirectoryBundleOutput directoryPublisherOutput = new DirectoryBundleOutput(timeMachineConfig)) {
+                    publishStatusList.add(APILocator.getPublisherAPI().publish(timeMachineConfig, directoryPublisherOutput));
+                } catch (Exception e) {
+                    throw e;
+                }
             }
             catch(Exception ex) {
                 Logger.error(this, ex.getMessage(), ex);

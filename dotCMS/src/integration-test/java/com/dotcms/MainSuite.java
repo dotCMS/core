@@ -3,6 +3,7 @@ package com.dotcms;
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
+import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
@@ -11,7 +12,16 @@ import com.dotcms.ema.EMAWebInterceptorTest;
 import com.dotcms.enterprise.HTMLDiffUtilTest;
 import com.dotcms.enterprise.cluster.ClusterFactoryTest;
 import com.dotcms.enterprise.publishing.remote.PushPublishBundleGeneratorTest;
-import com.dotcms.enterprise.publishing.remote.bundler.*;
+import com.dotcms.enterprise.publishing.remote.bundler.ContainerBundlerTest;
+import com.dotcms.enterprise.publishing.remote.bundler.ContentTypeBundlerTest;
+import com.dotcms.enterprise.publishing.remote.bundler.DependencyBundlerTest;
+import com.dotcms.enterprise.publishing.remote.bundler.FolderBundlerTest;
+import com.dotcms.enterprise.publishing.remote.bundler.HostBundlerTest;
+import com.dotcms.enterprise.publishing.remote.bundler.LinkBundlerTest;
+import com.dotcms.enterprise.publishing.remote.bundler.RuleBundlerTest;
+import com.dotcms.enterprise.publishing.remote.bundler.TemplateBundlerTest;
+import com.dotcms.enterprise.publishing.remote.bundler.WorkflowBundlerTest;
+import com.dotcms.enterprise.publishing.remote.handler.ContentHandlerTest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
 import com.dotcms.junit.MainBaseSuite;
@@ -40,15 +50,15 @@ import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
 import com.dotcms.saml.IdentityProviderConfigurationFactoryTest;
 import com.dotcms.saml.SamlConfigurationServiceTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
+import com.dotcms.security.apps.AppsCacheImplTest;
 import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.storage.StoragePersistenceAPITest;
-import com.dotcms.security.apps.AppsCacheImplTest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
 import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
 import com.dotmarketing.business.helper.PermissionHelperTest;
-import com.dotmarketing.filters.AutoLoginFilterTest;
 import com.dotmarketing.cache.FolderCacheImplIntegrationTest;
 import com.dotmarketing.common.db.DBTimeZoneCheckTest;
+import com.dotmarketing.filters.AutoLoginFilterTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.osgi.GenericBundleActivatorTest;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
@@ -59,13 +69,16 @@ import com.dotmarketing.portlets.contentlet.model.IntegrationResourceLinkTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegrationTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryIntegrationTest;
 import com.dotmarketing.portlets.folders.business.FolderFactoryImplTest;
-import com.dotmarketing.portlets.templates.business.TemplateFactoryImplTest;
 import com.dotmarketing.portlets.folders.model.FolderTest;
+import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtilTest;
+import com.dotmarketing.portlets.templates.business.TemplateFactoryImplTest;
 import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
 import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
 import com.dotmarketing.quartz.DotStatefulJobTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
+import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
 import com.dotmarketing.startup.StartupTasksExecutorTest;
+import com.dotmarketing.startup.runalways.Task00050LoadAppsSecretsTest;
 import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
 import com.dotmarketing.startup.runonce.Task05210CreateDefaultDotAssetTest;
 import com.dotmarketing.startup.runonce.Task05225RemoveLoadRecordsToIndexTest;
@@ -75,14 +88,14 @@ import com.dotmarketing.startup.runonce.Task05370AddAppsPortletToLayoutTest;
 import com.dotmarketing.startup.runonce.Task05380ChangeContainerPathToAbsoluteTest;
 import com.dotmarketing.startup.runonce.Task05390MakeRoomForLongerJobDetailTest;
 import com.dotmarketing.startup.runonce.Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest;
-import com.dotmarketing.startup.runalways.Task00050LoadAppsSecretsTest;
 import com.dotmarketing.startup.runonce.Task201013AddNewColumnsToIdentifierTableTest;
 import com.dotmarketing.startup.runonce.Task201014UpdateColumnsValuesInIdentifierTableTest;
 import com.dotmarketing.startup.runonce.Task201102UpdateColumnSitelicTableTest;
 import com.dotmarketing.startup.runonce.Task210218MigrateUserProxyTableTest;
+import com.dotmarketing.startup.runonce.Task210319CreateStorageTableTest;
+import com.dotmarketing.startup.runonce.Task210321RemoveOldMetadataFilesTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
-import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
 import com.dotmarketing.util.TestConfig;
 import com.liferay.portal.language.LanguageUtilTest;
 import org.junit.runner.RunWith;
@@ -90,10 +103,6 @@ import org.junit.runners.Suite.SuiteClasses;
 
 /* grep -l -r "@Test" dotCMS/src/integration-test */
 /* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
-//@RunWith(Suite.class)
-
-
-
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
         com.dotcms.content.elasticsearch.business.ESMappingAPITest.class,
@@ -395,7 +404,12 @@ import org.junit.runners.Suite.SuiteClasses;
         FolderCacheImplIntegrationTest.class,
         Task210218MigrateUserProxyTableTest.class,
         com.dotmarketing.startup.runonce.Task210316UpdateLayoutIconsTest.class,
-        DBTimeZoneCheckTest.class
+        Task210319CreateStorageTableTest.class,
+        Task210321RemoveOldMetadataFilesTest.class,
+        DBTimeZoneCheckTest.class,
+        ContentHandlerTest.class,
+        ESIndexAPITest.class,
+        FileAssetTemplateUtilTest.class
 })
 public class MainSuite {
 

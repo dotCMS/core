@@ -246,7 +246,7 @@ public abstract class Publisher implements IPublisher {
      */
     protected void compressBundleIfNeeded() throws IOException {
         if (Config.getBooleanProperty("STATIC_PUBLISHING_GENERATE_TAR_GZ", false)) {
-            final File bundleToCompress = BundlerUtil.getBundleRoot(config);
+            final File bundleToCompress = BundlerUtil.getBundleRoot(config.getName(), false);
             final ArrayList<File> list = Lists.newArrayList(bundleToCompress);
             final File bundle = new File(
                     bundleToCompress + File.separator

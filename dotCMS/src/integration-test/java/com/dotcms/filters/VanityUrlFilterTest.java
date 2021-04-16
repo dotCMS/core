@@ -1,6 +1,8 @@
 package com.dotcms.filters;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.util.Collection;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -84,19 +86,21 @@ public class VanityUrlFilterTest {
   
         final File tmp = File.createTempFile("testingVanity", "test");
         tmp.deleteOnExit();
-        
-        final HttpServletResponse response = new MockHttpCaptureResponse(new MockHttpResponse().response(), tmp).response();
 
-        final VanityURLFilter filter = new VanityURLFilter();
-        
-        filter.doFilter(request, response, null);
-        
-        assert(tmp.exists());
-        String content = FileUtil.read(tmp);
-        assert(content!=null);
-        assert(content.contains("All rights reserved"));
-        assert(content.contains("<meta property=\"og:url\" content=\"https://dotcms.com/\">"));
-        
+        try(OutputStream outputStream = new FileOutputStream(tmp)) {
+            final HttpServletResponse response = new MockHttpCaptureResponse(
+                    new MockHttpResponse().response(), outputStream).response();
+
+            final VanityURLFilter filter = new VanityURLFilter();
+
+            filter.doFilter(request, response, null);
+
+            assert (tmp.exists());
+            String content = FileUtil.read(tmp);
+            assert (content != null);
+            assert (content.contains("All rights reserved"));
+            assert (content.contains("<meta property=\"og:url\" content=\"https://dotcms.com/\">"));
+        }
 
     }
 

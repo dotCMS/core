@@ -10,6 +10,7 @@ import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -106,6 +107,8 @@ public class CategoryBundlerHandlerTest extends IntegrationTestBase {
             Mockito.when(config.getOperation()).thenReturn(PublisherConfig.Operation.PUBLISH);
             categoryBundler.setConfig(config);
 
+            final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config, tempDir);
+
             //Creating temp bundle dir
             if (!tempDir.exists()) {
                 tempDir.mkdirs();
@@ -113,7 +116,7 @@ public class CategoryBundlerHandlerTest extends IntegrationTestBase {
 
             //Generating bundle
             BundlerStatus status = new BundlerStatus(CategoryBundler.class.getName());
-            categoryBundler.generate(tempDir, status);
+            categoryBundler.generate(directoryBundleOutput, status);
             assertEquals("We should have 3 categories.xml", 3, status.getCount());
 
             // Now let's delete the categories to make sure they are installed by the Handler.
@@ -199,6 +202,8 @@ public class CategoryBundlerHandlerTest extends IntegrationTestBase {
             Mockito.when(config.getOperation()).thenReturn(PublisherConfig.Operation.PUBLISH);
             categoryBundler.setConfig(config);
 
+            final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config, tempDir);
+
             //Creating temp bundle dir
             if (!tempDir.exists()) {
                 tempDir.mkdirs();
@@ -206,7 +211,7 @@ public class CategoryBundlerHandlerTest extends IntegrationTestBase {
 
             //Generating bundle
             BundlerStatus status = new BundlerStatus(CategoryBundler.class.getName());
-            categoryBundler.generate(tempDir, status);
+            categoryBundler.generate(directoryBundleOutput, status);
             assertEquals("We should have 2 categories.xml", 2, status.getCount());
 
             // Now let's delete the categories to make sure they are installed by the Handler.
@@ -320,6 +325,8 @@ public class CategoryBundlerHandlerTest extends IntegrationTestBase {
             Mockito.when(config.getOperation()).thenReturn(PublisherConfig.Operation.PUBLISH);
             categoryBundler.setConfig(config);
 
+            final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config, tempDir);
+
             //Creating temp bundle dir
             if (!tempDir.exists()) {
                 tempDir.mkdirs();
@@ -327,7 +334,7 @@ public class CategoryBundlerHandlerTest extends IntegrationTestBase {
 
             //Generating bundle
             BundlerStatus status = new BundlerStatus(CategoryBundler.class.getName());
-            categoryBundler.generate(tempDir, status);
+            categoryBundler.generate(directoryBundleOutput, status);
             assertEquals("We should have 2 categories.xml", 2, status.getCount());
 
             // We don't want to delete the categories, just clear cache.
@@ -404,6 +411,8 @@ public class CategoryBundlerHandlerTest extends IntegrationTestBase {
             Mockito.when(config.getOperation()).thenReturn(PublisherConfig.Operation.PUBLISH);
             categoryBundler.setConfig(config);
 
+            final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config, tempDir);
+
             //Creating temp bundle dir
             if (!tempDir.exists()) {
                 tempDir.mkdirs();
@@ -411,7 +420,7 @@ public class CategoryBundlerHandlerTest extends IntegrationTestBase {
 
             //Generating bundle
             BundlerStatus status = new BundlerStatus(CategoryBundler.class.getName());
-            categoryBundler.generate(tempDir, status);
+            categoryBundler.generate(directoryBundleOutput, status);
             assertEquals("We should have 2 categories.xml", 2, status.getCount());
 
             // We don't want to delete the categories.
@@ -496,6 +505,8 @@ public class CategoryBundlerHandlerTest extends IntegrationTestBase {
             Mockito.when(config.getOperation()).thenReturn(PublisherConfig.Operation.PUBLISH);
             categoryBundler.setConfig(config);
 
+            final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config, tempDir);
+
             //Creating temp bundle dir
             if (!tempDir.exists()) {
                 tempDir.mkdirs();
@@ -503,7 +514,7 @@ public class CategoryBundlerHandlerTest extends IntegrationTestBase {
 
             //Generating bundle
             BundlerStatus status = new BundlerStatus(CategoryBundler.class.getName());
-            categoryBundler.generate(tempDir, status);
+            categoryBundler.generate(directoryBundleOutput, status);
             assertEquals("We should have 2 categories.xml", 2, status.getCount());
 
             // We don't want to delete the categories.

@@ -8,6 +8,7 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
+import com.dotcms.system.event.local.model.Subscriber;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.*;
@@ -22,6 +23,7 @@ import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.folders.business.ApplicationContainerFolderListener;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -873,5 +875,16 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 			this.relativePath = relativePath;
 			this.container = container;
 		}
+	}
+
+	@Subscriber
+	public void onCopySite(final SiteCreatedEvent event)
+			throws DotDataException, DotSecurityException {
+		final Folder appContainerFolder = APILocator.getFolderAPI().findFolderByPath(Constants.CONTAINER_FOLDER_PATH,
+				APILocator.getHostAPI().find(event.getSiteIdentifier(),APILocator.systemUser(),false),
+				APILocator.systemUser(), false);
+
+		APILocator.getFolderAPI().subscribeFolderListener(appContainerFolder, new ApplicationContainerFolderListener(),
+				childName -> null != childName && childName.endsWith(Constants.VELOCITY_FILE_EXTENSION));
 	}
 }

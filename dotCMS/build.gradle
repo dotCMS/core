@@ -18,7 +18,7 @@ plugins {
 }
 
 project.ext {
-    aspectjVersion = '1.8.10'
+    aspectjVersion = '1.9.2'
 }
 
 
@@ -77,6 +77,16 @@ apply plugin: 'org.unbroken-dome.test-sets'
 apply plugin: 'project-report' /*For gradle dependencies: ./gradlew htmlDependencyReport*/
 apply plugin: 'idea'
 apply plugin: 'eclipse'
+
+targetCompatibility = 1.8
+sourceCompatibility = 1.8
+
+// Compile Java.
+compileJava {
+    options.incremental = true
+    options.compilerArgs.addAll(['--release', '8'])
+}
+
 eclipse {
     project {
         name = 'dotCMS'
@@ -155,10 +165,10 @@ dependencies {
     felix (group: 'org.osgi', name: 'org.osgi.compendium', version: '4.3.1') {
         transitive = false
     }
-    felix(group: 'org.apache.tika', name: 'tika-core', version: '1.17') {
+    felix(group: 'org.apache.tika', name: 'tika-core', version: '1.19') {
         transitive = false
     }
-    felix(group: 'org.apache.tika', name: 'tika-bundle', version: '1.17') {
+    felix(group: 'org.apache.tika', name: 'tika-bundle', version: '1.19') {
         transitive = false
     }
 
@@ -171,10 +181,10 @@ dependencies {
     /**** And now the libs we pull in from internal company sources - libs stored in ./plugins, ./bin, ./libs, the starter site, etc. ****/
     compile fileTree("src/main/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
 
-    starter group: 'com.dotcms', name: 'starter', version: 'empty_20210315', ext: 'zip'
+    starter group: 'com.dotcms', name: 'starter', version: 'empty_20210405', ext: 'zip'
     //Uncomment this line if you want to download the starter that comes with data
     // starter group: 'com.dotcms', name: 'starter', version: '20210312', ext: 'zip'
-    testsStarter group: 'com.dotcms', name: 'starter', version: 'empty_20210315', ext: 'zip'
+    testsStarter group: 'com.dotcms', name: 'starter', version: 'empty_20210405', ext: 'zip'
 
     profiler group: 'glowroot-custom', name: 'glowroot-agent', version: '0.13.1'
     profilerDependencies group: 'glowroot-custom', name: 'collector-https-linux', version: '0.13.1'
@@ -276,13 +286,6 @@ if (project.hasProperty('jarBaseName')) {
 
 def tomcatDistBase = "$distLocation/$tomcatDistInstallLocation-$tomcatInstallVersion"
 def dotcmsDistBase = "../$tomcatDistInstallLocation-$tomcatInstallVersion"
-
-// Compile Java.
-compileJava {
-    targetCompatibility = 1.8
-    sourceCompatibility = 1.8
-    options.incremental = true
-}
 
 jar{
     exclude 'com/dotcms/enterprise/**'
@@ -409,6 +412,10 @@ integrationTest {
                     systemProperty "databaseType", "$databaseType"
                 }
             }
+
+    if(JavaVersion.current() > JavaVersion.VERSION_1_8) {
+        jvmArgs '--add-opens=java.base/jdk.internal.loader=ALL-UNNAMED'
+    }
 }
 integrationTest.group='dotCMS tests'
 
@@ -442,13 +449,13 @@ task prepareFelixForTests {
 prepareFelixForTests.group='dotCMS tests'
 prepareFelixForTests.description='Copies the felix bundle jars and the osgi-extra-generated.conf file to the specified felix home location'
 
-// Delete ROOT under tomcat8/webapps
+// Delete ROOT under tomcat9/webapps
 task undeployWarTomcat(type: Delete) {
     delete tomcatInstallLocation + webAppRootFolder
     followSymlinks = true
 }
 undeployWarTomcat.group='dotCMS Util'
-undeployWarTomcat.description='Removes /tomcat8/webapps folder. (reset tomcat)'
+undeployWarTomcat.description='Removes /tomcat9/webapps folder. (reset tomcat)'
 
 undeployWarTomcat.mustRunAfter 'backupWarTomcatData'
 
@@ -503,7 +510,7 @@ task clonePullTomcat(type: ClonePullTomcatTask) {
 
 }
 clonePullTomcat.group='dotCMS Util'
-clonePullTomcat.description='Clones or pull /tomcat8 folder.'
+clonePullTomcat.description='Clones or pull /tomcat9 folder.'
 
 //Executes clonePullTomcat task from dist version
 task clonePullTomcatDist(type: ClonePullTomcatTask) {
@@ -698,7 +705,11 @@ task buildPlugins(dependsOn: 'jar') {
             from "$buildDir/libs/"
         }
 
-        def pluginsFolder = new File("src/main/plugins");
+        println project.buildDir
+        println project.buildDir
+
+//        def pluginsFolder = new File("src/main/plugins");
+        def pluginsFolder = file('src/main/plugins')
 
         if (!pluginsFolder.exists()) {
             pluginsFolder = new File("../plugins");
@@ -945,13 +956,15 @@ class ClonePullTomcatTask extends DefaultTask{
 
     @TaskAction
     def pull(){
-        def folder = new File( tomcatLocation )
+        def folder = project.file( tomcatLocation )
+
+        println folder
         if( !folder.exists() ) {
 
             try {
 
                 println "Cloning the $project.tomcatInstallRepo, branch $project.tomcatInstallBranch on $tomcatLocation";
-                org.ajoberstar.grgit.Grgit.clone(dir: "$tomcatLocation", uri: "$project.tomcatInstallRepo", refToCheckout: "$project.tomcatInstallBranch")
+                org.ajoberstar.grgit.Grgit.clone(dir: folder.absolutePath, uri: "$project.tomcatInstallRepo", refToCheckout: "$project.tomcatInstallBranch")
             } catch (Exception exception) {
                 //Do nothing, this will fail only if git is not installed on this machine
             }
@@ -1001,6 +1014,7 @@ class DeployWarTomcatTask extends DefaultTask{
             from '../libs/buildlibs'
             into buildLibLocation + '/lib'
             include 'mail.jar'
+            include 'javax.activation-1.2.0.jar'
         }
 
     }

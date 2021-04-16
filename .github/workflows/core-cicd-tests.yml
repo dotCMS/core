@@ -9,9 +9,9 @@ on:
 jobs:
   run-unit-tests-job:
     name: Unit Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     env:
-      DOT_CICD_BRANCH: master
+      DOT_CICD_BRANCH: 19756-java-11
       DOT_CICD_CLOUD_PROVIDER: github
       DOT_CICD_TARGET: core
       EXPORT_REPORTS: true
@@ -72,9 +72,9 @@ jobs:
         if: env.jobRun == 'true'
   run-curl-tests-job:
     name: Curl Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     env:
-      DOT_CICD_BRANCH: master
+      DOT_CICD_BRANCH: 19756-java-11
       DOT_CICD_CLOUD_PROVIDER: github
       DOT_CICD_TARGET: core
       EXPORT_REPORTS: true
@@ -152,14 +152,14 @@ jobs:
         if: success() && env.jobRun == 'true'
   run-integration-tests-job:
     name: Integration Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
         databaseType: [ postgres, mysql, oracle, mssql ]
     env:
-      DOT_CICD_BRANCH: master
+      DOT_CICD_BRANCH: 19756-java-11
       DOT_CICD_CLOUD_PROVIDER: github
       DOT_CICD_TARGET: core
       EXPORT_REPORTS: true
@@ -271,7 +271,7 @@ jobs:
         if: success() && env.jobRun == 'true'
   slack-notification:
     name: Notification
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     env:
       DOT_CICD_TARGET: core
       GITHUB_USER: dotcmsbuild
@@ -300,3 +300,4 @@ jobs:
         with:
           github-user: ${{ github.actor }}
           branch: ${{ env.CURRENT_BRANCH }}
+

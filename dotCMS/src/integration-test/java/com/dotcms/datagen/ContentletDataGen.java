@@ -3,6 +3,7 @@ package com.dotcms.datagen;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
@@ -40,6 +41,10 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
     protected List<Category> categories;
     private boolean skipValidation = false;
     private IndexPolicy policy = null;
+
+    public ContentletDataGen(final ContentType contentType) {
+        this(contentType.id());
+    }
 
     public ContentletDataGen(String contentTypeId) {
         this.contentTypeId = contentTypeId;

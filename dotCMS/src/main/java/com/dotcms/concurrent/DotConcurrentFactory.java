@@ -3,6 +3,7 @@ package com.dotcms.concurrent;
 import com.dotcms.concurrent.lock.DotKeyLockManagerBuilder;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.util.ReflectionUtils;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.init.DotInitScheduler;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
@@ -721,6 +722,20 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         }
 
         @Override
+        public void waitForAll(long timeout, TimeUnit unit) throws ExecutionException {
+            try {
+                executorService.awaitTermination(timeout, unit);
+            } catch (InterruptedException e) {
+                throw new DotRuntimeException(e);
+            }
+        }
+
+        @Override
+        public long getTaskCount() {
+            throw new UnsupportedOperationException("Submit Delay not supported on single submitter");
+        }
+
+        @Override
         public void execute(final Runnable command) {
 
             this.executorService.execute(command);
@@ -918,6 +933,18 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
             return threadPoolExecutor.isTerminated() ||  threadPoolExecutor.isShutdown() || threadPoolExecutor.isTerminating();
         }
 
+        @Override
+        public void waitForAll(final long timeout, final TimeUnit unit) {
+            try {
+                threadPoolExecutor.awaitTermination(timeout, unit);
+            } catch (InterruptedException e) {
+                throw new DotRuntimeException(e);
+            }
+        }
+
+        public long getTaskCount() {
+            return threadPoolExecutor.getTaskCount();
+        }
 
         @Override
         public String toString() {
