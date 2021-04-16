@@ -12123,7 +12123,7 @@
 									"pm.test(\"Should be not allowed\", function () {",
 									"    ",
 									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.entity.summary.failCount).to.above(1);",
+									"    pm.expect(jsonData.entity.summary.failCount).to.above(0);",
 									"});",
 									""
 								],
@@ -12370,7 +12370,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"contentlet\": {\n        \"contentType\":\"webPageContent\",\n        \"title\":\"Test title\",\n        \"body\":\"Test body\",\n        \"host\":\"default\"\n\t}\n}",
+							"raw": "{\n\t\"contentlet\": {\n        \"contentType\":\"webPageContent\",\n        \"title\":\"Test title\",\n        \"body\":\"Test body\",\n        \"contentHost\":\"default\"\n\t}\n}",
 							"options": {
 								"raw": {
 									"language": "json"
