@@ -119,3 +119,5 @@ This maintenance release includes the following code fixes:
 57. https://github.com/dotCMS/core/issues/20063 : Send Cookies Secure and HttpOnly
 
 58. https://github.com/dotCMS/core/issues/19679 : Don't let rule PP fail
+
+59. https://github.com/dotCMS/core/issues/20053 : Anonymous users cannot fire actions when specified by their identifier
