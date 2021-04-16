@@ -1567,13 +1567,16 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			final String finalPermissionableType = permissionableType;
 			permissionsByRole.forEach((roleId, permissions) -> {
 
-                //Then find out if the group of role permissions we're looking at has at least one perm type matching the permissionable type that has been passed
+                //Then find out if the group of role permissions we're looking at least has one perm type matching the permissionable type that has been passed.
 				final Optional<Permission> hasRolesMatchingParentPermissionable = permissions
 						.stream()
 						.filter(permission -> finalPermissionableType
 								.equals(permission.getType())).findAny();
 
-				if (hasRolesMatchingParentPermissionable.isPresent()) {
+				final boolean onlyHasIndividualPermissions = permissions.stream().allMatch(
+						permission -> INDIVIDUAL_PERMISSION_TYPE.equals(permission.getType()));
+
+				if (hasRolesMatchingParentPermissionable.isPresent() || onlyHasIndividualPermissions) {
 
 					for (final Permission permission : permissions) {
 
@@ -1590,7 +1593,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 						if (finalPermissionableType.equals(permission.getType()) || permission
 								.isIndividualPermission()) {
 							Permission duplicatedPermission = null;
-							ImmutableList.Builder<Permission> dupsListBuilder = new Builder<>();
+							ImmutableList.Builder<Permission> dupesListBuilder = new Builder<>();
 
 							for (final Permission newPermission : newSetOfPermissions) {
 								if (newPermission.isIndividualPermission() && newPermission
@@ -1601,14 +1604,14 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 									break;
 								} else if (newPermission.isIndividualPermission() && newPermission
 										.getRoleId().equals(permission.getRoleId())) {
-									dupsListBuilder.add(newPermission);
+									dupesListBuilder.add(newPermission);
 								}
 							}
 
-							final List<Permission> dupsPermissionList = dupsListBuilder
+							final List<Permission> dupesPermissionList = dupesListBuilder
 									.build();
 							if (duplicatedPermission == null) {
-								newSetOfPermissions.removeAll(dupsPermissionList);
+								newSetOfPermissions.removeAll(dupesPermissionList);
 								if (permission.isIndividualPermission()) {
 									newSetOfPermissions.add(new Permission(permission.getType(),
 											permissionable.getPermissionId(),
