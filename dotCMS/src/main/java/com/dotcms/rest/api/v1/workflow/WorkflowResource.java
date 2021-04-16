@@ -1555,8 +1555,10 @@ public class WorkflowResource {
                                      @DefaultValue("-1") @QueryParam("language") final String   language,
                                      final FireActionForm fireActionForm) {
 
-        final InitDataObject initDataObject = this.webResource.init
-                (null, request, response, true, null);
+        final InitDataObject initDataObject = new WebResource.InitBuilder()
+                .requestAndResponse(request, response)
+                .requiredAnonAccess(AnonymousAccess.WRITE)
+                .init();
 
         try {
 
@@ -1607,8 +1609,10 @@ public class WorkflowResource {
                                               @PathParam("systemAction") final WorkflowAPI.SystemAction systemAction,
                                               final FormDataMultiPart multipart) {
 
-        final InitDataObject initDataObject = this.webResource.init
-                (null, request, response, true, null);
+        final InitDataObject initDataObject = new WebResource.InitBuilder()
+                .requestAndResponse(request, response)
+                .requiredAnonAccess(AnonymousAccess.WRITE)
+                .init();
 
         try {
 
@@ -1687,8 +1691,10 @@ public class WorkflowResource {
                                               @DefaultValue("-1") @QueryParam("language") final String   language,
                                               final FormDataMultiPart multipart) {
 
-        final InitDataObject initDataObject = this.webResource.init
-                (null, request, response, true, null);
+        final InitDataObject initDataObject = new WebResource.InitBuilder()
+                .requestAndResponse(request, response)
+                .requiredAnonAccess(AnonymousAccess.WRITE)
+                .init();
 
         try {
 

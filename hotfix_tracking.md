@@ -102,3 +102,5 @@ This release includes the following code fixes:
 48. https://github.com/dotCMS/core/issues/19927	: Adding more log to the JsonTOOL
 
 49. https://github.com/dotCMS/core/issues/19319	: Allow shutdown from backend of dotCMS
+
+50. https://github.com/dotCMS/core/issues/20053 : Anonymous users cannot fire actions when specified by their identifier
