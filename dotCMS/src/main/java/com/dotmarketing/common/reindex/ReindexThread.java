@@ -151,7 +151,7 @@ public class ReindexThread {
 
         while (STATE != ThreadState.STOPPED) {
             try {
-                runReindexLoop();
+                //runReindexLoop();
             } catch (Exception e) {
                 Logger.error(this.getClass(), e.getMessage(), e);
             }

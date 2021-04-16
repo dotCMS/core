@@ -1089,10 +1089,6 @@ public class DependencyManager {
 			final List<Contentlet> contentList =
 					APILocator.getContentletAPI().findAllVersions(ident, false, user, false);
 
-			if (contentList.isEmpty()) {
-				Logger.info(DependencyManager.class, "contentList.isEmpty()" + contentList.isEmpty());
-			}
-
 			final Set<Contentlet> contentsToProcess = new HashSet<Contentlet>();
 			final Set<Contentlet> contentsWithDependenciesToProcess = new HashSet<Contentlet>();
 
