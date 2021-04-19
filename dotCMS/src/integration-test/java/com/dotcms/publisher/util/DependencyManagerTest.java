@@ -119,7 +119,7 @@ public class DependencyManagerTest {
         //Creates child content
         final Contentlet childContent = new ContentletDataGen(contentType.id())
                 .languageId(languageId)
-                .setProperty(textField.variable(), "parent")
+                .setProperty(textField.variable(), "child")
                 .nextPersisted();
 
         //Creates parent content
@@ -163,63 +163,56 @@ public class DependencyManagerTest {
 
         final PushPublisherConfig config = new PushPublisherConfig();
 
-        final ContentType blogContentType = TestDataUtils.getBlogLikeContentType();
-        final ContentType commentContentType = TestDataUtils.getCommentsLikeContentType();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Field textFieldParent = new FieldDataGen().type(TextField.class).next();
 
-        final Field field = FieldBuilder.builder(RelationshipField.class)
-                .name(commentContentType.variable())
-                .contentTypeId(blogContentType.id())
-                .values(String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
-                .relationType(commentContentType.variable()).required(false).build();
+        final ContentType contentTypeParent = new ContentTypeDataGen()
+                .host(host)
+                .field(textFieldParent)
+                .nextPersisted();
 
-        contentTypeFieldAPI.save(field, user);
+        final Field textFieldChild = new FieldDataGen().type(TextField.class).next();
+        final ContentType contentTypeChild = new ContentTypeDataGen()
+                .host(host)
+                .field(textFieldChild)
+                .nextPersisted();
 
-        //Creates parent content
-        Contentlet blogContentParent = new ContentletDataGen(blogContentType.id())
-                .languageId(languageId)
-                .setProperty("title", "blogContentParent")
-                .setProperty("urlTitle", "blogContentParent")
-                .setProperty("author", "systemUser")
-                .setProperty("sysPublishDate", new Date())
-                .setProperty("body", "blogBody").next();
+        final Relationship relationship = new FieldRelationshipDataGen()
+                .child(contentTypeChild)
+                .parent(contentTypeParent)
+                .cardinality(RELATIONSHIP_CARDINALITY.ONE_TO_ONE)
+                .nextPersisted();
 
         //Creates child content
-        final Contentlet commentContentChild = new ContentletDataGen(commentContentType.id())
+        final Contentlet childContent = new ContentletDataGen(contentTypeChild.id())
                 .languageId(languageId)
-                .setProperty("title", "commentContentChild")
-                .setProperty("urlTitle", "commentContentChild")
-                .setProperty("author", "systemUser")
-                .setProperty("sysPublishDate", new Date())
-                .setProperty("body", "blogBody").nextPersisted();
+                .setProperty(textFieldChild.variable(), "child")
+                .nextPersisted();
 
-        //Adds a new relationship between both contentlets
-        final Relationship relationship = relationshipAPI.byContentType(blogContentType).get(0);
-
-        ContentletRelationships contentletRelationships = new ContentletRelationships(
-                blogContentParent);
-        ContentletRelationshipRecords records = contentletRelationships.new ContentletRelationshipRecords(
-                relationship, true);
-        records.setRecords(Lists.newArrayList(commentContentChild));
-        contentletRelationships.getRelationshipsRecords().add(records);
-        blogContentParent = contentletAPI.checkin(blogContentParent, contentletRelationships, null, null, user, false);
+        //Creates parent content
+        final Contentlet parentContent =  new ContentletDataGen(contentTypeParent.id())
+                .languageId(languageId)
+                .setProperty(textFieldParent.variable(), "parent")
+                .setProperty(contentTypeParent.variable(), list(childContent))
+                .nextPersisted();
 
         //Creates a bundle with just the child
-        createBundle(config, commentContentChild);
+        createBundle(config, childContent);
 
         DependencyManager dependencyManager = new DependencyManager(user, config);
         dependencyManager.setDependencies();
 
         //The dependecy manager should include parent and child contentlets in the bundle
-        validateDependencies(blogContentParent, commentContentChild, relationship, dependencyManager);
+        validateDependencies(parentContent, childContent, relationship, dependencyManager);
 
         //Creates a bundle with just the parent
-        createBundle(config, blogContentParent);
+        createBundle(config, parentContent);
 
         dependencyManager = new DependencyManager(user, config);
         dependencyManager.setDependencies();
 
         //The dependency manager should include parent and child contentlets in the bundle
-        validateDependencies(blogContentParent, commentContentChild, relationship, dependencyManager);
+        validateDependencies(parentContent, parentContent, relationship, dependencyManager);
    }
 
     /**
