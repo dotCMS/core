@@ -1,5 +1,6 @@
 package com.dotcms.publisher.util;
 
+import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -8,6 +9,7 @@ import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
 import com.dotcms.publisher.bundle.bean.Bundle;
@@ -35,6 +37,8 @@ import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
 import com.google.common.collect.ImmutableSet;
@@ -96,55 +100,52 @@ public class DependencyManagerTest {
     public void test_dependencyManager_shouldIncludeSelfRelationships()
             throws DotSecurityException, DotBundleException, DotDataException {
         final PushPublisherConfig config = new PushPublisherConfig();
-        final ContentType contentType = getContentTypeWithSelfJoinRelationship();
-        final ContentletDataGen dataGen = new ContentletDataGen(contentType.id());
 
-        //Creates parent content
-        Contentlet blogContentParent = dataGen
-                .languageId(languageId)
-                .setProperty("title", "blogContentParent")
-                .setProperty("urlTitle", "blogContentParent")
-                .setProperty("author", "systemUser")
-                .setProperty("sysPublishDate", new Date())
-                .setProperty("body", "blogBody").next();
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final Field textField = new FieldDataGen().type(TextField.class).next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .host(host)
+                .field(textField)
+                .nextPersisted();
+
+        final Relationship relationship = new FieldRelationshipDataGen()
+                .child(contentType)
+                .parent(contentType)
+                .cardinality(RELATIONSHIP_CARDINALITY.ONE_TO_ONE)
+                .nextPersisted();
 
         //Creates child content
-        final Contentlet blogContentChild = dataGen
+        final Contentlet childContent = new ContentletDataGen(contentType.id())
                 .languageId(languageId)
-                .setProperty("title", "blogContentChild")
-                .setProperty("urlTitle", "blogContentChild")
-                .setProperty("author", "systemUser")
-                .setProperty("sysPublishDate", new Date())
-                .setProperty("body", "blogBody").nextPersisted();
+                .setProperty(textField.variable(), "parent")
+                .nextPersisted();
 
-        //Adds a new relationship between both contentlets
-        final Relationship relationship = relationshipAPI.byContentType(contentType).get(0);
-
-        ContentletRelationships contentletRelationships = new ContentletRelationships(
-                blogContentParent);
-        ContentletRelationshipRecords records = contentletRelationships.new ContentletRelationshipRecords(
-                relationship, true);
-        records.setRecords(Lists.newArrayList(blogContentChild));
-        contentletRelationships.getRelationshipsRecords().add(records);
-        blogContentParent = contentletAPI.checkin(blogContentParent, contentletRelationships, null, null, user, false);
+        //Creates parent content
+        final Contentlet parentContent =  new ContentletDataGen(contentType.id())
+                .languageId(languageId)
+                .setProperty(textField.variable(), "parent")
+                .setProperty(relationship.getChildRelationName(), list(childContent))
+                .nextPersisted();
 
         //Creates a bundle with just the child
-        createBundle(config, blogContentChild);
+        createBundle(config, childContent);
 
         DependencyManager dependencyManager = new DependencyManager(user, config);
         dependencyManager.setDependencies();
 
         //The dependecy manager should include parent and child contentlets in the bundle
-        validateDependencies(blogContentParent, blogContentChild, relationship, dependencyManager);
+        validateDependencies(parentContent, childContent, relationship, dependencyManager);
 
         //Creates a bundle with just the parent
-        createBundle(config, blogContentParent);
+        createBundle(config, parentContent);
 
         dependencyManager = new DependencyManager(user, config);
         dependencyManager.setDependencies();
 
         //The dependency manager should include parent and child contentlets in the bundle
-        validateDependencies(blogContentParent, blogContentChild, relationship, dependencyManager);
+        validateDependencies(parentContent, childContent, relationship, dependencyManager);
 
     }
 
