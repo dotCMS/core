@@ -29,8 +29,7 @@ public class Task210218MigrateUserProxyTable implements StartupTask {
 
     private static final String ORACLE_SCRIPT = "alter table user_ add additional_info NCLOB NULL;";
 
-    private static final String MSSQL_SCRIPT = "SET TRANSACTION ISOLATION LEVEL READ COMMITTED;\n"
-            + "alter table user_ add additional_info NVARCHAR(MAX) NULL;";
+    private static final String MSSQL_SCRIPT = "alter table user_ add additional_info NVARCHAR(MAX) NULL;";
 
     @Override
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
@@ -49,6 +48,7 @@ public class Task210218MigrateUserProxyTable implements StartupTask {
      * @throws DotDataException
      */
     private void migrateDataFromUserProxyToUser() throws DotDataException {
+
         DotConnect dotConnect = new DotConnect();
         // retrieves existing additional info from user_proxy table
         final List<Map<String, Object>> additionalInfoMaps = dotConnect.setSQL(
@@ -58,6 +58,8 @@ public class Task210218MigrateUserProxyTable implements StartupTask {
 
         Connection connection;
         try {
+
+            DbConnectionFactory.getConnection().setAutoCommit(false);
             connection = DbConnectionFactory.getDataSource().getConnection();
 
             if (DbConnectionFactory.isPostgres()){
