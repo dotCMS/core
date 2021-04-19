@@ -408,7 +408,6 @@ import org.junit.runners.Suite.SuiteClasses;
         Task210321RemoveOldMetadataFilesTest.class,
         DBTimeZoneCheckTest.class,
         ContentHandlerTest.class,
-        ESIndexAPITest.class
         ESIndexAPITest.class,
         FileAssetTemplateUtilTest.class
 })
