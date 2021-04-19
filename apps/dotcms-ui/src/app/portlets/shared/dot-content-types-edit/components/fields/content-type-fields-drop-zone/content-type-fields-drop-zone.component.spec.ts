@@ -11,7 +11,11 @@ import { ContentTypeFieldsDropZoneComponent } from '.';
 import { By } from '@angular/platform-browser';
 import { ContentTypeFieldsAddRowModule } from '..';
 
-import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow, DotCMSContentType } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentTypeField,
+    DotCMSContentTypeLayoutRow,
+    DotCMSContentType
+} from '@dotcms/dotcms-models';
 import { ReactiveFormsModule } from '@angular/forms';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
@@ -25,8 +29,8 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { FieldDragDropService } from '../service/index';
 import { FieldPropertyService } from '../service/field-properties.service';
 import { FieldService } from '../service/field.service';
-import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
-import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { DotIconModule } from '@dotcms/ui';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DragulaModule, DragulaService } from 'ng2-dragula';
 import * as _ from 'lodash';
@@ -87,7 +91,10 @@ class TestContentTypeFieldsPropertiesFormComponent {
     @Input()
     contentType: DotCMSContentType;
 
-    public destroy(): void {return ;return;}
+    public destroy(): void {
+        return;
+        return;
+    }
 }
 
 @Component({
@@ -137,9 +144,13 @@ class TestFieldDragDropService {
 
 @Injectable()
 class TestDotLoadingIndicatorService {
-    show(): void {return;}
+    show(): void {
+        return;
+    }
 
-    hide(): void {return;}
+    hide(): void {
+        return;
+    }
 }
 
 function becomeNewField(field) {
@@ -188,7 +199,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                     DotContentTypeFieldsVariablesModule,
                     DotDialogModule,
                     DotActionButtonModule,
-                    DotIconButtonModule,
+                    UiDotIconButtonModule,
                     DotIconModule,
                     DragulaModule,
                     TableModule,
@@ -388,7 +399,9 @@ class TestHostComponent {
     layout: DotCMSContentTypeLayoutRow[];
     loading: boolean;
 
-    constructor() {return;}
+    constructor() {
+        return;
+    }
 }
 
 // TODO: Upgrade tests to use FieldDragDropService (without mocking) and mocking DragulaService
@@ -441,7 +454,7 @@ describe('Load fields and drag and drop', () => {
                     BrowserAnimationsModule,
                     DotActionButtonModule,
                     DotIconModule,
-                    DotIconButtonModule,
+                    UiDotIconButtonModule,
                     TableModule,
                     ContentTypeFieldsAddRowModule,
                     DotDialogModule,

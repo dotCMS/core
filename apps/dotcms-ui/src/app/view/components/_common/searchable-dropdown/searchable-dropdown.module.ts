@@ -3,8 +3,8 @@ import { NgModule } from '@angular/core';
 import { DataViewModule } from 'primeng/dataview';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { DotIconModule } from '../dot-icon/dot-icon.module';
-import { DotIconButtonModule } from '../dot-icon-button/dot-icon-button.module';
+import { DotIconModule } from '@dotcms/ui';
+import { UiDotIconButtonModule } from '../dot-icon-button/dot-icon-button.module';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -27,7 +27,7 @@ export const SEARCHABLE_NGFACES_MODULES = [
         FormsModule,
         ...SEARCHABLE_NGFACES_MODULES,
         DotIconModule,
-        DotIconButtonModule,
+        UiDotIconButtonModule,
         DotMessagePipeModule
     ],
     providers: []

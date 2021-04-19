@@ -13,7 +13,7 @@ import { CoreWebService, Site, SiteService } from '@dotcms/dotcms-js';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { PaginatorService } from '@services/paginator/paginator.service';
 import { DotThemesServiceMock } from '../../../../../test/dot-themes-service.mock';
-import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
+import { DotIconModule } from '@dotcms/ui';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';

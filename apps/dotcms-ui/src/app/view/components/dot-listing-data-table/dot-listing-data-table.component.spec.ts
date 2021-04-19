@@ -1,6 +1,6 @@
 import { of } from 'rxjs';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
-import { DotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
+import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotActionMenuButtonComponent } from '../_common/dot-action-menu-button/dot-action-menu-button.component';
 import { DotActionButtonComponent } from '../_common/dot-action-button/dot-action-button.component';
 import { By } from '@angular/platform-browser';
@@ -15,8 +15,8 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { ActionHeaderComponent } from './action-header/action-header.component';
 import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
 import { DotMenuModule } from '../_common/dot-menu/dot-menu.module';
-import { DotIconModule } from '../_common/dot-icon/dot-icon.module';
-import { DotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
+import { DotIconModule } from '@dotcms/ui';
+import { UiDotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
 import { DotStringFormatPipe } from '@pipes/dot-string-format/dot-string-format.pipe';
 import { ConfirmationService, SharedModule } from 'primeng/api';
 import { MenuModule } from 'primeng/menu';
@@ -111,11 +111,11 @@ describe('DotListingDataTableComponent', () => {
                 RouterTestingModule.withRoutes([
                     { path: 'test', component: DotListingDataTableComponent }
                 ]),
-                DotIconButtonTooltipModule,
+                UiDotIconButtonTooltipModule,
                 MenuModule,
                 DotMenuModule,
                 DotIconModule,
-                DotIconButtonModule,
+                UiDotIconButtonModule,
                 HttpClientTestingModule,
                 DotPipesModule,
                 FormsModule,

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 
 import { NotLicensedComponent } from './not-licensed.component';
 import { ButtonModule } from 'primeng/button';
-import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
+import { DotIconModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @NgModule({

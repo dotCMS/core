@@ -9,8 +9,8 @@ import { IFrameModule } from './view/components/_common/iframe';
 
 import { TableModule } from 'primeng/table';
 
-import { DotIconModule } from './view/components/_common/dot-icon/dot-icon.module';
-import { DotIconButtonModule } from './view/components/_common/dot-icon-button/dot-icon-button.module';
+import { DotIconModule } from '@dotcms/ui';
+import { UiDotIconButtonModule } from './view/components/_common/dot-icon-button/dot-icon-button.module';
 import { DotTextareaContentModule } from './view/components/_common/dot-textarea-content/dot-textarea-content.module';
 import { DotContentletEditorModule } from './view/components/dot-contentlet-editor/dot-contentlet-editor.module';
 import { DotWorkflowTaskDetailModule } from './view/components/dot-workflow-task-detail/dot-workflow-task-detail.module';
@@ -46,7 +46,7 @@ export const CUSTOM_MODULES = [
     DotActionButtonModule,
     DotContentletEditorModule,
     DotDialogModule,
-    DotIconButtonModule,
+    UiDotIconButtonModule,
     DotIconModule,
     DotTextareaContentModule,
     DotWorkflowTaskDetailModule,

@@ -4,7 +4,7 @@ import { DotMenuComponent } from './dot-menu.component';
 import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
-import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 
 describe('DotMenuComponent', () => {
     let component: DotMenuComponent;
@@ -14,7 +14,7 @@ describe('DotMenuComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [DotMenuComponent],
-            imports: [CommonModule, DotIconButtonModule]
+            imports: [CommonModule, UiDotIconButtonModule]
         }).compileComponents();
     });
 

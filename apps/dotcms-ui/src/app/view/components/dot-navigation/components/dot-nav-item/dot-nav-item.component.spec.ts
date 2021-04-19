@@ -4,7 +4,7 @@ import { Component, DebugElement } from '@angular/core';
 
 import { DotNavItemComponent } from './dot-nav-item.component';
 import { DotNavIconModule } from '../dot-nav-icon/dot-nav-icon.module';
-import { DotIconModule } from '../../../_common/dot-icon/dot-icon.module';
+import { DotIconModule } from '@dotcms/ui';
 import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
 import { RouterTestingModule } from '@angular/router/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';

@@ -9,6 +9,12 @@ import { CoreWebService, LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
 
+import { TabViewModule } from 'primeng/tabview';
+import { ChartModule } from 'primeng/chart';
+import { InputTextareaModule } from 'primeng/inputtextarea';
+import { ButtonModule } from 'primeng/button';
+import { DotIconModule } from '@dotcms/ui';
+
 @NgModule({
     declarations: [AppComponent],
     imports: [
@@ -17,7 +23,12 @@ import { HttpClientModule } from '@angular/common/http';
         DropdownModule,
         BrowserAnimationsModule,
         HttpClientModule,
-        RouterModule.forRoot([])
+        RouterModule.forRoot([]),
+        TabViewModule,
+        ChartModule,
+        InputTextareaModule,
+        ButtonModule,
+        DotIconModule
     ],
     providers: [CoreWebService, LoggerService, StringUtils],
     bootstrap: [AppComponent]

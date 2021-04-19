@@ -2,8 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Pipe, PipeTransform } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
-import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { DotIconModule } from '@dotcms/dot-icon';
 import { moduleMetadata } from '@storybook/angular';
 import { Story, Meta } from '@storybook/angular/types-6-0';
 import { ButtonModule } from 'primeng/button';
@@ -40,7 +40,7 @@ export default {
                 ButtonModule,
                 CommonModule,
                 DataViewModule,
-                DotIconButtonModule,
+                UiDotIconButtonModule,
                 DotIconModule,
                 FormsModule,
                 InputTextModule,

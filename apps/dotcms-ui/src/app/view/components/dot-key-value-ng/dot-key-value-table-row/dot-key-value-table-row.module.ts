@@ -2,7 +2,7 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TableModule } from 'primeng/table';
 import { FormsModule } from '@angular/forms';
-import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotKeyValueTableRowComponent } from './dot-key-value-table-row.component';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { ButtonModule } from 'primeng/button';
@@ -17,7 +17,7 @@ import { InputTextModule } from 'primeng/inputtext';
         InputTextModule,
         FormsModule,
         TableModule,
-        DotIconButtonModule,
+        UiDotIconButtonModule,
         DotPipesModule
     ],
     exports: [DotKeyValueTableRowComponent],

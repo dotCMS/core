@@ -2,8 +2,8 @@ import { DebugElement, Component } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { DotDialogComponent, DotDialogActions } from './dot-dialog.component';
-import { DotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
-import { DotIconButtonComponent } from '@components/_common/dot-icon-button/dot-icon-button.component';
+import { UiDotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
+import { UiDotIconButtonComponent } from '@components/_common/dot-icon-button/dot-icon-button.component';
 import { ButtonModule } from 'primeng/button';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -76,7 +76,7 @@ describe('DotDialogComponent', () => {
         beforeEach(
             waitForAsync(() => {
                 TestBed.configureTestingModule({
-                    imports: [DotIconButtonModule, ButtonModule, BrowserAnimationsModule],
+                    imports: [UiDotIconButtonModule, ButtonModule, BrowserAnimationsModule],
                     providers: [],
                     declarations: [DotDialogComponent, TestHostComponent]
                 }).compileComponents();
@@ -165,7 +165,7 @@ describe('DotDialogComponent', () => {
 
             it('should have close button', () => {
                 const close: DebugElement = de.query(By.css('dot-icon-button'));
-                const closeComponent: DotIconButtonComponent = close.componentInstance;
+                const closeComponent: UiDotIconButtonComponent = close.componentInstance;
 
                 expect(closeComponent.icon).toBe('close');
                 expect(close.attributes.big).toBeDefined();
@@ -443,7 +443,7 @@ describe('DotDialogComponent', () => {
         beforeEach(
             waitForAsync(() => {
                 TestBed.configureTestingModule({
-                    imports: [DotIconButtonModule, ButtonModule, BrowserAnimationsModule],
+                    imports: [UiDotIconButtonModule, ButtonModule, BrowserAnimationsModule],
                     providers: [],
                     declarations: [DotDialogComponent, TestHost2Component]
                 }).compileComponents();

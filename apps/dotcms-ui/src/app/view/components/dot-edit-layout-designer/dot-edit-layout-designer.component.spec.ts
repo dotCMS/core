@@ -17,7 +17,7 @@ import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotGlobalMessageModule } from '@components/_common/dot-global-message/dot-global-message.module';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
@@ -102,7 +102,7 @@ describe('DotEditLayoutDesignerComponent', () => {
                 ReactiveFormsModule,
                 RouterTestingModule,
                 TooltipModule,
-                DotIconButtonModule,
+                UiDotIconButtonModule,
                 ButtonModule
             ],
             providers: [

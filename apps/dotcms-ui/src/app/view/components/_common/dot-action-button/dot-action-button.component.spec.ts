@@ -5,7 +5,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { MenuModule } from 'primeng/menu';
 import { DotActionButtonComponent } from './dot-action-button.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotIconButtonModule } from '../dot-icon-button/dot-icon-button.module';
+import { UiDotIconButtonModule } from '../dot-icon-button/dot-icon-button.module';
 
 describe('ActionButtonComponent', () => {
     let comp: DotActionButtonComponent;
@@ -19,7 +19,7 @@ describe('ActionButtonComponent', () => {
                 imports: [
                     BrowserAnimationsModule,
                     MenuModule,
-                    DotIconButtonModule,
+                    UiDotIconButtonModule,
                     RouterTestingModule.withRoutes([
                         {
                             component: DotActionButtonComponent,

@@ -9,7 +9,7 @@ import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { NotLicensedComponent } from './not-licensed.component';
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
-import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
+import { DotIconModule } from '@dotcms/ui';
 import {
     DotLicenseService,
     DotUnlicensedPortletData

@@ -11,7 +11,7 @@ import {
     TemplateRef
 } from '@angular/core';
 import { DotKeyValueTableRowComponent } from './dot-key-value-table-row.component';
-import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DOTTestBed } from '@tests/dot-test-bed';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
@@ -104,7 +104,7 @@ xdescribe('DotKeyValueTableRowComponent', () => {
                 MockEditableColumnDirective,
                 TestHostComponent
             ],
-            imports: [DotIconButtonModule, InputSwitchModule],
+            imports: [UiDotIconButtonModule, InputSwitchModule],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         });
 

@@ -4,7 +4,7 @@ import { NgModule } from '@angular/core';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotPersonaSelectorComponent } from './dot-persona-selector.component';
 import { DotPersonaSelectorOptionModule } from '@components/dot-persona-selector-option/dot-persona-selector-option.module';
-import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
+import { DotIconModule } from '@dotcms/ui';
 import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
 import { DotPersonaSelectedItemModule } from '@components/dot-persona-selected-item/dot-persona-selected-item.module';
 import { PaginatorService } from '@services/paginator';

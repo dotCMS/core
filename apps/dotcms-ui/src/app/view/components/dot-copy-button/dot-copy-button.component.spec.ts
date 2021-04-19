@@ -6,7 +6,7 @@ import { DotCopyButtonComponent } from './dot-copy-button.component';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '@dotcms/app/test/dot-message-service.mock';
 import { DotClipboardUtil } from '@dotcms/app/api/util/clipboard/ClipboardUtil';
-import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { TooltipModule } from 'primeng/tooltip';
 
 const messageServiceMock = new MockDotMessageService({
@@ -33,7 +33,7 @@ describe('DotCopyButtonComponent', () => {
                     },
                     DotClipboardUtil
                 ],
-                imports: [DotIconButtonModule, TooltipModule]
+                imports: [UiDotIconButtonModule, TooltipModule]
             }).compileComponents();
         })
     );

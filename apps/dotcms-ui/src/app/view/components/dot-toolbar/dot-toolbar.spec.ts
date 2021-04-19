@@ -11,8 +11,8 @@ import { DotNavigationService } from '../dot-navigation/services/dot-navigation.
 import { SiteServiceMock, mockSites } from '../../../test/site-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { ActivatedRoute } from '@angular/router';
-import { DotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
-import { DotIconModule } from '../_common/dot-icon/dot-icon.module';
+import { UiDotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
+import { DotIconModule } from '@dotcms/ui';
 
 @Injectable()
 class MockDotNavigationService {
@@ -107,7 +107,7 @@ describe('DotToolbarComponent', () => {
                     BrowserAnimationsModule,
                     RouterTestingModule,
                     DotIconModule,
-                    DotIconButtonModule
+                    UiDotIconButtonModule
                 ],
                 providers: [
                     { provide: DotNavigationService, useClass: MockDotNavigationService },

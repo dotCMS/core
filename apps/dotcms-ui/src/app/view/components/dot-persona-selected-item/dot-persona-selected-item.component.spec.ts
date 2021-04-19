@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DotPersonaSelectedItemComponent } from './dot-persona-selected-item.component';
 import { DebugElement } from '@angular/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
+import { DotIconModule } from '@dotcms/ui';
 import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
 import { By } from '@angular/platform-browser';
 import { mockDotPersona } from '@tests/dot-persona.mock';

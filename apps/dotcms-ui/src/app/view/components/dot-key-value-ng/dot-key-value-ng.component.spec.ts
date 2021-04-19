@@ -10,7 +10,7 @@ import { DotMessageDisplayService } from '@components/dot-message-display/servic
 import { DotKeyValueTableRowModule } from '@components/dot-key-value-ng/dot-key-value-table-row/dot-key-value-table-row.module';
 import { DotKeyValueComponent } from './dot-key-value-ng.component';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
-import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
+import { DotIconModule } from '@dotcms/ui';
 import { DotKeyValueTableRowComponent } from './dot-key-value-table-row/dot-key-value-table-row.component';
 import { DotKeyValueTableInputRowModule } from './dot-key-value-table-input-row/dot-key-value-table-input-row.module';
 

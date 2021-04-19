@@ -8,7 +8,7 @@ import { Component, Input } from '@angular/core';
         [tooltipPosition]="tooltipPosition"
     ></dot-icon-button>`
 })
-export class DotIconButtonTooltipComponent {
+export class UiDotIconButtonTooltipComponent {
     @Input()
     icon: string;
 

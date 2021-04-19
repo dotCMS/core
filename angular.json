@@ -509,7 +509,8 @@
                         ],
                         "stylePreprocessorOptions": {
                             "includePaths": ["libs/dot-primeng-theme-styles/src/scss"]
-                        }
+                        },
+                        "scripts": ["node_modules/chart.js/dist/Chart.js"]
                     },
                     "configurations": {
                         "production": {
@@ -600,6 +601,28 @@
                     "builder": "@nrwl/linter:eslint",
                     "options": {
                         "lintFilePatterns": ["apps/dot-cdn-e2e/**/*.{js,ts}"]
+                    }
+                }
+            }
+        },
+        "ui": {
+            "projectType": "library",
+            "root": "libs/ui",
+            "sourceRoot": "libs/ui/src",
+            "prefix": "dotcms",
+            "architect": {
+                "lint": {
+                    "builder": "@nrwl/linter:eslint",
+                    "options": {
+                        "lintFilePatterns": ["libs/ui/src/**/*.ts", "libs/ui/src/**/*.html"]
+                    }
+                },
+                "test": {
+                    "builder": "@angular-devkit/build-angular:karma",
+                    "options": {
+                        "main": "libs/ui/src/test.ts",
+                        "tsConfig": "libs/ui/tsconfig.spec.json",
+                        "karmaConfig": "libs/ui/karma.conf.js"
                     }
                 }
             }

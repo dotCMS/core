@@ -2,7 +2,7 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { DotCrumbtrailModule } from '@components/dot-crumbtrail/dot-crumbtrail.module';
-import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotSiteSelectorModule } from '@components/_common/dot-site-selector/dot-site-selector.module';
 import { DotToolbarComponent } from './dot-toolbar.component';
 import { DotToolbarNotificationModule } from './components/dot-toolbar-notifications/dot-toolbar-notifications.module';
@@ -15,7 +15,7 @@ import { ToolbarModule } from 'primeng/toolbar';
         ButtonModule,
         CommonModule,
         DotCrumbtrailModule,
-        DotIconButtonModule,
+        UiDotIconButtonModule,
         DotSiteSelectorModule,
         DotToolbarNotificationModule,
         DotToolbarUserModule,

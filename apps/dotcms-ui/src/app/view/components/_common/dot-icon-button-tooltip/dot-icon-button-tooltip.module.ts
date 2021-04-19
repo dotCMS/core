@@ -1,12 +1,12 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DotIconButtonTooltipComponent } from './dot-icon-button-tooltip.component';
+import { UiDotIconButtonTooltipComponent } from './dot-icon-button-tooltip.component';
 import { TooltipModule } from 'primeng/tooltip';
-import { DotIconButtonModule } from '../dot-icon-button/dot-icon-button.module';
+import { UiDotIconButtonModule } from '../dot-icon-button/dot-icon-button.module';
 
 @NgModule({
-    declarations: [DotIconButtonTooltipComponent],
-    exports: [DotIconButtonTooltipComponent],
-    imports: [CommonModule, TooltipModule, DotIconButtonModule]
+    declarations: [UiDotIconButtonTooltipComponent],
+    exports: [UiDotIconButtonTooltipComponent],
+    imports: [CommonModule, TooltipModule, UiDotIconButtonModule]
 })
-export class DotIconButtonTooltipModule {}
+export class UiDotIconButtonTooltipModule {}

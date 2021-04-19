@@ -7,7 +7,7 @@ import { FieldService } from '../service';
 
 import { DragulaModule } from 'ng2-dragula';
 import { DragulaService } from 'ng2-dragula';
-import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
+import { DotIconModule } from '@dotcms/ui';
 
 const itemsData = [
     {

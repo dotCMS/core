@@ -1,13 +1,18 @@
 {
     "implicitDependencies": {
         "angular.json": "*",
-        "package.json": { "dependencies": "*", "devDependencies": "*" },
+        "package.json": {
+            "dependencies": "*",
+            "devDependencies": "*"
+        },
         "tsconfig.base.json": "*",
         "tslint.json": "*",
         ".eslintrc.json": "*",
         "nx.json": "*"
     },
-    "affected": { "defaultBase": "master" },
+    "affected": {
+        "defaultBase": "master"
+    },
     "npmScope": "dotcms",
     "tasksRunnerOptions": {
         "default": {
@@ -18,17 +23,46 @@
         }
     },
     "projects": {
-        "dotcms-ui": { "tags": [] },
-        "dotcms-ui-e2e": { "tags": [], "implicitDependencies": ["dotcms-ui"] },
-        "dot-rules": { "tags": [] },
-        "dotcms-js": { "tags": [] },
-        "dot-layout-grid": { "tags": [] },
-        "dotcms-webcomponents": { "tags": [] },
-        "dotcms-field-elements": { "tags": [] },
-        "dotcms": { "tags": [] },
-        "dotcms-models": { "tags": [] },
-        "dot-primeng-theme-styles": { "tags": [] },
-        "dot-cdn": { "tags": [] },
-        "dot-cdn-e2e": { "tags": [], "implicitDependencies": ["dot-cdn"] }
+        "dotcms-ui": {
+            "tags": []
+        },
+        "dotcms-ui-e2e": {
+            "tags": [],
+            "implicitDependencies": ["dotcms-ui"]
+        },
+        "dot-rules": {
+            "tags": []
+        },
+        "dotcms-js": {
+            "tags": []
+        },
+        "dot-layout-grid": {
+            "tags": []
+        },
+        "dotcms-webcomponents": {
+            "tags": []
+        },
+        "dotcms-field-elements": {
+            "tags": []
+        },
+        "dotcms": {
+            "tags": []
+        },
+        "dotcms-models": {
+            "tags": []
+        },
+        "dot-primeng-theme-styles": {
+            "tags": []
+        },
+        "dot-cdn": {
+            "tags": []
+        },
+        "dot-cdn-e2e": {
+            "tags": [],
+            "implicitDependencies": ["dot-cdn"]
+        },
+        "ui": {
+            "tags": []
+        }
     }
 }

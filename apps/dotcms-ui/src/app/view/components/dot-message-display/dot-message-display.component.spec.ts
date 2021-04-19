@@ -9,10 +9,9 @@ import { Observable, Subject } from 'rxjs';
 import { DotMessage } from './model';
 import { DotMessageSeverity } from './model';
 import { DotMessageType } from './model';
-import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
-import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { DotIconModule, DotIconComponent } from '@dotcms/ui';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotIconComponent } from '@components/_common/dot-icon/dot-icon.component';
 
 @Injectable()
 export class DotMessageDisplayServiceMock {
@@ -33,7 +32,12 @@ describe('DotMessageDisplayComponent', () => {
     beforeEach(
         waitForAsync(() => {
             TestBed.configureTestingModule({
-                imports: [ToastModule, DotIconModule, DotIconButtonModule, BrowserAnimationsModule],
+                imports: [
+                    ToastModule,
+                    DotIconModule,
+                    UiDotIconButtonModule,
+                    BrowserAnimationsModule
+                ],
                 declarations: [DotMessageDisplayComponent],
                 providers: [
                     { provide: DotMessageDisplayService, useValue: dotMessageDisplayServiceMock }

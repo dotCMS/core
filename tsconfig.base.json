@@ -32,7 +32,8 @@
             "@dotcms/dotcms-field-elements": ["libs/dotcms-field-elements/src/index.ts"],
             "@dotcms/dotcms-field-elements/loader": ["dist/libs/dotcms-field-elements/loader"],
             "@dotcms/dotcms": ["libs/dotcms/src/index.ts"],
-            "@dotcms/dotcms-models": ["libs/dotcms-models/src/index.ts"]
+            "@dotcms/dotcms-models": ["libs/dotcms-models/src/index.ts"],
+            "@dotcms/ui": ["libs/ui/src/index.ts"]
         }
     },
     "exclude": ["node_modules", "tmp"]

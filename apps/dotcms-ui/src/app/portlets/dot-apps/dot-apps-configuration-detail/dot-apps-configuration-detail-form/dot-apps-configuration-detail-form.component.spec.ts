@@ -4,7 +4,7 @@ import { DotAppsConfigurationDetailFormComponent } from './dot-apps-configuratio
 
 import { ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
-import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
+import { DotIconModule } from '@dotcms/ui';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { CheckboxModule } from 'primeng/checkbox';
 import { DropdownModule } from 'primeng/dropdown';

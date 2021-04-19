@@ -4,7 +4,7 @@ import { DebugElement, Component } from '@angular/core';
 import { ContentTypeFieldsTabComponent } from '.';
 import { By } from '@angular/platform-browser';
 import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
-import { DotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
+import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
@@ -51,7 +51,7 @@ describe('ContentTypeFieldsTabComponent', () => {
         waitForAsync(() => {
             DOTTestBed.configureTestingModule({
                 declarations: [ContentTypeFieldsTabComponent, DotTestHostComponent],
-                imports: [DotIconButtonTooltipModule],
+                imports: [UiDotIconButtonTooltipModule],
                 providers: [
                     DotAlertConfirmService,
                     {
