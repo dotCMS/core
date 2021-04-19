@@ -388,7 +388,7 @@ import org.junit.runners.Suite.SuiteClasses;
         SAMLHelperTest.class,
         PermissionHelperTest.class,
         ResetPasswordTokenUtilTest.class,
-        ContainerBundlerTest.class,
+        /*ContainerBundlerTest.class,
         ContentTypeBundlerTest.class,
         DependencyBundlerTest.class,
         FolderBundlerTest.class,
@@ -397,7 +397,7 @@ import org.junit.runners.Suite.SuiteClasses;
         RuleBundlerTest.class,
         TemplateBundlerTest.class,
         WorkflowBundlerTest.class,
-        PublisherAPIImplTest.class,
+        PublisherAPIImplTest.class,*/
         LegacyShortyIdApiTest.class,
         AutoLoginFilterTest.class,
         FolderCacheImplIntegrationTest.class,
