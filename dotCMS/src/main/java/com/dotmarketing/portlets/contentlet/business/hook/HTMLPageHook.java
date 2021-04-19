@@ -52,8 +52,8 @@ public class HTMLPageHook extends ContentletAPIPostHookAbstractImp {
             if(template==null) {
                 return;
             }
-            if (!APILocator.getVersionableAPI().isLive(template)) {
-                APILocator.getVersionableAPI().setLive(template);
+            if (!APILocator.getTemplateAPI().isLive(template)) {
+                APILocator.getTemplateAPI().setLive(template);
             }
 
 

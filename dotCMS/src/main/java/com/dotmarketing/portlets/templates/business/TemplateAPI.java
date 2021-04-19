@@ -7,6 +7,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
@@ -346,6 +347,39 @@ public interface TemplateAPI {
 	 * @return true if template is archived, false if not.
 	 * @throws DotDataException
 	 */
-	boolean isArchived(final Template template) throws DotDataException;
+	boolean isArchived(final Template template) throws DotDataException, DotStateException,DotSecurityException;
+
+	/**
+	 * Check if a template is live
+	 *
+	 * @param template {@link Template}
+	 * @return true if it is live. false if not
+	 * @throws DotDataException
+	 * @throws DotStateException
+	 * @throws DotSecurityException
+	 */
+	boolean isLive(Template template) throws DotDataException, DotStateException,DotSecurityException;
+
+	/**
+	 * Set this template as the live version
+	 *
+	 * @param template Template to be set as the live version
+	 * @throws DotDataException
+	 * @throws DotStateException
+	 * @throws DotSecurityException
+	 */
+	void setLive(Template template) throws DotDataException, DotStateException,DotSecurityException;
+
+	/**
+	 * Returns the Template based on the folder and host; this method is mostly used when the template is file asset based.
+	 * @param folder
+	 * @param host
+	 * @param user
+	 * @param showLive
+	 * @return
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	Template getTemplateByFolder(final Folder folder, final Host host, final User user, final boolean showLive) throws DotSecurityException, DotDataException;
 
 }
