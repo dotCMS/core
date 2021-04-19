@@ -123,3 +123,5 @@ This maintenance release includes the following code fixes:
 59. https://github.com/dotCMS/core/issues/20053 : Anonymous users cannot fire actions when specified by their identifier
 
 60. https://github.com/dotCMS/core/issues/20013 : Potential Timezone Bug
+
+61. https://github.com/dotCMS/core/issues/19511 : Contentlets with future publish date prevent Page Asset from being published.
