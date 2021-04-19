@@ -127,3 +127,5 @@ This maintenance release includes the following code fixes:
 61. https://github.com/dotCMS/core/issues/19511 : Contentlets with future publish date prevent Page Asset from being published.
 
 62. https://github.com/dotCMS/core/issues/19993 : [workflow] : The "Send an Email" sub-action fails if executed before "Save content" sub-action 
+
+63. https://github.com/dotCMS/core/issues/19992 : Elasticsearch RestHighLevelClient does not handle RuntimeExceptions
