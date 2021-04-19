@@ -12139,7 +12139,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"comments\":\"Publish an existing Generic content\",\n    \"query\":\"+contentType:webPageContent\",\n\t\"contentlet\": {\n        \"title\":\"Test Merge Content Published\"\n\t}\n}",
+							"raw": "{\n\t\"comments\":\"Publish an existing Generic content\",\n    \"query\":\"+contentType:FileAsset\",\n\t\"contentlet\": {\n        \"title\":\"Test Merge Content Published\"\n\t}\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -12339,12 +12339,7 @@
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
 									"});",
-									"",
-									"pm.test(\"Information Saved Correctly\", function () {",
-									"    ",
-									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.entity.summary.affected).to.above(9);",
-									"});"
+									""
 								],
 								"type": "text/javascript"
 							}
