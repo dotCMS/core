@@ -382,7 +382,7 @@ import org.junit.runners.Suite.SuiteClasses;
         AppsInterpolationTest.class,
         com.dotcms.rest.api.v1.template.TemplateResourceTest.class,
         Task201102UpdateColumnSitelicTableTest.class,*/
-        DependencyManagerTest.class/*,
+        DependencyManagerTest.class,
         com.dotcms.rest.api.v1.versionable.VersionableResourceTest.class,
         GenericBundleActivatorTest.class,
         SAMLHelperTest.class,
@@ -407,7 +407,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task210321RemoveOldMetadataFilesTest.class,
         DBTimeZoneCheckTest.class,
         ContentHandlerTest.class,
-        ESIndexAPITest.class*/
+        ESIndexAPITest.class
 })
 public class MainSuite {
 
