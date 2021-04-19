@@ -104,7 +104,7 @@ import org.junit.runners.Suite.SuiteClasses;
 /* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
-        com.dotcms.content.elasticsearch.business.ESMappingAPITest.class,
+        /*com.dotcms.content.elasticsearch.business.ESMappingAPITest.class,
         org.apache.velocity.runtime.parser.node.SimpleNodeTest.class,
         com.liferay.portal.ejb.UserLocalManagerTest.class,
         com.liferay.portal.ejb.UserUtilTest.class,
@@ -381,14 +381,14 @@ import org.junit.runners.Suite.SuiteClasses;
         Task201014UpdateColumnsValuesInIdentifierTableTest.class,
         AppsInterpolationTest.class,
         com.dotcms.rest.api.v1.template.TemplateResourceTest.class,
-        Task201102UpdateColumnSitelicTableTest.class,
-        DependencyManagerTest.class,
+        Task201102UpdateColumnSitelicTableTest.class,*/
+        DependencyManagerTest.class/*,
         com.dotcms.rest.api.v1.versionable.VersionableResourceTest.class,
         GenericBundleActivatorTest.class,
         SAMLHelperTest.class,
         PermissionHelperTest.class,
         ResetPasswordTokenUtilTest.class,
-        /*ContainerBundlerTest.class,
+        ContainerBundlerTest.class,
         ContentTypeBundlerTest.class,
         DependencyBundlerTest.class,
         FolderBundlerTest.class,
@@ -397,7 +397,7 @@ import org.junit.runners.Suite.SuiteClasses;
         RuleBundlerTest.class,
         TemplateBundlerTest.class,
         WorkflowBundlerTest.class,
-        PublisherAPIImplTest.class,*/
+        PublisherAPIImplTest.class,
         LegacyShortyIdApiTest.class,
         AutoLoginFilterTest.class,
         FolderCacheImplIntegrationTest.class,
@@ -407,7 +407,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task210321RemoveOldMetadataFilesTest.class,
         DBTimeZoneCheckTest.class,
         ContentHandlerTest.class,
-        ESIndexAPITest.class
+        ESIndexAPITest.class*/
 })
 public class MainSuite {
 
