@@ -177,7 +177,7 @@ class ElasticReadOnlyCommandImpl implements ElasticReadOnlyCommand {
                     .setSeverity(MessageSeverity.ERROR)
                     .setType(MessageType.SIMPLE_MESSAGE)
                     .setLife(TimeUnit.SECONDS.toMillis(5));
-            Logger.error(this.getClass(), message);
+            Logger.error(this.getClass(), "messageKey: " + messageKey + ", message: " + message);
             systemMessageEventUtil.pushMessage(messageBuilder.create(), usersId);
         } catch (final  LanguageException | DotDataException | DotSecurityException e) {
             Logger.warn(this, () -> e.getMessage());

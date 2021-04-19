@@ -588,7 +588,7 @@ public class PublishFactory {
 
 			Logger.warn(PublishFactory.class, message);
 		} catch (final  LanguageException  e) {
-			Logger.warn(PublishFactory.class, () -> e.getMessage());
+			Logger.warn(PublishFactory.class, () -> "messageKey:" + messageKey + ", msg:" + e.getMessage());
 		}
 	}
 }

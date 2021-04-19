@@ -354,7 +354,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
 
                 if (null == submitter) {
 
-                    submitter = new DotSingleSubmitterImpl();
+                    submitter = new DotSingleSubmitterImpl(name);
                     this.submitterMap.put(name, submitter);
                 }
             }
@@ -367,7 +367,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
 
                 synchronized (DotConcurrentFactory.class) {
 
-                    submitter = new DotSingleSubmitterImpl();
+                    submitter = new DotSingleSubmitterImpl(name);
                     this.submitterMap.put(name, submitter);
                 }
             }
@@ -659,7 +659,12 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
     /// DotSingleSubmitterImpl
     private final class DotSingleSubmitterImpl implements DotSubmitter {
 
+        private final String name;
         private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+
+        public DotSingleSubmitterImpl(final String name) {
+            this.name = name;
+        }
 
         @Override
         public Future<?> submit(final Runnable command) {
@@ -687,7 +692,8 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         @Override
         public <T> Future<T> submit(Callable<T> callable, long delay, TimeUnit unit) {
 
-            throw new UnsupportedOperationException("Submit Delay not supported on single submitter");
+            throw new UnsupportedOperationException(
+                    "Submit Delay not supported on single submitter, name: " + this.name);
         }
 
         @Override
@@ -726,13 +732,13 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
             try {
                 executorService.awaitTermination(timeout, unit);
             } catch (InterruptedException e) {
-                throw new DotRuntimeException(e);
+                throw new DotRuntimeException(e.getMessage() + ", name: " + this.name, e);
             }
         }
 
         @Override
         public long getTaskCount() {
-            throw new UnsupportedOperationException("Submit Delay not supported on single submitter");
+            throw new UnsupportedOperationException("Submit Delay not supported on single submitter, name: " + this.name);
         }
 
         @Override
