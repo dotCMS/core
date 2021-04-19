@@ -2,6 +2,7 @@ package com.dotcms.concurrent;
 
 import com.dotcms.UnitTestBase;
 import com.dotcms.concurrent.DotConcurrentFactory.SubmitterConfigBuilder;
+import com.dotcms.content.elasticsearch.business.ElasticReadOnlyCommand;
 import com.dotmarketing.util.json.JSONException;
 
 import org.junit.Test;
@@ -14,8 +15,29 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 public class DotConcurrentFactoryTest extends UnitTestBase {
+
+    /**
+     * Method to test: {@link DotSubmitter#submit(Runnable)}
+     * Given Scenario: Just running task to see if works
+     * ExpectedResult: The executeCheck should be called
+     *
+     */
+    @Test
+    public void testSubmit_Single_Submitter_Config() throws JSONException, ExecutionException, InterruptedException {
+
+        final ElasticReadOnlyCommand esReadOnlyMonitor = mock(ElasticReadOnlyCommand.class);
+        final DotConcurrentFactory dotConcurrentFactory =
+                DotConcurrentFactory.getInstance();
+        final DotSubmitter submitter =
+                dotConcurrentFactory.getSingleSubmitter();
+        submitter.submit(()-> esReadOnlyMonitor.executeCheck());
+
+        verify(esReadOnlyMonitor).executeCheck();
+    }
 
     @Test
     public void testDefaultOne_Single_Submitter_Config() throws JSONException, ExecutionException, InterruptedException {
