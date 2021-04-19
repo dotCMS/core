@@ -46,9 +46,6 @@ public class LocalSystemEventSubscribersInitializer implements DotInitializer {
         APILocator.getLocalSystemEventsAPI().subscribe(CompanyKeyResetEvent.class, PushPublishKeyResetEventListener.INSTANCE.get());
 
         APILocator.getLocalSystemEventsAPI().subscribe(CompanyKeyResetEvent.class, AppsKeyResetEventListener.INSTANCE.get());
-
-        APILocator.getLocalSystemEventsAPI().subscribe(AppSecretSavedEvent.class,  DotSamlProxyFactory.getInstance());
-
     }
 
     public void initApplicationContainerFolderListener() {

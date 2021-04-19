@@ -7,6 +7,7 @@ import com.dotcms.saml.DotSamlException;
 import com.dotcms.saml.DotSamlProxyFactory;
 import com.dotcms.saml.IdentityProviderConfiguration;
 import com.dotcms.saml.SamlAuthenticationService;
+import com.dotcms.saml.SamlConfigurationService;
 import com.dotcms.saml.SamlName;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -142,8 +143,11 @@ public class SAMLHelper {
         }
 
         // check if the client wants synchronization
-        final boolean createUserWhenDoesNotExists = DotSamlProxyFactory.getInstance()
-                .samlConfigurationService().getConfigAsBoolean(identityProviderConfiguration, SamlName.DOT_SAML_ALLOW_USER_SYNCHRONIZATION);
+        final SamlConfigurationService samlConfigurationService = DotSamlProxyFactory.getInstance().samlConfigurationService();
+        final boolean createUserWhenDoesNotExists =
+                null != samlConfigurationService?
+                        samlConfigurationService.getConfigAsBoolean(identityProviderConfiguration, SamlName.DOT_SAML_ALLOW_USER_SYNCHRONIZATION): true;
+
         if (createUserWhenDoesNotExists) {
 
             user = null == user?
