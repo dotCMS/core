@@ -317,6 +317,19 @@ public class HostAPIImpl implements HostAPI {
         return host;
     }
 
+    @Override
+    @CloseDBIfOpened
+    public Host find(final Contentlet contentlet,
+                     final User user,
+                     final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        return find(
+                org.apache.commons.lang3.StringUtils.defaultIfBlank(
+                        contentlet.getHost(),
+                        contentlet.getContentType().host()),
+                user,
+                respectFrontendRoles);
+    }
+
     /**
      * Retrieves the list of all hosts in the system
      * @throws DotSecurityException
