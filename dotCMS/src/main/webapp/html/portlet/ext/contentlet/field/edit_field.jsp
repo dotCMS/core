@@ -489,8 +489,10 @@
 
     <%}else{ %>
 
-        <% Optional<FocalPoint> focalPoint =new FocalPointAPIImpl().readFocalPoint(binInode, field.getVelocityVarName()); %>
-        <% String fpStr = focalPoint.isPresent() ? focalPoint.get().x + "," + focalPoint.get().y :".0,.0"; %>
+        <%
+         final Optional<FocalPoint> focalPoint =new FocalPointAPIImpl().readFocalPoint(binInode, field.getVelocityVarName());
+         final String fpStr = focalPoint.isPresent() ? focalPoint.get().x + "," + focalPoint.get().y :"0.0,0.0";
+        %>
 
 
        <div id="thumbnailParent<%=field.getVelocityVarName()%>">
