@@ -1,6 +1,7 @@
 package com.dotcms.publisher.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -29,6 +30,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
@@ -377,6 +379,90 @@ public class DependencyManagerTest {
 
         for (final FileAsset fileAsset : fileAssetsByFolder) {
             assertTrue(dependencyManager.getContents().contains(fileAsset.getIdentifier()));
+        }
+
+    }
+
+    /**
+     * <b>Method to test:</b> {@link DependencyManager#setDependencies()} <p>
+     * <b>Given Scenario:</b> A Page using a Template as a File Design<p>
+     * <b>ExpectedResult:</b> Should include the template files as dependencies
+     * @throws DotSecurityException
+     * @throws DotBundleException
+     * @throws DotDataException
+     */
+    @Test
+    public void test_Page_with_FileTemplateDesign_as_Dependencies()
+            throws DotSecurityException, DotBundleException, DotDataException {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final PushPublisherConfig config = new PushPublisherConfig();
+
+        FileAssetTemplate fileAssetTemplate = new TemplateAsFileDataGen().designTemplate(true)
+                .host(host).nextPersisted();
+
+        fileAssetTemplate = FileAssetTemplate.class.cast(APILocator.getTemplateAPI()
+                .findWorkingTemplate(fileAssetTemplate.getIdentifier(),user,false));
+
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, fileAssetTemplate).nextPersisted();
+
+        //Creates a bundle with just the page
+        createBundle(config, htmlPageAsset);
+
+        DependencyManager dependencyManager = new DependencyManager(user, config);
+        dependencyManager.setDependencies();
+
+        final String path = fileAssetTemplate.getPath();
+        final Folder rootFolder = APILocator.getFolderAPI()
+                .findFolderByPath(path, fileAssetTemplate.getHost(), user, false);
+
+        final List<FileAsset> fileAssetsByFolder = APILocator.getFileAssetAPI()
+                .findFileAssetsByFolder(rootFolder, APILocator.systemUser(), false);
+
+        for (final FileAsset fileAsset : fileAssetsByFolder) {
+            assertTrue("fileAsset: " + fileAsset.getIdentifier() + "Contents: " +dependencyManager.getContents().toString(),dependencyManager.getContents().contains(htmlPageAsset.getIdentifier()));
+        }
+
+    }
+
+    /**
+     * <b>Method to test:</b> {@link DependencyManager#setDependencies()} <p>
+     * <b>Given Scenario:</b> A Page using a Template as a File Advanced<p>
+     * <b>ExpectedResult:</b> Should include the template files as dependencies
+     * @throws DotSecurityException
+     * @throws DotBundleException
+     * @throws DotDataException
+     */
+    @Test
+    public void test_Page_with_FileTemplateAdvanced_as_Dependencies()
+            throws DotSecurityException, DotBundleException, DotDataException {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final PushPublisherConfig config = new PushPublisherConfig();
+
+        FileAssetTemplate fileAssetTemplate = new TemplateAsFileDataGen().designTemplate(false)
+                .host(host).nextPersisted();
+
+        fileAssetTemplate = FileAssetTemplate.class.cast(APILocator.getTemplateAPI()
+                .findWorkingTemplate(fileAssetTemplate.getIdentifier(),user,false));
+
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, fileAssetTemplate).nextPersisted();
+
+        //Creates a bundle with just the page
+        createBundle(config, htmlPageAsset);
+
+        DependencyManager dependencyManager = new DependencyManager(user, config);
+        dependencyManager.setDependencies();
+
+        final String path = fileAssetTemplate.getPath();
+        final Folder rootFolder = APILocator.getFolderAPI()
+                .findFolderByPath(path, fileAssetTemplate.getHost(), user, false);
+
+        final List<FileAsset> fileAssetsByFolder = APILocator.getFileAssetAPI()
+                .findFileAssetsByFolder(rootFolder, APILocator.systemUser(), false);
+
+        for (final FileAsset fileAsset : fileAssetsByFolder) {
+            assertTrue("fileAsset: " + fileAsset.getIdentifier() + "Contents: " +dependencyManager.getContents().toString(),dependencyManager.getContents().contains(htmlPageAsset.getIdentifier()));
         }
 
     }

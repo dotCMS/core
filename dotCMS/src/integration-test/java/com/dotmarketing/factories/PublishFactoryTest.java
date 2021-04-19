@@ -7,10 +7,13 @@ import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.google.common.collect.Lists;
 
 import com.dotcms.IntegrationTestBase;
@@ -420,5 +423,33 @@ public class PublishFactoryTest extends IntegrationTestBase {
                 eq(messageBuilderExpiredContent.create()),
                 any()
         );
+    }
+
+    /***
+     * Method to Test: {@link PublishFactory#publishHTMLPage(IHTMLPage, HttpServletRequest)}
+     * When: Try to publish a page with a file Template that is not published.
+     * Should: Publish the page and the file Template.
+     */
+    @Test
+    public void test_publishHTMLPage_pageUsingFileTemplate_success()
+            throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+
+        FileAssetTemplate fileAssetTemplate = new TemplateAsFileDataGen().designTemplate(true)
+                .host(host).nextPersisted();
+
+        fileAssetTemplate = FileAssetTemplate.class.cast(APILocator.getTemplateAPI()
+                .findWorkingTemplate(fileAssetTemplate.getIdentifier(),systemUser,false));
+
+        Assert.assertFalse(APILocator.getTemplateAPI().isLive(fileAssetTemplate));
+
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, fileAssetTemplate).nextPersisted();
+
+        APILocator.getContentletAPI().publish(htmlPageAsset, systemUser, false);
+
+        fileAssetTemplate = FileAssetTemplate.class.cast(APILocator.getTemplateAPI()
+                .findWorkingTemplate(fileAssetTemplate.getIdentifier(),systemUser,false));
+
+        Assert.assertTrue(APILocator.getTemplateAPI().isLive(fileAssetTemplate));
     }
 }
