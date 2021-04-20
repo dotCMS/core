@@ -116,3 +116,5 @@ This release includes the following code fixes:
 55. https://github.com/dotCMS/core/issues/20136 : [Push Publish] : Selecting the REMOVE option in Push Publishing modal is not working
 
 56. https://github.com/dotCMS/core/issues/19993 : [workflow] : The "Send an Email" sub-action fails if executed before "Save content" sub-action 
+
+57. https://github.com/dotCMS/core/issues/19951 : Date time field, should respect the time zone from format or company

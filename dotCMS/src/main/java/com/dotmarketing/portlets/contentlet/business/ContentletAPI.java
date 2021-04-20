@@ -46,6 +46,21 @@ import java.util.Set;
 public interface ContentletAPI {
 
 	/**
+	 * Default formats for contentlets including timezones
+	 */
+	public static final String[] DEFAULT_DATE_FORMATS = new String[] {
+			// time zone
+			"yyyy-MM-dd HH:mm:ss z Z", "d-MMM-yy z Z", "dd-MMM-yyyy z Z", "MM/dd/yy HH:mm:ss z Z",
+			"MM/dd/yy hh:mm:ss z Z", "MMMM dd, yyyy z Z", "M/d/y z Z", "MM/dd/yyyy z Z", "yyyy-MM-dd z Z",
+
+			"yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm", "d-MMM-yy", "MMM-yy", "MMMM-yy", "d-MMM", "dd-MMM-yyyy",
+			"MM/dd/yyyy hh:mm:ss aa", "MM/dd/yyyy hh:mm aa", "MM/dd/yy HH:mm:ss", "MM/dd/yy HH:mm:ss", "MM/dd/yy HH:mm",
+			"MM/dd/yy hh:mm:ss aa", "MM/dd/yy hh:mm:ss", "MM/dd/yyyy HH:mm:ss", "MM/dd/yyyy HH:mm", "MMMM dd, yyyy",
+			"M/d/y", "M/d", "EEEE, MMMM dd, yyyy", "MM/dd/yyyy",
+			"hh:mm:ss aa", "hh:mm aa", "HH:mm:ss", "HH:mm", "yyyy-MM-dd"
+	};
+
+	/**
 	 * Use to retrieve all version of all content in the database.  This is not a common method to use. 
 	 * Only use if you need to do maintenance tasks like search and replace something in every piece 
 	 * of content.  Doesn't respect permissions.
