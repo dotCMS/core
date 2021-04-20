@@ -321,7 +321,7 @@ import org.junit.runners.Suite.SuiteClasses;
         ConfigTest.class,
         FolderTest.class,
         PublishAuditAPITest.class,
-        BundleFactoryTest.class,/*
+        BundleFactoryTest.class,
         com.dotcms.security.apps.SecretsStoreKeyStoreImplTest.class,
         AppsAPIImplTest.class,
         AppsResourceTest.class,
@@ -341,7 +341,7 @@ import org.junit.runners.Suite.SuiteClasses;
         LanguageUtilTest.class,
         FolderResourceTest.class,
         Task05225RemoveLoadRecordsToIndexTest.class,
-        PushPublishBundleGeneratorTest.class,
+        /*PushPublishBundleGeneratorTest.class,
         BundleFactoryTest.class,
         PublisherFilterImplTest.class,
         PushPublishFiltersInitializerTest.class,
