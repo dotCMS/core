@@ -320,7 +320,7 @@ import org.junit.runners.Suite.SuiteClasses;
         TestConfig.class,
         ConfigTest.class,
         FolderTest.class,
-        PublishAuditAPITest.class,
+        PublishAuditAPITest.class,/*
         BundleFactoryTest.class,
         com.dotcms.security.apps.SecretsStoreKeyStoreImplTest.class,
         AppsAPIImplTest.class,
@@ -340,8 +340,8 @@ import org.junit.runners.Suite.SuiteClasses;
         ElasticsearchUtilTest.class,
         LanguageUtilTest.class,
         FolderResourceTest.class,
-        Task05225RemoveLoadRecordsToIndexTest.class,
-        /*PushPublishBundleGeneratorTest.class,
+        Task05225RemoveLoadRecordsToIndexTest.class,*/
+        PushPublishBundleGeneratorTest.class,
         BundleFactoryTest.class,
         PublisherFilterImplTest.class,
         PushPublishFiltersInitializerTest.class,
@@ -373,7 +373,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest.class,
         JSONToolTest.class,
         BundlePublisherResourceIntegrationTest.class,
-        IntegrityResourceIntegrationTest.class,*/
+        IntegrityResourceIntegrationTest.class,
         Task00050LoadAppsSecretsTest.class,
         StoragePersistenceAPITest.class,
         FileMetadataAPITest.class,
