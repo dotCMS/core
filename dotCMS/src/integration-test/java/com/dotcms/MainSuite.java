@@ -320,7 +320,7 @@ import org.junit.runners.Suite.SuiteClasses;
         TestConfig.class,
         ConfigTest.class,
         FolderTest.class,
-        PublishAuditAPITest.class,/*
+        PublishAuditAPITest.class,
         BundleFactoryTest.class,
         com.dotcms.security.apps.SecretsStoreKeyStoreImplTest.class,
         AppsAPIImplTest.class,
@@ -331,7 +331,7 @@ import org.junit.runners.Suite.SuiteClasses;
         DotAssetBaseTypeToContentTypeStrategyImplTest.class,
         RulesAPIImplIntegrationTest.class,
         FileAssetAPIImplIntegrationTest.class,
-        FileAssetFactoryIntegrationTest.class,
+        FileAssetFactoryIntegrationTest.class,/*
         UserResourceIntegrationTest.class,
         SiteSearchJobImplTest.class,
         IntegrationResourceLinkTest.class,
