@@ -129,3 +129,5 @@ This maintenance release includes the following code fixes:
 62. https://github.com/dotCMS/core/issues/19993 : [workflow] : The "Send an Email" sub-action fails if executed before "Save content" sub-action 
 
 63. https://github.com/dotCMS/core/issues/19992 : Elasticsearch RestHighLevelClient does not handle RuntimeExceptions
+
+64. https://github.com/dotCMS/core/issues/19974 : Performance issues with GraphQL under load

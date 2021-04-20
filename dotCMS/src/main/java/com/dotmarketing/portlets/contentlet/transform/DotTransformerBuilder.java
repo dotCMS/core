@@ -25,6 +25,7 @@ import com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -201,14 +202,17 @@ public class DotTransformerBuilder {
         return new DotContentletTransformerImpl(contentlets, resolver, EnumSet.copyOf(optionsHolder), user);
     }
 
+    final static Lazy<String> strategyResolver = Lazy.of(() -> {
+        return Config.getStringProperty("TRANSFORMER_PROVIDER_STRATEGY_CLASS", null);
+    });
+
     /**
      * The strategies resolver is a key part of the mechanism
      * This allows to provide a custom one.
      * @return
      */
     private String getStrategyResolverProvider() {
-        return Config
-                .getStringProperty("TRANSFORMER_PROVIDER_STRATEGY_CLASS", null);
+        return strategyResolver.get();
     }
 
 }
