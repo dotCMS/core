@@ -321,7 +321,7 @@ import org.junit.runners.Suite.SuiteClasses;
         ConfigTest.class,
         FolderTest.class,
         PublishAuditAPITest.class,
-        BundleFactoryTest.class,/*
+        BundleFactoryTest.class,
         com.dotcms.security.apps.SecretsStoreKeyStoreImplTest.class,
         AppsAPIImplTest.class,
         AppsResourceTest.class,
@@ -373,7 +373,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest.class,
         JSONToolTest.class,
         BundlePublisherResourceIntegrationTest.class,
-        IntegrityResourceIntegrationTest.class,
+        IntegrityResourceIntegrationTest.class,/*
         Task00050LoadAppsSecretsTest.class,
         StoragePersistenceAPITest.class,
         FileMetadataAPITest.class,
