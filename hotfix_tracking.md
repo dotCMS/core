@@ -139,3 +139,5 @@ This maintenance release includes the following code fixes:
 67. https://github.com/dotCMS/core/issues/19913 : [code] : Re-adding parent relationship after removal throws an error
 
 68. https://github.com/dotCMS/core/issues/19877 : [core] : Remove unnecessary Web Token 
+
+69. https://github.com/dotCMS/core/issues/19813 : Allow mail session to be configured via environmental variables

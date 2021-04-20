@@ -8,7 +8,7 @@
             pluggabilitySkip="${tomcat.util.scan.StandardJarScanFilter.jarsToSkip},ojdbc*.jar"
             tldSkip="${tomcat.util.scan.StandardJarScanFilter.jarsToSkip},ojdbc*.jar"/>
     </JarScanner>
-
+Ø
     <!--
     The class loader behaviour changed on recent tomcat versions, with the new default behaviour
      we are unable to set a -javaagent and with that we won't be able to use instrumentation, setting the
@@ -22,6 +22,6 @@
     -->
     <Loader delegate="true"/><!--https://issues.apache.org/bugzilla/show_bug.cgi?id=55943#c13-->
 
-    <Resource name="mail/MailSession" auth="Container" type="javax.mail.Session" mail.smtp.host="localhost" />
+    <!--<Resource name="mail/MailSession" auth="Container" type="javax.mail.Session" mail.smtp.host="localhost" />-->
 
 </Context>
