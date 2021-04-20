@@ -137,3 +137,5 @@ This maintenance release includes the following code fixes:
 66. https://github.com/dotCMS/core/issues/19926 : NPE on every page request after setting: ENABLE_NAV_PERMISSION_CHECK=true
 
 67. https://github.com/dotCMS/core/issues/19913 : [code] : Re-adding parent relationship after removal throws an error
+
+68. https://github.com/dotCMS/core/issues/19877 : [core] : Remove unnecessary Web Token 
