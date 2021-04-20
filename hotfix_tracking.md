@@ -124,3 +124,5 @@ This release includes the following code fixes:
 59. https://github.com/dotCMS/core/issues/19877 : [core] : Remove unnecessary Web Token
 
 60. https://github.com/dotCMS/core/issues/20041 : Time machine is causing an error with the index
+
+61. https://github.com/dotCMS/core/issues/19813 : Allow mail session to be configured via environmental variables
