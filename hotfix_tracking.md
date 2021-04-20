@@ -131,3 +131,5 @@ This maintenance release includes the following code fixes:
 63. https://github.com/dotCMS/core/issues/19992 : Elasticsearch RestHighLevelClient does not handle RuntimeExceptions
 
 64. https://github.com/dotCMS/core/issues/19974 : Performance issues with GraphQL under load
+
+65. https://github.com/dotCMS/core/issues/19951 : Date time field, should respect the time zone from format or company
