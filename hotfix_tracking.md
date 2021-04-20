@@ -118,3 +118,5 @@ This release includes the following code fixes:
 56. https://github.com/dotCMS/core/issues/19993 : [workflow] : The "Send an Email" sub-action fails if executed before "Save content" sub-action 
 
 57. https://github.com/dotCMS/core/issues/19951 : Date time field, should respect the time zone from format or company
+
+58. https://github.com/dotCMS/core/issues/19926 : NPE on every page request after setting: ENABLE_NAV_PERMISSION_CHECK=true
