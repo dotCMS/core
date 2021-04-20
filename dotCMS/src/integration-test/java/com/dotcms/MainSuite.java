@@ -281,7 +281,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.servlets.BinaryExporterServletTest.class,
         com.dotmarketing.servlets.ShortyServletAndTitleImageTest.class,
         com.dotmarketing.servlets.ajax.AjaxDirectorServletIntegrationTest.class,
-        com.dotmarketing.common.reindex.ReindexThreadTest.class,/*
+        com.dotmarketing.common.reindex.ReindexThreadTest.class,
         com.dotmarketing.common.reindex.ReindexAPITest.class,
         com.dotmarketing.common.db.DotDatabaseMetaDataTest.class,
         com.dotmarketing.common.db.ParamsSetterTest.class,
@@ -321,7 +321,7 @@ import org.junit.runners.Suite.SuiteClasses;
         ConfigTest.class,
         FolderTest.class,
         PublishAuditAPITest.class,
-        BundleFactoryTest.class,
+        BundleFactoryTest.class,/*
         com.dotcms.security.apps.SecretsStoreKeyStoreImplTest.class,
         AppsAPIImplTest.class,
         AppsResourceTest.class,
