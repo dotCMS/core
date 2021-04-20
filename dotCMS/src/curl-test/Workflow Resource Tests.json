@@ -12220,7 +12220,7 @@
 									"pm.test(\"Information Saved Correctly\", function () {",
 									"    ",
 									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.entity.summary.affected).to.above(1);",
+									"    pm.expect(jsonData.entity.summary.affected).to.above(0);",
 									"});"
 								],
 								"type": "text/javascript"
