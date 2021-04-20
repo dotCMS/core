@@ -12112,59 +12112,6 @@
 			"name": "mergeAction",
 			"item": [
 				{
-					"name": "PublishMergeNoAuth",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"console.log(\"Running test\")",
-									"",
-									"pm.test(\"Should be not allowed\", function () {",
-									"    ",
-									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.entity.summary.failCount).to.above(0);",
-									"});",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "noauth"
-						},
-						"method": "PATCH",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n\t\"comments\":\"Publish an existing Generic content\",\n    \"query\":\"+contentType:FileAsset\",\n\t\"contentlet\": {\n        \"title\":\"Test Merge Content Published\"\n\t}\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"actions",
-								"default",
-								"fire",
-								"PUBLISH"
-							]
-						}
-					},
-					"response": []
-				},
-				{
 					"name": "AddMergeContentlet",
 					"event": [
 						{
@@ -12273,7 +12220,7 @@
 									"pm.test(\"Information Saved Correctly\", function () {",
 									"    ",
 									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.entity.summary.affected).to.above(9);",
+									"    pm.expect(jsonData.entity.summary.affected).to.above(1);",
 									"});"
 								],
 								"type": "text/javascript"
