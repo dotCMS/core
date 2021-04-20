@@ -105,7 +105,7 @@ import org.junit.runners.Suite.SuiteClasses;
 /* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
-        /*com.dotcms.content.elasticsearch.business.ESMappingAPITest.class,
+        com.dotcms.content.elasticsearch.business.ESMappingAPITest.class,
         org.apache.velocity.runtime.parser.node.SimpleNodeTest.class,
         com.liferay.portal.ejb.UserLocalManagerTest.class,
         com.liferay.portal.ejb.UserUtilTest.class,
@@ -281,7 +281,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.servlets.BinaryExporterServletTest.class,
         com.dotmarketing.servlets.ShortyServletAndTitleImageTest.class,
         com.dotmarketing.servlets.ajax.AjaxDirectorServletIntegrationTest.class,
-        com.dotmarketing.common.reindex.ReindexThreadTest.class,*/
+        com.dotmarketing.common.reindex.ReindexThreadTest.class,/*
         com.dotmarketing.common.reindex.ReindexAPITest.class,
         com.dotmarketing.common.db.DotDatabaseMetaDataTest.class,
         com.dotmarketing.common.db.ParamsSetterTest.class,
@@ -382,7 +382,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task201014UpdateColumnsValuesInIdentifierTableTest.class,
         AppsInterpolationTest.class,
         com.dotcms.rest.api.v1.template.TemplateResourceTest.class,
-        Task201102UpdateColumnSitelicTableTest.class,
+        Task201102UpdateColumnSitelicTableTest.class,*/
         DependencyManagerTest.class,
         com.dotcms.rest.api.v1.versionable.VersionableResourceTest.class,
         GenericBundleActivatorTest.class,
