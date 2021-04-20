@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import com.dotcms.rest.api.v1.authentication.DotInvalidTokenException;
 import java.util.Date;
 import java.util.List;
 
@@ -8,6 +9,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.Address;
 import com.liferay.portal.model.User;
+import java.util.Optional;
 
 /**
  * UserAPI is an API intended to be a helper class for class to get User
@@ -430,5 +432,14 @@ public interface UserAPI {
    */
   public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous, boolean includeDefault, String roleId)
       throws DotDataException;
+
+	/**
+	 * Get the userId by the icqId.
+	 * If the icqId is not set a DotInvalidTokenException will be thrown
+	 *
+	 * @param icqId icqId to search for
+	 * @return userId that the icqId is associated
+	 */
+	public Optional<String> getUserIdByIcqId(final String icqId) throws DotInvalidTokenException;
 
 }
