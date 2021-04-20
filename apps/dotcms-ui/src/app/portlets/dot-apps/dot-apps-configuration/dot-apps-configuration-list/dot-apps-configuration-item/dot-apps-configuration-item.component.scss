@@ -27,6 +27,10 @@
     }
 }
 
+.dot-apps-configuration-list__host-configured {
+    display: flex;
+}
+
 .dot-apps-configuration-list__name,
 .dot-apps-configuration-list__host-key {
     align-self: center;

@@ -7,18 +7,26 @@
 </div>
 
 <ng-container *ngIf="site.configured; else noConfigurations">
-    <dot-icon
-        *ngIf="site.secretsWithWarnings"
-        name="warning"
-        pTooltip="{{ site.secretsWithWarnings + ' ' + ('apps.invalid.secrets' | dm) }}"
-        size="18"
-    ></dot-icon>
-    <dot-icon-button
-        icon="vertical_align_bottom"
-        (click)="exportConfiguration($event, site)"
-    ></dot-icon-button>
-    <dot-icon-button icon="delete_outline" (click)="confirmDelete($event, site)"></dot-icon-button>
-    <dot-icon-button icon="edit" (click)="editConfigurationSite($event, site)"></dot-icon-button>
+    <div class="dot-apps-configuration-list__host-configured">
+        <dot-icon
+            *ngIf="site.secretsWithWarnings"
+            name="warning"
+            pTooltip="{{ site.secretsWithWarnings + ' ' + ('apps.invalid.secrets' | dm) }}"
+            size="18"
+        ></dot-icon>
+        <dot-icon-button
+            icon="vertical_align_bottom"
+            (click)="exportConfiguration($event, site)"
+        ></dot-icon-button>
+        <dot-icon-button
+            icon="delete_outline"
+            (click)="confirmDelete($event, site)"
+        ></dot-icon-button>
+        <dot-icon-button
+            icon="edit"
+            (click)="editConfigurationSite($event, site)"
+        ></dot-icon-button>
+    </div>
 </ng-container>
 
 <ng-template #noConfigurations>
