@@ -331,13 +331,13 @@ import org.junit.runners.Suite.SuiteClasses;
         DotAssetBaseTypeToContentTypeStrategyImplTest.class,
         RulesAPIImplIntegrationTest.class,
         FileAssetAPIImplIntegrationTest.class,
-        FileAssetFactoryIntegrationTest.class,/*
+        FileAssetFactoryIntegrationTest.class,
         UserResourceIntegrationTest.class,
         SiteSearchJobImplTest.class,
         IntegrationResourceLinkTest.class,
         HTMLDiffUtilTest.class,
         HashBuilderTest.class,
-        ElasticsearchUtilTest.class,
+        /*ElasticsearchUtilTest.class,
         LanguageUtilTest.class,
         FolderResourceTest.class,
         Task05225RemoveLoadRecordsToIndexTest.class,*/
