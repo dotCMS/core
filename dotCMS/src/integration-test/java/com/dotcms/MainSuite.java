@@ -332,11 +332,11 @@ import org.junit.runners.Suite.SuiteClasses;
         RulesAPIImplIntegrationTest.class,
         FileAssetAPIImplIntegrationTest.class,
         FileAssetFactoryIntegrationTest.class,
-        UserResourceIntegrationTest.class,
+        /*UserResourceIntegrationTest.class,
         SiteSearchJobImplTest.class,
-        IntegrationResourceLinkTest.class,
-        /*HTMLDiffUtilTest.class,
-        HashBuilderTest.class,*/
+        IntegrationResourceLinkTest.class,*/
+        HTMLDiffUtilTest.class,
+        HashBuilderTest.class,
         ElasticsearchUtilTest.class,
         LanguageUtilTest.class,
         FolderResourceTest.class,
