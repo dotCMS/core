@@ -332,8 +332,8 @@ import org.junit.runners.Suite.SuiteClasses;
         RulesAPIImplIntegrationTest.class,
         FileAssetAPIImplIntegrationTest.class,
         FileAssetFactoryIntegrationTest.class,
-        /*UserResourceIntegrationTest.class,
-        SiteSearchJobImplTest.class,
+        UserResourceIntegrationTest.class,
+        /*SiteSearchJobImplTest.class,
         IntegrationResourceLinkTest.class,*/
         HTMLDiffUtilTest.class,
         HashBuilderTest.class,
