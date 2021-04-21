@@ -140,8 +140,8 @@ public class PageRenderUtil implements Serializable {
 
         final User systemUser = APILocator.getUserAPI().getSystemUser();
         final Template template = mode.showLive ?
-                (Template) APILocator.getVersionableAPI().findLiveVersion(templateId, systemUser, false)
-                : (Template) APILocator.getVersionableAPI().findWorkingVersion(templateId, systemUser, false);
+                APILocator.getTemplateAPI().findLiveTemplate(templateId,systemUser, false) :
+                APILocator.getTemplateAPI().findWorkingTemplate(templateId,systemUser, false);
 
         // to check user has permission to write on this page
         final List<PublishingEndPoint> receivingEndpoints = APILocator.getPublisherEndPointAPI().getReceivingEndPoints();

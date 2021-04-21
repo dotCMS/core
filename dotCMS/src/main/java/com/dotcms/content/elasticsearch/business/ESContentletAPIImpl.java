@@ -29,7 +29,6 @@ import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
-import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.publisher.business.DotPublisherException;
@@ -43,7 +42,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import org.apache.commons.io.FileUtils;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
@@ -152,8 +150,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
@@ -4908,12 +4904,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 final boolean contentVersionHardLink = Config
                                         .getBooleanProperty("CONTENT_VERSION_HARD_LINK", true);
                                 FileUtil.copyFile(incomingFile, newFile, contentVersionHardLink, validateEmptyFile);
-
-                                if(workingContentlet != contentlet){
-                                   //This copies the metadata from version to version so we don't lose any any custom attribute previously added
-                                   fileMetadataAPI.copyMetadata(workingContentlet, contentlet);
-                                }
                             }
+
+                            if(workingContentlet != contentlet){
+                                //This copies the metadata from version to version so we don't lose any any custom attribute previously added
+                                fileMetadataAPI.copyCustomMetadata(workingContentlet, contentlet);
+                                Logger.debug(ESContentletAPIImpl.class,String.format("Metadata copied from inode: `%s` to  inode `%s` ", workingContentlet.getInode(), contentlet.getInode()));
+                            }
+
                             contentlet.setBinary(velocityVarNm, newFile);
 
                             //This copies the metadata associated with the temp resource passed if any.
@@ -4922,6 +4920,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 if(optionalMetadata.isPresent()){
                                    final Metadata tempMeta = optionalMetadata.get();
                                    fileMetadataAPI.putCustomMetadataAttributes(contentlet, ImmutableMap.of(velocityVarNm, tempMeta.getCustomMeta()));
+                                   Logger.debug(ESContentletAPIImpl.class,String.format("Metadata copied from temp resource: `%s` ", tempResourceId.get()));
                                 }
                             }
                         }
@@ -5904,17 +5903,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
-    private static final String[] DEFAULT_DATE_FORMATS = new String[] {
-            // time zone
-            "yyyy-MM-dd HH:mm:ss z Z", "d-MMM-yy z Z", "dd-MMM-yyyy z Z", "MM/dd/yy HH:mm:ss z Z",
-            "MM/dd/yy hh:mm:ss z Z", "MMMM dd, yyyy z Z", "M/d/y z Z", "MM/dd/yyyy z Z", "yyyy-MM-dd z Z",
 
-            "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm", "d-MMM-yy", "MMM-yy", "MMMM-yy", "d-MMM", "dd-MMM-yyyy",
-            "MM/dd/yyyy hh:mm:ss aa", "MM/dd/yyyy hh:mm aa", "MM/dd/yy HH:mm:ss", "MM/dd/yy HH:mm:ss", "MM/dd/yy HH:mm",
-            "MM/dd/yy hh:mm:ss aa", "MM/dd/yy hh:mm:ss", "MM/dd/yyyy HH:mm:ss", "MM/dd/yyyy HH:mm", "MMMM dd, yyyy",
-            "M/d/y", "M/d", "EEEE, MMMM dd, yyyy", "MM/dd/yyyy",
-            "hh:mm:ss aa", "hh:mm aa", "HH:mm:ss", "HH:mm", "yyyy-MM-dd"
-    };
 
     @Override
     public void setContentletProperty(Contentlet contentlet,Field field, Object value)throws DotContentletStateException {

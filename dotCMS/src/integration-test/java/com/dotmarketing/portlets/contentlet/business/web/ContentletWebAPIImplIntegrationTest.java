@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.contentlet.business.web;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
@@ -13,8 +14,10 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.JsonTransformer;
 import com.dotcms.datagen.ContainerAsFileDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.PersonaDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateAsFileDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TemplateLayoutDataGen;
 import com.dotcms.datagen.ThemeDataGen;
@@ -30,8 +33,11 @@ import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
+import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.WebKeys;
@@ -80,6 +86,49 @@ public class ContentletWebAPIImplIntegrationTest extends IntegrationTestBase {
             QuartzUtils.getScheduler().start();
         }
     }
+
+    /**
+     * Method to Test: {@link ContentletWebAPIImpl#saveContent(Map, boolean, boolean, User)}
+     * When: Change a Host' name and exists any page is using a FileAssetTemplate
+     * Should: Update the templateId field into the page
+     *
+     * */
+    @Test
+    public void whenHostNameChangeShouldUpdatePageTemplatePath() throws Exception {
+
+        final User user = APILocator.systemUser();
+        init();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final String oldHostName = host.getHostname();
+
+        final FileAssetTemplate fileAssetTemplate = new TemplateAsFileDataGen()
+                .host(host)
+                .nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, fileAssetTemplate)
+                .nextPersisted();
+
+        assertTrue(htmlPageAsset.getTemplateId().contains(oldHostName));
+
+        final ContentletWebAPIImpl contentletWebAPI = new ContentletWebAPIImpl();
+        final Map<String, Object> hostMap = host.getMap();
+        final String newHostname = "newHostName_" + System.currentTimeMillis();
+        hostMap.put("text1", newHostname);
+        hostMap.put("contentletInode", hostMap.get("inode"));
+
+        contentletWebAPI.saveContent(hostMap, false, false, user);
+        waitUntilJobIsFinish();
+
+        final Host hostFromDataBse = APILocator.getHostAPI().find(host.getIdentifier(), user, false);
+        assertEquals(newHostname, hostFromDataBse.getHostname());
+
+        final IHTMLPage updatedPage = APILocator.getHTMLPageAssetAPI().findPage(htmlPageAsset.getInode(),user,false);
+
+        assertTrue(updatedPage.getTemplateId().contains(newHostname));
+        assertFalse(updatedPage.getTemplateId().contains(oldHostName));
+    }
+
 
     /**
      * Method to Test: {@link ContentletWebAPIImpl#saveContent(Map, boolean, boolean, User)}

@@ -70,6 +70,7 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegration
 import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryIntegrationTest;
 import com.dotmarketing.portlets.folders.business.FolderFactoryImplTest;
 import com.dotmarketing.portlets.folders.model.FolderTest;
+import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtilTest;
 import com.dotmarketing.portlets.templates.business.TemplateFactoryImplTest;
 import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
 import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
@@ -332,7 +333,6 @@ import org.junit.runners.Suite.SuiteClasses;
         FileAssetAPIImplIntegrationTest.class,
         FileAssetFactoryIntegrationTest.class,
         UserResourceIntegrationTest.class,
-        SiteSearchJobImplTest.class,
         IntegrationResourceLinkTest.class,
         HTMLDiffUtilTest.class,
         HashBuilderTest.class,
@@ -407,7 +407,9 @@ import org.junit.runners.Suite.SuiteClasses;
         Task210321RemoveOldMetadataFilesTest.class,
         DBTimeZoneCheckTest.class,
         ContentHandlerTest.class,
-        ESIndexAPITest.class
+        ESIndexAPITest.class,
+        FileAssetTemplateUtilTest.class,
+        SiteSearchJobImplTest.class
 })
 public class MainSuite {
 

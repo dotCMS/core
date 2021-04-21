@@ -6,6 +6,8 @@ import com.dotcms.datagen.*;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.DependencyManager;
 import com.dotcms.publishing.*;
+import com.dotcms.publishing.output.BundleOutput;
+import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -52,7 +54,6 @@ import static org.mockito.Mockito.mock;
 @RunWith(DataProviderRunner.class)
 public class DependencyBundlerTest {
 
-    private File bundleRoot = null;
     private BundlerStatus status = null;
 
     private DependencyBundler bundler = null;
@@ -84,9 +85,7 @@ public class DependencyBundlerTest {
 
     @Before
     public void initTest() throws IOException {
-        bundleRoot = FileUtil.createTemporaryDirectory("DependencyBundlerTest_");
         status = mock(BundlerStatus.class);
-
         bundler = new DependencyBundler();
     }
 
@@ -502,35 +501,48 @@ public class DependencyBundlerTest {
         final Host systemHost = APILocator.systemHost();
         final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
         return list(
-                new TestData(contentlet, list(host, contentType, language, systemFolder, systemWorkflowScheme), filterDescriptorAllDependencies),
+                new TestData(contentlet,
+                        list(host, contentType, language, systemFolder, systemWorkflowScheme),
+                        filterDescriptorAllDependencies),
                 new TestData(contentlet, list(), filterDescriptorNotDependencies),
-                new TestData(contentlet, list(), filterDescriptorNotRelationship),
+                new TestData(contentlet,
+                        list(host, contentType, language, systemFolder, systemWorkflowScheme),
+                        filterDescriptorNotRelationship),
                 new TestData(contentlet, list(), filterDescriptorNotDependenciesRelationship),
 
                 new TestData(contentletWithFolder, list(host, contentType, language, folder, systemWorkflowScheme, systemFolder),
                         filterDescriptorAllDependencies),
                 new TestData(contentletWithFolder, list(), filterDescriptorNotDependencies),
-                new TestData(contentletWithFolder, list(), filterDescriptorNotRelationship),
+                new TestData(contentletWithFolder,
+                        list(host, contentType, language, folder, systemWorkflowScheme, systemFolder),
+                        filterDescriptorNotRelationship),
                 new TestData(contentletWithFolder, list(), filterDescriptorNotDependenciesRelationship),
 
                 new TestData(contentletWithRelationship,
                         list(host, contentTypeParent, language, contentletChild, contentTypeChild,
                                 systemFolder, systemWorkflowScheme), filterDescriptorAllDependencies),
                 new TestData(contentletWithRelationship, list(), filterDescriptorNotDependencies),
-                new TestData(contentletWithRelationship, list(), filterDescriptorNotRelationship),
+                new TestData(contentletWithRelationship,
+                        list(host, contentTypeParent, language, systemFolder, systemWorkflowScheme),
+                        filterDescriptorNotRelationship),
                 new TestData(contentletWithRelationship, list(), filterDescriptorNotDependenciesRelationship),
 
-                new TestData(contentWithCategory, list(host, contentTypeWithCategory, language, category, systemFolder, systemWorkflowScheme),
+                new TestData(contentWithCategory,
+                        list(host, contentTypeWithCategory, language, category, systemFolder, systemWorkflowScheme),
                         filterDescriptorAllDependencies),
                 new TestData(contentWithCategory, list(), filterDescriptorNotDependencies),
-                new TestData(contentWithCategory, list(), filterDescriptorNotRelationship),
+                new TestData(contentWithCategory,
+                        list(host, contentTypeWithCategory, language, category, systemFolder, systemWorkflowScheme),
+                        filterDescriptorNotRelationship),
                 new TestData(contentWithCategory, list(), filterDescriptorNotDependenciesRelationship),
 
                 new TestData(htmlPageAsset, list(host, defaultHost, contentTypeToPage, defaultLanguage,
                         container, template, htmlPageAssetContentType, systemFolder, systemWorkflowScheme, systemHost),
                         filterDescriptorAllDependencies),
                 new TestData(htmlPageAsset, list(), filterDescriptorNotDependencies),
-                new TestData(htmlPageAsset, list(), filterDescriptorNotRelationship),
+                new TestData(htmlPageAsset, list(host, defaultHost, contentTypeToPage, defaultLanguage,
+                        container, template, htmlPageAssetContentType, systemFolder, systemWorkflowScheme, systemHost),
+                        filterDescriptorNotRelationship),
                 new TestData(htmlPageAsset, list(), filterDescriptorNotDependenciesRelationship)
         );
     }
@@ -546,12 +558,12 @@ public class DependencyBundlerTest {
         return list(
                 new TestData(rule, list(host), filterDescriptorAllDependencies),
                 new TestData(rule, list(), filterDescriptorNotDependencies),
-                new TestData(rule, list(), filterDescriptorNotRelationship),
+                new TestData(rule, list(host), filterDescriptorNotRelationship),
                 new TestData(rule, list(), filterDescriptorNotDependenciesRelationship),
 
                 new TestData(ruleWithPage, list(htmlPageAsset), filterDescriptorAllDependencies),
                 new TestData(ruleWithPage, list(), filterDescriptorNotDependencies),
-                new TestData(ruleWithPage, list(), filterDescriptorNotRelationship),
+                new TestData(ruleWithPage, list(htmlPageAsset), filterDescriptorNotRelationship),
                 new TestData(ruleWithPage, list(), filterDescriptorNotDependenciesRelationship)
         );
     }
@@ -621,30 +633,34 @@ public class DependencyBundlerTest {
 
                 new TestData(hostWithTemplate, list(template), filterDescriptorAllDependencies),
                 new TestData(hostWithTemplate, list(), filterDescriptorNotDependencies),
-                new TestData(hostWithTemplate, list(), filterDescriptorNotRelationship),
+                new TestData(hostWithTemplate, list(template), filterDescriptorNotRelationship),
                 new TestData(hostWithTemplate, list(), filterDescriptorNotDependenciesRelationship),
 
                 new TestData(hostWithContainer, list(container), filterDescriptorAllDependencies),
                 new TestData(hostWithContainer, list(), filterDescriptorNotDependencies),
-                new TestData(hostWithContainer, list(), filterDescriptorNotRelationship),
+                new TestData(hostWithContainer, list(container), filterDescriptorNotRelationship),
                 new TestData(hostWithContainer, list(), filterDescriptorNotDependenciesRelationship),
 
                 new TestData(hostWithContent, list(contentType, contentlet, systemWorkflowScheme,systemFolder, language),
                         filterDescriptorAllDependencies),
                 new TestData(hostWithContent, list(), filterDescriptorNotDependencies),
-                new TestData(hostWithContent, list(), filterDescriptorNotRelationship),
+                new TestData(hostWithContent,
+                        list(contentType, contentlet, systemWorkflowScheme,systemFolder, language),
+                        filterDescriptorNotRelationship),
                 new TestData(hostWithContent, list(), filterDescriptorNotDependenciesRelationship),
 
                 new TestData(hostWithFolder, list(folder, folderContentType, systemHost, systemFolder, systemWorkflowScheme),
                         filterDescriptorAllDependencies),
                 new TestData(hostWithFolder, list(), filterDescriptorNotDependencies),
-                new TestData(hostWithFolder, list(), filterDescriptorNotRelationship),
+                new TestData(hostWithFolder,
+                        list(folder, folderContentType, systemHost, systemFolder, systemWorkflowScheme),
+                        filterDescriptorNotRelationship),
                 new TestData(hostWithFolder, list(), filterDescriptorNotDependenciesRelationship),
 
                 new TestData(hostWithRule, list(rule), filterDescriptorAllDependencies),
-                new TestData(hostWithFolder, list(), filterDescriptorNotDependencies),
-                new TestData(hostWithFolder, list(), filterDescriptorNotRelationship),
-                new TestData(hostWithFolder, list(), filterDescriptorNotDependenciesRelationship)
+                new TestData(hostWithRule, list(), filterDescriptorNotDependencies),
+                new TestData(hostWithRule, list(rule), filterDescriptorNotRelationship),
+                new TestData(hostWithRule, list(), filterDescriptorNotDependenciesRelationship)
         );
     }
 
@@ -660,7 +676,7 @@ public class DependencyBundlerTest {
         return list(
                 new TestData(link, list(host, folder), filterDescriptorAllDependencies),
                 new TestData(link, list(), filterDescriptorNotDependencies),
-                new TestData(link, list(), filterDescriptorNotRelationship),
+                new TestData(link, list(host, folder), filterDescriptorNotRelationship),
                 new TestData(link, list(), filterDescriptorNotDependenciesRelationship)
         );
     }
@@ -717,39 +733,55 @@ public class DependencyBundlerTest {
                 new TestData(folder, list(host, folderContentType, systemHost, systemFolder, systemWorkflowScheme),
                         filterDescriptorAllDependencies),
                 new TestData(folder, list(), filterDescriptorNotDependencies),
-                new TestData(folder, list(), filterDescriptorNotRelationship),
+                new TestData(folder,
+                        list(host, folderContentType, systemHost, systemFolder, systemWorkflowScheme),
+                        filterDescriptorNotRelationship),
                 new TestData(folder, list(), filterDescriptorNotDependenciesRelationship),
 
                 //Dependency manager not add Parent Folder, the Parent Folder is added as dependency in FolderBundle
                 new TestData(folderWithParent, list(host, folderContentType, systemHost, systemFolder, systemWorkflowScheme),
                         filterDescriptorAllDependencies),
                 new TestData(folderWithParent, list(), filterDescriptorNotDependencies),
-                new TestData(folderWithParent, list(), filterDescriptorNotRelationship),
+                new TestData(folderWithParent,
+                        list(host, folderContentType, systemHost, systemFolder, systemWorkflowScheme),
+                        filterDescriptorNotRelationship),
                 new TestData(folderWithParent, list(), filterDescriptorNotDependenciesRelationship),
 
-                new TestData(folderWithContentType, list(host, folderContentType, systemHost, systemFolder, contentType, systemWorkflowScheme),
+                new TestData(folderWithContentType,
+                        list(host, folderContentType, systemHost, systemFolder, contentType, systemWorkflowScheme),
                         filterDescriptorAllDependencies),
                 new TestData(folderWithContentType, list(), filterDescriptorNotDependencies),
-                new TestData(folderWithContentType, list(), filterDescriptorNotRelationship),
+                new TestData(folderWithContentType,
+                        list(host, folderContentType, systemHost, systemFolder, contentType, systemWorkflowScheme),
+                        filterDescriptorNotRelationship),
                 new TestData(folderWithContentType, list(), filterDescriptorNotDependenciesRelationship),
 
                 new TestData(folderWithContent, list(host, folderContentType, systemHost, systemFolder, contentlet,
                         systemWorkflowScheme, language), filterDescriptorAllDependencies),
                 new TestData(folderWithContent, list(), filterDescriptorNotDependencies),
-                new TestData(folderWithContent, list(), filterDescriptorNotRelationship),
+                new TestData(folderWithContent,
+                        list(host, folderContentType, systemHost, systemFolder, contentlet,
+                                systemWorkflowScheme, language),
+                        filterDescriptorNotRelationship),
                 new TestData(folderWithContent, list(), filterDescriptorNotDependenciesRelationship),
 
                 new TestData(folderWithLink, list(host, folderContentType, systemHost, systemFolder, link,
                         systemWorkflowScheme), filterDescriptorAllDependencies),
                 new TestData(folderWithLink, list(), filterDescriptorNotDependencies),
-                new TestData(folderWithLink, list(), filterDescriptorNotRelationship),
+                new TestData(folderWithLink,
+                        list(host, folderContentType, systemHost, systemFolder, link,
+                                systemWorkflowScheme),
+                        filterDescriptorNotRelationship),
                 new TestData(folderWithLink, list(), filterDescriptorNotDependenciesRelationship),
 
                 new TestData(folderWithSubFolder, list(host, folderContentType, systemHost, systemFolder,
                         subFolder, contentlet_2, systemWorkflowScheme, language),
                         filterDescriptorAllDependencies),
                 new TestData(folderWithSubFolder, list(), filterDescriptorNotDependencies),
-                new TestData(folderWithSubFolder, list(), filterDescriptorNotRelationship),
+                new TestData(folderWithSubFolder,
+                        list(host, folderContentType, systemHost, systemFolder,
+                                subFolder, contentlet_2, systemWorkflowScheme, language),
+                        filterDescriptorNotRelationship),
                 new TestData(folderWithSubFolder, list(), filterDescriptorNotDependenciesRelationship)
         );
     }
@@ -774,12 +806,16 @@ public class DependencyBundlerTest {
         return list(
                 new TestData(containerWithoutContentType, list(host), filterDescriptorAllDependencies),
                 new TestData(containerWithoutContentType, list(), filterDescriptorNotDependencies),
-                new TestData(containerWithoutContentType, list(), filterDescriptorNotRelationship),
+                new TestData(containerWithoutContentType, list(host), filterDescriptorNotRelationship),
                 new TestData(containerWithoutContentType, list(), filterDescriptorNotDependenciesRelationship),
 
-                new TestData(containerWithContentType, list(host, contentType, systemWorkflowScheme, systemFolder), filterDescriptorAllDependencies),
+                new TestData(containerWithContentType,
+                        list(host, contentType, systemWorkflowScheme, systemFolder),
+                        filterDescriptorAllDependencies),
                 new TestData(containerWithContentType, list(), filterDescriptorNotDependencies),
-                new TestData(containerWithContentType, list(), filterDescriptorNotRelationship),
+                new TestData(containerWithContentType,
+                        list(host, contentType, systemWorkflowScheme, systemFolder),
+                        filterDescriptorNotRelationship),
                 new TestData(containerWithContentType, list(), filterDescriptorNotDependenciesRelationship)
         );
     }
@@ -816,13 +852,16 @@ public class DependencyBundlerTest {
         return list(
                 new TestData(advancedTemplateWithContainer, list(host), filterDescriptorAllDependencies),
                 new TestData(advancedTemplateWithContainer, list(), filterDescriptorNotDependencies),
-                new TestData(advancedTemplateWithContainer, list(), filterDescriptorNotRelationship),
+                new TestData(advancedTemplateWithContainer, list(host), filterDescriptorNotRelationship),
                 new TestData(advancedTemplateWithContainer, list(), filterDescriptorNotDependenciesRelationship),
 
-                new TestData(templateWithTemplateLayout, list(host, container_1, container_2, contentType, systemWorkflowScheme, systemFolder),
+                new TestData(templateWithTemplateLayout,
+                        list(host, container_1, container_2, contentType, systemWorkflowScheme, systemFolder),
                         filterDescriptorAllDependencies),
                 new TestData(templateWithTemplateLayout, list(), filterDescriptorNotDependencies),
-                new TestData(templateWithTemplateLayout, list(), filterDescriptorNotRelationship),
+                new TestData(templateWithTemplateLayout,
+                        list(host, container_1, container_2, contentType, systemWorkflowScheme, systemFolder),
+                        filterDescriptorNotRelationship),
                 new TestData(templateWithTemplateLayout, list(), filterDescriptorNotDependenciesRelationship)
         );
     }
@@ -871,34 +910,34 @@ public class DependencyBundlerTest {
         return list(
                 new TestData(contentType, list(host, systemWorkflowScheme, systemFolder), filterDescriptorAllDependencies),
                 new TestData(contentType, list(), filterDescriptorNotDependencies),
-                new TestData(contentType, list(), filterDescriptorNotRelationship),
+                new TestData(contentType, list(host, systemWorkflowScheme, systemFolder), filterDescriptorNotRelationship),
                 new TestData(contentType, list(), filterDescriptorNotDependenciesRelationship),
 
                 new TestData(contentTypeWithFolder, list(folder, systemWorkflowScheme, folderHost), filterDescriptorAllDependencies),
                 new TestData(contentTypeWithFolder, list(), filterDescriptorNotDependencies),
-                new TestData(contentTypeWithFolder, list(), filterDescriptorNotRelationship),
+                new TestData(contentTypeWithFolder, list(folder, systemWorkflowScheme, folderHost), filterDescriptorNotRelationship),
                 new TestData(contentTypeWithFolder, list(), filterDescriptorNotDependenciesRelationship),
 
                 new TestData(contentTypeWithWorkflow, list(host, systemWorkflowScheme, workflowScheme, systemFolder), filterDescriptorAllDependencies),
                 new TestData(contentTypeWithWorkflow, list(), filterDescriptorNotDependencies),
-                new TestData(contentTypeWithWorkflow, list(), filterDescriptorNotRelationship),
+                new TestData(contentTypeWithWorkflow, list(host, systemWorkflowScheme, workflowScheme, systemFolder), filterDescriptorNotRelationship),
                 new TestData(contentTypeWithWorkflow, list(), filterDescriptorNotDependenciesRelationship),
 
                 new TestData(contentTypeWithCategory, list(host, systemWorkflowScheme, category, systemFolder), filterDescriptorAllDependencies),
                 new TestData(contentTypeWithCategory, list(), filterDescriptorNotDependencies),
-                new TestData(contentTypeWithCategory, list(), filterDescriptorNotRelationship),
+                new TestData(contentTypeWithCategory, list(host, systemWorkflowScheme, category, systemFolder), filterDescriptorNotRelationship),
                 new TestData(contentTypeWithCategory, list(), filterDescriptorNotDependenciesRelationship),
 
                 new TestData(contentTypeParent, list(host, systemWorkflowScheme, contentTypeChild, systemFolder), filterDescriptorAllDependencies),
                 new TestData(contentTypeParent, list(), filterDescriptorNotDependencies),
-                new TestData(contentTypeParent, list(), filterDescriptorNotRelationship),
+                new TestData(contentTypeParent, list(host, systemWorkflowScheme, systemFolder), filterDescriptorNotRelationship),
                 new TestData(contentTypeParent, list(), filterDescriptorNotDependenciesRelationship)
         );
     }
 
 
     /**
-     * Method to Test: {@link DependencyBundler#generate(File, BundlerStatus)}
+     * Method to Test: {@link DependencyBundler#generate(BundleOutput, BundlerStatus)}
      * When: Case tested:
      * - Add a {@link ContentType} into a Bundle
      * - Add a {@link Container} into a Bundle
@@ -931,15 +970,22 @@ public class DependencyBundlerTest {
 
         final Set<Object> dependencies = new HashSet<>();
 
-        if (filterDescriptorAllDependencies == testData.filterDescriptor) {
+        final PublisherFilter publisherFilter = APILocator.getPublisherAPI()
+                .createPublisherFilter(config.getId());
+
+        if (publisherFilter.isDependencies()) {
             dependencies.addAll(testData.dependenciesToAssert);
             dependencies.addAll(languagesVariableDependencies);
+        } else {
+            dependencies.add(testData.assetsToAddInBundle);
         }
 
-        bundler.setConfig(config);
-        bundler.generate(bundleRoot, status);
+        final BundleOutput bundleOutput = new DirectoryBundleOutput(config);
 
-        assertAll(config, dependencies, testData.filterDescriptor);
+        bundler.setConfig(config);
+        bundler.generate(bundleOutput, status);
+
+        assertAll(config, dependencies);
     }
 
     @Test
@@ -957,12 +1003,14 @@ public class DependencyBundlerTest {
                     .filter(filterDescriptor)
                     .nextPersisted();
 
+            final BundleOutput bundleOutput = new DirectoryBundleOutput(config);
+
             bundler.setConfig(config);
-            bundler.generate(bundleRoot, status);
+            bundler.generate(bundleOutput, status);
 
             final Collection<Object> dependencies = getLanguagesVariableDependencies(
                     true, false, false);
-            assertAll(config, dependencies, filterDescriptor);
+            assertAll(config, dependencies);
         } finally {
             if (contentlet != null) {
                 ContentletDataGen.archive(contentlet);
@@ -972,7 +1020,7 @@ public class DependencyBundlerTest {
 
     }
 
-    private void assertAll(final PushPublisherConfig config, final Collection<Object> dependenciesToAssert, final FilterDescriptor filterDescriptor) {
+    private void assertAll(final PushPublisherConfig config, final Collection<Object> dependenciesToAssert) {
         AssignableFromMap<Integer> counts = new AssignableFromMap<>();
         Set<String> alreadyCounts = new HashSet<>();
 
@@ -992,21 +1040,19 @@ public class DependencyBundlerTest {
             }
         }
 
-        if (filterDescriptorAllDependencies == filterDescriptor) {
-            for (Class clazz : BundleDataGen.howAddInBundle.keySet()) {
-                final boolean justExactlyClass = Host.class == clazz || Folder.class == clazz;
+        for (Class clazz : BundleDataGen.howAddInBundle.keySet()) {
+            final boolean justExactlyClass = Host.class == clazz || Folder.class == clazz;
 
-                final Integer expectedCount = counts.get(clazz, 0, justExactlyClass);
+            final Integer expectedCount = counts.get(clazz, 0, justExactlyClass);
 
-                final BundleDataGen.MetaData metaData = BundleDataGen.howAddInBundle.get(clazz, null, justExactlyClass);
-                final int count = metaData.collection.apply(config).size();
+            final BundleDataGen.MetaData metaData = BundleDataGen.howAddInBundle.get(clazz, null, justExactlyClass);
+            final int count = metaData.collection.apply(config).size();
 
-                assertEquals(String.format("Expected %d not %d to %s: ", expectedCount, count, clazz.getSimpleName(),
-                        metaData.collection.apply(config).stream()
-                                .map(object -> object.toString())
-                                .collect(joining(","))),
-                        expectedCount, count);
-            }
+            assertEquals(String.format("Expected %d not %d to %s: ", expectedCount, count, clazz.getSimpleName(),
+                    metaData.collection.apply(config).stream()
+                            .map(object -> object.toString())
+                            .collect(joining(","))),
+                    expectedCount, count);
         }
     }
 

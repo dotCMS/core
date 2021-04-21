@@ -1,6 +1,9 @@
 package com.dotcms.storage;
 
 import com.dotcms.storage.model.Metadata;
+import java.io.Serializable;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -39,7 +42,13 @@ public class GenerateMetadataConfig {
     private final Predicate<String> metaDataKeyFilter;
 
     /**
-     * If true, means the medatada output will be stores in the memory cache.
+     * This expects a method that will be used to determine if a map only has custom metadata in it.
+     * If so the custom metadata is return otherwise an empty map must be returned
+     */
+    private Function<Map<String, Serializable>, Map<String, Serializable>> getIfOnlyHasCustomMetadata = map -> map;
+
+    /**
+     * If true, means the metadata output will be stored in cache.
      */
     private final boolean cache;
 
@@ -67,6 +76,7 @@ public class GenerateMetadataConfig {
         this.maxLength = builder.maxLength;
         this.storageKey = builder.storageKey;
         this.metaDataKeyFilter = builder.metaDataKeyFilter;
+        this.getIfOnlyHasCustomMetadata = builder.getIfOnlyHasCustomMetadata;
         this.override = builder.override;
         this.store = builder.store;
         this.full = builder.full;
@@ -91,6 +101,10 @@ public class GenerateMetadataConfig {
 
     public Predicate<String> getMetaDataKeyFilter() {
         return metaDataKeyFilter;
+    }
+
+    public Function<Map<String, Serializable>, Map<String, Serializable>> getIfOnlyHasCustomMetadata() {
+        return getIfOnlyHasCustomMetadata;
     }
 
     public boolean isCache() {
@@ -145,7 +159,13 @@ public class GenerateMetadataConfig {
         private Predicate<String> metaDataKeyFilter = s -> true; // no filter by default
 
         /**
-         * If true, means the medatada output will be stores in the memory cache.
+         * This expects a method that will be used to determine if a map only has custom metadata in it.
+         * If so the custom metadata is return otherwise an empty map must be returned
+         */
+        private Function<Map<String, Serializable>, Map<String, Serializable>> getIfOnlyHasCustomMetadata = map-> map;
+
+        /**
+         * If true, means the metadata output will be stored in cache.
          */
         private boolean cache;
 
@@ -202,6 +222,11 @@ public class GenerateMetadataConfig {
         public Builder metaDataKeyFilter(final Predicate<String> metaDataKeyFilter) {
 
             this.metaDataKeyFilter = metaDataKeyFilter;
+            return this;
+        }
+
+        public Builder getIfOnlyHasCustomMetadata(final Function<Map<String, Serializable>, Map<String, Serializable>> getIfOnlyHasCustomMetadata){
+            this.getIfOnlyHasCustomMetadata = getIfOnlyHasCustomMetadata;
             return this;
         }
 

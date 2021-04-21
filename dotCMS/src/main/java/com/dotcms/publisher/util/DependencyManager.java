@@ -48,6 +48,7 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Config;
@@ -195,7 +196,9 @@ public class DependencyManager {
 
 		Logger.debug(DependencyManager.class, "publisherFilter.isDependencies() " + publisherFilter.isDependencies());
 
-		setLanguageVariables();
+		if(publisherFilter.isDependencies()) {
+			setLanguageVariables();
+		}
 
 		List<PublishQueueElement> assets = config.getAssets();
 
@@ -232,7 +235,11 @@ public class DependencyManager {
 					if(t == null || !UtilMethods.isSet(t.getIdentifier())) {
 						Logger.warn(getClass(), "Template id: "+ (asset.getAsset() != null ? asset.getAsset() : "N/A") +" does NOT have working or live version, not Pushed");
 					} else {
-						templates.add(asset.getAsset(), t.getModDate(),true);
+						if(t instanceof FileAssetTemplate){
+							Logger.debug(getClass(), "FileAssetTemplate id: "+ (asset.getAsset() != null ? asset.getAsset() : "N/A") +" will be ignored");
+						} else {
+							templates.add(asset.getAsset(), t.getModDate(), true);
+						}
 						dependencyProcessor.put(asset.getAsset(), AssetTypes.TEMPLATES);
 					}
 
@@ -358,7 +365,9 @@ public class DependencyManager {
 		}
 
 		try {
-			dependencyProcessor.waitForAll();
+			if(publisherFilter.isDependencies()) {
+				dependencyProcessor.startAndWait();
+			}
 
 			config.setHostSet(hosts);
 			config.setFolders(folders);
@@ -469,7 +478,9 @@ public class DependencyManager {
 				final List<Template> templateList = APILocator.getTemplateAPI()
 						.findTemplatesAssignedTo(host);
 				for (final Template template : templateList) {
-					templates.addOrClean(template.getIdentifier(), template.getModDate());
+					if(!(template instanceof FileAssetTemplate)) {
+						templates.addOrClean(template.getIdentifier(), template.getModDate());
+					}
 					dependencyProcessor.put(template.getIdentifier(), AssetTypes.TEMPLATES);
 				}
 			}
@@ -555,7 +566,6 @@ public class DependencyManager {
 			final Folder parentFolder = APILocator.getFolderAPI().findParentFolder(folder, user, false);
 			if(UtilMethods.isSet(parentFolder)) {
 				folders.addOrClean( parentFolder.getInode(), parentFolder.getModDate());
-				dependencyProcessor.put(parentFolder.getInode(), AssetTypes.FOLDER);
 			}
 
 			setFolderListDependencies(folder);
@@ -713,8 +723,10 @@ public class DependencyManager {
 						.findLiveTemplate(workingPage.getTemplateId(), user, false);
 				// Templates dependencies
 				if (!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.TEMPLATE.getType()) && workingTemplateWP!=null) {
-					templates.addOrClean(workingPage.getTemplateId(),
-							workingTemplateWP.getModDate());
+					if(!(workingTemplateWP instanceof FileAssetTemplate)) {
+						templates.addOrClean(workingPage.getTemplateId(),
+								workingTemplateWP.getModDate());
+					}
 					dependencyProcessor.put(workingPage.getTemplateId(), AssetTypes.TEMPLATES);
 				}
 			}
@@ -727,7 +739,9 @@ public class DependencyManager {
 						.findLiveTemplate(livePage.getTemplateId(), user, false);
 				// Templates dependencies
 				if (!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.TEMPLATE.getType()) && liveTemplateLP!=null ) {
-					templates.addOrClean(livePage.getTemplateId(), livePage.getModDate());
+					if(!(liveTemplateLP instanceof FileAssetTemplate)) {
+						templates.addOrClean(livePage.getTemplateId(), livePage.getModDate());
+					}
 					dependencyProcessor.put(livePage.getTemplateId(), AssetTypes.TEMPLATES);
 				}
 			}
@@ -860,15 +874,12 @@ public class DependencyManager {
 					try {
 						final Folder themeFolder = folderAPI.find(workingTemplate.getTheme(), user, false);
 						if (themeFolder != null && InodeUtils.isSet(themeFolder.getInode())) {
-							final Folder parentFolder = APILocator.getFolderAPI()
-									.findParentFolder(themeFolder, user, false);
-							if (UtilMethods.isSet(parentFolder)) {
-								folders.addOrClean(parentFolder.getInode(), parentFolder.getModDate());
-								dependencyProcessor.put(parentFolder.getInode(), AssetTypes.FOLDER);
-							}
+
 							final List<Folder> folderList = new ArrayList<Folder>();
 							folderList.add(themeFolder);
-							setFolderListDependencies(folderList);
+
+							folders.addOrClean(themeFolder.getInode(), themeFolder.getModDate());
+							dependencyProcessor.put(themeFolder.getInode(), AssetTypes.FOLDER);
 						}
 					} catch (DotDataException e1) {
 						Logger.error(DependencyManager.class,
@@ -878,12 +889,40 @@ public class DependencyManager {
 					}
 				}
 			}
+
+			if(workingTemplate instanceof FileAssetTemplate){
+				//Process FileAssetTemplate
+				final Set<Folder> folders = this.collectFileAssetTemplateDependencies(FileAssetTemplate.class.cast(workingTemplate));
+				folders.stream().forEach(folder -> dependencyProcessor.put(folder.getInode(),AssetTypes.FOLDER));
+			}
 		} catch (DotSecurityException e) {
 
 			Logger.error(this, e.getMessage(),e);
 		} catch (DotDataException e) {
 
 			Logger.error(this, e.getMessage(),e);
+		}
+	}
+
+	/**
+	 * Given that a FileAssetTemplate is defined by a bunch of files we need to collect the folder that enclose'em
+	 */
+	private Set<Folder> collectFileAssetTemplateDependencies(final FileAssetTemplate fileAssetTemplate) {
+		try {
+			final String path = fileAssetTemplate.getPath();
+			final Folder rootFolder = APILocator.getFolderAPI()
+					.findFolderByPath(path, fileAssetTemplate.getHost(), user, false);
+			final List<Folder> subFolders = APILocator.getFolderAPI()
+					.findSubFolders(rootFolder, user, false);
+
+			final Set<Folder> dependenciesFolders = new HashSet<>();
+			dependenciesFolders.add(rootFolder);
+			dependenciesFolders.addAll(subFolders);
+
+			return dependenciesFolders;
+		}catch (DotSecurityException | DotDataException e) {
+			Logger.error(DependencyManager.class, "Error Collecting the Folder of the File Asset Template: " + fileAssetTemplate.getIdentifier(), e);
+			return Collections.emptySet();
 		}
 	}
 
@@ -1412,33 +1451,37 @@ public class DependencyManager {
 		 * The current thread wait until all the dependencies are processed
 		 * @throws ExecutionException
 		 */
-		private void waitForAll() throws ExecutionException {
+		private void startAndWait() throws ExecutionException {
 			final String submitterName = "DependencyManagerSubmitter" + Thread.currentThread().getName();
 			submitter = DotConcurrentFactory.getInstance().getSubmitter(submitterName,
 					new DotConcurrentFactory.SubmitterConfigBuilder()
-							.poolSize(Config.getIntProperty("MIN_NUMBER_THREAD_TO_EXECUTE_BUNDLER", 1))
+							.poolSize(Config.getIntProperty("MIN_NUMBER_THREAD_TO_EXECUTE_BUNDLER", 10))
 							.maxPoolSize(Config.getIntProperty("MAX_NUMBER_THREAD_TO_EXECUTE_BUNDLER", 40))
-							.queueCapacity(Config.getIntProperty("QUEUE_CAPACITY_TO_EXECUTE_BUNDLER", 500))
+							.queueCapacity(Config.getIntProperty("QUEUE_CAPACITY_TO_EXECUTE_BUNDLER", Integer.MAX_VALUE))
 							.build()
 			);
 
-			while(!isFinish()) {
-				try {
-					Logger.debug(DependencyManager.class, () -> "Waiting for more assets");
-					final DependencyProcessorItem dependencyProcessorItem = queue.take();
-					Logger.debug(DependencyProcessor.class, () -> "Taking one " + dependencyProcessorItem.assetKey);
-					if (!dependencyProcessorItem.equals(DependencyProcessorItem.FINISHED_DEPENDENCY_PROCESSOR_ITEM)) {
-						submitter.submit(new DependencyRunnable(dependencyProcessorItem));
-					} else {
-						finishReceived.incrementAndGet();
+			try {
+				while (!isFinish()) {
+					try {
+						Logger.debug(DependencyManager.class, () -> "Waiting for more assets");
+						final DependencyProcessorItem dependencyProcessorItem = queue.take();
+						Logger.debug(DependencyProcessor.class,
+								() -> "Taking one " + dependencyProcessorItem.assetKey);
+						if (!dependencyProcessorItem
+								.equals(DependencyProcessorItem.FINISHED_DEPENDENCY_PROCESSOR_ITEM)) {
+							submitter.submit(new DependencyRunnable(dependencyProcessorItem));
+						} else {
+							finishReceived.incrementAndGet();
+						}
+					} catch (InterruptedException e) {
+						throw new RuntimeException(e);
 					}
-				} catch (InterruptedException e) {
-					throw new RuntimeException(e);
 				}
+				Logger.debug(DependencyProcessor.class, "DependencyProcessor Finished");
+			} finally {
+				submitter.shutdownNow();
 			}
-			Logger.debug(DependencyProcessor.class, "DependencyProcessor Finished");
-
-			submitter.shutdownNow();
 		}
 
 		private synchronized void sendFinishNotification() {
