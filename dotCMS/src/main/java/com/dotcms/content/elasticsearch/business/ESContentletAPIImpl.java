@@ -4458,7 +4458,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         if (!isCheckInSafe(contentRelationships)){
 
-            DotConcurrentFactory.getInstance().getSingleSubmitter().submit(()-> this.elasticReadOnlyCommand.executeCheck());
+            if (contentlet.getBoolProperty(Contentlet.IS_TEST_MODE)) {
+                this.elasticReadOnlyCommand.executeCheck();
+            } else {
+                DotConcurrentFactory.getInstance().getSingleSubmitter().submit(() -> this.elasticReadOnlyCommand.executeCheck());
+            }
 
             final String contentletIdentifier =
                     null != contentlet && null != contentlet.getIdentifier()? contentlet.getIdentifier(): StringPool.NULL;

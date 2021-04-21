@@ -221,6 +221,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
 
             setClusterAsReadOnly(true);
 
+            contentlet.setProperty(Contentlet.IS_TEST_MODE, true);
             contentletAPIImpl.checkin(contentlet, contentletRelationship, null, null, user, false);
 
             throw new  AssertionError("DotContentletStateException Expected");
