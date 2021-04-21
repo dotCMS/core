@@ -985,7 +985,7 @@ public class DependencyBundlerTest {
         bundler.setConfig(config);
         bundler.generate(bundleOutput, status);
 
-        assertAll(config, dependencies, testData.filterDescriptor);
+        assertAll(config, dependencies);
     }
 
     @Test
@@ -1010,7 +1010,7 @@ public class DependencyBundlerTest {
 
             final Collection<Object> dependencies = getLanguagesVariableDependencies(
                     true, false, false);
-            assertAll(config, dependencies, filterDescriptor);
+            assertAll(config, dependencies);
         } finally {
             if (contentlet != null) {
                 ContentletDataGen.archive(contentlet);
@@ -1020,7 +1020,7 @@ public class DependencyBundlerTest {
 
     }
 
-    private void assertAll(final PushPublisherConfig config, final Collection<Object> dependenciesToAssert, final FilterDescriptor filterDescriptor) {
+    private void assertAll(final PushPublisherConfig config, final Collection<Object> dependenciesToAssert) {
         AssignableFromMap<Integer> counts = new AssignableFromMap<>();
         Set<String> alreadyCounts = new HashSet<>();
 
