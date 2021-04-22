@@ -88,10 +88,10 @@ class ElasticReadOnlyCommandImpl implements ElasticReadOnlyCommand {
         }
 
         final boolean clusterInReadOnlyMode              = Try.of(()-> ElasticsearchUtil.isClusterInReadOnlyMode())
-                .onFailure(e->Logger.warn(ElasticReadOnlyCommand.class,  "unable to access ES Cluster Metadata: " + e.getMessage()))
+                .onFailure(e->Logger.warn(ElasticReadOnlyCommand.class,  "unable to access ES Cluster: " + e.getMessage()))
                 .getOrElse(true);
         final boolean eitherLiveOrWorkingIndicesReadOnly = Try.of(()-> ElasticsearchUtil.isEitherLiveOrWorkingIndicesReadOnly())
-                .onFailure(e->Logger.warn(ElasticReadOnlyCommand.class,  "unable to access ES Index Metadata: " + e.getMessage()))
+                .onFailure(e->Logger.warn(ElasticReadOnlyCommand.class,  "unable to access ES Index: " + e.getMessage()))
                 .getOrElse(true);
 
         indexOrClusterReadOnly.set(true); // think it is ready only

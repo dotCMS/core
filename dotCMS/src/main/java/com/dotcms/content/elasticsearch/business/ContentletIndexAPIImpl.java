@@ -589,10 +589,6 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                     }
                 }
             }
-        } catch(final IllegalStateException e) {
-            ContentletFactory.rebuildRestHighLevelClientIfNeeded(e);
-            Logger.warnAndDebug(ContentletIndexAPIImpl.class, e);
-            throw new DotRuntimeException(e);
         } catch (final Exception e) {
             if(ExceptionUtil.causedBy(e, IllegalStateException.class)) {
                 ContentletFactory.rebuildRestHighLevelClientIfNeeded(e);

@@ -39,6 +39,12 @@ public class DotConcurrentFactoryTest extends UnitTestBase {
         verify(esReadOnlyMonitor).executeCheck();
     }
 
+    /**
+     * Method to test: {@link DotSubmitter#submit(Runnable)}
+     * Given Scenario: Running several task into a single thread executor
+     * ExpectedResult: All the threads should be called
+     *
+     */
     @Test
     public void testDefaultOne_Single_Submitter_Config() throws JSONException, ExecutionException, InterruptedException {
 
