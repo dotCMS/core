@@ -17,6 +17,7 @@ import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.FilterDescriptor;
+import com.dotcms.publishing.PublisherAPIImplTest;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
@@ -31,6 +32,7 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships.Content
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -72,7 +74,6 @@ public class DependencyManagerTest {
 
     @BeforeClass
     public static void prepare() throws Exception {
-
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
 
@@ -96,7 +97,6 @@ public class DependencyManagerTest {
     @Test
     public void test_dependencyManager_shouldIncludeSelfRelationships()
             throws DotSecurityException, DotBundleException, DotDataException {
-
         final PushPublisherConfig config = new PushPublisherConfig();
         final ContentType contentType = getContentTypeWithSelfJoinRelationship();
         final ContentletDataGen dataGen = new ContentletDataGen(contentType.id());
@@ -147,6 +147,7 @@ public class DependencyManagerTest {
 
         //The dependency manager should include parent and child contentlets in the bundle
         validateDependencies(blogContentParent, blogContentChild, relationship, dependencyManager);
+
     }
 
     /**
@@ -220,7 +221,7 @@ public class DependencyManagerTest {
 
         //The dependency manager should include parent and child contentlets in the bundle
         validateDependencies(blogContentParent, commentContentChild, relationship, dependencyManager);
-    }
+   }
 
     /**
      * <b>Method to test:</b> {@link DependencyManager#setDependencies()} <p>
@@ -291,7 +292,8 @@ public class DependencyManagerTest {
             DependencyManager dependencyManager = new DependencyManager(DependencyManagerTest.user, config);
             dependencyManager.setDependencies();
 
-//            assertEquals(4, dependencyManager.getContents().size());
+            final List<Contentlet> languageVariables = PublisherAPIImplTest.getLanguageVariables();
+            assertEquals(languageVariables.size() + 4, dependencyManager.getContents().size());
             assertTrue(dependencyManager.getContents().contains(htmlPageAsset_1.getIdentifier()));
             assertTrue(dependencyManager.getContents().contains(htmlPageAsset_2.getIdentifier()));
             assertTrue(dependencyManager.getContents().contains(theme_1.getIdentifier()));
@@ -495,13 +497,18 @@ public class DependencyManagerTest {
      * Validates the dependency manager includes relationship and both contentlets
      */
     private void validateDependencies(final Contentlet parentContent, final Contentlet childContent,
-            final Relationship relationship, final DependencyManager dependencyManager) {
+            final Relationship relationship, final DependencyManager dependencyManager)
+            throws DotSecurityException, DotDataException {
         assertNotNull(dependencyManager.getRelationships());
         assertEquals(1, dependencyManager.getRelationships().size());
         assertEquals(relationship.getInode(),
                 dependencyManager.getRelationships().iterator().next());
         assertNotNull(dependencyManager.getContents());
-//        assertEquals(2, dependencyManager.getContents().size());
+
+
+        final List<Contentlet> languageVariables = PublisherAPIImplTest.getLanguageVariables();
+        assertEquals(languageVariables.size() + 2, dependencyManager.getContents().size());
+
         assertTrue(dependencyManager.getContents().contains(parentContent.getIdentifier())
                 && dependencyManager.getContents().contains(childContent.getIdentifier()));
     }

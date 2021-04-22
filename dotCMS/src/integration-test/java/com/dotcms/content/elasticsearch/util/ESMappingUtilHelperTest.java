@@ -3,7 +3,6 @@ package com.dotcms.content.elasticsearch.util;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
@@ -48,7 +47,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
-import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -292,6 +290,91 @@ public class ESMappingUtilHelperTest {
 
             if (contentType != null) {
                 contentTypeAPI.delete(contentType);
+            }
+        }
+    }
+
+    /**
+     * <b>Test Case:</b> This test verifies that fields of type {@link DateField} or {@link DateTimeField} are always mapped as dates in ES<p></p>
+     * <b>Expected Results:</b> All fields should be mapped as dates with the right format
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws IOException
+     * @throws DotIndexException
+     */
+    @Test
+    public void testMappingForDateFields()
+            throws DotSecurityException, DotDataException, IOException, DotIndexException {
+        ContentType contentType = null;
+        String workingIndex = null;
+        String oldWorkingIndex = contentletIndexAPI.getActiveIndexName(IndexType.WORKING.getPrefix());
+        try {
+            contentType = new ContentTypeDataGen().nextPersisted();
+
+            Field dateField = FieldBuilder.builder(DateField.class).name("myDateField")
+                    .contentTypeId(contentType.id()).indexed(true).build();
+            Field dateTimeField = FieldBuilder.builder(DateTimeField.class).name("myDateTimeField")
+                    .contentTypeId(contentType.id()).indexed(true).build();
+
+            dateField = fieldAPI.save(dateField, user);
+            dateTimeField = fieldAPI.save(dateTimeField, user);
+
+            workingIndex = IndexType.WORKING.getPrefix() + "_" + System.currentTimeMillis();
+
+            //Create a working index
+            boolean result = contentletIndexAPI.createContentIndex(workingIndex);
+            assertTrue(result);
+
+            contentletIndexAPI.activateIndex(workingIndex);
+
+            assertEquals(workingIndex, contentletIndexAPI.getActiveIndexName( IndexType.WORKING.getPrefix()));
+
+            new ContentletDataGen(contentType.id())
+                    .setProperty("myDateField", new Date())
+                    .setProperty("myDateTimeField", new Date()).nextPersisted();
+
+            //verifies mapping type for common text fields
+            Map<String, String> mapping = (Map<String, String>) esMappingAPI
+                    .getFieldMappingAsMap(APILocator.getIndiciesAPI().loadIndicies().getWorking(),
+                            contentType.variable().toLowerCase() + "." + dateField.variable()
+                                    .toLowerCase()).entrySet()
+                    .iterator()
+                    .next().getValue();
+            assertTrue(UtilMethods.isSet(mapping.get("type")));
+            assertEquals("date", mapping.get("type"));
+            assertEquals(
+                    "yyyy-MM-dd't'HH:mm:ss||MMM d, yyyy h:mm:ss a||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd HH:mm:ss.SSS||yyyy-MM-dd||epoch_millis",
+                    mapping.get("format"));
+
+            mapping = (Map<String, String>) esMappingAPI
+                    .getFieldMappingAsMap(APILocator.getIndiciesAPI().loadIndicies().getWorking(),
+                            contentType.variable().toLowerCase() + "." + dateTimeField.variable()
+                                    .toLowerCase()).entrySet()
+                    .iterator()
+                    .next().getValue();
+            assertTrue(UtilMethods.isSet(mapping.get("type")));
+            assertEquals("date", mapping.get("type"));
+            assertEquals(
+                    "yyyy-MM-dd't'HH:mm:ss||MMM d, yyyy h:mm:ss a||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd HH:mm:ss.SSS||yyyy-MM-dd||epoch_millis",
+                    mapping.get("format"));
+
+            mapping = (Map<String, String>) esMappingAPI
+                    .getFieldMappingAsMap(APILocator.getIndiciesAPI().loadIndicies().getWorking(),
+                            "moddate").entrySet().iterator().next().getValue();
+            assertTrue(UtilMethods.isSet(mapping.get("type")));
+            assertEquals("date", mapping.get("type"));
+            assertEquals(
+                    "yyyy-MM-dd't'HH:mm:ss||MMM d, yyyy h:mm:ss a||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd HH:mm:ss.SSS||yyyy-MM-dd||epoch_millis",
+                    mapping.get("format"));
+        } finally {
+            if (contentType != null) {
+                contentTypeAPI.delete(contentType);
+            }
+
+            if (workingIndex != null) {
+                contentletIndexAPI.deactivateIndex(workingIndex);
+                contentletIndexAPI.activateIndex(oldWorkingIndex);
+                contentletIndexAPI.delete(workingIndex);
             }
         }
     }
