@@ -134,7 +134,7 @@ public class HTMLDiffUtilTest extends IntegrationTestBase {
         contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(contentlet, systemUser, false);
 
-        final HTMLPageAsset pageLive = new HTMLPageDataGen(folder, template).languageId(language.getId())
+        HTMLPageAsset pageLive = new HTMLPageDataGen(folder, template).languageId(language.getId())
                 .pageURL(pageName)
                 .friendlyName(pageName)
                 .title(pageName).nextPersisted();
@@ -144,6 +144,7 @@ public class HTMLDiffUtilTest extends IntegrationTestBase {
                 getDotParserContainerUUID(uuid), 0);
         multiTreeAPI.saveMultiTree(multiTreeV1);
         HTMLPageDataGen.publish(pageLive);
+        pageLive = (HTMLPageAsset) APILocator.getHTMLPageAssetAPI().getLiveHTMLPages(folder,systemUser,false).get(0);
 
         final Contentlet workingPage = contentletAPI
                 .checkout(pageLive.getInode(), systemUser, false);
