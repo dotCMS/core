@@ -134,8 +134,15 @@ public class BrowserAjax {
      * @throws DotSecurityException
      */
     public List<Map> getTree(String hostId) throws DotDataException, DotSecurityException {
+
+		final WebContext ctx         = WebContextFactory.get();
+		final HttpSession session    = ctx.getSession();
+
+		if (null != session && null != session.getAttribute("siteBrowserActiveFolderInode")) {
+			activeFolderInode = (String)session.getAttribute("siteBrowserActiveFolderInode");
+		}
+
         hostId = UtilMethods.isSet(hostId) ? hostId : getCurrentHost();
-        WebContext ctx = WebContextFactory.get();
         User usr = getUser(ctx.getHttpServletRequest());
         User systemUser = userAPI.getSystemUser();
         Role[] roles = new Role[]{};
