@@ -3,6 +3,7 @@ package com.dotcms.concurrent;
 import com.dotcms.UnitTestBase;
 import com.dotcms.concurrent.DotConcurrentFactory.SubmitterConfigBuilder;
 import com.dotcms.content.elasticsearch.business.ElasticReadOnlyCommand;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.json.JSONException;
 
 import org.junit.Test;
@@ -34,7 +35,9 @@ public class DotConcurrentFactoryTest extends UnitTestBase {
                 DotConcurrentFactory.getInstance();
         final DotSubmitter submitter =
                 dotConcurrentFactory.getSingleSubmitter();
-        submitter.submit(()-> esReadOnlyMonitor.executeCheck());
+        submitter.submit(()-> esReadOnlyMonitor.executeCheck()).get();
+
+        DateUtil.sleep(DateUtil.SECOND_MILLIS);
 
         verify(esReadOnlyMonitor).executeCheck();
     }
