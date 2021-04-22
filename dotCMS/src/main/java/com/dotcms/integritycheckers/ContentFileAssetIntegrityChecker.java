@@ -558,13 +558,12 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
                     FileUtil.deltree(currentInodeFolder, true);
                     Logger.info(this, "Relocated File Asset from inode = [" + oldContentlet.getInode()
                         + "] to inode = [" + newInode + "]");
-                    return;
                 } catch (final IOException e) {
                     throw new DotDataException(String.format("An error occurred when copying File Asset from old " +
                             "Inode '%s' to new Inode '%s': %s", oldContentlet.getInode(), newInode, e.getMessage()), e);
                 }
             } else {
-                throw new DotDataException(String.format("An error occurred when creating folder using Inode '%'. " +
+                throw new DotDataException(String.format("An error occurred when creating folder using Inode '%s'. " +
                         "Please check OS file system permissions.", newInode));
             }
         } else {
