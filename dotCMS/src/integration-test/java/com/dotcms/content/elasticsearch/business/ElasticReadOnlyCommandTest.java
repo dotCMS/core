@@ -34,7 +34,7 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
 
 @RunWith(DataProviderRunner.class)
-public class ESReadOnlyMonitorTest {
+public class ElasticReadOnlyCommandTest {
 
     final long timeToWait = TimeUnit.MINUTES.toMillis(3);
     private static ElasticReadOnlyCommand esReadOnlyMonitor;
