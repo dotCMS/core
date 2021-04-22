@@ -7,7 +7,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
-import com.dotcms.content.elasticsearch.business.ESReadOnlyMonitor;
+import com.dotcms.content.elasticsearch.business.ElasticReadOnlyCommand;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.reindex.ReindexQueueFactory.Priority;
@@ -117,8 +117,8 @@ public class ReindexQueueAPITest {
     @Test
     public void markAsFailed() throws DotDataException {
 
-        final ReindexQueueFactory reindexQueueFactory = mock(ReindexQueueFactory.class);
-        final ESReadOnlyMonitor esReadOnlyMonitor = mock(ESReadOnlyMonitor.class);
+        final ReindexQueueFactory reindexQueueFactory  = mock(ReindexQueueFactory.class);
+        final ElasticReadOnlyCommand esReadOnlyMonitor = mock(ElasticReadOnlyCommand.class);
 
         final ReindexQueueAPIImpl reindexQueueAPI = new ReindexQueueAPIImpl(reindexQueueFactory, esReadOnlyMonitor);
 
@@ -128,36 +128,6 @@ public class ReindexQueueAPITest {
         reindexQueueAPI.markAsFailed(reindexEntry, cause);
 
         verify(reindexQueueFactory).markAsFailed(reindexEntry, cause);
-        verify(esReadOnlyMonitor).start("Reindex failed for :" + reindexEntry + " because " + cause);
-    }
-
-    /**
-     * Method to Test: {@link ReindexQueueAPIImpl#markAsFailed(ReindexEntry, String)}
-     * When: Try to mark a reindex as fail and a {@link DotDataException} in thrown
-     * Should: Should not call the {@link ESReadOnlyMonitor#start(String)} )} )} method
-     *
-     * @throws DotDataException
-     */
-    @Test
-    public void markAsFailedWhenAExceptionIsThrown() throws DotDataException {
-
-        final ReindexQueueFactory reindexQueueFactory = mock(ReindexQueueFactory.class);
-        final ESReadOnlyMonitor esReadOnlyMonitor = mock(ESReadOnlyMonitor.class);
-
-        final ReindexQueueAPIImpl reindexQueueAPI = new ReindexQueueAPIImpl(reindexQueueFactory, esReadOnlyMonitor);
-
-
-        final ReindexEntry reindexEntry = mock(ReindexEntry.class);
-        final String cause = "Test Cause";
-
-        doThrow(DotDataException.class).when(reindexQueueFactory).markAsFailed(reindexEntry, cause);
-
-        try {
-            reindexQueueAPI.markAsFailed(reindexEntry, cause);
-            throw new AssertException("DotDataException expected");
-        } catch (DotDataException e){
-            verify(esReadOnlyMonitor, never()).start("Reindex failed for :" + reindexEntry + " because " + cause);
-        }
     }
 
     /**

@@ -34,10 +34,10 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
 
 @RunWith(DataProviderRunner.class)
-public class ESReadOnlyMonitorTest {
+public class ElasticReadOnlyCommandTest {
 
     final long timeToWait = TimeUnit.MINUTES.toMillis(3);
-    private static ESReadOnlyMonitor esReadOnlyMonitor;
+    private static ElasticReadOnlyCommand esReadOnlyMonitor;
     private SystemMessageEventUtil systemMessageEventUtilMock;
     private RoleAPI roleAPIMock;
 
@@ -52,7 +52,7 @@ public class ESReadOnlyMonitorTest {
         systemMessageEventUtilMock = mock(SystemMessageEventUtil.class);
         roleAPIMock = mock(RoleAPI.class);
 
-        esReadOnlyMonitor = ESReadOnlyMonitor.getInstance(systemMessageEventUtilMock, roleAPIMock);
+        esReadOnlyMonitor = ElasticReadOnlyCommandImpl.getInstance(systemMessageEventUtilMock, roleAPIMock);
     }
 
     @DataProvider
@@ -66,7 +66,7 @@ public class ESReadOnlyMonitorTest {
     }
 
     /**
-     * Method to Test: {@link ESReadOnlyMonitor#start(String)}
+     * Method to Test: {@link ElasticReadOnlyCommand#executeCheck()}
      * When: If the LIVE and WORKING current index are not read only
      * Should: not sent large message
      *
@@ -75,14 +75,13 @@ public class ESReadOnlyMonitorTest {
     @Test
     @UseDataProvider("indexReadOnlyProperties")
     public void shouldNotSendLargeMessage(final String propertyName) throws DotDataException, IOException {
-        final String message = "message";
 
         final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
 
         setReadOnly(indiciesInfo.getWorking(), propertyName, false);
         setReadOnly(indiciesInfo.getLive(), propertyName, false);
 
-        esReadOnlyMonitor.start(message);
+        esReadOnlyMonitor.executeCheck();
 
         verify(systemMessageEventUtilMock, never()).pushLargeMessage(any(), any());
 
@@ -90,7 +89,7 @@ public class ESReadOnlyMonitorTest {
     }
 
     /**
-     * Method to Test: {@link ESReadOnlyMonitor#start(String)}
+     * Method to Test: {@link ElasticReadOnlyCommand#executeCheck()}
      * When: If any of LIVE and WORKING current index are read only
      * Should: sent large message
      *
@@ -99,7 +98,6 @@ public class ESReadOnlyMonitorTest {
     @Test
     @UseDataProvider("indexReadOnlyProperties")
     public void shouldSendLargeMessage(final String propertyName) throws DotDataException, DotSecurityException, InterruptedException, IOException {
-        final String message = "message";
 
         final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
 
@@ -115,7 +113,7 @@ public class ESReadOnlyMonitorTest {
             setReadOnly(indiciesInfo.getWorking(), propertyName, true);
             setReadOnly(indiciesInfo.getLive(), propertyName, false);
 
-            esReadOnlyMonitor.start(message);
+            esReadOnlyMonitor.executeCheck();
 
             Thread.sleep(timeToWait);
 
@@ -127,7 +125,7 @@ public class ESReadOnlyMonitorTest {
     }
 
     /**
-     * Method to Test: {@link ESReadOnlyMonitor#start()}
+     * Method to Test: {@link ElasticReadOnlyCommand#executeCheck()}
      * When: If the cluster is read only
      * Should: sent message
      *
@@ -136,7 +134,6 @@ public class ESReadOnlyMonitorTest {
     @Test
     @UseDataProvider("clusterReadOnlyProperties")
     public void shouldSendLargeMessageIfTheClusterIsInReadOnly(final String propertyName) throws DotDataException, DotSecurityException, InterruptedException, IOException {
-        final String message = "message";
 
         final Role adminRole = mock(Role.class);
         when(roleAPIMock.loadCMSAdminRole()).thenReturn(adminRole);
@@ -149,7 +146,7 @@ public class ESReadOnlyMonitorTest {
         try {
             setClusterAsReadOnly(propertyName, true);
 
-            esReadOnlyMonitor.start(message);
+            esReadOnlyMonitor.executeCheck();
 
             Thread.sleep(timeToWait);
 
@@ -161,7 +158,7 @@ public class ESReadOnlyMonitorTest {
     }
 
     /**
-     * Method to Test: {@link ESReadOnlyMonitor#start(String)}
+     * Method to Test: {@link ElasticReadOnlyCommand#executeCheck()} }
      * When: If the cluster in not read only
      * Should: not sent large message
      *
@@ -172,7 +169,7 @@ public class ESReadOnlyMonitorTest {
     public void shouldNotSendLargeMessageWhenClusterIsNotReadOnly(final String propertyName) throws DotDataException, IOException {
         setClusterAsReadOnly(propertyName, false);
 
-        esReadOnlyMonitor.start();
+        esReadOnlyMonitor.executeCheck();
 
         verify(systemMessageEventUtilMock, never()).pushLargeMessage(any(), any());
 
@@ -180,7 +177,7 @@ public class ESReadOnlyMonitorTest {
     }
 
     /**
-     * Method to Test: {@link ESReadOnlyMonitor#start(String)}
+     * Method to Test: {@link ElasticReadOnlyCommand#executeCheck()}
      * When: If the read only if set to true again
      * Should: should set it to read only false again too
      *
@@ -189,7 +186,6 @@ public class ESReadOnlyMonitorTest {
     @Test
     public void shouldputReadonlyFalseAgain() throws DotDataException, DotSecurityException, IOException, InterruptedException {
         final String propertyName = "index.blocks.read_only";
-        final String message = "message";
 
         final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
 
@@ -205,7 +201,7 @@ public class ESReadOnlyMonitorTest {
             setReadOnly(indiciesInfo.getWorking(), propertyName, true);
             setReadOnly(indiciesInfo.getLive(), propertyName, false);
 
-            esReadOnlyMonitor.start(message);
+            esReadOnlyMonitor.executeCheck();
             Thread.sleep(100);
 
             setReadOnly(indiciesInfo.getWorking(), propertyName, true);
@@ -219,7 +215,7 @@ public class ESReadOnlyMonitorTest {
     }
 
     /**
-     * Method to Test: {@link ESReadOnlyMonitor#start(String)}
+     * Method to Test: {@link ElasticReadOnlyCommand#executeCheck()}
      * When: If the start method is call a second time after finish
      * Should: send the messages twice
      *
@@ -228,7 +224,6 @@ public class ESReadOnlyMonitorTest {
     @Test
     public void shouldSendLargeMessageTwice() throws DotDataException, DotSecurityException, IOException, InterruptedException {
         final String propertyName = "index.blocks.read_only";
-        final String message = "message";
 
         final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
 
@@ -244,12 +239,12 @@ public class ESReadOnlyMonitorTest {
             setReadOnly(indiciesInfo.getWorking(), propertyName, true);
             setReadOnly(indiciesInfo.getLive(), propertyName, false);
 
-            esReadOnlyMonitor.start(message);
+            esReadOnlyMonitor.executeCheck();
 
             Thread.sleep(timeToWait);
 
             setReadOnly(indiciesInfo.getWorking(), propertyName, true);
-            esReadOnlyMonitor.start(message);
+            esReadOnlyMonitor.executeCheck();
 
             Thread.sleep(timeToWait);
             checkLargeMessageSent(user, 2);
@@ -260,7 +255,7 @@ public class ESReadOnlyMonitorTest {
     }
 
     /**
-     * Method to Test: {@link ESReadOnlyMonitor#start(String)}
+     * Method to Test: {@link ElasticReadOnlyCommand#executeCheck()}
      * When: If call start again before the first call is finished
      * Should: should sent the message just once
      *
@@ -269,8 +264,6 @@ public class ESReadOnlyMonitorTest {
     @Test
     @UseDataProvider("indexReadOnlyProperties")
     public void shouldSendLargeMessageJustOnce(final String propertyName) throws DotDataException, DotSecurityException, IOException, InterruptedException {
-        final String message = "message";
-
         final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
 
         final Role adminRole = mock(Role.class);
@@ -285,8 +278,8 @@ public class ESReadOnlyMonitorTest {
             setReadOnly(indiciesInfo.getWorking(), propertyName, true);
             setReadOnly(indiciesInfo.getLive(), propertyName, false);
 
-            esReadOnlyMonitor.start(message);
-            esReadOnlyMonitor.start(message);
+            esReadOnlyMonitor.executeCheck();
+            esReadOnlyMonitor.executeCheck();
 
             Thread.sleep(timeToWait);
             checkLargeMessageSent(user, 1);
