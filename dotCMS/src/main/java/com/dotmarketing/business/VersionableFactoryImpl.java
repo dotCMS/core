@@ -476,4 +476,5 @@ public class VersionableFactoryImpl extends VersionableFactory {
 	private Set<Class<?>> getVersionableWhitelist() {
 		return set(Container.class, Template.class);
 	}
+
 }
