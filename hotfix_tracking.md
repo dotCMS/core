@@ -143,3 +143,5 @@ This maintenance release includes the following code fixes:
 69. https://github.com/dotCMS/core/issues/19813 : Allow mail session to be configured via environmental variables
 
 70. https://github.com/dotCMS/core/issues/20041 : Time machine is causing an error with the index
+
+71. https://github.com/dotCMS/core/issues/20136 : [Push Publish] : Selecting the REMOVE option in Push Publishing modal is not working
