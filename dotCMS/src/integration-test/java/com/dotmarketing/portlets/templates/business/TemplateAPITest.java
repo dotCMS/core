@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.templates.business;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateAsFileDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
@@ -30,7 +31,9 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
+import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
@@ -863,5 +866,102 @@ public class TemplateAPITest extends IntegrationTestBase {
 
         assertEquals(1,templateAPI.findTemplatesAssignedTo(newHostA).size());
         assertEquals(title,templateAPI.findTemplatesAssignedTo(newHostA).get(0).getTitle());
+    }
+
+    /**
+     * Method to test: {@link TemplateAPI#getTemplateHost(Template)}
+     * Given Scenario: Saves a new template as a File and tries to get the Host of it.
+     * ExpectedResult: host where the template lives.
+     */
+    @Test
+    public void getTemplateHost_fileTemplate_success() throws Exception {
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final FileAssetTemplate fileAssetTemplate = new TemplateAsFileDataGen()
+                .host(host)
+                .nextPersisted();
+
+        final FileAssetTemplate template = FileAssetTemplate.class.cast(APILocator.getTemplateAPI()
+                .findWorkingTemplate(fileAssetTemplate.getIdentifier(),user,false));
+
+        assertTrue(template.getIdentifier().contains(Constants.TEMPLATE_FOLDER_PATH));
+
+        final Host templateHost = templateAPI.getTemplateHost(template);
+
+        assertNotNull(templateHost);
+        assertEquals(host.getIdentifier(),templateHost.getIdentifier());
+        assertEquals(fileAssetTemplate.getIdentifier(),template.getIdentifier());
+    }
+
+    /**
+     * Method to test: {@link TemplateAPI#findWorkingTemplate(String, User, boolean)}
+     * Given Scenario: Saves a new template as a File and tries to get the working version of it.
+     * ExpectedResult: working version of a fileTemplate
+     */
+    @Test
+    public void findWorkingTemplate_fileTemplate_success() throws Exception {
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final FileAssetTemplate fileAssetTemplate = new TemplateAsFileDataGen()
+                .host(host)
+                .nextPersisted();
+
+        final Template template = templateAPI
+                .findWorkingTemplate(fileAssetTemplate.getIdentifier(),user,false);
+
+        assertNotNull(template);
+        assertTrue(template.getIdentifier().contains(Constants.TEMPLATE_FOLDER_PATH));
+        assertEquals(fileAssetTemplate.getIdentifier(),template.getIdentifier());
+    }
+
+    /**
+     * Method to test: {@link TemplateAPI#findLiveTemplate(String, User, boolean)}
+     * Given Scenario: Saves a new template as a File, make it live and tries to get the live version of it.
+     * ExpectedResult: live version of a fileTemplate
+     */
+    @Test
+    public void findLiveTemplate_fileTemplate_success() throws Exception {
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final FileAssetTemplate fileAssetTemplate = new TemplateAsFileDataGen()
+                .host(host)
+                .nextPersisted();
+        templateAPI.setLive(fileAssetTemplate);
+
+        final Template template = templateAPI
+                .findLiveTemplate(fileAssetTemplate.getIdentifier(),user,false);
+
+        assertNotNull(template);
+        assertTrue(template.getIdentifier().contains(Constants.TEMPLATE_FOLDER_PATH));
+        assertEquals(fileAssetTemplate.getIdentifier(),template.getIdentifier());
+    }
+
+    /**
+     * Method to test: {@link TemplateAPI#getTemplateByFolder(Folder, Host, User, boolean)}
+     * Given Scenario: Saves a new template as a File, and tries to get the template using the folder
+     * where the files lives.
+     * ExpectedResult: the fileTemplate created
+     */
+    @Test
+    public void getTemplateByFolder_fileTemplate_success() throws Exception {
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final FileAssetTemplate fileAssetTemplate = new TemplateAsFileDataGen()
+                .host(host)
+                .nextPersisted();
+
+        final Folder templateFolder = APILocator.getFolderAPI()
+                .findFolderByPath(fileAssetTemplate.getPath(), host, user, false);
+
+        final Template template = templateAPI
+                .getTemplateByFolder(templateFolder,host,user,false);
+
+        assertNotNull(template);
+        assertTrue(template.getIdentifier().contains(Constants.TEMPLATE_FOLDER_PATH));
+        assertEquals(fileAssetTemplate.getIdentifier(),template.getIdentifier());
     }
 }

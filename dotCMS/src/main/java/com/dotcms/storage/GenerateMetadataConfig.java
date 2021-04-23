@@ -1,5 +1,9 @@
 package com.dotcms.storage;
 
+import com.dotcms.storage.model.Metadata;
+import java.io.Serializable;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -38,7 +42,13 @@ public class GenerateMetadataConfig {
     private final Predicate<String> metaDataKeyFilter;
 
     /**
-     * If true, means the medatada output will be stores in the memory cache.
+     * This expects a method that will be used to determine if a map only has custom metadata in it.
+     * If so the custom metadata is return otherwise an empty map must be returned
+     */
+    private Function<Map<String, Serializable>, Map<String, Serializable>> getIfOnlyHasCustomMetadata = map -> map;
+
+    /**
+     * If true, means the metadata output will be stored in cache.
      */
     private final boolean cache;
 
@@ -53,6 +63,12 @@ public class GenerateMetadataConfig {
      */
     private final boolean full;
 
+    /**
+     * if specified the generated metadata must be merged with this
+     */
+    private final Metadata mergeWithMetadata;
+
+
     private GenerateMetadataConfig(final Builder builder) {
 
         this.cache = builder.cache;
@@ -60,9 +76,11 @@ public class GenerateMetadataConfig {
         this.maxLength = builder.maxLength;
         this.storageKey = builder.storageKey;
         this.metaDataKeyFilter = builder.metaDataKeyFilter;
+        this.getIfOnlyHasCustomMetadata = builder.getIfOnlyHasCustomMetadata;
         this.override = builder.override;
         this.store = builder.store;
         this.full = builder.full;
+        this.mergeWithMetadata = builder.mergeWithMetadata;
     }
 
     public StorageKey getStorageKey() {
@@ -85,6 +103,10 @@ public class GenerateMetadataConfig {
         return metaDataKeyFilter;
     }
 
+    public Function<Map<String, Serializable>, Map<String, Serializable>> getIfOnlyHasCustomMetadata() {
+        return getIfOnlyHasCustomMetadata;
+    }
+
     public boolean isCache() {
         return cache;
     }
@@ -95,6 +117,10 @@ public class GenerateMetadataConfig {
 
     public boolean isFull() {
         return full;
+    }
+
+    public Metadata getMergeWithMetadata() {
+        return mergeWithMetadata;
     }
 
     public static final class Builder {
@@ -133,7 +159,13 @@ public class GenerateMetadataConfig {
         private Predicate<String> metaDataKeyFilter = s -> true; // no filter by default
 
         /**
-         * If true, means the medatada output will be stores in the memory cache.
+         * This expects a method that will be used to determine if a map only has custom metadata in it.
+         * If so the custom metadata is return otherwise an empty map must be returned
+         */
+        private Function<Map<String, Serializable>, Map<String, Serializable>> getIfOnlyHasCustomMetadata = map-> map;
+
+        /**
+         * If true, means the metadata output will be stored in cache.
          */
         private boolean cache;
 
@@ -141,6 +173,11 @@ public class GenerateMetadataConfig {
          * Cache key supplier, if cache is true
          */
         private Supplier<String> cacheKeySupplier = null;
+
+        /**
+         * if specified the generated metadata must be merged with this.
+         */
+        private Metadata mergeWithMetadata;
 
 
         public Builder storageKey(final StorageKey storageKey) {
@@ -188,10 +225,20 @@ public class GenerateMetadataConfig {
             return this;
         }
 
+        public Builder getIfOnlyHasCustomMetadata(final Function<Map<String, Serializable>, Map<String, Serializable>> getIfOnlyHasCustomMetadata){
+            this.getIfOnlyHasCustomMetadata = getIfOnlyHasCustomMetadata;
+            return this;
+        }
+
         public Builder cache(final Supplier<String> cacheKeySupplier) {
 
             this.cache = true;
             this.cacheKeySupplier = cacheKeySupplier;
+            return this;
+        }
+
+        public Builder mergeWithMetadata(final Metadata mergeWithMetadata){
+            this.mergeWithMetadata = mergeWithMetadata;
             return this;
         }
 

@@ -24,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.*;
 import static org.junit.Assert.assertEquals;
@@ -231,7 +232,13 @@ public class FileTestUtil {
         final Collection<File> files = assertionChecker.getFile(asset, bundleRoot);
 
         for (final File file : files) {
-            assertTrue(String.format("File %s, not exists", file.getAbsolutePath()), file.exists());
+
+            if (!file.exists()) {
+                final String paths = FileUtil.listFilesRecursively(bundleRoot).stream()
+                        .map(fileInStream -> fileInStream.getAbsolutePath())
+                        .collect(Collectors.joining(", "));
+                assertTrue(String.format("File %s, not exists, files: %s", file.getAbsolutePath(), paths), file.exists());
+            }
 
             if (!assertionChecker.checkFileContent(asset)) {
                 continue;

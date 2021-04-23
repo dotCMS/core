@@ -1,6 +1,9 @@
 package com.dotcms.rest.api.v1.temp;
 
+import static com.dotcms.storage.FileMetadataAPIImpl.*;
+
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.storage.FileMetadataAPIImpl;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
@@ -274,7 +277,7 @@ public class TempFileAPI {
 
     final File tempFile = testFile.isDirectory() ? Try.of(() -> com.liferay.util.FileUtil.listFilesRecursively(testFile, tempFileFilter).stream().filter(d->d.isFile()).findFirst().get()).getOrNull() : testFile;
 
-    if (tempFile.exists()
+    if (tempFile != null && tempFile.exists()
         && tempFile.lastModified() + (tempResourceMaxAgeSeconds * 1000) > System.currentTimeMillis()) {
       
       return Optional.of(new DotTempFile(tempFileId, tempFile));
@@ -368,8 +371,9 @@ public class TempFileAPI {
     @Override
     public boolean accept(final File pathname) {
       return !pathname.getName().equalsIgnoreCase(WHO_CAN_USE_TEMP_FILE) &&
-             !pathname.getName().startsWith(".")
-          
+             !pathname.getName().startsWith(".") &&
+             !pathname.getName().endsWith(META_TMP)
+
           ;
     }
   };
@@ -401,6 +405,24 @@ public class TempFileAPI {
     return Encryptor.digest(fingerPrint);
     
     
+  }
+
+  /**
+   * given a file We explore the parent folder to figure out if it represents a temp resource
+   * and if it is so.. We return it.
+   * @param file
+   * @return
+   */
+  public Optional<String> getTempResourceId(final File file){
+    try {
+      final String tempResourceId = file.toPath().getParent().getFileName().toString();
+      if (isTempResource(tempResourceId)) {
+        return Optional.of(tempResourceId);
+      }
+    }catch (Exception e){
+      Logger.error(TempFileAPI.class, e);
+    }
+    return Optional.empty();
   }
 
 }

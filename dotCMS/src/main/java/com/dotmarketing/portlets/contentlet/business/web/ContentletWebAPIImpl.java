@@ -565,6 +565,10 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 								oldContentletMap.get(Host.HOST_NAME_KEY).toString(),
 								(String) currentContentlet.get("hostName")
 						);
+						UpdatePageTemplatePathJob.triggerUpdatePageTemplatePathJob(
+								oldContentletMap.get(Host.HOST_NAME_KEY).toString(),
+								(String) currentContentlet.get("hostName")
+						);
 					}
 				} else {
 					Logger.warn(this, "Calling Save Web Asset: " + currentContentlet.getIdentifier() +

@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.fileassets.business;
 
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.rendering.velocity.viewtools.content.FileAssetMap;
 import java.io.File;
 import java.io.IOException;
@@ -42,6 +43,8 @@ public interface FileAssetAPI {
 	String DEFAULT_FILE_ASSET_STRUCTURE_DESCRIPTION = "Default structure for all uploaded files";
 	String DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME = "FileAsset";
 	String DEFAULT_FILE_ASSET_STRUCTURE_INODE = "33888b6f-7a8e-4069-b1b6-5c1aa9d0a48d";
+
+	String TMP_UPLOAD = "tmp_upload";
 
 	void createBaseFileAssetFields(Structure structure) throws DotDataException,DotStateException;
 
@@ -93,6 +96,7 @@ public interface FileAssetAPI {
 	 * @param contentlet Contentlet owner of the file to parse
 	 * @param binFile File to parse the metadata from it
 	 */
+	@Deprecated
 	Map<String, String> getMetaDataMap(Contentlet contentlet, File binFile) throws DotDataException;
 
 	/**
@@ -280,29 +284,43 @@ public interface FileAssetAPI {
 	
 	/**
 	 * constructs the file path for content metadata assetpath/inode(0)/inode(1)/inode/metaData/content
-	 * 
+	 * @deprecated
+	 * This method is Here for compatibility purposes.
+	 *    <p> Use {@link Contentlet#getBinaryMetadata(Field)} }
+	 *    or {@link FileAsset#getMetaDataMap()} instead.
 	 * @param inode content inode
 	 * @return
 	 */
+	@Deprecated
 	File getContentMetadataFile(String inode);
 
 	/**
 	 * constructs the file path for content metadata assetpath/inode(0)/inode(1)/inode/{fileName}
-	 *
+	 * @deprecated
+	 * This method is Here for compatibility purposes.
+	 *    <p> Use {@link Contentlet#getBinaryMetadata(Field)} }
+	 *    or {@link FileAsset#getMetaDataMap()} instead.
 	 * @param inode    {@link String } content inode
 	 * @param fileName {@link String}  fileName for the metadata
 	 * @return File
 	 */
+	@Deprecated
 	File getContentMetadataFile(String inode, String fileName);
 	
 	/**
 	 * Takes the content metadata file and loads its content in a string.
 	 * It handles compression gzip, bzip2 or none using Tika to detect it 
 	 * based on the file header.
-	 * 
-	 * @param inode
+	 *
+	 * @deprecated
+	 * This method is Here for compatibility purposes.
+	 *    <p> Use {@link Contentlet#getBinaryMetadata(Field)} }
+	 *    or {@link FileAsset#getMetaDataMap()} instead.
+	 *
+	 * @param metadataFile
 	 * @return
 	 */
+	 @Deprecated
 	String getContentMetadataAsString(File metadataFile) throws Exception;
 
     /**

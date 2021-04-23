@@ -2,6 +2,8 @@ package com.dotcms.publishing;
 
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.publisher.business.DotPublisherException;
+import com.dotcms.publishing.output.BundleOutput;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -13,12 +15,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.DomDriver;
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
+
+import java.io.*;
 import java.nio.file.Files;
 import java.util.Calendar;
 import java.util.Date;
@@ -90,15 +88,17 @@ public class BundlerUtil {
 
 	/**
 	 * write bundle down
-	 * @param config
-	 */
-	public static void writeBundleXML(PublisherConfig config){
-		getBundleRoot(config);
+     * @param config
+     * @param output
+     */
+	public static void writeBundleXML(final PublisherConfig config, final BundleOutput output){
+		final String bundleXmlFilePath = File.separator + "bundle.xml";
 
-		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getName();
-
-		File xml = new File(bundlePath + File.separator + "bundle.xml");
-		objectToXML(config, xml);
+		try (final OutputStream outputStream = output.addFile(bundleXmlFilePath)) {
+            objectToXML(config, outputStream);
+        } catch ( IOException e ) {
+            Logger.error( BundlerUtil.class, e.getMessage(), e );
+        }
 	}
 
     /**
@@ -108,8 +108,6 @@ public class BundlerUtil {
      * @return The Bundle configuration read from the mail Bundle xml file
      */
     public static PublisherConfig readBundleXml(PublisherConfig config){
-		getBundleRoot(config);
-
 		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getName();
 
 		File xml = new File(bundlePath + File.separator + "bundle.xml");
@@ -155,10 +153,10 @@ public class BundlerUtil {
                 //Lets create the file.
             	f.createNewFile();
             }	
-            
-            try(OutputStreamWriter writer = new OutputStreamWriter(Files.newOutputStream(f.toPath()), "UTF-8")){
-                HierarchicalStreamWriter xmlWriter = new DotPrettyPrintWriter(writer);
-                xmlSerializer.marshal(obj, xmlWriter);
+
+
+            try(final OutputStream outputStream = Files.newOutputStream(f.toPath())){
+                objectToXML(obj, outputStream);
             }
 
         } catch ( FileNotFoundException e ) {
@@ -166,6 +164,11 @@ public class BundlerUtil {
         } catch ( IOException e ) {
             Logger.error( PublisherUtil.class, e.getMessage(), e );
         }
+    }
+
+    public static void objectToXML(final Object obj, final OutputStream outputStream) {
+        HierarchicalStreamWriter xmlWriter = new DotPrettyPrintWriter(new OutputStreamWriter(outputStream));
+        XMLSerializerUtil.getInstance().marshal(obj, xmlWriter);
     }
 
     /**
@@ -189,20 +192,19 @@ public class BundlerUtil {
         if ( removeFirst && f.exists() )
             f.delete();
 
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
 
         try {
             if ( !f.exists() ){
                 //Lets create the folders if necessary to avoid "No such file or directory" error.
                 if(f.getParentFile() != null){
                     f.getParentFile().mkdirs();
-                    }
+                }
                 //Lets create the file.
             	f.createNewFile();
             }	
 
             mapper.writeValue(f, obj);
-
         } catch ( FileNotFoundException e ) {
             Logger.error( PublisherUtil.class, e.getMessage(), e );
         } catch ( IOException e ) {
@@ -210,6 +212,16 @@ public class BundlerUtil {
         }
     }
 
+
+    public static void objectToJSON( final Object obj, final OutputStream outputStream) {
+        ObjectMapper mapper = new ObjectMapper();
+
+        try {
+            mapper.writeValue(outputStream, obj);
+        } catch ( IOException e ) {
+            Logger.error( PublisherUtil.class, e.getMessage(), e );
+        }
+    }
 
     /**
      * Deserialize an object back from XML
