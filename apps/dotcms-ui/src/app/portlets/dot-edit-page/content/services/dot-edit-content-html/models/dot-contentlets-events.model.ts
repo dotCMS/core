@@ -14,3 +14,18 @@ export interface DotRelocatePayload {
     container: DotPageContainer;
     contentlet: DotPageContent;
 }
+
+export interface DotInlineDataset {
+    mode: string;
+    inode: string;
+    fieldName: string;
+    language: string;
+}
+
+export interface DotInlineEditContent {
+    innerHTML: string;
+    dataset: DotInlineDataset;
+    element: HTMLElement;
+    isNotDirty: boolean;
+    eventType: string;
+}

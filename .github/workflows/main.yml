@@ -35,7 +35,7 @@ jobs:
             - name: Installing dependencies
               run: npm install
             - name: Building for production
-              run: npm run nx build dotcms-ui
+              run: npm run nx build dotcms-ui -- --with-deps --prod
             - name: Running tests
               id: test_run
               run: |

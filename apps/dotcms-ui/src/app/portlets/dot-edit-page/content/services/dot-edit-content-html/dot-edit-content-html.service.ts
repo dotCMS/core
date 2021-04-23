@@ -1,7 +1,7 @@
 import { fromEvent, of, Observable, Subject, Subscription } from 'rxjs';
 
-import { map, take } from 'rxjs/operators';
-import { Injectable, ElementRef } from '@angular/core';
+import { filter, map, take } from 'rxjs/operators';
+import { Injectable, ElementRef, NgZone } from '@angular/core';
 
 import * as _ from 'lodash';
 
@@ -12,30 +12,38 @@ import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.servic
 import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotPageContent, DotPageRenderState } from '@portlets/dot-edit-page/shared/models';
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 import { getEditPageCss } from '../html/libraries/iframe-edit-mode.css';
 import {
-  GOOGLE_FONTS,
-  MODEL_VAR_NAME,
+    GOOGLE_FONTS,
+    MODEL_VAR_NAME
 } from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/iframe-edit-mode.js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { PageModelChangeEvent, PageModelChangeEventType } from './models';
 import {
+    DotContentletEvent,
     DotContentletEventRelocate,
     DotContentletEventSave,
     DotContentletEventSelect,
+    DotInlineEditContent,
     DotRelocatePayload
 } from './models/dot-contentlets-events.model';
 import { DotPageContainer } from '@models/dot-page-container/dot-page-container.model';
+import { DotLicenseService } from '@services/dot-license/dot-license.service';
+import { INLINE_TINYMCE_SCRIPTS } from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/inline-edit-mode.js';
 
 export enum DotContentletAction {
     EDIT,
     ADD
 }
-
 @Injectable()
 export class DotEditContentHtmlService {
     contentletEvents$: Subject<
-        DotContentletEventRelocate | DotContentletEventSelect | DotContentletEventSave
+        | DotContentletEventRelocate
+        | DotContentletEventSelect
+        | DotContentletEventSave
+        | DotContentletEvent<DotInlineEditContent>
     > = new Subject();
     currentContainer: DotPageContainer;
     currentContentlet: DotPageContent;
@@ -43,7 +51,9 @@ export class DotEditContentHtmlService {
     iframeActions$: Subject<any> = new Subject();
     pageModel$: Subject<PageModelChangeEvent> = new Subject();
     mutationConfig = { attributes: false, childList: true, characterData: false };
+    datasetMissing: string[];
 
+    private inlineCurrentContent: { [key: string]: string } = {};
     private currentAction: DotContentletAction;
     private docClickSubscription: Subscription;
     private updateContentletInode = false;
@@ -57,7 +67,11 @@ export class DotEditContentHtmlService {
         private dotEditContentToolbarHtmlService: DotEditContentToolbarHtmlService,
         private dotDOMHtmlUtilService: DotDOMHtmlUtilService,
         private dotDialogService: DotAlertConfirmService,
-        private dotMessageService: DotMessageService
+        private dotMessageService: DotMessageService,
+        private dotGlobalMessageService: DotGlobalMessageService,
+        private dotWorkflowActionsFireService: DotWorkflowActionsFireService,
+        private ngZone: NgZone,
+        private dotLicenseService: DotLicenseService
     ) {
         this.contentletEvents$.subscribe(
             (
@@ -66,7 +80,9 @@ export class DotEditContentHtmlService {
                     | DotContentletEventSelect
                     | DotContentletEventSave
             ) => {
-                this.handlerContentletEvents(contentletEvent.name)(contentletEvent.data);
+                this.ngZone.run(() => {
+                    this.handlerContentletEvents(contentletEvent.name)(contentletEvent.data);
+                });
             }
         );
 
@@ -192,6 +208,7 @@ export class DotEditContentHtmlService {
     renderAddedContentlet(contentlet: DotPageContent): void {
         const doc = this.getEditPageDocument();
         const containerEl: HTMLElement = doc.querySelector(
+            // eslint-disable-next-line max-len
             `[data-dot-object="container"][data-dot-identifier="${this.currentContainer.identifier}"][data-dot-uuid="${this.currentContainer.uuid}"]`
         );
 
@@ -402,6 +419,36 @@ export class DotEditContentHtmlService {
         this.dotEditContentToolbarHtmlService.addContainerToolbar(doc);
     }
 
+    private injectInlineEditingScripts(): void {
+        const doc = this.getEditPageDocument();
+        const editModeNodes = doc.querySelectorAll('[data-mode]');
+
+        if (editModeNodes.length) {
+            const TINYMCE = `/html/js/tinymce/js/tinymce/tinymce.min.js`;
+            const tinyMceScript = this.dotDOMHtmlUtilService.creatExternalScriptElement(TINYMCE);
+            const tinyMceInitScript: HTMLScriptElement = this.dotDOMHtmlUtilService.createInlineScriptElement(
+                INLINE_TINYMCE_SCRIPTS
+            );
+
+            this.dotLicenseService
+                .isEnterprise()
+                .pipe(
+                    take(1),
+                    filter((isEnterprise: boolean) => isEnterprise === true)
+                )
+                .subscribe(() => {
+                    // We have elements in the DOM and we're on enterprise plan
+
+                    doc.body.append(tinyMceInitScript);
+                    doc.body.append(tinyMceScript);
+
+                    editModeNodes.forEach((node) => {
+                        node.classList.add('dotcms__inline-edit-field');
+                    });
+                });
+        }
+    }
+
     private createScriptTag(node: HTMLScriptElement): HTMLScriptElement {
         const doc = this.getEditPageDocument();
         const script = doc.createElement('script');
@@ -502,6 +549,63 @@ export class DotEditContentHtmlService {
         );
     }
 
+    private resetInlineCurrentContent(id: string) {
+        return this.inlineCurrentContent[id];
+    }
+
+    private handleDatasetMissingErrors({ dataset }: Pick<DotInlineEditContent, 'dataset'>): void {
+        const requiredDatasetKeys = ['mode', 'inode', 'fieldName', 'language'];
+        const datasetMissing = requiredDatasetKeys.filter(function (key) {
+            return !Object.keys(dataset).includes(key);
+        });
+        const message = this.dotMessageService.get('editpage.inline.attribute.error');
+        datasetMissing.forEach((dataset: string) => {
+            this.dotGlobalMessageService.error(`${dataset} ${message}`);
+        });
+    }
+
+    private handleTinyMCEOnFocusEvent(contentlet: DotInlineEditContent) {
+        this.handleDatasetMissingErrors(contentlet);
+        this.inlineCurrentContent = {
+            ...this.inlineCurrentContent,
+            [contentlet.element.id]: contentlet.innerHTML
+        };
+    }
+
+    private handleTinyMCEOnBlurEvent(content: DotInlineEditContent) {
+        // If editor is dirty then we continue making the request
+        if (!content.isNotDirty) {
+            // Add the loading indicator to the field
+            content.element.classList.add('inline-editing--saving');
+
+            // All good, initiate the request
+            this.dotWorkflowActionsFireService
+                .saveContentlet({
+                    [content.dataset.fieldName]: content.innerHTML,
+                    inode: content.dataset.inode
+                })
+                .pipe(take(1))
+                .subscribe(
+                    () => {
+                        // on success
+                    },
+                    () => {
+                        // on error
+                        content.element.innerHTML = this.inlineCurrentContent[content.element.id];
+                        const message = this.dotMessageService.get('editpage.inline.error');
+                        this.dotGlobalMessageService.error(message);
+                    },
+                    () => {
+                        // finally
+                        content.element.classList.remove('inline-editing--saving');
+                        delete this.inlineCurrentContent[content.element.id];
+                    }
+                );
+        } else {
+            delete this.inlineCurrentContent[content.element.id];
+        }
+    }
+
     private handlerContentletEvents(
         event: string
     ): (contentletEvent: DotPageContent | DotRelocatePayload) => void {
@@ -515,6 +619,15 @@ export class DotEditContentHtmlService {
                         this.currentContentlet.inode = contentlet.inode;
                     }
                     this.renderEditedContentlet(this.currentContentlet);
+                }
+            },
+            inlineEdit: (contentlet: DotInlineEditContent) => {
+                if (contentlet.eventType === 'focus') {
+                    this.handleTinyMCEOnFocusEvent(contentlet);
+                }
+
+                if (contentlet.eventType === 'blur') {
+                    this.handleTinyMCEOnBlurEvent(contentlet);
                 }
             },
             // When a user select a content from the search jsp
@@ -593,6 +706,7 @@ export class DotEditContentHtmlService {
     private setEditMode(): void {
         this.setEditContentletStyles();
         this.addContentToolBars();
+        this.injectInlineEditingScripts();
         this.dotDragDropAPIHtmlService.initDragAndDropContext(this.getEditPageIframe());
     }
 

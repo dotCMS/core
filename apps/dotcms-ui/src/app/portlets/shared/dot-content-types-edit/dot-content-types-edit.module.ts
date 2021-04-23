@@ -41,8 +41,8 @@ import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-hel
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { DotContentTypeFieldsVariablesModule } from '@portlets/shared/dot-content-types-edit/components/fields/dot-content-type-fields-variables/dot-content-type-fields-variables.module';
 import { DragulaModule, DragulaService } from 'ng2-dragula';
-import { DotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
-import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
+import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
+import { DotIconModule } from '@dotcms/ui';
 import { DynamicFieldPropertyDirective } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dynamic-field-property-directive/dynamic-field-property.directive';
 import { DotContentTypesEditRoutingModule } from './dot-content-types-edit-routing.module';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
@@ -50,7 +50,7 @@ import { DotTextareaContentModule } from '@components/_common/dot-textarea-conte
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotBaseTypeSelectorModule } from '@components/dot-base-type-selector';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
-import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotRelationshipsModule } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/dot-relationships.module';
 import { DotMaxlengthModule } from '@directives/dot-maxlength/dot-maxlength.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
@@ -125,8 +125,8 @@ import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot
         DotSecondaryToolbarModule,
         DotFieldHelperModule,
         DotFieldValidationMessageModule,
-        DotIconButtonModule,
-        DotIconButtonTooltipModule,
+        UiDotIconButtonModule,
+        UiDotIconButtonTooltipModule,
         DotIconModule,
         DotMaxlengthModule,
         DotMenuModule,

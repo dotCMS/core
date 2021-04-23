@@ -4,13 +4,14 @@ import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
 import { CommonModule } from '@angular/common';
 import { DotAppsConfigurationItemComponent } from './dot-apps-configuration-item.component';
-import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { By } from '@angular/platform-browser';
-import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
+import { DotIconModule } from '@dotcms/ui';
 import { TooltipModule } from 'primeng/tooltip';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ConfirmationService } from 'primeng/api';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotCopyButtonModule } from '@dotcms/app/view/components/dot-copy-button/dot-copy-button.module';
 
 const messages = {
     'apps.key': 'Key',
@@ -52,7 +53,8 @@ describe('DotAppsConfigurationItemComponent', () => {
             TestBed.configureTestingModule({
                 imports: [
                     CommonModule,
-                    DotIconButtonModule,
+                    DotCopyButtonModule,
+                    UiDotIconButtonModule,
                     DotIconModule,
                     TooltipModule,
                     HttpClientTestingModule,
@@ -96,6 +98,12 @@ describe('DotAppsConfigurationItemComponent', () => {
             expect(buttons[0].componentInstance.icon).toBe('vertical_align_bottom');
             expect(buttons[1].componentInstance.icon).toBe('delete_outline');
             expect(buttons[2].componentInstance.icon).toBe('edit');
+        });
+
+        it('should DotCopy with right properties', () => {
+            const dotCopy = fixture.debugElement.query(By.css('dot-copy-button')).componentInstance;
+            expect(dotCopy.label).toBe(component.site.id);
+            expect(dotCopy.copy).toBe(component.site.id);
         });
 
         it('should have warning icon', () => {

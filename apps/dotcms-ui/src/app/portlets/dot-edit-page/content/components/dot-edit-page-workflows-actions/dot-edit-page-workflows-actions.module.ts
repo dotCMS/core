@@ -5,10 +5,10 @@ import { DotWorkflowsActionsService } from '@services/dot-workflows-actions/dot-
 import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
 import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import { MenuModule } from 'primeng/menu';
-import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 
 @NgModule({
-    imports: [CommonModule, DotIconButtonModule, MenuModule],
+    imports: [CommonModule, UiDotIconButtonModule, MenuModule],
     exports: [DotEditPageWorkflowsActionsComponent],
     declarations: [DotEditPageWorkflowsActionsComponent],
     providers: [DotWorkflowsActionsService, DotWorkflowService, DotWorkflowEventHandlerService]

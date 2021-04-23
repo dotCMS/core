@@ -39,16 +39,29 @@
         "dot-layout-grid": {
             "tags": []
         },
-        "dotcms-models": {
+        "dotcms-webcomponents": {
+            "tags": []
+        },
+        "dotcms-field-elements": {
             "tags": []
         },
         "dotcms": {
             "tags": []
         },
-        "dotcms-webcomponents": {
+        "dotcms-models": {
             "tags": []
         },
-        "dotcms-field-elements": {
+        "dot-primeng-theme-styles": {
+            "tags": []
+        },
+        "dot-cdn": {
+            "tags": []
+        },
+        "dot-cdn-e2e": {
+            "tags": [],
+            "implicitDependencies": ["dot-cdn"]
+        },
+        "ui": {
             "tags": []
         }
     }

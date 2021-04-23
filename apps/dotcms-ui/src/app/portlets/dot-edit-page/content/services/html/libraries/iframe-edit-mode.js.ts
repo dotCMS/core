@@ -85,6 +85,7 @@ export const EDIT_PAGE_JS = `
         });
 
         currentModel = getDotNgModel();
+
     })
 
     drake.on('over', function(el, container, source) {

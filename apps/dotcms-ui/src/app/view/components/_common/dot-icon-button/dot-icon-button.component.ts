@@ -1,17 +1,17 @@
 import { Component, Input } from '@angular/core';
 
 /**
- * The DotIconButtonComponent is a round button which
+ * The UiDotIconButtonComponent is a round button which
  * reuses the dot-icon component
  * @export
- * @class DotIconButtonComponent
+ * @class UiDotIconButtonComponent
  */
 @Component({
     selector: 'dot-icon-button',
     styleUrls: ['./dot-icon-button.component.scss'],
     templateUrl: './dot-icon-button.component.html'
 })
-export class DotIconButtonComponent {
+export class UiDotIconButtonComponent {
     @Input()
     disabled?: boolean;
 

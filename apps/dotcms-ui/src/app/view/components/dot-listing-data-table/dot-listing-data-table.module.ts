@@ -9,7 +9,7 @@ import { NgModule } from '@angular/core';
 import { InputTextModule } from 'primeng/inputtext';
 import { TableModule } from 'primeng/table';
 import { DotActionMenuButtonModule } from '../_common/dot-action-menu-button/dot-action-menu-button.module';
-import { DotIconModule } from '../_common/dot-icon/dot-icon.module';
+import { DotIconModule } from '@dotcms/ui';
 import { RouterModule } from '@angular/router';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { CheckboxModule } from 'primeng/checkbox';

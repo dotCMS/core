@@ -6,9 +6,9 @@ import { MockDotMessageService } from '../../../../../test/dot-message-service.m
 import { SEARCHABLE_NGFACES_MODULES } from '../searchable-dropdown.module';
 import { SearchableDropdownComponent } from './searchable-dropdown.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotIconModule } from '../../dot-icon/dot-icon.module';
+import { DotIconModule } from '@dotcms/ui';
 import * as _ from 'lodash';
-import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 @Component({
     selector: 'dot-host-component',
@@ -97,7 +97,7 @@ describe('SearchableDropdownComponent', () => {
                     ...SEARCHABLE_NGFACES_MODULES,
                     BrowserAnimationsModule,
                     DotIconModule,
-                    DotIconButtonModule,
+                    UiDotIconButtonModule,
                     DotPipesModule
                 ],
                 providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
@@ -420,7 +420,7 @@ describe('SearchableDropdownComponent', () => {
                     ...SEARCHABLE_NGFACES_MODULES,
                     BrowserAnimationsModule,
                     DotIconModule,
-                    DotIconButtonModule,
+                    UiDotIconButtonModule,
                     DotPipesModule
                 ],
                 providers: [{ provide: DotMessageService, useValue: messageServiceMock }]

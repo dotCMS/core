@@ -18,6 +18,8 @@
     dot-icon {
         align-self: center;
         margin-right: $spacing-3;
+        text-align: end;
+        width: 100%;
     }
 
     dot-icon {
@@ -25,16 +27,15 @@
     }
 }
 
+.dot-apps-configuration-list__host-configured {
+    display: flex;
+}
+
 .dot-apps-configuration-list__name,
 .dot-apps-configuration-list__host-key {
     align-self: center;
     margin-left: $spacing-3;
     white-space: nowrap;
-}
-
-.dot-apps-configuration-list__name {
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 .dot-apps-configuration-list__host-key {

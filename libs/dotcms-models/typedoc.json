@@ -1,8 +1,0 @@
-{
-    "name": "DotCMS Models",
-    "out": "./docs/dotcms-models",
-    "readme": "./libs/dotcms-models/README.md",
-    "excludePrivate": true,
-    "tsconfig": "./libs/dotcms-models/tsconfig.lib.json",
-    "excludeExternals": true
-}

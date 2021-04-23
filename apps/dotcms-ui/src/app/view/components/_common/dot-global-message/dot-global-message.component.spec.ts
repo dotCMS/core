@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { DotGlobalMessageComponent } from './dot-global-message.component';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
+import { DotIconModule } from '@dotcms/ui';
 import { DotSpinnerModule } from '@components/_common/dot-spinner/dot-spinner.module';
 import { By } from '@angular/platform-browser';
 

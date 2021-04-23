@@ -343,6 +343,49 @@ export const getEditPageCss = (timestampId: string): string => {
         z-index: 1 !important;
     }
 
+    ${timestampId} .inline-editing--saving::before {
+        background: rgba(200,200,200, .6);
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        content: "";
+        left: 0;
+    }
+
+    ${timestampId} .inline-editing--error::before {
+        background: rgba(255, 0, 0, 0.2);
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        content: "";
+        left: 0;
+    }
+
+    ${timestampId} [data-mode] > * {
+        pointer-events: none;
+    }
+
+    ${timestampId} [data-mode].active > * {
+        pointer-events: auto;
+    }
+
+    ${timestampId} .mce-edit-focus * {
+        color: black !important;
+    }
+
+    ${timestampId} .mce-edit-focus {
+        background: white;
+        border: 1px solid black !important;
+        outline: none;
+        color: black !important;
+    }
+
+    ${timestampId} [data-mode].dotcms__inline-edit-field {
+        cursor: text;
+        border: 1px solid #53c2f9 !important;
+        display: block;
+    }
+
     @keyframes load8 {
         0% {
             transform: rotate(0deg);

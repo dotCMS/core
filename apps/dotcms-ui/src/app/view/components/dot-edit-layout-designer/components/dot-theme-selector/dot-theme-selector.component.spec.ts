@@ -1,25 +1,38 @@
 import { of } from 'rxjs';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { DotThemeSelectorComponent } from './dot-theme-selector.component';
-import { DebugElement } from '@angular/core';
+import { Component, DebugElement, Input } from '@angular/core';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotThemesService } from '@services/dot-themes/dot-themes.service';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
 import { By } from '@angular/platform-browser';
 import { mockDotThemes } from '../../../../../test/dot-themes.mock';
 import { DataViewModule } from 'primeng/dataview';
-import { DotSiteSelectorModule } from '@components/_common/dot-site-selector/dot-site-selector.module';
 import { mockSites, SiteServiceMock } from '../../../../../test/site-service.mock';
-import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
+import { CoreWebService, Site, SiteService } from '@dotcms/dotcms-js';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { PaginatorService } from '@services/paginator/paginator.service';
 import { DotThemesServiceMock } from '../../../../../test/dot-themes-service.mock';
-import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
+import { DotIconModule } from '@dotcms/ui';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+
+@Component({
+    selector: 'dot-site-selector',
+    template: `<select>
+        <option>Fake site selector</option>
+    </select>`
+})
+class MockDotSiteSelectorComponent {
+    @Input() system;
+    @Input() archive;
+    searchableDropdown = {
+        handleClick: () => {}
+    };
+}
 
 describe('DotThemeSelectorComponent', () => {
     let component: DotThemeSelectorComponent;
@@ -37,10 +50,9 @@ describe('DotThemeSelectorComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotThemeSelectorComponent],
+            declarations: [DotThemeSelectorComponent, MockDotSiteSelectorComponent],
             imports: [
                 DataViewModule,
-                DotSiteSelectorModule,
                 BrowserAnimationsModule,
                 DotDialogModule,
                 DotIconModule,
@@ -87,6 +99,8 @@ describe('DotThemeSelectorComponent', () => {
                     By.css('[data-testId="header"] [data-testId="siteSelector"]')
                 );
                 expect(siteSelector).not.toBeNull();
+                expect(siteSelector.componentInstance.system).toEqual(true);
+                expect(siteSelector.componentInstance.archive).toEqual(false);
             });
 
             it('should have dot-icon', () => {
@@ -135,7 +149,7 @@ describe('DotThemeSelectorComponent', () => {
             expect(paginatorService.url).toBe('v1/themes');
             expect(paginatorService.setExtraParams).toHaveBeenCalledWith(
                 'hostId',
-                '123-xyz-567-xxl'
+                mockDotThemes[0].hostId
             );
             expect(paginatorService.deleteExtraParams).toHaveBeenCalledWith('searchParam');
         });
@@ -162,14 +176,31 @@ describe('DotThemeSelectorComponent', () => {
         });
 
         it('should show theme image when available', () => {
-            spyOn(paginatorService, 'getWithOffset').and.returnValue(of(mockDotThemes));
+            const systemTheme = {
+                name: 'system Theme',
+                title: 'Theme tittle',
+                inode: '1',
+                themeThumbnail: '/system/theme/url',
+                identifier: 'SYSTEM_THEME',
+                hostId: '1',
+                host: {
+                    hostName: 'Test',
+                    inode: '3',
+                    identifier: '345'
+                }
+            };
+
+            spyOn(paginatorService, 'getWithOffset').and.returnValue(
+                of([...mockDotThemes, systemTheme])
+            );
             component.siteChange(mockSites[0]);
             fixture.detectChanges();
-            const themeImage: DebugElement = fixture.debugElement.query(
-                By.css('.dot-theme-iteme__image')
+            const themeImages = de.queryAll(By.css('[data-testId="themeImage"]'));
+            console.log(themeImages[0]);
+            expect(themeImages[0].nativeElement.src).toContain(
+                `/dA/${mockDotThemes[2].themeThumbnail}/130w/130h/thumbnail.png`
             );
-
-            expect(themeImage).not.toBeNull();
+            expect(themeImages[1].nativeElement.src).toContain(systemTheme.themeThumbnail);
         });
     });
 
@@ -224,5 +255,27 @@ describe('DotThemeSelectorComponent', () => {
             expect(paginatorService.extraParams.get('searchParam')).toBe('test');
             expect(component.paginate).toHaveBeenCalled();
         }));
+    });
+
+    describe('User interaction empty', () => {
+        let siteService: SiteService;
+
+        beforeEach(() => {
+            siteService = TestBed.inject(SiteService);
+            spyOn(paginatorService, 'getWithOffset').and.returnValue(of([]));
+        });
+
+        it(' should set system host ', () => {
+            spyOn(siteService, 'getSiteById').and.returnValue(of({} as Site));
+            fixture.detectChanges();
+            expect(siteService.getSiteById).toHaveBeenCalledOnceWith('SYSTEM_HOST');
+        });
+
+        it(' should set system host just once ', () => {
+            spyOn(siteService, 'getSiteById').and.returnValue(of({} as Site));
+            fixture.detectChanges();
+            setTimeout(() => component.siteChange({ identifier: '123' } as Site), 0); // simulate user site change.
+            expect(siteService.getSiteById).toHaveBeenCalledOnceWith('SYSTEM_HOST');
+        });
     });
 });

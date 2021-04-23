@@ -8,7 +8,7 @@ import { DOTTestBed } from '@tests/dot-test-bed';
 import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { RouterTestingModule } from '@angular/router/testing';
 
@@ -34,7 +34,7 @@ describe('ContentTypeFieldsAddRowComponent', () => {
             imports: [
                 TooltipModule,
                 BrowserAnimationsModule,
-                DotIconButtonModule,
+                UiDotIconButtonModule,
                 SplitButtonModule,
                 RouterTestingModule
             ],

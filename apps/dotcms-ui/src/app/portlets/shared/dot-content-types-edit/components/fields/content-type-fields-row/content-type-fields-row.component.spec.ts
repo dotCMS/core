@@ -6,7 +6,7 @@ import { By } from '@angular/platform-browser';
 import { FieldDragDropService } from '../service';
 import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
 import { DragulaModule, DragulaService } from 'ng2-dragula';
-import { DotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
+import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
@@ -88,7 +88,7 @@ describe('ContentTypeFieldsRowComponent', () => {
                     TestContentTypeFieldDraggableItemComponent,
                     DotTestHostComponent
                 ],
-                imports: [DragulaModule, DotIconButtonTooltipModule],
+                imports: [DragulaModule, UiDotIconButtonTooltipModule],
                 providers: [
                     FieldDragDropService,
                     DotAlertConfirmService,

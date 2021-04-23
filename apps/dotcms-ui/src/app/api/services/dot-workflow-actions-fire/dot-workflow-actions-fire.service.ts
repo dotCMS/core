@@ -7,14 +7,15 @@ import { DotActionBulkRequestOptions } from '@models/dot-action-bulk-request-opt
 import { DotActionBulkResult } from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
 
 interface DotActionRequestOptions {
-    contentType: string;
+    contentType?: string;
     data: { [key: string]: any };
     action: ActionToFire;
 }
 
 enum ActionToFire {
     NEW = 'NEW',
-    PUBLISH = 'PUBLISH'
+    PUBLISH = 'PUBLISH',
+    EDIT = 'EDIT'
 }
 
 @Injectable()
@@ -90,6 +91,21 @@ export class DotWorkflowActionsFireService {
             action: ActionToFire.PUBLISH
         });
     }
+    /**
+     * Fire an "EDIT" action over the content type received with the specified data
+     *
+     * @template T
+     * @param {string} contentType
+     * @param {{ [key: string]: any }} data
+     * @return {*}  {Observable<T>}
+     * @memberof DotWorkflowActionsFireService
+     */
+    saveContentlet<T>(data: { [key: string]: any }): Observable<T> {
+        return this.request<T>({
+            data,
+            action: ActionToFire.EDIT
+        });
+    }
 
     /**
      * Fire a "PUBLISH" action over the content type received and append the wait for index attr
@@ -111,11 +127,15 @@ export class DotWorkflowActionsFireService {
     }
 
     private request<T>({ contentType, data, action }: DotActionRequestOptions): Observable<T> {
+        const contentlet = contentType ? { contentType: contentType, ...data } : data;
+
         return this.coreWebService
             .requestView({
                 method: 'PUT',
-                url: `v1/workflow/actions/default/fire/${action}`,
-                body: { contentlet: { contentType: contentType, ...data } }
+                url: `v1/workflow/actions/default/fire/${action}${
+                    data.inode ? `?inode=${data.inode}` : ''
+                }`,
+                body: { contentlet }
             })
             .pipe(take(1), pluck('entity'));
     }

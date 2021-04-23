@@ -100,18 +100,35 @@ describe('DotContentletWrapperComponent', () => {
                 expect(dotAddContentletService.load).toHaveBeenCalledWith({ hello: 'world' });
             });
 
-            it('should close the dialog', () => {
+            it('should close the dialog and redirect to Edit Page', () => {
                 component.header = 'header';
 
                 dotIframeDialog.triggerEventHandler('custom', {
                     detail: {
-                        name: 'close'
+                        name: 'close',
+                        data: {
+                            redirectUrl: 'testUrl',
+                            languageId: '1'
+                        }
                     }
                 });
                 expect(dotAddContentletService.clear).toHaveBeenCalledTimes(1);
                 expect(component.header).toBe('');
                 expect(component.custom.emit).toHaveBeenCalledTimes(1);
                 expect(component.close.emit).toHaveBeenCalledTimes(1);
+                expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
+                    url: 'testUrl',
+                    language_id: '1'
+                });
+            });
+
+            it('should close the dialog and do not redirect to Edit Page', () => {
+                dotIframeDialog.triggerEventHandler('custom', {
+                    detail: {
+                        name: 'close'
+                    }
+                });
+                expect(dotRouterService.goToEditPage).not.toHaveBeenCalled();
             });
 
             it('should called goToEdit', () => {

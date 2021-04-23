@@ -25,6 +25,7 @@ const mockBulkOptions: DotActionBulkRequestOptions = {
         }
     }
 };
+
 describe('DotWorkflowActionsFireService', () => {
     let injector: TestBed;
     let dotWorkflowActionsFireService: DotWorkflowActionsFireService;
@@ -40,7 +41,7 @@ describe('DotWorkflowActionsFireService', () => {
         });
         injector = getTestBed();
         dotWorkflowActionsFireService = injector.get(DotWorkflowActionsFireService);
-        httpMock = injector.get(HttpTestingController);
+        httpMock = injector.inject(HttpTestingController);
     });
 
     it('should SAVE and return a new contentlet', () => {
@@ -66,6 +67,37 @@ describe('DotWorkflowActionsFireService', () => {
             entity: [
                 {
                     name: 'test'
+                }
+            ]
+        });
+    });
+
+    it('should EDIT and return the updated contentlet', () => {
+        const fieldName = 'title';
+
+        dotWorkflowActionsFireService
+            .saveContentlet({ inode: '123', [fieldName]: 'hello world' })
+            .subscribe((res) => {
+                expect(res).toEqual([
+                    {
+                        inode: '123'
+                    }
+                ]);
+            });
+
+        const req = httpMock.expectOne('v1/workflow/actions/default/fire/EDIT?inode=123');
+        expect(req.request.method).toBe('PUT');
+        console.log(req.request.body)
+        // expect(req.request.body).toEqual({
+        //     contentlet: {
+        //         inode: '123',
+        //         [fieldName]: 'hello world'
+        //     }
+        // });
+        req.flush({
+            entity: [
+                {
+                    inode: '123'
                 }
             ]
         });

@@ -1,4 +1,4 @@
-import { DotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
+import { UiDotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NgModule } from '@angular/core';
@@ -44,7 +44,7 @@ import { DotEditLayoutService } from '@services/dot-edit-layout/dot-edit-layout.
         DotContainerSelectorModule,
         DotEditPageInfoModule,
         DotGlobalMessageModule,
-        DotIconButtonModule,
+        UiDotIconButtonModule,
         DotLayoutPropertiesModule,
         DotSidebarPropertiesModule,
         DotThemeSelectorModule,

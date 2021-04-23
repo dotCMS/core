@@ -3,11 +3,9 @@
     (select)="onFormSelected($event)"
     (close)="editForm = false"
 ></dot-form-selector>
-
 <dot-add-contentlet (custom)="onCustomEvent($event)"></dot-add-contentlet>
 <dot-edit-contentlet (custom)="onCustomEvent($event)"></dot-edit-contentlet>
 <dot-reorder-menu [url]="reorderMenuUrl" (close)="onCloseReorderDialog()"></dot-reorder-menu>
-
 <div class="dot-edit-content__wrapper">
     <dot-loading-indicator fullscreen="true"></dot-loading-indicator>
     <ng-container *ngIf="pageState$ | async as pageState">

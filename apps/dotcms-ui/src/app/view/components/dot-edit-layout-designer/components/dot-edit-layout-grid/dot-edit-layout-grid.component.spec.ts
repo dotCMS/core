@@ -14,7 +14,7 @@ import { DotContainerSelectorLayoutModule } from '@components/dot-container-sele
 import { DotTemplateContainersCacheService } from '@services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { DotEditLayoutService } from '@services/dot-edit-layout/dot-edit-layout.service';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { DotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
+import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 
 import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
@@ -75,7 +75,7 @@ class DotDialogMockComponent {
     selector: 'dot-icon-button',
     template: ''
 })
-class DotIconButtonMockComponent {}
+class UiDotIconButtonMockComponent {}
 
 describe('DotEditLayoutGridComponent', () => {
     let component: DotEditLayoutGridComponent;
@@ -119,13 +119,13 @@ describe('DotEditLayoutGridComponent', () => {
                 DotEditLayoutGridComponent,
                 TestHostComponent,
                 DotDialogMockComponent,
-                DotIconButtonMockComponent
+                UiDotIconButtonMockComponent
             ],
             imports: [
                 NgGridModule,
                 DotContainerSelectorLayoutModule,
                 BrowserAnimationsModule,
-                DotIconButtonTooltipModule,
+                UiDotIconButtonTooltipModule,
                 DotAutofocusModule
             ],
             providers: [

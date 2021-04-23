@@ -1,4 +1,4 @@
-import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -19,7 +19,7 @@ import { OverlayPanelModule } from 'primeng/overlaypanel';
         OverlayPanelModule,
         ButtonModule,
         ReactiveFormsModule,
-        DotIconButtonModule,
+        UiDotIconButtonModule,
         DotPipesModule
     ],
     exports: [DotLayoutPropertiesComponent],

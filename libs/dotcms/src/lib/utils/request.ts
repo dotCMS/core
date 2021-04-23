@@ -1,30 +1,28 @@
-import fetch from 'node-fetch';
 import { DotCMSConfigurationParams, DotAppHttpRequestParams } from '../models';
+import fetch from 'cross-fetch';
 
-function getQueryParams(language: string, hostId: string): string {
-    let result = language || hostId ? '?' : '';
+async function getUrl(
+    { params, url }: DotAppHttpRequestParams,
+    { host, hostId }: DotCMSConfigurationParams
+): Promise<string> {
+    if (!host) {
+        throw new Error('Please pass the DotCMS instance in the initDotCMS initialization')
+    }
 
-    if (language) {
-        result += `language_id=${language}`;
+    const newUrl = new URL(`${host}${url}`);
+    const paramsKeys = params ? Object.keys(params) : [];
 
-        if (hostId) {
-            result += '&';
-        }
+    if (paramsKeys.length) {
+        paramsKeys.map((key: string) => {
+            newUrl.searchParams.append(key, params[key]);
+        })
     }
 
     if (hostId) {
-        result += `host_id=${hostId}`;
+        newUrl.searchParams.append('host_id', hostId);
     }
 
-    return result;
-}
-
-async function getUrl(
-    params: DotAppHttpRequestParams,
-    config: DotCMSConfigurationParams
-): Promise<string> {
-    const host = config.host || '';
-    return `${host}${params.url}${getQueryParams(params.language, config.hostId)}`;
+    return `${newUrl.toString()}`;
 }
 
 function shouldAppendBody(params: DotAppHttpRequestParams): boolean {
@@ -53,8 +51,8 @@ function getOpts(
     return opts;
 }
 
-export async function request(params: DotAppHttpRequestParams, config: DotCMSConfigurationParams) {
-    const url = await getUrl(params, config);
-    const opts = getOpts(params, config);
+export async function request(options: DotAppHttpRequestParams, config: DotCMSConfigurationParams) {
+    const url = await getUrl(options, config);
+    const opts = getOpts(options, config);
     return fetch(url, opts);
 }

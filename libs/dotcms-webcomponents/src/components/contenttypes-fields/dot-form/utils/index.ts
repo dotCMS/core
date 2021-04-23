@@ -1,5 +1,5 @@
-import { DotFormFields } from "./fields";
-import { getStringFromDotKeyArray, isStringType } from "../../../../utils";
+import { DotFormFields } from './fields';
+import { getStringFromDotKeyArray, isStringType } from '../../../../utils';
 import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
@@ -7,7 +7,7 @@ import {
     DotCMSContentTypeFieldVariable
 } from '@dotcms/dotcms-models';
 
-export const DOT_ATTR_PREFIX = "dot";
+export const DOT_ATTR_PREFIX = 'dot';
 
 /**
  * Sets attributes to the HtmlElement from fieldVariables array
@@ -30,13 +30,13 @@ export function setAttributesToTag(
  */
 const pipedValuesToObject = (values: string): { [key: string]: string } => {
     return isStringType(values)
-        ? values.split(",").reduce((acc, item) => {
-            const [key, value] = item.split("|");
-            return {
-                ...acc,
-                [key]: value
-            };
-        }, {})
+        ? values.split(',').reduce((acc, item) => {
+              const [key, value] = item.split('|');
+              return {
+                  ...acc,
+                  [key]: value
+              };
+          }, {})
         : null;
 };
 
@@ -50,12 +50,9 @@ function isDotAttribute(name: string): boolean {
  * @param Element element
  * @param Attr[] attributes
  */
-export function setDotAttributesToElement(
-    element: Element,
-    attributes: Attr[]
-): void {
+export function setDotAttributesToElement(element: Element, attributes: Attr[]): void {
     attributes.forEach(({ name, value }) => {
-        element.setAttribute(name.replace(DOT_ATTR_PREFIX, ""), value);
+        element.setAttribute(name.replace(DOT_ATTR_PREFIX, ''), value);
     });
 }
 
@@ -66,15 +63,10 @@ export function setDotAttributesToElement(
  * @param string[] attrException
  * @returns Attr[]
  */
-export function getDotAttributesFromElement(
-    attributes: Attr[],
-    attrException: string[]
-): Attr[] {
+export function getDotAttributesFromElement(attributes: Attr[], attrException: string[]): Attr[] {
     const exceptions = attrException.map((attr: string) => attr.toUpperCase());
     return attributes.filter(
-        (item: Attr) =>
-            !exceptions.includes(item.name.toUpperCase()) &&
-            isDotAttribute(item.name)
+        (item: Attr) => !exceptions.includes(item.name.toUpperCase()) && isDotAttribute(item.name)
     );
 }
 
@@ -83,11 +75,8 @@ export function getDotAttributesFromElement(
  * @param DotCMSContentTypeField field
  * @returns boolean
  */
-export const shouldShowField = (
-    field: DotCMSContentTypeField,
-    fieldsToShow: string
-): boolean => {
-    const fields2Show = fieldsToShow ? fieldsToShow.split(",") : [];
+export const shouldShowField = (field: DotCMSContentTypeField, fieldsToShow: string): boolean => {
+    const fields2Show = fieldsToShow ? fieldsToShow.split(',') : [];
     return !fields2Show.length || fields2Show.includes(field.variable);
 };
 
@@ -103,8 +92,7 @@ export const getFieldVariableValue = (
 ): string => {
     if (fieldVariables && fieldVariables.length) {
         const [variable] = fieldVariables.filter(
-            (item: DotCMSContentTypeFieldVariable) =>
-                item.key.toUpperCase() === key.toUpperCase()
+            (item: DotCMSContentTypeFieldVariable) => item.key.toUpperCase() === key.toUpperCase()
         );
         return variable && variable.value;
     }
@@ -137,35 +125,26 @@ export const getFieldsFromLayout = (
     layout: DotCMSContentTypeLayoutRow[]
 ): DotCMSContentTypeField[] => {
     return layout.reduce(
-        (
-            acc: DotCMSContentTypeField[],
-            { columns }: DotCMSContentTypeLayoutRow
-        ) =>
-            acc.concat(
-                ...columns.map(
-                    (col: DotCMSContentTypeLayoutColumn) => col.fields
-                )
-            ),
+        (acc: DotCMSContentTypeField[], { columns }: DotCMSContentTypeLayoutRow) =>
+            acc.concat(...columns.map((col: DotCMSContentTypeLayoutColumn) => col.fields)),
         []
     );
 };
 
 const fieldParamsConversionFromBE = {
-    "Key-Value": (field: DotCMSContentTypeField) => {
-        if (field.defaultValue && typeof field.defaultValue !== "string") {
-            const valuesArray = Object.keys(field.defaultValue).map(
-                (key: string) => {
-                    return { key: key, value: field.defaultValue[key] };
-                }
-            );
+    'Key-Value': (field: DotCMSContentTypeField) => {
+        if (field.defaultValue && typeof field.defaultValue !== 'string') {
+            const valuesArray = Object.keys(field.defaultValue).map((key: string) => {
+                return { key: key, value: field.defaultValue[key] };
+            });
             field.defaultValue = getStringFromDotKeyArray(valuesArray);
         }
-        return DotFormFields["Key-Value"](field);
+        return DotFormFields['Key-Value'](field);
     }
 };
 
 export const fieldCustomProcess = {
-    "DOT-KEY-VALUE": pipedValuesToObject
+    'DOT-KEY-VALUE': pipedValuesToObject
 };
 
 export const fieldMap = {
@@ -175,10 +154,10 @@ export const fieldMap = {
     Tag: DotFormFields.Tag,
     Select: DotFormFields.Select,
     Radio: DotFormFields.Radio,
-    "Multi-Select": DotFormFields["Multi-Select"],
-    "Key-Value": fieldParamsConversionFromBE["Key-Value"],
-    "Date-and-Time": DotFormFields["Date-and-Time"],
-    "Date-Range": DotFormFields["Date-Range"],
+    'Multi-Select': DotFormFields['Multi-Select'],
+    'Key-Value': fieldParamsConversionFromBE['Key-Value'],
+    'Date-and-Time': DotFormFields['Date-and-Time'],
+    'Date-Range': DotFormFields['Date-Range'],
     Date: DotFormFields.Date,
     Checkbox: DotFormFields.Checkbox,
     Binary: DotFormFields.Binary

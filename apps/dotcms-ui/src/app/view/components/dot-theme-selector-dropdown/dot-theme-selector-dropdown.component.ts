@@ -39,6 +39,8 @@ export class DotThemeSelectorDropdownComponent
     @ViewChild('siteSelector')
     siteSelector: DotSiteSelectorComponent;
 
+    private initialLoad = true;
+
     constructor(
         public readonly paginatorService: PaginatorService,
         private readonly siteService: SiteService,
@@ -46,12 +48,7 @@ export class DotThemeSelectorDropdownComponent
     ) {}
 
     ngOnInit(): void {
-        this.siteService
-            .getCurrentSite()
-            .pipe(pluck('identifier'), take(1))
-            .subscribe((identifier: string) => {
-                this.currentSiteIdentifier = identifier;
-            });
+        this.currentSiteIdentifier = this.siteService.currentSite.identifier;
     }
 
     ngAfterViewInit(): void {
@@ -196,8 +193,15 @@ export class DotThemeSelectorDropdownComponent
             .getWithOffset(offset)
             .pipe(take(1))
             .subscribe((themes: DotTheme[]) => {
-                this.themes = themes;
-                this.setTotalRecords();
+                if (themes.length || !this.initialLoad) {
+                    this.themes = themes;
+                    this.setTotalRecords();
+                } else {
+                    this.siteService.getSiteById('SYSTEM_HOST').subscribe((site: Site) => {
+                        this.siteSelector.searchableDropdown.handleClick(site);
+                    });
+                }
+                this.initialLoad = false;
             });
     }
 

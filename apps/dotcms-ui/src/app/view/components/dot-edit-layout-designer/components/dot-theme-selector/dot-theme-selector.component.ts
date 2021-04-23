@@ -21,6 +21,7 @@ import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { PaginatorService } from '@services/paginator';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotTheme } from '@models/dot-edit-layout-designer';
+import { DotSiteSelectorComponent } from '@components/_common/dot-site-selector/dot-site-selector.component';
 
 /**
  * The DotThemeSelectorComponent is modal that
@@ -51,12 +52,16 @@ export class DotThemeSelectorComponent implements OnInit, OnDestroy {
     @ViewChild('dataView', { static: true })
     dataView: DataView;
 
+    @ViewChild('siteSelector', { static: true })
+    siteSelector: DotSiteSelectorComponent;
+
     current: DotTheme;
     visible = true;
     dialogActions: DotDialogActions;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private SEARCH_PARAM = 'searchParam';
+    private initialLoad = true;
 
     constructor(
         private dotMessageService: DotMessageService,
@@ -78,12 +83,14 @@ export class DotThemeSelectorComponent implements OnInit, OnDestroy {
                 label: this.dotMessageService.get('dot.common.cancel')
             }
         };
+        this.current = this.value;
         this.paginatorService.url = 'v1/themes';
-        this.paginatorService.setExtraParams('hostId', this.siteService.currentSite.identifier);
+        this.paginatorService.setExtraParams(
+            'hostId',
+            this.current?.hostId || this.siteService.currentSite.identifier
+        );
         this.paginatorService.deleteExtraParams(this.SEARCH_PARAM);
         this.paginatorService.paginationPerPage = 8;
-        this.current = this.value;
-
         observableFromEvent(this.searchInput.nativeElement, 'keyup')
             .pipe(debounceTime(500), takeUntil(this.destroy$))
             .subscribe((keyboardEvent: Event) => {
@@ -107,8 +114,16 @@ export class DotThemeSelectorComponent implements OnInit, OnDestroy {
             .getWithOffset($event.first)
             .pipe(take(1))
             .subscribe((themes: DotTheme[]) => {
-                this.themes = themes;
-                this.cd.detectChanges();
+                if (this.noThemesInInitialLoad(themes, $event)) {
+                    this.siteService.getSiteById('SYSTEM_HOST').subscribe((site: Site) => {
+                        this.siteSelector.searchableDropdown.handleClick(site);
+                        this.cd.detectChanges();
+                    });
+                } else {
+                    this.themes = themes;
+                    this.cd.detectChanges();
+                }
+                this.initialLoad = false;
             });
         this.dataView.first = $event.first;
     }
@@ -163,5 +178,9 @@ export class DotThemeSelectorComponent implements OnInit, OnDestroy {
     private filterThemes(searchCriteria?: string): void {
         this.paginatorService.setExtraParams(this.SEARCH_PARAM, searchCriteria);
         this.paginate({ first: 0 });
+    }
+
+    private noThemesInInitialLoad(themes: DotTheme[], $event: LazyLoadEvent): boolean {
+        return this.initialLoad && !themes.length && !$event.first;
     }
 }

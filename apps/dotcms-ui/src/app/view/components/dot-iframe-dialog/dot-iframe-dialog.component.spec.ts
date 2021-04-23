@@ -10,7 +10,7 @@ import { LoginService } from '@dotcms/dotcms-js';
 import { LoginServiceMock } from '../../../test/login-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { IframeComponent } from '../_common/iframe/iframe-component';
-import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 
@@ -29,7 +29,7 @@ const getTestConfig = (hostComponent) => {
             BrowserAnimationsModule,
             IFrameModule,
             RouterTestingModule,
-            DotIconButtonModule
+            UiDotIconButtonModule
         ],
         providers: [
             {

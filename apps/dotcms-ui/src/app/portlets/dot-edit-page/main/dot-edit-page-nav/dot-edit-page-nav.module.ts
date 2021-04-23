@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { DotEditPageNavComponent } from './dot-edit-page-nav.component';
 import { RouterModule } from '@angular/router';
 import { TooltipModule } from 'primeng/tooltip';
-import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
+import { DotIconModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @NgModule({

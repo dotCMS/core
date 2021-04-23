@@ -7,7 +7,11 @@
         <img
             *ngIf="item?.themeThumbnail; else imageFallback"
             class="dot-theme-item__image"
-            src="/dA/{{ item.themeThumbnail }}/48w/48h/thumbnail.png"
+            [src]="
+                item.identifier === 'SYSTEM_THEME'
+                    ? item.themeThumbnail
+                    : '/dA/' + item.themeThumbnail + '/48w/48h/thumbnail.png'
+            "
         />
 
         <ng-template #imageFallback>
@@ -29,8 +33,9 @@
         <dot-site-selector
             #siteSelector
             width="12.8rem"
-            [id]="id"
+            [system]="true"
             (change)="siteChange($event)"
+            data-testId="siteSelector"
         ></dot-site-selector>
         <div class="searchable-dropdown__search-section">
             <dot-icon class="searchable-dropdown__search-icon" name="search"></dot-icon>

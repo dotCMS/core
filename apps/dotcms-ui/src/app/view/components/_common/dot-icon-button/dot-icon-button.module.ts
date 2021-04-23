@@ -1,11 +1,11 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DotIconModule } from '../dot-icon/dot-icon.module';
-import { DotIconButtonComponent } from './dot-icon-button.component';
+import { DotIconModule } from '@dotcms/ui';
+import { UiDotIconButtonComponent } from './dot-icon-button.component';
 
 @NgModule({
-    declarations: [DotIconButtonComponent],
-    exports: [DotIconButtonComponent],
+    declarations: [UiDotIconButtonComponent],
+    exports: [UiDotIconButtonComponent],
     imports: [CommonModule, DotIconModule]
 })
-export class DotIconButtonModule {}
+export class UiDotIconButtonModule {}

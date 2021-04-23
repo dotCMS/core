@@ -10,9 +10,11 @@
     <div class="dot-theme__header" data-testId="header">
         <dot-site-selector
             data-testId="siteSelector"
+            [id]="current?.hostId"
             #siteSelector
             (change)="siteChange($event)"
             [archive]="false"
+            [system]="true"
         ></dot-site-selector>
         <div class="dot-theme-search-box">
             <dot-icon
@@ -65,7 +67,12 @@
                     <img
                         *ngIf="theme?.themeThumbnail"
                         class="dot-theme-iteme__image"
-                        src="/dA/{{ theme.themeThumbnail }}/130w/130h/thumbnail.png"
+                        data-testId="themeImage"
+                        [src]="
+                            theme.identifier === 'SYSTEM_THEME'
+                                ? theme.themeThumbnail
+                                : '/dA/' + theme.themeThumbnail + '/130w/130h/thumbnail.png'
+                        "
                     />
                     <h5 class="dot-theme-item__name">{{ theme.name }}</h5>
                 </div>

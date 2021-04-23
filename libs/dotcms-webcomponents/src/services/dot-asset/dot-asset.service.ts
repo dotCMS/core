@@ -38,7 +38,7 @@ export class DotAssetService {
                         options.updateCallback(filesCreated++);
                         return response;
                     })
-                    .catch(e => e)
+                    .catch((e) => e)
             );
         });
 

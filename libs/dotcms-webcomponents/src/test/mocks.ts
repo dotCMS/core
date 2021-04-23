@@ -148,5 +148,5 @@ export const contentletMock: DotContentletItem = {
     mediaType: '',
     language: '',
     mimeType: '',
-    titleImage:'fileAsset'
+    titleImage: 'fileAsset'
 };

@@ -5,8 +5,8 @@ import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
-import { DotIconButtonComponent } from '@components/_common/dot-icon-button/dot-icon-button.component';
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { UiDotIconButtonComponent } from '@components/_common/dot-icon-button/dot-icon-button.component';
 
 describe('DotFieldHelperComponent', () => {
     let component: DotFieldHelperComponent;
@@ -16,7 +16,7 @@ describe('DotFieldHelperComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [DotFieldHelperComponent],
-            imports: [BrowserAnimationsModule, DotIconButtonModule, OverlayPanelModule]
+            imports: [BrowserAnimationsModule, UiDotIconButtonModule, OverlayPanelModule]
         }).compileComponents();
 
         fixture = TestBed.createComponent(DotFieldHelperComponent);
@@ -46,7 +46,7 @@ describe('DotFieldHelperComponent', () => {
     });
 
     it('should have correct attributes  on button', () => {
-        const iconButton: DotIconButtonComponent = de.query(By.css('dot-icon-button'))
+        const iconButton: UiDotIconButtonComponent = de.query(By.css('dot-icon-button'))
             .componentInstance;
 
         expect(iconButton.icon).toEqual('help_outline');

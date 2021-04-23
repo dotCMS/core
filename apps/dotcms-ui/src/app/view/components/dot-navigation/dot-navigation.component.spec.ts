@@ -11,7 +11,7 @@ import { DotNavigationService } from './services/dot-navigation.service';
 import { DotMenuService } from '@services/dot-menu.service';
 import { DotSubNavComponent } from './components/dot-sub-nav/dot-sub-nav.component';
 import { DotNavItemComponent } from './components/dot-nav-item/dot-nav-item.component';
-import { DotIconModule } from '../_common/dot-icon/dot-icon.module';
+import { DotIconModule } from '@dotcms/ui';
 import { LoginService } from '@dotcms/dotcms-js';
 import { LoginServiceMock } from '../../../test/login-service.mock';
 import { DotMenu } from '@models/navigation';
