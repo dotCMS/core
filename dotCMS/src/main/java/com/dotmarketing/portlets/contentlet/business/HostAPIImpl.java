@@ -39,6 +39,7 @@ import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import org.apache.commons.lang.StringUtils;
@@ -1194,6 +1195,11 @@ public class HostAPIImpl implements HostAPI {
             Logger.error(HostAPIImpl.class, e.getMessage(), e);
             throw new DotRuntimeException(e.getMessage(), e);
         }
+    }
+
+    @VisibleForTesting
+    public void flushCache(Host host){
+        hostCache.remove(host);
     }
 
 	private PaginatedArrayList<Host> convertToHostPaginatedArrayList(PaginatedArrayList<Contentlet> list) {

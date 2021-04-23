@@ -391,4 +391,5 @@ public interface HostAPI {
 	 * @return
 	 */
 	public long count(User user, boolean respectFrontendRoles);
+
 }

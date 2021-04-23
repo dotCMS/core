@@ -3,9 +3,17 @@ package com.dotcms.enterprise.publishing.remote.bundler;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.*;
+import com.dotcms.publisher.assets.bean.PushedAsset;
+import com.dotcms.publisher.bundle.bean.Bundle;
+import com.dotcms.publisher.bundle.business.BundleFactoryImpl;
+import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.publisher.endpoint.bean.impl.PushPublishingEndPoint;
+import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.pusher.PushPublisherConfig.AssetTypes;
 import com.dotcms.publisher.util.DependencyManager;
 import com.dotcms.publishing.*;
+import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.publishing.output.BundleOutput;
 import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotcms.util.IntegrationTestInitService;
@@ -14,6 +22,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.WebAssetFactory.AssetType;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -36,6 +45,7 @@ import com.dotmarketing.util.Logger;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -1020,6 +1030,342 @@ public class DependencyBundlerTest {
 
     }
 
+    @DataProvider(format = "%m: %p[0]")
+    public static Object[] configs() throws Exception {
+        return new ModDateTestData[] {
+                new ModDateTestData(false, false, Operation.PUBLISH, true, false),
+                new ModDateTestData(false, false, Operation.UNPUBLISH, true, false),
+                new ModDateTestData(true, false, Operation.PUBLISH, false, false),
+                new ModDateTestData(false, true, Operation.PUBLISH, false, false),
+
+                new ModDateTestData(false, false, Operation.PUBLISH, false, true),
+                new ModDateTestData(false, false, Operation.UNPUBLISH, true, true),
+                new ModDateTestData(true, false, Operation.PUBLISH, false, true),
+                new ModDateTestData(false, true, Operation.PUBLISH, false, true)
+        };
+    }
+
+    /**
+     * Method to Test: {@link DependencyBundler#generate(BundleOutput, BundlerStatus)}
+     * When: A {@link Contentlet} has a modDate before the last Push Publish
+     * should: the {@link Contentlet} should be exclude in the bundle
+     */
+    @Test
+    @UseDataProvider("configs")
+    public void excludeAssetByModDate(ModDateTestData modDateTestData)
+            throws DotBundleException, DotDataException, DotSecurityException {
+        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
+        APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptorAllDependencies);
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Language language = new LanguageDataGen().nextPersisted();
+
+        final ContentType contentTypeParent =  new ContentTypeDataGen()
+                .host(host)
+                .nextPersisted();
+
+        final ContentType contentTypeChild =  new ContentTypeDataGen()
+                .host(host)
+                .nextPersisted();
+
+        final Relationship relationship = new FieldRelationshipDataGen()
+                .child(contentTypeChild)
+                .parent(contentTypeParent)
+                .nextPersisted();
+
+        final Calendar yesterday = Calendar.getInstance();
+        yesterday.add(Calendar.DATE, -1);
+
+        final Contentlet contentletChild =  new ContentletDataGen(contentTypeChild.id())
+                .languageId(language.getId())
+                .host(host)
+                .modeDate(yesterday.getTime())
+                .nextPersisted();
+
+        final Contentlet contentParent = new ContentletDataGen(contentTypeParent.id())
+                .languageId(language.getId())
+                .host(host)
+                .setProperty(contentTypeParent.variable(), list(contentletChild))
+                .nextPersisted();
+
+        final Environment environment = new EnvironmentDataGen().nextPersisted();
+
+        final PushPublishingEndPoint publishingEndPoint = new PushPublishingEndPointDataGen()
+                .environment(environment)
+                .nextPersisted();
+
+        final PushPublisherConfig config = new PushPublisherConfig();
+        config.setDownloading(modDateTestData.isDownload);
+        config.setOperation(modDateTestData.operation);
+
+        final Bundle bundle = new BundleDataGen()
+                .pushPublisherConfig(config)
+                .filter(filterDescriptorAllDependencies)
+                .downloading(modDateTestData.isDownload)
+                .addAssets(set(modDateTestData.addChildDirectly ? contentletChild: contentParent))
+                .operation(modDateTestData.operation)
+                .forcePush(modDateTestData.isForcePush)
+                .nextPersisted();
+
+        yesterday.add(Calendar.HOUR, 2);
+        createPushAsset(
+                yesterday.getTime(),
+                contentletChild.getIdentifier(),
+                "content",
+                environment,
+                publishingEndPoint,
+                bundle);
+
+        final BundleFactoryImpl bundleFactory = new BundleFactoryImpl();
+        bundleFactory.saveBundleEnvironment(bundle, environment);
+        final BundleOutput bundleOutput = new DirectoryBundleOutput(config);
+
+        bundler.setConfig(config);
+        bundler.generate(bundleOutput, status);
+
+        final Collection<Object> dependencies = new HashSet<>();
+
+        if (modDateTestData.operation == Operation.PUBLISH) {
+            dependencies.addAll(getLanguagesVariableDependencies(
+                    true, false, false));
+            dependencies.addAll(list(host, language, contentTypeParent, contentTypeChild,
+                    contentParent));
+
+            dependencies.add(APILocator.getWorkflowAPI().findSystemWorkflowScheme());
+            dependencies.add(APILocator.getFolderAPI().findSystemFolder());
+            dependencies.add(language);
+        } else {
+            dependencies.add(modDateTestData.addChildDirectly ? contentletChild: contentParent);
+        }
+
+        if (!modDateTestData.shouldExcludeByModDate) {
+            dependencies.add(contentletChild);
+        }
+        assertAll(config, dependencies);
+    }
+
+    private void createPushAsset(Date pushDate, String assetId, String assetType, Environment environment,
+            PushPublishingEndPoint publishingEndPoint, Bundle bundle) {
+        new PushedAssetDataGen()
+            .assetId(assetId)
+            .assetType(assetType)
+            .bundle(bundle)
+            .publishingEndPoint(publishingEndPoint)
+            .environment(environment)
+            .pushDate(pushDate)
+            .nextPersisted();
+    }
+
+    /**
+     * Method to Test: {@link DependencyBundler#generate(BundleOutput, BundlerStatus)}
+     * When:  {@link HTMLPageAsset}'s dependencies has a modDate before the last Push Publish
+     * should: the {@link Contentlet} should be exclude in the bundle
+     */
+    @Test
+    @UseDataProvider("configs")
+    public void excludeHTMLDependenciesByModDate(ModDateTestData modDateTestData)
+            throws DotBundleException, DotDataException, DotSecurityException {
+
+        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
+        APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptorAllDependencies);
+
+        final Calendar yesterday = Calendar.getInstance();
+        yesterday.add(Calendar.DATE, -1);
+
+        final Host host = new SiteDataGen()
+                .modDate(yesterday.getTime())
+                .nextPersisted();
+
+        final Container container = new ContainerDataGen()
+                .modDate(yesterday.getTime())
+                .site(host)
+                .nextPersisted();
+
+        final TemplateLayout templateLayout = new TemplateLayoutDataGen().withContainer(container).next();
+        final Template template = new TemplateDataGen()
+                .modDate(yesterday.getTime())
+                .drawedBody(templateLayout)
+                .host(host)
+                .nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template)
+                .nextPersisted();
+
+        final PushPublisherConfig config = new PushPublisherConfig();
+        config.setDownloading(modDateTestData.isDownload);
+        config.setOperation(modDateTestData.operation);
+
+        final Environment environment = new EnvironmentDataGen().nextPersisted();
+
+        final PushPublishingEndPoint publishingEndPoint = new PushPublishingEndPointDataGen()
+                .environment(environment)
+                .nextPersisted();
+
+        final Bundle bundle = new BundleDataGen()
+                .pushPublisherConfig(config)
+                .filter(filterDescriptorAllDependencies)
+                .downloading(modDateTestData.isDownload)
+                .addAssets(modDateTestData.addChildDirectly ?
+                        set(template, host, container, htmlPageAsset) : set(htmlPageAsset))
+                .operation(modDateTestData.operation)
+                .forcePush(modDateTestData.isForcePush)
+                .nextPersisted();
+
+        final BundleOutput bundleOutput = new DirectoryBundleOutput(config);
+
+        yesterday.add(Calendar.HOUR, 2);
+        createPushAsset(
+                yesterday.getTime(),
+                host.getIdentifier(),
+                "host",
+                environment,
+                publishingEndPoint,
+                bundle);
+
+        createPushAsset(
+                yesterday.getTime(),
+                template.getIdentifier(),
+                "template",
+                environment,
+                publishingEndPoint,
+                bundle);
+
+        createPushAsset(
+                yesterday.getTime(),
+                container.getIdentifier(),
+                "container",
+                environment,
+                publishingEndPoint,
+                bundle);
+
+        final BundleFactoryImpl bundleFactory = new BundleFactoryImpl();
+        bundleFactory.saveBundleEnvironment(bundle, environment);
+
+        bundler.setConfig(config);
+        bundler.generate(bundleOutput, status);
+
+        final Host systemHost = APILocator.getHostAPI().findSystemHost();
+
+        final Collection<Object> dependencies = new HashSet<>();
+
+        if (modDateTestData.operation == Operation.PUBLISH) {
+            dependencies.addAll(getLanguagesVariableDependencies(
+                    true, false, false));
+
+            final ContentType pageContentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                    .find(htmlPageAsset.getStructureInode());
+            dependencies.add(pageContentType);
+
+            dependencies.add(APILocator.getWorkflowAPI().findSystemWorkflowScheme());
+            dependencies.add(APILocator.getFolderAPI().findSystemFolder());
+            dependencies.add(APILocator.getLanguageAPI().getDefaultLanguage());
+            dependencies.add(systemHost);
+        }
+
+        if (!modDateTestData.shouldExcludeByModDate || modDateTestData.addChildDirectly) {
+            dependencies.addAll(list(host, container, template));
+        }
+
+        dependencies.add(htmlPageAsset);
+        assertAll(config, dependencies);
+    }
+
+    /**
+     * Method to Test: {@link DependencyBundler#generate(BundleOutput, BundlerStatus)}
+     * When:  {@link HTMLPageAsset}'s template has a modDate before the last Push Publish for one environment,
+     * but exists another environment
+     * should: the {@link Template} should be include in the bundle
+     */
+    @Test
+    public void includeTemplateUsingTwoEnvironment()
+            throws DotBundleException, DotDataException, DotSecurityException {
+
+        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
+        APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptorAllDependencies);
+
+        final Calendar yesterday = Calendar.getInstance();
+        yesterday.add(Calendar.DATE, -1);
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final Template template = new TemplateDataGen()
+                .modDate(yesterday.getTime())
+                .host(host)
+                .nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final PushPublisherConfig config = new PushPublisherConfig();
+        config.setDownloading(false);
+        config.setOperation(Operation.PUBLISH);
+
+        final Environment environment_1 = new EnvironmentDataGen().nextPersisted();
+        final Environment environment_2 = new EnvironmentDataGen().nextPersisted();
+
+        final PushPublishingEndPoint publishingEndPoint_1 = new PushPublishingEndPointDataGen()
+                .environment(environment_1)
+                .nextPersisted();
+
+        final PushPublishingEndPoint publishingEndPoint_2 = new PushPublishingEndPointDataGen()
+                .environment(environment_2)
+                .nextPersisted();
+
+        final Bundle bundle = new BundleDataGen()
+                .pushPublisherConfig(config)
+                .filter(filterDescriptorAllDependencies)
+                .downloading(false)
+                .addAssets(set(htmlPageAsset))
+                .operation(Operation.PUBLISH)
+                .forcePush(false)
+                .nextPersisted();
+
+        final BundleOutput bundleOutput = new DirectoryBundleOutput(config);
+
+        yesterday.add(Calendar.HOUR, 2);
+        createPushAsset(
+                yesterday.getTime(),
+                template.getIdentifier(),
+                "template",
+                environment_1,
+                publishingEndPoint_1,
+                bundle);
+
+        final BundleFactoryImpl bundleFactory = new BundleFactoryImpl();
+        bundleFactory.saveBundleEnvironment(bundle, environment_1);
+        bundleFactory.saveBundleEnvironment(bundle, environment_2);
+
+        bundler.setConfig(config);
+        bundler.generate(bundleOutput, status);
+
+        final Host systemHost = APILocator.getHostAPI().findSystemHost();
+
+        final ContentType pageContentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                .find(htmlPageAsset.getStructureInode());
+
+        final Collection<Object> dependencies = list(
+                pageContentType, systemHost, host, template, htmlPageAsset,
+                APILocator.getWorkflowAPI().findSystemWorkflowScheme(),
+                APILocator.getFolderAPI().findSystemFolder(),
+                APILocator.getLanguageAPI().getDefaultLanguage()
+        );
+
+        dependencies.addAll(getLanguagesVariableDependencies(
+                true, false, false));
+
+
+        assertAll(config, dependencies);
+
+        final List<String> environmentsId = APILocator.getPushedAssetsAPI()
+                .getPushedAssets(template.getIdentifier())
+                .stream()
+                .filter(pushedAsset -> pushedAsset.getPushDate().getTime() != yesterday.getTimeInMillis())
+                .map(pushedAsset -> pushedAsset.getEnvironmentId())
+                .collect(toList());
+
+        assertEquals(1, environmentsId.size());
+        assertTrue(environmentsId.contains(environment_2.getId()));
+    }
+
     private void assertAll(final PushPublisherConfig config, final Collection<Object> dependenciesToAssert) {
         AssignableFromMap<Integer> counts = new AssignableFromMap<>();
         Set<String> alreadyCounts = new HashSet<>();
@@ -1053,6 +1399,28 @@ public class DependencyBundlerTest {
                             .map(object -> object.toString())
                             .collect(joining(","))),
                     expectedCount, count);
+        }
+    }
+
+    private static class ModDateTestData {
+        private boolean isForcePush;
+        private boolean isDownload;
+        private Operation operation;
+        private boolean shouldExcludeByModDate;
+        private boolean addChildDirectly;
+
+        public ModDateTestData(
+                boolean isForcePush,
+                boolean isDownload,
+                Operation operation,
+                boolean shouldExcludeByModDate,
+                boolean addChildDirectly) {
+
+            this.isForcePush = isForcePush;
+            this.isDownload = isDownload;
+            this.operation = operation;
+            this.shouldExcludeByModDate = shouldExcludeByModDate;
+            this.addChildDirectly = addChildDirectly;
         }
     }
 
