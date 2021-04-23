@@ -26,7 +26,6 @@ import {
     DotContentletEventRelocate,
     DotContentletEventSave,
     DotContentletEventSelect,
-    DotInlineDataset,
     DotInlineEditContent,
     DotRelocatePayload
 } from './models/dot-contentlets-events.model';
@@ -579,15 +578,9 @@ export class DotEditContentHtmlService {
             // Add the loading indicator to the field
             content.element.classList.add('inline-editing--saving');
 
-            const contentTypeNode: HTMLElement = content.element.closest(
-                '[data-dot-object="contentlet"]'
-            );
-
-            const { dotType } = contentTypeNode.dataset;
-
             // All good, initiate the request
             this.dotWorkflowActionsFireService
-                .saveContentlet(dotType, {
+                .saveContentlet({
                     [content.dataset.fieldName]: content.innerHTML,
                     inode: content.dataset.inode
                 })

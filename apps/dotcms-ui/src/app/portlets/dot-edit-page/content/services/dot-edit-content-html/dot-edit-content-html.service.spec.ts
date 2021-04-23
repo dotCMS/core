@@ -859,7 +859,7 @@ xdescribe('DotEditContentHtmlService', () => {
                 }
             });
 
-            expect(dotWorkflowActionsFireService.saveContentlet).toHaveBeenCalledWith('Banner', {
+            expect(dotWorkflowActionsFireService.saveContentlet).toHaveBeenCalledWith({
                 title: '<div>hello</div>',
                 inode: '999'
             });
