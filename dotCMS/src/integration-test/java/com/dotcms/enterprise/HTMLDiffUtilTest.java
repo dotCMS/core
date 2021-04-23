@@ -134,7 +134,7 @@ public class HTMLDiffUtilTest extends IntegrationTestBase {
         contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(contentlet, systemUser, false);
 
-        HTMLPageAsset pageLive = new HTMLPageDataGen(folder, template).languageId(language.getId())
+        final HTMLPageAsset pageLive = new HTMLPageDataGen(folder, template).languageId(language.getId())
                 .pageURL(pageName)
                 .friendlyName(pageName)
                 .title(pageName).nextPersisted();
@@ -144,16 +144,15 @@ public class HTMLDiffUtilTest extends IntegrationTestBase {
                 getDotParserContainerUUID(uuid), 0);
         multiTreeAPI.saveMultiTree(multiTreeV1);
         HTMLPageDataGen.publish(pageLive);
-        pageLive = (HTMLPageAsset) APILocator.getHTMLPageAssetAPI().getLiveHTMLPages(folder,systemUser,false).get(0);
 
         final Contentlet workingPage = contentletAPI
                 .checkout(pageLive.getInode(), systemUser, false);
-        final Contentlet contentletCheckedOut = contentletAPI
+        final Contentlet checkedOut = contentletAPI
                 .checkout(contentlet.getInode(), systemUser, false);
-        contentletCheckedOut.setProperty("body", String.join(",", coneheads));
-        contentletCheckedOut.setIndexPolicy(IndexPolicy.FORCE);
-        contentletAPI.checkin(contentletCheckedOut, systemUser, false);
-        workingPage.setIndexPolicy(IndexPolicy.FORCE);
+        checkedOut.setProperty("body", String.join(",", coneheads));
+        checkedOut.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        contentletAPI.checkin(checkedOut, systemUser, false);
+        workingPage.setIndexPolicy(IndexPolicy.WAIT_FOR);
         contentletAPI.checkin(workingPage, systemUser, false);
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
