@@ -227,6 +227,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
             try {
                  publishDate = dateFormat.parse(_contentPushPublishDate + "-" + _contentPushPublishTime);
             } catch (ParseException ex) {
+                //this is to catch an issue with the format of a date being sent in the front end. This is an LTS fix only and will not impact master.
                  publishDate = dateFormat.parse(new Date().toString());
             }
 
