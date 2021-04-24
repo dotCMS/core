@@ -82,6 +82,34 @@ public class StoragePersistenceAPITest {
                 .getStorage(StorageType.DB) instanceof DataBaseStoragePersistenceAPIImpl);
     }
 
+
+    @Test
+    @UseDataProvider("getRandomTestCases")
+    public void Test_Replace_Entry(final TestCase testCase) throws Exception {
+        final StoragePersistenceAPI storage = persistenceProvider.getStorage(testCase.storageType);
+        final String groupName = testCase.groupName;
+        final String path = testCase.path;
+        final File pushFile = testCase.file;
+        assertFalse(storage.existsGroup(groupName));
+        assertTrue(storage.createGroup(groupName));
+        final Object resultObject1 = storage.pushFile(groupName, path, pushFile, ImmutableMap.of());
+        assertNotNull(resultObject1);
+        assertTrue(storage.existsGroup(groupName));
+        final File pullFile = storage.pullFile(groupName, path);
+        assertTrue(pullFile.exists());
+        assertNotSame(pushFile, pullFile);
+
+        final int newFileSize = 1024 * 2;
+        final File newFile = generateTestFile(newFileSize);
+        final Object resultObject2 = storage.pushFile(groupName, path, newFile, ImmutableMap.of());
+        assertNotNull(resultObject2);
+        final File replacedFile = storage.pullFile(groupName, path);
+        assertTrue(replacedFile.exists());
+        assertNotSame(replacedFile, newFile);
+        assertEquals(replacedFile.length(), newFileSize);
+    }
+
+
     /**
      * Given scenario: For the same group we send two files of different type.
      * Expected Result: The Group should be created then the file should be stored and then removed together with all of its elements.
@@ -286,7 +314,7 @@ public class StoragePersistenceAPITest {
     public static Object[] getRandomTestCases() throws Exception{
         final String path = "any-path";
         final String groupName = RandomStringUtils.randomAlphanumeric(10);
-        final File temp = File.createTempFile("tempfile", ".txt");
+        final File temp = generateTestFile(1024);
         return new Object[]{
                 new TestCase(StorageType.FILE_SYSTEM, groupName, path, temp),
                 new TestCase(StorageType.DB, groupName, path, temp)
@@ -330,13 +358,7 @@ public class StoragePersistenceAPITest {
         final String path = "fixed-large-file-path";
         final String groupName = RandomStringUtils.randomAlphanumeric(10);
 
-        final File temp = File.createTempFile("largeFile", ".bin");
-
-        try (FileOutputStream output = new FileOutputStream(temp, true)) {
-            final byte[] data = new byte[LARGE_FILE_SIZE];
-            random.nextBytes(data);
-            output.write(data);
-        }
+        final File temp = generateTestFile(LARGE_FILE_SIZE);
 
         return new Object[]{
                 new TestCase(StorageType.FILE_SYSTEM, groupName, path, temp),
@@ -344,6 +366,15 @@ public class StoragePersistenceAPITest {
         };
     }
 
+    private static File generateTestFile(final int size) throws Exception{
+        final File temp = File.createTempFile("testFile", ".bin");
+        try (FileOutputStream output = new FileOutputStream(temp, true)) {
+            final byte[] data = new byte[size];
+            random.nextBytes(data);
+            output.write(data);
+        }
+        return temp;
+    }
 
     /**
      * Test Data DTO

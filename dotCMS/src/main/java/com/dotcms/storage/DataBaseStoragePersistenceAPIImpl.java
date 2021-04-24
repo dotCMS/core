@@ -456,14 +456,13 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
                                     ", does not exist.");
                         }
                         if (this.existsObject(groupName, path, connection)) {
+                            deleteObjectAndReferences(groupName, path);
                             Logger.warn(DataBaseStoragePersistenceAPIImpl.class,
-                                    String.format("Attempt to override entry `%s/%s` ", groupName,
-                                            path));
-                            return false;
+                            String.format("The existing entry `%s/%s` has been completely replaced.", groupName, path));
                         }
                         return existsHashReference(fileHash, connection) ?
-                                this.pushFileReference(groupName, path, metaData, fileHash, connection) :
-                                this.pushNewFile(groupName, path, file, metaData, connection);
+                                pushFileReference(groupName, path, metaData, fileHash, connection) :
+                                pushNewFile(groupName, path, file, metaData, connection);
                     }
                 });
     }
@@ -610,13 +609,18 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
             final ObjectWriterDelegate writerDelegate,
             final Serializable object, final Map<String, Serializable> extraMeta)
             throws DotDataException {
+        File file = null;
         try {
-            final File file = FileUtil.createTemporaryFile("object-storage", ".tmp");
+            file = FileUtil.createTemporaryFile("object-storage", ".tmp");
             writeToFile(writerDelegate, object, file);
             return this.pushFile(groupName, path, file, extraMeta);
         } catch (Exception e) {
             Logger.error(DataBaseStoragePersistenceAPIImpl.class, e.getMessage(), e);
             throw new DotDataException(e);
+        } finally {
+            if(null != file){
+               file.delete();
+            }
         }
     }
 
