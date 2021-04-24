@@ -787,7 +787,14 @@ public class FileMetadataAPITest {
 
     }
 
-
+    /**
+     * Method to test: {@link FileMetadataAPIImpl#putCustomMetadataAttributes(Contentlet, Map)}
+     * combined with {@link FileMetadataAPIImpl#generateContentletMetadata(Contentlet)}
+     * Given scenario: We have a file asset then we set custom attributes then we generate the file Metadata by calling {@link FileMetadataAPIImpl#generateContentletMetadata(Contentlet)}
+     * Expected Result: We must have the combined metadata straight from disk no cache.. this to ensure that both were saved.
+     * @param storageType
+     * @throws Exception
+     */
     @Test
     @UseDataProvider("getStorageType")
     public void Test_Write_Custom_Metadata_Then_Generate_Metadata_Expect_All_Metadata(final StorageType storageType) throws Exception {

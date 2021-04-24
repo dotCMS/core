@@ -70,8 +70,8 @@ public class StoragePersistenceAPITest {
     }
 
     /**
-     * Given Scenario:
-     * Expected Result:
+     * Given Scenario: Given a configured property value we must be able to predict what implementation will be returned by the persistence provider
+     * Expected Result: We must be able to predict what implementation will be returned by the persistence provider
      */
     @Test
     public void Test_Get_Provider_By_StorageType() {
@@ -82,7 +82,12 @@ public class StoragePersistenceAPITest {
                 .getStorage(StorageType.DB) instanceof DataBaseStoragePersistenceAPIImpl);
     }
 
-
+    /**
+     * Given Scenario: We want to Test we can replace the contents of a file
+     * Expected Result: We push a file, then we push a different one. We verify it has been replaced.
+     * @param testCase
+     * @throws Exception
+     */
     @Test
     @UseDataProvider("getRandomTestCases")
     public void Test_Replace_Entry(final TestCase testCase) throws Exception {
