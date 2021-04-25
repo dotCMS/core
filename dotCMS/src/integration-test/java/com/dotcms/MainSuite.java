@@ -333,7 +333,6 @@ import org.junit.runners.Suite.SuiteClasses;
         FileAssetAPIImplIntegrationTest.class,
         FileAssetFactoryIntegrationTest.class,
         UserResourceIntegrationTest.class,
-        SiteSearchJobImplTest.class,
         IntegrationResourceLinkTest.class,
         HTMLDiffUtilTest.class,
         HashBuilderTest.class,
@@ -409,7 +408,8 @@ import org.junit.runners.Suite.SuiteClasses;
         DBTimeZoneCheckTest.class,
         ContentHandlerTest.class,
         ESIndexAPITest.class,
-        FileAssetTemplateUtilTest.class
+        FileAssetTemplateUtilTest.class,
+        SiteSearchJobImplTest.class
 })
 public class MainSuite {
 

@@ -257,13 +257,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
     };
 
     private static final Supplier<String> ND_SUPPLIER = ()->"N/D";
-    private ESReadOnlyMonitor esReadOnlyMonitor;
+    private ElasticReadOnlyCommand elasticReadOnlyCommand;
 
     /**
      * Default class constructor.
      */
     @VisibleForTesting
-    public ESContentletAPIImpl (final ESReadOnlyMonitor esReadOnlyMonitor) {
+    public ESContentletAPIImpl (final ElasticReadOnlyCommand readOnlyCommand) {
         indexAPI = new ContentletIndexAPIImpl();
         fieldAPI = APILocator.getFieldAPI();
         contentFactory = new ESContentFactoryImpl();
@@ -277,12 +277,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         localSystemEventsAPI      = APILocator.getLocalSystemEventsAPI();
         lockManager = DotConcurrentFactory.getInstance().getIdentifierStripedLock();
         tempApi=  APILocator.getTempFileAPI();
+        this.elasticReadOnlyCommand = readOnlyCommand;
         fileMetadataAPI = APILocator.getFileMetadataAPI();
-        this.esReadOnlyMonitor = esReadOnlyMonitor;
     }
 
     public ESContentletAPIImpl () {
-        this(ESReadOnlyMonitor.getInstance());
+        this(ElasticReadOnlyCommand.getInstance());
     }
 
 
@@ -4457,9 +4457,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         if (!isCheckInSafe(contentRelationships)){
-            this.esReadOnlyMonitor.start();
+
+            if (contentlet.getBoolProperty(Contentlet.IS_TEST_MODE)) {
+                this.elasticReadOnlyCommand.executeCheck();
+            } else {
+                DotConcurrentFactory.getInstance().getSingleSubmitter().submit(() -> this.elasticReadOnlyCommand.executeCheck());
+            }
+
+            final String contentletIdentifier =
+                    null != contentlet && null != contentlet.getIdentifier()? contentlet.getIdentifier(): StringPool.NULL;
+
             throw new DotContentletStateException(
-                    "Content cannot be saved at this moment. Reason: Elastic Search cluster is in read only mode.");
+                    "Content cannot be saved at this moment. Reason: Elastic Search cluster is in read only mode. Contentlet Id: " +
+                            contentletIdentifier);
         }
 
         if(cats == null) {
@@ -5903,17 +5913,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
-    private static final String[] DEFAULT_DATE_FORMATS = new String[] {
-            // time zone
-            "yyyy-MM-dd HH:mm:ss z Z", "d-MMM-yy z Z", "dd-MMM-yyyy z Z", "MM/dd/yy HH:mm:ss z Z",
-            "MM/dd/yy hh:mm:ss z Z", "MMMM dd, yyyy z Z", "M/d/y z Z", "MM/dd/yyyy z Z", "yyyy-MM-dd z Z",
 
-            "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm", "d-MMM-yy", "MMM-yy", "MMMM-yy", "d-MMM", "dd-MMM-yyyy",
-            "MM/dd/yyyy hh:mm:ss aa", "MM/dd/yyyy hh:mm aa", "MM/dd/yy HH:mm:ss", "MM/dd/yy HH:mm:ss", "MM/dd/yy HH:mm",
-            "MM/dd/yy hh:mm:ss aa", "MM/dd/yy hh:mm:ss", "MM/dd/yyyy HH:mm:ss", "MM/dd/yyyy HH:mm", "MMMM dd, yyyy",
-            "M/d/y", "M/d", "EEEE, MMMM dd, yyyy", "MM/dd/yyyy",
-            "hh:mm:ss aa", "hh:mm aa", "HH:mm:ss", "HH:mm", "yyyy-MM-dd"
-    };
 
     @Override
     public void setContentletProperty(Contentlet contentlet,Field field, Object value)throws DotContentletStateException {

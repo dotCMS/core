@@ -365,16 +365,16 @@ public class ESMappingUtilHelper {
         String mappingForField = null;
 
         if (!matchesExclusions(fieldVariableName)) {
-            if (field instanceof DateField || field instanceof DateTimeField
-                    || field instanceof TimeField) {
-                mappingForField = "{\n\"type\":\"date\",\n";
-                mappingForField += "\"format\": \"yyyy-MM-dd't'HH:mm:ss||MMM d, yyyy h:mm:ss a||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis\"\n}";
-            } else if (field instanceof TextField || field instanceof TextAreaField
-                    || field instanceof WysiwygField || field instanceof RadioField
+        if (field instanceof DateField || field instanceof DateTimeField
+                || field instanceof TimeField) {
+            mappingForField = "{\n\"type\":\"date\",\n";
+            mappingForField += "\"format\": \"yyyy-MM-dd't'HH:mm:ss||MMM d, yyyy h:mm:ss a||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd HH:mm:ss.SSS||yyyy-MM-dd||epoch_millis\"\n}";
+        } else if (field instanceof TextField || field instanceof TextAreaField
+                || field instanceof WysiwygField || field instanceof RadioField
                     || field instanceof SelectField || field instanceof MultiSelectField
                     || field instanceof TagField) {
 
-                if (dataTypesMap.containsKey(field.dataType())) {
+            if (dataTypesMap.containsKey(field.dataType())) {
                     mappingForField = String
                             .format("{\n\"type\":\"%s\"\n}",
                                     dataTypesMap.get(field.dataType()));
@@ -382,12 +382,12 @@ public class ESMappingUtilHelper {
                     if (field.unique() || field instanceof TagField) {
                         mappingForField = "{\n\"type\":\"keyword\"\n}";
                     } else {
-                        mappingForField = "{\n"
+                mappingForField = "{\n"
                                 + ("\"type\":\"text\",\n")
-                                + "\"analyzer\":\"my_analyzer\""
-                                + "\n}";
-                    }
-                }
+                        + "\"analyzer\":\"my_analyzer\""
+                        + "\n}";
+            }
+        }
             }
         }
 

@@ -32,6 +32,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
@@ -338,9 +339,13 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
 
         if(reindexTimeElapsedInLong()<Config.getLongProperty("REINDEX_THREAD_MINIMUM_RUNTIME_IN_SEC", 30)*1000) {
-          Logger.info(this.getClass(), "Reindex has been running only " +reindexTimeElapsed().get() + ". Letting the reindex settle.");
-          ThreadUtils.sleep(3000);
-          return false;
+            if(reindexTimeElapsed().isPresent()){
+                Logger.info(this.getClass(), "Reindex has been running only " +reindexTimeElapsed().get() + ". Letting the reindex settle.");
+            }else{
+                Logger.info(this.getClass(), "Reindex Time Elapsed not set.");
+            }
+            ThreadUtils.sleep(3000);
+            return false;
         }
         try {
             final IndiciesInfo oldInfo = APILocator.getIndiciesAPI().loadIndicies();
@@ -491,8 +496,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 .build()
                 : ImmutableList.of(parentContenlet);
 
-        if (ESReadOnlyMonitor.getInstance().isIndexOrClusterReadOnly()) {
-            ESReadOnlyMonitor.getInstance().sendReadOnlyMessage();
+
+        if (ElasticReadOnlyCommand.getInstance().isIndexOrClusterReadOnly()) {
+            ElasticReadOnlyCommand.getInstance().sendReadOnlyMessage();
         }
 
         if(parentContenlet.getIndexPolicy()==IndexPolicy.DEFER) {
@@ -567,23 +573,32 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     @Override
     public void putToIndex(final BulkRequest bulkRequest,
             final ActionListener<BulkResponse> listener) {
-        if (bulkRequest != null && bulkRequest.numberOfActions() > 0) {
-            bulkRequest.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
 
-            if (listener != null) {
-                RestHighLevelClientProvider.getInstance()
-                        .getClient().bulkAsync(bulkRequest, RequestOptions.DEFAULT, listener);
-            } else {
-                BulkResponse response = Sneaky.sneak(() -> RestHighLevelClientProvider.getInstance().getClient()
-                        .bulk(bulkRequest, RequestOptions.DEFAULT));
+        try {
+            if (bulkRequest != null && bulkRequest.numberOfActions() > 0) {
+                bulkRequest.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
 
-                if (response != null && response.hasFailures()) {
-                    Logger.error(this,
-                            "Error reindexing (" + response.getItems().length + ") content(s) "
-                                    + response.buildFailureMessage());
+                if (listener != null) {
+                    RestHighLevelClientProvider.getInstance()
+                            .getClient().bulkAsync(bulkRequest, RequestOptions.DEFAULT, listener);
+                } else {
+                    BulkResponse response = Sneaky.sneak(() -> RestHighLevelClientProvider.getInstance().getClient()
+                            .bulk(bulkRequest, RequestOptions.DEFAULT));
+
+                    if (response != null && response.hasFailures()) {
+                        Logger.error(this,
+                                "Erro" +
+                                        "r reindexing (" + response.getItems().length + ") content(s) "
+                                        + response.buildFailureMessage());
+                    }
                 }
             }
-
+        } catch (final Exception e) {
+            if(ExceptionUtil.causedBy(e, IllegalStateException.class)) {
+                ContentletFactory.rebuildRestHighLevelClientIfNeeded(e);
+            }
+            Logger.warnAndDebug(ContentletIndexAPIImpl.class, e);
+            throw new DotRuntimeException(e.getMessage(), e);
         }
     }
 

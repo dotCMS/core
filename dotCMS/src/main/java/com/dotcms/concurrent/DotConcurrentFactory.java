@@ -9,10 +9,13 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.github.rjeschke.txtmark.Run;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
@@ -28,7 +31,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
 
     private static final int POOL_SIZE_VAL = 10;
     private static final int MAXPOOL_SIZE_VAL = 50;
-    private static final int QUEUE_CAPACITY_VAL = 100;
+    private static final int QUEUE_CAPACITY_VAL = 1000;
 
 
     /**
@@ -64,6 +67,8 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
 
     public static final String DOT_SYSTEM_THREAD_POOL = "dotSystemPool";
 
+    public static final String DOT_SINGLE_SYSTEM_THREAD_POOL = "dotSingleSystemPool";
+
     public static final String BULK_ACTIONS_THREAD_POOL = "bulkActionsPool";
 
     public static final String LOCK_MANAGER = "IdentifierStripedLock";
@@ -72,7 +77,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
      * Used to keep the instance of the submitter
      * Should be volatile to avoid thread-caching
      */
-    private final Map<String, DotConcurrentImpl> submitterMap =
+    private final Map<String, DotSubmitter> submitterMap =
             new ConcurrentHashMap<>();
 
     /**
@@ -187,19 +192,28 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
     @Override
     public Map<String, Object> getStats(final String name) {
 
-        final DotConcurrentImpl dotConcurrent =
+        final DotSubmitter dotConcurrent =
                 this.submitterMap.get(name);
 
         return (null != dotConcurrent)?
-                map(
+                (dotConcurrent instanceof DotConcurrentImpl)?
+                        map(
                         "name",        name,
-                        "threadPool",  dotConcurrent.getThreadPoolExecutor().toString(),
-                        "maxPoolSize", dotConcurrent.getThreadPoolExecutor().getMaximumPoolSize(),
-                        "keepAlive",   dotConcurrent.getThreadPoolExecutor().getKeepAliveTime(TimeUnit.MILLISECONDS),
-                        "queue",       dotConcurrent.getThreadPoolExecutor().getQueue().toString(),
-                        "isShutdown",  dotConcurrent.shutdown
-                ):
-                map(
+                        "threadPool",  DotConcurrentImpl.class.cast(dotConcurrent).getThreadPoolExecutor().toString(),
+                        "maxPoolSize", DotConcurrentImpl.class.cast(dotConcurrent).getThreadPoolExecutor().getMaximumPoolSize(),
+                        "keepAlive",   DotConcurrentImpl.class.cast(dotConcurrent).getThreadPoolExecutor().getKeepAliveTime(TimeUnit.MILLISECONDS),
+                        "queue",       toString(DotConcurrentImpl.class.cast(dotConcurrent).getThreadPoolExecutor().getQueue()),
+                        "isShutdown",  DotConcurrentImpl.class.cast(dotConcurrent).shutdown
+                        ):
+                        map(
+                                "name",        name,
+                                "threadPool",  "noInfo",
+                                "maxPoolSize", dotConcurrent.getMaxPoolSize(),
+                                "keepAlive",   -1,
+                                "queue",       "noInfo",
+                                "isShutdown",  dotConcurrent.isAborting()
+                        )
+                :map(
                         "name",        name,
                         "threadPool",  "noInfo",
                         "maxPoolSize", -1,
@@ -209,9 +223,27 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
                 );
     }
 
+    private Object toString(final BlockingQueue<Runnable> queue) {
+
+        final StringBuilder builder = new StringBuilder();
+
+        if (null != queue) {
+
+            final Iterator<Runnable> threadsOnQueue = queue.iterator();
+            while (threadsOnQueue.hasNext()) {
+
+                builder.append(threadsOnQueue.next());
+            }
+        }
+
+        return builder.toString();
+    }
+
+
+
     @Override
     public Boolean shutdown(final String name){
-        final DotConcurrentImpl dotConcurrent =
+        final DotSubmitter dotConcurrent =
                 this.submitterMap.get(name);
         if(null == dotConcurrent){
            return false;
@@ -299,6 +331,52 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
     }
 
     /**
+     * Get the default single thread submitter
+     * @return DotSubmitter
+     */
+    public DotSubmitter getSingleSubmitter () {
+
+        return this.getSingleSubmitter(DOT_SINGLE_SYSTEM_THREAD_POOL);
+    }
+
+    /**
+     * Get the default single thread submitter by name
+     * @param name {@link String} name of the {@link DotSubmitter}
+     * @return DotSubmitter
+     */
+    public DotSubmitter getSingleSubmitter (final String name) {
+
+        DotSubmitter submitter = null;
+
+        if (!this.submitterMap.containsKey(name)) {
+
+            synchronized (DotConcurrentFactory.class) {
+
+                if (null == submitter) {
+
+                    submitter = new DotSingleSubmitterImpl(name);
+                    this.submitterMap.put(name, submitter);
+                }
+            }
+        } else {
+
+            submitter =
+                    this.submitterMap.get(name);
+
+            if (null != submitter && (submitter.isAborting())) { // if it is shutdown, create a new one
+
+                synchronized (DotConcurrentFactory.class) {
+
+                    submitter = new DotSingleSubmitterImpl(name);
+                    this.submitterMap.put(name, submitter);
+                }
+            }
+        }
+
+        return submitter;
+    }
+
+    /**
      * Get's the submitter for a submitterName parameter
      * The submitterName is used as a prefix for all these properties:
      *
@@ -329,7 +407,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         } else {
 
             submitter =
-                    this.submitterMap.get(name);
+                    (DotConcurrentImpl)this.submitterMap.get(name);
 
             if (null != submitter && (submitter.shutdown || submitter.threadPoolExecutor
                     .isTerminated())) { // if it is shutdown, create a new one
@@ -578,6 +656,97 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         }
     } // DelayQueueConsumer.
 
+    /// DotSingleSubmitterImpl
+    private final class DotSingleSubmitterImpl implements DotSubmitter {
+
+        private final String name;
+        private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+
+        public DotSingleSubmitterImpl(final String name) {
+            this.name = name;
+        }
+
+        @Override
+        public Future<?> submit(final Runnable command) {
+            return this.executorService.submit(command);
+        }
+
+        @Override
+        public void delay(final Runnable task, final long delay, final TimeUnit unit) {
+
+            throw new UnsupportedOperationException("Delay not supported on single submitter");
+        }
+
+        @Override
+        public Future<?> submit(final Runnable command, final long delay, final TimeUnit unit) {
+
+            throw new UnsupportedOperationException("Submit Delay not supported on single submitter");
+        }
+
+        @Override
+        public <T> Future<T> submit(final Callable<T> callable) {
+
+            return this.executorService.submit(callable);
+        }
+
+        @Override
+        public <T> Future<T> submit(Callable<T> callable, long delay, TimeUnit unit) {
+
+            throw new UnsupportedOperationException(
+                    "Submit Delay not supported on single submitter, name: " + this.name);
+        }
+
+        @Override
+        public int getActiveCount() {
+            return 1;
+        }
+
+        @Override
+        public int getPoolSize() {
+            return 1;
+        }
+
+        @Override
+        public int getMaxPoolSize() {
+            return 1;
+        }
+
+        @Override
+        public void shutdown() {
+
+            this.executorService.shutdown();
+        }
+
+        @Override
+        public List<Runnable> shutdownNow() {
+            return this.executorService.shutdownNow();
+        }
+
+        @Override
+        public boolean isAborting() {
+            return this.executorService.isTerminated() ||  this.executorService.isShutdown();
+        }
+
+        @Override
+        public void waitForAll(long timeout, TimeUnit unit) throws ExecutionException {
+            try {
+                executorService.awaitTermination(timeout, unit);
+            } catch (InterruptedException e) {
+                throw new DotRuntimeException(e.getMessage() + ", name: " + this.name, e);
+            }
+        }
+
+        @Override
+        public long getTaskCount() {
+            throw new UnsupportedOperationException("Submit Delay not supported on single submitter, name: " + this.name);
+        }
+
+        @Override
+        public void execute(final Runnable command) {
+
+            this.executorService.execute(command);
+        }
+    }
     /// DotSubmitter
     private final class DotConcurrentImpl implements DotSubmitter {
 
@@ -766,6 +935,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
 
         @Override
         public boolean isAborting() {
+
             return threadPoolExecutor.isTerminated() ||  threadPoolExecutor.isShutdown() || threadPoolExecutor.isTerminating();
         }
 
