@@ -1,6 +1,5 @@
 package com.dotcms.rest.config;
 
-import com.dotcms.auth.providers.saml.v1.DotSamlResource;
 import com.dotcms.contenttype.model.field.FieldTypeResource;
 import com.dotcms.rest.PublishQueueResource;
 import com.dotcms.rest.RulesEnginePortlet;
@@ -33,8 +32,8 @@ import com.dotcms.rest.api.v1.page.NavResource;
 import com.dotcms.rest.api.v1.page.PageResource;
 import com.dotcms.rest.api.v1.personalization.PersonalizationResource;
 import com.dotcms.rest.api.v1.personas.PersonaResource;
-import com.dotcms.rest.api.v1.portlet.ToolGroupResource;
 import com.dotcms.rest.api.v1.portlet.PortletResource;
+import com.dotcms.rest.api.v1.portlet.ToolGroupResource;
 import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResource;
 import com.dotcms.rest.api.v1.relationships.RelationshipsResource;
 import com.dotcms.rest.api.v1.site.SiteResource;
@@ -62,10 +61,11 @@ import com.dotcms.rest.api.v1.vtl.VTLResource;
 import com.dotcms.rest.personas.PersonasResourcePortlet;
 import com.dotcms.rest.servlet.ReloadableServletContainer;
 import com.google.common.collect.ImmutableSet;
+import org.glassfish.jersey.media.multipart.MultiPartFeature;
+
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import org.glassfish.jersey.media.multipart.MultiPartFeature;
 
 /**
  * This class provides the list of all the REST end-points in dotCMS. Every new
