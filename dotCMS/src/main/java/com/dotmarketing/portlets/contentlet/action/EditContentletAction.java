@@ -15,7 +15,9 @@ import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.ContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
@@ -80,6 +82,7 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
@@ -291,7 +294,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		
 		User user = _getUser(req);
 
-		if(user ==null || !user.isBackendUser()){
+		if(user ==null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(reqImpl.getPortletName(), user)){
 		  Logger.warn(this.getClass(), "User is not set or user does not have access to portlet:" + reqImpl.getPortletName());
 		  _sendToReferral(req, res, "/api/v1/logout");
 		  return;

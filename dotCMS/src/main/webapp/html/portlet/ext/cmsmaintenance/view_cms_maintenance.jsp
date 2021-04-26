@@ -1101,8 +1101,6 @@ dd.leftdl {
         <input type="hidden" name="userId"  id="userId" value="<%=user.getUserId()%>">
         <input type="hidden" name="referer" value="<%=referer%>">
         <input type="hidden" name="cacheName" id="cacheName">
-        <input type="hidden" name="systemJobName" id="systemJobName">
-        <input type="hidden" name="systemJobGroup" id="systemJobGroup">
         <input type="hidden" name="dataOnly" id="dataOnly">
         <input type="hidden" name="cmd" value="">
         <input type="hidden"  name="defaultStructure" id="defaultStructure" value="">
