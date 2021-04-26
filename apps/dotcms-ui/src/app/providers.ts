@@ -1,4 +1,4 @@
-import { AccountService } from '@services/account-service';
+import { DotAccountService } from '@services/dot-account-service';
 import { AuthGuardService } from '@services/guards/auth-guard.service';
 import { ColorUtil } from './api/util/ColorUtil';
 import { DotContentTypesInfoService } from '@services/dot-content-types-info';
@@ -36,7 +36,7 @@ export const LOCATION_TOKEN = new InjectionToken<Location>('Window location obje
 
 const PROVIDERS: any[] = [
     { provide: LOCATION_TOKEN, useValue: window.location },
-    AccountService,
+    DotAccountService,
     AuthGuardService,
     ColorUtil,
     ConfirmationService,

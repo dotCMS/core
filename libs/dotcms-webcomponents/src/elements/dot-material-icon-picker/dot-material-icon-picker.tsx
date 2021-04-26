@@ -140,6 +140,13 @@ export class DotMaterialIcon {
         this.emitValues();
     };
 
+    onTextChange = (e: Event) => {
+        const value = (e.target as HTMLInputElement).value;
+        if (this.suggestionlist.includes(value)) {
+            this.onSelect(value);
+        }
+    };
+
     getSuggestionElement = (suggestion: string): JSX.Element => {
         const isSelected =
             this.selectedSuggestionIndex !== undefined &&
@@ -190,6 +197,7 @@ export class DotMaterialIcon {
                             role="searchbox"
                             placeholder={this.placeholder}
                             value={this.value}
+                            onChange={(e) => this.onTextChange(e)}
                             onInput={(e) => this.onInput(e)}
                             onClick={() => this.onFocus(false)}
                             onKeyDown={(e) => this.onKeyDown(e)}
