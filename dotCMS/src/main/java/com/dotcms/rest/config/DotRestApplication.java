@@ -161,7 +161,6 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 			.add(BrowserResource.class)
 			.add(ResourceLinkResource.class)
 			.add(PushPublishFilterResource.class)
-			.add(DotSamlResource.class)
 			.add(LoggerResource.class)
 			.add(TemplateResource.class)
 			.add(MaintenanceResource.class)
