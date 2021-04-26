@@ -87,7 +87,7 @@ export class DotCardContentlet {
                     </div>
                     <div class="extra">
                         <div class="state">
-                            <dot-contentlet-state-icon
+                            <dot-state-icon
                                 state={this.getContentState(contentlet)}
                                 size="16px"
                             />
