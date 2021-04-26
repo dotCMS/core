@@ -93,6 +93,7 @@ public class UserServiceFactory implements Serializable {
 	private final class UserServiceImpl implements UserService {
 
 		private static final String USER_TYPE_VALUE = "user";
+		private static final String TOKEN_SPLITTER = ":";
 
 		private final UserAPI userAPI;
 		private final PermissionAPI permissionAPI;
@@ -394,7 +395,8 @@ public class UserServiceFactory implements Serializable {
 				}
 
 				token = ResetPasswordTokenUtil.createToken();
-				user.setIcqId(token);
+				user.setIcqId(new StringBuilder(token)
+						.append(TOKEN_SPLITTER).append(new Date().getTime()).toString());
 
 				this.update(user);
 
