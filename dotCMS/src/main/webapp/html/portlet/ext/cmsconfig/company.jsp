@@ -173,7 +173,6 @@
                     </tr>
                 </table>
             </div>
-
         </td>
         <td valign="top">
             <img style="max-width: 300px;" border="1" hspace="0" src="<%= IMAGE_PATH %>/company_logo?img_id=<%= company.getCompanyId() %>&key=<%= ImageKey.get(company.getCompanyId()) %>" vspace="0"><br>
@@ -227,6 +226,7 @@
 	                <dt><%= LanguageUtil.get(pageContext, "time-zone") %></dt>
 	                <dd>
 	                    <span id="userTimezoneWrapper">
+							<input type="hidden" name="currentCompanyTimeZoneId" id="currentCompanyTimeZoneId" value="<%=company.getTimeZone().getID() %>" />
 	                        <select style="width: 250px" dojoType="dijit.form.FilteringSelect" value="<%=company.getTimeZone().getID() %>"
 	                                id="companyTimeZoneId" name="companyTimeZoneId" style="width: 250px;">
 	                            <% String[] ids = TimeZone.getAvailableIDs();

@@ -110,3 +110,5 @@ This release includes the following code fixes:
 52. https://github.com/dotCMS/core/issues/20068 : Allow portal.properties to be overridden by environmental variables
 
 53. https://github.com/dotCMS/core/issues/20063 : Send Cookies Secure and HttpOnly
+
+54. https://github.com/dotCMS/core/issues/20013 : Potential timezone bug
