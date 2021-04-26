@@ -21,6 +21,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.WebAssetFactory.AssetType;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -1033,30 +1034,195 @@ public class DependencyBundlerTest {
     @DataProvider(format = "%m: %p[0]")
     public static Object[] configs() throws Exception {
         return new ModDateTestData[] {
-                new ModDateTestData(false, false, Operation.PUBLISH, true, false),
-                new ModDateTestData(false, false, Operation.UNPUBLISH, true, false),
-                new ModDateTestData(true, false, Operation.PUBLISH, false, false),
-                new ModDateTestData(false, true, Operation.PUBLISH, false, false),
-
-                new ModDateTestData(false, false, Operation.PUBLISH, false, true),
-                new ModDateTestData(false, false, Operation.UNPUBLISH, true, true),
-                new ModDateTestData(true, false, Operation.PUBLISH, false, true),
-                new ModDateTestData(false, true, Operation.PUBLISH, false, true)
+                new ModDateTestData(false, false, Operation.PUBLISH),
+                new ModDateTestData(false, false, Operation.UNPUBLISH),
+                new ModDateTestData(true, false, Operation.PUBLISH),
+                new ModDateTestData(false, true, Operation.PUBLISH),
         };
     }
 
     /**
      * Method to Test: {@link DependencyBundler#generate(BundleOutput, BundlerStatus)}
-     * When: A {@link Contentlet} has a modDate before the last Push Publish
-     * should: the {@link Contentlet} should be exclude in the bundle
+     * When:
+     * - Have a Relationship.
+     * - Have a parent content related with a child contentlet.
+     * - The child contentlet have a moddate before the last Push operation.
+     * - Add the parent content into a bundle.
+     * Should:
+     * - Exclude the child contentlet in the bundle when isForPush is false, isDownload is false and Operation is PUBLISH
+     * otherwise should exclude the content child and content child dependencies any way
      */
     @Test
     @UseDataProvider("configs")
-    public void excludeAssetByModDate(ModDateTestData modDateTestData)
+    public void excludeContenletChildAssetByModDate(ModDateTestData modDateTestData)
+            throws DotBundleException, DotDataException, DotSecurityException {
+
+        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
+        APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptorAllDependencies);
+
+        final Map<String, Object> relationShip = createRelationShip();
+
+        final Host host = (Host) relationShip.get("host");
+        final Language language = (Language) relationShip.get("language");
+        final ContentType contentTypeParent =  (ContentType) relationShip.get("contentTypeParent");
+        final ContentType contentTypeChild =  (ContentType) relationShip.get("contentTypeChild");
+
+        final Contentlet contentletChild =  (Contentlet) relationShip.get("contentletChild");
+        final Contentlet contentParent = (Contentlet) relationShip.get("contentParent");
+
+        final Map<String, Object> pushContext = createPushContext(modDateTestData, contentParent);
+
+        final Environment environment = (Environment) pushContext.get("environment");
+        final PushPublishingEndPoint publishingEndPoint = (PushPublishingEndPoint) pushContext.get("publishingEndPoint");
+        final PushPublisherConfig config = (PushPublisherConfig) pushContext.get("config");
+        final Bundle bundle = (Bundle) pushContext.get("bundle");
+
+        final BundleOutput bundleOutput = new DirectoryBundleOutput(config);
+
+        final Calendar yesterday = Calendar.getInstance();
+        yesterday.add(Calendar.DATE, -1);
+        yesterday.add(Calendar.HOUR, 2);
+
+        createPushAsset(
+                yesterday.getTime(),
+                contentletChild.getIdentifier(),
+                "content",
+                environment,
+                publishingEndPoint,
+                bundle);
+
+
+        bundler.setConfig(config);
+        bundler.generate(bundleOutput, status);
+
+        final Collection<Object> dependencies = new HashSet<>();
+
+        if (modDateTestData.operation == Operation.PUBLISH) {
+            dependencies.addAll(getLanguagesVariableDependencies(
+                    true, false, false));
+
+            dependencies.addAll(list(host, language, contentTypeParent, contentTypeChild));
+            dependencies.add(APILocator.getWorkflowAPI().findSystemWorkflowScheme());
+            dependencies.add(APILocator.getFolderAPI().findSystemFolder());
+            dependencies.add(language);
+        }
+
+        dependencies.add(contentParent);
+
+        if (modDateTestData.isDownload || modDateTestData.isForcePush) {
+            dependencies.add(contentletChild);
+        }
+
+         assertAll(config, dependencies);
+    }
+
+    /**
+     * Method to Test: {@link DependencyBundler#generate(BundleOutput, BundlerStatus)}
+     * When:
+     * - Have a Relationship.
+     * - Have a parent content related with a child contentlet.
+     * - The child contentlet have a moddate before the last Push operation.
+     * - Add the child content into a bundle.
+     * Should:
+     * - Include the child contentlet in the bundle
+     */
+    @Test
+    @UseDataProvider("configs")
+    public void notExcludeContenletChildAssetByModDate(ModDateTestData modDateTestData)
             throws DotBundleException, DotDataException, DotSecurityException {
         PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
         APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptorAllDependencies);
 
+        final Map<String, Object> relationShipMap = createRelationShip();
+
+        final Host host = (Host) relationShipMap.get("host");
+        final Language language = (Language) relationShipMap.get("language");
+        final ContentType contentTypeParent =  (ContentType) relationShipMap.get("contentTypeParent");
+        final ContentType contentTypeChild =  (ContentType) relationShipMap.get("contentTypeChild");
+
+        final Calendar yesterday = Calendar.getInstance();
+        yesterday.add(Calendar.DATE, -1);
+
+        final Contentlet contentletChild =  (Contentlet) relationShipMap.get("contentletChild");
+        final Contentlet contentParent = (Contentlet) relationShipMap.get("contentParent");
+
+        final Map<String, Object> pushContext = createPushContext(modDateTestData, contentletChild);
+
+        final Environment environment = (Environment) pushContext.get("environment");
+        final PushPublishingEndPoint publishingEndPoint = (PushPublishingEndPoint) pushContext.get("publishingEndPoint");
+        final PushPublisherConfig config = (PushPublisherConfig) pushContext.get("config");
+        final Bundle bundle = (Bundle) pushContext.get("bundle");
+
+        yesterday.add(Calendar.HOUR, 2);
+        createPushAsset(
+                yesterday.getTime(),
+                contentletChild.getIdentifier(),
+                "content",
+                environment,
+                publishingEndPoint,
+                bundle);
+
+        final BundleOutput bundleOutput = new DirectoryBundleOutput(config);
+
+        bundler.setConfig(config);
+        bundler.generate(bundleOutput, status);
+
+        final Collection<Object> dependencies = new HashSet<>();
+
+        if (modDateTestData.operation == Operation.PUBLISH) {
+            dependencies.addAll(getLanguagesVariableDependencies(
+                    true, false, false));
+            dependencies.addAll(list(host, language, contentTypeParent, contentTypeChild,
+                    contentParent));
+
+            dependencies.add(APILocator.getWorkflowAPI().findSystemWorkflowScheme());
+            dependencies.add(APILocator.getFolderAPI().findSystemFolder());
+            dependencies.add(language);
+        }
+
+        dependencies.add(contentletChild);
+        assertAll(config, dependencies);
+    }
+
+    private Map<String, Object> createPushContext(final ModDateTestData modDateTestData,
+            final Object... assets){
+
+        final Environment environment = new EnvironmentDataGen().nextPersisted();
+
+        final PushPublishingEndPoint publishingEndPoint = new PushPublishingEndPointDataGen()
+                .environment(environment)
+                .nextPersisted();
+
+        final PushPublisherConfig config = new PushPublisherConfig();
+        config.setDownloading(modDateTestData.isDownload);
+        config.setOperation(modDateTestData.operation);
+
+        final Bundle bundle = new BundleDataGen()
+                .pushPublisherConfig(config)
+                .filter(filterDescriptorAllDependencies)
+                .downloading(modDateTestData.isDownload)
+                .addAssets(Arrays.asList(assets))
+                .operation(modDateTestData.operation)
+                .forcePush(modDateTestData.isForcePush)
+                .nextPersisted();
+
+        try {
+            final BundleFactoryImpl bundleFactory = new BundleFactoryImpl();
+            bundleFactory.saveBundleEnvironment(bundle, environment);
+
+            return map(
+                "environment", environment,
+                "publishingEndPoint", publishingEndPoint,
+                "config", config,
+                "bundle", bundle,
+                "bundleFactory", bundleFactory
+            );
+        }catch (DotDataException e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
+    private Map<String, Object> createRelationShip() {
         final Host host = new SiteDataGen().nextPersisted();
         final Language language = new LanguageDataGen().nextPersisted();
 
@@ -1088,60 +1254,15 @@ public class DependencyBundlerTest {
                 .setProperty(contentTypeParent.variable(), list(contentletChild))
                 .nextPersisted();
 
-        final Environment environment = new EnvironmentDataGen().nextPersisted();
-
-        final PushPublishingEndPoint publishingEndPoint = new PushPublishingEndPointDataGen()
-                .environment(environment)
-                .nextPersisted();
-
-        final PushPublisherConfig config = new PushPublisherConfig();
-        config.setDownloading(modDateTestData.isDownload);
-        config.setOperation(modDateTestData.operation);
-
-        final Bundle bundle = new BundleDataGen()
-                .pushPublisherConfig(config)
-                .filter(filterDescriptorAllDependencies)
-                .downloading(modDateTestData.isDownload)
-                .addAssets(set(modDateTestData.addChildDirectly ? contentletChild: contentParent))
-                .operation(modDateTestData.operation)
-                .forcePush(modDateTestData.isForcePush)
-                .nextPersisted();
-
-        yesterday.add(Calendar.HOUR, 2);
-        createPushAsset(
-                yesterday.getTime(),
-                contentletChild.getIdentifier(),
-                "content",
-                environment,
-                publishingEndPoint,
-                bundle);
-
-        final BundleFactoryImpl bundleFactory = new BundleFactoryImpl();
-        bundleFactory.saveBundleEnvironment(bundle, environment);
-        final BundleOutput bundleOutput = new DirectoryBundleOutput(config);
-
-        bundler.setConfig(config);
-        bundler.generate(bundleOutput, status);
-
-        final Collection<Object> dependencies = new HashSet<>();
-
-        if (modDateTestData.operation == Operation.PUBLISH) {
-            dependencies.addAll(getLanguagesVariableDependencies(
-                    true, false, false));
-            dependencies.addAll(list(host, language, contentTypeParent, contentTypeChild,
-                    contentParent));
-
-            dependencies.add(APILocator.getWorkflowAPI().findSystemWorkflowScheme());
-            dependencies.add(APILocator.getFolderAPI().findSystemFolder());
-            dependencies.add(language);
-        } else {
-            dependencies.add(modDateTestData.addChildDirectly ? contentletChild: contentParent);
-        }
-
-        if (!modDateTestData.shouldExcludeByModDate) {
-            dependencies.add(contentletChild);
-        }
-        assertAll(config, dependencies);
+        return map(
+            "host", host,
+            "language", language,
+            "contentTypeParent", contentTypeParent,
+            "contentTypeChild", contentTypeChild,
+            "relationship", relationship,
+            "contentletChild", contentletChild,
+            "contentParent", contentParent
+        );
     }
 
     private void createPushAsset(Date pushDate, String assetId, String assetType, Environment environment,
@@ -1156,10 +1277,14 @@ public class DependencyBundlerTest {
             .nextPersisted();
     }
 
+
     /**
      * Method to Test: {@link DependencyBundler#generate(BundleOutput, BundlerStatus)}
-     * When:  {@link HTMLPageAsset}'s dependencies has a modDate before the last Push Publish
-     * should: the {@link Contentlet} should be exclude in the bundle
+     * When:
+     * - Have a Page with all its dependencies: Template, Containers, Host.
+     * - Template, Containers, Host have a moddate before the last Push operation.
+     * - Add the page into a bundle.
+     * Should: Exclude all the page's dependencies
      */
     @Test
     @UseDataProvider("configs")
@@ -1172,18 +1297,89 @@ public class DependencyBundlerTest {
         final Calendar yesterday = Calendar.getInstance();
         yesterday.add(Calendar.DATE, -1);
 
+        final Map<String, Object> pageAndDependencies = pageWithDependencies(yesterday.getTime());
+
+        final Host host = (Host) pageAndDependencies.get("host");
+        final Container container = (Container) pageAndDependencies.get("container");
+        final Template template = (Template) pageAndDependencies.get("template");
+        final HTMLPageAsset htmlPageAsset = (HTMLPageAsset) pageAndDependencies.get("htmlPageAsset");
+
+        final Map<String, Object> pushContext = createPushContext(modDateTestData, htmlPageAsset);
+
+        final Environment environment = (Environment) pushContext.get("environment");
+        final PushPublishingEndPoint publishingEndPoint = (PushPublishingEndPoint) pushContext.get("publishingEndPoint");
+        final PushPublisherConfig config = (PushPublisherConfig) pushContext.get("config");
+        final Bundle bundle = (Bundle) pushContext.get("bundle");
+
+        final BundleOutput bundleOutput = new DirectoryBundleOutput(config);
+
+        yesterday.add(Calendar.HOUR, 2);
+        createPushAsset(
+                yesterday.getTime(),
+                host.getIdentifier(),
+                "host",
+                environment,
+                publishingEndPoint,
+                bundle);
+
+        createPushAsset(
+                yesterday.getTime(),
+                template.getIdentifier(),
+                "template",
+                environment,
+                publishingEndPoint,
+                bundle);
+
+        createPushAsset(
+                yesterday.getTime(),
+                container.getIdentifier(),
+                "container",
+                environment,
+                publishingEndPoint,
+                bundle);
+
+        bundler.setConfig(config);
+        bundler.generate(bundleOutput, status);
+
+        final Host systemHost = APILocator.getHostAPI().findSystemHost();
+
+        final Collection<Object> dependencies = new HashSet<>();
+
+        if (modDateTestData.operation == Operation.PUBLISH) {
+            dependencies.addAll(getLanguagesVariableDependencies(
+                    true, false, false));
+
+            final ContentType pageContentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                    .find(htmlPageAsset.getStructureInode());
+            dependencies.add(pageContentType);
+
+            dependencies.add(APILocator.getWorkflowAPI().findSystemWorkflowScheme());
+            dependencies.add(APILocator.getFolderAPI().findSystemFolder());
+            dependencies.add(APILocator.getLanguageAPI().getDefaultLanguage());
+            dependencies.add(systemHost);
+        }
+
+        if (modDateTestData.isDownload || modDateTestData.isForcePush) {
+            dependencies.addAll(list(host, container, template));
+        }
+
+        dependencies.add(htmlPageAsset);
+        assertAll(config, dependencies);
+    }
+
+    private Map<String, Object> pageWithDependencies(final Date modDate){
         final Host host = new SiteDataGen()
-                .modDate(yesterday.getTime())
+                .modDate(modDate)
                 .nextPersisted();
 
         final Container container = new ContainerDataGen()
-                .modDate(yesterday.getTime())
+                .modDate(modDate)
                 .site(host)
                 .nextPersisted();
 
         final TemplateLayout templateLayout = new TemplateLayoutDataGen().withContainer(container).next();
         final Template template = new TemplateDataGen()
-                .modDate(yesterday.getTime())
+                .modDate(modDate)
                 .drawedBody(templateLayout)
                 .host(host)
                 .nextPersisted();
@@ -1191,25 +1387,47 @@ public class DependencyBundlerTest {
         final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template)
                 .nextPersisted();
 
-        final PushPublisherConfig config = new PushPublisherConfig();
-        config.setDownloading(modDateTestData.isDownload);
-        config.setOperation(modDateTestData.operation);
+        return map(
+            "host", host,
+            "container", container,
+            "template", template,
+            "htmlPageAsset", htmlPageAsset
+        );
+    }
 
-        final Environment environment = new EnvironmentDataGen().nextPersisted();
+    /**
+     * Method to Test: {@link DependencyBundler#generate(BundleOutput, BundlerStatus)}
+     * When:
+     * - Have a Page with all its dependencies: Template, Containers, Host.
+     * - Template, Containers, Host have a moddate before the last Push operation.
+     * - Add the Template, Containers, Host and Page into a bundle.
+     * Should: Should include all the pages's dependencies
+     */
+    @Test
+    @UseDataProvider("configs")
+    public void includeHTMLDependenciesNoMatterModDate(ModDateTestData modDateTestData)
+            throws DotBundleException, DotDataException, DotSecurityException {
 
-        final PushPublishingEndPoint publishingEndPoint = new PushPublishingEndPointDataGen()
-                .environment(environment)
-                .nextPersisted();
+        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
+        APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptorAllDependencies);
 
-        final Bundle bundle = new BundleDataGen()
-                .pushPublisherConfig(config)
-                .filter(filterDescriptorAllDependencies)
-                .downloading(modDateTestData.isDownload)
-                .addAssets(modDateTestData.addChildDirectly ?
-                        set(template, host, container, htmlPageAsset) : set(htmlPageAsset))
-                .operation(modDateTestData.operation)
-                .forcePush(modDateTestData.isForcePush)
-                .nextPersisted();
+        final Calendar yesterday = Calendar.getInstance();
+        yesterday.add(Calendar.DATE, -1);
+
+        final Map<String, Object> pageAndDependencies = pageWithDependencies(yesterday.getTime());
+
+        final Host host = (Host) pageAndDependencies.get("host");
+        final Container container = (Container) pageAndDependencies.get("container");
+        final Template template = (Template) pageAndDependencies.get("template");
+        final HTMLPageAsset htmlPageAsset = (HTMLPageAsset) pageAndDependencies.get("htmlPageAsset");
+
+        final Map<String, Object> pushContext = createPushContext(modDateTestData, host, container,
+                template, htmlPageAsset);
+
+        final Environment environment = (Environment) pushContext.get("environment");
+        final PushPublishingEndPoint publishingEndPoint = (PushPublishingEndPoint) pushContext.get("publishingEndPoint");
+        final PushPublisherConfig config = (PushPublisherConfig) pushContext.get("config");
+        final Bundle bundle = (Bundle) pushContext.get("bundle");
 
         final BundleOutput bundleOutput = new DirectoryBundleOutput(config);
 
@@ -1262,10 +1480,7 @@ public class DependencyBundlerTest {
             dependencies.add(systemHost);
         }
 
-        if (!modDateTestData.shouldExcludeByModDate || modDateTestData.addChildDirectly) {
-            dependencies.addAll(list(host, container, template));
-        }
-
+        dependencies.addAll(list(host, container, template));
         dependencies.add(htmlPageAsset);
         assertAll(config, dependencies);
     }
@@ -1403,24 +1618,28 @@ public class DependencyBundlerTest {
     }
 
     private static class ModDateTestData {
+
+        /**
+         * True if {@link Bundle#isForcePush()} have to be true in te test
+         */
         private boolean isForcePush;
+        /**
+         * True if {@link PushPublisherConfig#isDownloading()} have to be true in the test
+         */
         private boolean isDownload;
+        /**
+         * Value to set in {@link Bundle#setOperation(Integer)}
+         */
         private Operation operation;
-        private boolean shouldExcludeByModDate;
-        private boolean addChildDirectly;
 
         public ModDateTestData(
                 boolean isForcePush,
                 boolean isDownload,
-                Operation operation,
-                boolean shouldExcludeByModDate,
-                boolean addChildDirectly) {
+                Operation operation) {
 
             this.isForcePush = isForcePush;
             this.isDownload = isDownload;
             this.operation = operation;
-            this.shouldExcludeByModDate = shouldExcludeByModDate;
-            this.addChildDirectly = addChildDirectly;
         }
     }
 

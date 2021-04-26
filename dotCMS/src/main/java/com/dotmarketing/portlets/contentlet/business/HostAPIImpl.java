@@ -54,7 +54,7 @@ import java.util.stream.Collectors;
  * @author david torres
  *
  */
-public class HostAPIImpl implements HostAPI {
+public class HostAPIImpl implements HostAPI, Flushable<Host> {
 
     private ContentletFactory contentletFactory = FactoryLocator.getContentletFactory();
     private HostCache hostCache = CacheLocator.getHostCache();
@@ -1197,11 +1197,6 @@ public class HostAPIImpl implements HostAPI {
         }
     }
 
-    @VisibleForTesting
-    public void flushCache(Host host){
-        hostCache.remove(host);
-    }
-
 	private PaginatedArrayList<Host> convertToHostPaginatedArrayList(PaginatedArrayList<Contentlet> list) {
 		
 		PaginatedArrayList<Host> hosts = new PaginatedArrayList<Host>();
@@ -1211,4 +1206,14 @@ public class HostAPIImpl implements HostAPI {
 		
 		return hosts;
 	}
+
+    @Override
+    public void flushAll() {
+        hostCache.clearCache();
+    }
+
+    @Override
+    public void flush(Host host) {
+        hostCache.remove(host);
+    }
 }

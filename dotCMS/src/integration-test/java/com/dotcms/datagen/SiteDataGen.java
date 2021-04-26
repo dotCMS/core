@@ -76,7 +76,7 @@ public class SiteDataGen extends AbstractDataGen<Host> {
                 updateContentletModeDate(newSite, modDate);
                 updateContentletVersionDate(newSite, modDate);
 
-                ((HostAPIImpl) APILocator.getHostAPI()).flushCache(newSite);
+                ((HostAPIImpl) APILocator.getHostAPI()).flush(newSite);
             }
 
             return newSite;
