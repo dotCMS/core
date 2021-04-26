@@ -47,22 +47,6 @@
             var parameters = {
                 query: `# dotCMS GraphQL Playground
 # 
-# Example Query:
-#
-# query ContentAPI {
-#   ProductCollection(query: "+title:snow", limit: 10, offset: 0, sortBy: "score") {
-#     title
-#     urlMap
-#     category {
-#       name
-#       inode
-#     }
-#     retailPrice
-#     image {
-#       versionPath
-#     }
-#   }
-# }
 #
 # Keyboard shortcuts:
 #
@@ -74,6 +58,23 @@
 #
 #   Auto Complete:  Ctrl-Space (or just start typing)
 #
+
+# Example Query
+
+query ContentAPI {
+  ProductCollection(query: "+title:snow", limit: 10, offset: 0, sortBy: "score") {
+    title
+    urlMap
+    category {
+      name
+      inode
+    }
+    retailPrice
+    image {
+      versionPath
+    }
+  }
+}
 `
             };
             search
