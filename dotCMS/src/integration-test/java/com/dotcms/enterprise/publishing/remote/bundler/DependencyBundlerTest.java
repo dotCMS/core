@@ -1050,7 +1050,7 @@ public class DependencyBundlerTest {
      * - Add the parent content into a bundle.
      * Should:
      * - Exclude the child contentlet in the bundle when isForPush is false, isDownload is false and Operation is PUBLISH
-     * otherwise should exclude the content child and content child dependencies any way
+     * otherwise should include the content child and content child dependencies
      */
     @Test
     @UseDataProvider("configs")
