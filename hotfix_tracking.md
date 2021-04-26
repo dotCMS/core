@@ -112,3 +112,6 @@ This release includes the following code fixes:
 53. https://github.com/dotCMS/core/issues/20063 : Send Cookies Secure and HttpOnly
 
 54. https://github.com/dotCMS/core/issues/20013 : Potential timezone bug
+
+55. https://github.com/dotCMS/core/issues/20136 : [Push Publish] : Selecting the REMOVE option in Push Publishing modal is not working
+
