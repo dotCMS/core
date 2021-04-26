@@ -1,11 +1,12 @@
 package com.dotcms.cache.transport.postgres;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import com.dotcms.cache.transport.postgres.CachePubSubTopic.CacheEventType;
 import com.dotcms.cluster.bean.Server;
+import com.dotcms.dotpubsub.DotPubSubEvent;
 import com.dotcms.dotpubsub.DotPubSubTopic;
 import com.dotcms.dotpubsub.PostgresPubSubImpl;
-import com.dotcms.enterprise.cluster.ClusterFactory;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.business.cache.transport.CacheTransportException;
 import com.dotmarketing.util.Logger;
@@ -14,6 +15,9 @@ public class PostgresCacheTransport implements CacheTransport {
 
     PostgresPubSubImpl pubsub;
 
+    DotPubSubTopic topic;
+
+    AtomicBoolean initialized = new AtomicBoolean(false);
 
 
     public PostgresCacheTransport() {
@@ -29,28 +33,26 @@ public class PostgresCacheTransport implements CacheTransport {
 
         Logger.info(this.getClass(), "calling init");
         this.pubsub = new PostgresPubSubImpl();
-        
-        
-        DotPubSubTopic topic = new DotPubSubTopic() {
-            
-            @Override
-            public Comparable getKey() {
-                return APILocator.getShortyAPI().shortify(ClusterFactory.getClusterId()).toLowerCase();
-            }
-        };
-        
-        this.pubsub .subscribe(topic);
-        
-        this.pubsub.init();
 
+        this.topic = new CachePubSubTopic();
+
+        this.pubsub.subscribe(topic);
+
+        this.pubsub.init();
+        initialized.set(true);
     }
 
 
 
     @Override
     public void send(String message) throws CacheTransportException {
-        this.pubsub.publish(null);
-        Logger.info(this.getClass(), "calling end(String message)");
+
+
+        final DotPubSubEvent event =
+                        new DotPubSubEvent.Builder().withType(CacheEventType.INVAL.name()).withMessage(message).build();
+
+        this.pubsub.publish(this.topic, event);
+
 
     }
 
@@ -58,7 +60,12 @@ public class PostgresCacheTransport implements CacheTransport {
 
     @Override
     public void testCluster() throws CacheTransportException {
-        Logger.info(this.getClass(), "calling testCluster()");
+
+        final DotPubSubEvent event =
+                        new DotPubSubEvent.Builder().withType(CachePubSubTopic.CacheEventType.PING.name()).build();
+        Logger.info(this.getClass(), "Testing cluster, sending PING from server:" + event.getOrigin() + ".");
+
+        this.pubsub.publish(this.topic, event);
 
     }
 
@@ -67,8 +74,10 @@ public class PostgresCacheTransport implements CacheTransport {
     @Override
     public Map<String, Boolean> validateCacheInCluster(String dateInMillis, int numberServers, int maxWaitSeconds)
                     throws CacheTransportException {
-        Logger.info(this.getClass(),
-                        "validateCacheInCluster(String dateInMillis, int numberServers, int maxWaitSeconds)");
+
+        final DotPubSubEvent event = new DotPubSubEvent.Builder()
+                        .withType(CachePubSubTopic.CacheEventType.CLUSTER_REQ.name()).build();
+        this.pubsub.publish(this.topic, event);
         return null;
     }
 
@@ -77,7 +86,7 @@ public class PostgresCacheTransport implements CacheTransport {
     @Override
     public void shutdown() throws CacheTransportException {
         Logger.info(this.getClass(), "shutdown()");
-
+        this.pubsub.shutdown();
     }
 
 
@@ -85,22 +94,21 @@ public class PostgresCacheTransport implements CacheTransport {
     @Override
     public boolean isInitialized() {
         Logger.info(this.getClass(), "isInitialized");
-        return false;
+        return initialized.get();
     }
 
 
 
     @Override
     public boolean shouldReinit() {
-        Logger.info(this.getClass(), "shouldReinit");
-        return false;
+
+        return !initialized.get();
     }
 
 
 
     @Override
     public CacheTransportInfo getInfo() {
-        Logger.info(this.getClass(), "getInfo");
         return null;
     }
 

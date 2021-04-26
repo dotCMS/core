@@ -28,6 +28,8 @@ import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.business.FieldAPIImpl;
 import com.dotcms.device.DeviceAPI;
 import com.dotcms.device.DeviceAPIImpl;
+import com.dotcms.dotpubsub.DotPubSubProvider;
+import com.dotcms.dotpubsub.DotPubSubProviderLocator;
 import com.dotcms.enterprise.ESSeachAPI;
 import com.dotcms.enterprise.RulesAPIProxy;
 import com.dotcms.enterprise.ServerActionAPIImplProxy;
@@ -302,6 +304,10 @@ public class APILocator extends Locator<APIIndex>{
 	public static EventAPI getEventAPI() {
 		return (EventAPI)getInstance(APIIndex.EVENT_API);
 	}
+	
+    public static DotPubSubProvider getDotPubSubProvider() {
+        return (DotPubSubProvider) DotPubSubProviderLocator.provider.get();
+    }
 
 	/**
 	 * Creates a single instance of the {@link CategoryAPI} class.
