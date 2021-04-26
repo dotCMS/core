@@ -33,6 +33,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
@@ -48,6 +50,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableObject;
 
@@ -479,6 +482,7 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
                     .of(() -> {
                                 final List<Map<String, Object>> result = new DotConnect()
                                         .setSQL("SELECT count(*) as x FROM storage_x_data WHERE storage_hash = ?")
+                                        //.setSQL("SELECT count(*) as x FROM storage_data WHERE hash_id = ?")
                                         .addParam(fileHash)
                                         .loadObjectResults(connection);
                                 return (Number) result.get(0).get("x");
@@ -547,7 +551,12 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
             return true;
         } catch (DotDataException | NoSuchAlgorithmException | IOException e) {
             Logger.error(DataBaseStoragePersistenceAPIImpl.class, e.getMessage(), e);
-            throw new DotRuntimeException(e);
+            final String detailedError = String
+                    .format("Exception pushing new file. group=[%s], path=[%s], extraMeta=[%s] \n file=[%s] ",
+                            groupNameLC, pathLC, extraMeta, Try.of(() -> FileUtils
+                                    .readFileToString(file, StandardCharsets.UTF_8.name()))
+                                    .getOrElse("unavailable"));
+            throw new DotRuntimeException(detailedError, e);
         }
 
     }
@@ -563,7 +572,7 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
             final Map<String, Serializable> extraMeta) {
 
         if(UtilMethods.isSet(extraMeta)) {
-            //This is here to correct a behavior where we were using the sha256 of the binary file to store the medata
+            //This is here to correct a behavior where we were using the sha256 of the binary file to store the metadata
             //So when we were recovering the Metadata file from db again we would end-up getting the binary
             //So this instructs the Api to regenerate the sha256 with the temp file which has the Metadata written to it.
             if (Try.of(() -> (Boolean) extraMeta.get(HASH_OBJECT)).getOrElse(false)) {
