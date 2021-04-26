@@ -109,7 +109,7 @@ public class PublisherAPIImplTest {
 
 
     /**
-     * Method to Test: {@link PublisherAPIImpl#publish(PublisherConfig, BundleOutput)}
+     * Method to Test: {@link PublisherAPIImpl#publish(PublisherConfig)}
      * When: Add a {@link Container} in a bundle
      * Should:
      * - The file should be create in:
@@ -142,8 +142,8 @@ public class PublisherAPIImplTest {
 
         for (final Class<? extends Publisher> publisher : publishers) {
             for (TestAsset asset : assets) {
-                cases.add(new TestCase(publisher, asset, true));
-                cases.add(new TestCase(publisher, asset, false));
+                cases.add(new TestCase(publisher, asset));
+                cases.add(new TestCase(publisher, asset));
             }
         }
 
@@ -377,8 +377,6 @@ public class PublisherAPIImplTest {
         config.setLuceneQueries(list());
         config.setId("PublisherAPIImplTest_" + System.currentTimeMillis());
 
-        final BundleOutput output = testCase.useTarGzipOutput ? new TarGzipBundleOutput(config) :
-                new DirectoryBundleOutput(config);
 
         new BundleDataGen()
                 .pushPublisherConfig(config)
@@ -386,12 +384,10 @@ public class PublisherAPIImplTest {
                 .filter(filterDescriptor)
                 .nextPersisted();
 
-        publisherAPI.publish(config);
-        output.close();
+        final PublishStatus publish = publisherAPI.publish(config);
+        File bundleRoot = publish.getOutputFiles().get(0);
 
-        File bundleRoot = output.getFile();
-
-        if (TarGzipBundleOutput.class.isInstance(output)) {
+        if (GenerateBundlePublisher.class.equals(publisher)) {
             final File extractHere = new File(bundleRoot.getParent() + File.separator + config.getName());
             extractTarArchive(bundleRoot, extractHere);
             bundleRoot = extractHere;
@@ -461,14 +457,13 @@ public class PublisherAPIImplTest {
     private static class TestCase {
         Class<? extends Publisher> publisher;
         TestAsset asset;
-        boolean useTarGzipOutput;
+
         public TestCase(
                 final Class<? extends Publisher> publisher,
-                TestAsset asset, final boolean useTarGzipOutput) {
+                TestAsset asset) {
 
             this.publisher = publisher;
             this.asset = asset;
-            this.useTarGzipOutput =useTarGzipOutput;
         }
     }
 
