@@ -22,6 +22,6 @@
     -->
     <Loader delegate="true"/><!--https://issues.apache.org/bugzilla/show_bug.cgi?id=55943#c13-->
 
-    <!--<Resource name="mail/MailSession" auth="Container" type="javax.mail.Session" mail.smtp.host="localhost" />-->
+    <Resource name="mail/MailSession" auth="Container" type="javax.mail.Session" mail.smtp.host="localhost" />
 
 </Context>

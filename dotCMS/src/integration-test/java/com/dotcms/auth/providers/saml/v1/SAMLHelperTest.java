@@ -123,7 +123,6 @@ public class SAMLHelperTest extends IntegrationTestBase {
         when(companyAPI.getDefaultCompany()).thenReturn(company);
 
         // no want to sync roles
-        when(identityProviderConfiguration.containsOptionalProperty(SamlName.DOT_SAML_ALLOW_USER_SYNCHRONIZATION.getPropertyName())).thenReturn(false);
         when(identityProviderConfiguration.containsOptionalProperty(SamlName.DOTCMS_SAML_BUILD_ROLES.getPropertyName())).thenReturn(true);
         when(identityProviderConfiguration.getOptionalProperty(SamlName.DOTCMS_SAML_BUILD_ROLES.getPropertyName())).thenReturn(DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_NONE_VALUE);
 
@@ -156,48 +155,5 @@ public class SAMLHelperTest extends IntegrationTestBase {
         Assert.assertEquals (samlFirstName,    samlUser.getFirstName());
         Assert.assertEquals (samlLastName,     samlUser.getLastName());
 
-    }
-
-
-    /**
-     * Method to test: testing the resolveUser of the {@link SAMLHelper}
-     * Given Scenario: the test creates one user, the login is by email and the name id is an id (not email) so will fallbacks to email
-     * ExpectedResult: Must return the user by email
-     *
-     */
-    @Test()
-    public void testResolveUser_byEmailAddress() throws DotDataException, DotSecurityException, IOException {
-
-        final SamlAuthenticationService samlAuthenticationService         = new MockSamlAuthenticationService();
-        final IdentityProviderConfiguration identityProviderConfiguration = mock(IdentityProviderConfiguration.class);
-        final CompanyAPI companyAPI                                       = mock(CompanyAPI.class);
-        final Company    company                                          = new Company();
-        final SAMLHelper           		samlHelper                        = new SAMLHelper(samlAuthenticationService, companyAPI);
-        final String nativeLastName     = "For SAML";
-        final String nativeFirstName    = "Native User";
-        final String nativeEmailAddress = "native.user" + UUID.randomUUID() +  "@dotcms.com";
-
-        // wants login by id
-        company.setAuthType(Company.AUTH_TYPE_EA);
-        when(companyAPI.getDefaultCompany()).thenReturn(company);
-
-        // no want to sync roles
-        when(identityProviderConfiguration.containsOptionalProperty(SamlName.DOTCMS_SAML_BUILD_ROLES.getPropertyName())).thenReturn(true);
-        when(identityProviderConfiguration.getOptionalProperty(SamlName.DOTCMS_SAML_BUILD_ROLES.getPropertyName())).thenReturn(DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_NONE_VALUE);
-
-        // creates a new native user
-        final User nativeUser = new UserDataGen().active(true).lastName(nativeLastName).firstName(nativeFirstName)
-                .emailAddress(nativeEmailAddress).nextPersisted();
-
-        final Attributes nativeUserAttributes = new Attributes.Builder().firstName(nativeFirstName + "Updated")
-                .lastName(nativeLastName).nameID("xxxxxxxxxxx").email(nativeEmailAddress).build();
-
-        // recover with SAML the native user
-        final User recoveredNativeUser = samlHelper.resolveUser(nativeUserAttributes, identityProviderConfiguration);
-
-        Assert.assertNotNull(recoveredNativeUser);
-        Assert.assertEquals (nativeUser.getEmailAddress(), recoveredNativeUser.getEmailAddress());
-        Assert.assertNotEquals(nativeUser.getFirstName(),  recoveredNativeUser.getFirstName());
-        Assert.assertEquals (nativeUser.getLastName(),     recoveredNativeUser.getLastName());
     }
 }

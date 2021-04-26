@@ -27,58 +27,6 @@ public class JSONToolTest extends IntegrationTestBase {
         IntegrationTestInitService.getInstance().init();
     }
 
-    private static final String DIRTY_ARRAY_JSON = "     \n\n\n[\n" +
-            "      {\n" +
-            "         \"getBundleId\":0,\n" +
-            "         \"getLocation\":\"System Bundle\",\n" +
-            "         \"getState\":32,\n" +
-            "         \"getSymbolicName\":\"org.apache.felix.framework\",\n" +
-            "         \"getVersion\":{\n" +
-            "            \"major\":5,\n" +
-            "            \"micro\":10,\n" +
-            "            \"minor\":6,\n" +
-            "            \"qualifier\":\"\"\n" +
-            "         }\n" +
-            "      },\n" +
-            "      {\n" +
-            "         \"getBundleId\":1,\n" +
-            "         \"getLocation\":\"file:/srv/dotserver/tomcat-8.5.32/webapps/ROOT/WEB-INF/felix/bundle/com.dotcms.samlbundle-21.03.1.jar\",\n" +
-            "         \"getState\":32,\n" +
-            "         \"getSymbolicName\":\"com.dotcms.samlbundle\",\n" +
-            "         \"getVersion\":{\n" +
-            "            \"major\":21,\n" +
-            "            \"micro\":1,\n" +
-            "            \"minor\":3,\n" +
-            "            \"qualifier\":\"\"\n" +
-            "         }\n" +
-            "      }]    \n\n";
-
-    /**
-     * Method to test: {@link JSONTool#generate(String)}
-     * Given Scenario: Parsing an plain object with new lines and spaces
-     * ExpectedResult: Expected a list of map with the properties
-     * @throws DotSecurityException
-     * @throws DotDataException
-     */
-    @Test
-    public void test_Generate_dirty_Map() throws Exception {
-
-        final JSONTool jsonTool   = new JSONTool();
-        final String   stringJson = DIRTY_ARRAY_JSON;
-        final Object object = jsonTool.generate(stringJson);
-
-        assertNotNull(object);
-        assertTrue(object instanceof List);
-
-        final List<Map<String, Object>> list = (List<Map<String, Object>>)object;
-        assertTrue(list.size() > 0);
-        final Map<String, Object> map = list.get(0);
-        assertFalse(map.isEmpty());
-
-        assertTrue(map.containsKey("getBundleId"));
-        assertTrue(map.containsKey("getLocation"));
-    }
-
     /**
      * Method to test: {@link JSONTool#generate(String)}
      * Given Scenario: Parsing an plain object

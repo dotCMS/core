@@ -44,6 +44,7 @@ public class AutoLoginFilter extends AbstractWebInterceptorSupportFilter {
         delegate.add(new CasAutoLoginWebInterceptor());
         delegate.add(new DefaultAutoLoginWebInterceptor());
         delegate.add(new JsonWebTokenInterceptor());
+        delegate.add(new SamlWebInterceptor());
     } // addDefaultInterceptors.
 
 
