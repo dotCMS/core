@@ -386,7 +386,7 @@ public class PublisherAPIImplTest {
                 .filter(filterDescriptor)
                 .nextPersisted();
 
-        publisherAPI.publish(config, output);
+        publisherAPI.publish(config);
         output.close();
 
         File bundleRoot = output.getFile();
