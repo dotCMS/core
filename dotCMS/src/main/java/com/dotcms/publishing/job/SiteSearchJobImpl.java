@@ -147,11 +147,7 @@ public class SiteSearchJobImpl {
             final PreparedJobContext preparedJobContext = prepareJob(jobContext);
             synchronized (preparedJobContext.lockKey()) {
                 for (final SiteSearchConfig config : preparedJobContext.getConfigs()) {
-                    try(final DirectoryBundleOutput directoryPublisherOutput = new DirectoryBundleOutput(config)) {
-                        publisherAPI.publish(config, status, directoryPublisherOutput);
-                    }catch(Exception e) {
-                        throw e;
-                    }
+                    publisherAPI.publish(config, status);
                 }
 
                 try {
