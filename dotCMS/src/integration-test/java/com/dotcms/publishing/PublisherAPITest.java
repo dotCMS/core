@@ -216,10 +216,8 @@ public class PublisherAPITest extends IntegrationTestBase {
             publisherConfig.setStartDate(new Date(new Date().getTime() - 24*3600*1000));
             publisherConfig.setPublishers(Lists.newArrayList(PushPublisher.class));
 
-            DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(
-                    publisherConfig);
             // Push Publish.
-            publisherAPI.publish(publisherConfig, directoryBundleOutput);
+            publisherAPI.publish(publisherConfig);
             /* Get the date of a file. */
             final String bundlePath =
                     ConfigUtils.getBundlePath() + File.separator + publisherConfig.getName();
@@ -256,8 +254,7 @@ public class PublisherAPITest extends IntegrationTestBase {
             publisherConfig.setStartDate(new Date());
             publisherConfig.setPublishers(Lists.newArrayList(PushPublisher.class));
 
-            directoryBundleOutput = new DirectoryBundleOutput(publisherConfig);
-            publisherAPI.publish(publisherConfig, directoryBundleOutput);
+            publisherAPI.publish(publisherConfig);
 
             /* Check the file dates */
             final long bundleTarGzSecondDate = bundleTarGz.lastModified();
