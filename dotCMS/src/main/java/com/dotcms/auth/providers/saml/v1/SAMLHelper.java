@@ -7,6 +7,7 @@ import com.dotcms.saml.DotSamlException;
 import com.dotcms.saml.DotSamlProxyFactory;
 import com.dotcms.saml.IdentityProviderConfiguration;
 import com.dotcms.saml.SamlAuthenticationService;
+import com.dotcms.saml.SamlConfigurationService;
 import com.dotcms.saml.SamlName;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -29,6 +30,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.Encryptor;
@@ -101,8 +103,16 @@ public class SAMLHelper {
     protected User resolveUser(final Attributes attributes,
                              final IdentityProviderConfiguration identityProviderConfiguration) {
 
+        if (null == attributes || !UtilMethods.isSet(attributes.getNameID())) {
+
+            Logger.error(this, "Failed to resolve user because Attributes or NameID are null");
+            throw new DotSamlException("Failed to resolve user because Attributes or NameID are null");
+        }
+
         User user       = null;
         User systemUser = null;
+        final String nameId = Try.of(()->this.samlAuthenticationService.getValue(attributes.getNameID())).getOrNull();
+
         try {
 
             Logger.debug(this, ()-> "Validating user - " + attributes);
@@ -111,24 +121,33 @@ public class SAMLHelper {
             final Company company  = companyAPI.getDefaultCompany();
             final String  authType = company.getAuthType();
             user                   = Company.AUTH_TYPE_ID.equals(authType)?
-                    this.loadUserById(this.samlAuthenticationService.getValue(attributes.getNameID()),      systemUser):
-                    this.userAPI.loadByUserByEmail(this.samlAuthenticationService.getValue(attributes.getNameID()), systemUser, false);
+                    this.loadUserById(nameId,      systemUser):
+                    this.userAPI.loadByUserByEmail(nameId, systemUser, false);
         } catch (NoSuchUserException e) {
 
-            Logger.error(this, "No user matches ID '" +
-                    this.samlAuthenticationService.getValue(attributes.getNameID()) + "'. Creating one...", e);
-            user = null;
+            final String email = this.samlAuthenticationService.getValue(attributes.getEmail());
+            Logger.warn(this, String.format("No user matches ID '%s'. Checking for email match with '%s' instead...",
+                    nameId, email));
+            try {
+                user = this.userAPI.loadByUserByEmail(email, systemUser, false);
+            } catch (final DotDataException | DotSecurityException | NoSuchUserException ex) {
+                Logger.error(this, "An error occurred when resolving user with email '" + (UtilMethods.isSet(email) ?
+                        email : "-null-") + "'", e);
+                user = null;
+            }
         } catch (Exception e) {
 
-            Logger.error(this, "An error occurred when loading user with ID '" +
-                    (null != attributes && null != attributes.getNameID()?
-                    this.samlAuthenticationService.getValue(attributes.getNameID()): "null") + "'", e);
+            Logger.error(this, String.format("An error occurred when resolving user with ID '%s': %s", nameId, e
+                    .getMessage()), e);
             user = null;
         }
 
         // check if the client wants synchronization
-        final boolean createUserWhenDoesNotExists = DotSamlProxyFactory.getInstance()
-                .samlConfigurationService().getConfigAsBoolean(identityProviderConfiguration, SamlName.DOT_SAML_ALLOW_USER_SYNCHRONIZATION);
+        final SamlConfigurationService samlConfigurationService = DotSamlProxyFactory.getInstance().samlConfigurationService();
+        final boolean createUserWhenDoesNotExists =
+                null != samlConfigurationService?
+                        samlConfigurationService.getConfigAsBoolean(identityProviderConfiguration, SamlName.DOT_SAML_ALLOW_USER_SYNCHRONIZATION): true;
+
         if (createUserWhenDoesNotExists) {
 
             user = null == user?
