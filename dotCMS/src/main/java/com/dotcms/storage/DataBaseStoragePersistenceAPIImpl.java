@@ -3,6 +3,7 @@ package com.dotcms.storage;
 import static com.dotcms.storage.model.BasicMetadataFields.SHA256_META_KEY;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.lock.DotKeyLockManagerBuilder;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.util.CloseUtils;
 import com.dotcms.util.CollectionsUtils;
@@ -67,7 +68,8 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
 
     private static final String DATABASE_STORAGE_JDBC_POOL_NAME = "DATABASE_STORAGE_JDBC_POOL_NAME";
 
-    private IdentifierStripedLock stripedLock = DotConcurrentFactory.getInstance().getIdentifierStripedLock();
+    private static final IdentifierStripedLock stripedLock =
+            new IdentifierStripedLock(DotKeyLockManagerBuilder.newLockManager("fileHashStripedLock"));
 
     /**
      * custom external connection provider method in case we want to store stuff outside our db
