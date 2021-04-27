@@ -39,6 +39,7 @@ import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import org.apache.commons.lang.StringUtils;
@@ -53,7 +54,7 @@ import java.util.stream.Collectors;
  * @author david torres
  *
  */
-public class HostAPIImpl implements HostAPI {
+public class HostAPIImpl implements HostAPI, Flushable<Host> {
 
     private ContentletFactory contentletFactory = FactoryLocator.getContentletFactory();
     private HostCache hostCache = CacheLocator.getHostCache();
@@ -1205,4 +1206,14 @@ public class HostAPIImpl implements HostAPI {
 		
 		return hosts;
 	}
+
+    @Override
+    public void flushAll() {
+        hostCache.clearCache();
+    }
+
+    @Override
+    public void flush(Host host) {
+        hostCache.remove(host);
+    }
 }
