@@ -3,6 +3,7 @@ package com.dotcms.storage;
 import static com.dotcms.storage.model.BasicMetadataFields.SHA256_META_KEY;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.util.CloseUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.FileByteSplitter;
@@ -51,6 +52,7 @@ import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableObject;
 
@@ -64,6 +66,8 @@ import org.apache.commons.lang3.mutable.MutableObject;
 public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI {
 
     private static final String DATABASE_STORAGE_JDBC_POOL_NAME = "DATABASE_STORAGE_JDBC_POOL_NAME";
+
+    private IdentifierStripedLock stripedLock = DotConcurrentFactory.getInstance().getIdentifierStripedLock();
 
     /**
      * custom external connection provider method in case we want to store stuff outside our db
@@ -450,24 +454,29 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
         // 2.2 if does not exists, insert a new one
         final Map<String, Serializable> metaData = hashFile(file, extraMeta);
         final String fileHash = (String) metaData.get(SHA256_META_KEY.key());
-
-        return wrapInTransaction(
-                () -> {
-                    try (final Connection connection = getConnection()) {
-                        if (!existsGroup(groupName, connection)) {
-                            throw new IllegalArgumentException("The groupName: " + groupName +
-                                    ", does not exist.");
+        final String hashRef = (String)extraMeta.get(HASH_REF);
+        Logger.debug(DataBaseStoragePersistenceAPIImpl.class, " fileHash is : " + fileHash);
+        try {
+            return stripedLock.tryLock(fileHash, () -> wrapInTransaction(
+                    () -> {
+                        try (final Connection connection = getConnection()) {
+                            if (!existsGroup(groupName, connection)) {
+                                throw new IllegalArgumentException("The groupName: " + groupName +
+                                        ", does not exist.");
+                            }
+                            if (this.existsObject(groupName, path, connection)) {
+                                deleteObjectAndReferences(groupName, path);
+                                Logger.warn(DataBaseStoragePersistenceAPIImpl.class,
+                                        String.format("The existing entry `%s/%s` has been completely replaced.", groupName, path));
+                            }
+                            return existsHashReference(fileHash, connection) ?
+                                    pushFileReference(groupName, path, fileHash, hashRef, connection) :
+                                    pushNewFile(groupName, path, fileHash, hashRef, file, connection);
                         }
-                        if (this.existsObject(groupName, path, connection)) {
-                            deleteObjectAndReferences(groupName, path);
-                            Logger.warn(DataBaseStoragePersistenceAPIImpl.class,
-                            String.format("The existing entry `%s/%s` has been completely replaced.", groupName, path));
-                        }
-                        return existsHashReference(fileHash, connection) ?
-                                pushFileReference(groupName, path, metaData, fileHash, connection) :
-                                pushNewFile(groupName, path, file, metaData, connection);
-                    }
-                });
+                    }));
+        }catch (Throwable t){
+            throw new DotDataException(t);
+        }
     }
 
     /**
@@ -482,25 +491,26 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
                     .of(() -> {
                                 final List<Map<String, Object>> result = new DotConnect()
                                         .setSQL("SELECT count(*) as x FROM storage_x_data WHERE storage_hash = ?")
-                                        //.setSQL("SELECT count(*) as x FROM storage_data WHERE hash_id = ?")
                                         .addParam(fileHash)
                                         .loadObjectResults(connection);
                                 return (Number) result.get(0).get("x");
                             }
                     ).getOrElse(0);
-            exists.setValue(results.intValue() > 0);
+        final boolean found = results.intValue() > 0;
+        Logger.debug(DataBaseStoragePersistenceAPIImpl.class, String.format(" is HashReference [%s] found [%s] ", fileHash,
+                BooleanUtils.toStringYesNo(found)));
+        exists.setValue(found);
         return exists.getValue();
     }
     
-    private Object pushFileReference(final String groupName, final String path,
-            final Map<String, Serializable> extraMeta, final String objectHash, final Connection connection) throws DotDataException {
+    private Object pushFileReference(final String groupName, final String path, final String fileHash, final String hashRef, final Connection connection) throws DotDataException {
         final String groupNameLC = groupName.toLowerCase();
         final String pathLC = path.toLowerCase();
-        final String hashRef = (String)extraMeta.get(HASH_REF);
+        Logger.debug(DataBaseStoragePersistenceAPIImpl.class, String.format("Pushing new reference for group [%s] path [%s] hash [%s]", groupNameLC, pathLC, hashRef));
         try {
             new DotConnect().executeUpdate(connection,
                     "INSERT INTO storage(hash, path, group_name, hash_ref) VALUES (?, ?, ?, ?)",
-                    objectHash, pathLC, groupNameLC, hashRef);
+                    fileHash, pathLC, groupNameLC, hashRef);
             return true;
         } catch (DotDataException e) {
             Logger.error(DataBaseStoragePersistenceAPIImpl.class, e.getMessage(), e);
@@ -508,11 +518,10 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
         }
     }
 
-    private Object pushNewFile(final String groupName, final String path, final File file,
-            final Map<String, Serializable> extraMeta, final Connection connection ) {
+    private Object pushNewFile(final String groupName, final String path,
+             final String fileHash, final String hashRef, final File file, final Connection connection ) {
         final String groupNameLC = groupName.toLowerCase();
         final String pathLC = path.toLowerCase();
-        final String hashRef = (String)extraMeta.get(HASH_REF);
         try (final FileByteSplitter fileSplitter = new FileByteSplitter(file)) {
 
             final HashBuilder objectHashBuilder = Encryptor.Hashing.sha256();
@@ -535,6 +544,8 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
 
             final String objectHash = objectHashBuilder.buildUnixHash();
 
+            assert objectHash.equals(fileHash) : "File hash and objectHash must match." ;
+
             int order = 1;
             for (final String chunkHash : chunkHashes) {
 
@@ -551,12 +562,7 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
             return true;
         } catch (DotDataException | NoSuchAlgorithmException | IOException e) {
             Logger.error(DataBaseStoragePersistenceAPIImpl.class, e.getMessage(), e);
-            final String detailedError = String
-                    .format("Exception pushing new file. group=[%s], path=[%s], extraMeta=[%s] \n file=[%s] ",
-                            groupNameLC, pathLC, extraMeta, Try.of(() -> FileUtils
-                                    .readFileToString(file, StandardCharsets.UTF_8.name()))
-                                    .getOrElse("unavailable"));
-            throw new DotRuntimeException(detailedError, e);
+            throw new DotRuntimeException(String.format("Exception pushing new file. group=[%s], path=[%s], fileHash=[%s]", groupNameLC, pathLC, fileHash), e);
         }
 
     }

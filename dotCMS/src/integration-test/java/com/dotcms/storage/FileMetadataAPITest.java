@@ -424,7 +424,7 @@ public class FileMetadataAPITest {
 
             Metadata fileAssetMeta = fileMetadataAPI
                     .getFullMetadataNoCache(fileAssetContent, FILE_ASSET);
-            //Expect No metadata it's generation until generateContentletMetadata is called
+            //Expect No metadata it's generated until generateContentletMetadata is called
             assertNull(fileAssetMeta);
 
             final ContentletMetadata metadata = fileMetadataAPI

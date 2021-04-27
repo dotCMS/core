@@ -220,6 +220,7 @@ public class StoragePersistenceAPITest {
         final StoragePersistenceAPI storage = persistenceProvider.getStorage(testCase.storageType);
         storage.deleteObjectAndReferences(testCase.groupName, testCase.path);
         assertTrue(storage.createGroup(testCase.groupName));
+
         final Object object = storage
                 .pushFile(testCase.groupName, testCase.path, testCase.file, ImmutableMap.of());
         assertNotNull(object);
@@ -229,6 +230,17 @@ public class StoragePersistenceAPITest {
         final Object object2 = storage
                 .pushFile(testCase.groupName, testCase.path, testCase.file, ImmutableMap.of());
         assertNotNull(object2);
+
+        //Same binary to a different group
+
+        final String groupVariant = testCase.groupName + "_2" ;
+
+        assertTrue(storage.createGroup(groupVariant));
+
+        final Object object3 = storage
+                .pushFile(groupVariant, testCase.path, testCase.file, ImmutableMap.of());
+        assertNotNull(object3);
+
     }
 
     @DataProvider
