@@ -3,8 +3,6 @@ package com.dotcms.storage;
 import static com.dotcms.storage.model.BasicMetadataFields.SHA256_META_KEY;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
-import com.dotcms.concurrent.lock.DotKeyLockManagerBuilder;
-import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.util.CloseUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.FileByteSplitter;
@@ -35,15 +33,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -52,7 +47,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableObject;
@@ -67,9 +61,6 @@ import org.apache.commons.lang3.mutable.MutableObject;
 public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI {
 
     private static final String DATABASE_STORAGE_JDBC_POOL_NAME = "DATABASE_STORAGE_JDBC_POOL_NAME";
-
-    private static final IdentifierStripedLock stripedLock =
-            new IdentifierStripedLock(DotKeyLockManagerBuilder.newLockManager("fileHashStripedLock"));
 
     /**
      * custom external connection provider method in case we want to store stuff outside our db
@@ -458,8 +449,8 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
         final String fileHash = (String) metaData.get(SHA256_META_KEY.key());
         final String hashRef = (String)extraMeta.get(HASH_REF);
         Logger.debug(DataBaseStoragePersistenceAPIImpl.class, " fileHash is : " + fileHash);
-        try {
-            return stripedLock.tryLock(fileHash, () -> wrapInTransaction(
+
+            return wrapInTransaction(
                     () -> {
                         try (final Connection connection = getConnection()) {
                             if (!existsGroup(groupName, connection)) {
@@ -475,10 +466,8 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
                                     pushFileReference(groupName, path, fileHash, hashRef, connection) :
                                     pushNewFile(groupName, path, fileHash, hashRef, file, connection);
                         }
-                    }));
-        }catch (Throwable t){
-            throw new DotDataException(t);
-        }
+                    });
+
     }
 
     /**
