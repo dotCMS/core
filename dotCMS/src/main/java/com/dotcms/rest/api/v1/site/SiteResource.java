@@ -2,27 +2,54 @@ package com.dotcms.rest.api.v1.site;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
+import com.dotcms.business.WrapInTransaction;
+import com.dotcms.enterprise.HostAssetsJobProxy;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.temp.DotTempFile;
+import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.util.DotLambdas;
 import com.dotcms.util.I18NUtil;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.SitePaginator;
+import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.util.HostNameComparator;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.quartz.QuartzUtils;
+import com.dotmarketing.quartz.SimpleScheduledTask;
+import com.dotmarketing.quartz.job.HostCopyOptions;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
+
+import java.io.File;
 import java.io.Serializable;
+import java.text.ParseException;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -31,8 +58,12 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import io.vavr.control.Try;
 import org.apache.commons.lang.StringUtils;
 import org.glassfish.jersey.server.JSONP;
+import org.quartz.SchedulerException;
+import org.quartz.SimpleTrigger;
 
 /**
  * This resource provides all the different end-points associated to information
@@ -244,4 +275,252 @@ public class SiteResource implements Serializable {
         }
 
     }
+
+    @GET
+    @Path("/thumbnails")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response findAllHostThumbnails(@Context final HttpServletRequest httpServletRequest,
+                                @Context final HttpServletResponse httpServletResponse) throws PortalException, SystemException, DotDataException, DotSecurityException {
+
+        final User user = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(httpServletRequest, httpServletResponse)
+                .requiredBackendUser(true)
+                .rejectWhenNoUser(true)
+                .init().getUser();
+
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        final PageMode      pageMode      = PageMode.get(httpServletRequest);
+        final boolean respectFrontend     = pageMode.respectAnonPerms;
+        final List<Host> hosts            = this.siteHelper.findAll(user, respectFrontend);
+        final HostNameComparator hostNameComparator = new HostNameComparator();
+
+        Logger.debug(this, ()-> "Finding all host thumbnails...");
+
+        return Response.ok(new ResponseEntityView(hosts.stream().filter(DotLambdas.not(Host::isSystemHost))
+                .sorted(hostNameComparator).map(host -> this.toHostMap(user, contentletAPI, host))
+                .collect(Collectors.toList()))).build();
+    }
+
+    private Map<String, Object> toHostMap(final User user,
+                                          final ContentletAPI contentletAPI, final Host host) {
+
+        final Map<String, Object> thumbInfo = new HashMap<>();
+        thumbInfo.put("hostId",    host.getIdentifier());
+        thumbInfo.put("hostInode", host.getInode());
+        thumbInfo.put("hostName",  host.getHostname());
+        final File hostThumbnail   = Try.of(()-> contentletAPI.getBinaryFile(host.getInode(), Host.HOST_THUMB_KEY, user)).getOrNull();
+        final boolean hasThumbnail = hostThumbnail != null;
+        thumbInfo.put("hasThumbnail", hasThumbnail);
+        thumbInfo.put("tagStorage",   host.getMap().get("tagStorage"));
+        return thumbInfo;
+    }
+
+    @PUT
+    @Path("/publish")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response publishHost(@Context final HttpServletRequest httpServletRequest,
+                            @Context final HttpServletResponse httpServletResponse,
+                            final String hostId) throws DotDataException, DotSecurityException, PortalException, SystemException {
+
+        final User user = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(httpServletRequest, httpServletResponse)
+                .requiredBackendUser(true)
+                .rejectWhenNoUser(true)
+                .init().getUser();
+
+        Logger.debug(this, ()-> "Publishing host: " + hostId);
+
+        final PageMode      pageMode      = PageMode.get(httpServletRequest);
+        final Host host = pageMode.respectAnonPerms? this.siteHelper.getSite(user, hostId):
+                this.siteHelper.getSiteNoFrontEndRoles(user, hostId);
+        this.siteHelper.publish(host, user, pageMode.respectAnonPerms);
+        return Response.ok(new ResponseEntityView(host)).build();
+    }
+
+    @PUT
+    @Path("/unpublish")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response unpublishHost(@Context final HttpServletRequest httpServletRequest,
+                                @Context final HttpServletResponse httpServletResponse,
+                                final String hostId) throws DotDataException, DotSecurityException, PortalException, SystemException {
+
+        final User user = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(httpServletRequest, httpServletResponse)
+                .requiredBackendUser(true)
+                .rejectWhenNoUser(true)
+                .init().getUser();
+
+        Logger.debug(this, ()-> "Unpublishing host: " + hostId);
+
+        final PageMode      pageMode      = PageMode.get(httpServletRequest);
+        final Host host = pageMode.respectAnonPerms? this.siteHelper.getSite(user, hostId):
+                this.siteHelper.getSiteNoFrontEndRoles(user, hostId);
+        this.siteHelper.unpublish(host, user, pageMode.respectAnonPerms);
+        return Response.ok(new ResponseEntityView(host)).build();
+    }
+
+    @PUT
+    @Path("/archive")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response archiveHost(@Context final HttpServletRequest httpServletRequest,
+                            @Context final HttpServletResponse httpServletResponse,
+                            final String hostId) throws DotDataException, DotSecurityException, PortalException, SystemException {
+
+        final User user = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(httpServletRequest, httpServletResponse)
+                .requiredBackendUser(true)
+                .rejectWhenNoUser(true)
+                .init().getUser();
+
+        Logger.debug(this, ()-> "Archiving host: " + hostId);
+
+        final PageMode      pageMode      = PageMode.get(httpServletRequest);
+        final Host host = pageMode.respectAnonPerms? this.siteHelper.getSite(user, hostId):
+                this.siteHelper.getSiteNoFrontEndRoles(user, hostId);
+        if(host.isDefault()) {
+
+            throw new DotStateException("the default host can't be archived");
+        }
+
+        this.archive(user, pageMode, host);
+        return Response.ok(new ResponseEntityView(host)).build();
+    }
+
+    @WrapInTransaction
+    private Response archive(final User user, final PageMode pageMode,
+                         final Host host) throws DotDataException, DotSecurityException {
+
+        if(host.isLocked()) {
+
+            this.siteHelper.unlock(host, user, pageMode.respectAnonPerms);
+        }
+
+        this.siteHelper.archive(host, user, pageMode.respectAnonPerms);
+        return Response.ok(new ResponseEntityView(host)).build();
+    }
+
+    @PUT
+    @Path("/unarchive")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response unarchiveHost(@Context final HttpServletRequest httpServletRequest,
+                              @Context final HttpServletResponse httpServletResponse,
+                              final String hostId) throws DotDataException, DotSecurityException, PortalException, SystemException {
+
+        final User user = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(httpServletRequest, httpServletResponse)
+                .requiredBackendUser(true)
+                .rejectWhenNoUser(true)
+                .init().getUser();
+
+        Logger.debug(this, ()-> "unarchiving host: " + hostId);
+
+        final PageMode      pageMode      = PageMode.get(httpServletRequest);
+        final Host host = pageMode.respectAnonPerms? this.siteHelper.getSite(user, hostId):
+                this.siteHelper.getSiteNoFrontEndRoles(user, hostId);
+
+        this.siteHelper.unarchive(host, user, pageMode.respectAnonPerms);
+        return Response.ok(new ResponseEntityView(host)).build();
+    }
+
+    @POST
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response createNewHost(@Context final HttpServletRequest httpServletRequest,
+                             @Context final HttpServletResponse httpServletResponse,
+                             final HostForm newHostForm)
+            throws DotDataException, DotSecurityException, PortalException, SystemException, ParseException, SchedulerException, ClassNotFoundException {
+
+        final User user = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(httpServletRequest, httpServletResponse)
+                .requiredBackendUser(true)
+                .rejectWhenNoUser(true)
+                .requireLicense(true)
+                .init().getUser();
+        final PageMode      pageMode      = PageMode.get(httpServletRequest);
+        final Host newHost = new Host();
+        final TempFileAPI tempFileAPI = APILocator.getTempFileAPI();
+
+        if (UtilMethods.isSet(newHostForm.getHostThumbnail())) {
+
+            final Optional<DotTempFile> dotTempFileOpt = tempFileAPI.getTempFile(httpServletRequest, newHostForm.getHostThumbnail());
+            if (dotTempFileOpt.isPresent()) {
+                newHost.setHostThumbnail(dotTempFileOpt.get().file);
+            }
+        }
+
+        newHost.setHostname(newHostForm.getHostName());
+        newHost.setAliases(newHostForm.getAliases());
+        newHost.setTagStorage(newHostForm.getTagStorage());
+
+        //todo: add more values here
+
+        Logger.debug(this, ()-> "Creating new Host: " + newHostForm);
+
+        return Response.ok(new ResponseEntityView(this.siteHelper.save(newHost, user, pageMode.respectAnonPerms))).build();
+    }
+
+    @PUT
+    @Path("/copy")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response copyHost(@Context final HttpServletRequest httpServletRequest,
+                                  @Context final HttpServletResponse httpServletResponse,
+                                  final CopyHostForm copyHostForm)
+            throws DotDataException, DotSecurityException, PortalException, SystemException, ParseException, SchedulerException, ClassNotFoundException {
+
+        final User user = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(httpServletRequest, httpServletResponse)
+                .requiredBackendUser(true)
+                .rejectWhenNoUser(true)
+                .requireLicense(true)
+                .init().getUser();
+
+        final String hostId = copyHostForm.getCopyFromHostId();
+        final PageMode      pageMode      = PageMode.get(httpServletRequest);
+        final Host sourceHost = pageMode.respectAnonPerms? this.siteHelper.getSite(user, hostId):
+                this.siteHelper.getSiteNoFrontEndRoles(user, hostId);
+        final Response response  = this.createNewHost(httpServletRequest, httpServletResponse, copyHostForm.getHost());
+        final Host newHost       = (Host)ResponseEntityView.class.cast(response.getEntity()).getEntity();
+
+        Logger.debug(this, ()-> "copying host from: " + hostId);
+        Logger.debug(this, ()-> "copying host with values: " + copyHostForm);
+
+        final HostCopyOptions hostCopyOptions = copyHostForm.isCopyAll()?
+                    new HostCopyOptions(true):
+                    new HostCopyOptions(copyHostForm.isCopyTemplatesContainers(),
+                            copyHostForm.isCopyFolders(), copyHostForm.isCopyLinks(),
+                            copyHostForm.isCopyContentOnPages(), copyHostForm.isCopyContentOnHost(),
+                            copyHostForm.isCopyHostVariables());
+
+        final Map<String, Object> parameters = new HashMap<>();
+        parameters.put("sourceHostId",      sourceHost.getIdentifier());
+        parameters.put("destinationHostId", newHost.getIdentifier());
+        parameters.put("copyOptions",       hostCopyOptions);
+
+        // We make sure we schedule the copy only once even if the
+        // browser for any reason sends the request twice
+        if (!QuartzUtils.isJobSequentiallyScheduled("setup-host-" + newHost.getIdentifier(), "setup-host-group")) {
+            Calendar startTime = Calendar.getInstance();
+            SimpleScheduledTask task = new SimpleScheduledTask("setup-host-" + newHost.getIdentifier(), "setup-host-group", "Setups host "
+                    + newHost.getIdentifier() + " from host " + sourceHost.getIdentifier(), HostAssetsJobProxy.class.getCanonicalName(), false,
+                    "setup-host-" + newHost.getIdentifier() + "-trigger", "setup-host-trigger-group", startTime.getTime(), null,
+                    SimpleTrigger.MISFIRE_INSTRUCTION_RESCHEDULE_NEXT_WITH_REMAINING_COUNT, 5, true, parameters, 0, 0);
+            QuartzUtils.scheduleTask(task);
+        }
+
+        return Response.ok(new ResponseEntityView(newHost)).build();
+    }
+
 } // E:O:F:SiteBrowserResource.
