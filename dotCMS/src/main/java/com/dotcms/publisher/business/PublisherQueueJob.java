@@ -183,8 +183,8 @@ public class PublisherQueueJob implements StatefulJob {
 						pconf = setUpConfigForPublisher(pconf);
 						PushPublishLogger.log(this.getClass(), "Pre-publish work complete.");
 
-						try (final DirectoryBundleOutput bundlerOutput = new DirectoryBundleOutput(pconf)){
-							APILocator.getPublisherAPI().publish(pconf, bundlerOutput);
+						try {
+							APILocator.getPublisherAPI().publish(pconf);
 						} catch (final DotPublishingException e) {
 							/*
 							If we are getting errors creating the bundle we should stop trying to publish it, this is not just a connection error,

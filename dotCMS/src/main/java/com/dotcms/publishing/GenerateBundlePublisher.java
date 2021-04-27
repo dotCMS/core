@@ -1,8 +1,12 @@
 package com.dotcms.publishing;
 
+import com.dotcms.publishing.output.BundleOutput;
+import com.dotcms.publishing.output.DirectoryBundleOutput;
+import com.dotcms.publishing.output.TarGzipBundleOutput;
 import java.io.File;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotmarketing.util.Logger;
+import java.io.IOException;
 
 /**
  * This GenerateBundlePublisher uses the same config/bundlers as the PushPublisher - the only
@@ -21,7 +25,9 @@ public class GenerateBundlePublisher extends PushPublisher {
         Logger.info(this.getClass(), "Bundling Complete: " + bundleRoot);
         return this.config;
     }
-    
-    
+
+    public BundleOutput createBundleOutput() throws IOException {
+        return new TarGzipBundleOutput(config);
+    }
     
 }
