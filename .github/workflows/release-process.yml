@@ -7,7 +7,7 @@ jobs:
     name: Release Process Automation
     runs-on: ubuntu-18.04
     env:
-      DOT_CICD_BRANCH: master
+      DOT_CICD_BRANCH: release-21.05
       DOT_CICD_CLOUD_PROVIDER: github
       DOT_CICD_TARGET: core
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
