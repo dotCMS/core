@@ -147,6 +147,18 @@ public class SiteResource implements Serializable {
         return response;
     }
 
+    /**
+     * Return the list of sites paginated
+     * @param httpServletRequest
+     * @param httpServletResponse
+     * @param filterParam
+     * @param showArchived
+     * @param showLive
+     * @param showSystem
+     * @param page
+     * @param perPage
+     * @return
+     */
     @GET
     @JSONP
     @NoCache
@@ -188,7 +200,13 @@ public class SiteResource implements Serializable {
         return response;
     } // sites.
 
-
+    /**
+     * Switch to a site
+     * @param httpServletRequest
+     * @param httpServletResponse
+     * @param hostId
+     * @return
+     */
     @PUT
     @Path ("/switch/{id}")
     @JSONP
@@ -276,6 +294,16 @@ public class SiteResource implements Serializable {
 
     }
 
+    /**
+     * Retrieve the host thumbnails
+     * @param httpServletRequest
+     * @param httpServletResponse
+     * @return
+     * @throws PortalException
+     * @throws SystemException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @GET
     @Path("/thumbnails")
     @JSONP
@@ -317,6 +345,17 @@ public class SiteResource implements Serializable {
         return thumbInfo;
     }
 
+    /**
+     * Publish a host
+     * @param httpServletRequest
+     * @param httpServletResponse
+     * @param hostId
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws PortalException
+     * @throws SystemException
+     */
     @PUT
     @Path("/publish")
     @JSONP
@@ -341,6 +380,17 @@ public class SiteResource implements Serializable {
         return Response.ok(new ResponseEntityView(host)).build();
     }
 
+    /**
+     * Unpublish a host
+     * @param httpServletRequest
+     * @param httpServletResponse
+     * @param hostId
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws PortalException
+     * @throws SystemException
+     */
     @PUT
     @Path("/unpublish")
     @JSONP
@@ -365,6 +415,17 @@ public class SiteResource implements Serializable {
         return Response.ok(new ResponseEntityView(host)).build();
     }
 
+    /**
+     * Archive a host
+     * @param httpServletRequest
+     * @param httpServletResponse
+     * @param hostId
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws PortalException
+     * @throws SystemException
+     */
     @PUT
     @Path("/archive")
     @JSONP
@@ -407,6 +468,17 @@ public class SiteResource implements Serializable {
         return Response.ok(new ResponseEntityView(host)).build();
     }
 
+    /**
+     * Unarchive a host
+     * @param httpServletRequest
+     * @param httpServletResponse
+     * @param hostId
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws PortalException
+     * @throws SystemException
+     */
     @PUT
     @Path("/unarchive")
     @JSONP
@@ -432,6 +504,20 @@ public class SiteResource implements Serializable {
         return Response.ok(new ResponseEntityView(host)).build();
     }
 
+    /**
+     * Creates a new host
+     * @param httpServletRequest
+     * @param httpServletResponse
+     * @param newHostForm
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws PortalException
+     * @throws SystemException
+     * @throws ParseException
+     * @throws SchedulerException
+     * @throws ClassNotFoundException
+     */
     @POST
     @JSONP
     @NoCache
@@ -451,6 +537,13 @@ public class SiteResource implements Serializable {
         final Host newHost = new Host();
         final TempFileAPI tempFileAPI = APILocator.getTempFileAPI();
 
+        if (UtilMethods.isNotSet(newHostForm.getHostName())) {
+
+            throw new IllegalArgumentException("Hostname can not be Null");
+        }
+
+        Logger.debug(this, ()->"Creating the host: " + newHostForm);
+        newHost.setHostname(newHostForm.getHostName());
         if (UtilMethods.isSet(newHostForm.getHostThumbnail())) {
 
             final Optional<DotTempFile> dotTempFileOpt = tempFileAPI.getTempFile(httpServletRequest, newHostForm.getHostThumbnail());
@@ -459,11 +552,47 @@ public class SiteResource implements Serializable {
             }
         }
 
-        newHost.setHostname(newHostForm.getHostName());
-        newHost.setAliases(newHostForm.getAliases());
-        newHost.setTagStorage(newHostForm.getTagStorage());
+        if (UtilMethods.isSet(newHostForm.getAliases())) {
+            newHost.setAliases(newHostForm.getAliases());
+        }
 
-        //todo: add more values here
+        if (UtilMethods.isSet(newHostForm.getTagStorage())) {
+            newHost.setTagStorage(newHostForm.getTagStorage());
+        }
+
+        newHost.setProperty("runDashboard", newHostForm.isRunDashboard());
+        if (UtilMethods.isSet(newHostForm.getKeywords())) {
+            newHost.setProperty("keywords", newHostForm.getKeywords());
+        }
+
+        if (UtilMethods.isSet(newHostForm.getDescription())) {
+            newHost.setProperty("description", newHostForm.getDescription());
+        }
+
+        if (UtilMethods.isSet(newHostForm.getGoogleMap())) {
+            newHost.setProperty("googleMap", newHostForm.getGoogleMap());
+        }
+
+        if (UtilMethods.isSet(newHostForm.getGoogleAnalytics())) {
+            newHost.setProperty("googleAnalytics", newHostForm.getGoogleAnalytics());
+        }
+
+        if (UtilMethods.isSet(newHostForm.getAddThis())) {
+            newHost.setProperty("addThis", newHostForm.getAddThis());
+        }
+
+        if (UtilMethods.isSet(newHostForm.getProxyUrlForEditMode())) {
+            newHost.setProperty("proxyEditModeUrl", newHostForm.getProxyUrlForEditMode());
+        }
+
+        if (UtilMethods.isSet(newHostForm.getEmbeddedDashboard())) {
+            newHost.setProperty("embeddedDashboard", newHostForm.getEmbeddedDashboard());
+        }
+
+        final long languageId = 0 == newHostForm.getLanguageId()?
+                APILocator.getLanguageAPI().getDefaultLanguage().getId(): newHost.getLanguageId();
+
+        newHost.setLanguageId(languageId);
 
         Logger.debug(this, ()-> "Creating new Host: " + newHostForm);
 

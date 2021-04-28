@@ -1,8 +1,5 @@
 package com.dotcms.rest.api.v1.site;
 
-import static com.dotmarketing.util.Logger.debug;
-import static com.dotmarketing.util.Logger.error;
-
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Host;
@@ -15,13 +12,16 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-import java.io.Serializable;
-import java.util.List;
+import org.apache.commons.lang.StringUtils;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import org.apache.commons.lang.StringUtils;
+import java.io.Serializable;
+import java.util.List;
+
+import static com.dotmarketing.util.Logger.debug;
+import static com.dotmarketing.util.Logger.error;
 
 /**
  * Provides all the utility methods used by the {@link SiteResource}
@@ -55,28 +55,70 @@ public class SiteHelper implements Serializable {
 		this.hostAPI = APILocator.getHostAPI();
 	}
 
+	/**
+	 * Retrieve all sites
+	 * @param user
+	 * @param respectFrontend
+	 * @return
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
 	public List<Host> findAll(final User user, final boolean respectFrontend) throws DotSecurityException, DotDataException {
 
 		return hostAPI.findAll(user, respectFrontend);
 	}
 
+	/**
+	 * Unlock a host
+	 * @param host
+	 * @param user
+	 * @param respectAnonPerms
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
 	@WrapInTransaction
 	public void unlock(final Host host, final User user, final boolean respectAnonPerms) throws DotSecurityException, DotDataException {
 
 		APILocator.getContentletAPI().unlock(host, user, respectAnonPerms);
 	}
 
+	/**
+	 * Archive a host
+	 * @param host
+	 * @param user
+	 * @param respectAnonPerms
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
 	@WrapInTransaction
 	public void archive(final Host host, final User user, final boolean respectAnonPerms) throws DotSecurityException, DotDataException {
 
 		hostAPI.archive(host, user, respectAnonPerms);
 	}
 
+	/**
+	 * UnArchive a host
+	 * @param host
+	 * @param user
+	 * @param respectAnonPerms
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	@WrapInTransaction
 	public void unarchive(final Host host, final User user, final boolean respectAnonPerms) throws DotSecurityException, DotDataException {
 
 		hostAPI.unarchive(host, user, respectAnonPerms);
 	}
 
+	/**
+	 * Save a new or existing host
+	 * @param host
+	 * @param user
+	 * @param respectAnonPerms
+	 * @return
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
 	@WrapInTransaction
 	public Host save(final Host host, final User user, final boolean respectAnonPerms) throws DotSecurityException, DotDataException {
 
@@ -258,12 +300,25 @@ public class SiteHelper implements Serializable {
 		}
 	}
 
+	/**
+	 * Switch a site
+	 * @param req
+	 * @param hostId
+	 */
 	public void switchSite(final HttpServletRequest req, final String hostId) {
 
 		// we do this in order to get a properly behaviour of the SwichSiteListener
 		HostUtil.switchSite(req, hostId);
 	}
 
+	/**
+	 * Switch to the default host
+	 * @param req
+	 * @param user
+	 * @return
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
 	public Host switchToDefaultHost(final HttpServletRequest req, final User user)
 			throws DotSecurityException, DotDataException {
 

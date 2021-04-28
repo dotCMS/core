@@ -3,6 +3,11 @@ package com.dotcms.rest.api.v1.site;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ *
+ * Form to encapsulate the copy host
+ * @author jsanca
+ */
 public class CopyHostForm {
 
     private final String copyFromHostId;

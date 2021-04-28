@@ -3,6 +3,10 @@ package com.dotcms.rest.api.v1.site;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * Form to create a host
+ * @author jsanca
+ */
 public class HostForm {
 
     private final String aliases;
@@ -15,19 +19,21 @@ public class HostForm {
 
     private final boolean runDashboard;
 
-    private final boolean keywords;
+    private final String keywords;
 
-    private final boolean description;
+    private final String description;
 
-    private final boolean googleMap;
+    private final String googleMap;
 
-    private final boolean googleAnalytics;
+    private final String googleAnalytics;
 
-    private final boolean addThis;
+    private final String addThis;
 
-    private final boolean proxyUrlForEditMode;
+    private final String proxyUrlForEditMode;
 
     private final String embeddedDashboard;
+
+    private final long   languageId;
 
     @JsonCreator
     public HostForm(@JsonProperty("aliases")    final String aliases,
@@ -35,13 +41,14 @@ public class HostForm {
                     @JsonProperty("tagStorage") final String tagStorage,
                     @JsonProperty("hostThumbnail") final String hostThumbnail,
                     @JsonProperty("runDashboard")  final boolean runDashboard,
-                    @JsonProperty("keywords")      final boolean keywords,
-                    @JsonProperty("description")   final boolean description,
-                    @JsonProperty("googleMap")     final boolean googleMap,
-                    @JsonProperty("googleAnalytics") final boolean googleAnalytics,
-                    @JsonProperty("addThis")         final boolean addThis,
-                    @JsonProperty("proxyUrlForEditMode") final boolean proxyUrlForEditMode,
-                    @JsonProperty("embeddedDashboard")   final String embeddedDashboard) {
+                    @JsonProperty("keywords")      final String keywords,
+                    @JsonProperty("description")   final String description,
+                    @JsonProperty("googleMap")     final String googleMap,
+                    @JsonProperty("googleAnalytics") final String googleAnalytics,
+                    @JsonProperty("addThis")         final String addThis,
+                    @JsonProperty("proxyUrlForEditMode") final String proxyUrlForEditMode,
+                    @JsonProperty("embeddedDashboard")   final String embeddedDashboard,
+                    @JsonProperty("languageId")          final long   languageId) {
 
         this.aliases = aliases;
         this.hostName = hostName;
@@ -55,6 +62,12 @@ public class HostForm {
         this.addThis = addThis;
         this.proxyUrlForEditMode = proxyUrlForEditMode;
         this.embeddedDashboard = embeddedDashboard;
+        this.languageId        = languageId;
+    }
+
+
+    public long getLanguageId() {
+        return languageId;
     }
 
     public String getAliases() {
@@ -77,27 +90,27 @@ public class HostForm {
         return runDashboard;
     }
 
-    public boolean isKeywords() {
+    public String  getKeywords() {
         return keywords;
     }
 
-    public boolean isDescription() {
+    public String  getDescription() {
         return description;
     }
 
-    public boolean isGoogleMap() {
+    public String  getGoogleMap() {
         return googleMap;
     }
 
-    public boolean isGoogleAnalytics() {
+    public String  getGoogleAnalytics() {
         return googleAnalytics;
     }
 
-    public boolean isAddThis() {
+    public String  getAddThis() {
         return addThis;
     }
 
-    public boolean isProxyUrlForEditMode() {
+    public String  getProxyUrlForEditMode() {
         return proxyUrlForEditMode;
     }
 
