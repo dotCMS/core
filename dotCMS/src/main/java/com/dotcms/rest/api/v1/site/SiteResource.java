@@ -17,7 +17,6 @@ import com.dotcms.util.DotLambdas;
 import com.dotcms.util.I18NUtil;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.SitePaginator;
-import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -26,7 +25,6 @@ import com.dotmarketing.business.util.HostNameComparator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.SimpleScheduledTask;
 import com.dotmarketing.quartz.job.HostCopyOptions;
@@ -524,7 +522,7 @@ public class SiteResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response createNewHost(@Context final HttpServletRequest httpServletRequest,
                              @Context final HttpServletResponse httpServletResponse,
-                             final HostForm newHostForm)
+                             final SiteForm newHostForm)
             throws DotDataException, DotSecurityException, PortalException, SystemException, ParseException, SchedulerException, ClassNotFoundException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
@@ -606,7 +604,7 @@ public class SiteResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response copyHost(@Context final HttpServletRequest httpServletRequest,
                                   @Context final HttpServletResponse httpServletResponse,
-                                  final CopyHostForm copyHostForm)
+                                  final CopySiteForm copyHostForm)
             throws DotDataException, DotSecurityException, PortalException, SystemException, ParseException, SchedulerException, ClassNotFoundException {
 
         final User user = new WebResource.InitBuilder(this.webResource)

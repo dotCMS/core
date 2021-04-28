@@ -5,10 +5,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  *
- * Form to encapsulate the copy host
+ * Form to encapsulate the copy site
  * @author jsanca
  */
-public class CopyHostForm {
+public class CopySiteForm {
 
     private final String copyFromHostId;
     private final boolean copyAll;
@@ -18,10 +18,10 @@ public class CopyHostForm {
     private final boolean copyContentOnHost;
     private final boolean copyLinks;
     private final boolean copyHostVariables;
-    private final HostForm host;
+    private final SiteForm host;
 
     @JsonCreator
-    public CopyHostForm(
+    public CopySiteForm(
             @JsonProperty("copyFromHostId") final String copyFromHostId,
             @JsonProperty("copyAll") final boolean copyAll,
             @JsonProperty("copyTemplatesContainers") final boolean copyTemplatesContainers,
@@ -30,7 +30,7 @@ public class CopyHostForm {
             @JsonProperty("copyContentOnHost") final boolean copyContentOnHost,
             @JsonProperty("copyLinks") final boolean copyLinks,
             @JsonProperty("copyHostVariables") final boolean copyHostVariables,
-            @JsonProperty("host") final HostForm host) {
+            @JsonProperty("host") final SiteForm host) {
 
         this.copyFromHostId = copyFromHostId;
         this.copyAll = copyAll;
@@ -43,7 +43,7 @@ public class CopyHostForm {
         this.host = host;
     }
 
-    public HostForm getHost() {
+    public SiteForm getHost() {
         return host;
     }
 

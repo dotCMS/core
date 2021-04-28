@@ -4,10 +4,10 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Form to create a host
+ * Form to create a site
  * @author jsanca
  */
-public class HostForm {
+public class SiteForm {
 
     private final String aliases;
 
@@ -36,7 +36,7 @@ public class HostForm {
     private final long   languageId;
 
     @JsonCreator
-    public HostForm(@JsonProperty("aliases")    final String aliases,
+    public SiteForm(@JsonProperty("aliases")    final String aliases,
                     @JsonProperty("hostName")   final String hostName,
                     @JsonProperty("tagStorage") final String tagStorage,
                     @JsonProperty("hostThumbnail") final String hostThumbnail,
