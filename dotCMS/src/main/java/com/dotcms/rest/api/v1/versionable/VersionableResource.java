@@ -102,4 +102,44 @@ public class VersionableResource {
         return Response.ok(new ResponseEntityView("Version " + versionableInode + " deleted successfully")).build();
     }
 
+    /**
+     * Finds a specific inode version
+     * If the inode for the version does not exists, 404 is returned
+     * User executing the action needs to have View Permissions over the element
+     *
+     * @param versionableInode {@link String} Inode of the element
+     * @return {@link VersionableView} versionable view object
+     */
+    @GET
+    @Path("/{versionableInode}")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response findVersion(@Context final HttpServletRequest httpRequest,
+            @Context final HttpServletResponse httpResponse,
+            @PathParam("versionableInode") final String versionableInode)
+            throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
+        final User user     = initData.getUser();
+        final PageMode mode = PageMode.get(httpRequest);
+        Logger.debug(this, ()-> "Finding the version: " + versionableInode);
+
+        final String type = Try.of(()->InodeUtils.getAssetTypeFromDB(versionableInode)).getOrNull();
+
+        if (null == type) {
+            throw new DoesNotExistException("The versionable inode: " + versionableInode + " does not exists");
+        }
+
+            final VersionableView versionable = this.versionableHelper
+                    .getAssetTypeByVersionableFindVersionMap().getOrDefault(type,
+                            this.versionableHelper.getDefaultVersionableFindVersionStrategy())
+                    .findVersion(versionableInode, user, mode.respectAnonPerms);
+
+
+                return Response.ok(new ResponseEntityView(versionable)).build();
+    }
+
 }

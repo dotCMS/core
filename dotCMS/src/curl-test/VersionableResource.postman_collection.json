@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "e8026507-2d36-47d3-bbca-454a60ca7929",
+		"_postman_id": "07752d41-72ef-4d5c-ac2e-a494c8a372d2",
 		"name": "Versionable Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -573,6 +573,302 @@
 							"response": []
 						}
 					]
+				},
+				{
+					"name": "FindVersion",
+					"item": [
+						{
+							"name": "Create New Template Success Copy",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.test(\"body check\", function () {",
+											"    pm.expect(jsonData.entity.body).to.eql('This is the body');",
+											"});",
+											"",
+											"pm.test(\"friendlyName check\", function () {",
+											"    pm.expect(jsonData.entity.friendlyName).to.eql('This is a postman test description');",
+											"});",
+											"",
+											"pm.test(\"Title check\", function () {",
+											"    pm.expect(jsonData.entity.title).to.eql('PostMan Test');",
+											"});",
+											"",
+											"pm.collectionVariables.set(\"templateIdToFindVersion\", jsonData.entity.identifier);",
+											"pm.collectionVariables.set(\"templateInodeV1ToFindVersion\", jsonData.entity.inode);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"title\":\"PostMan Test\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/templates",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"templates"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Edit Template Success Copy",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.test(\"body check\", function () {",
+											"    pm.expect(jsonData.entity.body).to.eql('This is the body');",
+											"});",
+											"",
+											"pm.test(\"friendlyName check\", function () {",
+											"    pm.expect(jsonData.entity.friendlyName).to.eql('This is a postman test description');",
+											"});",
+											"",
+											"pm.test(\"Title check\", function () {",
+											"    pm.expect(jsonData.entity.title).to.eql('PostMan Test Changed');",
+											"});",
+											"",
+											"pm.test(\"Identifier check\", function () {",
+											"    pm.expect(jsonData.entity.identifier).to.eql(pm.variables.get(\"templateIdToFindVersion\"));",
+											"});",
+											"",
+											"pm.collectionVariables.set(\"templateInodeV2ToFindVersion\", jsonData.entity.inode);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"identifier\":\"{{templateIdToFindVersion}}\",\n    \"title\":\"PostMan Test Changed\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/templates",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"templates"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Versionable Success",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Title check\", function () {",
+											"    pm.expect(jsonData.entity.title).to.eql('PostMan Test');",
+											"});",
+											"",
+											"pm.test(\"Type check\", function () {",
+											"    pm.expect(jsonData.entity.versionType).to.eql('template');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/versionables/{{templateInodeV1ToFindVersion}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"versionables",
+										"{{templateInodeV1ToFindVersion}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Versionable Inode Does Not Exists NotFound",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"pm.test(\"Status code should be ok 404\", function () {",
+											"    pm.response.to.have.status(404);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/versionables/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"versionables",
+										"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+									]
+								}
+							},
+							"response": []
+						}
+					]
 				}
 			]
 		}
@@ -597,6 +893,18 @@
 		{
 			"key": "templateInodeV3ToDeleteVersion",
 			"value": "463f4dae-846c-4ead-8e60-7dddc1340eff"
+		},
+		{
+			"key": "templateIdToFindVersion",
+			"value": ""
+		},
+		{
+			"key": "templateInodeV1ToFindVersion",
+			"value": ""
+		},
+		{
+			"key": "templateInodeV2ToFindVersion",
+			"value": ""
 		}
 	]
 }

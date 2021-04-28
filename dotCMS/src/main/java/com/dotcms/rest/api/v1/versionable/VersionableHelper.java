@@ -40,6 +40,9 @@ public class VersionableHelper {
     private final Map<String, VersionableDeleteStrategy> assetTypeByVersionableDeleteMap;
     private final VersionableDeleteStrategy              defaultVersionableDeleteStrategy;
 
+    private final Map<String, VersionableFinderStrategy> assetTypeByVersionableFindVersionMap;
+    private final VersionableFinderStrategy defaultVersionableFindVersionStrategy;
+
     public VersionableHelper(final TemplateAPI        templateAPI,
             final ContentletAPI      contentletAPI,
             final PermissionAPI      permissionAPI,
@@ -61,6 +64,17 @@ public class VersionableHelper {
         //Default Method to Delete Version of an element
         this.defaultVersionableDeleteStrategy = this::deleteContentByInode;
 
+        //Map to call the Find Version method of an element using the type as the key
+        this.assetTypeByVersionableFindVersionMap =
+                new ImmutableMap.Builder<String, VersionableFinderStrategy>()
+                        .put(Inode.Type.CONTENTLET.getValue(), this::findContentletVersion)
+                        .put(Inode.Type.TEMPLATE.getValue(),   this::findTemplateVersion)
+                        .put(Inode.Type.CONTAINERS.getValue(), this::findContainerVersion)
+                        .put(Inode.Type.LINKS.getValue(),      this::findLinkVersion)
+                        .build();
+        //Default Method to Find Version of an element
+        this.defaultVersionableFindVersionStrategy = this::findContentletVersion;
+
     }
 
     public Map<String, VersionableDeleteStrategy> getAssetTypeByVersionableDeleteMap() {
@@ -69,6 +83,14 @@ public class VersionableHelper {
 
     public VersionableDeleteStrategy getDefaultVersionableDeleteStrategy() {
         return defaultVersionableDeleteStrategy;
+    }
+
+    public Map<String, VersionableFinderStrategy> getAssetTypeByVersionableFindVersionMap() {
+        return assetTypeByVersionableFindVersionMap;
+    }
+
+    public VersionableFinderStrategy getDefaultVersionableFindVersionStrategy() {
+        return defaultVersionableFindVersionStrategy;
     }
 
     // DELETE VERSION
@@ -167,5 +189,37 @@ public class VersionableHelper {
             throw new DotStateException("The versionable with Inode " + asset.getInode() + " that you are trying to delete is on Working or Live Status");
         }
     }
+
+    // FIND VERSION
+    /**
+     * This interface is just a general encapsulation to get version for all kind of types
+     */
+    @FunctionalInterface
+    interface VersionableFinderStrategy {
+
+        VersionableView findVersion(String inode, User user, boolean respectFrontendRoles)
+                throws DotDataException, DotSecurityException;
+    }
+
+    private VersionableView findTemplateVersion(final String inode, final User user, final boolean respectFrontEndRoles)
+            throws DotDataException, DotSecurityException {
+        return new VersionableView(this.templateAPI.find(inode, user, respectFrontEndRoles));
+    }
+
+    private VersionableView findContainerVersion(final String inode, final User user, final boolean respectFrontEndRoles)
+            throws DotSecurityException, DotDataException {
+        return new VersionableView(this.containerAPI.find(inode, user, respectFrontEndRoles));
+    }
+
+    private VersionableView findLinkVersion(final String inode, final User user, final boolean respectFrontEndRoles)
+            throws DotSecurityException, DotDataException {
+        return new VersionableView(LinkFactory.getLinkFromInode(inode, user.getUserId()));
+    }
+
+    private VersionableView findContentletVersion(final String inode, final User user, final boolean respectFrontEndRoles)
+            throws DotSecurityException, DotDataException {
+        return new VersionableView(contentletAPI.find(inode, user, respectFrontEndRoles));
+    }
+    //END FIND VERSION METHODS
 
 }
