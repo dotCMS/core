@@ -10,6 +10,7 @@ import com.dotcms.enterprise.cluster.action.NodeStatusServerAction;
 import com.dotcms.enterprise.cluster.action.ServerAction;
 import com.dotcms.enterprise.cluster.action.model.ServerActionBean;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -388,4 +389,31 @@ public class ClusterResource {
 
         return Response.ok().build();
     }
+    
+    
+    
+    /**
+     * sends a cluster ping which is recorded in the logs
+     * 
+     * @param request
+     * @param response
+     * @return
+     */
+    @GET
+    @Path("/test")
+    public Response testCluster(@Context HttpServletRequest request, @Context final HttpServletResponse response) {
+
+
+        new WebResource.InitBuilder(request, response).requiredPortlet(PortletID.CONFIGURATION.toString())
+                        .requiredBackendUser(true).init();
+
+
+        CacheLocator.getCacheAdministrator().getTransport().testCluster();
+
+
+
+        return Response.ok().build();
+    }
+    
+    
 }

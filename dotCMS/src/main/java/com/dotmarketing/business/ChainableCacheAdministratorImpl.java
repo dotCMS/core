@@ -9,7 +9,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.cluster.bean.Server;
@@ -35,10 +34,10 @@ import com.dotmarketing.util.WebKeys;
  */
 public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 
-    CacheTransport cacheTransport;
+    final CacheTransport cacheTransport;
 
     private CacheProviderAPI cacheProviderAPI;
-    private boolean useTransportChannel = false;
+    final private boolean useTransportChannel ;
 
     public static final String TEST_MESSAGE = "HELLO CLUSTER!";
     public static final String TEST_MESSAGE_NODE = "TESTNODE";
@@ -51,29 +50,15 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
         return cacheTransport;
     }
 
-    public void setTransport(CacheTransport transport) {
-
-        if (getTransport() != null) {
-            getTransport().shutdown();
-        }
-
-        this.cacheTransport = transport;
-    }
-
     public ChainableCacheAdministratorImpl() {
         this(null);
     }
 
     public ChainableCacheAdministratorImpl(CacheTransport transport) {
+        this.cacheTransport = transport;
+        this.useTransportChannel = transport !=null;
 
-        if (transport != null) {
-            useTransportChannel = true;
-            this.cacheTransport = transport;
-        } else {
-            useTransportChannel = false;
-        }
 
-        APILocator.getReindexQueueAPI();
     }
 
     public void initProviders() {
@@ -205,11 +190,12 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
         Logger.info(this, "***\t Prefer IPv4: " + (preferIPv4.equals("true") ? "enabled" : "disabled"));
         System.setProperty("java.net.preferIPv4Stack", preferIPv4);
 
-        if (cacheTransport != null && (cacheTransport.shouldReinit() || !cacheTransport.isInitialized())) {
-            cacheTransport.init(localServer);
-            useTransportChannel = true;
-        } else {
+        if(cacheTransport==null) {
             throw new CacheTransportException("No Cache transport implementation is defined");
+        }
+        if (cacheTransport.shouldReinit() || !cacheTransport.isInitialized()) {
+            cacheTransport.init(localServer);
+
         }
     }
 
@@ -378,7 +364,6 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 
         if (getTransport() != null) {
             getTransport().shutdown();
-            useTransportChannel = false;
         } else {
             throw new CacheTransportException("No Cache transport implementation is defined");
         }

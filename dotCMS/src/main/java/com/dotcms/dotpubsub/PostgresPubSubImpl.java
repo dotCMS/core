@@ -28,7 +28,7 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
 
 
     
-    final String serverId;
+    public final String serverId;
     private long messagesSent = 0;
     private long messagesRecieved = 0;
 
@@ -43,8 +43,10 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
 
 
     @Override
-    public DotPubSubProvider init() {
+    public DotPubSubProvider start() {
 
+        int numberOfServers = Try.of(()->APILocator.getServerAPI().getAliveServers().size()).getOrElse(1);
+        Logger.info(PostgresPubSubImpl.class,()->"Initing PostgresPubSub. Have servers:" + numberOfServers);
         listen();
         return this;
     }
@@ -80,22 +82,20 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
             if (event == null) {
                 return;
             }
-            Logger.info(PostgresPubSubImpl.class,
+            Logger.debug(PostgresPubSubImpl.class,
                             () -> "recieved event: " + processId + ", " + channelName + ", " + payload);
 
             lastEventIn=event;
 
-            topicMap.values().forEach(t -> t.notify(event));
+            matchingTopics.forEach(t -> { t.notify(event); t.incrementRecievedCounters(event);});
 
 
         }
 
         @Override
         public void closed() {
-            Logger.warn(this.getClass(), "Listener connection closed, reconnecting");
-
-
             if (state.get() != RUNSTATE.STOPPED) {
+                Logger.warn(this.getClass(), "PGNotificationListener connection closed, reconnecting");
                 listen();
             }
         }
@@ -104,10 +104,14 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
 
     public void listen() {
         if(connection!=null) {
+            Logger.info(this.getClass(), ()-> "PGNotificationListener already connected. Returning");
             return;
         }
-
-        Logger.info(this.getClass(), "Listener connecting...");
+        state.set(RUNSTATE.STARTED);
+        
+        
+        
+        Logger.info(this.getClass(), ()-> "PGNotificationListener connecting to pub/sub...");
         try {
 
             connection = DriverManager.getConnection(attributes.get().getDbUrl()).unwrap(PGConnection.class);
@@ -133,16 +137,14 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
      * This will automatically restart the connections
      */
     public void restart() {
-        this.state.set(RUNSTATE.STOPPED);
-        Try.run(() -> connection.close());
-        connection = null;
-        Logger.warn(getClass(), "waiting 1 second to retry postgres pub/sub connection");
+        Logger.warn(getClass(), "Restarting PGNotificationListener in 1 second to retry postgres pub/sub connection");
+        stop();
         Try.run(() -> Thread.sleep(1000));
         listen();
     }
 
 
-    public void shutdown() {
+    public void stop() {
         this.state.set(RUNSTATE.STOPPED);
         Try.run(() -> connection.close());
         connection = null;
@@ -159,7 +161,6 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
     @Override
     public DotPubSubProvider subscribe(DotPubSubTopic topic) {
         this.topicMap.putIfAbsent(topic.getKey(),topic);
-        restart();
         return this;
     }
 
@@ -170,14 +171,20 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
 
         final DotPubSubEvent eventOut = new DotPubSubEvent.Builder(eventIn).withOrigin(serverId).build();
 
-        Logger.info(getClass(), "sending  event:" + eventOut);
+        topic.incrementSentCounters(eventOut);
+        
+        
+        Logger.debug(getClass(), ()-> "sending  event:" + eventOut);
         try (Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
             // postgres pubsub cannot send more than 8000 bytes
             if (eventOut.toString().getBytes().length > 8000) {
                 throw new DotRuntimeException("Payload too large, must be under 8000b:" + eventOut.toString());
             }
-            new DotConnect().setSQL("SELECT pg_notify(?,?)").addParam(topic.getKey()).addParam(eventOut.toString())
-                            .loadResult(conn);
+            new DotConnect()
+                .setSQL("SELECT pg_notify(?,?)")
+                .addParam(topic.getKey())
+                .addParam(eventOut.toString())
+                .loadResult(conn);
             messagesSent++;
             lastEventOut=eventOut;
             return true;

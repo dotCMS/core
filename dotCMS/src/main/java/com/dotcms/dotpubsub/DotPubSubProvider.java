@@ -5,9 +5,9 @@ public interface DotPubSubProvider {
     
     DotPubSubProvider subscribe(DotPubSubTopic topic);
 
-    DotPubSubProvider init();
+    DotPubSubProvider start();
 
-    void shutdown();
+    void stop();
     
     boolean publish(DotPubSubTopic topic, DotPubSubEvent event);
     
