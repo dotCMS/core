@@ -4,9 +4,14 @@ import java.util.HashMap;
 import java.util.Map;
 import com.dotcms.dotpubsub.DotPubSubEvent;
 import com.dotcms.dotpubsub.DotPubSubTopic;
-import com.dotmarketing.business.APILocator;
 import com.google.common.collect.ImmutableMap;
 
+/**
+ * This Topic collects server responses when a request for all servers is sent out
+ * 
+ * @author will
+ *
+ */
 public class ServerResponseTopic implements DotPubSubTopic {
 
     private final Map<String, Boolean> serverResponses = new HashMap<>();
