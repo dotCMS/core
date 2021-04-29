@@ -238,7 +238,7 @@ public class ReindexThread {
                   Config.getIntProperty("REINDEX_THREAD_PAUSE_IN_MINUTES", 60) * 60000);
         Long restartTime = (Long) cache.get().get(REINDEX_THREAD_PAUSED);
         if(restartTime ==null || restartTime < System.currentTimeMillis()) {
-            unpause();
+            STATE = ThreadState.RUNNING;
         }
       }
     }

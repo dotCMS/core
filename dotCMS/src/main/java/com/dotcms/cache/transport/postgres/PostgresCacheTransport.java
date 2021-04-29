@@ -5,47 +5,48 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.dotcms.cache.transport.postgres.CachePubSubTopic.CacheEventType;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.dotpubsub.DotPubSubEvent;
-import com.dotcms.dotpubsub.DotPubSubTopic;
 import com.dotcms.dotpubsub.PostgresPubSubImpl;
+import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.business.cache.transport.CacheTransportException;
 import com.dotmarketing.util.Logger;
+import jersey.repackaged.com.google.common.collect.ImmutableMap;
 
 public class PostgresCacheTransport implements CacheTransport {
 
-    PostgresPubSubImpl pubsub;
+    final PostgresPubSubImpl pubsub;
 
-    DotPubSubTopic topic;
-
-    AtomicBoolean initialized = new AtomicBoolean(false);
+    final CachePubSubTopic topic;
+    final ServerResponseTopic serverResponseTopic;
+    final AtomicBoolean initialized = new AtomicBoolean(false);
 
 
     public PostgresCacheTransport() {
-
-        Logger.info(this.getClass(), "PostgresCacheTransport");
+        this.pubsub = new PostgresPubSubImpl();
+        this.topic = new CachePubSubTopic();
+        this.serverResponseTopic = new ServerResponseTopic();
+        Logger.debug(this.getClass(), "PostgresCacheTransport");
 
     }
 
 
 
     @Override
-    public void init(Server localServer) throws CacheTransportException {
+    public void init(final Server localServer) throws CacheTransportException {
 
-        Logger.info(this.getClass(), "calling init");
-        this.pubsub = new PostgresPubSubImpl();
+        Logger.info(this.getClass(), "initing PostgresCacheTransport");
 
-        this.topic = new CachePubSubTopic();
 
         this.pubsub.subscribe(topic);
-
-        this.pubsub.init();
-        initialized.set(true);
+        this.pubsub.subscribe(serverResponseTopic);
+        this.pubsub.start();
+        this.initialized.set(true);
     }
 
 
 
     @Override
-    public void send(String message) throws CacheTransportException {
+    public void send(final String message) throws CacheTransportException {
 
 
         final DotPubSubEvent event =
@@ -63,22 +64,42 @@ public class PostgresCacheTransport implements CacheTransport {
 
         final DotPubSubEvent event =
                         new DotPubSubEvent.Builder().withType(CachePubSubTopic.CacheEventType.PING.name()).build();
-        Logger.info(this.getClass(), "Testing cluster, sending PING from server:" + event.getOrigin() + ".");
+        Logger.info(this.getClass(), "Testing cluster" );
+        Logger.info(this.getClass(), "sending PING from server:" + this.pubsub.serverId + "...");
 
         this.pubsub.publish(this.topic, event);
 
     }
 
 
+    
+    
+    
+
 
     @Override
-    public Map<String, Boolean> validateCacheInCluster(String dateInMillis, int numberServers, int maxWaitSeconds)
+    public Map<String, Boolean> validateCacheInCluster(final String dateInMillis, final int numberServers, final int maxWaitSeconds)
                     throws CacheTransportException {
 
         final DotPubSubEvent event = new DotPubSubEvent.Builder()
                         .withType(CachePubSubTopic.CacheEventType.CLUSTER_REQ.name()).build();
+        
+        serverResponseTopic.resetMap();
+        
+        
         this.pubsub.publish(this.topic, event);
-        return null;
+        
+        final long waitUntil = System.currentTimeMillis() + (1000*maxWaitSeconds);
+        while(System.currentTimeMillis()< waitUntil) {
+            if(serverResponseTopic.size()>=numberServers) {
+                return serverResponseTopic.readResponses();
+            }
+            
+            
+        }
+        
+        
+        return ImmutableMap.of();
     }
 
 
@@ -86,7 +107,7 @@ public class PostgresCacheTransport implements CacheTransport {
     @Override
     public void shutdown() throws CacheTransportException {
         Logger.info(this.getClass(), "shutdown()");
-        this.pubsub.shutdown();
+        this.pubsub.stop();
     }
 
 
@@ -109,9 +130,57 @@ public class PostgresCacheTransport implements CacheTransport {
 
     @Override
     public CacheTransportInfo getInfo() {
-        return null;
-    }
+        
 
+        return new CacheTransportInfo(){
+            @Override
+            public String getClusterName() {
+                return ClusterFactory.getClusterId();
+            }
+
+            @Override
+            public String getAddress() {
+                return "n/a";
+            }
+
+            @Override
+            public int getPort() {
+                return -1;
+            }
+
+
+            @Override
+            public boolean isOpen() {
+                return true;
+            }
+
+            @Override
+            public int getNumberOfNodes() {
+                return serverResponseTopic.size()+1;
+            }
+
+
+            @Override
+            public long getReceivedBytes() {
+                return topic.bytesRecieved();
+            }
+
+            @Override
+            public long getReceivedMessages() {
+                return topic.messagesRecieved();
+            }
+
+            @Override
+            public long getSentBytes() {
+                return topic.bytesSent();
+            }
+
+            @Override
+            public long getSentMessages() {
+                return topic.messagesSent();
+            }
+        };
+    }
 
 
 }

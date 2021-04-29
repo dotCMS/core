@@ -1,7 +1,8 @@
 package com.dotmarketing.business.cache.transport;
 
 import com.dotcms.cluster.bean.Server;
-
+import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotmarketing.business.cache.transport.CacheTransport.CacheTransportInfo;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -50,10 +51,6 @@ public interface CacheTransport {
 
     boolean shouldReinit();
 
-    /**
-     * Returns stats about the cache transport
-     */
-    CacheTransportInfo getInfo();
 
     public interface CacheTransportInfo {
     	String getClusterName();
@@ -68,4 +65,63 @@ public interface CacheTransport {
     	long getSentBytes();
     	long getSentMessages();
     }
+    
+    
+    
+
+    default CacheTransportInfo getInfo() {
+        
+
+        return new CacheTransportInfo(){
+            @Override
+            public String getClusterName() {
+                return ClusterFactory.getClusterId();
+            }
+
+            @Override
+            public String getAddress() {
+                return "n/a";
+            }
+
+            @Override
+            public int getPort() {
+                return -1;
+            }
+
+
+            @Override
+            public boolean isOpen() {
+                return true;
+            }
+
+            @Override
+            public int getNumberOfNodes() {
+                return 1;
+            }
+
+
+            @Override
+            public long getReceivedBytes() {
+                return 0;
+            }
+
+            @Override
+            public long getReceivedMessages() {
+                return 0;
+            }
+
+            @Override
+            public long getSentBytes() {
+                return 0;
+            }
+
+            @Override
+            public long getSentMessages() {
+                return 0;
+            }
+        };
+    }
+    
+    
+    
 }
