@@ -11,7 +11,7 @@ public class PostgresPubSubImplTest {
     static PostgresPubSubImpl pubsub;
     static DotPubSubTopic topic;
     
-    static String serverId1 = UUIDGenerator.generateUuid();
+    static String fakeServerId = UUIDGenerator.generateUuid();
     
     
     
@@ -21,9 +21,9 @@ public class PostgresPubSubImplTest {
         IntegrationTestInitService.getInstance().init();
 
         
-        pubsub = new PostgresPubSubImpl(serverId1);
+        pubsub = new PostgresPubSubImpl(fakeServerId);
 
-        topic = new CachePubSubTopic();
+        topic = new CachePubSubTopic(fakeServerId);
 
         pubsub.subscribe(topic);
 
@@ -38,9 +38,10 @@ public class PostgresPubSubImplTest {
         DotPubSubEvent event = new DotPubSubEvent.Builder().withType(CachePubSubTopic.CacheEventType.PING.name()).build();
 
         
-        long messagesSent = pubsub.getMessagesSent();
+        long messagesSent = topic.messagesSent();
+        long messagesRecieved= topic.messagesRecieved();
         
-        long messagesRecieved= pubsub.getMessagesRecieved();
+        
         pubsub.publish(topic, event);
         
         assert(pubsub.lastEventOut.getType().equalsIgnoreCase("ping"));
@@ -51,9 +52,9 @@ public class PostgresPubSubImplTest {
         
         assert(pubsub.lastEventOut.getType().equalsIgnoreCase("pong"));
 
-        assert(messagesSent < pubsub.getMessagesSent());
-
-        assert(messagesRecieved < pubsub.getMessagesRecieved());
+        assert(messagesSent < topic.messagesSent());
+        assert(messagesRecieved < topic.messagesRecieved());
+        
         Thread.sleep(2000);
     }
     
@@ -64,16 +65,15 @@ public class PostgresPubSubImplTest {
         DotPubSubEvent event = new DotPubSubEvent.Builder().withType(CachePubSubTopic.CacheEventType.CLUSTER_REQ.name() ).build();
 
         
-        long messagesSent = pubsub.getMessagesSent();
+        long messagesSent = topic.messagesSent();
+        long messagesRecieved= topic.messagesRecieved();
         
-        long messagesRecieved= pubsub.getMessagesRecieved();
         pubsub.publish(topic, event);
         
         Thread.sleep(2000);
         
-        assert(messagesSent < pubsub.getMessagesSent());
-
-        assert(messagesRecieved < pubsub.getMessagesRecieved());
+        assert(messagesSent < topic.messagesSent());
+        assert(messagesRecieved < topic.messagesRecieved());
         
     }
     
@@ -84,25 +84,26 @@ public class PostgresPubSubImplTest {
         DotPubSubEvent event = new DotPubSubEvent.Builder().withType(CachePubSubTopic.CacheEventType.PING.name() ).build();
 
         
-        long messagesSent = pubsub.getMessagesSent();
-        
-        long messagesRecieved= pubsub.getMessagesRecieved();
+        long messagesSent = topic.messagesSent();
+        long messagesRecieved= topic.messagesRecieved();
         pubsub.publish(topic, event);
         
         
         Thread.sleep(2000);
         
-        assert(messagesSent < pubsub.getMessagesSent());
-
-        assert(messagesRecieved < pubsub.getMessagesRecieved());
+        assert(messagesSent < topic.messagesSent());
+        assert(messagesRecieved < topic.messagesRecieved());
+        
+        messagesSent = topic.messagesSent();
+        messagesRecieved= topic.messagesRecieved();
         
         pubsub.restart();
         
         pubsub.publish(topic, event);
         Thread.sleep(2000);
-        assert(messagesSent < pubsub.getMessagesSent());
-
-        assert(messagesRecieved < pubsub.getMessagesRecieved());
+        
+        assert(messagesSent < topic.messagesSent());
+        assert(messagesRecieved < topic.messagesRecieved());
         
     }
     

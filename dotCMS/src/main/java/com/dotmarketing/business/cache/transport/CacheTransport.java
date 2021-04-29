@@ -1,10 +1,10 @@
 package com.dotmarketing.business.cache.transport;
 
+import java.util.Map;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.enterprise.cluster.ClusterFactory;
-import com.dotmarketing.business.cache.transport.CacheTransport.CacheTransportInfo;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
+import com.dotmarketing.business.APILocator;
+import io.vavr.control.Try;
 
 /**
  * @author Jonathan Gamba
@@ -40,6 +40,16 @@ public interface CacheTransport {
      */
     Map<String, Boolean> validateCacheInCluster ( String dateInMillis, int numberServers, int maxWaitSeconds ) throws CacheTransportException;
 
+    
+    
+    default Map<String, Boolean> validateCacheInCluster ( int maxWaitSeconds ) {
+        int lookingForServers = Try.of(()->APILocator.getServerAPI().getAliveServers().size()-1).getOrElse(0);
+        return validateCacheInCluster(null,lookingForServers,2);
+    };
+
+    
+    
+    
     /**
      * Disconnects and closes the channel
      *
@@ -51,6 +61,11 @@ public interface CacheTransport {
 
     boolean shouldReinit();
 
+    
+    default boolean requiresAutowiring() {
+        return true;
+    }
+    
 
     public interface CacheTransportInfo {
     	String getClusterName();

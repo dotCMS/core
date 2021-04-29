@@ -81,7 +81,11 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 
         String cacheProtocol, bindAddr, bindPort, cacheTCPInitialHosts, mCastAddr, mCastPort, preferIPv4;
 
-        if (ClusterUtils.isTransportAutoWire()) {
+
+        
+        
+        
+        if (ClusterUtils.isTransportAutoWire() && cacheTransport.requiresAutowiring()) {
             Logger.info(this, "Using automatic port placement as AUTOWIRE_CLUSTER_TRANSPORT is ON");
 
             String bindAddressFromProperty = Config.getStringProperty("CACHE_BINDADDRESS", null);
@@ -146,8 +150,41 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
             mCastAddr = Config.getStringProperty("CACHE_MULTICAST_ADDRESS", "228.10.10.10");
             mCastPort = Config.getStringProperty("CACHE_MULTICAST_PORT", "45588");
             preferIPv4 = Config.getStringProperty("CACHE_FORCE_IPV4", "true");
+            
+            if (UtilMethods.isSet(bindAddr)) {
+                Logger.info(this, "***\t Using " + bindAddr + " as the bindaddress");
+
+                Config.setProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_BIND_ADDRESS, bindAddr);
+            } else {
+                Logger.info(this, "***\t bindaddress is not set");
+            }
+
+            if (UtilMethods.isSet(bindPort)) {
+                Logger.info(this, "***\t Using " + bindPort + " as the bindport");
+
+                Config.setProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_BIND_PORT, bindPort);
+            } else {
+                Logger.info(this, "***\t bindport is not set");
+            }
+
+            if (cacheProtocol.equals("tcp")) {
+                Logger.info(this, "***\t Setting up TCP initial hosts: " + cacheTCPInitialHosts);
+
+                Config.setProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_TCP_INITIAL_HOSTS, cacheTCPInitialHosts);
+            } else if (cacheProtocol.equals("udp")) {
+                Logger.info(this, "***\t Setting up UDP address and port: " + mCastAddr + ":" + mCastPort);
+
+                Config.setProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_UDP_MCAST_ADDRESS, mCastAddr);
+                Config.setProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_UDP_MCAST_PORT, mCastPort);
+            } else {
+                Logger.info(this, "Not Setting up any Properties as no protocal was found");
+            }
+            
+            
+            
         } else {
-            Logger.info(this, "Using manual port placement as AUTOWIRE_CLUSTER_TRANSPORT is OFF");
+            
+            
 
             cacheProtocol = Config.getStringProperty("CACHE_PROTOCOL", "tcp");
             bindAddr = Config.getStringProperty("CACHE_BINDADDRESS", null);
@@ -158,34 +195,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
             preferIPv4 = Config.getStringProperty("CACHE_FORCE_IPV4", "true");
         }
 
-        if (UtilMethods.isSet(bindAddr)) {
-            Logger.info(this, "***\t Using " + bindAddr + " as the bindaddress");
-
-            Config.setProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_BIND_ADDRESS, bindAddr);
-        } else {
-            Logger.info(this, "***\t bindaddress is not set");
-        }
-
-        if (UtilMethods.isSet(bindPort)) {
-            Logger.info(this, "***\t Using " + bindPort + " as the bindport");
-
-            Config.setProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_BIND_PORT, bindPort);
-        } else {
-            Logger.info(this, "***\t bindport is not set");
-        }
-
-        if (cacheProtocol.equals("tcp")) {
-            Logger.info(this, "***\t Setting up TCP initial hosts: " + cacheTCPInitialHosts);
-
-            Config.setProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_TCP_INITIAL_HOSTS, cacheTCPInitialHosts);
-        } else if (cacheProtocol.equals("udp")) {
-            Logger.info(this, "***\t Setting up UDP address and port: " + mCastAddr + ":" + mCastPort);
-
-            Config.setProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_UDP_MCAST_ADDRESS, mCastAddr);
-            Config.setProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_UDP_MCAST_PORT, mCastPort);
-        } else {
-            Logger.info(this, "Not Setting up any Properties as no protocal was found");
-        }
+        
 
         Logger.info(this, "***\t Prefer IPv4: " + (preferIPv4.equals("true") ? "enabled" : "disabled"));
         System.setProperty("java.net.preferIPv4Stack", preferIPv4);
