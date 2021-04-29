@@ -133,15 +133,16 @@
 		var <%= relationJsName %>_Contents = new Array ();
 
          function getCurrentLanguageIndex(o) {
-             var languageName = document.getElementById("langcombo").value.split(' ')[0].toLowerCase();
-             var index = 0;
-             for (var sibIndex = 0; sibIndex < o['siblings'].length ; sibIndex++) {
-                 if (o['siblings'][sibIndex]['langName'].toLowerCase() === languageName) {
-                     index = sibIndex;
-                 }
-             }
+              var index = 0;
 
-             return index;
+              for (var sibIndex = 0; sibIndex < o['siblings'].length ; sibIndex++) {
+                  if (o['langCode'].toLowerCase() === o['siblings'][sibIndex]['langCode'].toLowerCase()) {
+                      index = sibIndex;
+                      break;
+                  }
+              }
+
+              return index;
          }
 
 		//Function used to render language id
@@ -711,6 +712,5 @@
 	     contentletLanguageId="<%=contentlet.getLanguageId() %>"
 	     dialogCounter="<%= randomNumber %>">
 	 </div>
-
 
 

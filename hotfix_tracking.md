@@ -145,3 +145,5 @@ This maintenance release includes the following code fixes:
 70. https://github.com/dotCMS/core/issues/20041 : Time machine is causing an error with the index
 
 71. https://github.com/dotCMS/core/issues/20136 : [Push Publish] : Selecting the REMOVE option in Push Publishing modal is not working
+
+72. https://github.com/dotCMS/core/issues/20197 : Cannot relate content to a macrolanguage if there is the same language with a country code
