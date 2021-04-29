@@ -126,3 +126,5 @@ This release includes the following code fixes:
 60. https://github.com/dotCMS/core/issues/20041 : Time machine is causing an error with the index
 
 61. https://github.com/dotCMS/core/issues/19813 : Allow mail session to be configured via environmental variables
+
+62. https://github.com/dotCMS/core/issues/20197 : Cannot relate content to a macrolanguage if there is the same language with a country code
