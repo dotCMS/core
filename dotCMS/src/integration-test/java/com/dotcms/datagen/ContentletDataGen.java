@@ -1,13 +1,15 @@
 package com.dotcms.datagen;
 
-import com.dotcms.business.WrapInTransaction;
+import static com.dotmarketing.business.ModDateTestUtil.updateContentletVersionDate;import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -20,6 +22,7 @@ import com.dotmarketing.util.UtilMethods;
 import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +44,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
     protected List<Category> categories;
     private boolean skipValidation = false;
     private IndexPolicy policy = null;
+    private Date modDate;
 
     public ContentletDataGen(final ContentType contentType) {
         this(contentType.id());
@@ -164,6 +168,11 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
         if(skipValidation){
             contentlet.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
         }
+
+        if (modDate != null) {
+            contentlet.setProperty("_use_mod_date", modDate);
+        }
+
         return contentlet;
     }
 
@@ -191,7 +200,13 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
      */
     @Override
     public Contentlet persist(Contentlet contentlet) {
-        return checkin(contentlet, null != policy?policy:IndexPolicy.FORCE);
+        final Contentlet checkin = checkin(contentlet, null != policy ? policy : IndexPolicy.FORCE);
+
+        if (modDate != null) {
+            updateContentletVersionDate(checkin, modDate);
+        }
+
+        return checkin;
     }
 
     /**
@@ -201,7 +216,13 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
      * @return
      */
     public Contentlet persist(final Contentlet contentlet, final List<Category> categories) {
-        return checkin(contentlet, categories);
+        final Contentlet checkin = checkin(contentlet, categories);
+
+        if (modDate != null) {
+            updateContentletVersionDate(checkin, modDate);
+        }
+
+        return checkin;
     }
 
     /**
@@ -270,6 +291,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
             contentlet.setIndexPolicy(policy);
             contentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
             return contentletAPI.checkin(contentlet, user, false);
+
         } catch (DotContentletStateException | IllegalArgumentException | DotDataException | DotSecurityException e) {
             throw new RuntimeException(e);
         }
@@ -383,6 +405,11 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
 
     public ContentletDataGen setPolicy(final IndexPolicy policy) {
         this.policy = policy;
+        return this;
+    }
+
+    public ContentletDataGen modeDate(final Date modDate) {
+        this.modDate = modDate;
         return this;
     }
 }
