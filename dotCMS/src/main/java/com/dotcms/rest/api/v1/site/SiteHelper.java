@@ -176,7 +176,7 @@ public class SiteHelper implements Serializable {
 	 * @throws DotDataException if one is thrown when the sites are search
 	 */
 	public Host getSite(User user, String siteId) throws DotSecurityException, DotDataException {
-		Host site = this.hostAPI.find(siteId, user, Boolean.TRUE);
+		final Host site = this.hostAPI.find(siteId, user, Boolean.TRUE);
 		return site;
 	}
 
@@ -192,6 +192,35 @@ public class SiteHelper implements Serializable {
 	public Host getSiteNoFrontEndRoles(final User user, final String siteId) throws DotSecurityException, DotDataException {
 
 		final Host site = this.hostAPI.find(siteId, user, Boolean.FALSE);
+		return site;
+	}
+
+	/**
+	 * Return a site by user and site name
+	 *
+	 * @param user User to filter the host to return
+	 * @param siteName name to filter the host to return
+	 * @return host that the given user has permissions and with id equal to hostId, if any exists then return null
+	 * @throws DotSecurityException if one is thrown when the sites are search
+	 * @throws DotDataException if one is thrown when the sites are search
+	 */
+	public Host getSiteByName(User user, String siteName) throws DotSecurityException, DotDataException {
+		final Host site = this.hostAPI.findByName(siteName, user, Boolean.TRUE);
+		return site;
+	}
+
+	/**
+	 * Return a site by user and site name, respect front roles = false
+	 *
+	 * @param user User to filter the host to return
+	 * @param siteName name to filter the host to return
+	 * @return host that the given user has permissions and with id equal to hostId, if any exists then return null
+	 * @throws DotSecurityException if one is thrown when the sites are search
+	 * @throws DotDataException if one is thrown when the sites are search
+	 */
+	public Host getSiteByNameNoFrontEndRoles(final User user, final String siteName) throws DotSecurityException, DotDataException {
+
+		final Host site = this.hostAPI.findByName(siteName, user, Boolean.FALSE);
 		return site;
 	}
 

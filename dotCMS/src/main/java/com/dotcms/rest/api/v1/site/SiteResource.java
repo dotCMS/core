@@ -598,7 +598,7 @@ public class SiteResource implements Serializable {
      * @throws SystemException
      */
     @PUT
-    @Path("_makedefault/{hostId}")
+    @Path("/_makedefault/{hostId}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -641,7 +641,7 @@ public class SiteResource implements Serializable {
      * @throws SystemException
      */
     @GET
-    @Path("_setup_progress/{hostId}")
+    @Path("/_setup_progress/{hostId}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -657,7 +657,7 @@ public class SiteResource implements Serializable {
     }
 
     @GET
-    @Path("_setup_progress/{hostId}")
+    @Path("/{hostId}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -681,6 +681,42 @@ public class SiteResource implements Serializable {
 
         if (null == host) {
             throw new IllegalArgumentException("Site: " + hostId + " does not exists");
+        }
+
+        return Response.ok(new ResponseEntityView(host)).build();
+    }
+
+    @POST
+    @Path("/_byname")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response findHostByName(@Context final HttpServletRequest httpServletRequest,
+                                         @Context final HttpServletResponse httpServletResponse,
+                                         @Suspended final AsyncResponse asyncResponse,
+                                         final SearchSiteByNameForm searchSiteByNameForm) throws DotDataException, DotSecurityException, PortalException, SystemException {
+
+        final User user = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(httpServletRequest, httpServletResponse)
+                .requiredBackendUser(true)
+                .rejectWhenNoUser(true)
+                .requireLicense(true)
+                .init().getUser();
+
+        final String hostname = searchSiteByNameForm.getSitename();
+
+        if (null == hostname) {
+            throw new IllegalArgumentException("Sitename can not be null");
+        }
+
+        Logger.debug(this, ()-> "Finding the site by name: " + hostname);
+
+        final PageMode      pageMode      = PageMode.get(httpServletRequest);
+        final Host host = pageMode.respectAnonPerms? this.siteHelper.getSiteByName(user, hostname):
+                this.siteHelper.getSiteByNameNoFrontEndRoles(user, hostname);
+
+        if (null == host) {
+            throw new IllegalArgumentException("Site: " + hostname + " does not exists");
         }
 
         return Response.ok(new ResponseEntityView(host)).build();
