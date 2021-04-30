@@ -43,9 +43,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -53,6 +55,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -65,7 +69,7 @@ import org.quartz.SimpleTrigger;
 
 /**
  * This resource provides all the different end-points associated to information
- * and actions that the front-end can perform on the Site Browser page.
+ * and actions that the front-end can perform on the Sites page.
  *
  * @author jsanca
  */
@@ -307,7 +311,7 @@ public class SiteResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Response findAllHostThumbnails(@Context final HttpServletRequest httpServletRequest,
+    public Response findAllSiteThumbnails(@Context final HttpServletRequest httpServletRequest,
                                 @Context final HttpServletResponse httpServletResponse) throws PortalException, SystemException, DotDataException, DotSecurityException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
@@ -322,14 +326,14 @@ public class SiteResource implements Serializable {
         final List<Host> hosts            = this.siteHelper.findAll(user, respectFrontend);
         final HostNameComparator hostNameComparator = new HostNameComparator();
 
-        Logger.debug(this, ()-> "Finding all host thumbnails...");
+        Logger.debug(this, ()-> "Finding all site thumbnails...");
 
         return Response.ok(new ResponseEntityView(hosts.stream().filter(DotLambdas.not(Host::isSystemHost))
-                .sorted(hostNameComparator).map(host -> this.toHostMap(user, contentletAPI, host))
+                .sorted(hostNameComparator).map(host -> this.toSiteMap(user, contentletAPI, host))
                 .collect(Collectors.toList()))).build();
     }
 
-    private Map<String, Object> toHostMap(final User user,
+    private Map<String, Object> toSiteMap(final User user,
                                           final ContentletAPI contentletAPI, final Host host) {
 
         final Map<String, Object> thumbInfo = new HashMap<>();
@@ -355,25 +359,29 @@ public class SiteResource implements Serializable {
      * @throws SystemException
      */
     @PUT
-    @Path("/publish")
+    @Path("/_publish/{hostId}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Response publishHost(@Context final HttpServletRequest httpServletRequest,
-                            @Context final HttpServletResponse httpServletResponse,
-                            final String hostId) throws DotDataException, DotSecurityException, PortalException, SystemException {
+    public Response publishSite(@Context final HttpServletRequest httpServletRequest,
+                                @Context final HttpServletResponse httpServletResponse,
+                                @PathParam("hostId") final String hostId) throws DotDataException, DotSecurityException, PortalException, SystemException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
+                .requireLicense(true)
                 .init().getUser();
 
-        Logger.debug(this, ()-> "Publishing host: " + hostId);
+        Logger.debug(this, ()-> "Publishing site: " + hostId);
 
         final PageMode      pageMode      = PageMode.get(httpServletRequest);
         final Host host = pageMode.respectAnonPerms? this.siteHelper.getSite(user, hostId):
                 this.siteHelper.getSiteNoFrontEndRoles(user, hostId);
+        if (null == host) {
+            throw new IllegalArgumentException("Site: " + hostId + " does not exists");
+        }
         this.siteHelper.publish(host, user, pageMode.respectAnonPerms);
         return Response.ok(new ResponseEntityView(host)).build();
     }
@@ -390,25 +398,31 @@ public class SiteResource implements Serializable {
      * @throws SystemException
      */
     @PUT
-    @Path("/unpublish")
+    @Path("/_unpublish/{hostId}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Response unpublishHost(@Context final HttpServletRequest httpServletRequest,
-                                @Context final HttpServletResponse httpServletResponse,
-                                final String hostId) throws DotDataException, DotSecurityException, PortalException, SystemException {
+    public Response unpublishSite(@Context final HttpServletRequest httpServletRequest,
+                                  @Context final HttpServletResponse httpServletResponse,
+                                  @PathParam("hostId") final String hostId) throws DotDataException, DotSecurityException, PortalException, SystemException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
+                .requireLicense(true)
                 .init().getUser();
 
-        Logger.debug(this, ()-> "Unpublishing host: " + hostId);
+        Logger.debug(this, ()-> "Unpublishing site: " + hostId);
 
         final PageMode      pageMode      = PageMode.get(httpServletRequest);
         final Host host = pageMode.respectAnonPerms? this.siteHelper.getSite(user, hostId):
                 this.siteHelper.getSiteNoFrontEndRoles(user, hostId);
+
+        if (null == host) {
+            throw new IllegalArgumentException("Site: " + hostId + " does not exists");
+        }
+
         this.siteHelper.unpublish(host, user, pageMode.respectAnonPerms);
         return Response.ok(new ResponseEntityView(host)).build();
     }
@@ -425,28 +439,34 @@ public class SiteResource implements Serializable {
      * @throws SystemException
      */
     @PUT
-    @Path("/archive")
+    @Path("/_archive/{hostId}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Response archiveHost(@Context final HttpServletRequest httpServletRequest,
-                            @Context final HttpServletResponse httpServletResponse,
-                            final String hostId) throws DotDataException, DotSecurityException, PortalException, SystemException {
+    public Response archiveSite(@Context final HttpServletRequest httpServletRequest,
+                                @Context final HttpServletResponse httpServletResponse,
+                                @PathParam("hostId")  final String hostId) throws DotDataException, DotSecurityException, PortalException, SystemException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
+                .requireLicense(true)
                 .init().getUser();
 
-        Logger.debug(this, ()-> "Archiving host: " + hostId);
+        Logger.debug(this, ()-> "Archiving site: " + hostId);
 
         final PageMode      pageMode      = PageMode.get(httpServletRequest);
         final Host host = pageMode.respectAnonPerms? this.siteHelper.getSite(user, hostId):
                 this.siteHelper.getSiteNoFrontEndRoles(user, hostId);
+
+        if (null == host) {
+            throw new IllegalArgumentException("Site: " + hostId + " does not exists");
+        }
+
         if(host.isDefault()) {
 
-            throw new DotStateException("the default host can't be archived");
+            throw new DotStateException("the default site can't be archived");
         }
 
         this.archive(user, pageMode, host);
@@ -478,27 +498,191 @@ public class SiteResource implements Serializable {
      * @throws SystemException
      */
     @PUT
-    @Path("/unarchive")
+    @Path("/_unarchive/{hostId}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Response unarchiveHost(@Context final HttpServletRequest httpServletRequest,
-                              @Context final HttpServletResponse httpServletResponse,
-                              final String hostId) throws DotDataException, DotSecurityException, PortalException, SystemException {
+    public Response unarchiveSite(@Context final HttpServletRequest httpServletRequest,
+                                  @Context final HttpServletResponse httpServletResponse,
+                                  @PathParam("hostId")  final String hostId) throws DotDataException, DotSecurityException, PortalException, SystemException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
+                .requireLicense(true)
                 .init().getUser();
 
-        Logger.debug(this, ()-> "unarchiving host: " + hostId);
+        Logger.debug(this, ()-> "unarchiving site: " + hostId);
 
         final PageMode      pageMode      = PageMode.get(httpServletRequest);
         final Host host = pageMode.respectAnonPerms? this.siteHelper.getSite(user, hostId):
                 this.siteHelper.getSiteNoFrontEndRoles(user, hostId);
 
+        if (null == host) {
+            throw new IllegalArgumentException("Site: " + hostId + " does not exists");
+        }
+
         this.siteHelper.unarchive(host, user, pageMode.respectAnonPerms);
+        return Response.ok(new ResponseEntityView(host)).build();
+    }
+
+    /**
+     * Delete a host
+     * @param httpServletRequest
+     * @param httpServletResponse
+     * @param hostId
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws PortalException
+     * @throws SystemException
+     */
+    @DELETE
+    @Path("/{hostId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public void deleteSite(@Context final HttpServletRequest httpServletRequest,
+                                @Context final HttpServletResponse httpServletResponse,
+                                @Suspended final AsyncResponse asyncResponse,
+                                @PathParam("hostId")  final String hostId) throws DotDataException, DotSecurityException, PortalException, SystemException {
+
+        final User user = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(httpServletRequest, httpServletResponse)
+                .requiredBackendUser(true)
+                .rejectWhenNoUser(true)
+                .requireLicense(true)
+                .init().getUser();
+
+        Logger.debug(this, ()-> "deleting the site: " + hostId);
+
+        final PageMode      pageMode      = PageMode.get(httpServletRequest);
+        final boolean respectFrontendRoles = pageMode.respectAnonPerms;
+        final Host host = pageMode.respectAnonPerms? this.siteHelper.getSite(user, hostId):
+                this.siteHelper.getSiteNoFrontEndRoles(user, hostId);
+
+        if (null == host) {
+            throw new IllegalArgumentException("Site: " + hostId + " does not exists");
+        }
+
+        if(host.isDefault()) {
+
+            throw new DotStateException("the default site can't be deleted");
+        }
+
+        final Future<Boolean> deleteHostResult = this.siteHelper.delete(host, user, respectFrontendRoles);
+        if (null == deleteHostResult) {
+
+            throw new DotStateException("the Site: " + hostId + " couldn't be deleted");
+        } else {
+
+            try {
+                asyncResponse.resume(new ResponseEntityView(deleteHostResult.get()));
+            } catch (Exception e) {
+                asyncResponse.resume(e);
+            }
+        }
+    }
+
+
+    /**
+     * Make a host as a default
+     * @param httpServletRequest
+     * @param httpServletResponse
+     * @param hostId
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws PortalException
+     * @throws SystemException
+     */
+    @PUT
+    @Path("_makedefault/{hostId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response makeDefault(@Context final HttpServletRequest httpServletRequest,
+                           @Context final HttpServletResponse httpServletResponse,
+                           @Suspended final AsyncResponse asyncResponse,
+                           @PathParam("hostId")  final String hostId) throws DotDataException, DotSecurityException, PortalException, SystemException {
+
+        final User user = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(httpServletRequest, httpServletResponse)
+                .requiredBackendUser(true)
+                .rejectWhenNoUser(true)
+                .requireLicense(true)
+                .init().getUser();
+
+        Logger.debug(this, ()-> "making the site: " + hostId + " as a default");
+
+        final PageMode      pageMode      = PageMode.get(httpServletRequest);
+        final boolean respectFrontendRoles = pageMode.respectAnonPerms;
+        final Host host = pageMode.respectAnonPerms? this.siteHelper.getSite(user, hostId):
+                this.siteHelper.getSiteNoFrontEndRoles(user, hostId);
+
+        if (null == host) {
+            throw new IllegalArgumentException("Site: " + hostId + " does not exists");
+        }
+
+        return Response.ok(new ResponseEntityView(
+                this.siteHelper.makeDefault(host, user, respectFrontendRoles))).build();
+    }
+
+    /**
+     * Get the host setup progress
+     * @param httpServletRequest
+     * @param httpServletResponse
+     * @param hostId
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws PortalException
+     * @throws SystemException
+     */
+    @GET
+    @Path("_setup_progress/{hostId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response getSiteSetupProgress(@Context final HttpServletRequest httpServletRequest,
+                                @Context final HttpServletResponse httpServletResponse,
+                                @Suspended final AsyncResponse asyncResponse,
+                                @PathParam("hostId")  final String hostId) throws DotDataException, DotSecurityException, PortalException, SystemException {
+
+        Logger.debug(this, ()-> "Getting the site : " + hostId + " as a default");
+
+        return Response.ok(new ResponseEntityView(
+                QuartzUtils.getTaskProgress("setup-host-" + hostId, "setup-host-group"))).build();
+    }
+
+    @GET
+    @Path("_setup_progress/{hostId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response findHostByIdentifier(@Context final HttpServletRequest httpServletRequest,
+                                         @Context final HttpServletResponse httpServletResponse,
+                                         @Suspended final AsyncResponse asyncResponse,
+                                         @PathParam("hostId")  final String hostId) throws DotDataException, DotSecurityException, PortalException, SystemException {
+
+        final User user = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(httpServletRequest, httpServletResponse)
+                .requiredBackendUser(true)
+                .rejectWhenNoUser(true)
+                .requireLicense(true)
+                .init().getUser();
+
+        Logger.debug(this, ()-> "Finding the site: " + hostId);
+
+        final PageMode      pageMode      = PageMode.get(httpServletRequest);
+        final Host host = pageMode.respectAnonPerms? this.siteHelper.getSite(user, hostId):
+                this.siteHelper.getSiteNoFrontEndRoles(user, hostId);
+
+        if (null == host) {
+            throw new IllegalArgumentException("Site: " + hostId + " does not exists");
+        }
+
         return Response.ok(new ResponseEntityView(host)).build();
     }
 
@@ -540,7 +724,7 @@ public class SiteResource implements Serializable {
             throw new IllegalArgumentException("Hostname can not be Null");
         }
 
-        Logger.debug(this, ()->"Creating the host: " + newHostForm);
+        Logger.debug(this, ()->"Creating the site: " + newHostForm);
         newHost.setHostname(newHostForm.getHostName());
         if (UtilMethods.isSet(newHostForm.getHostThumbnail())) {
 
@@ -598,7 +782,7 @@ public class SiteResource implements Serializable {
     }
 
     @PUT
-    @Path("/copy")
+    @Path("/_copy")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -621,8 +805,8 @@ public class SiteResource implements Serializable {
         final Response response  = this.createNewHost(httpServletRequest, httpServletResponse, copyHostForm.getHost());
         final Host newHost       = (Host)ResponseEntityView.class.cast(response.getEntity()).getEntity();
 
-        Logger.debug(this, ()-> "copying host from: " + hostId);
-        Logger.debug(this, ()-> "copying host with values: " + copyHostForm);
+        Logger.debug(this, ()-> "copying site from: " + hostId);
+        Logger.debug(this, ()-> "copying site with values: " + copyHostForm);
 
         final HostCopyOptions hostCopyOptions = copyHostForm.isCopyAll()?
                     new HostCopyOptions(true):

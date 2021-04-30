@@ -120,7 +120,7 @@ public class SiteForm {
 
     @Override
     public String toString() {
-        return "HostForm{" +
+        return "SiteForm{" +
                 "aliases='" + aliases + '\'' +
                 ", hostName='" + hostName + '\'' +
                 ", tagStorage='" + tagStorage + '\'' +

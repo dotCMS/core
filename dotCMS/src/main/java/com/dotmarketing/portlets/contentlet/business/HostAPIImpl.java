@@ -45,6 +45,7 @@ import org.apache.commons.lang.StringUtils;
 
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
@@ -988,6 +989,7 @@ public class HostAPIImpl implements HostAPI {
         return hosts;
     }
 
+    @WrapInTransaction
     @Override
     public void publish(Host host, User user, boolean respectFrontendRoles) throws DotContentletStateException, DotDataException, DotSecurityException {
 
@@ -1003,6 +1005,7 @@ public class HostAPIImpl implements HostAPI {
 
     }
 
+    @WrapInTransaction
     @Override
     public void unpublish(Host host, User user, boolean respectFrontendRoles) throws DotContentletStateException, DotDataException, DotSecurityException {
         if(host != null){

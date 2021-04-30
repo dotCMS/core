@@ -81,7 +81,7 @@ public class CopySiteForm {
 
     @Override
     public String toString() {
-        return "CopyHostForm{" +
+        return "CopySiteForm{" +
                 "copyFromHostId='" + copyFromHostId + '\'' +
                 ", copyAll=" + copyAll +
                 ", copyTemplatesContainers=" + copyTemplatesContainers +

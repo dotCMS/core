@@ -1,7 +1,7 @@
 package com.dotcms.rest.api.v1.site;
 
-import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.ErrorEntity;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -19,6 +19,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.io.Serializable;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.Future;
 
 import static com.dotmarketing.util.Logger.debug;
 import static com.dotmarketing.util.Logger.error;
@@ -76,7 +78,6 @@ public class SiteHelper implements Serializable {
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
-	@WrapInTransaction
 	public void unlock(final Host host, final User user, final boolean respectAnonPerms) throws DotSecurityException, DotDataException {
 
 		APILocator.getContentletAPI().unlock(host, user, respectAnonPerms);
@@ -90,7 +91,6 @@ public class SiteHelper implements Serializable {
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
-	@WrapInTransaction
 	public void archive(final Host host, final User user, final boolean respectAnonPerms) throws DotSecurityException, DotDataException {
 
 		hostAPI.archive(host, user, respectAnonPerms);
@@ -104,7 +104,6 @@ public class SiteHelper implements Serializable {
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
-	@WrapInTransaction
 	public void unarchive(final Host host, final User user, final boolean respectAnonPerms) throws DotSecurityException, DotDataException {
 
 		hostAPI.unarchive(host, user, respectAnonPerms);
@@ -119,13 +118,24 @@ public class SiteHelper implements Serializable {
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
-	@WrapInTransaction
 	public Host save(final Host host, final User user, final boolean respectAnonPerms) throws DotSecurityException, DotDataException {
 
 		return APILocator.getHostAPI().save(host, user, respectAnonPerms);
 	}
 
-    private static class SingletonHolder {
+	public Future<Boolean> delete(final Host host, final User user, final boolean respectAnonPerms) throws DotSecurityException, DotDataException {
+
+		final Optional<Future<Boolean>> hostDeleteResultOpt = hostAPI.delete(host, user, respectAnonPerms, true);
+		return hostDeleteResultOpt.isPresent()?hostDeleteResultOpt.get():null;
+	}
+
+	public boolean makeDefault(Host host, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+
+		this.hostAPI.makeDefault(host, user, respectFrontendRoles);
+		return true;
+	}
+
+	private static class SingletonHolder {
 		private static final SiteHelper INSTANCE = new SiteHelper();
 	}
 
@@ -195,7 +205,6 @@ public class SiteHelper implements Serializable {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	@WrapInTransaction
 	public Host publish(final Host host, final User user, final boolean respectAnonPerms) throws DotContentletStateException, DotDataException, DotSecurityException {
 
 		this.hostAPI.publish(host, user, respectAnonPerms);
@@ -212,7 +221,6 @@ public class SiteHelper implements Serializable {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	@WrapInTransaction
 	public Host unpublish(final Host host, final User user, final boolean respectAnonPerms) throws DotContentletStateException, DotDataException, DotSecurityException {
 
 		this.hostAPI.unpublish(host, user, respectAnonPerms);
