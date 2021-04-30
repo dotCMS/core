@@ -11,7 +11,7 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-18.04
     env:
-      DOT_CICD_BRANCH: master
+      DOT_CICD_BRANCH: 20088-automated-vulnerability-scan
       DOT_CICD_CLOUD_PROVIDER: github
       DOT_CICD_TARGET: core
       EXPORT_REPORTS: true
@@ -74,7 +74,8 @@ jobs:
     name: Curl Tests
     runs-on: ubuntu-18.04
     env:
-      DOT_CICD_BRANCH: master
+      DOT_CICD_BRANCH: 20088-automated-vulnerability-scan
+      DOCKER_BRANCH: export-stuff-from-dotcms-image
       DOT_CICD_CLOUD_PROVIDER: github
       DOT_CICD_TARGET: core
       EXPORT_REPORTS: true
@@ -159,7 +160,7 @@ jobs:
       matrix:
         databaseType: [ postgres, mysql, oracle, mssql ]
     env:
-      DOT_CICD_BRANCH: master
+      DOT_CICD_BRANCH: 20088-automated-vulnerability-scan
       DOT_CICD_CLOUD_PROVIDER: github
       DOT_CICD_TARGET: core
       EXPORT_REPORTS: true
@@ -268,6 +269,7 @@ jobs:
           dotcicd/library/pipeline.sh runIntegration
         env:
           databaseType: ${{ matrix.databaseType }}
+          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
         if: success() && env.jobRun == 'true'
   slack-notification:
     name: Notification
@@ -300,4 +302,5 @@ jobs:
         with:
           github-user: ${{ github.actor }}
           branch: ${{ env.CURRENT_BRANCH }}
+
 
