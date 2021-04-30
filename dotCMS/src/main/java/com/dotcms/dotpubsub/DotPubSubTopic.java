@@ -7,13 +7,43 @@ import com.dotmarketing.util.Logger;
 public interface DotPubSubTopic extends EventSubscriber<DotPubSubEvent>, KeyFilterable {
 
 
-    long messagesSent();
+    default long messagesSent() {
+        return -1;
+    }
 
-    long bytesSent();
+    default long bytesSent() {
+        return -1;
+    }
 
-    long messagesRecieved();
 
-    long bytesRecieved();
+    default long messagesReceived() {
+        return -1;
+    }
+
+
+    default long bytesReceived() {
+        return -1;
+    }
+
+    /**
+     * Implement this to increment the counters
+     * 
+     * @param event
+     */
+    default void incrementSentCounters(DotPubSubEvent event) {
+
+
+    }
+
+    /**
+     * Implement this to increment the counters
+     * 
+     * @param event
+     */
+    default void incrementReceivedCounters(DotPubSubEvent event) {
+
+
+    }
 
     /**
      * Should this topic ignore messages sent by my own server
@@ -29,21 +59,10 @@ public interface DotPubSubTopic extends EventSubscriber<DotPubSubEvent>, KeyFilt
      */
     @Override
     default void notify(DotPubSubEvent event) {
+        incrementReceivedCounters(event);
         Logger.info(this.getClass(), "got event:" + event);
 
     }
-
-    /**
-     * Implement this to increment the counters
-     * @param event
-     */
-    void incrementSentCounters(DotPubSubEvent event);
-
-    /**
-     * Implement this to increment the counters
-     * @param event
-     */
-    void incrementRecievedCounters(DotPubSubEvent event);
 
 
 

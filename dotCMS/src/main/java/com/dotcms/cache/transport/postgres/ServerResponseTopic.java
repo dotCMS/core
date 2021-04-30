@@ -63,12 +63,12 @@ public class ServerResponseTopic implements DotPubSubTopic {
     }
 
     @Override
-    public long messagesRecieved() {
+    public long messagesReceived() {
         return messagesRecieved;
     }
 
     @Override
-    public long bytesRecieved() {
+    public long bytesReceived() {
         return bytesRecieved;
     }
     
@@ -79,7 +79,7 @@ public class ServerResponseTopic implements DotPubSubTopic {
     }
     
     @Override
-    public void incrementRecievedCounters (final DotPubSubEvent event) {
+    public void incrementReceivedCounters (final DotPubSubEvent event) {
         bytesRecieved+=event.toString().getBytes().length;
         messagesRecieved++;
     }

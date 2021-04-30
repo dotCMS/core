@@ -2,6 +2,7 @@ package com.dotcms.dotpubsub;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 import java.util.Map;
@@ -32,10 +33,16 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
     public final String serverId;
     private long restartDelay=0;
 
+    /**
+     * provides db connection information for the postgres pub/sub connection
+     */
     private Lazy<PgNgDataSourceUrl> attributes = Lazy.of(() -> getDatasourceAttributes());
     private AtomicReference<RUNSTATE> state = new AtomicReference<>(RUNSTATE.STOPPED);
     private PGConnection connection;
 
+    /**
+     * This is the list of topics that are subscribed to by the postgres pub/sub connection
+     */
     private Map<Comparable<String>, DotPubSubTopic> topicMap = new ConcurrentHashMap<>();
 
     @VisibleForTesting
@@ -47,7 +54,9 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
 
         int numberOfServers = Try.of(() -> APILocator.getServerAPI().getAliveServers().size()).getOrElse(1);
         Logger.info(PostgresPubSubImpl.class, () -> "Initing PostgresPubSub. Have servers:" + numberOfServers);
+        
         listen();
+        
         return this;
     }
 
@@ -63,6 +72,12 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
 
     }
 
+    /**
+     * This is the DB Listener that listens for messages and then passes them on to the matching
+     * DotPubSubTopic for processing by the topic.notify(DotPubSubEvent) method. This listener will
+     * reconnect in the case of any errors or if the connection gets closed
+     * 
+     */
     private PGNotificationListener listener = new PGNotificationListener() {
 
         @Override
@@ -80,7 +95,6 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
                 return;
             }
             
-            
             final DotPubSubEvent event = Try.of(() -> new DotPubSubEvent(payload))
                             .onFailure(e -> Logger.warn(PostgresPubSubImpl.class, e.getMessage(), e)).getOrNull();
             if (event == null) {
@@ -91,14 +105,10 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
             lastEventIn = event;
             restartDelay=0;
 
-
-
-
             matchingTopics.forEach(t -> {
                 t.notify(event);
-                t.incrementRecievedCounters(event);
+                t.incrementReceivedCounters(event);
             });
-
 
         }
 
@@ -111,28 +121,21 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
         }
     };
 
-
-    public void listen() {
+    /**
+     * Runs the SQL that starts the listening process and activates the PGNotificationListener
+     */
+    private void setUpConnection() {
         if (connection != null) {
             Logger.info(this.getClass(), () -> "PGNotificationListener already connected. Returning");
             return;
         }
         state.set(RUNSTATE.STARTED);
 
-
-
         Logger.info(this.getClass(), () -> "PGNotificationListener connecting to pub/sub...");
         try {
 
             connection = DriverManager.getConnection(attributes.get().getDbUrl()).unwrap(PGConnection.class);
             connection.addNotificationListener(listener);
-
-            for (DotPubSubTopic topic : topicMap.values()) {
-                try (Statement stmt = connection.createStatement()) {
-                    Logger.info(this.getClass(), () -> " - LISTEN " + topic.getKey().toString().toLowerCase());
-                    stmt.execute("LISTEN " + topic.getKey().toString().toLowerCase());
-                }
-            }
 
         } catch (Exception e) {
             Logger.warnAndDebug(getClass(), e);
@@ -144,9 +147,45 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
     }
 
 
+    private void subscribeToTopicSQL(String topic) throws Exception {
+        try (Statement stmt = connection.createStatement()) {
+            Logger.info(this.getClass(), () -> " - LISTEN " + topic.toLowerCase());
+            stmt.execute("LISTEN " + topic.toString().toLowerCase());
+        }
+    }
+    
+    private void unsubscribeToTopicSQL(String topic) throws Exception {
+        try (Statement stmt = connection.createStatement()) {
+            Logger.info(this.getClass(), () -> " - UNLISTEN " + topic.toLowerCase());
+            stmt.execute("UNLISTEN " + topic.toString().toLowerCase());
+        }
+    }
+    
+    
+    
+    
+    private void listen() {
+        try {
+            setUpConnection();
+            for (DotPubSubTopic topic : topicMap.values()) {
+                subscribeToTopicSQL(topic.getKey().toString());
+            }
+        } catch (Exception e) {
+            Logger.warnAndDebug(getClass(), e);
+            if (state.get() != RUNSTATE.STOPPED) {
+                restart();
+            }
+        }
+
+    }
+    
+    
+    
+    
+    
 
     /**
-     * This will automatically restart the connections
+     * This will automatically restart the connection
      */
     public void restart() {
        
@@ -157,7 +196,9 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
         listen();
     }
 
-
+    /**
+     * Stops the listener and connection
+     */
     public void stop() {
         this.state.set(RUNSTATE.STOPPED);
         Try.run(() -> connection.close());
@@ -191,10 +232,30 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
 
     @Override
     public DotPubSubProvider subscribe(DotPubSubTopic topic) {
-        this.topicMap.putIfAbsent(topic.getKey(), topic);
+        this.topicMap.put(topic.getKey(), topic);
+        try {
+            subscribeToTopicSQL(topic.getKey().toString());
+        }
+        catch(Exception e) {
+            restart();
+        }
+        
         return this;
     }
-
+    
+    @Override
+    public DotPubSubProvider unsubscribe(DotPubSubTopic topic) {
+        this.topicMap.remove(topic.getKey());
+        try {
+            unsubscribeToTopicSQL(topic.getKey().toString());
+        }
+        catch(Exception e) {
+            restart();
+        }
+        
+        
+        return this;
+    }
 
 
     @Override

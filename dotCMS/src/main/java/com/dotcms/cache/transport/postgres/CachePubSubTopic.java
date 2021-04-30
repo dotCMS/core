@@ -16,19 +16,20 @@ public class CachePubSubTopic implements DotPubSubTopic {
 
     static long bytesSent, bytesRecieved, messagesSent, messagesRecieved = 0;
 
-
+    @VisibleForTesting
     final String serverId;
 
     public CachePubSubTopic() {
-        this(APILocator.getShortyAPI().shortify(APILocator.getServerAPI().readServerId()));
-    }
-
-    public CachePubSubTopic(String serverId) {
-        this.serverId = serverId;
-
+        this(APILocator.getServerAPI().readServerId());
     }
 
     @VisibleForTesting
+    public CachePubSubTopic(String serverId) {
+        this.serverId = APILocator.getShortyAPI().shortify(serverId);
+
+    }
+
+
     public enum CacheEventType {
         INVAL, PING, PONG, CLUSTER_REQ, CLUSTER_RES, UKN;
 
@@ -109,12 +110,12 @@ public class CachePubSubTopic implements DotPubSubTopic {
     }
 
     @Override
-    public long messagesRecieved() {
+    public long messagesReceived() {
         return messagesRecieved;
     }
 
     @Override
-    public long bytesRecieved() {
+    public long bytesReceived() {
         return bytesRecieved;
     }
 
@@ -125,7 +126,7 @@ public class CachePubSubTopic implements DotPubSubTopic {
     }
 
     @Override
-    public void incrementRecievedCounters(final DotPubSubEvent event) {
+    public void incrementReceivedCounters(final DotPubSubEvent event) {
         bytesRecieved += event.toString().getBytes().length;
         messagesRecieved++;
     }

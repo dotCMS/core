@@ -68,7 +68,10 @@ public interface CacheTransport {
     
 
     public interface CacheTransportInfo {
-    	String getClusterName();
+
+        default String getClusterName() {
+            return ClusterFactory.getClusterId();
+        }
     	String getAddress();
     	int getPort();
 
@@ -88,10 +91,7 @@ public interface CacheTransport {
         
 
         return new CacheTransportInfo(){
-            @Override
-            public String getClusterName() {
-                return ClusterFactory.getClusterId();
-            }
+
 
             @Override
             public String getAddress() {

@@ -154,7 +154,8 @@
                             open:   nodeStatus.cacheOpen,
                             address:   nodeStatus.cacheAddress,
                             receivedBytes:   nodeStatus.cacheReceivedBytes,
-                            port:   nodeStatus.cachePort
+                            port:   nodeStatus.cachePort,
+                            cacheTransportClass: nodeStatus.cacheTransportClass
                           },
 
                           es: {

@@ -30,6 +30,13 @@ public interface DotPubSubProvider {
      * @return
      */
     boolean publish(DotPubSubTopic topic, DotPubSubEvent event);
+
+    /**
+     * Unsubscribes from a topic
+     * @param topic
+     * @return
+     */
+    DotPubSubProvider unsubscribe(DotPubSubTopic topic);
     
 
     

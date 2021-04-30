@@ -44,10 +44,12 @@ public class PostgresCacheTransport implements CacheTransport {
     public void init(final Server localServer) throws CacheTransportException {
         
         Logger.info(this.getClass(), "initing PostgresCacheTransport");
-        this.pubsub.subscribe(topic);
-        this.pubsub.subscribe(serverResponseTopic);
         this.pubsub.start();
         this.initialized.set(true);
+        this.pubsub.subscribe(topic);
+        this.pubsub.subscribe(serverResponseTopic);
+        
+        
     }
 
 
@@ -173,12 +175,12 @@ public class PostgresCacheTransport implements CacheTransport {
 
             @Override
             public long getReceivedBytes() {
-                return topic.bytesRecieved();
+                return topic.bytesReceived();
             }
 
             @Override
             public long getReceivedMessages() {
-                return topic.messagesRecieved();
+                return topic.messagesReceived();
             }
 
             @Override
