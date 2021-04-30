@@ -73,6 +73,7 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -752,8 +753,19 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 						contentletMap.put(keyName, valueObj);
 						contentletMap.put(keyNameText, numFormatter.format(valueObj));
 					} else {
-						contentletMap.put(keyName, valueObj);
-						contentletMap.put(keyNameText, valueObj.toString());
+					    if (UtilMethods.isSet(valueObj) && valueObj instanceof Date){
+                            try {
+                                String datetimeString = datetimeFormat.format(valueObj);
+                                contentletMap.put(keyName, elasticSearchDateTimeFormat.format(valueObj));
+                                contentletMap.put(keyNameText, datetimeString);
+                            } catch(Exception ex) {
+                                contentletMap.put(keyName, valueObj);
+                                contentletMap.put(keyNameText, valueObj.toString());
+                            }
+                        } else{
+                            contentletMap.put(keyName, valueObj);
+                            contentletMap.put(keyNameText, valueObj.toString());
+                        }
 					}
 				}
 
