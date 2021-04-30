@@ -6,6 +6,8 @@ import com.dotcms.repackage.com.google.common.base.CaseFormat;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.repackage.org.jsoup.Jsoup;
+import com.dotcms.rest.api.v1.temp.TempFileAPI;
+import com.dotcms.uuid.shorty.ShortyException;
 import com.liferay.util.StringPool;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -337,6 +339,35 @@ public class StringUtils {
         }
         return strings;
     }
+    
+    
+
+    /**
+     * Takes a string and makes it a Shorty, based on the minimum length passed in.  This method was
+     * moved from the ShortyAPI so that is can be used in Unit testing without having to init our whole framework
+     * @param shortStr
+     * @param minLength
+     * @return
+     */
+    public static String shortify(final String shortStr, final int minLength) {
+      try {
+
+        if (UtilMethods.isSet(shortStr)) {
+
+          final String trimmedShortStr = shortStr.trim().replaceAll("-", "");
+          final int    min             = Math.min(trimmedShortStr.length(), minLength);
+
+          return (trimmedShortStr.startsWith(TempFileAPI.TEMP_RESOURCE_PREFIX)) ? trimmedShortStr : 
+                  trimmedShortStr.substring(0, min);
+        }
+
+        return shortStr;
+      } catch (Exception se) {
+          throw new ShortyException("shorty " + shortStr + " is not a short id.  Short Ids should be "
+                  + minLength + " alphanumeric chars in length", se);
+      }
+    }
+    
     
     
 }

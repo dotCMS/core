@@ -4,8 +4,8 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import io.vavr.Lazy;
@@ -21,8 +21,10 @@ public final class DotPubSubEvent implements Serializable {
     private static final String TYPE = "t";
     private static final String TIMESTAMP = "ts";
     private final Map<String, Serializable> payload;
-    private final static ObjectMapper objectMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
     
+    //cannot use DotObjectMapperProvider.getInstance().getDefaultObjectMapper() b/c it does not work in unit tests
+    private final static ObjectMapper objectMapper = new ObjectMapper();
+
     /**
      * Construct a DotPubSubEvent from a Json String
      * 
@@ -30,7 +32,7 @@ public final class DotPubSubEvent implements Serializable {
      */
     public DotPubSubEvent(String payloadJson) {
         this(Try.of(() -> objectMapper.readValue(payloadJson, Map.class))
-                        .onFailure(e->Logger.warnAndDebug(DotPubSubEvent.class,e.getMessage(),e))
+                        .onFailure(e -> Logger.warnAndDebug(DotPubSubEvent.class, e.getMessage(), e))
                         .getOrElse(new HashMap<>()));
 
 
@@ -45,11 +47,9 @@ public final class DotPubSubEvent implements Serializable {
 
         ImmutableMap.Builder<String, Serializable> builder = ImmutableMap.<String, Serializable>builder().putAll(map);
         /*
-        if(!map.containsKey(TIMESTAMP)) {
-            builder.put(TIMESTAMP,System.currentTimeMillis());
-        }
-        */
-        this.payload= builder.build();
+         * if(!map.containsKey(TIMESTAMP)) { builder.put(TIMESTAMP,System.currentTimeMillis()); }
+         */
+        this.payload = builder.build();
     }
 
 
@@ -100,7 +100,7 @@ public final class DotPubSubEvent implements Serializable {
         try {
             return objectMapper.writeValueAsString(payload);
         } catch (Exception e) {
-            Logger.warn(this.getClass(), "unable to write payload as String:" + e.getMessage() + " " + payload );
+            Logger.warn(this.getClass(), "unable to write payload as String:" + e.getMessage() + " " + payload);
             return null;
         }
     });
@@ -189,7 +189,7 @@ public final class DotPubSubEvent implements Serializable {
         }
 
         public Builder withOrigin(final String origin) {
-            return addPayload(DotPubSubEvent.ORIGIN, APILocator.getShortyAPI().shortify(origin));
+            return addPayload(DotPubSubEvent.ORIGIN, StringUtils.shortify(origin, 10));
         }
 
 

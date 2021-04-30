@@ -7,6 +7,7 @@ import com.dotcms.dotpubsub.DotPubSubTopic;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 
@@ -25,7 +26,7 @@ public class CachePubSubTopic implements DotPubSubTopic {
 
     @VisibleForTesting
     public CachePubSubTopic(String serverId) {
-        this.serverId = APILocator.getShortyAPI().shortify(serverId);
+        this.serverId = StringUtils.shortify(serverId, 10);
 
     }
 
