@@ -65,7 +65,7 @@ public class CachePubSubTopic implements DotPubSubTopic {
 
         switch (type) {
             case INVAL:
-                Logger.info(getClass(), () -> "got cache invalidation event:" + event);
+                Logger.debug(getClass(), () -> "got cache invalidation event:" + event);
                 CacheLocator.getCacheAdministrator().invalidateCacheMesageFromCluster(message);
                 return;
 
