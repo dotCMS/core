@@ -22,6 +22,7 @@ import {
 } from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
 import { DotContentState } from '@dotcms/dotcms-models';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { DotSiteBrowserService } from '@services/dot-site-browser/dot-site-browser.service';
 
 @Component({
     selector: 'dot-template-list',
@@ -50,7 +51,8 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
         private dotSiteService: SiteService,
         private dotTemplatesService: DotTemplatesService,
         private route: ActivatedRoute,
-        public dialogService: DialogService
+        public dialogService: DialogService,
+        private dotSiteBrowserService: DotSiteBrowserService
     ) {}
 
     ngOnInit(): void {
@@ -103,7 +105,11 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
      * @memberof DotTemplateListComponent
      */
     editTemplate({ identifier }: DotTemplate): void {
-        this.dotRouterService.goToEditTemplate(identifier);
+        this.isTemplateAsFile(identifier)
+            ? this.dotSiteBrowserService.setSelectedFolder(identifier).subscribe(() => {
+                  this.dotRouterService.goToSiteBrowser();
+              })
+            : this.dotRouterService.goToEditTemplate(identifier);
     }
 
     /**
@@ -160,9 +166,9 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
      * @memberof DotTemplateListComponent
      */
     setContextMenu(template: DotTemplate): void {
-        this.listing.contextMenuItems = this.setTemplateActions(template).map(
-            ({ menuItem }: DotActionMenuItem) => menuItem
-        );
+        this.listing.contextMenuItems = this.isTemplateAsFile(template.identifier)
+            ? null
+            : this.setTemplateActions(template).map(({ menuItem }: DotActionMenuItem) => menuItem);
     }
 
     /**
@@ -187,6 +193,15 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
             revision: this.dotMessageService.get('Revision'),
             draft: this.dotMessageService.get('Draft')
         };
+    }
+    /**
+     * Identify if is a template as File based on the identifier path.
+     * @param {string} identifier
+     * @returns boolean
+     * @memberof DotTemplateListComponent
+     */
+    isTemplateAsFile(identifier: string): boolean {
+        return identifier.includes('/');
     }
 
     handleButtonClick(): void {

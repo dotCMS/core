@@ -432,6 +432,20 @@ describe('DotListingDataTableComponent', () => {
         expect(comp.rowWasClicked.emit).toHaveBeenCalledTimes(2);
     }));
 
+    it('should hide and show context menu ', fakeAsync(() => {
+        setRequestSpy(items);
+        spyOn(comp.rowWasClicked, 'emit');
+        comp.loadFirstPage();
+        hostFixture.detectChanges();
+        tick(1);
+        hostFixture.detectChanges();
+        const contextMenu = document.querySelector('.p-contextmenu');
+        expect(contextMenu.classList.contains('no-display')).toEqual(true);
+        comp.contextMenuItems = [{ label: 'test' }];
+        hostFixture.detectChanges();
+        expect(contextMenu.classList.contains('no-display')).toEqual(false);
+    }));
+
     describe('with checkBox', () => {
         let bodyCheckboxes: DebugElement[];
 

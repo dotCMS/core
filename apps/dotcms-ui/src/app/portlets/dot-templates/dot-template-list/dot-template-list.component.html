@@ -62,8 +62,9 @@
         <td [ngStyle]="{ 'text-align': tableColumns[3].textAlign }">
             {{ rowData.modDate }}
         </td>
-        <td style="width: 5%">
+        <td style="width: 5%; height: 3.85rem">
             <dot-action-menu-button
+                *ngIf="!isTemplateAsFile(rowData.identifier)"
                 [attr.data-testid]="rowData.identifier"
                 class="listing-datatable__action-button"
                 [actions]="setTemplateActions(rowData)"

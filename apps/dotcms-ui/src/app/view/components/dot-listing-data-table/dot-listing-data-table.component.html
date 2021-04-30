@@ -77,7 +77,7 @@
         </ng-template>
     </ng-template>
 </p-table>
-<p-contextMenu #cm [model]="contextMenuItems" appendTo="body"></p-contextMenu>
+<p-contextMenu #cm [model]="contextMenuItems" [styleClass]="contextMenuItems?.length ? '' : 'no-display'"  appendTo="body"></p-contextMenu>
 <ng-template pTemplate="header" let-columns="columns" #defaultHeaderTemplate>
     <th
         *ngFor="let col of columns"
