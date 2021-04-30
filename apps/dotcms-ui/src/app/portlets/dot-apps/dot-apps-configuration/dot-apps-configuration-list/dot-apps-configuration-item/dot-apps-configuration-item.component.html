@@ -2,8 +2,13 @@
     {{ site.name }}
 </div>
 
-<div class="dot-apps-configuration-list__host-key" (click)="$event.stopPropagation()">
-    {{ 'apps.key' | dm }} <dot-copy-button [copy]="site.id" [label]="site.id"></dot-copy-button>
+<div class="dot-apps-configuration-list__host-key">
+    {{ 'apps.key' | dm }}
+    <dot-copy-button
+        (click)="$event.stopPropagation()"
+        [copy]="site.id"
+        [label]="site.id"
+    ></dot-copy-button>
 </div>
 
 <ng-container *ngIf="site.configured; else noConfigurations">
