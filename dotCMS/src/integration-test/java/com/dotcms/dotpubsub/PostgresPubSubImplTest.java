@@ -44,7 +44,7 @@ public class PostgresPubSubImplTest {
         
         pubsubA.publish(topicA, event);
         
-        assert(pubsubA.lastEventOut.getType().equalsIgnoreCase(CachePubSubTopic.CacheEventType.PING.name()));
+        assert(pubsubA.lastEventOut().getType().equalsIgnoreCase(CachePubSubTopic.CacheEventType.PING.name()));
         
         
         Thread.sleep(2000);

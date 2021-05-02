@@ -3,6 +3,7 @@ package com.dotcms.dotpubsub;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.system.event.local.model.KeyFilterable;
 import com.dotmarketing.util.Logger;
+import io.vavr.control.Try;
 
 public interface DotPubSubTopic extends EventSubscriber<DotPubSubEvent>, KeyFilterable {
 
@@ -64,6 +65,9 @@ public interface DotPubSubTopic extends EventSubscriber<DotPubSubEvent>, KeyFilt
 
     }
 
+
+
+    
 
 
 }

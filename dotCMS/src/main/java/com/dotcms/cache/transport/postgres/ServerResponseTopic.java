@@ -5,6 +5,7 @@ import java.util.Map;
 import com.dotcms.dotpubsub.DotPubSubEvent;
 import com.dotcms.dotpubsub.DotPubSubTopic;
 import com.google.common.collect.ImmutableMap;
+import io.vavr.control.Try;
 
 /**
  * This Topic collects server responses when a request for all servers is sent out
@@ -83,6 +84,10 @@ public class ServerResponseTopic implements DotPubSubTopic {
         bytesRecieved+=event.toString().getBytes().length;
         messagesRecieved++;
     }
+
+
+    
+    
     
 
 

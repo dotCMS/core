@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,12 +33,20 @@ public final class DotPubSubEvent implements Serializable {
      */
     public DotPubSubEvent(String payloadJson) {
         this(Try.of(() -> objectMapper.readValue(payloadJson, Map.class))
-                        .onFailure(e -> Logger.warnAndDebug(DotPubSubEvent.class, e.getMessage(), e))
-                        .getOrElse(new HashMap<>()));
+                        .getOrElseThrow(e-> {throw new DotRuntimeException(e);}));
 
 
     }
-
+    /**
+     * builder constructor
+     * @param builder
+     */
+    private DotPubSubEvent(Builder builder) {
+        this(builder.payload);
+    }
+    
+    
+    
     /**
      * Construct an DotPubSubEvent from a map
      * 
@@ -143,11 +152,7 @@ public final class DotPubSubEvent implements Serializable {
     }
 
 
-    private DotPubSubEvent(Builder builder) {
-        this(builder.payload);
 
-
-    }
 
 
 
@@ -179,8 +184,10 @@ public final class DotPubSubEvent implements Serializable {
         }
 
         public Builder withPayload(String payloadJson) {
-            HashMap<String, Serializable> map = Try.of(() -> DotObjectMapperProvider.getInstance()
-                            .getDefaultObjectMapper().readValue(payloadJson, HashMap.class)).getOrElse(new HashMap<>());
+            HashMap<String, Serializable> map =
+                            Try.of(() -> objectMapper.readValue(payloadJson, HashMap.class)).getOrElseThrow(e -> {
+                                throw new DotRuntimeException(e);
+                            });
 
             this.payload = map;
 

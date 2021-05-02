@@ -8,6 +8,7 @@ import com.dotcms.dotpubsub.DotPubSubProvider;
 import com.dotcms.dotpubsub.DotPubSubProviderLocator;
 import com.dotcms.dotpubsub.DotPubSubTopic;
 import com.dotcms.dotpubsub.NullDotPubSubProvider;
+import com.dotcms.dotpubsub.QueuingPubSubWrapper;
 
 public class CachePubSubTopicTest {
 
@@ -24,17 +25,19 @@ public class CachePubSubTopicTest {
     @Test
     public void test_provider_override() {
         DotPubSubProvider provider = DotPubSubProviderLocator.provider.get();
-        assert provider instanceof NullDotPubSubProvider;
+        assert provider instanceof NullDotPubSubProvider || provider instanceof QueuingPubSubWrapper;
 
     }
 
     @Test
-    public void test_provider_topic_sending__a_ping_gets_a_pong() {
-        NullDotPubSubProvider provider = (NullDotPubSubProvider) DotPubSubProviderLocator.provider.get();
+    public void test_provider_topic_sending__a_ping_gets_a_pong() throws InterruptedException {
+        NullDotPubSubProvider provider = new NullDotPubSubProvider();
+        provider.start();
         DotPubSubEvent event= new DotPubSubEvent.Builder().withType(CacheEventType.PING.name()).build();
-        DotPubSubTopic topic = new CachePubSubTopic("fakeServer");
+        DotPubSubTopic topic = new CachePubSubTopic("fakeServer",provider);
         topic.notify(event);
-        assert "PONG".equalsIgnoreCase(provider.lastEvent.getType());
+        Thread.sleep(2000);
+        assert "PONG".equalsIgnoreCase(provider.lastEventIn().getType());
         
     }
     

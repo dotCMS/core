@@ -2,6 +2,7 @@ package com.dotcms.cache.transport.postgres;
 
 import java.io.Serializable;
 import com.dotcms.dotpubsub.DotPubSubEvent;
+import com.dotcms.dotpubsub.DotPubSubProvider;
 import com.dotcms.dotpubsub.DotPubSubProviderLocator;
 import com.dotcms.dotpubsub.DotPubSubTopic;
 import com.dotmarketing.business.APILocator;
@@ -19,17 +20,25 @@ public class CachePubSubTopic implements DotPubSubTopic {
 
     @VisibleForTesting
     final String serverId;
-
+    
+    final DotPubSubProvider provider;
+    
     public CachePubSubTopic() {
         this(APILocator.getServerAPI().readServerId());
     }
-
+    
     @VisibleForTesting
     public CachePubSubTopic(String serverId) {
+        this(serverId,DotPubSubProviderLocator.provider.get());
+    }
+    
+    @VisibleForTesting
+    public CachePubSubTopic(String serverId,DotPubSubProvider provider) {
         this.serverId = StringUtils.shortify(serverId, 10);
-
+        this.provider = provider;
     }
 
+    
 
     public enum CacheEventType {
         INVAL, PING, PONG, CLUSTER_REQ, CLUSTER_RES, UKN;
@@ -72,7 +81,7 @@ public class CachePubSubTopic implements DotPubSubTopic {
 
             case PING:
                 Logger.info(this.getClass(), () -> "Got PING from server:" + event.getOrigin() + ". sending PONG");
-                DotPubSubProviderLocator.provider.get().publish(this,
+                provider.publish(this,
                                 new DotPubSubEvent.Builder(event).withType(CacheEventType.PONG.name()).build());
                 return;
 
@@ -83,8 +92,12 @@ public class CachePubSubTopic implements DotPubSubTopic {
             case CLUSTER_REQ:
                 Logger.info(this.getClass(),
                                 () -> "Got CLUSTER_REQ from server:" + event.getOrigin() + ". sending response");
-                DotPubSubProviderLocator.provider.get()
-                                .publish(new ServerResponseTopic(),
+                
+                
+                
+
+                
+                provider.publish(new ServerResponseTopic(),
                                                 new DotPubSubEvent.Builder(event)
                                                                 .withPayload(ImmutableMap.of(
                                                                                 APILocator.getServerAPI()
@@ -96,12 +109,17 @@ public class CachePubSubTopic implements DotPubSubTopic {
             default:
 
         }
-
     }
 
+    
+    
+    
+    
     @Override
     public long messagesSent() {
 
+        
+        
         return messagesSent;
     }
 

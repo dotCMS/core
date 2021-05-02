@@ -41,4 +41,17 @@ public class NullDotPubSubProvider implements DotPubSubProvider {
         return this;
     }
 
+    @Override
+    public DotPubSubEvent lastEventIn() {
+        
+        return this.lastEvent;
+    }
+
+    @Override
+    public DotPubSubEvent lastEventOut() {
+        return this.lastEvent;
+    }
+    
+    
+
 }

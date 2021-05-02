@@ -92,8 +92,7 @@ public class ClusterResource {
 		}
 		
 		//Waits for 3 seconds in order server respond.
-		int maxWaitTime = 
-				timeoutSeconds.intValue() * 1000 + Config.getIntProperty("CLUSTER_SERVER_THREAD_SLEEP", 2000) ;
+		int maxWaitTime =  timeoutSeconds.intValue() * 1000 + Config.getIntProperty("CLUSTER_SERVER_THREAD_SLEEP", 2000) ;
 		int passedWaitTime = 0;
 		
 		//Trying to NOT wait whole time for returning the info.
@@ -117,12 +116,12 @@ public class ClusterResource {
 			    
 			    //No need to wait if we have all Action results. 
 			    if(resultActionBeans.size() == servers.size()){
-			    	passedWaitTime = maxWaitTime + 1;
+			    	break;
 			    }
 			    
 			} catch(InterruptedException ex) {
 			    Thread.currentThread().interrupt();
-			    passedWaitTime = maxWaitTime + 1;
+			    break;
 			}
 		}
 		

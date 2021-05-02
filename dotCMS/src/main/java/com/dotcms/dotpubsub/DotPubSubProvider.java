@@ -39,6 +39,20 @@ public interface DotPubSubProvider {
     DotPubSubProvider unsubscribe(DotPubSubTopic topic);
     
 
+    /**
+     * for testing
+     * @return
+     */
+    default DotPubSubEvent lastEventIn() {
+        return null;
+    }
     
+    /**
+     * for testing
+     * @return
+     */
+    default DotPubSubEvent lastEventOut() {
+        return null;
+    }
     
 }

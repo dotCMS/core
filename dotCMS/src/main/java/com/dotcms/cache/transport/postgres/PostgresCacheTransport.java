@@ -7,16 +7,19 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.dotcms.cache.transport.postgres.CachePubSubTopic.CacheEventType;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.dotpubsub.DotPubSubEvent;
-import com.dotcms.dotpubsub.PostgresPubSubImpl;
+import com.dotcms.dotpubsub.DotPubSubProvider;
+import com.dotcms.dotpubsub.DotPubSubProviderLocator;
 import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.business.cache.transport.CacheTransportException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import jersey.repackaged.com.google.common.collect.ImmutableMap;
 
 public class PostgresCacheTransport implements CacheTransport {
 
-    final PostgresPubSubImpl pubsub;
+    final DotPubSubProvider pubsub;
 
     final CachePubSubTopic topic;
     final ServerResponseTopic serverResponseTopic;
@@ -31,7 +34,7 @@ public class PostgresCacheTransport implements CacheTransport {
 
 
     public PostgresCacheTransport() {
-        this.pubsub = new PostgresPubSubImpl();
+        this.pubsub = DotPubSubProviderLocator.provider.get();
         this.topic = new CachePubSubTopic();
         this.serverResponseTopic = new ServerResponseTopic();
         Logger.debug(this.getClass(), "PostgresCacheTransport");
@@ -77,7 +80,7 @@ public class PostgresCacheTransport implements CacheTransport {
         Logger.info(this.getClass(), "Querying servers in cluster: " +ClusterFactory.getClusterId() + "..." );
         Set<String> servers = new HashSet<>();
         servers.addAll(validateCacheInCluster(2).keySet());
-        servers.add(pubsub.serverId + "(me)");
+        servers.add(StringUtils.shortify(APILocator.getServerAPI().readServerId(),10) + "(me)");
         
 
         
@@ -102,7 +105,7 @@ public class PostgresCacheTransport implements CacheTransport {
         
         this.pubsub.publish(this.topic, event);
         
-        final long waitUntil = System.currentTimeMillis() + (1000*maxWaitSeconds);
+        final long waitUntil = System.currentTimeMillis() + (1000 * maxWaitSeconds);
         while(System.currentTimeMillis()< waitUntil) {
             if(serverResponseTopic.size()>=numberServers) {
                 return serverResponseTopic.readResponses();

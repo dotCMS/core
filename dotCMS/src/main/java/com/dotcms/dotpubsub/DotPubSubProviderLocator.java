@@ -21,10 +21,10 @@ public class DotPubSubProviderLocator {
         
         
 
-        return (DotPubSubProvider) Try.of(()->Class.forName(clazz).newInstance()).getOrElseThrow(e->new DotRuntimeException(e));
+        DotPubSubProvider provider= (DotPubSubProvider) Try.of(()->Class.forName(clazz).newInstance()).getOrElseThrow(e->new DotRuntimeException(e));
 
         
-        
+        return new QueuingPubSubWrapper(provider);
         
         
     });

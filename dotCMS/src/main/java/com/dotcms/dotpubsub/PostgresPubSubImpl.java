@@ -2,7 +2,6 @@ package com.dotcms.dotpubsub;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +14,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import com.google.common.annotations.VisibleForTesting;
 import com.impossibl.postgres.api.jdbc.PGConnection;
 import com.impossibl.postgres.api.jdbc.PGNotificationListener;
@@ -36,8 +36,8 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
     /**
      * provides db connection information for the postgres pub/sub connection
      */
-    private Lazy<PgNgDataSourceUrl> attributes = Lazy.of(() -> getDatasourceAttributes());
-    private AtomicReference<RUNSTATE> state = new AtomicReference<>(RUNSTATE.STOPPED);
+    final private Lazy<PgNgDataSourceUrl> attributes = Lazy.of(() -> getDatasourceAttributes());
+    final private AtomicReference<RUNSTATE> state = new AtomicReference<>(RUNSTATE.STOPPED);
     private PGConnection connection;
 
     /**
@@ -46,7 +46,7 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
     private Map<Comparable<String>, DotPubSubTopic> topicMap = new ConcurrentHashMap<>();
 
     @VisibleForTesting
-    protected static DotPubSubEvent lastEventIn, lastEventOut;
+    private static DotPubSubEvent lastEventIn, lastEventOut;
 
 
     @Override
@@ -68,7 +68,7 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
     }
 
     public PostgresPubSubImpl(String serverId) {
-        this.serverId = APILocator.getShortyAPI().shortify(serverId);
+        this.serverId = StringUtils.shortify(serverId,10);
 
     }
 
@@ -100,7 +100,11 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
             if (event == null) {
                 return;
             }
-
+            Logger.debug(PostgresPubSubImpl.class,
+                            () -> "recieved event: " + processId + ", " + channelName + ", " + payload);
+            
+            
+            
             // save for testing
             lastEventIn = event;
             restartDelay=0;
@@ -282,6 +286,18 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
             return false;
         }
 
+    }
+
+
+    @Override
+    public DotPubSubEvent lastEventIn() {
+        return lastEventIn;
+    }
+
+
+    @Override
+    public DotPubSubEvent lastEventOut() {
+        return lastEventOut;
     }
 
 
