@@ -1,32 +1,27 @@
 package com.dotcms.system.event.local.business;
 
-import com.dotcms.concurrent.DotConcurrentFactory;
-import com.dotcms.publishing.listener.PushPublishKeyResetEventListener;
-import com.dotcms.rest.api.v1.system.logger.ChangeLoggerLevelEvent;
-import com.dotcms.saml.DotSamlProxyFactory;
-import com.dotcms.security.apps.AppSecretSavedEvent;
-import com.dotcms.security.apps.AppsKeyResetEventListener;
-import com.dotcms.system.event.local.model.EventSubscriber;
-import com.dotcms.system.event.local.type.security.CompanyKeyResetEvent;
-import com.dotmarketing.portlets.folders.business.ApplicationTemplateFolderListener;
-import io.vavr.API;
-import java.util.List;
-
 import com.dotcms.config.DotInitializer;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.graphql.listener.ContentTypeAndFieldsModsListeners;
-
+import com.dotcms.publishing.listener.PushPublishKeyResetEventListener;
+import com.dotcms.rest.api.v1.system.logger.ChangeLoggerLevelEvent;
+import com.dotcms.security.apps.AppsKeyResetEventListener;
+import com.dotcms.system.event.local.model.EventSubscriber;
+import com.dotcms.system.event.local.type.security.CompanyKeyResetEvent;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolver;
 import com.dotmarketing.portlets.folders.business.ApplicationContainerFolderListener;
+import com.dotmarketing.portlets.folders.business.ApplicationTemplateFolderListener;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.workflows.business.UnassignedWorkflowContentletCheckinListener;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+
+import java.util.List;
 
 /**
  * Initializer class that allow us to register Local System Events subscribers
@@ -51,8 +46,6 @@ public class LocalSystemEventSubscribersInitializer implements DotInitializer {
         APILocator.getLocalSystemEventsAPI().subscribe(CompanyKeyResetEvent.class,    PushPublishKeyResetEventListener.INSTANCE.get());
 
         APILocator.getLocalSystemEventsAPI().subscribe(CompanyKeyResetEvent.class,    AppsKeyResetEventListener.INSTANCE.get());
-
-        APILocator.getLocalSystemEventsAPI().subscribe(AppSecretSavedEvent.class,     DotSamlProxyFactory.getInstance());
 
         APILocator.getLocalSystemEventsAPI().subscribe(ChangeLoggerLevelEvent.class, new EventSubscriber<ChangeLoggerLevelEvent>() {
 

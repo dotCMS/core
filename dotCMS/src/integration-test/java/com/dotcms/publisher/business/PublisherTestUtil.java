@@ -365,9 +365,7 @@ public class PublisherTestUtil {
         PublishStatus         publishStatus   = null;
 
         try {
-            final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(
-                    publisherConfig);
-            publishStatus = APILocator.getPublisherAPI().publish(publisherConfig, directoryBundleOutput);
+            publishStatus = APILocator.getPublisherAPI().publish(publisherConfig);
         } catch (DotPublishingException e) {
 
             publishAuditAPI.updatePublishAuditStatus(publisherConfig.getId(), PublishAuditStatus.Status.FAILED_TO_BUNDLE, historyPojo);

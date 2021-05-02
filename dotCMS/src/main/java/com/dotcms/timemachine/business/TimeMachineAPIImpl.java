@@ -53,11 +53,7 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
                 	timeMachineConfig.setId("timeMachineBundle_" +currentDate.getTime() + "_" + language.getId());
                 }
 
-                try(final DirectoryBundleOutput directoryPublisherOutput = new DirectoryBundleOutput(timeMachineConfig)) {
-                    publishStatusList.add(APILocator.getPublisherAPI().publish(timeMachineConfig, directoryPublisherOutput));
-                } catch (Exception e) {
-                    throw e;
-                }
+                publishStatusList.add(APILocator.getPublisherAPI().publish(timeMachineConfig));
             }
             catch(Exception ex) {
                 Logger.error(this, ex.getMessage(), ex);

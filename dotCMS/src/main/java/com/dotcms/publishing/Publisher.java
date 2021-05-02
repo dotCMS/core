@@ -2,6 +2,8 @@ package com.dotcms.publishing;
 
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.pusher.PushUtils;
+import com.dotcms.publishing.output.BundleOutput;
+import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
@@ -346,4 +348,7 @@ public abstract class Publisher implements IPublisher {
         return config;
     } // getContextMap.
 
+    public BundleOutput createBundleOutput() throws IOException {
+        return new DirectoryBundleOutput(config);
+    }
 }

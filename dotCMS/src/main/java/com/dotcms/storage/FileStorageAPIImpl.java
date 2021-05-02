@@ -267,7 +267,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
                         }
 
                     } else {
-                        //Carry the custom metata
+                        //Carry the custom metadata
                         if(!onlyHasCustomMetadataMap.isEmpty()){
                             //This metadata is expected to have prefix that's fine.
                             //This is necessary since metadataMap is immutable.
