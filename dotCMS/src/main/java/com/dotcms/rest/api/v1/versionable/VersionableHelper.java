@@ -1,7 +1,9 @@
 package com.dotcms.rest.api.v1.versionable;
 
 import com.dotcms.business.WrapInTransaction;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
@@ -22,7 +24,9 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_EDIT;
 
@@ -42,6 +46,9 @@ public class VersionableHelper {
 
     private final Map<String, VersionableFinderStrategy> assetTypeByVersionableFindVersionMap;
     private final VersionableFinderStrategy defaultVersionableFindVersionStrategy;
+
+    private final Map<String, versionableFindAllStrategy> assetTypeByVersionableFindAllMap;
+    private final versionableFindAllStrategy defaultVersionableFindAllStrategy;
 
     public VersionableHelper(final TemplateAPI        templateAPI,
             final ContentletAPI      contentletAPI,
@@ -75,6 +82,15 @@ public class VersionableHelper {
         //Default Method to Find Version of an element
         this.defaultVersionableFindVersionStrategy = this::findContentletVersion;
 
+        //Map to call the Find All Versions method of an element using the type as the key
+        this.assetTypeByVersionableFindAllMap =
+                new ImmutableMap.Builder<String, versionableFindAllStrategy>()
+                        .put(Inode.Type.CONTENTLET.getValue(), this::findAllVersionsByContentletId)
+                        .put(Inode.Type.TEMPLATE.getValue(),   this::findAllVersionsByTemplateId)
+                        .build();
+        //Default Method to Find All Versions of an element
+        this.defaultVersionableFindAllStrategy = this::findAllVersionsByVersionableId;
+
     }
 
     public Map<String, VersionableDeleteStrategy> getAssetTypeByVersionableDeleteMap() {
@@ -91,6 +107,14 @@ public class VersionableHelper {
 
     public VersionableFinderStrategy getDefaultVersionableFindVersionStrategy() {
         return defaultVersionableFindVersionStrategy;
+    }
+
+    public Map<String, versionableFindAllStrategy> getAssetTypeByVersionableFindAllMap() {
+        return assetTypeByVersionableFindAllMap;
+    }
+
+    public versionableFindAllStrategy getDefaultVersionableFindAllStrategy() {
+        return defaultVersionableFindAllStrategy;
     }
 
     // DELETE VERSION
@@ -221,5 +245,38 @@ public class VersionableHelper {
         return new VersionableView(contentletAPI.find(inode, user, respectFrontEndRoles));
     }
     //END FIND VERSION METHODS
+
+    // FIND ALL VERSIONS
+    /**
+     * This interface is just a general encapsulation to get versiones for all kind of types
+     */
+    @FunctionalInterface
+    interface versionableFindAllStrategy {
+
+        List<VersionableView> findAllVersions(Identifier identifier, User user, boolean respectFrontendRoles)
+                throws DotDataException, DotSecurityException;
+    }
+
+    private List<VersionableView> findAllVersionsByContentletId(final Identifier identifier, final User user, final boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException {
+
+        return this.contentletAPI.findAllVersions(identifier, user, respectFrontendRoles)
+                .stream().map(VersionableView::new).collect(Collectors.toList());
+    }
+
+    private List<VersionableView> findAllVersionsByTemplateId(final Identifier identifier, final User user, final boolean respectFrontendRoles)
+            throws DotSecurityException, DotDataException {
+
+        return this.templateAPI.findAllVersions(identifier, user, respectFrontendRoles)
+                .stream().map(VersionableView::new).collect(Collectors.toList());
+    }
+
+    private List<VersionableView> findAllVersionsByVersionableId(final Identifier identifier, final User user, final boolean respectFrontendRoles)
+            throws DotSecurityException, DotDataException {
+
+        return APILocator.getVersionableAPI().findAllVersions(identifier, user, respectFrontendRoles)
+                .stream().map(VersionableView::new).collect(Collectors.toList());
+    }
+    // END FIND ALL VERSIONS METHODS
 
 }
