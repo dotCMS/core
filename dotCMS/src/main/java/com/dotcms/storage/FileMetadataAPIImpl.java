@@ -230,7 +230,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
 
                 builder.put(binaryFieldName, new Metadata(binaryFieldName, metadataMap));
             } else {
-                Logger.warn(FileMetadataAPIImpl.class,String.format("The Contentlet named `%s` references a binary field: `%s` that is null, does not exists or can not be access.", contentlet.getTitle(), binaryFieldName));
+                Logger.debug(FileMetadataAPIImpl.class,String.format("The Contentlet named `%s` references a binary field: `%s` that is null, does not exists or can not be access.", contentlet.getTitle(), binaryFieldName));
             }
         }
         return builder.build();
