@@ -11,6 +11,7 @@ import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.bean.impl.PushPublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
+import com.dotcms.publisher.util.dependencies.DependencyModDateUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -55,7 +56,7 @@ public class DependencySetTest extends IntegrationTestBase {
         final boolean IS_DOWNLOADING = false;
         final boolean IS_PUBLISHING = true;
         final boolean IS_STATIC = false;
-        final DependencySet dependencySet = new DependencySet(testBundle.getId(), "content", IS_DOWNLOADING,
+        final DependencyModDateUtil dependencySet = new DependencyModDateUtil(testBundle.getId(), "content", IS_DOWNLOADING,
             IS_PUBLISHING, IS_STATIC);
 
         final Host site = new SiteDataGen().nextPersisted();

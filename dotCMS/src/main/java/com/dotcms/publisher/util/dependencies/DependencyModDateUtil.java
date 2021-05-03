@@ -1,10 +1,12 @@
-package com.dotcms.publisher.util;
+package com.dotcms.publisher.util.dependencies;
 
 import com.dotcms.publisher.assets.bean.PushedAsset;
 import com.dotcms.publisher.assets.business.PushedAssetsCache;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
+import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.publishing.PublisherConfiguration;
 import com.dotcms.util.AnnotationUtils;
 import com.dotmarketing.beans.VersionInfo;
@@ -19,28 +21,32 @@ import org.apache.commons.lang.StringUtils;
 
 import java.util.*;
 
-public class DependencySet extends HashSet<String> {
+public class DependencyModDateUtil extends HashSet<String> {
 
 	/**
 	 *
 	 */
 	private static final long serialVersionUID = 3048299770146564147L;
+	private static final String ENDPOINTS_SUFFIX = "_endpointIds";
+	private static final String PUBLISHER_SUFFIX = "_publisher";
+
 	private PushedAssetsCache cache;
 	private List<Environment> envs = new ArrayList<>();
-	private String assetType;
 	private String bundleId;
 	private Bundle bundle;
 	private boolean isDownload;
 	private boolean isPublish;
 	private Map<String,String> environmentsEndpointsAndPublisher = new HashMap<>();
-	private static final String ENDPOINTS_SUFFIX = "_endpointIds";
-	private static final String PUBLISHER_SUFFIX = "_publisher";
 
-	public DependencySet(final String bundleId, final String assetType, final boolean isDownload,
-						 final boolean isPublish, final boolean isStatic) {
+	public DependencyModDateUtil(final PushPublisherConfig config) {
 		super();
+
+		final String bundleId = config.getId();
+		final boolean isDownload = config.isDownloading();
+		final boolean isStatic = config.isStatic();
+		boolean isPublish = config.getOperation().equals(Operation.PUBLISH);
+
 		cache = CacheLocator.getPushedAssetsCache();
-		this.assetType = assetType;
 		this.bundleId = bundleId;
 		this.isDownload = isDownload;
 		this.isPublish = isPublish;
@@ -145,7 +151,7 @@ public class DependencySet extends HashSet<String> {
 		return addOrClean( assetId, assetModDate, true, false);
 	}
 
-	private synchronized boolean addOrClean ( final String assetId, final Date assetModDate, final boolean cleanForUnpublish, final boolean isContentExplicitlyAdded) {
+	private synchronized boolean excludeByModDate ( final String assetId, final Date assetModDate, final boolean cleanForUnpublish, final boolean isContentExplicitlyAdded) {
 
 		if ( !isPublish ) {
 

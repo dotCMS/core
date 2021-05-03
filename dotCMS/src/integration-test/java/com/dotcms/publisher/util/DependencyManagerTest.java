@@ -15,6 +15,7 @@ import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.bundle.business.BundleAPI;
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.util.dependencies.DependencyManager;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherAPIImplTest;
@@ -32,23 +33,15 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships.Content
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
 import java.util.Date;
 import java.util.Map;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
-import com.liferay.portal.model.User;
-import java.util.Date;
-import java.util.HashSet;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -57,8 +50,6 @@ import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * @author nollymar
@@ -420,7 +411,7 @@ public class DependencyManagerTest {
                 .findFileAssetsByFolder(rootFolder, APILocator.systemUser(), false);
 
         for (final FileAsset fileAsset : fileAssetsByFolder) {
-            assertTrue("fileAsset: " + fileAsset.getIdentifier() + "Contents: " +dependencyManager.getContents().toString(),dependencyManager.getContents().contains(htmlPageAsset.getIdentifier()));
+            assertTrue("fileAsset: " + fileAsset.getIdentifier() + "Contents: " +dependencyManager.getContents().toString(),dependencyManager.getContents().contains(fileAsset.getIdentifier()));
         }
 
     }

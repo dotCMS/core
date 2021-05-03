@@ -1,5 +1,14 @@
 package com.dotcms.publisher.pusher;
 
+import com.dotcms.publisher.util.PusheableAsset;
+import com.dotcms.publisher.util.dependencies.DependencyProcessor;
+import com.dotcms.publisher.util.dependencies.DependencySet;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.model.Template;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -16,6 +25,7 @@ import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import java.util.concurrent.ExecutionException;
 
 /**
  * This class provides the main configuration values for the bundle that is
@@ -48,6 +58,8 @@ public class PushPublisherConfig extends PublisherConfig {
 
 	private List<PublishingEndPoint> endpoints;
 	private boolean downloading = false;
+	private DependencyProcessor dependencyProcessor;
+	private DependencySet dependencySet;
 
 	public PushPublisherConfig() {
 		super();
@@ -119,20 +131,12 @@ public class PushPublisherConfig extends PublisherConfig {
 
 	@SuppressWarnings("unchecked")
 	public Set<String> getContainers() {
-		if(get(AssetTypes.CONTAINERS.name()) == null){
-			Set<String> containersToBuild =   new HashSet<String>();
-			put(AssetTypes.CONTAINERS.name(), containersToBuild);
-		}
-		return (Set<String>) get(AssetTypes.CONTAINERS.name());
+		return dependencySet.getContainers();
 	}
 
 	@SuppressWarnings("unchecked")
 	public Set<String> getTemplates() {
-		if(get(AssetTypes.TEMPLATES.name()) == null){
-			Set<String> templatesToBuild =   new HashSet<String>();
-			put(AssetTypes.TEMPLATES.name(), templatesToBuild);
-		}
-		return (Set<String>) get(AssetTypes.TEMPLATES.name());
+		return dependencySet.getTemplates();
 	}
 
 	@SuppressWarnings("unchecked")
@@ -146,29 +150,17 @@ public class PushPublisherConfig extends PublisherConfig {
 
 	@SuppressWarnings("unchecked")
 	public Set<String> getContentlets() {
-		if(get(AssetTypes.CONTENTS.name()) == null){
-			Set<String> contentletsToBuild =   new HashSet<String>();
-			put(AssetTypes.CONTENTS.name(), contentletsToBuild);
-		}
-		return (Set<String>) get(AssetTypes.CONTENTS.name());
+		return dependencySet.getContentlets();
 	}
 
 	@SuppressWarnings("unchecked")
 	public Set<String> getLinks() {
-		if(get(AssetTypes.LINKS.name()) == null){
-			Set<String> linksToBuild =   new HashSet<String>();
-			put(AssetTypes.LINKS.name(), linksToBuild);
-		}
-		return (Set<String>) get(AssetTypes.LINKS.name());
+		return dependencySet.getLinks();
 	}
 
 	@SuppressWarnings("unchecked")
 	public Set<String> getWorkflows() {
-		if(get(AssetTypes.WORKFLOWS.name()) == null){
-			Set<String> workflowsToBuild =   new HashSet<String>();
-			put(AssetTypes.WORKFLOWS.name(), workflowsToBuild);
-		}
-		return (Set<String>) get(AssetTypes.WORKFLOWS.name());
+		return dependencySet.getWorkflows();
 	}
 
 	/**
@@ -179,74 +171,17 @@ public class PushPublisherConfig extends PublisherConfig {
 	 */
 	@SuppressWarnings("unchecked")
 	public Set<String> getRules() {
-		if (get(AssetTypes.RULES.name()) == null) {
-			Set<String> rulesToBuild = new HashSet<String>();
-			put(AssetTypes.RULES.name(), rulesToBuild);
-		}
-		return (Set<String>) get(AssetTypes.RULES.name());
+		return dependencySet.getRules();
 	}
 
 	@SuppressWarnings("unchecked")
 	public Set<String> getRelationships() {
-		if(get(AssetTypes.RELATIONSHIPS.name()) == null){
-			Set<String> relationshipsToBuild =   new HashSet<String>();
-			put(AssetTypes.RELATIONSHIPS.name(), relationshipsToBuild);
-		}
-		return (Set<String>) get(AssetTypes.RELATIONSHIPS.name());
+		return dependencySet.getRelationships();
 	}
 
     @SuppressWarnings("unchecked")
     public Set<String> getCategories() {
-        if(get(AssetTypes.CATEGORIES.name()) == null){
-            Set<String> categoriesToBuild =   new HashSet<>();
-            put(AssetTypes.CATEGORIES.name(), categoriesToBuild);
-        }
-        return (Set<String>) get(AssetTypes.CATEGORIES.name());
-    }
-
-	public void setHTMLPages(Set<String> htmlPages) {
-		put(AssetTypes.HTMLPAGES.name(), htmlPages);
-	}
-
-	public void setContainers(Set<String> containers) {
-		put(AssetTypes.CONTAINERS.name(), containers);
-	}
-
-	public void setTemplates(Set<String> templates) {
-		put(AssetTypes.TEMPLATES.name(), templates);
-	}
-
-	public void setContents(Set<String> contents) {
-		put(AssetTypes.CONTENTS.name(), contents);
-	}
-
-	public void setLinks(Set<String> links) {
-		put(AssetTypes.LINKS.name(), links);
-	}
-
-	public void setWorkflows(Set<String> workflows) {
-		put(AssetTypes.WORKFLOWS.name(), workflows);
-	}
-
-
-
-	/**
-	 * Sets the list of {@link Rule} objects that will be pushed to the
-	 * destination end-point.
-	 * 
-	 * @param rules
-	 *            - The list of rules.
-	 */
-	public void setRules(Set<String> rules) {
-		put(AssetTypes.RULES.name(), rules);
-	}
-
-	public void setRelationships(Set<String> relationships) {
-		put(AssetTypes.RELATIONSHIPS.name(), relationships);
-	}
-
-    public void setCategories(Set<String> categories) {
-        put(AssetTypes.CATEGORIES.name(), categories);
+		return dependencySet.getCategories();
     }
 
     public boolean isDownloading () {
@@ -256,5 +191,48 @@ public class PushPublisherConfig extends PublisherConfig {
     public void setDownloading ( boolean downloading ) {
         this.downloading = downloading;
     }
+
+	public void setDependencyProcessor(DependencyProcessor dependencyProcessor) {
+		this.dependencyProcessor = dependencyProcessor;
+	}
+
+	public <T> void addWithDependencies(final T asset, final PusheableAsset pusheableAsset) {
+		final String key = getAssestKey(asset);
+
+		if(!dependencySet.isDependenciesAdded(key, pusheableAsset)) {
+			dependencySet.addWithDependencies(key, pusheableAsset);
+			this.dependencyProcessor.addAsset(asset, pusheableAsset);
+		}
+	}
+
+	private <T> String getAssestKey(final T asset) {
+		if (Structure.class.isInstance(asset)){
+			return ((Structure) asset).getInode();
+		} if (Folder.class.isInstance(asset)){
+			return ((Folder) asset).getInode();
+		} if (Host.class.isInstance(asset)){
+			return ((Host) asset).getIdentifier();
+		} if (Contentlet.class.isInstance(asset)){
+			return ((Contentlet) asset).getIdentifier();
+		} if (Template.class.isInstance(asset)){
+			return ((Template) asset).getIdentifier();
+		} if (Link.class.isInstance(asset)){
+			return ((Link) asset).getIdentifier();
+		} else {
+			throw new IllegalArgumentException("Class no expected");
+		}
+	}
+
+	public <T> void add(final T asset, final PusheableAsset pusheableAsset) {
+		final String key = getAssestKey(asset);
+
+		if(!dependencySet.isAdded(key, pusheableAsset)) {
+			dependencySet.add(key, pusheableAsset);
+		}
+	}
+
+	public void waitUntilResolveAllDependencies() throws ExecutionException {
+		this.dependencyProcessor.waitUntilResolveAllDependencies();
+	}
 
 }
