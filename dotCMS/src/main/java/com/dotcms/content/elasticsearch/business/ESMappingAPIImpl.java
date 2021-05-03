@@ -753,7 +753,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 						contentletMap.put(keyName, valueObj);
 						contentletMap.put(keyNameText, numFormatter.format(valueObj));
 					} else {
-					    if (UtilMethods.isSet(valueObj) && valueObj instanceof Date){
+					    if (valueObj instanceof Date){
                             try {
                                 String datetimeString = datetimeFormat.format(valueObj);
                                 contentletMap.put(keyName, elasticSearchDateTimeFormat.format(valueObj));
