@@ -3,7 +3,9 @@ dependencies {
 
     def eeType = dotcmsReleaseVersion.equals("master") ? '-SNAPSHOT' : ''
 
-    compile group: 'com.dotcms.enterprise', name: 'ee', version: dotcmsReleaseVersion + eeType, changing: true
+    //compile group: 'com.dotcms.enterprise', name: 'ee', version: dotcmsReleaseVersion + eeType, changing: true
+    //compile fileTree(dir: 'src/main/enterprise/build/libs', include: ['ee_clean.jar'])
+    compile group: 'com.dotcms.enterprise', name: 'ee', version: 'issue-20295-filenames-with-blank-spaces-cause-problems-20210503.224635-1', changing: true
 
     compile group: 'com.dotcms', name: 'ant-tooling', version: '1.3.2'
     compile ('io.jsonwebtoken:jjwt:0.6.0'){
