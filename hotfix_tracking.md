@@ -128,3 +128,5 @@ This release includes the following code fixes:
 61. https://github.com/dotCMS/core/issues/19813 : Allow mail session to be configured via environmental variables
 
 62. https://github.com/dotCMS/core/issues/20197 : Cannot relate content to a macrolanguage if there is the same language with a country code
+
+63. https://github.com/dotCMS/core/issues/20164 : JsonTool parsing

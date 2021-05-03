@@ -269,11 +269,12 @@ public class JSONTool extends ImportSupport implements ViewTool {
 
     try {
 
+      final String trimmedString = s.trim();
       Logger.debug(this.getClass(), ()->"Json RESPONSE: " + s);
 
-      return s.startsWith("[") && s.endsWith("]")?
-              mapper.getDefaultObjectMapper().readValue(s, LIST_MAP_CLASS):
-              mapper.getDefaultObjectMapper().readValue(s, MAP_CLASS);
+      return trimmedString.startsWith("[") && trimmedString.endsWith("]")?
+              mapper.getDefaultObjectMapper().readValue(trimmedString, LIST_MAP_CLASS):
+              mapper.getDefaultObjectMapper().readValue(trimmedString, MAP_CLASS);
     } catch (Exception e) {
       Logger.error(this.getClass(), "Error on parsing the String: " + s + ", message: " + e.getMessage());
       Logger.warnAndDebug(this.getClass(), e);
@@ -285,10 +286,12 @@ public class JSONTool extends ImportSupport implements ViewTool {
     Object result;
 
     try {
-      if (s.startsWith("[") && s.endsWith("]")) {
-        result = new JSONArray(s);
+
+      final String trimmedString = s.trim();
+      if (trimmedString.startsWith("[") && trimmedString.endsWith("]")) {
+        result = new JSONArray(trimmedString);
       } else {
-        result = new JSONObject(s);
+        result = new JSONObject(trimmedString);
       }
     } catch (Exception e) {
       Logger.warn(this.getClass(), e.getMessage());
