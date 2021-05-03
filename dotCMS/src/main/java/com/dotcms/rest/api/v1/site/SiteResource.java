@@ -9,6 +9,7 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.rest.exception.ForbiddenException;
@@ -61,6 +62,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import org.apache.commons.lang.StringUtils;
 import org.glassfish.jersey.server.JSONP;
@@ -383,7 +385,7 @@ public class SiteResource implements Serializable {
             throw new IllegalArgumentException("Site: " + hostId + " does not exists");
         }
         this.siteHelper.publish(host, user, pageMode.respectAnonPerms);
-        return Response.ok(new ResponseEntityView(host)).build();
+        return Response.ok(new ResponseEntityView(this.toView(host))).build();
     }
 
     /**
@@ -424,7 +426,7 @@ public class SiteResource implements Serializable {
         }
 
         this.siteHelper.unpublish(host, user, pageMode.respectAnonPerms);
-        return Response.ok(new ResponseEntityView(host)).build();
+        return Response.ok(new ResponseEntityView(this.toView(host))).build();
     }
 
     /**
@@ -470,7 +472,7 @@ public class SiteResource implements Serializable {
         }
 
         this.archive(user, pageMode, host);
-        return Response.ok(new ResponseEntityView(host)).build();
+        return Response.ok(new ResponseEntityView(this.toView(host))).build();
     }
 
     @WrapInTransaction
@@ -483,7 +485,7 @@ public class SiteResource implements Serializable {
         }
 
         this.siteHelper.archive(host, user, pageMode.respectAnonPerms);
-        return Response.ok(new ResponseEntityView(host)).build();
+        return Response.ok(new ResponseEntityView(this.toView(host))).build();
     }
 
     /**
@@ -524,11 +526,12 @@ public class SiteResource implements Serializable {
         }
 
         this.siteHelper.unarchive(host, user, pageMode.respectAnonPerms);
-        return Response.ok(new ResponseEntityView(host)).build();
+        return Response.ok(new ResponseEntityView(this.toView(host))).build();
     }
 
     /**
      * Delete a host
+     * Default host can not be deleted
      * @param httpServletRequest
      * @param httpServletResponse
      * @param hostId
@@ -580,7 +583,7 @@ public class SiteResource implements Serializable {
             try {
                 asyncResponse.resume(new ResponseEntityView(deleteHostResult.get()));
             } catch (Exception e) {
-                asyncResponse.resume(e);
+                asyncResponse.resume(ResponseUtil.mapExceptionResponse(e));
             }
         }
     }
@@ -604,7 +607,6 @@ public class SiteResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response makeDefault(@Context final HttpServletRequest httpServletRequest,
                            @Context final HttpServletResponse httpServletResponse,
-                           @Suspended final AsyncResponse asyncResponse,
                            @PathParam("hostId")  final String hostId) throws DotDataException, DotSecurityException, PortalException, SystemException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
@@ -630,7 +632,7 @@ public class SiteResource implements Serializable {
     }
 
     /**
-     * Get the host setup progress
+     * Get the host setup progress when the hosts assets are being copied on background
      * @param httpServletRequest
      * @param httpServletResponse
      * @param hostId
@@ -647,7 +649,6 @@ public class SiteResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response getSiteSetupProgress(@Context final HttpServletRequest httpServletRequest,
                                 @Context final HttpServletResponse httpServletResponse,
-                                @Suspended final AsyncResponse asyncResponse,
                                 @PathParam("hostId")  final String hostId) throws DotDataException, DotSecurityException, PortalException, SystemException {
 
         Logger.debug(this, ()-> "Getting the site : " + hostId + " as a default");
@@ -656,6 +657,17 @@ public class SiteResource implements Serializable {
                 QuartzUtils.getTaskProgress("setup-host-" + hostId, "setup-host-group"))).build();
     }
 
+    /**
+     * Finds the host by identifier
+     * @param httpServletRequest
+     * @param httpServletResponse
+     * @param hostId
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws PortalException
+     * @throws SystemException
+     */
     @GET
     @Path("/{hostId}")
     @JSONP
@@ -663,7 +675,6 @@ public class SiteResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response findHostByIdentifier(@Context final HttpServletRequest httpServletRequest,
                                          @Context final HttpServletResponse httpServletResponse,
-                                         @Suspended final AsyncResponse asyncResponse,
                                          @PathParam("hostId")  final String hostId) throws DotDataException, DotSecurityException, PortalException, SystemException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
@@ -683,18 +694,29 @@ public class SiteResource implements Serializable {
             throw new IllegalArgumentException("Site: " + hostId + " does not exists");
         }
 
-        return Response.ok(new ResponseEntityView(host)).build();
+        return Response.ok(new ResponseEntityView(this.toView(host))).build();
     }
 
+    /**
+     * Finds a host by name
+     * The host name is sent by post to avoid escape url issues.
+     * @param httpServletRequest
+     * @param httpServletResponse
+     * @param searchSiteByNameForm
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws PortalException
+     * @throws SystemException
+     */
     @POST
     @Path("/_byname")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response findHostByName(@Context final HttpServletRequest httpServletRequest,
-                                         @Context final HttpServletResponse httpServletResponse,
-                                         @Suspended final AsyncResponse asyncResponse,
-                                         final SearchSiteByNameForm searchSiteByNameForm) throws DotDataException, DotSecurityException, PortalException, SystemException {
+                                 @Context final HttpServletResponse httpServletResponse,
+                                 final SearchSiteByNameForm searchSiteByNameForm) throws DotDataException, DotSecurityException, PortalException, SystemException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -719,7 +741,7 @@ public class SiteResource implements Serializable {
             throw new IllegalArgumentException("Site: " + hostname + " does not exists");
         }
 
-        return Response.ok(new ResponseEntityView(host)).build();
+        return Response.ok(new ResponseEntityView(this.toView(host))).build();
     }
 
     /**
@@ -770,6 +792,9 @@ public class SiteResource implements Serializable {
             }
         }
 
+        newHost.setIdentifier(null);
+        newHost.setInode(null);
+
         if (UtilMethods.isSet(newHostForm.getAliases())) {
             newHost.setAliases(newHostForm.getAliases());
         }
@@ -814,9 +839,25 @@ public class SiteResource implements Serializable {
 
         Logger.debug(this, ()-> "Creating new Host: " + newHostForm);
 
-        return Response.ok(new ResponseEntityView(this.siteHelper.save(newHost, user, pageMode.respectAnonPerms))).build();
+        return Response.ok(new ResponseEntityView(this.toView(this.siteHelper.save(newHost, user, pageMode.respectAnonPerms)))).build();
     }
 
+    /**
+     * Copy a host
+     * - Creates a new host,
+     * - Copies the assets based on the copy options
+     * @param httpServletRequest
+     * @param httpServletResponse
+     * @param copyHostForm
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws PortalException
+     * @throws SystemException
+     * @throws ParseException
+     * @throws SchedulerException
+     * @throws ClassNotFoundException
+     */
     @PUT
     @Path("/_copy")
     @JSONP
@@ -838,8 +879,13 @@ public class SiteResource implements Serializable {
         final PageMode      pageMode      = PageMode.get(httpServletRequest);
         final Host sourceHost = pageMode.respectAnonPerms? this.siteHelper.getSite(user, hostId):
                 this.siteHelper.getSiteNoFrontEndRoles(user, hostId);
+
+        if (null == sourceHost) {
+            throw new IllegalArgumentException("Site: " + hostId + " does not exists");
+        }
+
         final Response response  = this.createNewHost(httpServletRequest, httpServletResponse, copyHostForm.getHost());
-        final Host newHost       = (Host)ResponseEntityView.class.cast(response.getEntity()).getEntity();
+        final SiteView newSite   = (SiteView)ResponseEntityView.class.cast(response.getEntity()).getEntity();
 
         Logger.debug(this, ()-> "copying site from: " + hostId);
         Logger.debug(this, ()-> "copying site with values: " + copyHostForm);
@@ -853,21 +899,31 @@ public class SiteResource implements Serializable {
 
         final Map<String, Object> parameters = new HashMap<>();
         parameters.put("sourceHostId",      sourceHost.getIdentifier());
-        parameters.put("destinationHostId", newHost.getIdentifier());
+        parameters.put("destinationHostId", newSite.getIdentifier());
         parameters.put("copyOptions",       hostCopyOptions);
 
         // We make sure we schedule the copy only once even if the
         // browser for any reason sends the request twice
-        if (!QuartzUtils.isJobSequentiallyScheduled("setup-host-" + newHost.getIdentifier(), "setup-host-group")) {
+        if (!QuartzUtils.isJobSequentiallyScheduled("setup-host-" + newSite.getIdentifier(), "setup-host-group")) {
             Calendar startTime = Calendar.getInstance();
-            SimpleScheduledTask task = new SimpleScheduledTask("setup-host-" + newHost.getIdentifier(), "setup-host-group", "Setups host "
-                    + newHost.getIdentifier() + " from host " + sourceHost.getIdentifier(), HostAssetsJobProxy.class.getCanonicalName(), false,
-                    "setup-host-" + newHost.getIdentifier() + "-trigger", "setup-host-trigger-group", startTime.getTime(), null,
+            SimpleScheduledTask task = new SimpleScheduledTask("setup-host-" + newSite.getIdentifier(), "setup-host-group", "Setups host "
+                    + newSite.getIdentifier() + " from host " + sourceHost.getIdentifier(), HostAssetsJobProxy.class.getCanonicalName(), false,
+                    "setup-host-" + newSite.getIdentifier() + "-trigger", "setup-host-trigger-group", startTime.getTime(), null,
                     SimpleTrigger.MISFIRE_INSTRUCTION_RESCHEDULE_NEXT_WITH_REMAINING_COUNT, 5, true, parameters, 0, 0);
             QuartzUtils.scheduleTask(task);
         }
 
-        return Response.ok(new ResponseEntityView(newHost)).build();
+        return Response.ok(new ResponseEntityView(newSite)).build();
     }
 
+    private SiteView toView (final Host host) throws DotStateException, DotDataException, DotSecurityException {
+
+        return new SiteView(host.getIdentifier(), host.getInode(), host.getAliases(), host.getHostname(), host.getTagStorage(),
+                null != host.getHostThumbnail()? host.getHostThumbnail().getName(): StringPool.BLANK,
+                host.getBoolProperty("runDashboard"), host.getStringProperty("keywords"), host.getStringProperty("description"),
+                host.getStringProperty("googleMap"), host.getStringProperty("googleAnalytics"), host.getStringProperty("addThis"),
+                host.getStringProperty("proxyEditModeUrl"), host.getStringProperty("embeddedDashboard"), host.getLanguageId(),
+                host.isSystemHost(), host.isDefault(), host.isArchived(), host.isLive(), host.isLocked(), host.isWorking(), host.getModDate(), host.getModUser()
+        );
+    }
 } // E:O:F:SiteBrowserResource.

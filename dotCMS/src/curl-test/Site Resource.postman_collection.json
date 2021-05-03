@@ -76,7 +76,7 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code should be 200\", function () {",
+							"pm.test(\"Status code should be 200\", function () {  ",
 							"    pm.response.to.have.status(200);",
 							"});",
 							"",
@@ -162,17 +162,17 @@
 							"var jsonData = pm.response.json();",
 							"",
 							"pm.test(\"File name check\", function () {",
-							"    pm.expect(jsonData.entity.hostname).to.eql('postman.host1.com');",
+							"    pm.expect(jsonData.entity.hostName).to.eql('postman.host1.com');",
 							"    pm.expect(jsonData.entity.aliases).to.eql('postman.host2.com postman.host3.com');",
-							"    pm.expect(jsonData.entity.map.addThis).to.eql('add-this-key');",
-							"    pm.expect(jsonData.entity.map.description).to.eql('This is a postman host test 2');",
-							"    pm.expect(jsonData.entity.map.embeddedDashboard).to.eql('postman.host.com/dashboard');",
-							"    pm.expect(jsonData.entity.map.googleAnalytics).to.eql('google-analytics-key');",
-							"    pm.expect(jsonData.entity.map.googleMap).to.eql('google-key');",
-							"    pm.expect(jsonData.entity.map.proxyEditModeUrl).to.eql('proxy.postman.host.com');",
-							"    pm.expect(jsonData.entity.map.runDashboard).to.eql(true);",
-							"    pm.expect(jsonData.entity.map.tagStorage).to.eql('default');",
-							"    pm.expect(jsonData.entity.map.hostThumbnail).to.include('250px-Bocas2.jpg');",
+							"    pm.expect(jsonData.entity.addThis).to.eql('add-this-key');",
+							"    pm.expect(jsonData.entity.description).to.eql('This is a postman host test 2');",
+							"    pm.expect(jsonData.entity.embeddedDashboard).to.eql('postman.host.com/dashboard');",
+							"    pm.expect(jsonData.entity.googleAnalytics).to.eql('google-analytics-key');",
+							"    pm.expect(jsonData.entity.googleMap).to.eql('google-key');",
+							"    pm.expect(jsonData.entity.proxyUrlForEditMode).to.eql('proxy.postman.host.com');",
+							"    pm.expect(jsonData.entity.runDashboard).to.eql(true);",
+							"    pm.expect(jsonData.entity.tagStorage).to.eql('default');",
+							"    pm.expect(jsonData.entity.hostThumbnail).to.include('250px-Bocas2.jpg');",
 							"});",
 							"",
 							"pm.collectionVariables.set(\"hostId\", jsonData.entity.identifier);",
@@ -183,11 +183,26 @@
 				}
 			],
 			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
 				"method": "POST",
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"hostName\":\"postman.host1x.com\",\n    \"aliases\":\"postman.host2.com postman.host3.com\",\n    \"tagStorage\":\"default\",\n    \"hostThumbnail\":\"{{temporalFileId}}\",\n    \"runDashboard\":true,\n    \"keywords\":\"key1, key2, key3\",\n    \"description\":\"This is a postman host test 2\",\n    \"googleMap\":\"google-key\",\n    \"googleAnalytics\":\"google-analytics-key\",\n    \"addThis\":\"add-this-key\",\n    \"proxyUrlForEditMode\":\"proxy.postman.host.com\",\n    \"embeddedDashboard\":\"postman.host.com/dashboard\"\n}",
+					"raw": "{\n    \"hostName\":\"postman.host1.com\",\n    \"aliases\":\"postman.host2.com postman.host3.com\",\n    \"tagStorage\":\"default\",\n    \"hostThumbnail\":\"{{temporalFileId}}\",\n    \"runDashboard\":true,\n    \"keywords\":\"key1, key2, key3\",\n    \"description\":\"This is a postman host test 2\",\n    \"googleMap\":\"google-key\",\n    \"googleAnalytics\":\"google-analytics-key\",\n    \"addThis\":\"add-this-key\",\n    \"proxyUrlForEditMode\":\"proxy.postman.host.com\",\n    \"embeddedDashboard\":\"postman.host.com/dashboard\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -209,7 +224,7 @@
 			"response": []
 		},
 		{
-			"name": "Publish Host",
+			"name": "Publish Site",
 			"event": [
 				{
 					"listen": "test",
@@ -222,18 +237,18 @@
 							"var jsonData = pm.response.json();",
 							"",
 							"pm.test(\"File name check\", function () {",
-							"    pm.expect(jsonData.entity.hostname).to.eql('postman.host1.com');",
+							"    pm.expect(jsonData.entity.hostName).to.eql('postman.host1.com');",
 							"    pm.expect(jsonData.entity.aliases).to.eql('postman.host2.com postman.host3.com');",
-							"    pm.expect(jsonData.entity.map.addThis).to.eql('add-this-key');",
-							"    pm.expect(jsonData.entity.map.description).to.eql('This is a postman host test 2');",
-							"    pm.expect(jsonData.entity.map.embeddedDashboard).to.eql('postman.host.com/dashboard');",
-							"    pm.expect(jsonData.entity.map.googleAnalytics).to.eql('google-analytics-key');",
-							"    pm.expect(jsonData.entity.map.googleMap).to.eql('google-key');",
-							"    pm.expect(jsonData.entity.map.proxyEditModeUrl).to.eql('proxy.postman.host.com');",
-							"    pm.expect(jsonData.entity.map.runDashboard).to.eql(true);",
-							"    pm.expect(jsonData.entity.map.tagStorage).to.eql('default');",
-							"    pm.expect(jsonData.entity.map.hostThumbnail).to.include('250px-Bocas2.jpg');",
-							"    pm.expect(jsonData.entity.map.live).to.eql(true);",
+							"    pm.expect(jsonData.entity.addThis).to.eql('add-this-key');",
+							"    pm.expect(jsonData.entity.description).to.eql('This is a postman host test 2');",
+							"    pm.expect(jsonData.entity.embeddedDashboard).to.eql('postman.host.com/dashboard');",
+							"    pm.expect(jsonData.entity.googleAnalytics).to.eql('google-analytics-key');",
+							"    pm.expect(jsonData.entity.googleMap).to.eql('google-key');",
+							"    pm.expect(jsonData.entity.proxyUrlForEditMode).to.eql('proxy.postman.host.com');",
+							"    pm.expect(jsonData.entity.runDashboard).to.eql(true);",
+							"    pm.expect(jsonData.entity.tagStorage).to.eql('default');",
+							"    pm.expect(jsonData.entity.hostThumbnail).to.include('250px-Bocas2.jpg');",
+							"    pm.expect(jsonData.entity.live).to.eql(true);",
 							"});",
 							"",
 							"pm.collectionVariables.set(\"hostId\", jsonData.entity.identifier);",
@@ -278,7 +293,7 @@
 			"response": []
 		},
 		{
-			"name": "Make Default host",
+			"name": "Make Default Site",
 			"event": [
 				{
 					"listen": "test",
@@ -290,22 +305,7 @@
 							"",
 							"var jsonData = pm.response.json();",
 							"",
-							"pm.test(\"File name check\", function () {",
-							"    pm.expect(jsonData.entity.hostname).to.eql('postman.host1.com');",
-							"    pm.expect(jsonData.entity.aliases).to.eql('postman.host2.com postman.host3.com');",
-							"    pm.expect(jsonData.entity.map.addThis).to.eql('add-this-key');",
-							"    pm.expect(jsonData.entity.map.description).to.eql('This is a postman host test 2');",
-							"    pm.expect(jsonData.entity.map.embeddedDashboard).to.eql('postman.host.com/dashboard');",
-							"    pm.expect(jsonData.entity.map.googleAnalytics).to.eql('google-analytics-key');",
-							"    pm.expect(jsonData.entity.map.googleMap).to.eql('google-key');",
-							"    pm.expect(jsonData.entity.map.proxyEditModeUrl).to.eql('proxy.postman.host.com');",
-							"    pm.expect(jsonData.entity.map.runDashboard).to.eql(true);",
-							"    pm.expect(jsonData.entity.map.tagStorage).to.eql('default');",
-							"    pm.expect(jsonData.entity.map.hostThumbnail).to.include('250px-Bocas2.jpg');",
-							"    pm.expect(jsonData.entity.map.default).to.eql(true);",
-							"});",
 							"",
-							"pm.collectionVariables.set(\"hostId\", jsonData.entity.identifier);",
 							""
 						],
 						"type": "text/javascript"
@@ -347,7 +347,61 @@
 			"response": []
 		},
 		{
-			"name": "Get Host by Name",
+			"name": "Get Site By Id",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"File name check\", function () {",
+							"    pm.expect(jsonData.entity.hostName).to.eql('postman.host1.com');",
+							"    pm.expect(jsonData.entity.aliases).to.eql('postman.host2.com postman.host3.com');",
+							"    pm.expect(jsonData.entity.addThis).to.eql('add-this-key');",
+							"    pm.expect(jsonData.entity.description).to.eql('This is a postman host test 2');",
+							"    pm.expect(jsonData.entity.embeddedDashboard).to.eql('postman.host.com/dashboard');",
+							"    pm.expect(jsonData.entity.googleAnalytics).to.eql('google-analytics-key');",
+							"    pm.expect(jsonData.entity.googleMap).to.eql('google-key');",
+							"    pm.expect(jsonData.entity.proxyUrlForEditMode).to.eql('proxy.postman.host.com');",
+							"    pm.expect(jsonData.entity.runDashboard).to.eql(true);",
+							"    pm.expect(jsonData.entity.tagStorage).to.eql('default');",
+							"    pm.expect(jsonData.entity.hostThumbnail).to.include('250px-Bocas2.jpg');",
+							"    pm.expect(jsonData.entity.live).to.eql(true);",
+							"    pm.expect(jsonData.entity.default).to.eql(true);",
+							"});",
+							"",
+							"pm.collectionVariables.set(\"hostId\", jsonData.entity.identifier);",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/site/{{hostId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"site",
+						"{{hostId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Site by Name",
 			"event": [
 				{
 					"listen": "test",
@@ -355,21 +409,17 @@
 						"exec": [
 							"var jsonData = pm.response.json();",
 							"",
-							"pm.test(\"body check\", function () {",
-							"    pm.expect(jsonData.entity.length).to.gte(1);",
+							"pm.test(\"Status code is 200\", () => {",
+							"  pm.expect(pm.response.code).to.eql(200);",
 							"});",
 							"",
 							"pm.test(\"To Check if Value is Null\", function () {",
 							"",
-							"    pm.expect(jsonData.entity[0].hasThumbnail).not.eq(undefined);",
-							"    pm.expect(jsonData.entity[0].hostInode).not.eq(undefined);",
-							"    pm.expect(jsonData.entity[0].hostId).not.eq(undefined);",
-							"    pm.expect(jsonData.entity[0].hostName).not.eq(undefined);",
-							"    pm.expect(jsonData.entity[0].tagStorage).not.eq(undefined);",
+							"    pm.expect(jsonData.entity.hostName).eq(\"default\");",
 							"});",
 							"",
-							"pm.collectionVariables.set(\"temporaryInode\", jsonData.entity[0].hostInode);",
-							"pm.collectionVariables.set(\"temmporayIdentifier\", jsonData.entity[0].hostInode);",
+							"pm.collectionVariables.set(\"hostInode\", jsonData.entity.inode);",
+							"pm.collectionVariables.set(\"hostdentifier\", jsonData.entity.identifier);",
 							""
 						],
 						"type": "text/javascript"
@@ -419,7 +469,58 @@
 			"response": []
 		},
 		{
-			"name": "UnPublish Host",
+			"name": "Make Default - Default Site",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/site/_makedefault/{{hostdentifier}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"site",
+						"_makedefault",
+						"{{hostdentifier}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Site By Id After switched the Default",
 			"event": [
 				{
 					"listen": "test",
@@ -432,18 +533,73 @@
 							"var jsonData = pm.response.json();",
 							"",
 							"pm.test(\"File name check\", function () {",
-							"    pm.expect(jsonData.entity.hostname).to.eql('postman.host1.com');",
+							"    pm.expect(jsonData.entity.hostName).to.eql('postman.host1.com');",
 							"    pm.expect(jsonData.entity.aliases).to.eql('postman.host2.com postman.host3.com');",
-							"    pm.expect(jsonData.entity.map.addThis).to.eql('add-this-key');",
-							"    pm.expect(jsonData.entity.map.description).to.eql('This is a postman host test 2');",
-							"    pm.expect(jsonData.entity.map.embeddedDashboard).to.eql('postman.host.com/dashboard');",
-							"    pm.expect(jsonData.entity.map.googleAnalytics).to.eql('google-analytics-key');",
-							"    pm.expect(jsonData.entity.map.googleMap).to.eql('google-key');",
-							"    pm.expect(jsonData.entity.map.proxyEditModeUrl).to.eql('proxy.postman.host.com');",
-							"    pm.expect(jsonData.entity.map.runDashboard).to.eql(true);",
-							"    pm.expect(jsonData.entity.map.tagStorage).to.eql('default');",
-							"    pm.expect(jsonData.entity.map.hostThumbnail).to.include('250px-Bocas2.jpg');",
-							"    pm.expect(jsonData.entity.map.live).to.eql(false);",
+							"    pm.expect(jsonData.entity.addThis).to.eql('add-this-key');",
+							"    pm.expect(jsonData.entity.description).to.eql('This is a postman host test 2');",
+							"    pm.expect(jsonData.entity.embeddedDashboard).to.eql('postman.host.com/dashboard');",
+							"    pm.expect(jsonData.entity.googleAnalytics).to.eql('google-analytics-key');",
+							"    pm.expect(jsonData.entity.googleMap).to.eql('google-key');",
+							"    pm.expect(jsonData.entity.proxyUrlForEditMode).to.eql('proxy.postman.host.com');",
+							"    pm.expect(jsonData.entity.runDashboard).to.eql(true);",
+							"    pm.expect(jsonData.entity.tagStorage).to.eql('default');",
+							"    pm.expect(jsonData.entity.hostThumbnail).to.include('250px-Bocas2.jpg');",
+							"    pm.expect(jsonData.entity.live).to.eql(true);",
+							"    pm.expect(jsonData.entity.default).to.eql(false);",
+							"});",
+							"",
+							"pm.collectionVariables.set(\"hostId\", jsonData.entity.identifier);",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/site/{{hostId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"site",
+						"{{hostId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UnPublish Site",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"File name check\", function () {",
+							"    pm.expect(jsonData.entity.hostName).to.eql('postman.host1.com');",
+							"    pm.expect(jsonData.entity.aliases).to.eql('postman.host2.com postman.host3.com');",
+							"    pm.expect(jsonData.entity.addThis).to.eql('add-this-key');",
+							"    pm.expect(jsonData.entity.description).to.eql('This is a postman host test 2');",
+							"    pm.expect(jsonData.entity.embeddedDashboard).to.eql('postman.host.com/dashboard');",
+							"    pm.expect(jsonData.entity.googleAnalytics).to.eql('google-analytics-key');",
+							"    pm.expect(jsonData.entity.googleMap).to.eql('google-key');",
+							"    pm.expect(jsonData.entity.proxyUrlForEditMode).to.eql('proxy.postman.host.com');",
+							"    pm.expect(jsonData.entity.runDashboard).to.eql(true);",
+							"    pm.expect(jsonData.entity.tagStorage).to.eql('default');",
+							"    pm.expect(jsonData.entity.hostThumbnail).to.include('250px-Bocas2.jpg');",
+							"    pm.expect(jsonData.entity.live).to.eql(false);",
+							"    pm.expect(jsonData.entity.default).to.eql(false);",
 							"});",
 							"",
 							"pm.collectionVariables.set(\"hostId\", jsonData.entity.identifier);",
@@ -481,6 +637,147 @@
 						"v1",
 						"site",
 						"_unpublish",
+						"{{hostId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Archive Site",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"File name check\", function () {",
+							"    pm.expect(jsonData.entity.hostName).to.eql('postman.host1.com');",
+							"    pm.expect(jsonData.entity.aliases).to.eql('postman.host2.com postman.host3.com');",
+							"    pm.expect(jsonData.entity.addThis).to.eql('add-this-key');",
+							"    pm.expect(jsonData.entity.description).to.eql('This is a postman host test 2');",
+							"    pm.expect(jsonData.entity.embeddedDashboard).to.eql('postman.host.com/dashboard');",
+							"    pm.expect(jsonData.entity.googleAnalytics).to.eql('google-analytics-key');",
+							"    pm.expect(jsonData.entity.googleMap).to.eql('google-key');",
+							"    pm.expect(jsonData.entity.proxyUrlForEditMode).to.eql('proxy.postman.host.com');",
+							"    pm.expect(jsonData.entity.runDashboard).to.eql(true);",
+							"    pm.expect(jsonData.entity.tagStorage).to.eql('default');",
+							"    pm.expect(jsonData.entity.hostThumbnail).to.include('250px-Bocas2.jpg');",
+							"    pm.expect(jsonData.entity.live).to.eql(false);",
+							"    pm.expect(jsonData.entity.default).to.eql(false);",
+							"});",
+							"",
+							"pm.collectionVariables.set(\"hostId\", jsonData.entity.identifier);",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/site/_archive/{{hostId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"site",
+						"_archive",
+						"{{hostId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UnArchive Site",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"File name check\", function () {",
+							"    pm.expect(jsonData.entity.hostName).to.eql('postman.host1.com');",
+							"    pm.expect(jsonData.entity.aliases).to.eql('postman.host2.com postman.host3.com');",
+							"    pm.expect(jsonData.entity.addThis).to.eql('add-this-key');",
+							"    pm.expect(jsonData.entity.description).to.eql('This is a postman host test 2');",
+							"    pm.expect(jsonData.entity.embeddedDashboard).to.eql('postman.host.com/dashboard');",
+							"    pm.expect(jsonData.entity.googleAnalytics).to.eql('google-analytics-key');",
+							"    pm.expect(jsonData.entity.googleMap).to.eql('google-key');",
+							"    pm.expect(jsonData.entity.proxyUrlForEditMode).to.eql('proxy.postman.host.com');",
+							"    pm.expect(jsonData.entity.runDashboard).to.eql(true);",
+							"    pm.expect(jsonData.entity.tagStorage).to.eql('default');",
+							"    pm.expect(jsonData.entity.hostThumbnail).to.include('250px-Bocas2.jpg');",
+							"    pm.expect(jsonData.entity.archived).to.eql(false);",
+							"    pm.expect(jsonData.entity.live).to.eql(false);",
+							"    pm.expect(jsonData.entity.default).to.eql(false);",
+							"});",
+							"",
+							"pm.collectionVariables.set(\"hostId\", jsonData.entity.identifier);",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/site/_unarchive/{{hostId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"site",
+						"_unarchive",
 						"{{hostId}}"
 					]
 				}
@@ -549,6 +846,846 @@
 				}
 			},
 			"response": []
+		},
+		{
+			"name": "Delete Site No-Archived",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/site/{{hostId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"site",
+						"{{hostId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Archive Site Again",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"File name check\", function () {",
+							"    pm.expect(jsonData.entity.hostName).to.eql('postman.host1.com');",
+							"    pm.expect(jsonData.entity.aliases).to.eql('postman.host2.com postman.host3.com');",
+							"    pm.expect(jsonData.entity.addThis).to.eql('add-this-key');",
+							"    pm.expect(jsonData.entity.description).to.eql('This is a postman host test 2');",
+							"    pm.expect(jsonData.entity.embeddedDashboard).to.eql('postman.host.com/dashboard');",
+							"    pm.expect(jsonData.entity.googleAnalytics).to.eql('google-analytics-key');",
+							"    pm.expect(jsonData.entity.googleMap).to.eql('google-key');",
+							"    pm.expect(jsonData.entity.proxyUrlForEditMode).to.eql('proxy.postman.host.com');",
+							"    pm.expect(jsonData.entity.runDashboard).to.eql(true);",
+							"    pm.expect(jsonData.entity.tagStorage).to.eql('default');",
+							"    pm.expect(jsonData.entity.hostThumbnail).to.include('250px-Bocas2.jpg');",
+							"    pm.expect(jsonData.entity.live).to.eql(false);",
+							"    pm.expect(jsonData.entity.default).to.eql(false);",
+							"});",
+							"",
+							"pm.collectionVariables.set(\"hostId\", jsonData.entity.identifier);",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/site/_archive/{{hostId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"site",
+						"_archive",
+						"{{hostId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Site",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/site/{{hostId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"site",
+						"{{hostId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Copy Site",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"File name check\", function () {",
+							"    pm.expect(jsonData.entity.hostName).to.eql('postman.copy.host.com');",
+							"});",
+							"",
+							"pm.collectionVariables.set(\"hostId\", jsonData.entity.identifier);",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"copyFromHostId\":\"{{hostdentifier}}\",\n    \"copyAll\":true,\n    \"copyTemplatesContainers\":true,\n    \"copyContentOnPages\":true,\n    \"copyFolders\":true,\n    \"copyContentOnHost\":true,\n    \"copyLinks\":true,\n    \"copyHostVariables\":true,\n    \"host\": {\n        \"hostName\":\"postman.copy.host.com\"\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/site/_copy",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"site",
+						"_copy"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Setup progress status",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// not so much to test here",
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/site/_setup_progress/{{hostId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"site",
+						"_setup_progress",
+						"{{hostId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Publish Site Wrong Site Id",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"File name check\", function () {",
+							"    pm.expect(jsonData.entity.hostName).to.eql('postman.host1.com');",
+							"    pm.expect(jsonData.entity.aliases).to.eql('postman.host2.com postman.host3.com');",
+							"    pm.expect(jsonData.entity.addThis).to.eql('add-this-key');",
+							"    pm.expect(jsonData.entity.description).to.eql('This is a postman host test 2');",
+							"    pm.expect(jsonData.entity.embeddedDashboard).to.eql('postman.host.com/dashboard');",
+							"    pm.expect(jsonData.entity.googleAnalytics).to.eql('google-analytics-key');",
+							"    pm.expect(jsonData.entity.googleMap).to.eql('google-key');",
+							"    pm.expect(jsonData.entity.proxyUrlForEditMode).to.eql('proxy.postman.host.com');",
+							"    pm.expect(jsonData.entity.runDashboard).to.eql(true);",
+							"    pm.expect(jsonData.entity.tagStorage).to.eql('default');",
+							"    pm.expect(jsonData.entity.hostThumbnail).to.include('250px-Bocas2.jpg');",
+							"    pm.expect(jsonData.entity.live).to.eql(true);",
+							"});",
+							"",
+							"pm.collectionVariables.set(\"hostId\", jsonData.entity.identifier);",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/site/_publish/xxx",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"site",
+						"_publish",
+						"xxx"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UnPublish Site Wrong Site Id Copy",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/site/_unpublish/xxx",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"site",
+						"_unpublish",
+						"xxx"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Site by Name Copy",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"Status code is 200\", () => {",
+							"  pm.expect(pm.response.code).to.eql(200);",
+							"});",
+							"",
+							"pm.test(\"To Check if Value is Null\", function () {",
+							"",
+							"    pm.expect(jsonData.entity.hostName).eq(\"default\");",
+							"});",
+							"",
+							"pm.collectionVariables.set(\"hostInode\", jsonData.entity.inode);",
+							"pm.collectionVariables.set(\"hostdentifier\", jsonData.entity.identifier);",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"sitename\":\"default\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/site/_byname",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"site",
+						"_byname"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Archive Site Default Site is not Possible",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/site/_archive/{{hostdentifier}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"site",
+						"_archive",
+						"{{hostdentifier}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Archive Site wrong site Id",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/site/_archive/xxx",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"site",
+						"_archive",
+						"xxx"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Archive Site wrong site Id Copy",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/site/xxx",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"site",
+						"xxx"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Make Default Site wrong site Id",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/site/_makedefault/xxx",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"site",
+						"_makedefault",
+						"xxx"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Site By Id Site site",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/site/xxx",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"site",
+						"xxx"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Site By Name Wrong host name",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/site/_byname/xxxx",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"site",
+						"_byname",
+						"xxxx"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create new Site - No Hostname",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \n\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/site",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"site"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Copy Site - wrong host",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"copyFromHostId\":\"xxxxx\",\n    \"copyAll\":true,\n    \"copyTemplatesContainers\":true,\n    \"copyContentOnPages\":true,\n    \"copyFolders\":true,\n    \"copyContentOnHost\":true,\n    \"copyLinks\":true,\n    \"copyHostVariables\":true,\n    \"host\": {\n        \"hostName\":\"postman.copy.host.com\"\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/site/_copy",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"site",
+						"_copy"
+					]
+				}
+			},
+			"response": []
 		}
 	],
 	"variable": [
@@ -566,6 +1703,14 @@
 		},
 		{
 			"key": "hostId",
+			"value": ""
+		},
+		{
+			"key": "hostInode",
+			"value": ""
+		},
+		{
+			"key": "hostdentifier",
 			"value": ""
 		}
 	]
