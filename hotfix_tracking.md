@@ -153,3 +153,5 @@ This maintenance release includes the following code fixes:
 74. https://github.com/dotCMS/core/issues/20250 : [Push Publishing] : Improving error message when finding unique content match
 
 75. https://github.com/dotCMS/core/issues/20232 : [Integrity Checker] : Improving error message when fixing File Asset conflict
+
+76. https://github.com/dotCMS/core/issues/20252 : Dates with format yyyy-MM-dd HH:mm:ss.SSS are mapped as texts in ES
