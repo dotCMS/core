@@ -151,3 +151,5 @@ This maintenance release includes the following code fixes:
 73. https://github.com/dotCMS/core/issues/20164 : JsonTool parsing
 
 74. https://github.com/dotCMS/core/issues/20250 : [Push Publishing] : Improving error message when finding unique content match
+
+75. https://github.com/dotCMS/core/issues/20232 : [Integrity Checker] : Improving error message when fixing File Asset conflict
