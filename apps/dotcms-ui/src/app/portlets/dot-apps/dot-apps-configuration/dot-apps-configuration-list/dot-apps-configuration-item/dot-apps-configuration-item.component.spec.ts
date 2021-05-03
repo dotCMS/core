@@ -172,6 +172,12 @@ describe('DotAppsConfigurationItemComponent', () => {
             });
             expect(component.edit.emit).toHaveBeenCalledWith(sites[0]);
         });
+
+        it('should not emit edit action when host label clicked', () => {
+            spyOn(component.edit, 'emit');
+            fixture.debugElement.query(By.css('dot-copy-button')).nativeElement.click();
+            expect(component.edit.emit).toHaveBeenCalledTimes(0);
+        });
     });
 
     describe('With No configuration', () => {

@@ -32,6 +32,7 @@ import {
 import { DotPageContainer } from '@models/dot-page-container/dot-page-container.model';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { INLINE_TINYMCE_SCRIPTS } from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/inline-edit-mode.js';
+import { HttpErrorResponse } from '@angular/common/http';
 
 export enum DotContentletAction {
     EDIT,
@@ -549,23 +550,7 @@ export class DotEditContentHtmlService {
         );
     }
 
-    private resetInlineCurrentContent(id: string) {
-        return this.inlineCurrentContent[id];
-    }
-
-    private handleDatasetMissingErrors({ dataset }: Pick<DotInlineEditContent, 'dataset'>): void {
-        const requiredDatasetKeys = ['mode', 'inode', 'fieldName', 'language'];
-        const datasetMissing = requiredDatasetKeys.filter(function (key) {
-            return !Object.keys(dataset).includes(key);
-        });
-        const message = this.dotMessageService.get('editpage.inline.attribute.error');
-        datasetMissing.forEach((dataset: string) => {
-            this.dotGlobalMessageService.error(`${dataset} ${message}`);
-        });
-    }
-
     private handleTinyMCEOnFocusEvent(contentlet: DotInlineEditContent) {
-        this.handleDatasetMissingErrors(contentlet);
         this.inlineCurrentContent = {
             ...this.inlineCurrentContent,
             [contentlet.element.id]: contentlet.innerHTML
@@ -588,15 +573,14 @@ export class DotEditContentHtmlService {
                 .subscribe(
                     () => {
                         // on success
+                        content.element.classList.remove('inline-editing--saving');
+                        delete this.inlineCurrentContent[content.element.id];
                     },
-                    () => {
+                    (e: HttpErrorResponse) => {
                         // on error
                         content.element.innerHTML = this.inlineCurrentContent[content.element.id];
-                        const message = this.dotMessageService.get('editpage.inline.error');
+                        const message = e.error.errors[0].message || this.dotMessageService.get('editpage.inline.error');
                         this.dotGlobalMessageService.error(message);
-                    },
-                    () => {
-                        // finally
                         content.element.classList.remove('inline-editing--saving');
                         delete this.inlineCurrentContent[content.element.id];
                     }
