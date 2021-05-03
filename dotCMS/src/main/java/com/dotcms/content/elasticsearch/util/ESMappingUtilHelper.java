@@ -368,7 +368,7 @@ public class ESMappingUtilHelper {
         if (field instanceof DateField || field instanceof DateTimeField
                 || field instanceof TimeField) {
             mappingForField = "{\n\"type\":\"date\",\n";
-            mappingForField += "\"format\": \"yyyy-MM-dd't'HH:mm:ss||MMM d, yyyy h:mm:ss a||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis\"\n}";
+            mappingForField += "\"format\": \"yyyy-MM-dd't'HH:mm:ss||MMM d, yyyy h:mm:ss a||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd HH:mm:ss.SSS||yyyy-MM-dd||epoch_millis\"\n}";
         } else if (field instanceof TextField || field instanceof TextAreaField
                 || field instanceof WysiwygField || field instanceof RadioField
                     || field instanceof SelectField || field instanceof MultiSelectField
