@@ -147,3 +147,5 @@ This maintenance release includes the following code fixes:
 71. https://github.com/dotCMS/core/issues/20136 : [Push Publish] : Selecting the REMOVE option in Push Publishing modal is not working
 
 72. https://github.com/dotCMS/core/issues/20197 : Cannot relate content to a macrolanguage if there is the same language with a country code
+
+73. https://github.com/dotCMS/core/issues/20164 : JsonTool parsing
