@@ -10,6 +10,7 @@
     url="v1/templates"
     [actions]="[]"
     [checkbox]="true"
+    [mapItems]="mapTableItems"
     [contextMenu]="true"
     dataKey="inode"
 >
@@ -62,8 +63,9 @@
         <td [ngStyle]="{ 'text-align': tableColumns[3].textAlign }">
             {{ rowData.modDate }}
         </td>
-        <td style="width: 5%">
+        <td style="width: 5%; height: 3.85rem">
             <dot-action-menu-button
+                *ngIf="rowData.disableInteraction === undefined || rowData.disableInteraction === false"
                 [attr.data-testid]="rowData.identifier"
                 class="listing-datatable__action-button"
                 [actions]="setTemplateActions(rowData)"

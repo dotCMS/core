@@ -22,6 +22,7 @@ import {
 } from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
 import { DotContentState } from '@dotcms/dotcms-models';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { DotSiteBrowserService } from '@services/dot-site-browser/dot-site-browser.service';
 
 @Component({
     selector: 'dot-template-list',
@@ -50,7 +51,8 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
         private dotSiteService: SiteService,
         private dotTemplatesService: DotTemplatesService,
         private route: ActivatedRoute,
-        public dialogService: DialogService
+        public dialogService: DialogService,
+        private dotSiteBrowserService: DotSiteBrowserService
     ) {}
 
     ngOnInit(): void {
@@ -99,11 +101,15 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
     /**
      * Handle selected template.
      *
-     * @param {DotTemplate} { identifier }
+     * @param {DotTemplate} { template }
      * @memberof DotTemplateListComponent
      */
-    editTemplate({ identifier }: DotTemplate): void {
-        this.dotRouterService.goToEditTemplate(identifier);
+    editTemplate(template: DotTemplate): void {
+        this.isTemplateAsFile(template)
+            ? this.dotSiteBrowserService.setSelectedFolder(template.identifier).subscribe(() => {
+                  this.dotRouterService.goToSiteBrowser();
+              })
+            : this.dotRouterService.goToEditTemplate(template.identifier);
     }
 
     /**
@@ -187,6 +193,29 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
             revision: this.dotMessageService.get('Revision'),
             draft: this.dotMessageService.get('Draft')
         };
+    }
+
+    /**
+     * Map table results to add the disableInteraction property.
+     * @param {DotTemplate[]} templates
+     * @returns DotTemplate[]
+     * @memberof DotTemplateListComponent
+     */
+    mapTableItems(templates: DotTemplate[]): DotTemplate[] {
+        return templates.map((template) => {
+            template.disableInteraction = template.identifier.includes('/') ? true : false;
+            return template;
+        });
+    }
+
+    /**
+     * Identify if is a template as File based on the identifier path.
+     * @param {DotTemplate} {identifier}
+     * @returns boolean
+     * @memberof DotTemplateListComponent
+     */
+    isTemplateAsFile({ identifier }: DotTemplate): boolean {
+        return identifier.includes('/');
     }
 
     handleButtonClick(): void {

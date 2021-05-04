@@ -33,7 +33,7 @@ import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-b
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
-import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA, DebugElement } from '@angular/core';
 import { DotActionMenuButtonComponent } from '@components/_common/dot-action-menu-button/dot-action-menu-button.component';
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotAddToBundleComponent } from '@components/_common/dot-add-to-bundle/dot-add-to-bundle.component';
@@ -47,6 +47,7 @@ import { DotContentState } from '@dotcms/dotcms-models';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { mockSites } from '@tests/site-service.mock';
+import { DotSiteBrowserService } from '@services/dot-site-browser/dot-site-browser.service';
 
 const templatesMock: DotTemplate[] = [
     {
@@ -116,6 +117,23 @@ const templatesMock: DotTemplate[] = [
         canPublish: true,
         hasLiveVersion: false,
         working: false
+    },
+    {
+        anonymous: false,
+        friendlyName: 'Template as a File',
+        identifier: '//dir/asFile',
+        inode: '1asFile',
+        name: 'Template as a File',
+        type: 'type',
+        versionType: 'type',
+        deleted: false,
+        live: true,
+        layout: null,
+        canEdit: true,
+        canWrite: true,
+        canPublish: true,
+        hasLiveVersion: true,
+        working: true
     }
 ];
 
@@ -241,6 +259,7 @@ describe('DotTemplateListComponent', () => {
     let archivedTemplate: DotActionMenuButtonComponent;
     let dotAlertConfirmService: DotAlertConfirmService;
     let coreWebService: CoreWebService;
+    let dotSiteBrowserService: DotSiteBrowserService;
 
     const messageServiceMock = new MockDotMessageService(messages);
 
@@ -262,7 +281,8 @@ describe('DotTemplateListComponent', () => {
                     provide: DotRouterService,
                     useValue: {
                         gotoPortlet: jasmine.createSpy(),
-                        goToEditTemplate: jasmine.createSpy()
+                        goToEditTemplate: jasmine.createSpy(),
+                        goToSiteBrowser: jasmine.createSpy()
                     }
                 },
                 {
@@ -287,7 +307,8 @@ describe('DotTemplateListComponent', () => {
                 DotEventsSocket,
                 DotcmsConfigService,
                 DotMessageDisplayService,
-                DialogService
+                DialogService,
+                DotSiteBrowserService
             ],
             imports: [
                 DotListingDataTableModule,
@@ -315,6 +336,7 @@ describe('DotTemplateListComponent', () => {
         dialogService = TestBed.inject(DialogService);
         dotAlertConfirmService = TestBed.inject(DotAlertConfirmService);
         coreWebService = TestBed.inject(CoreWebService);
+        dotSiteBrowserService = TestBed.inject(DotSiteBrowserService);
     });
 
     describe('with data', () => {
@@ -447,6 +469,28 @@ describe('DotTemplateListComponent', () => {
                 ];
 
                 expect(publishTemplate.actions).toEqual(actions);
+            });
+
+            describe('template as a file ', () => {
+                it('should go to site Broser when selected', () => {
+                    spyOn(dotSiteBrowserService, 'setSelectedFolder').and.returnValue(of({}));
+                    const rows: DebugElement[] = fixture.debugElement.queryAll(
+                        By.css('.p-selectable-row')
+                    );
+                    fixture.detectChanges();
+                    rows[rows.length - 1].nativeElement.click();
+                    expect(dotSiteBrowserService.setSelectedFolder).toHaveBeenCalledWith(
+                        templatesMock[4].identifier
+                    );
+                    expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
+                });
+
+                it('should hide the Action Menu', () => {
+                    const menu: DebugElement = fixture.debugElement.query(
+                        By.css('[data-testid="//dir/asFile"]')
+                    );
+                    expect(menu).toBeNull();
+                });
             });
         });
 

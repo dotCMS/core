@@ -28,6 +28,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { FormsModule } from '@angular/forms';
 import { ContextMenuModule } from 'primeng/contextmenu';
+import { doc } from 'prettier';
 
 @Component({
     selector: 'dot-empty-state',
@@ -49,7 +50,7 @@ class EmptyMockComponent {}
         [actions]="actions"
         [dataKey]="dataKey"
         [checkbox]="checkbox"
-        [firstPageData]="firstPageData"
+        [mapItems]="mapItems"
         [paginatorExtraParams]="paginatorExtraParams"
         (rowWasClicked)="rowWasClicked($event)"
         (selectedItems)="selectedItems($event)"
@@ -69,7 +70,6 @@ class TestHostComponent {
     @Input() actions: DotActionMenuItem[];
     @Input() dataKey = '';
     @Input() checkbox = false;
-    @Input() firstPageData: any[];
     @Input() paginatorExtraParams: { [key: string]: string } = {};
 
     rowWasClicked(data: any) {
@@ -78,6 +78,13 @@ class TestHostComponent {
 
     selectedItems(data: any) {
         console.log(data);
+    }
+
+    mapItems(items: any[]): any[] {
+        return items.map((item) => {
+            item.disableInteraction = item.variable === 'Host';
+            return item;
+        });
     }
 }
 
@@ -156,18 +163,18 @@ describe('DotListingDataTableComponent', () => {
 
         items = [
             {
-                field1: 'item1-value1',
-                field2: 'item1-value2',
-                field3: 'item1-value3',
-                nEntries: 'item1-value4',
-                variable: 'Host'
-            },
-            {
                 field1: 'item2-value1',
                 field2: 'item2-value2',
                 field3: 'item2-value3',
                 nEntries: 'item1-value4',
                 variable: 'Banner'
+            },
+            {
+                field1: 'item1-value1',
+                field2: 'item1-value2',
+                field3: 'item1-value3',
+                nEntries: 'item1-value4',
+                variable: 'Host'
             },
             {
                 field1: 'item3-value1',
@@ -432,6 +439,19 @@ describe('DotListingDataTableComponent', () => {
         expect(comp.rowWasClicked.emit).toHaveBeenCalledTimes(2);
     }));
 
+    it('should set pContextMenuRowDisabled correctly', fakeAsync(() => {
+        setRequestSpy(items);
+        spyOn(comp.rowWasClicked, 'emit');
+        comp.loadFirstPage();
+        hostFixture.detectChanges();
+        tick(1);
+        hostFixture.detectChanges();
+        const rows = document.querySelectorAll('[data-testclass="testTableRow"]');
+        debugger;
+        expect(rows[0].getAttribute('ng-reflect-p-context-menu-row-disabled')).toEqual('false');
+        expect(rows[1].getAttribute('ng-reflect-p-context-menu-row-disabled')).toEqual('true');
+    }));
+
     describe('with checkBox', () => {
         let bodyCheckboxes: DebugElement[];
 
@@ -448,7 +468,7 @@ describe('DotListingDataTableComponent', () => {
         it('should renderer table', () => {
             const headerCheckBoxes = el.querySelectorAll('p-tableheadercheckbox');
             expect(1).toEqual(headerCheckBoxes.length);
-            expect(7).toEqual(bodyCheckboxes.length);
+            expect(6).toEqual(bodyCheckboxes.length);
         });
     });
 
