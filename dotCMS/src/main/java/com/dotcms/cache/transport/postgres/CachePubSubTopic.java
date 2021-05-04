@@ -1,6 +1,7 @@
 package com.dotcms.cache.transport.postgres;
 
 import java.io.Serializable;
+import java.util.Map;
 import com.dotcms.dotpubsub.DotPubSubEvent;
 import com.dotcms.dotpubsub.DotPubSubProvider;
 import com.dotcms.dotpubsub.DotPubSubProviderLocator;
@@ -11,6 +12,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
+import io.vavr.Function2;
 
 public class CachePubSubTopic implements DotPubSubTopic {
 
@@ -54,64 +56,87 @@ public class CachePubSubTopic implements DotPubSubTopic {
     }
 
 
+    
 
     @Override
     public Comparable getKey() {
         return CACHE_TOPIC;
     }
 
+    
+
+    
     @Override
-    public void notify(DotPubSubEvent event) {
+    public void notify(final DotPubSubEvent event) {
 
         if (serverId.equals(event.getOrigin())) {
             Logger.debug(getClass(), () -> "pub/sub event sent from me, ignoring:" + event);
             return;
         }
 
+        
         Logger.debug(getClass(), () -> "got pub/sub event:" + event);
-        final String message = (String) event.getMessage();
-        final CacheEventType type = CacheEventType.from(event.getType());
 
 
-        switch (type) {
-            case INVAL:
-                Logger.debug(getClass(), () -> "got cache invalidation event:" + event);
-                CacheLocator.getCacheAdministrator().invalidateCacheMesageFromCluster(message);
-                return;
+        functionMap.getOrDefault(event.getType(), na).apply(event, this);
 
-            case PING:
-                Logger.info(this.getClass(), () -> "Got PING from server:" + event.getOrigin() + ". sending PONG");
-                provider.publish(
-                                new DotPubSubEvent.Builder(event)
-                                .withTopic(this)
-                                .withType(CacheEventType.PONG.name()).build());
-                return;
-
-            case PONG:
-                Logger.info(this.getClass(), () -> "Got PONG from server:" + event + ".");
-                return;
-
-            case CLUSTER_REQ:
-                Logger.info(this.getClass(),
-                                () -> "Got CLUSTER_REQ from server:" + event.getOrigin() + ". sending response");
-                
-                
-                
-
-                
-                provider.publish(new DotPubSubEvent.Builder(event)
-                                .withPayload(ImmutableMap.of(serverId,Boolean.TRUE))
-                                .withType(CacheEventType.CLUSTER_RES.name())
-                                .withTopic(new ServerResponseTopic())
-                                
-                                .build());
-                return;
-
-            default:
-
-        }
     }
 
+    
+    final private Function2<DotPubSubEvent,CachePubSubTopic, Boolean> na = (event,topic) -> {
+        Logger.debug(getClass(), () -> "got an non-event:" + event);
+
+        return true;
+    };
+    
+    
+    final private Function2<DotPubSubEvent,CachePubSubTopic, Boolean> inval = (event,topic) -> {
+        Logger.debug(getClass(), () -> "got cache invalidation event:" + event);
+        CacheLocator.getCacheAdministrator().invalidateCacheMesageFromCluster(event.getMessage());
+        return true;
+    };
+    
+    
+    final private Function2<DotPubSubEvent,CachePubSubTopic, Boolean> ping = (event,topic) -> {
+        Logger.info(this.getClass(), () -> "Got PING from server:" + event.getOrigin() + ". sending PONG");
+        topic.provider.publish(
+                        new DotPubSubEvent.Builder(event)
+                        .withTopic(this)
+                        .withType(CacheEventType.PONG.name()).build());
+        return true;
+    };
+    
+    
+    final private Function2<DotPubSubEvent,CachePubSubTopic, Boolean> pong = (event,topic) -> {
+        Logger.info(this.getClass(), () -> "Got PONG from server:" + event + ".");
+        return true;
+    };
+    
+    
+    final private Function2<DotPubSubEvent,CachePubSubTopic, Boolean> clusterRequest = (event,topic) -> {
+        Logger.info(this.getClass(),
+                        () -> "Got CLUSTER_REQ from server:" + event.getOrigin() + ". sending response");
+        
+        
+        
+        topic.provider.publish(new DotPubSubEvent.Builder(event)
+                        .withPayload(ImmutableMap.of(topic.serverId,Boolean.TRUE))
+                        .withType(CacheEventType.CLUSTER_RES.name())
+                        .withTopic(new ServerResponseTopic())
+                        
+                        .build());
+        return true;
+    };
+    
+    
+    //Map <CacheEventType,Function2<DotPubSubEvent,CachePubSubTopic, Boolean>> functionMap  
+    final Map<String, Function2<DotPubSubEvent,CachePubSubTopic, Boolean>> functionMap = new ImmutableMap.Builder<String, Function2<DotPubSubEvent,CachePubSubTopic, Boolean>>()
+    .put(CacheEventType.INVAL.name(), this.inval)
+    .put(CacheEventType.PING.name(), this.ping)
+    .put(CacheEventType.PONG.name(), this.pong)
+    .put(CacheEventType.CLUSTER_REQ.name(), this.clusterRequest)
+    .build();
+    
     
     
     

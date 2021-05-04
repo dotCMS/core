@@ -78,15 +78,18 @@ public class PostgresCacheTransport implements CacheTransport {
     @Override
     public void testCluster() throws CacheTransportException {
 
-
-        Logger.info(this.getClass(), "Querying servers in our cluster. ClusterId " +ClusterFactory.getClusterId() + "..." );
-        Set<String> servers = new HashSet<>();
-        servers.addAll(validateCacheInCluster(2).keySet());
-        servers.add(StringUtils.shortify(APILocator.getServerAPI().readServerId(),10) + "(me)");
+        Logger.info(this.getClass(), "Sending PING to cluster ");
+        final DotPubSubEvent event = new DotPubSubEvent.Builder()
+                        .withType(CachePubSubTopic.CacheEventType.PING.name())
+                        .withTopic(this.topic)
+                        
+                        .build();
+        
+        this.pubsub.publish( event);
         
 
         
-        Logger.info(this.getClass()," Found "+ servers.size() + " servers in cluster: " + String.join( ", " , servers.toArray(new String[servers.size()])) );
+    
     }
 
 
