@@ -296,15 +296,7 @@ public class StaticPushPublishBundleGeneratorTest extends IntegrationTestBase {
         final File bundleRoot = BundlerUtil.getBundleRoot(publisherConfig);
         final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(publisherConfig, bundleRoot);
 
-        final Publisher publisher = new StaticPublisher(
-                PublishAuditAPI.getInstance(),
-                APILocator.getEnvironmentAPI(),
-                APILocator.getPublisherEndPointAPI(),
-                APILocator.getPushedAssetsAPI(),
-                PublisherAPI.getInstance(),
-                APILocator.getLocalSystemEventsAPI(),
-                ()->true
-        );
+        final Publisher publisher = new StaticPublisher();
         publisher.init(publisherConfig);
 
         final IBundler instance = bundleGenerator.newInstance();
@@ -331,7 +323,7 @@ public class StaticPushPublishBundleGeneratorTest extends IntegrationTestBase {
         final Template template = new TemplateDataGen().nextPersisted();
         APILocator.getVersionableAPI().setLive(template);
         HTMLPageAsset dummyPage = new HTMLPageDataGen(folder, template).friendlyName(pageName)
-                .pageURL(pageName).languageId(languageId)
+                .pageURL(pageName + System.currentTimeMillis()).languageId(languageId)
                 .title(pageName).nextPersisted();
         return HTMLPageDataGen.publish(dummyPage);
     }
