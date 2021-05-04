@@ -117,8 +117,6 @@ public class CachePubSubTopic implements DotPubSubTopic {
         Logger.info(this.getClass(),
                         () -> "Got CLUSTER_REQ from server:" + event.getOrigin() + ". sending response");
         
-        
-        
         topic.provider.publish(new DotPubSubEvent.Builder(event)
                         .withPayload(ImmutableMap.of(topic.serverId,Boolean.TRUE))
                         .withType(CacheEventType.CLUSTER_RES.name())
@@ -136,16 +134,10 @@ public class CachePubSubTopic implements DotPubSubTopic {
     .put(CacheEventType.PONG.name(), this.pong)
     .put(CacheEventType.CLUSTER_REQ.name(), this.clusterRequest)
     .build();
-    
-    
-    
-    
+
     
     @Override
     public long messagesSent() {
-
-        
-        
         return messagesSent;
     }
 

@@ -31,7 +31,7 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
     }
 
 
-
+    final static String PG_NOTIFY_SQL="SELECT pg_notify(?,?)";
     public final String serverId;
     private long restartDelay = 0;
 
@@ -259,7 +259,8 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
         return this;
     }
 
-
+    
+    
     @Override
     public boolean publish(DotPubSubEvent eventIn) {
 
@@ -267,7 +268,7 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
 
         Logger.debug(getClass(), () -> "sending  event:" + eventOut);
         try (final Connection conn = getConnection();
-                        final PreparedStatement statment = conn.prepareStatement("SELECT pg_notify(?,?)")) {
+             final PreparedStatement statment = conn.prepareStatement(PG_NOTIFY_SQL)) {
 
             statment.setString(1, eventIn.getTopic());
             statment.setString(2, eventOut.toString());
