@@ -3,6 +3,8 @@ package com.dotcms.storage;
 import static com.dotcms.storage.model.BasicMetadataFields.SHA256_META_KEY;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.lock.DotKeyLockManagerBuilder;
+import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.util.CloseUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.FileByteSplitter;
@@ -61,6 +63,9 @@ import org.apache.commons.lang3.mutable.MutableObject;
 public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI {
 
     private static final String DATABASE_STORAGE_JDBC_POOL_NAME = "DATABASE_STORAGE_JDBC_POOL_NAME";
+
+    private static final IdentifierStripedLock stripedLock =
+            new IdentifierStripedLock(DotKeyLockManagerBuilder.newLockManager("fileHashStripedLock"));
 
     /**
      * custom external connection provider method in case we want to store stuff outside our db
@@ -449,8 +454,8 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
         final String fileHash = (String) metaData.get(SHA256_META_KEY.key());
         final String hashRef = (String)extraMeta.get(HASH_REF);
         Logger.debug(DataBaseStoragePersistenceAPIImpl.class, " fileHash is : " + fileHash);
-
-            return wrapInTransaction(
+        try {
+            return stripedLock.tryLock(fileHash, () -> wrapInTransaction(
                     () -> {
                         try (final Connection connection = getConnection()) {
                             if (!existsGroup(groupName, connection)) {
@@ -466,8 +471,10 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
                                     pushFileReference(groupName, path, fileHash, hashRef, connection) :
                                     pushNewFile(groupName, path, fileHash, hashRef, file, connection);
                         }
-                    });
-
+                    }));
+        }catch (Throwable t){
+            throw new DotDataException(t);
+        }
     }
 
     /**
