@@ -1,10 +1,3 @@
----
-name: Pull Request
-about: Give us some information about your proposed PR
-title: ''
-assignees: ''
----
-
 ### Proposed Changes
 * change 1
 * change 2
