@@ -51,9 +51,12 @@
             (keyup.enter)="handleRowClick(rowData)"
             [pSelectableRow]="rowData"
             [pContextMenuRow]="rowData"
+            [pContextMenuRowDisabled]="rowData.disableInteraction === true"
+            data-testClass="testTableRow"
         >
             <td *ngIf="checkbox">
                 <p-tableCheckbox
+                    *ngIf="rowData.disableInteraction === undefined || rowData.disableInteraction === false"
                     (click)="$event.stopPropagation()"
                     [value]="rowData"
                 ></p-tableCheckbox>
@@ -77,7 +80,7 @@
         </ng-template>
     </ng-template>
 </p-table>
-<p-contextMenu #cm [model]="contextMenuItems" [styleClass]="contextMenuItems?.length ? '' : 'no-display'"  appendTo="body"></p-contextMenu>
+<p-contextMenu #cm [model]="contextMenuItems" appendTo="body"></p-contextMenu>
 <ng-template pTemplate="header" let-columns="columns" #defaultHeaderTemplate>
     <th
         *ngFor="let col of columns"
