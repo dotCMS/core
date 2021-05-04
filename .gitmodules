@@ -1,5 +1,5 @@
 [submodule "dotCMS/src/main/enterprise"]
 	path = dotCMS/src/main/enterprise
 	url = git@github.com:dotCMS/enterprise.git
-	branch = issue-20295-filenames-with-blank-spaces-cause-problems
+	branch = master
 	ignore = dirty
