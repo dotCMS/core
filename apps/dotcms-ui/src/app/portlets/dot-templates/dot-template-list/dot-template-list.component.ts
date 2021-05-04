@@ -101,15 +101,15 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
     /**
      * Handle selected template.
      *
-     * @param {DotTemplate} { identifier }
+     * @param {DotTemplate} { template }
      * @memberof DotTemplateListComponent
      */
-    editTemplate({ identifier }: DotTemplate): void {
-        this.isTemplateAsFile(identifier)
-            ? this.dotSiteBrowserService.setSelectedFolder(identifier).subscribe(() => {
+    editTemplate(template: DotTemplate): void {
+        this.isTemplateAsFile(template)
+            ? this.dotSiteBrowserService.setSelectedFolder(template.identifier).subscribe(() => {
                   this.dotRouterService.goToSiteBrowser();
               })
-            : this.dotRouterService.goToEditTemplate(identifier);
+            : this.dotRouterService.goToEditTemplate(template.identifier);
     }
 
     /**
@@ -166,9 +166,9 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
      * @memberof DotTemplateListComponent
      */
     setContextMenu(template: DotTemplate): void {
-        this.listing.contextMenuItems = this.isTemplateAsFile(template.identifier)
-            ? null
-            : this.setTemplateActions(template).map(({ menuItem }: DotActionMenuItem) => menuItem);
+        this.listing.contextMenuItems = this.setTemplateActions(template).map(
+            ({ menuItem }: DotActionMenuItem) => menuItem
+        );
     }
 
     /**
@@ -194,13 +194,27 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
             draft: this.dotMessageService.get('Draft')
         };
     }
+
+    /**
+     * Map table results to add the disableInteraction property.
+     * @param {DotTemplate[]} templates
+     * @returns DotTemplate[]
+     * @memberof DotTemplateListComponent
+     */
+    mapTableItems(templates: DotTemplate[]): DotTemplate[] {
+        return templates.map((template) => {
+            template.disableInteraction = template.identifier.includes('/') ? true : false;
+            return template;
+        });
+    }
+
     /**
      * Identify if is a template as File based on the identifier path.
-     * @param {string} identifier
+     * @param {DotTemplate} {identifier}
      * @returns boolean
      * @memberof DotTemplateListComponent
      */
-    isTemplateAsFile(identifier: string): boolean {
+    isTemplateAsFile({ identifier }: DotTemplate): boolean {
         return identifier.includes('/');
     }
 

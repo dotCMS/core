@@ -30,6 +30,7 @@ export interface DotTemplate {
     type: string;
     versionType: string;
     working: boolean;
+    disableInteraction?: boolean;
 }
 
 // Extra properties from renderHTML

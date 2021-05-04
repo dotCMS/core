@@ -14,6 +14,10 @@
 
 ## Dependencies
 
+### Used by
+
+ - [dot-card-contentlet](../../components/dot-card-contentlet)
+
 ### Depends on
 
 - [dot-tooltip](../dot-tooltip)
@@ -22,6 +26,7 @@
 ```mermaid
 graph TD;
   dot-state-icon --> dot-tooltip
+  dot-card-contentlet --> dot-state-icon
   style dot-state-icon fill:#f9f,stroke:#333,stroke-width:4px
 ```
 
