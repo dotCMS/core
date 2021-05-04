@@ -83,6 +83,17 @@ public class StaticPushPublishBundleGeneratorTest extends IntegrationTestBase {
            this.condition = condition;
        }
 
+       @Override
+       public String toString() {
+           return "TestCase{" +
+                   "bundler=" + bundler +
+                   ", contentlet=" + contentlet.getTitle() +
+                   ", includePattern='" + includePattern + '\'' +
+                   ", excludePattern='" + excludePattern + '\'' +
+                   ", expectedMatches=" + expectedMatches +
+                   ", condition=" + condition +
+                   '}';
+       }
    }
 
 
@@ -176,14 +187,14 @@ public class StaticPushPublishBundleGeneratorTest extends IntegrationTestBase {
         return new Object[]{
 
                 fileAssetInclusivePatternTest(folder,
-                "test-file.txt", langId, 1, Condition.EQ),
+                "static-push-test-file.txt", langId, 1, Condition.EQ),
                 fileAssetInclusivePatternTest(folder,
                 "test file blank.txt", langId, 1, Condition.EQ),
                 fileAssetInclusivePatternTest(folder,
                 "test-file.txt", langId, "/*", 1, Condition.GTE),
 
                 htmlPageInclusivePatternTest(folder,
-                "test-page.htm", langId, 1, Condition.EQ),
+                "static-push-test-page.htm", langId, 1, Condition.EQ),
                 htmlPageInclusivePatternTest(folder,
                 "test page blank.htm", langId, 1, Condition.EQ),
                 htmlPageInclusivePatternTest(folder,
