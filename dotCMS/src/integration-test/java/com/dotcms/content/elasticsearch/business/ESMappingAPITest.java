@@ -24,6 +24,7 @@ import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
+import com.dotcms.contenttype.model.field.ImmutableHiddenField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.RelationshipField;
@@ -154,6 +155,43 @@ public class ESMappingAPITest {
         assertEquals(4, contentletMap.get("metadata.filesize"));
         assertTrue( contentletMap.get("metadata.content").toString().contains("lol!"));
 
+    }
+
+    /**
+     * Method to test: {@link ESMappingAPIImpl#toMap(Contentlet)}
+     * Given Scenario: When a hidden field is a date, it should be mapped as
+     * a string with a datetime format
+     * ExpectedResult: The result map should contain the hidden date field with the right format
+     */
+    @Test
+    public void test_toMap_hidden_date_fields_shouldSuccess() throws Exception {
+
+        final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+        Field hiddenField = ImmutableHiddenField.builder()
+                .name("MyHiddenField")
+                .variable("MyHiddenField")
+                .contentTypeId(contentType.id())
+                .dataType(DataTypes.DATE)
+                .indexed(true)
+                .build();
+
+        hiddenField = fieldAPI.save(hiddenField, user);
+        final Date hiddenDate = new Date();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .setProperty(hiddenField.variable(), hiddenDate).nextPersisted();
+
+        final Map<String, Object> contentletMap = esMappingAPI.toMap(contentlet);
+
+        assertNotNull(contentletMap);
+
+        final String fullFieldKey =
+                contentType.variable().toLowerCase() + "." + hiddenField.variable().toLowerCase();
+        assertTrue(contentletMap.get(fullFieldKey) instanceof String);
+        assertEquals(ESMappingAPIImpl.elasticSearchDateTimeFormat.format(hiddenDate).toLowerCase(),
+                contentletMap.get(fullFieldKey));
     }
 
     /**
