@@ -48,9 +48,11 @@ public class PostgresCacheTransport implements CacheTransport {
         
         Logger.info(this.getClass(), "initing PostgresCacheTransport");
         this.pubsub.start();
-        this.initialized.set(true);
         this.pubsub.subscribe(topic);
         this.pubsub.subscribe(serverResponseTopic);
+
+        this.initialized.set(true);
+
         
         
     }
@@ -64,9 +66,9 @@ public class PostgresCacheTransport implements CacheTransport {
         }
 
         final DotPubSubEvent event =
-                        new DotPubSubEvent.Builder().withType(CacheEventType.INVAL.name()).withMessage(message).build();
+                        new DotPubSubEvent.Builder().withTopic(this.topic).withType(CacheEventType.INVAL.name()).withMessage(message).build();
 
-        this.pubsub.publish(this.topic, event);
+        this.pubsub.publish( event);
 
 
     }
@@ -77,7 +79,7 @@ public class PostgresCacheTransport implements CacheTransport {
     public void testCluster() throws CacheTransportException {
 
 
-        Logger.info(this.getClass(), "Querying servers in cluster: " +ClusterFactory.getClusterId() + "..." );
+        Logger.info(this.getClass(), "Querying servers in our cluster. ClusterId " +ClusterFactory.getClusterId() + "..." );
         Set<String> servers = new HashSet<>();
         servers.addAll(validateCacheInCluster(2).keySet());
         servers.add(StringUtils.shortify(APILocator.getServerAPI().readServerId(),10) + "(me)");
@@ -98,12 +100,15 @@ public class PostgresCacheTransport implements CacheTransport {
                     throws CacheTransportException {
 
         final DotPubSubEvent event = new DotPubSubEvent.Builder()
-                        .withType(CachePubSubTopic.CacheEventType.CLUSTER_REQ.name()).build();
+                        .withType(CachePubSubTopic.CacheEventType.CLUSTER_REQ.name())
+                        .withTopic(this.topic)
+                        
+                        .build();
         
         serverResponseTopic.resetMap();
         
         
-        this.pubsub.publish(this.topic, event);
+        this.pubsub.publish(event);
         
         final long waitUntil = System.currentTimeMillis() + (1000 * maxWaitSeconds);
         while(System.currentTimeMillis()< waitUntil) {

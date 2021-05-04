@@ -30,7 +30,7 @@ public class NullDotPubSubProvider implements DotPubSubProvider {
     }
 
     @Override
-    public boolean publish(DotPubSubTopic topic, DotPubSubEvent event) {
+    public boolean publish(DotPubSubEvent event) {
         this.lastEvent=event;
         return true;
     }

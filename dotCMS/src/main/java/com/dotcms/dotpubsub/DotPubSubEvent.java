@@ -21,9 +21,11 @@ public final class DotPubSubEvent implements Serializable {
     private static final String MESSAGE = "m";
     private static final String TYPE = "t";
     private static final String TIMESTAMP = "ts";
+    private static final String TOPIC = "top";
     private final Map<String, Serializable> payload;
-    
-    //cannot use DotObjectMapperProvider.getInstance().getDefaultObjectMapper() b/c it does not work in unit tests
+
+    // cannot use DotObjectMapperProvider.getInstance().getDefaultObjectMapper() b/c it does not work in
+    // unit tests
     private final static ObjectMapper objectMapper = new ObjectMapper();
 
     /**
@@ -32,21 +34,24 @@ public final class DotPubSubEvent implements Serializable {
      * @param payloadJson
      */
     public DotPubSubEvent(String payloadJson) {
-        this(Try.of(() -> objectMapper.readValue(payloadJson, Map.class))
-                        .getOrElseThrow(e-> {throw new DotRuntimeException(e);}));
+        this(Try.of(() -> objectMapper.readValue(payloadJson, Map.class)).getOrElseThrow(e -> {
+            throw new DotRuntimeException(e);
+        }));
 
 
     }
+
     /**
      * builder constructor
+     * 
      * @param builder
      */
     private DotPubSubEvent(Builder builder) {
         this(builder.payload);
     }
-    
-    
-    
+
+
+
     /**
      * Construct an DotPubSubEvent from a map
      * 
@@ -98,6 +103,12 @@ public final class DotPubSubEvent implements Serializable {
         return payload != null ? (String) payload.get(MESSAGE) : null;
     }
 
+    /**
+     * Returns the meat of the DotPubSubEvent
+     */
+    public String getTopic() {
+        return payload != null ? (String) payload.get(TOPIC) : null;
+    }
 
     /**
      * converts an event to a String - because events are immutable once constructed, we should only do
@@ -150,9 +161,6 @@ public final class DotPubSubEvent implements Serializable {
         }
         return true;
     }
-
-
-
 
 
 
@@ -218,6 +226,15 @@ public final class DotPubSubEvent implements Serializable {
             return addPayload(MESSAGE, message);
         }
 
+        public Builder withTopic(final DotPubSubTopic topic) {
+            return withTopic(String.valueOf(topic.getKey()));
+        }
+
+        public Builder withTopic(final String topicKey) {
+            final String topicStr = topicKey != null ? topicKey.toLowerCase() : null;
+            payload.put(TOPIC, topicStr);
+            return this;
+        }
 
         public Builder withType(final String type) {
 

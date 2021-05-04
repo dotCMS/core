@@ -81,8 +81,10 @@ public class CachePubSubTopic implements DotPubSubTopic {
 
             case PING:
                 Logger.info(this.getClass(), () -> "Got PING from server:" + event.getOrigin() + ". sending PONG");
-                provider.publish(this,
-                                new DotPubSubEvent.Builder(event).withType(CacheEventType.PONG.name()).build());
+                provider.publish(
+                                new DotPubSubEvent.Builder(event)
+                                .withTopic(this)
+                                .withType(CacheEventType.PONG.name()).build());
                 return;
 
             case PONG:
@@ -97,13 +99,12 @@ public class CachePubSubTopic implements DotPubSubTopic {
                 
 
                 
-                provider.publish(new ServerResponseTopic(),
-                                                new DotPubSubEvent.Builder(event)
-                                                                .withPayload(ImmutableMap.of(
-                                                                                APILocator.getServerAPI()
-                                                                                                .readServerId(),
-                                                                                Boolean.TRUE))
-                                                                .withType(CacheEventType.CLUSTER_RES.name()).build());
+                provider.publish(new DotPubSubEvent.Builder(event)
+                                .withPayload(ImmutableMap.of(serverId,Boolean.TRUE))
+                                .withType(CacheEventType.CLUSTER_RES.name())
+                                .withTopic(new ServerResponseTopic())
+                                
+                                .build());
                 return;
 
             default:

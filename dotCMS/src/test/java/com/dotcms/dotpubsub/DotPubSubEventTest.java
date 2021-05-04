@@ -2,6 +2,7 @@ package com.dotcms.dotpubsub;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UUIDGenerator;
 
 public class DotPubSubEventTest {
@@ -19,9 +20,9 @@ public class DotPubSubEventTest {
         
         DotPubSubEvent event = new DotPubSubEvent.Builder().withMessage(message).build();
 
-        String eventToString = event.toString();
+        String eventToJson = event.toString();
 
-        DotPubSubEvent serializedEvent = new DotPubSubEvent(eventToString);
+        DotPubSubEvent serializedEvent = new DotPubSubEvent(eventToJson);
 
         assert (serializedEvent.equals(event));
 
@@ -29,9 +30,9 @@ public class DotPubSubEventTest {
         
         event = new DotPubSubEvent.Builder(event).withOrigin(origin).build();
 
-        eventToString = event.toString();
+        eventToJson = event.toString();
 
-        serializedEvent = new DotPubSubEvent(eventToString);
+        serializedEvent = new DotPubSubEvent(eventToJson);
 
         assert (serializedEvent.equals(event));
 
@@ -39,13 +40,49 @@ public class DotPubSubEventTest {
         
         event = new DotPubSubEvent.Builder(event).withType(type).build();
 
-        eventToString = event.toString();
+        eventToJson = event.toString();
 
-        serializedEvent = new DotPubSubEvent(eventToString);
+        serializedEvent = new DotPubSubEvent(eventToJson);
 
         assert (serializedEvent.equals(event));
         
         
     }
 
+    
+    @Test
+    public void test_DotPubSubEvent_Builder() throws Exception {
+
+        String message = "message";
+        String type = "type";
+        String topic = "TOPIC";
+        String origin = UUIDGenerator.generateUuid();
+
+        
+        DotPubSubEvent event = new DotPubSubEvent
+                        .Builder()
+                        .withMessage(message)
+                        .withOrigin(origin)
+                        .withType(type)
+                        .withTopic(topic)
+                       
+                        .build();
+
+        assert event.getMessage().equals(message);
+
+        // origin ID is shortified 
+        assert event.getOrigin().equals(StringUtils.shortify(origin,10));
+        
+        // topics are lowercased
+        assert event.getTopic().equals(topic.toLowerCase());
+
+        assert event.getType().equals(type);
+
+        
+        
+    }
+    
+    
+    
+    
 }

@@ -46,14 +46,7 @@ public interface DotPubSubTopic extends EventSubscriber<DotPubSubEvent>, KeyFilt
 
     }
 
-    /**
-     * Should this topic ignore messages sent by my own server
-     * 
-     * @return
-     */
-    default boolean ignoreMyOwnMessages() {
-        return true;
-    }
+
 
     /**
      * Override to respond to an incoming DotPubSubEvent.

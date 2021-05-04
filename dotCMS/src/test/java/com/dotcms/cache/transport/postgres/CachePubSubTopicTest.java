@@ -15,7 +15,7 @@ public class CachePubSubTopicTest {
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
         // override the provider for testing
-        System.setProperty(DotPubSubProviderLocator.DEFAULT_DOT_PUBSUB_PROVIDER, NullDotPubSubProvider.class.getCanonicalName());
+        System.setProperty(DotPubSubProviderLocator.DOT_PUBSUB_PROVIDER_OVERRIDE,NullDotPubSubProvider.class.getCanonicalName());
         
     }
 
@@ -33,8 +33,9 @@ public class CachePubSubTopicTest {
     public void test_provider_topic_sending__a_ping_gets_a_pong() throws InterruptedException {
         NullDotPubSubProvider provider = new NullDotPubSubProvider();
         provider.start();
-        DotPubSubEvent event= new DotPubSubEvent.Builder().withType(CacheEventType.PING.name()).build();
+
         DotPubSubTopic topic = new CachePubSubTopic("fakeServer",provider);
+        DotPubSubEvent event= new DotPubSubEvent.Builder().withType(CacheEventType.PING.name()).withTopic(topic).build();
         topic.notify(event);
         Thread.sleep(2000);
         assert "PONG".equalsIgnoreCase(provider.lastEventIn().getType());

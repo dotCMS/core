@@ -1,5 +1,7 @@
 package com.dotcms.dotpubsub;
 
+import static org.junit.Assert.assertFalse;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotcms.cache.transport.postgres.CachePubSubTopic;
@@ -27,7 +29,7 @@ public class PostgresPubSubImplTest {
         pubsubA.subscribe(topicB);
         pubsubA.start();
 
-        
+
         
     }
 
@@ -35,16 +37,17 @@ public class PostgresPubSubImplTest {
     @Test
     public void test_ping() throws Exception{
 
-        DotPubSubEvent event = new DotPubSubEvent.Builder().withType(CachePubSubTopic.CacheEventType.PING.name()).build();
+        DotPubSubEvent event = new DotPubSubEvent.Builder()
+                        .withType(CachePubSubTopic.CacheEventType.PING.name())
+                        .withTopic(topicA)
+                        .build();
 
         
         long messagesSent = topicA.messagesSent();
         long messagesRecieved= topicA.messagesReceived();
         
         
-        pubsubA.publish(topicA, event);
-        
-        assert(pubsubA.lastEventOut().getType().equalsIgnoreCase(CachePubSubTopic.CacheEventType.PING.name()));
+        pubsubA.publish(event);
         
         
         Thread.sleep(2000);
@@ -59,13 +62,14 @@ public class PostgresPubSubImplTest {
     @Test
     public void test_cluster_request_response() throws Exception{
 
-        DotPubSubEvent event = new DotPubSubEvent.Builder().withType(CachePubSubTopic.CacheEventType.CLUSTER_REQ.name() ).build();
+        DotPubSubEvent event = new DotPubSubEvent.Builder().withType(CachePubSubTopic.CacheEventType.CLUSTER_REQ.name())
+                        .withTopic(topicA).build();
 
-        
+
         long messagesSent = topicA.messagesSent();
         long messagesRecieved= topicA.messagesReceived();
         
-        pubsubA.publish(topicA, event);
+        pubsubA.publish(event);
         
         Thread.sleep(2000);
         
@@ -79,12 +83,12 @@ public class PostgresPubSubImplTest {
     @Test
     public void test_reconnection() throws Exception{
 
-        DotPubSubEvent event = new DotPubSubEvent.Builder().withType(CachePubSubTopic.CacheEventType.PING.name() ).build();
+        DotPubSubEvent event = new DotPubSubEvent.Builder().withType(CachePubSubTopic.CacheEventType.PING.name() ).withTopic(topicA).build();
 
         
         long messagesSent = topicA.messagesSent();
         long messagesRecieved= topicA.messagesReceived();
-        pubsubA.publish(topicA, event);
+        pubsubA.publish(event);
         
         
         Thread.sleep(2000);
@@ -97,7 +101,7 @@ public class PostgresPubSubImplTest {
         
         pubsubA.restart();
         
-        pubsubA.publish(topicA, event);
+        pubsubA.publish(event);
         Thread.sleep(2000);
         
         assert(messagesSent < topicA.messagesSent());
@@ -118,10 +122,10 @@ public class PostgresPubSubImplTest {
         
         long messagesRecieved = fakeTopic.messagesReceived();
         
-        DotPubSubEvent event = new DotPubSubEvent.Builder().withType(CachePubSubTopic.CacheEventType.PING.name() ).build();
+        DotPubSubEvent event = new DotPubSubEvent.Builder().withType(CachePubSubTopic.CacheEventType.PING.name() ).withTopic(fakeTopic).build();
 
         // publish to fake topic
-        pubsubA.publish(fakeTopic, event);
+        pubsubA.publish(event);
 
         
         Thread.sleep(2000);
@@ -139,7 +143,7 @@ public class PostgresPubSubImplTest {
         pubsubA.unsubscribe(fakeTopic);
         
         // publishing an event does nothing
-        pubsubA.publish(fakeTopic, event);
+        pubsubA.publish(event);
         
         Thread.sleep(2000);
         
@@ -195,6 +199,44 @@ public class PostgresPubSubImplTest {
 
     };
     
+    
+    
+    
+    @Test
+    public void test_sending_a_large_message_fails_and_recovers() throws Exception{
+        
+        
+        // create a fake topic and subscribe to it
+        FakeDotPubSubTopic fakeTopic = new FakeDotPubSubTopic(); 
+        pubsubA.subscribe(fakeTopic);
+        DotPubSubEvent workingEvent = new DotPubSubEvent.Builder()
+                        .withType(CachePubSubTopic.CacheEventType.UKN.name())
+                                        .withTopic(fakeTopic)
+                                        .withMessage(RandomStringUtils.randomAlphabetic(7500))
+                                        .build();
+        
+        DotPubSubEvent tooBigEvent = new DotPubSubEvent.Builder()
+                        .withType(CachePubSubTopic.CacheEventType.UKN.name())
+                                        .withTopic(fakeTopic)
+                                        .withMessage(RandomStringUtils.randomAlphabetic(9000))
+                                        .build();
+        
+        
+        assert(pubsubA.publish(workingEvent));
+            
+
+        assertFalse(pubsubA.publish(tooBigEvent));
+            
+
+       
+
+        
+        assert(pubsubA.publish(workingEvent));
+            
+        
+        
+        
+    }
     
     
     

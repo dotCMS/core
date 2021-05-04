@@ -29,7 +29,7 @@ public interface DotPubSubProvider {
      * @param event
      * @return
      */
-    boolean publish(DotPubSubTopic topic, DotPubSubEvent event);
+    boolean publish(DotPubSubEvent event);
 
     /**
      * Unsubscribes from a topic
@@ -54,5 +54,11 @@ public interface DotPubSubProvider {
     default DotPubSubEvent lastEventOut() {
         return null;
     }
+    
+    
+    
+    
+    
+    
     
 }

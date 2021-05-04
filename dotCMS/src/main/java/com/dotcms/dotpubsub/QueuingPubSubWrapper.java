@@ -90,7 +90,7 @@ public class QueuingPubSubWrapper implements DotPubSubProvider {
             }
             
             for (DotPubSubEvent event : outgoingMessages) {
-                this.wrappedProvider.publish(topic, event);
+                this.wrappedProvider.publish(event);
             }
             outgoingMessages.clear();
         }
@@ -103,9 +103,9 @@ public class QueuingPubSubWrapper implements DotPubSubProvider {
      * Publishing an event only adds the DotPubSubEvent to the queue, which will be processed async once every seccond
      */
     @Override
-    public boolean publish(final DotPubSubTopic topic, final DotPubSubEvent event) {
+    public boolean publish(final DotPubSubEvent event) {
         
-        LinkedBlockingQueue<DotPubSubEvent> topicQueue = topicQueues.getOrDefault(topic.getKey().toString(), Tuple.of(topic, new LinkedBlockingQueue<DotPubSubEvent>()))._2;
+        LinkedBlockingQueue<DotPubSubEvent> topicQueue = topicQueues.get(event.getTopic())._2;
         Try.run(() -> topicQueue.add(event)).onFailure(e->Logger.warn(QueuingPubSubWrapper.class,e.getMessage(),e));
         return true;
 
