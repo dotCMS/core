@@ -10,45 +10,45 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class CopySiteForm {
 
-    private final String copyFromHostId;
+    private final String  copyFromSiteId;
     private final boolean copyAll;
     private final boolean copyTemplatesContainers;
     private final boolean copyContentOnPages;
     private final boolean copyFolders;
-    private final boolean copyContentOnHost;
+    private final boolean copyContentOnSite;
     private final boolean copyLinks;
-    private final boolean copyHostVariables;
-    private final SiteForm host;
+    private final boolean copySiteVariables;
+    private final SiteForm site;
 
     @JsonCreator
     public CopySiteForm(
-            @JsonProperty("copyFromHostId") final String copyFromHostId,
+            @JsonProperty("copyFromSiteId") final String copyFromSiteId,
             @JsonProperty("copyAll") final boolean copyAll,
             @JsonProperty("copyTemplatesContainers") final boolean copyTemplatesContainers,
             @JsonProperty("copyContentOnPages") final boolean copyContentOnPages,
             @JsonProperty("copyFolders") final boolean copyFolders,
-            @JsonProperty("copyContentOnHost") final boolean copyContentOnHost,
+            @JsonProperty("copyContentOnSite") final boolean copyContentOnSite,
             @JsonProperty("copyLinks") final boolean copyLinks,
-            @JsonProperty("copyHostVariables") final boolean copyHostVariables,
-            @JsonProperty("host") final SiteForm host) {
+            @JsonProperty("copySiteVariables") final boolean copySiteVariables,
+            @JsonProperty("site") final SiteForm site) {
 
-        this.copyFromHostId = copyFromHostId;
+        this.copyFromSiteId = copyFromSiteId;
         this.copyAll = copyAll;
         this.copyTemplatesContainers = copyTemplatesContainers;
         this.copyContentOnPages = copyContentOnPages;
         this.copyFolders = copyFolders;
-        this.copyContentOnHost = copyContentOnHost;
+        this.copyContentOnSite = copyContentOnSite;
         this.copyLinks = copyLinks;
-        this.copyHostVariables = copyHostVariables;
-        this.host = host;
+        this.copySiteVariables = copySiteVariables;
+        this.site = site;
     }
 
-    public SiteForm getHost() {
-        return host;
+    public SiteForm getSite() {
+        return site;
     }
 
-    public String getCopyFromHostId() {
-        return copyFromHostId;
+    public String getCopyFromSiteId() {
+        return copyFromSiteId;
     }
 
     public boolean isCopyAll() {
@@ -67,30 +67,30 @@ public class CopySiteForm {
         return copyFolders;
     }
 
-    public boolean isCopyContentOnHost() {
-        return copyContentOnHost;
+    public boolean isCopyContentOnSite() {
+        return copyContentOnSite;
     }
 
     public boolean isCopyLinks() {
         return copyLinks;
     }
 
-    public boolean isCopyHostVariables() {
-        return copyHostVariables;
+    public boolean isCopySiteVariables() {
+        return copySiteVariables;
     }
 
     @Override
     public String toString() {
         return "CopySiteForm{" +
-                "copyFromHostId='" + copyFromHostId + '\'' +
+                "copyFromSiteId='" + copyFromSiteId + '\'' +
                 ", copyAll=" + copyAll +
                 ", copyTemplatesContainers=" + copyTemplatesContainers +
                 ", copyContentOnPages=" + copyContentOnPages +
                 ", copyFolders=" + copyFolders +
-                ", copyContentOnHost=" + copyContentOnHost +
+                ", copyContentOnSite=" + copyContentOnSite +
                 ", copyLinks=" + copyLinks +
-                ", copyHostVariables=" + copyHostVariables +
-                ", host=" + host +
+                ", copySiteVariables=" + copySiteVariables +
+                ", site=" + site +
                 '}';
     }
 }

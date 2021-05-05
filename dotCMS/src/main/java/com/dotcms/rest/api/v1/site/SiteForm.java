@@ -11,11 +11,11 @@ public class SiteForm {
 
     private final String aliases;
 
-    private final String hostName;
+    private final String siteName;
 
     private final String tagStorage;
 
-    private final String hostThumbnail;
+    private final String siteThumbnail;
 
     private final boolean runDashboard;
 
@@ -37,9 +37,9 @@ public class SiteForm {
 
     @JsonCreator
     public SiteForm(@JsonProperty("aliases")    final String aliases,
-                    @JsonProperty("hostName")   final String hostName,
+                    @JsonProperty("siteName")   final String siteName,
                     @JsonProperty("tagStorage") final String tagStorage,
-                    @JsonProperty("hostThumbnail") final String hostThumbnail,
+                    @JsonProperty("siteThumbnail") final String siteThumbnail,
                     @JsonProperty("runDashboard")  final boolean runDashboard,
                     @JsonProperty("keywords")      final String keywords,
                     @JsonProperty("description")   final String description,
@@ -51,9 +51,9 @@ public class SiteForm {
                     @JsonProperty("languageId")          final long   languageId) {
 
         this.aliases = aliases;
-        this.hostName = hostName;
+        this.siteName = siteName;
         this.tagStorage = tagStorage;
-        this.hostThumbnail = hostThumbnail;
+        this.siteThumbnail = siteThumbnail;
         this.runDashboard = runDashboard;
         this.keywords = keywords;
         this.description = description;
@@ -74,16 +74,16 @@ public class SiteForm {
         return aliases;
     }
 
-    public String getHostName() {
-        return hostName;
+    public String getSiteName() {
+        return siteName;
     }
 
     public String getTagStorage() {
         return tagStorage;
     }
 
-    public String getHostThumbnail() {
-        return hostThumbnail;
+    public String getSiteThumbnail() {
+        return siteThumbnail;
     }
 
     public boolean isRunDashboard() {
@@ -122,9 +122,9 @@ public class SiteForm {
     public String toString() {
         return "SiteForm{" +
                 "aliases='" + aliases + '\'' +
-                ", hostName='" + hostName + '\'' +
+                ", siteName='" + siteName + '\'' +
                 ", tagStorage='" + tagStorage + '\'' +
-                ", hostThumbnail='" + hostThumbnail + '\'' +
+                ", siteThumbnail='" + siteThumbnail + '\'' +
                 ", runDashboard=" + runDashboard +
                 ", keywords=" + keywords +
                 ", description=" + description +

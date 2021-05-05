@@ -19,7 +19,7 @@
 							"var jsonData = pm.response.json();",
 							"",
 							"pm.test(\"Host check\", function () {",
-							"    pm.expect(jsonData.entity.hostname).to.eql('postman.host.com');",
+							"    pm.expect(jsonData.entity.siteName).to.eql('postman.host.com');",
 							"});",
 							"",
 							""
@@ -48,7 +48,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"hostName\":\"postman.host.com\"\n\n}",
+					"raw": "{\n    \"siteName\":\"postman.host.com\"\n\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -162,7 +162,7 @@
 							"var jsonData = pm.response.json();",
 							"",
 							"pm.test(\"File name check\", function () {",
-							"    pm.expect(jsonData.entity.hostName).to.eql('postman.host1.com');",
+							"    pm.expect(jsonData.entity.siteName).to.eql('postman.host1.com');",
 							"    pm.expect(jsonData.entity.aliases).to.eql('postman.host2.com postman.host3.com');",
 							"    pm.expect(jsonData.entity.addThis).to.eql('add-this-key');",
 							"    pm.expect(jsonData.entity.description).to.eql('This is a postman host test 2');",
@@ -172,7 +172,7 @@
 							"    pm.expect(jsonData.entity.proxyUrlForEditMode).to.eql('proxy.postman.host.com');",
 							"    pm.expect(jsonData.entity.runDashboard).to.eql(true);",
 							"    pm.expect(jsonData.entity.tagStorage).to.eql('default');",
-							"    pm.expect(jsonData.entity.hostThumbnail).to.include('250px-Bocas2.jpg');",
+							"    pm.expect(jsonData.entity.siteThumbnail).to.include('250px-Bocas2.jpg');",
 							"});",
 							"",
 							"pm.collectionVariables.set(\"hostId\", jsonData.entity.identifier);",
@@ -202,7 +202,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"hostName\":\"postman.host1.com\",\n    \"aliases\":\"postman.host2.com postman.host3.com\",\n    \"tagStorage\":\"default\",\n    \"hostThumbnail\":\"{{temporalFileId}}\",\n    \"runDashboard\":true,\n    \"keywords\":\"key1, key2, key3\",\n    \"description\":\"This is a postman host test 2\",\n    \"googleMap\":\"google-key\",\n    \"googleAnalytics\":\"google-analytics-key\",\n    \"addThis\":\"add-this-key\",\n    \"proxyUrlForEditMode\":\"proxy.postman.host.com\",\n    \"embeddedDashboard\":\"postman.host.com/dashboard\"\n}",
+					"raw": "{\n    \"siteName\":\"postman.host1.com\",\n    \"aliases\":\"postman.host2.com postman.host3.com\",\n    \"tagStorage\":\"default\",\n    \"siteThumbnail\":\"{{temporalFileId}}\",\n    \"runDashboard\":true,\n    \"keywords\":\"key1, key2, key3\",\n    \"description\":\"This is a postman host test 2\",\n    \"googleMap\":\"google-key\",\n    \"googleAnalytics\":\"google-analytics-key\",\n    \"addThis\":\"add-this-key\",\n    \"proxyUrlForEditMode\":\"proxy.postman.host.com\",\n    \"embeddedDashboard\":\"postman.host.com/dashboard\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -237,7 +237,7 @@
 							"var jsonData = pm.response.json();",
 							"",
 							"pm.test(\"File name check\", function () {",
-							"    pm.expect(jsonData.entity.hostName).to.eql('postman.host1.com');",
+							"    pm.expect(jsonData.entity.siteName).to.eql('postman.host1.com');",
 							"    pm.expect(jsonData.entity.aliases).to.eql('postman.host2.com postman.host3.com');",
 							"    pm.expect(jsonData.entity.addThis).to.eql('add-this-key');",
 							"    pm.expect(jsonData.entity.description).to.eql('This is a postman host test 2');",
@@ -247,7 +247,7 @@
 							"    pm.expect(jsonData.entity.proxyUrlForEditMode).to.eql('proxy.postman.host.com');",
 							"    pm.expect(jsonData.entity.runDashboard).to.eql(true);",
 							"    pm.expect(jsonData.entity.tagStorage).to.eql('default');",
-							"    pm.expect(jsonData.entity.hostThumbnail).to.include('250px-Bocas2.jpg');",
+							"    pm.expect(jsonData.entity.siteThumbnail).to.include('250px-Bocas2.jpg');",
 							"    pm.expect(jsonData.entity.live).to.eql(true);",
 							"});",
 							"",
@@ -277,7 +277,7 @@
 				"method": "PUT",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/site/_publish/{{hostId}}",
+					"raw": "{{serverURL}}/api/v1/site/{{hostId}}/_publish",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -285,8 +285,8 @@
 						"api",
 						"v1",
 						"site",
-						"_publish",
-						"{{hostId}}"
+						"{{hostId}}",
+						"_publish"
 					]
 				}
 			},
@@ -331,7 +331,7 @@
 				"method": "PUT",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/site/_makedefault/{{hostId}}",
+					"raw": "{{serverURL}}/api/v1/site/{{hostId}}/_makedefault",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -339,8 +339,8 @@
 						"api",
 						"v1",
 						"site",
-						"_makedefault",
-						"{{hostId}}"
+						"{{hostId}}",
+						"_makedefault"
 					]
 				}
 			},
@@ -360,7 +360,7 @@
 							"var jsonData = pm.response.json();",
 							"",
 							"pm.test(\"File name check\", function () {",
-							"    pm.expect(jsonData.entity.hostName).to.eql('postman.host1.com');",
+							"    pm.expect(jsonData.entity.siteName).to.eql('postman.host1.com');",
 							"    pm.expect(jsonData.entity.aliases).to.eql('postman.host2.com postman.host3.com');",
 							"    pm.expect(jsonData.entity.addThis).to.eql('add-this-key');",
 							"    pm.expect(jsonData.entity.description).to.eql('This is a postman host test 2');",
@@ -370,7 +370,7 @@
 							"    pm.expect(jsonData.entity.proxyUrlForEditMode).to.eql('proxy.postman.host.com');",
 							"    pm.expect(jsonData.entity.runDashboard).to.eql(true);",
 							"    pm.expect(jsonData.entity.tagStorage).to.eql('default');",
-							"    pm.expect(jsonData.entity.hostThumbnail).to.include('250px-Bocas2.jpg');",
+							"    pm.expect(jsonData.entity.siteThumbnail).to.include('250px-Bocas2.jpg');",
 							"    pm.expect(jsonData.entity.live).to.eql(true);",
 							"    pm.expect(jsonData.entity.default).to.eql(true);",
 							"});",
@@ -415,7 +415,7 @@
 							"",
 							"pm.test(\"To Check if Value is Null\", function () {",
 							"",
-							"    pm.expect(jsonData.entity.hostName).eq(\"default\");",
+							"    pm.expect(jsonData.entity.siteName).eq(\"default\");",
 							"});",
 							"",
 							"pm.collectionVariables.set(\"hostInode\", jsonData.entity.inode);",
@@ -504,7 +504,7 @@
 				"method": "PUT",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/site/_makedefault/{{hostdentifier}}",
+					"raw": "{{serverURL}}/api/v1/site/{{hostdentifier}}/_makedefault",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -512,8 +512,8 @@
 						"api",
 						"v1",
 						"site",
-						"_makedefault",
-						"{{hostdentifier}}"
+						"{{hostdentifier}}",
+						"_makedefault"
 					]
 				}
 			},
@@ -533,7 +533,7 @@
 							"var jsonData = pm.response.json();",
 							"",
 							"pm.test(\"File name check\", function () {",
-							"    pm.expect(jsonData.entity.hostName).to.eql('postman.host1.com');",
+							"    pm.expect(jsonData.entity.siteName).to.eql('postman.host1.com');",
 							"    pm.expect(jsonData.entity.aliases).to.eql('postman.host2.com postman.host3.com');",
 							"    pm.expect(jsonData.entity.addThis).to.eql('add-this-key');",
 							"    pm.expect(jsonData.entity.description).to.eql('This is a postman host test 2');",
@@ -543,7 +543,7 @@
 							"    pm.expect(jsonData.entity.proxyUrlForEditMode).to.eql('proxy.postman.host.com');",
 							"    pm.expect(jsonData.entity.runDashboard).to.eql(true);",
 							"    pm.expect(jsonData.entity.tagStorage).to.eql('default');",
-							"    pm.expect(jsonData.entity.hostThumbnail).to.include('250px-Bocas2.jpg');",
+							"    pm.expect(jsonData.entity.siteThumbnail).to.include('250px-Bocas2.jpg');",
 							"    pm.expect(jsonData.entity.live).to.eql(true);",
 							"    pm.expect(jsonData.entity.default).to.eql(false);",
 							"});",
@@ -587,7 +587,7 @@
 							"var jsonData = pm.response.json();",
 							"",
 							"pm.test(\"File name check\", function () {",
-							"    pm.expect(jsonData.entity.hostName).to.eql('postman.host1.com');",
+							"    pm.expect(jsonData.entity.siteName).to.eql('postman.host1.com');",
 							"    pm.expect(jsonData.entity.aliases).to.eql('postman.host2.com postman.host3.com');",
 							"    pm.expect(jsonData.entity.addThis).to.eql('add-this-key');",
 							"    pm.expect(jsonData.entity.description).to.eql('This is a postman host test 2');",
@@ -597,7 +597,7 @@
 							"    pm.expect(jsonData.entity.proxyUrlForEditMode).to.eql('proxy.postman.host.com');",
 							"    pm.expect(jsonData.entity.runDashboard).to.eql(true);",
 							"    pm.expect(jsonData.entity.tagStorage).to.eql('default');",
-							"    pm.expect(jsonData.entity.hostThumbnail).to.include('250px-Bocas2.jpg');",
+							"    pm.expect(jsonData.entity.siteThumbnail).to.include('250px-Bocas2.jpg');",
 							"    pm.expect(jsonData.entity.live).to.eql(false);",
 							"    pm.expect(jsonData.entity.default).to.eql(false);",
 							"});",
@@ -628,7 +628,7 @@
 				"method": "PUT",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/site/_unpublish/{{hostId}}",
+					"raw": "{{serverURL}}/api/v1/site/{{hostId}}/_unpublish",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -636,8 +636,8 @@
 						"api",
 						"v1",
 						"site",
-						"_unpublish",
-						"{{hostId}}"
+						"{{hostId}}",
+						"_unpublish"
 					]
 				}
 			},
@@ -657,7 +657,7 @@
 							"var jsonData = pm.response.json();",
 							"",
 							"pm.test(\"File name check\", function () {",
-							"    pm.expect(jsonData.entity.hostName).to.eql('postman.host1.com');",
+							"    pm.expect(jsonData.entity.siteName).to.eql('postman.host1.com');",
 							"    pm.expect(jsonData.entity.aliases).to.eql('postman.host2.com postman.host3.com');",
 							"    pm.expect(jsonData.entity.addThis).to.eql('add-this-key');",
 							"    pm.expect(jsonData.entity.description).to.eql('This is a postman host test 2');",
@@ -667,7 +667,8 @@
 							"    pm.expect(jsonData.entity.proxyUrlForEditMode).to.eql('proxy.postman.host.com');",
 							"    pm.expect(jsonData.entity.runDashboard).to.eql(true);",
 							"    pm.expect(jsonData.entity.tagStorage).to.eql('default');",
-							"    pm.expect(jsonData.entity.hostThumbnail).to.include('250px-Bocas2.jpg');",
+							"    pm.expect(jsonData.entity.siteThumbnail).to.include('250px-Bocas2.jpg');",
+							"    pm.expect(jsonData.entity.archived).to.eql(true);",
 							"    pm.expect(jsonData.entity.live).to.eql(false);",
 							"    pm.expect(jsonData.entity.default).to.eql(false);",
 							"});",
@@ -698,7 +699,7 @@
 				"method": "PUT",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/site/_archive/{{hostId}}",
+					"raw": "{{serverURL}}/api/v1/site/{{hostId}}/_archive",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -706,8 +707,8 @@
 						"api",
 						"v1",
 						"site",
-						"_archive",
-						"{{hostId}}"
+						"{{hostId}}",
+						"_archive"
 					]
 				}
 			},
@@ -727,7 +728,7 @@
 							"var jsonData = pm.response.json();",
 							"",
 							"pm.test(\"File name check\", function () {",
-							"    pm.expect(jsonData.entity.hostName).to.eql('postman.host1.com');",
+							"    pm.expect(jsonData.entity.siteName).to.eql('postman.host1.com');",
 							"    pm.expect(jsonData.entity.aliases).to.eql('postman.host2.com postman.host3.com');",
 							"    pm.expect(jsonData.entity.addThis).to.eql('add-this-key');",
 							"    pm.expect(jsonData.entity.description).to.eql('This is a postman host test 2');",
@@ -737,7 +738,7 @@
 							"    pm.expect(jsonData.entity.proxyUrlForEditMode).to.eql('proxy.postman.host.com');",
 							"    pm.expect(jsonData.entity.runDashboard).to.eql(true);",
 							"    pm.expect(jsonData.entity.tagStorage).to.eql('default');",
-							"    pm.expect(jsonData.entity.hostThumbnail).to.include('250px-Bocas2.jpg');",
+							"    pm.expect(jsonData.entity.siteThumbnail).to.include('250px-Bocas2.jpg');",
 							"    pm.expect(jsonData.entity.archived).to.eql(false);",
 							"    pm.expect(jsonData.entity.live).to.eql(false);",
 							"    pm.expect(jsonData.entity.default).to.eql(false);",
@@ -769,7 +770,7 @@
 				"method": "PUT",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/site/_unarchive/{{hostId}}",
+					"raw": "{{serverURL}}/api/v1/site/{{hostId}}/_unarchive",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -777,8 +778,8 @@
 						"api",
 						"v1",
 						"site",
-						"_unarchive",
-						"{{hostId}}"
+						"{{hostId}}",
+						"_unarchive"
 					]
 				}
 			},
@@ -911,7 +912,7 @@
 							"var jsonData = pm.response.json();",
 							"",
 							"pm.test(\"File name check\", function () {",
-							"    pm.expect(jsonData.entity.hostName).to.eql('postman.host1.com');",
+							"    pm.expect(jsonData.entity.siteName).to.eql('postman.host1.com');",
 							"    pm.expect(jsonData.entity.aliases).to.eql('postman.host2.com postman.host3.com');",
 							"    pm.expect(jsonData.entity.addThis).to.eql('add-this-key');",
 							"    pm.expect(jsonData.entity.description).to.eql('This is a postman host test 2');",
@@ -921,7 +922,7 @@
 							"    pm.expect(jsonData.entity.proxyUrlForEditMode).to.eql('proxy.postman.host.com');",
 							"    pm.expect(jsonData.entity.runDashboard).to.eql(true);",
 							"    pm.expect(jsonData.entity.tagStorage).to.eql('default');",
-							"    pm.expect(jsonData.entity.hostThumbnail).to.include('250px-Bocas2.jpg');",
+							"    pm.expect(jsonData.entity.siteThumbnail).to.include('250px-Bocas2.jpg');",
 							"    pm.expect(jsonData.entity.live).to.eql(false);",
 							"    pm.expect(jsonData.entity.default).to.eql(false);",
 							"});",
@@ -952,7 +953,7 @@
 				"method": "PUT",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/site/_archive/{{hostId}}",
+					"raw": "{{serverURL}}/api/v1/site/{{hostId}}/_archive",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -960,8 +961,8 @@
 						"api",
 						"v1",
 						"site",
-						"_archive",
-						"{{hostId}}"
+						"{{hostId}}",
+						"_archive"
 					]
 				}
 			},
@@ -1031,7 +1032,7 @@
 							"var jsonData = pm.response.json();",
 							"",
 							"pm.test(\"File name check\", function () {",
-							"    pm.expect(jsonData.entity.hostName).to.eql('postman.copy.host.com');",
+							"    pm.expect(jsonData.entity.siteName).to.eql('postman.copy.host.com');",
 							"});",
 							"",
 							"pm.collectionVariables.set(\"hostId\", jsonData.entity.identifier);",
@@ -1061,7 +1062,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"copyFromHostId\":\"{{hostdentifier}}\",\n    \"copyAll\":true,\n    \"copyTemplatesContainers\":true,\n    \"copyContentOnPages\":true,\n    \"copyFolders\":true,\n    \"copyContentOnHost\":true,\n    \"copyLinks\":true,\n    \"copyHostVariables\":true,\n    \"host\": {\n        \"hostName\":\"postman.copy.host.com\"\n    }\n}",
+					"raw": "{\n    \"copyFromSiteId\":\"{{hostdentifier}}\",\n    \"copyAll\":true,\n    \"copyTemplatesContainers\":true,\n    \"copyContentOnPages\":true,\n    \"copyFolders\":true,\n    \"copyContentOnSite\":true,\n    \"copyLinks\":true,\n    \"copySiteVariables\":true,\n    \"site\": {\n        \"siteName\":\"postman.copy.host.com\"\n    }\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -1104,7 +1105,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/site/_setup_progress/{{hostId}}",
+					"raw": "{{serverURL}}/api/v1/site/{{hostId}}/_setup_progress",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -1112,8 +1113,8 @@
 						"api",
 						"v1",
 						"site",
-						"_setup_progress",
-						"{{hostId}}"
+						"{{hostId}}",
+						"_setup_progress"
 					]
 				}
 			},
@@ -1126,28 +1127,9 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code should be 200\", function () {",
-							"    pm.response.to.have.status(200);",
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
 							"});",
-							"",
-							"var jsonData = pm.response.json();",
-							"",
-							"pm.test(\"File name check\", function () {",
-							"    pm.expect(jsonData.entity.hostName).to.eql('postman.host1.com');",
-							"    pm.expect(jsonData.entity.aliases).to.eql('postman.host2.com postman.host3.com');",
-							"    pm.expect(jsonData.entity.addThis).to.eql('add-this-key');",
-							"    pm.expect(jsonData.entity.description).to.eql('This is a postman host test 2');",
-							"    pm.expect(jsonData.entity.embeddedDashboard).to.eql('postman.host.com/dashboard');",
-							"    pm.expect(jsonData.entity.googleAnalytics).to.eql('google-analytics-key');",
-							"    pm.expect(jsonData.entity.googleMap).to.eql('google-key');",
-							"    pm.expect(jsonData.entity.proxyUrlForEditMode).to.eql('proxy.postman.host.com');",
-							"    pm.expect(jsonData.entity.runDashboard).to.eql(true);",
-							"    pm.expect(jsonData.entity.tagStorage).to.eql('default');",
-							"    pm.expect(jsonData.entity.hostThumbnail).to.include('250px-Bocas2.jpg');",
-							"    pm.expect(jsonData.entity.live).to.eql(true);",
-							"});",
-							"",
-							"pm.collectionVariables.set(\"hostId\", jsonData.entity.identifier);",
 							""
 						],
 						"type": "text/javascript"
@@ -1173,7 +1155,7 @@
 				"method": "PUT",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/site/_publish/xxx",
+					"raw": "{{serverURL}}/api/v1/site/xxx/_publish",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -1181,8 +1163,8 @@
 						"api",
 						"v1",
 						"site",
-						"_publish",
-						"xxx"
+						"xxx",
+						"_publish"
 					]
 				}
 			},
@@ -1223,7 +1205,7 @@
 				"method": "PUT",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/site/_unpublish/xxx",
+					"raw": "{{serverURL}}/api/v1/site/xxx/_unpublish",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -1231,8 +1213,8 @@
 						"api",
 						"v1",
 						"site",
-						"_unpublish",
-						"xxx"
+						"xxx",
+						"_unpublish"
 					]
 				}
 			},
@@ -1253,7 +1235,7 @@
 							"",
 							"pm.test(\"To Check if Value is Null\", function () {",
 							"",
-							"    pm.expect(jsonData.entity.hostName).eq(\"default\");",
+							"    pm.expect(jsonData.entity.siteName).eq(\"default\");",
 							"});",
 							"",
 							"pm.collectionVariables.set(\"hostInode\", jsonData.entity.inode);",
@@ -1341,7 +1323,7 @@
 				"method": "PUT",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/site/_archive/{{hostdentifier}}",
+					"raw": "{{serverURL}}/api/v1/site/{{hostdentifier}}/_archive",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -1349,8 +1331,8 @@
 						"api",
 						"v1",
 						"site",
-						"_archive",
-						"{{hostdentifier}}"
+						"{{hostdentifier}}",
+						"_archive"
 					]
 				}
 			},
@@ -1391,7 +1373,7 @@
 				"method": "PUT",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/site/_archive/xxx",
+					"raw": "{{serverURL}}/api/v1/site/xxx/_archive",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -1399,15 +1381,15 @@
 						"api",
 						"v1",
 						"site",
-						"_archive",
-						"xxx"
+						"xxx",
+						"_archive"
 					]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "Archive Site wrong site Id Copy",
+			"name": "Delete Site wrong site Id Copy",
 			"event": [
 				{
 					"listen": "test",
@@ -1490,7 +1472,7 @@
 				"method": "PUT",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/site/_makedefault/xxx",
+					"raw": "{{serverURL}}/api/v1/site/xxx/_makedefault",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -1498,8 +1480,8 @@
 						"api",
 						"v1",
 						"site",
-						"_makedefault",
-						"xxx"
+						"xxx",
+						"_makedefault"
 					]
 				}
 			},

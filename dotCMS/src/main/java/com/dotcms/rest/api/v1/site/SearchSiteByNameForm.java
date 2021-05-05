@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Form to find an host by name
+ * Form to find an site by name
  * @author jsanca
  */
 public class SearchSiteByNameForm {

@@ -70,67 +70,85 @@ public class SiteHelper implements Serializable {
 	}
 
 	/**
-	 * Unlock a host
-	 * @param host
+	 * Unlock a site
+	 * @param site
 	 * @param user
 	 * @param respectAnonPerms
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
-	public void unlock(final Host host, final User user, final boolean respectAnonPerms) throws DotSecurityException, DotDataException {
+	public void unlock(final Host site, final User user, final boolean respectAnonPerms) throws DotSecurityException, DotDataException {
 
-		APILocator.getContentletAPI().unlock(host, user, respectAnonPerms);
+		APILocator.getContentletAPI().unlock(site, user, respectAnonPerms);
 	}
 
 	/**
-	 * Archive a host
-	 * @param host
+	 * Archive a site
+	 * @param site
 	 * @param user
 	 * @param respectAnonPerms
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
-	public void archive(final Host host, final User user, final boolean respectAnonPerms) throws DotSecurityException, DotDataException {
+	public void archive(final Host site, final User user, final boolean respectAnonPerms) throws DotSecurityException, DotDataException {
 
-		hostAPI.archive(host, user, respectAnonPerms);
+		hostAPI.archive(site, user, respectAnonPerms);
 	}
 
 	/**
-	 * UnArchive a host
-	 * @param host
+	 * UnArchive a site
+	 * @param site
 	 * @param user
 	 * @param respectAnonPerms
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
-	public void unarchive(final Host host, final User user, final boolean respectAnonPerms) throws DotSecurityException, DotDataException {
+	public void unarchive(final Host site, final User user, final boolean respectAnonPerms) throws DotSecurityException, DotDataException {
 
-		hostAPI.unarchive(host, user, respectAnonPerms);
+		hostAPI.unarchive(site, user, respectAnonPerms);
 	}
 
 	/**
-	 * Save a new or existing host
-	 * @param host
+	 * Save a new or existing site
+	 * @param site
 	 * @param user
 	 * @param respectAnonPerms
 	 * @return
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
-	public Host save(final Host host, final User user, final boolean respectAnonPerms) throws DotSecurityException, DotDataException {
+	public Host save(final Host site, final User user, final boolean respectAnonPerms) throws DotSecurityException, DotDataException {
 
-		return APILocator.getHostAPI().save(host, user, respectAnonPerms);
+		return APILocator.getHostAPI().save(site, user, respectAnonPerms);
 	}
 
-	public Future<Boolean> delete(final Host host, final User user, final boolean respectAnonPerms) throws DotSecurityException, DotDataException {
+	/**
+	 * Deletes a site
+	 * @param site
+	 * @param user
+	 * @param respectAnonPerms
+	 * @return
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	public Future<Boolean> delete(final Host site, final User user, final boolean respectAnonPerms) throws DotSecurityException, DotDataException {
 
-		final Optional<Future<Boolean>> hostDeleteResultOpt = hostAPI.delete(host, user, respectAnonPerms, true);
+		final Optional<Future<Boolean>> hostDeleteResultOpt = hostAPI.delete(site, user, respectAnonPerms, true);
 		return hostDeleteResultOpt.isPresent()?hostDeleteResultOpt.get():null;
 	}
 
-	public boolean makeDefault(Host host, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+	/**
+	 * Make default a site
+	 * @param site
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	public boolean makeDefault(Host site, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
-		this.hostAPI.makeDefault(host, user, respectFrontendRoles);
+		this.hostAPI.makeDefault(site, user, respectFrontendRoles);
 		return true;
 	}
 
@@ -150,14 +168,14 @@ public class SiteHelper implements Serializable {
 	/**
 	 * Check if a Site is archived or not, keeping the exception quietly
 	 * @param showArchived {@link Boolean}
-	 * @param host {@link Host}
+	 * @param site {@link Host}
 	 * @return Boolean
 	 */
-	public boolean checkArchived (final boolean showArchived, final Host host) {
+	public boolean checkArchived (final boolean showArchived, final Host site) {
 		boolean checkArchived = false;
 		try {
 
-			checkArchived = (showArchived || !host.isArchived());
+			checkArchived = (showArchived || !site.isArchived());
 		} catch (Exception e) {
 			error(SiteHelper.class, e.getMessage(), e);
 		}
@@ -224,8 +242,8 @@ public class SiteHelper implements Serializable {
 	}
 
 	/**
-	 * Publish a host
-	 * @param host {@link Host}
+	 * Publish a site
+	 * @param site {@link Host}
 	 * @param user {@link User}
 	 * @param respectAnonPerms {@link Boolean}
 	 * @return Host
@@ -233,15 +251,15 @@ public class SiteHelper implements Serializable {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public Host publish(final Host host, final User user, final boolean respectAnonPerms) throws DotContentletStateException, DotDataException, DotSecurityException {
+	public Host publish(final Host site, final User user, final boolean respectAnonPerms) throws DotContentletStateException, DotDataException, DotSecurityException {
 
-		this.hostAPI.publish(host, user, respectAnonPerms);
-		return host;
+		this.hostAPI.publish(site, user, respectAnonPerms);
+		return site;
 	}
 
 	/**
-	 * Unpublish a host
-	 * @param host {@link Host}
+	 * Unpublish a site
+	 * @param site {@link Host}
 	 * @param user {@link User}
 	 * @param respectAnonPerms {@link Boolean}
 	 * @return Host
@@ -249,10 +267,10 @@ public class SiteHelper implements Serializable {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public Host unpublish(final Host host, final User user, final boolean respectAnonPerms) throws DotContentletStateException, DotDataException, DotSecurityException {
+	public Host unpublish(final Host site, final User user, final boolean respectAnonPerms) throws DotContentletStateException, DotDataException, DotSecurityException {
 
-		this.hostAPI.unpublish(host, user, respectAnonPerms);
-		return host;
+		this.hostAPI.unpublish(site, user, respectAnonPerms);
+		return site;
 	}
 
 	/**
@@ -323,12 +341,12 @@ public class SiteHelper implements Serializable {
 	public Host getCurrentSite(final HttpServletRequest req, final User user) {
 		try {
 			final HttpSession session = req.getSession();
-			String hostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+			String siteId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
 
-			if(null==hostId){
+			if(null==siteId){
 				return WebAPILocator.getHostWebAPI().getHost(req);
 			}else{
-				return hostAPI.find(hostId, user, false);
+				return hostAPI.find(siteId, user, false);
 			}
 
 		} catch (DotDataException|DotSecurityException e) {
@@ -339,12 +357,12 @@ public class SiteHelper implements Serializable {
 	/**
 	 * Switch a site
 	 * @param req
-	 * @param hostId
+	 * @param siteId
 	 */
-	public void switchSite(final HttpServletRequest req, final String hostId) {
+	public void switchSite(final HttpServletRequest req, final String siteId) {
 
 		// we do this in order to get a properly behaviour of the SwichSiteListener
-		HostUtil.switchSite(req, hostId);
+		HostUtil.switchSite(req, siteId);
 	}
 
 	/**
@@ -358,8 +376,8 @@ public class SiteHelper implements Serializable {
 	public Host switchToDefaultHost(final HttpServletRequest req, final User user)
 			throws DotSecurityException, DotDataException {
 
-		final Host defaultHost = this.hostAPI.findDefaultHost(user, false);
-		this.switchSite(req, defaultHost.getIdentifier());
-		return defaultHost;
+		final Host defaultSite = this.hostAPI.findDefaultHost(user, false);
+		this.switchSite(req, defaultSite.getIdentifier());
+		return defaultSite;
 	}
 }

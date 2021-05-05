@@ -10,11 +10,11 @@ public class SiteView {
 
     private final String aliases;
 
-    private final String hostName;
+    private final String siteName;
 
     private final String tagStorage;
 
-    private final String hostThumbnail;
+    private final String siteThumbnail;
 
     private final boolean runDashboard;
 
@@ -50,7 +50,7 @@ public class SiteView {
 
     private final  String modUser;
 
-    public SiteView(String identifier, String inode, String aliases, String hostName, String tagStorage, String hostThumbnail,
+    public SiteView(String identifier, String inode, String aliases, String siteName, String tagStorage, String hostThumbnail,
                     boolean runDashboard, String keywords, String description, String googleMap, String googleAnalytics, String addThis,
                     String proxyUrlForEditMode, String embeddedDashboard, long languageId, boolean isSystemHost, boolean isDefault, boolean isArchived,
                     boolean isLive, boolean isLocked, boolean isWorking, Date modDate, String modUser) {
@@ -58,9 +58,9 @@ public class SiteView {
         this.identifier = identifier;
         this.inode = inode;
         this.aliases = aliases;
-        this.hostName = hostName;
+        this.siteName = siteName;
         this.tagStorage = tagStorage;
-        this.hostThumbnail = hostThumbnail;
+        this.siteThumbnail = hostThumbnail;
         this.runDashboard = runDashboard;
         this.keywords = keywords;
         this.description = description;
@@ -92,16 +92,16 @@ public class SiteView {
         return aliases;
     }
 
-    public String getHostName() {
-        return hostName;
+    public String getSiteName() {
+        return siteName;
     }
 
     public String getTagStorage() {
         return tagStorage;
     }
 
-    public String getHostThumbnail() {
-        return hostThumbnail;
+    public String getSiteThumbnail() {
+        return siteThumbnail;
     }
 
     public boolean isRunDashboard() {
