@@ -3,10 +3,8 @@ package com.dotcms.dotpubsub;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.system.event.local.model.KeyFilterable;
 import com.dotmarketing.util.Logger;
-import io.vavr.control.Try;
 
 public interface DotPubSubTopic extends EventSubscriber<DotPubSubEvent>, KeyFilterable {
-
 
     default long messagesSent() {
         return -1;
@@ -16,11 +14,9 @@ public interface DotPubSubTopic extends EventSubscriber<DotPubSubEvent>, KeyFilt
         return -1;
     }
 
-
     default long messagesReceived() {
         return -1;
     }
-
 
     default long bytesReceived() {
         return -1;
@@ -33,7 +29,6 @@ public interface DotPubSubTopic extends EventSubscriber<DotPubSubEvent>, KeyFilt
      */
     default void incrementSentCounters(DotPubSubEvent event) {
 
-
     }
 
     /**
@@ -43,10 +38,7 @@ public interface DotPubSubTopic extends EventSubscriber<DotPubSubEvent>, KeyFilt
      */
     default void incrementReceivedCounters(DotPubSubEvent event) {
 
-
     }
-
-
 
     /**
      * Override to respond to an incoming DotPubSubEvent.
@@ -57,10 +49,5 @@ public interface DotPubSubTopic extends EventSubscriber<DotPubSubEvent>, KeyFilt
         Logger.info(this.getClass(), "got event:" + event);
 
     }
-
-
-
-    
-
 
 }

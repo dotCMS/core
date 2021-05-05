@@ -67,7 +67,7 @@ public class ClusterResource {
     public Response getNodesInfo (@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam ("params") String params )
 			throws DotDataException, JSONException, DotStateException, DotSecurityException, DotCacheException {
 
-		final InitDataObject initData = new WebResource.InitBuilder(webResource)
+		new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)
 				.requiredFrontendUser(false)
 				.requestAndResponse(request, response)
@@ -77,28 +77,27 @@ public class ClusterResource {
 				.init();
 
 
+        final List<Server> pendingServers = new ArrayList<>(APILocator.getServerAPI().getAliveServers());
+        final String myServerId = APILocator.getServerAPI().readServerId();
         
-        ServerAPI serverAPI = APILocator.getServerAPI();
-        final  List<Server> allServers = new ArrayList<>(serverAPI.getAliveServers());
-        final String myServerId = serverAPI.readServerId();
-        
-        int maxWaitTime =  Config.getIntProperty("CLUSTER_SERVER_THREAD_SLEEP", 2000) ;
+        final int maxWaitTime =  Config.getIntProperty("CLUSTER_SERVER_THREAD_SLEEP", Math.max(2000, pendingServers.size()*1000)) ;
         final Map<String, Serializable> info = new HashMap<>();
         info.put("myServerId", myServerId);
-        final Map<String, Serializable> members = CacheLocator.getCacheAdministrator().getTransport().validateCacheInCluster( maxWaitTime);
-        final ArrayList<Serializable> arrayOfServers = new ArrayList<>();
+        final Map<String, Serializable> members = CacheLocator.getCacheAdministrator().getTransport().validateCacheInCluster(maxWaitTime);
+        final ArrayList<Serializable> arrayOfServerResponses = new ArrayList<>();
         
-        allServers.removeIf(s->members.containsKey(s.getServerId()));
+        // if we got a response, remove from pending servers
+        pendingServers.removeIf(s->members.containsKey(s.getServerId()));
         
 
         members.values().forEach(map->{
-            arrayOfServers.add(map);
+            arrayOfServerResponses.add(map);
         });
         
-        allServers.forEach(server->arrayOfServers.add(ClusterUtil.createFailedJson(server)));
+        pendingServers.forEach(server->arrayOfServerResponses.add(ClusterUtil.createFailedJson(server)));
         
-        info.put("clusterHealth", allServers.isEmpty() ? "green":"red");
-        info.put("serverInfo", arrayOfServers);
+        info.put("clusterHealth", pendingServers.isEmpty() ? "green":"red");
+        info.put("serverInfo", arrayOfServerResponses);
 
 		
 		

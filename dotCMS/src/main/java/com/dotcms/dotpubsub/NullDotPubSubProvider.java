@@ -5,12 +5,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.google.common.annotations.VisibleForTesting;
 
 public class NullDotPubSubProvider implements DotPubSubProvider {
-    
+
     private Map<Comparable<String>, DotPubSubTopic> topicMap = new ConcurrentHashMap<>();
-    
+
     @VisibleForTesting
     public DotPubSubEvent lastEvent;
-    
+
     @Override
     public DotPubSubProvider subscribe(DotPubSubTopic topic) {
         topicMap.put(topic.getKey().toString(), topic);
@@ -26,12 +26,11 @@ public class NullDotPubSubProvider implements DotPubSubProvider {
     @Override
     public void stop() {
 
-
     }
 
     @Override
     public boolean publish(DotPubSubEvent event) {
-        this.lastEvent=event;
+        this.lastEvent = event;
         return true;
     }
 
@@ -43,7 +42,7 @@ public class NullDotPubSubProvider implements DotPubSubProvider {
 
     @Override
     public DotPubSubEvent lastEventIn() {
-        
+
         return this.lastEvent;
     }
 
@@ -51,7 +50,5 @@ public class NullDotPubSubProvider implements DotPubSubProvider {
     public DotPubSubEvent lastEventOut() {
         return this.lastEvent;
     }
-    
-    
 
 }

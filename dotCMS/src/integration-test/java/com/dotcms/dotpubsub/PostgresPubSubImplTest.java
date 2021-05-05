@@ -4,7 +4,6 @@ import static org.junit.Assert.assertFalse;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import com.dotcms.cache.transport.postgres.CachePubSubTopic;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.util.Logger;
 

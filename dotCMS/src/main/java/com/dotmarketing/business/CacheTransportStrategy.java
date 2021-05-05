@@ -1,7 +1,7 @@
 package com.dotmarketing.business;
 
 import com.dotcms.cache.transport.HazelcastCacheTransportEmbedded;
-import com.dotcms.cache.transport.postgres.PostgresCacheTransport;
+import com.dotcms.cache.transport.PostgresCacheTransport;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.business.jgroups.NullTransport;

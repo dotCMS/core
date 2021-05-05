@@ -1,6 +1,5 @@
 package com.dotcms.dotpubsub;
 
-
 import java.io.StringWriter;
 
 /**
@@ -13,9 +12,7 @@ import java.io.StringWriter;
  */
 class PgNgDataSourceUrl {
 
-
     private final String finalUrl;
-
 
     /**
      * Use our existing database connection/url and
@@ -39,13 +36,13 @@ class PgNgDataSourceUrl {
         return "DbUrl Obfuscated";
     }
 
-
     String getDbUrl() {
         return finalUrl;
     }
 
     /**
      * jdbc:postgresql://oboxturbo/dotcms
+     * 
      * @param username
      * @param password
      * @param url
@@ -56,15 +53,15 @@ class PgNgDataSourceUrl {
         String[] data = url.split("/");
         StringWriter sw = new StringWriter();
         sw.append("jdbc:pgsql://");
-        if(url.contains("@")) {
-            sw.append(data[data.length-3]);
-        }else {
-            sw.append(username).append(":") .append(new String(password)).append("@");
+        if (url.contains("@")) {
+            sw.append(data[data.length - 3]);
+        } else {
+            sw.append(username).append(":").append(new String(password)).append("@");
         }
-        sw.append(data[data.length-2]);
+        sw.append(data[data.length - 2]);
         sw.append("/");
-        sw.append(data[data.length-1]);
-        
+        sw.append(data[data.length - 1]);
+
         return sw.toString();
 
     }

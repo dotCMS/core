@@ -11,8 +11,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 
-
-
 public final class DotPubSubEvent implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -37,7 +35,6 @@ public final class DotPubSubEvent implements Serializable {
             throw new DotRuntimeException(e);
         }));
 
-
     }
 
     /**
@@ -49,8 +46,6 @@ public final class DotPubSubEvent implements Serializable {
         this(builder.payload);
     }
 
-
-
     /**
      * Construct an DotPubSubEvent from a map
      * 
@@ -58,13 +53,11 @@ public final class DotPubSubEvent implements Serializable {
      */
     public DotPubSubEvent(Map<String, Serializable> map) {
 
-
-        this.payload =Collections.unmodifiableMap(map);
-        if(!map.containsKey(TOPIC)) {
+        this.payload = Collections.unmodifiableMap(map);
+        if (!map.containsKey(TOPIC)) {
             throw new DotRuntimeException("Topic must be set on a DotPubSubEvent");
         }
     }
-
 
     /**
      * get whole payload as a map
@@ -83,7 +76,6 @@ public final class DotPubSubEvent implements Serializable {
     public String getType() {
         return payload != null ? (String) payload.get(TYPE) : null;
     }
-
 
     /**
      * Returns the sending server of DotPubSubEvent
@@ -124,15 +116,12 @@ public final class DotPubSubEvent implements Serializable {
         }
     });
 
-
-
     @Override
     public String toString() {
 
         return payloadAsString.get();
 
     }
-
 
     @Override
     public int hashCode() {
@@ -141,7 +130,6 @@ public final class DotPubSubEvent implements Serializable {
         result = prime * result + ((payload == null) ? 0 : payload.hashCode());
         return result;
     }
-
 
     @Override
     public boolean equals(Object obj) {
@@ -161,8 +149,6 @@ public final class DotPubSubEvent implements Serializable {
         return true;
     }
 
-
-
     /**
      * Creates a builder to build {@link DotPubSubEvent} and initialize it with the given object.
      * 
@@ -181,7 +167,6 @@ public final class DotPubSubEvent implements Serializable {
 
         private Map<String, Serializable> payload = new HashMap<>();
 
-
         public Builder() {}
 
         public Builder(final DotPubSubEvent dotPubSubEvent) {
@@ -198,14 +183,12 @@ public final class DotPubSubEvent implements Serializable {
 
             this.payload = map;
 
-
             return this;
         }
 
         public Builder withOrigin(final String origin) {
             return addPayload(DotPubSubEvent.ORIGIN, StringUtils.shortify(origin, 10));
         }
-
 
         public Builder withPayload(final Map<String, Serializable> payloadIncoming) {
             if (payloadIncoming != null) {
@@ -245,7 +228,5 @@ public final class DotPubSubEvent implements Serializable {
             return new DotPubSubEvent(this);
         }
     }
-
-
 
 }

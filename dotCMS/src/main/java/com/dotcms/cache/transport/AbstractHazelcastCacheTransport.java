@@ -1,9 +1,9 @@
 package com.dotcms.cache.transport;
 
-import com.dotcms.cache.transport.postgres.CachePubSubTopic;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.business.HazelcastUtil;
 import com.dotcms.cluster.business.HazelcastUtil.HazelcastInstanceType;
+import com.dotcms.dotpubsub.CachePubSubTopic;
 import com.dotcms.dotpubsub.DotPubSubEvent;
 import com.dotcms.enterprise.ClusterUtil;
 import com.dotcms.enterprise.license.LicenseManager;

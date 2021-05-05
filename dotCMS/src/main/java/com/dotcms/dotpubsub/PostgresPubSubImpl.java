@@ -28,8 +28,7 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
         STOPPED, STARTED, REBUILD
     }
 
-
-    final static String PG_NOTIFY_SQL="SELECT pg_notify(?,?)";
+    final static String PG_NOTIFY_SQL = "SELECT pg_notify(?,?)";
     public final String serverId;
     private long restartDelay = 0;
 
@@ -47,7 +46,6 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
 
     @VisibleForTesting
     private static DotPubSubEvent lastEventIn, lastEventOut;
-
 
     @Override
     public DotPubSubProvider start() {
@@ -70,10 +68,8 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
         return this;
     }
 
-
     public PostgresPubSubImpl() {
         this(APILocator.getServerAPI().readServerId());
-
 
     }
 
@@ -112,8 +108,6 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
             }
             Logger.debug(PostgresPubSubImpl.class,
                             () -> "recieved event: " + processId + ", " + channelName + ", " + payload);
-
-
 
             // save for testing
             lastEventIn = event;
@@ -163,7 +157,6 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
 
     }
 
-
     private void subscribeToTopicSQL(String topic) throws SQLException {
         try (Statement stmt = connection.createStatement()) {
             Logger.info(this.getClass(), () -> " - LISTEN " + topic.toLowerCase());
@@ -177,8 +170,6 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
             stmt.execute("UNLISTEN " + topic.toString().toLowerCase());
         }
     }
-
-
 
     /**
      * This will automatically restart the connection
@@ -203,7 +194,6 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
         connection = null;
     }
 
-
     /**
      * allow a user to override the DB server for PubSub Activity Otherwise, we will just use the same
      * DB Format:
@@ -220,18 +210,14 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
             return new PgNgDataSourceUrl(POSTGRES_PUBSUB_JDBC_URL);
         }
 
-
         HikariDataSource hds = (HikariDataSource) DbConnectionFactory.getDataSource();
         return new PgNgDataSourceUrl(hds.getUsername(), hds.getPassword(), hds.getJdbcUrl());
 
     }
 
-    
     private PGConnection getConnection() throws SQLException {
         return DriverManager.getConnection(attributes.get().getDbUrl()).unwrap(PGConnection.class);
     }
-
-
 
     @Override
     public DotPubSubProvider subscribe(DotPubSubTopic topic) {
@@ -254,12 +240,9 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
             restart();
         }
 
-
         return this;
     }
 
-    
-    
     @Override
     public boolean publish(DotPubSubEvent eventIn) {
 
@@ -267,7 +250,7 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
 
         Logger.debug(getClass(), () -> "sending  event:" + eventOut);
         try (final Connection conn = getConnection();
-             final PreparedStatement statment = conn.prepareStatement(PG_NOTIFY_SQL)) {
+                        final PreparedStatement statment = conn.prepareStatement(PG_NOTIFY_SQL)) {
 
             statment.setString(1, eventIn.getTopic());
             statment.setString(2, eventOut.toString());
@@ -288,19 +271,14 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
 
     }
 
-
-
     @Override
     public DotPubSubEvent lastEventIn() {
         return lastEventIn;
     }
 
-
     @Override
     public DotPubSubEvent lastEventOut() {
         return lastEventOut;
     }
-
-
 
 }

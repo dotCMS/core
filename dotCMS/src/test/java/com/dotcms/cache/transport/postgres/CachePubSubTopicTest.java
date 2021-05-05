@@ -2,13 +2,14 @@ package com.dotcms.cache.transport.postgres;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
-import com.dotcms.cache.transport.postgres.CachePubSubTopic.CacheEventType;
+import com.dotcms.dotpubsub.CachePubSubTopic;
 import com.dotcms.dotpubsub.DotPubSubEvent;
 import com.dotcms.dotpubsub.DotPubSubProvider;
 import com.dotcms.dotpubsub.DotPubSubProviderLocator;
 import com.dotcms.dotpubsub.DotPubSubTopic;
 import com.dotcms.dotpubsub.NullDotPubSubProvider;
 import com.dotcms.dotpubsub.QueuingPubSubWrapper;
+import com.dotcms.dotpubsub.CachePubSubTopic.CacheEventType;
 
 public class CachePubSubTopicTest {
 

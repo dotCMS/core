@@ -1,5 +1,7 @@
 package com.dotcms.dotpubsub;
 
+import com.google.common.annotations.VisibleForTesting;
+
 public interface DotPubSubProvider {
 
     /**
@@ -12,19 +14,21 @@ public interface DotPubSubProvider {
 
     /**
      * Starts the Provider (if needed)
+     * 
      * @return
      */
     DotPubSubProvider start();
-    
+
     /**
      * Shuts down the Provider (if needed)
+     * 
      * @return
      */
     void stop();
-    
-    
+
     /**
      * Publish an event on a given topic
+     * 
      * @param topic
      * @param event
      * @return
@@ -33,32 +37,30 @@ public interface DotPubSubProvider {
 
     /**
      * Unsubscribes from a topic
+     * 
      * @param topic
      * @return
      */
     DotPubSubProvider unsubscribe(DotPubSubTopic topic);
-    
 
     /**
      * for testing
+     * 
      * @return
      */
+    @VisibleForTesting
     default DotPubSubEvent lastEventIn() {
         return null;
     }
-    
+
     /**
      * for testing
+     * 
      * @return
      */
+    @VisibleForTesting
     default DotPubSubEvent lastEventOut() {
         return null;
     }
-    
-    
-    
-    
-    
-    
-    
+
 }
