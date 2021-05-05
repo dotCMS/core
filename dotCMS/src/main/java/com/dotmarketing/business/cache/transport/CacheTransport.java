@@ -1,10 +1,15 @@
 package com.dotmarketing.business.cache.transport;
 
+import java.io.Serializable;
 import java.util.Map;
 import com.dotcms.cluster.bean.Server;
+import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotmarketing.business.APILocator;
-import io.vavr.control.Try;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.util.StringUtils;
+import com.google.common.collect.ImmutableMap;
+
 
 /**
  * @author Jonathan Gamba
@@ -29,23 +34,9 @@ public interface CacheTransport {
      */
     void testCluster () throws CacheTransportException;
 
-    /**
-     * Tests the transport channel of a cluster sending and receiving messages for a given number of servers
-     *
-     * @param dateInMillis   String use as Key on out Map of results.
-     * @param numberServers  Number of servers to wait for a response.
-     * @param maxWaitSeconds seconds to wait for a response.
-     * @return Map with DateInMillis, ServerInfo for each cache/live server in Cluster.
-     * @throws CacheTransportException
-     */
-    Map<String, Boolean> validateCacheInCluster ( String dateInMillis, int numberServers, int maxWaitSeconds ) throws CacheTransportException;
 
     
-    
-    default Map<String, Boolean> validateCacheInCluster ( int maxWaitSeconds ) {
-        int lookingForServers = Try.of(()->APILocator.getServerAPI().getAliveServers().size()-1).getOrElse(0);
-        return validateCacheInCluster(null,lookingForServers,2);
-    };
+     Map<String, Serializable> validateCacheInCluster ( int maxWaitInMillis ) ;
 
     
     
@@ -67,11 +58,13 @@ public interface CacheTransport {
     }
     
 
-    public interface CacheTransportInfo {
+    public interface CacheTransportInfo extends Serializable {
 
         default String getClusterName() {
             return ClusterFactory.getClusterId();
         }
+
+        
     	String getAddress();
     	int getPort();
 
@@ -82,6 +75,37 @@ public interface CacheTransport {
     	long getReceivedMessages();
     	long getSentBytes();
     	long getSentMessages();
+    	
+    	default String getLicenseId() {
+    	    return LicenseUtil.getDisplaySerial();
+    	}
+        default String getServerId() {
+            return StringUtils.shortify(APILocator.getServerAPI().readServerId(),10);
+        }
+        default String getCacheTransport() {
+            return CacheLocator.getCacheAdministrator().getTransport().getClass().getSimpleName();
+        }
+    	
+        
+    	default Map<String,Serializable> asMap() {
+    	    return ImmutableMap.<String,Serializable>builder()
+    	    .put("clusterName", getClusterName())
+    	    .put("ipAddress", getAddress())
+    	    .put("port", getPort())
+    	    .put("open", isOpen())
+    	    .put("numberOfNodes", getNumberOfNodes())
+    	    .put("receivedBytes", getReceivedBytes())
+    	    .put("receivedMessages", getReceivedMessages())
+    	    .put("sentMessages", getSentMessages())
+    	    .put("sentBytes", getSentBytes())
+    	    .put("cacheTransport", getCacheTransport())
+    	    .put("licenseId", getLicenseId())
+    	    .put("serverId", getServerId())
+    	    .build();
+    	}
+    	
+    	
+    	
     }
     
     
@@ -91,7 +115,6 @@ public interface CacheTransport {
         
 
         return new CacheTransportInfo(){
-
 
             @Override
             public String getAddress() {

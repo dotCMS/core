@@ -37,10 +37,9 @@ import com.dotmarketing.util.WebKeys;
  */
 public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 
-    final CacheTransport cacheTransport;
+    final CacheTransportStrategy cacheTransportStrat;
 
     private CacheProviderAPI cacheProviderAPI;
-    final private boolean useTransportChannel ;
 
     public static final String TEST_MESSAGE = "HELLO CLUSTER!";
     public static final String TEST_MESSAGE_NODE = "TESTNODE";
@@ -50,16 +49,16 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
     public static final String DUMMY_TEXT_TO_SEND = "DUMMY MSG TO TEST SEND";
 
     public CacheTransport getTransport() {
-        return cacheTransport;
+        return cacheTransportStrat.get();
     }
 
-    public ChainableCacheAdministratorImpl() {
-        this(null);
+    private ChainableCacheAdministratorImpl() {
+        this(new CacheTransportStrategy());
     }
 
-    public ChainableCacheAdministratorImpl(CacheTransport transport) {
-        this.cacheTransport = (transport ==null) ? new NullTransport() : transport;
-        this.useTransportChannel = true;
+    public ChainableCacheAdministratorImpl(CacheTransportStrategy transport) {
+        this.cacheTransportStrat = (transport == null) ? new CacheTransportStrategy() : transport;
+
 
 
     }
@@ -78,7 +77,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
     
     private void setUpAutowire(Server localServer) throws DotDataException {
 
-        if(!cacheTransport.requiresAutowiring()) {
+        if(!getTransport().requiresAutowiring()) {
             return;   
         }
         
@@ -192,8 +191,8 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
         setUpAutowire(localServer);
 
 
-        if (cacheTransport.shouldReinit() || !cacheTransport.isInitialized()) {
-            cacheTransport.init(localServer);
+        if (getTransport().shouldReinit() || !getTransport().isInitialized()) {
+            getTransport().init(localServer);
 
         }
     }
@@ -207,19 +206,13 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 
         flushAlLocalOnly(false);
 
-        if (useTransportChannel) {
+        if (!cacheProviderAPI.isDistributed()) {
 
-            if (!cacheProviderAPI.isDistributed()) {
-                if (getTransport() != null) {
-                    try {
-                        getTransport().send("0:" + ROOT_GOUP);
-                    } catch (Exception e) {
-                        Logger.error(ChainableCacheAdministratorImpl.class, "Unable to send invalidation to cluster : " + e.getMessage(),
-                                e);
-                    }
-                } else {
-                    throw new CacheTransportException("No Cache transport implementation is defined");
-                }
+            try {
+                getTransport().send("0:" + ROOT_GOUP);
+            } catch (Exception e) {
+                Logger.error(ChainableCacheAdministratorImpl.class,
+                                "Unable to send invalidation to cluster : " + e.getMessage(), e);
             }
         }
 
@@ -240,15 +233,15 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 
         flushGroupLocalOnly(group, false);
 
-        if (useTransportChannel) {
-            if (!cacheProviderAPI.isGroupDistributed(group)) {
-                try {
-                    cacheTransport.send("0:" + group);
-                } catch (Exception e) {
-                    Logger.error(ChainableCacheAdministratorImpl.class, "Unable to send invalidation to cluster : " + e.getMessage(), e);
-                }
+        if (!cacheProviderAPI.isGroupDistributed(group)) {
+            try {
+                getTransport().send("0:" + group);
+            } catch (Exception e) {
+                Logger.error(ChainableCacheAdministratorImpl.class,
+                                "Unable to send invalidation to cluster : " + e.getMessage(), e);
             }
         }
+
     }
 
     public void flushAlLocalOnly(boolean ignoreDistributed) {
@@ -316,19 +309,17 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
         String g = group.toLowerCase();
         removeLocalOnly(k, g, false);
 
-        if (useTransportChannel) {
-            if (!cacheProviderAPI.isGroupDistributed(group)) {
-                if (getTransport() != null) {
-                    try {
-                        getTransport().send(k + ":" + g);
-                    } catch (Exception e) {
-                        Logger.warnAndDebug(ChainableCacheAdministratorImpl.class,
-                                "Unable to send invalidation to cluster : " + e.getMessage(), e);
-                    }
-                } else {
-                    Logger.warn(ChainableCacheAdministratorImpl.class,
-                            "No Cache transport implementation is defined - clustered dotcms will not work properly without a valid cache transport");
+        if (!cacheProviderAPI.isGroupDistributed(group)) {
+            if (getTransport() != null) {
+                try {
+                    getTransport().send(k + ":" + g);
+                } catch (Exception e) {
+                    Logger.warnAndDebug(ChainableCacheAdministratorImpl.class,
+                                    "Unable to send invalidation to cluster : " + e.getMessage(), e);
                 }
+            } else {
+                Logger.warn(ChainableCacheAdministratorImpl.class,
+                                "No Cache transport implementation is defined - clustered dotcms will not work properly without a valid cache transport");
             }
         }
 
@@ -370,50 +361,21 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
     }
 
     public boolean isClusteringEnabled() {
-        return useTransportChannel;
+        return true;
     }
 
     public void send(String msg) {
 
-        if (getTransport() != null) {
-
-            try {
-                getTransport().send(msg);
-            } catch (Exception e) {
-                Logger.warn(ChainableCacheAdministratorImpl.class, "Unable to send message to cluster : " + e.getMessage(), e);
-            }
-
-        } else {
-            throw new CacheTransportException("No Cache transport implementation is defined");
+        try {
+            getTransport().send(msg);
+        } catch (Exception e) {
+            Logger.warn(ChainableCacheAdministratorImpl.class, "Unable to send message to cluster : " + e.getMessage(),
+                            e);
         }
 
     }
 
-    /**
-     * Tests the transport channel of a cluster sending and receiving messages for a given number of
-     * servers
-     *
-     * @param dateInMillis String use as Key on out Map of results.
-     * @param numberServers Number of servers to wait for a response.
-     * @param maxWaitSeconds seconds to wait for a response.
-     * @return Map with DateInMillis, ServerInfo for each cache/live server in Cluster.
-     */
-    public Map<String, Boolean> validateCacheInCluster(String dateInMillis, int numberServers, int maxWaitSeconds)
-            throws DotCacheException {
 
-        if (getTransport() != null) {
-
-            try {
-                return getTransport().validateCacheInCluster(dateInMillis, numberServers, maxWaitSeconds);
-            } catch (CacheTransportException e) {
-                Logger.error(ChainableCacheAdministratorImpl.class, e.getMessage(), e);
-                throw new DotCacheException(e);
-            }
-
-        } else {
-            throw new CacheTransportException("No Cache transport implementation is defined");
-        }
-    }
 
     public void testCluster() {
 

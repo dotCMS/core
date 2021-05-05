@@ -1,5 +1,7 @@
 package com.dotcms.dotpubsub;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -8,6 +10,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
@@ -24,13 +27,13 @@ import io.vavr.control.Try;
  */
 public class QueuingPubSubWrapper implements DotPubSubProvider {
 
-    private final ScheduledExecutorService executorService;
+    private ScheduledExecutorService executorService;
     private final DotPubSubProvider wrappedProvider;
-    private final Set<DotPubSubEvent> outgoingMessages = new LinkedHashSet<>();
+    private final Collection<DotPubSubEvent> outgoingMessages ;
     private final Map<String,Tuple2<DotPubSubTopic, LinkedBlockingQueue<DotPubSubEvent>>> topicQueues =
                     new ConcurrentHashMap<>();
 
-    boolean logDedupes = true;
+    final boolean logDedupes;
     
     
     
@@ -41,12 +44,26 @@ public class QueuingPubSubWrapper implements DotPubSubProvider {
 
         this.executorService = Executors.newSingleThreadScheduledExecutor();
 
+        this.logDedupes = Config.getBooleanProperty("QUEUING_PUBSUB_DEDUPE_LOG", false);
+        
+        
+        outgoingMessages = Config.getBooleanProperty("QUEUING_PUBSUB_DEDUPE", true) 
+                        ? new LinkedHashSet<>()
+                        : new ArrayList<>();
+        
     }
 
     public QueuingPubSubWrapper() {
         this(DotPubSubProviderLocator.provider.get());
     }
 
+    private final ScheduledExecutorService executorService() {
+        if(this.executorService==null || this.executorService.isShutdown() || this.executorService.isTerminated()) {
+            executorService =  Executors.newSingleThreadScheduledExecutor();
+        }
+        return executorService;
+        
+    }
 
     @Override
     public DotPubSubProvider subscribe(final DotPubSubTopic topic) {
@@ -56,7 +73,8 @@ public class QueuingPubSubWrapper implements DotPubSubProvider {
 
     @Override
     public DotPubSubProvider start() {
-        this.executorService.scheduleAtFixedRate(this::publishQueue, 5, 1, TimeUnit.SECONDS);
+        
+        executorService().scheduleAtFixedRate(this::publishQueue, 5, 1, TimeUnit.SECONDS);
         this.wrappedProvider.start();
         return this;
     }

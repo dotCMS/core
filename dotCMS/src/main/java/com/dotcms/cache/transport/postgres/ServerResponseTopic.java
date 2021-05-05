@@ -1,11 +1,13 @@
 package com.dotcms.cache.transport.postgres;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import com.dotcms.dotpubsub.DotPubSubEvent;
 import com.dotcms.dotpubsub.DotPubSubTopic;
+import com.dotcms.enterprise.ClusterUtil;
+import com.dotmarketing.business.APILocator;
 import com.google.common.collect.ImmutableMap;
-import io.vavr.control.Try;
 
 /**
  * This Topic collects server responses when a request for all servers is sent out
@@ -15,7 +17,7 @@ import io.vavr.control.Try;
  */
 public class ServerResponseTopic implements DotPubSubTopic {
 
-    private final Map<String, Boolean> serverResponses = new HashMap<>();
+    private final Map<String, Serializable> serverResponses = new HashMap<>();
 
     final static String KEY = "serverresponse";
     
@@ -30,10 +32,12 @@ public class ServerResponseTopic implements DotPubSubTopic {
 
     public void resetMap() {
         serverResponses.clear();
-        //serverResponses.put(APILocator.getServerAPI().readServerId(), true);
+        final HashMap<String,Serializable> map = new HashMap<>();
+        map.putAll(ClusterUtil.getNodeInfo());
+        serverResponses.put(APILocator.getServerAPI().readServerId(), map);
     }
 
-    public Map<String, Boolean> readResponses() {
+    public Map<String, Serializable> readResponses() {
         return ImmutableMap.copyOf(serverResponses);
     }
 
@@ -48,7 +52,8 @@ public class ServerResponseTopic implements DotPubSubTopic {
 
     @Override
     public void notify(DotPubSubEvent event) {
-        serverResponses.put(event.getOrigin(), true);
+        final String origin = (String) event.getPayload().get("serverId");
+        serverResponses.put(origin, (Serializable) event.getPayload());
 
 
     }

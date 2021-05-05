@@ -1,14 +1,13 @@
 package com.dotcms.dotpubsub;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 
@@ -59,11 +58,8 @@ public final class DotPubSubEvent implements Serializable {
      */
     public DotPubSubEvent(Map<String, Serializable> map) {
 
-        ImmutableMap.Builder<String, Serializable> builder = ImmutableMap.<String, Serializable>builder().putAll(map);
-        /*
-         * if(!map.containsKey(TIMESTAMP)) { builder.put(TIMESTAMP,System.currentTimeMillis()); }
-         */
-        this.payload = builder.build();
+
+        this.payload =Collections.unmodifiableMap(map);
     }
 
 
@@ -73,7 +69,7 @@ public final class DotPubSubEvent implements Serializable {
      * @return
      */
     public Map<String, Serializable> getPayload() {
-        return ImmutableMap.copyOf(payload);
+        return this.payload;
     }
 
     /**

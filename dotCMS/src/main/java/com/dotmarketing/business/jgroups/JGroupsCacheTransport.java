@@ -14,6 +14,8 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.struts.MultiMessageResources;
+import io.vavr.control.Try;
+import java.io.Serializable;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -270,16 +272,18 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
         }
     }
 
+    @Override
+    public Map<String, Serializable> validateCacheInCluster(int maxWaitSeconds) throws CacheTransportException {
+        cacheStatus.clear();
 
-
-    public Map<String, Boolean> validateCacheInCluster ( String dateInMillis, int numberServers, int maxWaitSeconds ) throws CacheTransportException {
-
-        cacheStatus = new HashMap<>();
-
+        
+        final int numberServers = Try.of(()-> APILocator.getServerAPI().getAliveServers().size()-1).getOrElse(0);
+        
+        
         //If we are already in Cluster.
         if ( numberServers > 0 ) {
             //Sends the message to the other servers.
-            send(ChainableCacheAdministratorImpl.VALIDATE_CACHE + dateInMillis);
+            send(ChainableCacheAdministratorImpl.VALIDATE_CACHE );
 
             //Waits for 2 seconds in order all the servers respond.
             int maxWaitTime = maxWaitSeconds * 1000;
@@ -291,7 +295,7 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
                     Thread.sleep(10);
                     passedWaitTime += 10;
 
-                    Map<String, Boolean> ourMap = cacheStatus.get(dateInMillis);
+                    Map<String, Serializable> ourMap = this.getInfo().asMap();
 
                     //No need to wait if we have all server results.
                     if ( ourMap != null && ourMap.size() == numberServers ) {
@@ -306,11 +310,9 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
         }
 
         //Returns the Map with all the info stored by receive() method.
-        Map<String, Boolean> mapToReturn = new HashMap<String, Boolean>();
+        Map<String, Serializable> mapToReturn = new HashMap<String, Serializable>();
 
-        if ( cacheStatus.get(dateInMillis) != null ) {
-            mapToReturn = cacheStatus.get(dateInMillis);
-        }
+
 
         return mapToReturn;
     }

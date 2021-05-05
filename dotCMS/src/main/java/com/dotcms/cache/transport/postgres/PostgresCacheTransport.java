@@ -1,8 +1,7 @@
 package com.dotcms.cache.transport.postgres;
 
-import java.util.HashSet;
+import java.io.Serializable;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import com.dotcms.cache.transport.postgres.CachePubSubTopic.CacheEventType;
 import com.dotcms.cluster.bean.Server;
@@ -14,7 +13,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.business.cache.transport.CacheTransportException;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.StringUtils;
+import io.vavr.control.Try;
 import jersey.repackaged.com.google.common.collect.ImmutableMap;
 
 public class PostgresCacheTransport implements CacheTransport {
@@ -99,23 +98,26 @@ public class PostgresCacheTransport implements CacheTransport {
 
 
     @Override
-    public Map<String, Boolean> validateCacheInCluster(final String dateInMillis, final int numberServers, final int maxWaitSeconds)
+    public Map<String, Serializable> validateCacheInCluster(final int maxWaitInMillis)
                     throws CacheTransportException {
 
         final DotPubSubEvent event = new DotPubSubEvent.Builder()
                         .withType(CachePubSubTopic.CacheEventType.CLUSTER_REQ.name())
                         .withTopic(this.topic)
-                        
                         .build();
         
         serverResponseTopic.resetMap();
         
+        final int numberOfOtherServers = Try.of(()-> APILocator.getServerAPI().getAliveServers().size()).getOrElse(0);
         
         this.pubsub.publish(event);
         
-        final long waitUntil = System.currentTimeMillis() + (1000 * maxWaitSeconds);
-        while(System.currentTimeMillis()< waitUntil) {
-            if(serverResponseTopic.size()>=numberServers) {
+        final long waitUntil = System.currentTimeMillis() + maxWaitInMillis;
+        
+        
+        while(System.currentTimeMillis() < waitUntil) {
+
+            if(serverResponseTopic.size()>=numberOfOtherServers) {
                 return serverResponseTopic.readResponses();
             }
             
@@ -123,7 +125,7 @@ public class PostgresCacheTransport implements CacheTransport {
         }
         
         
-        return ImmutableMap.of();
+        return serverResponseTopic.readResponses();
     }
 
 
@@ -180,7 +182,7 @@ public class PostgresCacheTransport implements CacheTransport {
 
             @Override
             public int getNumberOfNodes() {
-                return serverResponseTopic.size()+1;
+                return Try.of(()-> APILocator.getServerAPI().getAliveServers().size()).getOrElse(-1);
             }
 
 

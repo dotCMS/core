@@ -1,11 +1,13 @@
 package com.dotcms.cache.transport.postgres;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Map;
 import com.dotcms.dotpubsub.DotPubSubEvent;
 import com.dotcms.dotpubsub.DotPubSubProvider;
 import com.dotcms.dotpubsub.DotPubSubProviderLocator;
 import com.dotcms.dotpubsub.DotPubSubTopic;
+import com.dotcms.enterprise.ClusterUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.util.Logger;
@@ -117,8 +119,12 @@ public class CachePubSubTopic implements DotPubSubTopic {
         Logger.info(this.getClass(),
                         () -> "Got CLUSTER_REQ from server:" + event.getOrigin() + ". sending response");
         
+        final HashMap<String,Serializable> cacheInfo = new HashMap<>();
+        cacheInfo.putAll(ClusterUtil.getNodeInfo());
+        
+        
         topic.provider.publish(new DotPubSubEvent.Builder(event)
-                        .withPayload(ImmutableMap.of(topic.serverId,Boolean.TRUE))
+                        .withPayload(cacheInfo)
                         .withType(CacheEventType.CLUSTER_RES.name())
                         .withTopic(new ServerResponseTopic())
                         

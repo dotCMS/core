@@ -88,20 +88,24 @@
                 hide/show action Panel
             **/
             toggle:function(row){
+            	
+            	
+            	
+            	
 				var nodeStatus;
 				if(row==undefined){
 					row = this.myServerId;
 				}
-
+			
                 
    				if(this.nodeData != undefined){
-	                for(i=0;i<this.nodeData.length;i++){
-	                	if(row==this.nodeData[i].serverId){
-	                		nodeStatus= this.nodeData[i];
+	                for(i=0;i<this.nodeData.serverInfo.length;i++){
+	                	if(row==this.nodeData.serverInfo[i].serverId){
+	                		nodeStatus= this.nodeData.serverInfo[i];
 	                	}
 	                }
    				}
-                
+                //console.log(nodeStatus)
                 dojo.addClass("actionPanel", "");
                 dojo.destroy("display-arrow");
 
@@ -142,19 +146,21 @@
 				var result = actionPanelTable.actionPanelHtml;
                 var output = '';
 				if(this.nodeData != undefined && this.licenseData !=undefined && this.actionPanelHtml!=undefined){
-				console.log(nodeStatus);
+				const clusterHealth = this.nodeData.clusterHealth;
+
                 require(["dojo/_base/lang"], function(lang){
                       output = lang.replace(
                         result,
                         {
                           cache: {
-                            status:  nodeStatus.cacheStatus,
-                            clusterName:  nodeStatus.cacheClusterName,
-                            numberOfNodes: nodeStatus.cacheNumberOfNodes,
-                            open:   nodeStatus.cacheOpen,
-                            address:   nodeStatus.cacheAddress,
-                            receivedBytes:   nodeStatus.cacheReceivedBytes,
-                            port:   nodeStatus.cachePort,
+                        	  
+                            status:  clusterHealth,
+                            clusterName:  nodeStatus.clusterName,
+                            numberOfNodes: nodeStatus.numberOfNodes,
+                            open:   nodeStatus.open,
+                            address:   nodeStatus.ipAddress,
+                            receivedBytes:   nodeStatus.receivedBytes,
+                            port:   nodeStatus.port,
                             cacheTransportClass: nodeStatus.cacheTransportClass
                           },
 
@@ -263,7 +269,7 @@
                     handleAs : "json",
                     sync: false,
                     load : function(data) {
-                        if (data != undefined && data.length > 0) {
+                        if (data != undefined && data.serverInfo  != undefined && data.serverInfo.length > 0) {
                             actionPanelTable.nodeData = data;
                             actionPanelTable.drawNodeTable();
                         } else {
@@ -308,8 +314,7 @@
             },
             
             drawNodeTable : function() {
-            	nodeList = this.nodeData;
-            	 
+
                 var nodesTableHTML = "<table class='listingTable actionTable network__listing'> "
                     + "<tr>"
                         + "<th width='7%'>&nbsp;</th>"
@@ -327,9 +332,15 @@
                         + "<th id='actionPanelTableHeader' network-action__header><div style='width:400px;'></div></th>"
                     + "</tr>";
 
-                    if(nodeList ==undefined){
-                        nodesTableHTML += "<tr><td colspan='8' id='row-" + this.myServerId + "' style=''><div class='loader' id='loader'></div></td></tr>";
-                    	
+                    
+                    
+                    nodeList = this.nodeData == undefined ? [] : this.nodeData.serverInfo;
+                	
+
+
+
+                    if(nodeList.length ==0){
+                        nodesTableHTML += "<tr><td colspan='8' id='row-data' style=''><div class='loader' id='loader'></div></td></tr>";
                     }
                     
                     
@@ -338,17 +349,15 @@
                         if(index==0) {
                             initialRow = item.serverId;
                         }
+						
 
-                        if(item.myself) {
-                            myServerId = item.serverId;
-                        }
 
 
 
                         nodesTableHTML += ""
                         + "<tr id='row-"+item.serverId+"' onclick='javascript:actionPanelTable.toggle(\""+item.serverId+"\");'>"
                             + "<td align='center'><img src='/html/images/skin/icon-server.png' class='icon network__listing-icon' /></td>"
-                            + "<td align='center' style='color:#8c9ca9;'>" + (item.myself?"<i class='userIcon'></i>":"")+"</td>"
+                            + "<td align='center' style='color:#8c9ca9;'>" + (item.serverId==actionPanelTable.myServerId?"<i class='userIcon'></i>":"")+"</td>"
                             + "<td>" + item.displayServerId + "</td>"
                             + "<td>" + item.licenseId + "</td>"
                             + "<td>" + item.friendlyName + "</td>"
