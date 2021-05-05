@@ -1,33 +1,5 @@
 package com.dotcms.rest;
 
-import com.dotcms.cluster.bean.Server;
-import com.dotcms.cluster.bean.ServerPort;
-import com.dotcms.cluster.business.ServerAPI;
-import com.dotcms.enterprise.ClusterUtil;
-import com.dotcms.enterprise.ClusterUtilProxy;
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.cluster.ClusterFactory;
-import com.dotcms.enterprise.cluster.action.NodeStatusServerAction;
-import com.dotcms.enterprise.cluster.action.ServerAction;
-import com.dotcms.enterprise.cluster.action.model.ServerActionBean;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotCacheException;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.cache.util.CacheUtil;
-import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PortletID;
-import com.dotmarketing.util.StringUtils;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.json.JSONArray;
-import com.dotmarketing.util.json.JSONException;
-import com.dotmarketing.util.json.JSONObject;
-import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -42,6 +14,26 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
+import com.dotcms.cluster.bean.Server;
+import com.dotcms.cluster.bean.ServerPort;
+import com.dotcms.cluster.business.ServerAPI;
+import com.dotcms.enterprise.ClusterUtilProxy;
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletID;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
 
 
 @Path("/cluster")
@@ -94,7 +86,7 @@ public class ClusterResource {
             arrayOfServerResponses.add(map);
         });
         
-        pendingServers.forEach(server->arrayOfServerResponses.add(ClusterUtil.createFailedJson(server)));
+        pendingServers.forEach(server->arrayOfServerResponses.add(ClusterUtilProxy.createFailedJson(server)));
         
         info.put("clusterHealth", pendingServers.isEmpty() ? "green":"red");
         info.put("serverInfo", arrayOfServerResponses);

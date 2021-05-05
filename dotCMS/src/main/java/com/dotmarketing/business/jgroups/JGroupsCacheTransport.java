@@ -1,10 +1,23 @@
 package com.dotmarketing.business.jgroups;
 
+import java.io.Serializable;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import org.jgroups.Address;
+import org.jgroups.Event;
+import org.jgroups.JChannel;
+import org.jgroups.Message;
+import org.jgroups.PhysicalAddress;
+import org.jgroups.ReceiverAdapter;
+import org.jgroups.View;
 import com.dotcms.cache.transport.CacheTransportTopic;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.dotpubsub.DotPubSubEvent;
-import com.dotcms.enterprise.ClusterUtil;
+import com.dotcms.enterprise.ClusterUtilProxy;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.business.APILocator;
@@ -20,20 +33,6 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.struts.MultiMessageResources;
 import io.vavr.control.Try;
 import jersey.repackaged.com.google.common.collect.ImmutableMap;
-import java.io.Serializable;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.commons.collections.map.LRUMap;
-import org.jgroups.Address;
-import org.jgroups.Event;
-import org.jgroups.JChannel;
-import org.jgroups.Message;
-import org.jgroups.PhysicalAddress;
-import org.jgroups.ReceiverAdapter;
-import org.jgroups.View;
 
 /**
  * @author Jonathan Gamba
@@ -246,7 +245,7 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
                             .withOrigin(APILocator.getServerAPI().readServerId())
                             .withType(CacheTransportTopic.CacheEventType.CLUSTER_REQ.name())
                             .withTopic("cacheInvalidation")
-                            .withPayload(ClusterUtil.getNodeInfo())
+                            .withPayload(ClusterUtilProxy.getNodeInfo())
                             .build();
 
             Logger.info(this.getClass(), "got asked to VALIDATE_CACHE?, sending response");
@@ -280,7 +279,7 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
 
         final int numberServers = Try.of(()-> APILocator.getServerAPI().getAliveServers().size()).getOrElse(0);
         
-        final Map<String,Serializable> map = ClusterUtil.getNodeInfo();
+        final Map<String,Serializable> map = ClusterUtilProxy.getNodeInfo();
         cacheStatus.put(APILocator.getServerAPI().readServerId(),(Serializable) map);
         
         //If we are already in Cluster.

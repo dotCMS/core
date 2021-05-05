@@ -8,7 +8,7 @@ import com.dotcms.dotpubsub.DotPubSubEvent;
 import com.dotcms.dotpubsub.DotPubSubProvider;
 import com.dotcms.dotpubsub.DotPubSubProviderLocator;
 import com.dotcms.dotpubsub.DotPubSubTopic;
-import com.dotcms.enterprise.ClusterUtil;
+import com.dotcms.enterprise.ClusterUtilProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.util.Logger;
@@ -116,11 +116,11 @@ public class CacheTransportTopic implements DotPubSubTopic {
         serverResponses.clear();
         Logger.info(this.getClass(), () -> "Got CLUSTER_REQ from server:" + event.getOrigin() + ". sending response");
 
-        final Map<String, Serializable> cacheInfo = Try.of(() -> ClusterUtil.getNodeInfo()).onFailure(e -> {
+        final Map<String, Serializable> cacheInfo = Try.of(() -> ClusterUtilProxy.getNodeInfo()).onFailure(e -> {
             Logger.warnAndDebug(CacheTransportTopic.class, e.getMessage(), e);
         }).getOrElse(ImmutableMap.of("serverId", event.getOrigin()));
 
-        cacheInfo.putAll(ClusterUtil.getNodeInfo());
+        cacheInfo.putAll(ClusterUtilProxy.getNodeInfo());
 
         topic.provider.publish(new DotPubSubEvent.Builder(event).withTopic(this).withPayload(cacheInfo)
                         .withType(CacheEventType.CLUSTER_RES.name()).withTopic(this)

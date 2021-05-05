@@ -1,10 +1,18 @@
 package com.dotcms.cache.transport;
 
+import java.io.Serializable;
+import java.net.InetSocketAddress;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.business.HazelcastUtil;
 import com.dotcms.cluster.business.HazelcastUtil.HazelcastInstanceType;
 import com.dotcms.dotpubsub.DotPubSubEvent;
-import com.dotcms.enterprise.ClusterUtil;
+import com.dotcms.enterprise.ClusterUtilProxy;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
@@ -22,14 +30,6 @@ import com.hazelcast.core.MessageListener;
 import com.liferay.portal.struts.MultiMessageResources;
 import io.vavr.control.Try;
 import jersey.repackaged.com.google.common.collect.ImmutableMap;
-import java.io.Serializable;
-import java.net.InetSocketAddress;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Created by jasontesser on 3/28/17.
@@ -146,7 +146,7 @@ public abstract class AbstractHazelcastCacheTransport implements CacheTransport 
                             .withOrigin(APILocator.getServerAPI().readServerId())
                             .withType(CacheTransportTopic.CacheEventType.CLUSTER_REQ.name())
                             .withTopic(topicName)
-                            .withPayload(ClusterUtil.getNodeInfo())
+                            .withPayload(ClusterUtilProxy.getNodeInfo())
                             .build();
 
             Logger.info(this.getClass(), "got asked to VALIDATE_CACHE?, sending response");
@@ -204,7 +204,7 @@ public abstract class AbstractHazelcastCacheTransport implements CacheTransport 
 
         final int numberServers = Try.of(()-> APILocator.getServerAPI().getAliveServers().size()).getOrElse(0);
         
-        final Map<String,Serializable> map = ClusterUtil.getNodeInfo();
+        final Map<String,Serializable> map = ClusterUtilProxy.getNodeInfo();
         cacheStatus.put(APILocator.getServerAPI().readServerId(),(Serializable) map);
         
         //If we are already in Cluster.
