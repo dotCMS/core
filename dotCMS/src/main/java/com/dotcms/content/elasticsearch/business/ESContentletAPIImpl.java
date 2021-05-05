@@ -1581,7 +1581,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotDataException     An error occurred when interacting with the data source.
      */
     private List<Contentlet> getRelatedChildren(final Contentlet contentlet, final Relationship rel,
-            final User user, final boolean respectFrontendRoles, final int limit, final int offset)
+            final User user, final boolean respectFrontendRoles, int limit, final int offset)
             throws DotSecurityException, DotDataException {
         final boolean HAS_PARENT = Boolean.TRUE;
         final boolean WORKING_VERSION = Boolean.FALSE;
@@ -1595,6 +1595,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             SearchResponse response;
             final boolean DONT_PULL_PARENTS = Boolean.FALSE;
+
+            if (limit <= 0) {
+                limit = MAX_LIMIT;
+            }
+
             //Search for related content in existing contentlet
             if (UtilMethods.isSet(contentlet.getInode())) {
                 response = APILocator.getEsSearchAPI()
@@ -1661,7 +1666,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotDataException     An error occurred when interacting with the data source.
      */
     private List<Contentlet> getRelatedParents(final Contentlet contentlet, final Relationship rel,
-            final User user, final boolean respectFrontendRoles, final int limit, final int offset)
+            final User user, final boolean respectFrontendRoles, int limit, final int offset)
             throws DotSecurityException, DotDataException {
         final boolean HAS_NO_PARENT = Boolean.FALSE;
         final boolean WORKING_VERSION = Boolean.FALSE;
@@ -1674,6 +1679,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             SearchResponse response;
             final boolean PULL_PARENTS = Boolean.TRUE;
+
+            if (limit <= 0) {
+                limit = MAX_LIMIT;
+            }
+
             //Search for related content in existing contentlet
             if (UtilMethods.isSet(contentlet.getInode())) {
                 response = APILocator.getEsSearchAPI()
