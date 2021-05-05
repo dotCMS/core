@@ -339,6 +339,7 @@ public class StringUtils {
         }
         return strings;
     }
+
     
     
 
@@ -370,4 +371,18 @@ public class StringUtils {
     
     
     
+
+
+
+   private static final Pattern pattern = Pattern.compile("\\s");
+
+    /**
+     * How can I find whitespace in a String?
+     * @param in
+     * @return
+     */
+   public static boolean hasWhiteSpaces(final String in){
+      return pattern.matcher(in).find();
+   }
+
 }
