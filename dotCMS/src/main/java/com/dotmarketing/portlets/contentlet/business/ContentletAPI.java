@@ -58,7 +58,7 @@ public interface ContentletAPI {
 			"MM/dd/yyyy hh:mm:ss aa", "MM/dd/yyyy hh:mm aa", "MM/dd/yy HH:mm:ss", "MM/dd/yy HH:mm:ss", "MM/dd/yy HH:mm",
 			"MM/dd/yy hh:mm:ss aa", "MM/dd/yy hh:mm:ss", "MM/dd/yyyy HH:mm:ss", "MM/dd/yyyy HH:mm", "MMMM dd, yyyy",
 			"M/d/y", "M/d", "EEEE, MMMM dd, yyyy", "MM/dd/yyyy",
-			"hh:mm:ss aa", "hh:mm aa", "HH:mm:ss", "HH:mm", "yyyy-MM-dd"
+			"hh:mm:ss aa", "hh:mm aa", "HH:mm:ss", "HH:mm", "yyyy-MM-dd", "yyyy-MM-dd-H-m"
 	};
 
 	/**
