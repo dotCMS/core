@@ -60,6 +60,9 @@ public final class DotPubSubEvent implements Serializable {
 
 
         this.payload =Collections.unmodifiableMap(map);
+        if(!map.containsKey(TOPIC)) {
+            throw new DotRuntimeException("Topic must be set on a DotPubSubEvent");
+        }
     }
 
 

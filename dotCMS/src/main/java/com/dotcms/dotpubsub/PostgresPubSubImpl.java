@@ -11,9 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
@@ -122,8 +120,9 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
             restartDelay = 0;
 
             matchingTopics.forEach(t -> {
-                t.notify(event);
                 t.incrementReceivedCounters(event);
+                t.notify(event);
+
             });
 
         }

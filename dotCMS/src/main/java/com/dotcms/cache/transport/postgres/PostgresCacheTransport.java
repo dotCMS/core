@@ -14,14 +14,13 @@ import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.business.cache.transport.CacheTransportException;
 import com.dotmarketing.util.Logger;
 import io.vavr.control.Try;
-import jersey.repackaged.com.google.common.collect.ImmutableMap;
 
 public class PostgresCacheTransport implements CacheTransport {
 
     final DotPubSubProvider pubsub;
 
     final CachePubSubTopic topic;
-    final ServerResponseTopic serverResponseTopic;
+
     final AtomicBoolean initialized = new AtomicBoolean(false);
 
 
@@ -35,7 +34,6 @@ public class PostgresCacheTransport implements CacheTransport {
     public PostgresCacheTransport() {
         this.pubsub = DotPubSubProviderLocator.provider.get();
         this.topic = new CachePubSubTopic();
-        this.serverResponseTopic = new ServerResponseTopic();
         Logger.debug(this.getClass(), "PostgresCacheTransport");
 
     }
@@ -48,7 +46,7 @@ public class PostgresCacheTransport implements CacheTransport {
         Logger.info(this.getClass(), "initing PostgresCacheTransport");
         this.pubsub.start();
         this.pubsub.subscribe(topic);
-        this.pubsub.subscribe(serverResponseTopic);
+
 
         this.initialized.set(true);
 
@@ -92,40 +90,37 @@ public class PostgresCacheTransport implements CacheTransport {
     }
 
 
-    
-    
-    
-
 
     @Override
     public Map<String, Serializable> validateCacheInCluster(final int maxWaitInMillis)
                     throws CacheTransportException {
 
-        final DotPubSubEvent event = new DotPubSubEvent.Builder()
+        final DotPubSubEvent clusterStatusRequest = new DotPubSubEvent.Builder()
                         .withType(CachePubSubTopic.CacheEventType.CLUSTER_REQ.name())
                         .withTopic(this.topic)
                         .build();
         
-        serverResponseTopic.resetMap();
+
         
         final int numberOfOtherServers = Try.of(()-> APILocator.getServerAPI().getAliveServers().size()).getOrElse(0);
-        
-        this.pubsub.publish(event);
+        this.topic.resetResponses();
+        this.pubsub.publish(clusterStatusRequest);
         
         final long waitUntil = System.currentTimeMillis() + maxWaitInMillis;
         
         
         while(System.currentTimeMillis() < waitUntil) {
 
-            if(serverResponseTopic.size()>=numberOfOtherServers) {
-                return serverResponseTopic.readResponses();
+            if(this.topic.readResponses().size()>=numberOfOtherServers) {
+                break;
             }
             
+            Try.run(()->Thread.sleep(10));
             
         }
         
         
-        return serverResponseTopic.readResponses();
+        return this.topic.readResponses();
     }
 
 

@@ -5,6 +5,7 @@ import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.business.HazelcastUtil;
 import com.dotcms.cluster.business.HazelcastUtil.HazelcastInstanceType;
 import com.dotcms.dotpubsub.DotPubSubEvent;
+import com.dotcms.enterprise.ClusterUtil;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
@@ -27,6 +28,7 @@ import java.net.InetSocketAddress;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -35,7 +37,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public abstract class AbstractHazelcastCacheTransport implements CacheTransport {
 
-    final private Map<String, Serializable> cacheStatus = new HashMap<>();
+    final private Map<String, Serializable> cacheStatus = new ConcurrentHashMap<>();
 
     private final AtomicLong receivedMessages = new AtomicLong(0);
     private final AtomicLong receivedBytes = new AtomicLong(0);
@@ -123,22 +125,20 @@ public abstract class AbstractHazelcastCacheTransport implements CacheTransport 
             //Deletes the first part of the message, no longer needed.
             msg = msg.replace(ChainableCacheAdministratorImpl.VALIDATE_CACHE_RESPONSE, "");
 
-            //Gets the part of the message that has the Data in Milli.
-            String dateInMillis = msg.substring(0, msg.indexOf(ChainableCacheAdministratorImpl.VALIDATE_SEPARATOR));
-            //Gets the last part of the message that has the Server ID.
-            String serverID = msg.substring(msg.lastIndexOf(ChainableCacheAdministratorImpl.VALIDATE_SEPARATOR) + 1);
-
+            Logger.info(this.getClass(), "got a response to my question: VALIDATE_CACHE? ");
             synchronized (this) {
                 final String incomingMessage = msg;
-                
-               HashMap<String,Serializable> incomingMap = Try.of(()-> 
-                DotObjectMapperProvider.getInstance().getDefaultObjectMapper().readValue(incomingMessage, HashMap.class)).getOrElse(new HashMap<>());
-                
-                cacheStatus.put((String) incomingMap.get("o"), incomingMap);
 
+                HashMap<String, Serializable> incomingMap =
+                                Try.of(() -> DotObjectMapperProvider.getInstance().getDefaultObjectMapper()
+                                                .readValue(incomingMessage, HashMap.class)).getOrElse(new HashMap<>());
+                final String origin = (String) incomingMap.get("serverId");
+                cacheStatus.put(origin, incomingMap);
+                Logger.debug(this, ChainableCacheAdministratorImpl.VALIDATE_CACHE_RESPONSE + " SERVER_ID: " + origin
+                                + " Message: " + msg);
             }
 
-            Logger.debug(this, ChainableCacheAdministratorImpl.VALIDATE_CACHE_RESPONSE + " SERVER_ID: " + serverID + " DATE_MILLIS: " + dateInMillis);
+
 
             //Handle when other server is trying to ping local server.
         } else if ( msg.startsWith(ChainableCacheAdministratorImpl.VALIDATE_CACHE) ) {
@@ -146,9 +146,11 @@ public abstract class AbstractHazelcastCacheTransport implements CacheTransport 
             final DotPubSubEvent event = new DotPubSubEvent.Builder()
                             .withOrigin(APILocator.getServerAPI().readServerId())
                             .withType(CachePubSubTopic.CacheEventType.CLUSTER_REQ.name())
-                            .withPayload(getInfo().asMap())
+                            .withTopic(topicName)
+                            .withPayload(ClusterUtil.getNodeInfo())
                             .build();
 
+            Logger.info(this.getClass(), "got asked to VALIDATE_CACHE?, sending response");
             try {
                 send(ChainableCacheAdministratorImpl.VALIDATE_CACHE_RESPONSE + event.toString());
             } catch ( CacheTransportException e ) {
@@ -196,14 +198,15 @@ public abstract class AbstractHazelcastCacheTransport implements CacheTransport 
     }
 
     @Override
-    public Map<String, Serializable> validateCacheInCluster(int maxWaitSeconds) throws CacheTransportException {
-        cacheStatus.clear();
+    public Map<String, Serializable> validateCacheInCluster(int maxWaitMillis) throws CacheTransportException {
 
         
+        cacheStatus.clear();
+
         final int numberServers = Try.of(()-> APILocator.getServerAPI().getAliveServers().size()).getOrElse(0);
         
-        final ImmutableMap<String,Serializable> map = ImmutableMap.copyOf(this.getInfo().asMap());
-        cacheStatus.put(APILocator.getServerAPI().readServerId(), map);
+        final Map<String,Serializable> map = ClusterUtil.getNodeInfo();
+        cacheStatus.put(APILocator.getServerAPI().readServerId(),(Serializable) map);
         
         //If we are already in Cluster.
         if ( numberServers > 1 ) {
@@ -211,22 +214,20 @@ public abstract class AbstractHazelcastCacheTransport implements CacheTransport 
             send(ChainableCacheAdministratorImpl.VALIDATE_CACHE );
 
             //Waits for 2 seconds in order all the servers respond.
-            int maxWaitTime = maxWaitSeconds * 1000;
-            int passedWaitTime = 0;
+
+            final long endTime = System.currentTimeMillis() + maxWaitMillis;
 
             //Trying to NOT wait whole 2 seconds for returning the info.
-            while ( passedWaitTime <= maxWaitTime ) {
+            while ( System.currentTimeMillis() <= endTime ) {
                 try {
                     Thread.sleep(10);
-                    passedWaitTime += 10;
-
 
                     if(cacheStatus.size()>=numberServers) {
                         return ImmutableMap.copyOf(cacheStatus);
                     }
                 } catch ( InterruptedException ex ) {
                     Thread.currentThread().interrupt();
-                    passedWaitTime = maxWaitTime + 1;
+    
                 }
             }
         }

@@ -5,14 +5,13 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotcms.cache.transport.postgres.CachePubSubTopic;
-import com.dotcms.cache.transport.postgres.ServerResponseTopic;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.util.Logger;
 
 public class PostgresPubSubImplTest {
 
     static PostgresPubSubImpl pubsubA,pubsubB;
-    static DotPubSubTopic topicA,topicB;
+    static DotPubSubTopic topicA;
     
     static String fakeServerA = "fakeServerA";
     static String fakeServerB = "fakeServerB";
@@ -23,10 +22,8 @@ public class PostgresPubSubImplTest {
         IntegrationTestInitService.getInstance().init();
 
         pubsubA = new PostgresPubSubImpl(fakeServerA);
-        topicA = new CachePubSubTopic(fakeServerA);
-        topicB = new ServerResponseTopic();
+        topicA = new CachePubSubTopic(fakeServerA,pubsubA);
         pubsubA.subscribe(topicA);
-        pubsubA.subscribe(topicB);
         pubsubA.start();
 
 
