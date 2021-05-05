@@ -1,17 +1,17 @@
-package com.dotcms.cache.transport.postgres;
+package com.dotcms.cache.transport;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
-import com.dotcms.dotpubsub.CachePubSubTopic;
+import com.dotcms.cache.transport.CacheTransportTopic;
+import com.dotcms.cache.transport.CacheTransportTopic.CacheEventType;
 import com.dotcms.dotpubsub.DotPubSubEvent;
 import com.dotcms.dotpubsub.DotPubSubProvider;
 import com.dotcms.dotpubsub.DotPubSubProviderLocator;
 import com.dotcms.dotpubsub.DotPubSubTopic;
 import com.dotcms.dotpubsub.NullDotPubSubProvider;
 import com.dotcms.dotpubsub.QueuingPubSubWrapper;
-import com.dotcms.dotpubsub.CachePubSubTopic.CacheEventType;
 
-public class CachePubSubTopicTest {
+public class CacheTransportTopicTest {
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
@@ -35,13 +35,16 @@ public class CachePubSubTopicTest {
         NullDotPubSubProvider provider = new NullDotPubSubProvider();
         provider.start();
 
-        DotPubSubTopic topic = new CachePubSubTopic("fakeServer",provider);
+        DotPubSubTopic topic = new CacheTransportTopic("fakeServer",provider);
         DotPubSubEvent event= new DotPubSubEvent.Builder().withType(CacheEventType.PING.name()).withTopic(topic).build();
         topic.notify(event);
         Thread.sleep(2000);
         assert "PONG".equalsIgnoreCase(provider.lastEventIn().getType());
         
     }
+    
+    
+    
     
     
 }

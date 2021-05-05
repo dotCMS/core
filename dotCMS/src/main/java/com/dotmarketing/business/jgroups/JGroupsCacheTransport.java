@@ -1,8 +1,8 @@
 package com.dotmarketing.business.jgroups;
 
+import com.dotcms.cache.transport.CacheTransportTopic;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.business.ServerAPI;
-import com.dotcms.dotpubsub.CachePubSubTopic;
 import com.dotcms.dotpubsub.DotPubSubEvent;
 import com.dotcms.enterprise.ClusterUtil;
 import com.dotcms.repackage.org.apache.struts.Globals;
@@ -244,7 +244,7 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
 
             final DotPubSubEvent event = new DotPubSubEvent.Builder()
                             .withOrigin(APILocator.getServerAPI().readServerId())
-                            .withType(CachePubSubTopic.CacheEventType.CLUSTER_REQ.name())
+                            .withType(CacheTransportTopic.CacheEventType.CLUSTER_REQ.name())
                             .withTopic("cacheInvalidation")
                             .withPayload(ClusterUtil.getNodeInfo())
                             .build();

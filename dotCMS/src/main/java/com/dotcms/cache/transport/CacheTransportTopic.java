@@ -1,9 +1,13 @@
-package com.dotcms.dotpubsub;
+package com.dotcms.cache.transport;
 
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import com.dotcms.dotpubsub.DotPubSubEvent;
+import com.dotcms.dotpubsub.DotPubSubProvider;
+import com.dotcms.dotpubsub.DotPubSubProviderLocator;
+import com.dotcms.dotpubsub.DotPubSubTopic;
 import com.dotcms.enterprise.ClusterUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -14,7 +18,7 @@ import com.google.common.collect.ImmutableMap;
 import io.vavr.Function2;
 import io.vavr.control.Try;
 
-public class CachePubSubTopic implements DotPubSubTopic {
+public class CacheTransportTopic implements DotPubSubTopic {
 
     final static String CACHE_TOPIC = "dotcache_topic";
 
@@ -37,17 +41,17 @@ public class CachePubSubTopic implements DotPubSubTopic {
 
     final DotPubSubProvider provider;
 
-    public CachePubSubTopic() {
+    public CacheTransportTopic() {
         this(APILocator.getServerAPI().readServerId());
     }
 
     @VisibleForTesting
-    public CachePubSubTopic(String serverId) {
+    public CacheTransportTopic(String serverId) {
         this(serverId, DotPubSubProviderLocator.provider.get());
     }
 
     @VisibleForTesting
-    public CachePubSubTopic(String serverId, DotPubSubProvider provider) {
+    public CacheTransportTopic(String serverId, DotPubSubProvider provider) {
         this.serverId = StringUtils.shortify(serverId, 10);
         this.provider = provider;
     }
@@ -79,13 +83,13 @@ public class CachePubSubTopic implements DotPubSubTopic {
 
     }
 
-    final private Function2<DotPubSubEvent, CachePubSubTopic, Boolean> doNothing = (event, topic) -> {
+    final private Function2<DotPubSubEvent, CacheTransportTopic, Boolean> doNothing = (event, topic) -> {
         Logger.debug(getClass(), () -> "got an non-event:" + event);
 
         return true;
     };
 
-    final private Function2<DotPubSubEvent, CachePubSubTopic, Boolean> inval = (event, topic) -> {
+    final private Function2<DotPubSubEvent, CacheTransportTopic, Boolean> inval = (event, topic) -> {
         if (topic.serverId.equals(event.getOrigin())) {
             Logger.debug(getClass(), () -> "pub/sub event sent from me, ignoring:" + event);
             return true;
@@ -96,24 +100,24 @@ public class CachePubSubTopic implements DotPubSubTopic {
         return true;
     };
 
-    final private Function2<DotPubSubEvent, CachePubSubTopic, Boolean> ping = (event, topic) -> {
+    final private Function2<DotPubSubEvent, CacheTransportTopic, Boolean> ping = (event, topic) -> {
         Logger.info(this.getClass(), () -> "Got PING from server:" + event.getOrigin() + ". sending PONG");
         topic.provider.publish(
                         new DotPubSubEvent.Builder(event).withTopic(this).withType(CacheEventType.PONG.name()).build());
         return true;
     };
 
-    final private Function2<DotPubSubEvent, CachePubSubTopic, Boolean> pong = (event, topic) -> {
+    final private Function2<DotPubSubEvent, CacheTransportTopic, Boolean> pong = (event, topic) -> {
         Logger.info(this.getClass(), () -> "Got PONG from server:" + event + ".");
         return true;
     };
 
-    final private Function2<DotPubSubEvent, CachePubSubTopic, Boolean> clusterRequest = (event, topic) -> {
+    final private Function2<DotPubSubEvent, CacheTransportTopic, Boolean> clusterRequest = (event, topic) -> {
         serverResponses.clear();
         Logger.info(this.getClass(), () -> "Got CLUSTER_REQ from server:" + event.getOrigin() + ". sending response");
 
         final Map<String, Serializable> cacheInfo = Try.of(() -> ClusterUtil.getNodeInfo()).onFailure(e -> {
-            Logger.warnAndDebug(CachePubSubTopic.class, e.getMessage(), e);
+            Logger.warnAndDebug(CacheTransportTopic.class, e.getMessage(), e);
         }).getOrElse(ImmutableMap.of("serverId", event.getOrigin()));
 
         cacheInfo.putAll(ClusterUtil.getNodeInfo());
@@ -125,7 +129,7 @@ public class CachePubSubTopic implements DotPubSubTopic {
         return true;
     };
 
-    final private Function2<DotPubSubEvent, CachePubSubTopic, Boolean> clusterResponse = (event, topic) -> {
+    final private Function2<DotPubSubEvent, CacheTransportTopic, Boolean> clusterResponse = (event, topic) -> {
 
         Logger.info(this.getClass(),
                         () -> "Got CLUSTER_RESPONSE from server:" + event.getOrigin() + ". Saving response");
@@ -136,8 +140,8 @@ public class CachePubSubTopic implements DotPubSubTopic {
     };
 
     // Map <CacheEventType,Function2<DotPubSubEvent,CachePubSubTopic, Boolean>> functionMap
-    final Map<String, Function2<DotPubSubEvent, CachePubSubTopic, Boolean>> functionMap =
-                    new ImmutableMap.Builder<String, Function2<DotPubSubEvent, CachePubSubTopic, Boolean>>()
+    final Map<String, Function2<DotPubSubEvent, CacheTransportTopic, Boolean>> functionMap =
+                    new ImmutableMap.Builder<String, Function2<DotPubSubEvent, CacheTransportTopic, Boolean>>()
                                     .put(CacheEventType.INVAL.name(), this.inval)
                                     .put(CacheEventType.PING.name(), this.ping)
                                     .put(CacheEventType.PONG.name(), this.pong)

@@ -40,9 +40,9 @@ public class QueuingPubSubWrapper implements DotPubSubProvider {
 
         this.executorService = Executors.newSingleThreadScheduledExecutor();
 
-        this.logDedupes = Config.getBooleanProperty("QUEUING_PUBSUB_DEDUPE_LOG", false);
+        this.logDedupes = Config.getBooleanProperty("DOT_PUBSUB_QUEUE_DEDUPE_LOG", false);
 
-        outgoingMessages = Config.getBooleanProperty("QUEUING_PUBSUB_DEDUPE", true) 
+        outgoingMessages = Config.getBooleanProperty("DOT_PUBSUB_QUEUE_DEDUPE", true) 
                         ? new LinkedHashSet<>()
                         : new ArrayList<>();
 

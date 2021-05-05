@@ -3,12 +3,11 @@ package com.dotcms.cache.transport;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import com.dotcms.cache.transport.CacheTransportTopic.CacheEventType;
 import com.dotcms.cluster.bean.Server;
-import com.dotcms.dotpubsub.CachePubSubTopic;
 import com.dotcms.dotpubsub.DotPubSubEvent;
 import com.dotcms.dotpubsub.DotPubSubProvider;
 import com.dotcms.dotpubsub.DotPubSubProviderLocator;
-import com.dotcms.dotpubsub.CachePubSubTopic.CacheEventType;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.cache.transport.CacheTransport;
@@ -16,11 +15,17 @@ import com.dotmarketing.business.cache.transport.CacheTransportException;
 import com.dotmarketing.util.Logger;
 import io.vavr.control.Try;
 
-public class PostgresCacheTransport implements CacheTransport {
+/**
+ * This class uses the dotCMS pub/sub mechanism to send cache invalidations
+ * to other servers in the cluster
+ * @author will
+ *
+ */
+public class PubSubCacheTransport implements CacheTransport {
 
     final DotPubSubProvider pubsub;
 
-    final CachePubSubTopic topic;
+    final CacheTransportTopic topic;
 
     final AtomicBoolean initialized = new AtomicBoolean(false);
 
@@ -29,16 +34,16 @@ public class PostgresCacheTransport implements CacheTransport {
         return false;
     }
 
-    public PostgresCacheTransport() {
+    public PubSubCacheTransport() {
         this.pubsub = DotPubSubProviderLocator.provider.get();
-        this.topic = new CachePubSubTopic();
-        Logger.debug(this.getClass(), "PostgresCacheTransport");
+        this.topic = new CacheTransportTopic();
+        Logger.debug(this.getClass(), "PubSubCacheTransport");
     }
 
     @Override
     public void init(final Server localServer) throws CacheTransportException {
 
-        Logger.info(this.getClass(), "initing PostgresCacheTransport");
+        Logger.info(this.getClass(), "initing PubSubCacheTransport");
         this.pubsub.start();
         this.pubsub.subscribe(topic);
 
@@ -63,7 +68,7 @@ public class PostgresCacheTransport implements CacheTransport {
     public void testCluster() throws CacheTransportException {
 
         Logger.info(this.getClass(), "Sending PING to cluster ");
-        final DotPubSubEvent event = new DotPubSubEvent.Builder().withType(CachePubSubTopic.CacheEventType.PING.name())
+        final DotPubSubEvent event = new DotPubSubEvent.Builder().withType(CacheTransportTopic.CacheEventType.PING.name())
                         .withTopic(this.topic)
 
                         .build();
@@ -76,7 +81,7 @@ public class PostgresCacheTransport implements CacheTransport {
     public Map<String, Serializable> validateCacheInCluster(final int maxWaitInMillis) throws CacheTransportException {
 
         final DotPubSubEvent clusterStatusRequest = new DotPubSubEvent.Builder()
-                        .withType(CachePubSubTopic.CacheEventType.CLUSTER_REQ.name()).withTopic(this.topic).build();
+                        .withType(CacheTransportTopic.CacheEventType.CLUSTER_REQ.name()).withTopic(this.topic).build();
 
         final int numberOfOtherServers = Try.of(() -> APILocator.getServerAPI().getAliveServers().size()).getOrElse(0);
         this.topic.resetResponses();
