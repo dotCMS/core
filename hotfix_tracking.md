@@ -157,3 +157,5 @@ This maintenance release includes the following code fixes:
 76. https://github.com/dotCMS/core/issues/20252 : Dates with format yyyy-MM-dd HH:mm:ss.SSS are mapped as texts in ES
 
 77. https://github.com/dotCMS/core/issues/19723 : Only 10 parent related contents retrieved when editing a child content
+
+78. https://github.com/dotCMS/core/issues/20147 : If UrlMap specifies an invalid field, then you can't open the edit content screen
