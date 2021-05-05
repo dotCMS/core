@@ -134,3 +134,6 @@ This release includes the following code fixes:
 64. https://github.com/dotCMS/core/issues/20250 : [Push Publishing] : Improving error message when finding unique content match
 
 65. https://github.com/dotCMS/core/issues/20232 : [Integrity Checker] : Improving error message when fixing File Asset conflict
+
+66. https://github.com/dotCMS/core/issues/19723 : Only 10 parent related contents retrieved when editing a child content
+
