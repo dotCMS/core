@@ -159,3 +159,5 @@ This maintenance release includes the following code fixes:
 77. https://github.com/dotCMS/core/issues/19723 : Only 10 parent related contents retrieved when editing a child content
 
 78. https://github.com/dotCMS/core/issues/20147 : If UrlMap specifies an invalid field, then you can't open the edit content screen
+
+79. https://github.com/dotCMS/core/issues/19412 : "Permission Individually" on a folder defaults to all permissions of its parent, not just the inheritable ones
