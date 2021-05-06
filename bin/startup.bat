@@ -84,8 +84,6 @@ copy %CATALINA_HOME%\bin\byte-buddy\%BYTE_BUDDY_VERSION%\* %CATALINA_BASE%\webap
 rem Set agent opts
 set JAVA_OPTS=%JAVA_OPTS% -javaagent:%DOTCMS_HOME%/WEB-INF/lib/byte-buddy-agent-%BYTE_BUDDY_VERSION%.jar
 
-echo JAVA_OPTS = %JAVA_OPTS%
-
 rem Uncomment the next line if you want to enable JMX
 rem set JAVA_OPTS=%JAVA_OPTS% -Dcom.sun.management.jmxremote.port=7788 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false -Djava.endorsed.dirs=$DOTCMS_HOME/WEB-INF/endorsed_libs
 :noDefaultJavaOpts
