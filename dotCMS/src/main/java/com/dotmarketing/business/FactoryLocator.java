@@ -8,7 +8,7 @@ import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
 import com.dotcms.contenttype.business.FieldFactory;
 import com.dotcms.contenttype.business.FieldFactoryImpl;
 import com.dotcms.contenttype.business.RelationshipFactory;
-
+import com.dotcms.contenttype.business.RelationshipFactoryImpl;
 import com.dotcms.enterprise.DashboardProxy;
 import com.dotcms.enterprise.RulesFactoryProxy;
 import com.dotcms.enterprise.ServerActionFactoryImplProxy;
@@ -96,7 +96,9 @@ public class FactoryLocator extends Locator<FactoryIndex>{
         return (CategoryFactory)getInstance(FactoryIndex.CATEGORY_FACTORY);
     }
     
-
+    public static RelationshipFactory getRelationshipFactory() {
+      return (RelationshipFactory)getInstance(FactoryIndex.RELATIONSHIP_FACTORY);
+    }
     public static ContentletFactory getContentletFactory(){
     	return (ContentletFactory)getInstance(FactoryIndex.CONTENTLET_FACTORY);
     }
@@ -341,7 +343,7 @@ enum FactoryIndex
             case SERVER_ACTION_FACTORY: return new ServerActionFactoryImplProxy();
             case RULES_FACTORY: return new RulesFactoryProxy();
             case PERSONA_FACTORY: return new PersonaFactoryImpl();
-
+            case RELATIONSHIP_FACTORY: return RelationshipFactoryImpl.instance();
             case TAG_FACTORY: return new TagFactoryImpl();
             case FileAsset_Factory: return new FileAssetFactoryImpl();
 		}

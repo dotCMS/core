@@ -1,11 +1,15 @@
 package com.dotmarketing.business;
 
 
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.RelationshipFactory;
-import com.dotcms.contenttype.business.RelationshipFactoryImpl;
 import com.dotcms.contenttype.model.field.ImmutableRelationshipField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
@@ -22,7 +26,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
-
 import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformer;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -31,11 +34,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import org.apache.commons.beanutils.BeanUtils;
-import java.util.Map;
 
 // THIS IS A FAKE API SO PEOPLE CAN FIND AND USE THE RELATIONSHIPFACTORY
 public class RelationshipAPIImpl implements RelationshipAPI {
@@ -48,7 +46,7 @@ public class RelationshipAPIImpl implements RelationshipAPI {
     
     
     public RelationshipAPIImpl() {
-        this.relationshipFactory = new RelationshipFactoryImpl();
+        this.relationshipFactory = FactoryLocator.getRelationshipFactory();
     }
 
     @WrapInTransaction
