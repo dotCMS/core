@@ -2281,7 +2281,7 @@ public class ContentletAjax {
 		try{
 			HibernateUtil.startTransaction();
 			Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<Relationship, List<Contentlet>>();
-			List<Relationship> rels =  FactoryLocator.getRelationshipFactory().byContentType(structure);
+			List<Relationship> rels =  APILocator.getRelationshipAPI().byContentType(structure);
 			for (Relationship r : rels) {
 				if (!contentRelationships.containsKey(r)) {
 					contentRelationships
@@ -2460,15 +2460,15 @@ public class ContentletAjax {
 			currentContentlet = conAPI.find(contentletIdentifier, currentUser, false);
 			contentletToUnrelate = conAPI.find(identifierToUnrelate, currentUser, false);
 
-			relationship =  FactoryLocator.getRelationshipFactory().byInode(relationshipInode);
+			relationship =  APILocator.getRelationshipAPI().byInode(relationshipInode);
 
 			conList.add(contentletToUnrelate);
-			FactoryLocator.getRelationshipFactory().deleteByContent(currentContentlet, relationship, conList);
+			APILocator.getRelationshipAPI().deleteByContent(currentContentlet, relationship, conList);
 
 			//if contentletToUnrelate is related as new content, there exists the below relation which also needs to be deleted.
 			conList.clear();
 			conList.add(currentContentlet);
-			FactoryLocator.getRelationshipFactory().deleteByContent(contentletToUnrelate, relationship, conList);
+			APILocator.getRelationshipAPI().deleteByContent(contentletToUnrelate, relationship, conList);
 
 			conAPI.refresh(currentContentlet);
 			conAPI.refresh(contentletToUnrelate);

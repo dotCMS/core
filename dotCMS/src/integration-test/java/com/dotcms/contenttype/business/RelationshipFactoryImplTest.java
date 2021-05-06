@@ -26,7 +26,7 @@ import org.junit.Test;
 
 public class RelationshipFactoryImplTest extends ContentTypeBaseTest{
 
-    private final RelationshipFactory relationshipFactory = FactoryLocator.getRelationshipFactory();
+    private final RelationshipFactory relationshipFactory = new RelationshipFactoryImpl();
     private ContentType parentContentType = null;
     private ContentType childContentType = null;
     private final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
