@@ -108,5 +108,19 @@ public interface DotSubmitter extends Executor, Serializable {
 
     void waitForAll() throws ExecutionException;
 
+    default void waitForAll(final Collection<Future<Void>> futures) throws ExecutionException {
+        for(final Future future : futures) {
+            try {
+                future.get();
+            } catch(ExecutionException e) {
+                Logger.error(DotSubmitter.class, e);
+                throw e;
+            } catch(InterruptedException e) {
+                Logger.error(DotSubmitter.class, e);
+                continue;
+            }
+        }
+    }
+
     long getTaskCount();
 } // E:O:F:DotExecutor.
