@@ -5,6 +5,7 @@ import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
+import com.liferay.util.FileUtil;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 
@@ -77,6 +78,20 @@ public class TarGzipBundleOutput extends BundleOutput {
     @Override
     public void setLastModified(String myFile, long timeInMillis){
 
+    }
+
+    public void innerCopyFile(final File source, final String destinationPath) throws IOException {
+        synchronized (tarArchiveOutputStream) {
+            try {
+                final TarArchiveEntry tarArchiveEntry = new TarArchiveEntry(destinationPath);
+                tarArchiveEntry.setSize(source.length());
+
+                tarArchiveOutputStream.putArchiveEntry(tarArchiveEntry);
+                IOUtils.copy(new FileInputStream(source), tarArchiveOutputStream);
+            } finally {
+                tarArchiveOutputStream.closeArchiveEntry();
+            }
+        }
     }
 
     public void mkdirs(final String path) {

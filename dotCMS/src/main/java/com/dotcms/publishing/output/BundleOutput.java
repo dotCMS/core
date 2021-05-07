@@ -55,13 +55,12 @@ public abstract class BundleOutput implements Closeable {
         if (userHardLink) {
             FileUtil.copyFile(source, getFile(destinationPath), true);
         } else {
-            try(final OutputStream outputStream = addFile(destinationPath)) {
-                FileUtil.copyFile(source, outputStream);
-            } catch(IOException e) {
-                Logger.error(FileUtil.class, e);
-                throw e;
-            }
+            innerCopyFile(source, destinationPath);
         }
+    }
+
+    protected void innerCopyFile(final File source, final String destinationPath) throws IOException {
+        FileUtil.copyFile(source, getFile(destinationPath), useHardLinkByDefault());
     }
 
     /**
