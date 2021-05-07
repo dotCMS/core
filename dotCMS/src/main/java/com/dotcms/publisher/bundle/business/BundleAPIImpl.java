@@ -7,6 +7,7 @@ import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
+import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.output.TarGzipBundleOutput;
 import com.dotcms.util.DotPreconditions;
 
@@ -407,9 +408,10 @@ public class BundleAPIImpl implements BundleAPI {
         final PushPublisherConfig pushPublisherConfig = new PushPublisherConfig(bundle);
         pushPublisherConfig.setPublishers(Arrays.asList(GenerateBundlePublisher.class));
 
-        try (final TarGzipBundleOutput tarGzipPublisherOutput = new TarGzipBundleOutput(pushPublisherConfig)) {
-			APILocator.getPublisherAPI().publish(pushPublisherConfig, tarGzipPublisherOutput);
-            return tarGzipPublisherOutput.getFile();
+        try {
+			final PublishStatus publishStatus =
+					APILocator.getPublisherAPI().publish(pushPublisherConfig);
+			return publishStatus.getOutputFiles().get(0);
         }
         catch(final Exception e) {
         	Logger.error(this,e.getMessage(),e);

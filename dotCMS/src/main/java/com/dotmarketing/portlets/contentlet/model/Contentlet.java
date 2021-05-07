@@ -1314,8 +1314,10 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 			// we simply return the the MD associated with the field `fileAsset`
 			if (isFileAsset()) {
 				final Metadata fileAssetMetadata = Try
-						.of(() -> //Access directly the binaryField
-							 getBinaryMetadata(FileAssetAPI.BINARY_FIELD)
+						.of(() -> //here we only return MD if it has been already generated NOT earlier
+						// That is why we're accessing the API method tha does not force it's generation
+						// otherwise we would loose control and API behavior would become a bit unpredictable
+								fileMetadataAPI.getMetadata(this, FileAssetAPI.BINARY_FIELD)
 						).getOrNull();
 				if (null != fileAssetMetadata) {
 					return fileAssetMetadata;
