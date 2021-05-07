@@ -643,7 +643,7 @@ public class SiteResource implements Serializable {
      * @throws SystemException
      */
     @GET
-    @Path("/{siteId}/_setup_progress")
+    @Path("/{siteId}/setup_progress")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})

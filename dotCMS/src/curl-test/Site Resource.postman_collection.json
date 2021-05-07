@@ -1135,7 +1135,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/site/{{hostId}}/_setup_progress",
+					"raw": "{{serverURL}}/api/v1/site/{{hostId}}/setup_progress",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -1144,7 +1144,7 @@
 						"v1",
 						"site",
 						"{{hostId}}",
-						"_setup_progress"
+						"setup_progress"
 					]
 				}
 			},
