@@ -114,6 +114,12 @@ public class ContentResource {
 
     private final WebResource webResource = new WebResource();
     private final ContentHelper contentHelper = ContentHelper.getInstance();
+    
+    
+    // set this only from an environmental variable so it cannot be overrriden in our Config class
+    private final boolean USE_XSTREAM_FOR_DESERIALIZATION = System.getenv("USE_XSTREAM_FOR_DESERIALIZATION")!=null && "true".equals(System.getenv("USE_XSTREAM_FOR_DESERIALIZATION"));
+    
+    
 
     /**
      *
@@ -1490,7 +1496,11 @@ public class ContentResource {
             final FormDataMultiPart multipart, final String params, final String method)
             throws URISyntaxException, DotDataException {
 
-        final InitDataObject init = webResource.init(params, request, response, false, null);
+        InitDataObject init = new WebResource.InitBuilder(request, response)
+                        .requiredAnonAccess(AnonymousAccess.WRITE)
+                        .params(params)
+                        .init();
+
         final Contentlet contentlet = new Contentlet();
         setRequestMetadata(contentlet, request);
 
@@ -1685,7 +1695,13 @@ public class ContentResource {
     private Response singlePUTandPOST(HttpServletRequest request, HttpServletResponse response,
             String params, String method)
             throws URISyntaxException {
-        InitDataObject init = webResource.init(params, request, response,false, null);
+        
+        // this take AnonymousAccess.WRITE
+        InitDataObject init = new WebResource.InitBuilder(request, response)
+                        .requiredAnonAccess(AnonymousAccess.WRITE)
+                        .params(params)
+                        .init();
+
 
         Contentlet contentlet = new Contentlet();
         setRequestMetadata(contentlet, request);
@@ -1968,6 +1984,13 @@ public class ContentResource {
     protected void processXML(Contentlet contentlet, InputStream inputStream)
             throws IOException, DotSecurityException, DotDataException {
 
+        
+        if(!USE_XSTREAM_FOR_DESERIALIZATION) {
+            SecurityLogger.logInfo(ContentResource.class, "Insecure XML PUT or Post Detected - possible vunerability probing");
+            throw new DotStateException("Unable to deserialize XML");
+        }
+        
+        
         String input = IOUtils.toString(inputStream, "UTF-8");
         // deal with XXE or SSRF security vunerabilities in XML docs
         // besides, we do not expect a fully formed xml doc - only an xml doc that can be transformed into a java.util.Map
