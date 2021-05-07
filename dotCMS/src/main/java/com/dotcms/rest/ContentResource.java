@@ -1985,6 +1985,7 @@ public class ContentResource {
             throws IOException, DotSecurityException, DotDataException {
 
         
+        // github issue #20364
         if(!USE_XSTREAM_FOR_DESERIALIZATION) {
             SecurityLogger.logInfo(ContentResource.class, "Insecure XML PUT or Post Detected - possible vunerability probing");
             throw new DotStateException("Unable to deserialize XML");
