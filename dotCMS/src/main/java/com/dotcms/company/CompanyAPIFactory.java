@@ -54,7 +54,7 @@ public class CompanyAPIFactory implements Serializable {
 
     @VisibleForTesting
     /**
-     * Set a third part {@link CompanyAPI}
+     * Set a third part {@link CompanyAPI} only for testing.
      * @param thirdPartyCompanyAPI
      */
     public static void setThirdPartyCompanyAPI(final CompanyAPI thirdPartyCompanyAPI) {

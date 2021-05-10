@@ -86,7 +86,7 @@ public class VanityURLFilter implements Filter {
           if (cachedVanity.isPresent() &&
                   // checks if the current destiny is not exactly the forward of the vanity
                   // we do this to avoid infinite loop
-                  !cachedVanity.get().forwardTo.equals(uri)) {
+                  this.forwardToIsnotTheSameOfUri(cachedVanity.get(), uri)) {
 
               request.setAttribute(VANITY_URL_OBJECT, cachedVanity.get());
               final VanityUrlResult vanityUrlResult = cachedVanity.get().handle( uri, response);
@@ -103,6 +103,13 @@ public class VanityURLFilter implements Filter {
 
       filterChain.doFilter(request, response);
   } // doFilter.
+
+    private boolean forwardToIsnotTheSameOfUri(final CachedVanityUrl cachedVanityUrl, final String uri) {
+
+      // if the forward to is not actually the same of uri, is ok
+        return null != cachedVanityUrl && null != cachedVanityUrl.forwardTo && null != uri?
+                !cachedVanityUrl.forwardTo.equals(uri): false;
+    }
 
   @Override
   public void destroy() {

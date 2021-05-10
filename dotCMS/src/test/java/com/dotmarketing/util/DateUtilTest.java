@@ -1,8 +1,14 @@
 package com.dotmarketing.util;
 
 import com.dotcms.UnitTestBase;
+import com.dotcms.company.CompanyAPI;
+import com.dotcms.company.CompanyAPIFactory;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.unittest.TestUtil;
+import com.dotmarketing.business.APILocator;
+import com.liferay.portal.ejb.CompanyPersistence;
+import com.liferay.portal.model.Company;
+import com.liferay.util.InstancePool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -21,6 +27,7 @@ import java.util.*;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -458,6 +465,8 @@ public class DateUtilTest extends UnitTestBase {
         }
     }
 
+    private static final String PERSISTENCE = "value.object.persistence.com.liferay.portal.model.Company";
+
     /**
      * Method to test: convert Date
      * Given Scenario: Passing a Date without any formats
@@ -466,6 +475,12 @@ public class DateUtilTest extends UnitTestBase {
      */
     @Test()
     public void test_time_zone_string_no_formats() throws ParseException {
+
+        final CompanyAPI companyAPI = mock(CompanyAPI.class);
+        final Company company = mock(Company.class);
+        when(company.getTimeZone()).thenReturn(TimeZone.getDefault());
+        when(companyAPI.getDefaultCompany()).thenReturn(company);
+        CompanyAPIFactory.setThirdPartyCompanyAPI(companyAPI);
 
         final Date date1 = DateUtil.convertDate("2015-02-04 GMT +1400");
 
