@@ -977,7 +977,7 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
         }
 
         /**
-         * As the SQL is a bit more complex and requireds more params to be replaced we need to adjust
+         * As the SQL is a bit more complex and requires more params to be replaced we need to adjust
          * @param connection
          * @param objectHash
          * @param path
@@ -995,7 +995,7 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
         }
 
         /**
-         * As the SQL is a bit more complex and requireds more params to be replaced we need to adjust
+         * As the SQL is a bit more complex and requires more params to be replaced we need to adjust
          * @param connection
          * @param chunkHash
          * @param data
@@ -1011,7 +1011,7 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
         }
 
         /**
-         * As the SQL is a bit more complex and requireds more params to be replaced we need to adjust
+         * As the SQL is a bit more complex and requires more params to be replaced we need to adjust
          * @param connection
          * @param objectHash
          * @param chunkHashes
