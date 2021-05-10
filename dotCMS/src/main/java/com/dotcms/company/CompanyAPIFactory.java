@@ -10,6 +10,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.CompanyUtils;
 import com.dotmarketing.util.Config;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.CompanyManagerUtil;
@@ -47,6 +48,19 @@ public class CompanyAPIFactory implements Serializable {
     private static class SingletonHolder {
         private static final CompanyAPIFactory INSTANCE = new CompanyAPIFactory();
     }
+
+    @VisibleForTesting
+    private static CompanyAPI thirdPartyCompanyAPI = null;
+
+    @VisibleForTesting
+    /**
+     * Set a third part {@link CompanyAPI}
+     * @param thirdPartyCompanyAPI
+     */
+    public static void setThirdPartyCompanyAPI(final CompanyAPI thirdPartyCompanyAPI) {
+        CompanyAPIFactory.thirdPartyCompanyAPI = thirdPartyCompanyAPI;
+    }
+
     /**
      * Get the instance.
      * @return JsonWebTokenFactory
@@ -58,7 +72,7 @@ public class CompanyAPIFactory implements Serializable {
 
     public CompanyAPI getCompanyAPI() {
 
-        return this.companyAPI;
+        return null != thirdPartyCompanyAPI? thirdPartyCompanyAPI: this.companyAPI;
     }
 
     private class CompanyAPIImpl implements CompanyAPI {
