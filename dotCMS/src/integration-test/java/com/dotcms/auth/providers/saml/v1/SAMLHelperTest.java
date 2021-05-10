@@ -126,7 +126,9 @@ public class SAMLHelperTest extends IntegrationTestBase {
         when(identityProviderConfiguration.containsOptionalProperty(SamlName.DOT_SAML_ALLOW_USER_SYNCHRONIZATION.getPropertyName())).thenReturn(false);
         when(identityProviderConfiguration.containsOptionalProperty(SamlName.DOTCMS_SAML_BUILD_ROLES.getPropertyName())).thenReturn(true);
         when(identityProviderConfiguration.getOptionalProperty(SamlName.DOTCMS_SAML_BUILD_ROLES.getPropertyName())).thenReturn(DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_NONE_VALUE);
-
+        when(identityProviderConfiguration.containsOptionalProperty(SamlName.DOTCMS_SAML_LOGIN_UPDATE_EMAIL.getPropertyName())).thenReturn(true);
+        when(identityProviderConfiguration.getOptionalProperty(SamlName.DOTCMS_SAML_LOGIN_UPDATE_EMAIL.getPropertyName())).thenReturn(true);
+        
         // creates a new native user
             final User nativeUser = new UserDataGen().active(true).lastName(nativeLastName).firstName(nativeFirstName)
                 .emailAddress(nativeEmailAddress).nextPersisted();
@@ -183,6 +185,8 @@ public class SAMLHelperTest extends IntegrationTestBase {
 
         // no want to sync roles
         when(identityProviderConfiguration.containsOptionalProperty(SamlName.DOTCMS_SAML_BUILD_ROLES.getPropertyName())).thenReturn(true);
+        when(identityProviderConfiguration.containsOptionalProperty(SamlName.DOTCMS_SAML_LOGIN_UPDATE_EMAIL.getPropertyName())).thenReturn(true);
+        when(identityProviderConfiguration.getOptionalProperty(SamlName.DOTCMS_SAML_LOGIN_UPDATE_EMAIL.getPropertyName())).thenReturn(true);
         when(identityProviderConfiguration.getOptionalProperty(SamlName.DOTCMS_SAML_BUILD_ROLES.getPropertyName())).thenReturn(DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_NONE_VALUE);
 
         // creates a new native user
