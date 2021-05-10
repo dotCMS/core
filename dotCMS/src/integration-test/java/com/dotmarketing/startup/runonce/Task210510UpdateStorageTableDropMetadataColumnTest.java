@@ -56,8 +56,8 @@ public class Task210510UpdateStorageTableDropMetadataColumnTest {
     }
 
     /**
-     * Given scenario:
-     * Expected result:
+     * Given scenario: We intend to test the upgrade task that drops the column if it exist
+     * Expected result: If the column does not exist it gets added. Once added we test it can be removed and the task wont run again.
      * @throws DotDataException
      * @throws SQLException
      */
