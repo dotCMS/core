@@ -67,8 +67,23 @@ JAVA_OPTS="$JAVA_OPTS -XX:MaxMetaspaceSize=512m -Xmx1G"
 # Set GC opts
 JAVA_OPTS="$JAVA_OPTS -XX:+UseG1GC"
 
+JAVA_VERSION="$(java -version 2>&1 | grep -i version | cut -d'"' -f2 | cut -d'.' -f1-2)"
+
+echo "JAVA_VERSION: $JAVA_VERSION"
+BYTE_BUDDY_VERSION="1.9.0"
+
+# Lexicographic comparation
+if [[ (($JAVA_VERSION < 11.0)) ]]; then 
+  BYTE_BUDDY_VERSION="1.6.12";
+fi
+
+echo "Using BYTE_BUDDY_VERSION: $BYTE_BUDDY_VERSION"
+
+rm $DOTCMS_HOME/WEB-INF/lib/byte-buddy-*
+cp $TOMCAT_HOME/bin/byte-buddy/$BYTE_BUDDY_VERSION/* $DOTCMS_HOME/WEB-INF/lib/
+
 # Set agent opts
-JAVA_OPTS="$JAVA_OPTS -javaagent:$DOTCMS_HOME/WEB-INF/lib/byte-buddy-agent-1.9.0.jar"
+JAVA_OPTS="$JAVA_OPTS -javaagent:$DOTCMS_HOME/WEB-INF/lib/byte-buddy-agent-$BYTE_BUDDY_VERSION.jar"
 
 # Set encoding
 JAVA_OPTS="$JAVA_OPTS -Dsun.jnu.encoding=UTF-8"
