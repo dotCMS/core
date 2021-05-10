@@ -49,18 +49,6 @@ public class CompanyAPIFactory implements Serializable {
         private static final CompanyAPIFactory INSTANCE = new CompanyAPIFactory();
     }
 
-    @VisibleForTesting
-    private static CompanyAPI thirdPartyCompanyAPI = null;
-
-    @VisibleForTesting
-    /**
-     * Set a third part {@link CompanyAPI} only for testing.
-     * @param thirdPartyCompanyAPI
-     */
-    public static void setThirdPartyCompanyAPI(final CompanyAPI thirdPartyCompanyAPI) {
-        CompanyAPIFactory.thirdPartyCompanyAPI = thirdPartyCompanyAPI;
-    }
-
     /**
      * Get the instance.
      * @return JsonWebTokenFactory
@@ -72,7 +60,7 @@ public class CompanyAPIFactory implements Serializable {
 
     public CompanyAPI getCompanyAPI() {
 
-        return null != thirdPartyCompanyAPI? thirdPartyCompanyAPI: this.companyAPI;
+        return this.companyAPI;
     }
 
     private class CompanyAPIImpl implements CompanyAPI {

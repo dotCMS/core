@@ -476,12 +476,6 @@ public class DateUtilTest extends UnitTestBase {
     @Test()
     public void test_time_zone_string_no_formats() throws ParseException {
 
-        final CompanyAPI companyAPI = mock(CompanyAPI.class);
-        final Company company = mock(Company.class);
-        when(company.getTimeZone()).thenReturn(TimeZone.getDefault());
-        when(companyAPI.getDefaultCompany()).thenReturn(company);
-        CompanyAPIFactory.setThirdPartyCompanyAPI(companyAPI);
-
         final Date date1 = DateUtil.convertDate("2015-02-04 GMT +1400");
 
         assertNotNull(date1);
