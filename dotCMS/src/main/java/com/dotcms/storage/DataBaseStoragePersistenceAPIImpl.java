@@ -988,10 +988,11 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
         @Override
         void pushObjectReference(final Connection connection, final String objectHash, final String path, final String groupName, final String hashRef)
                 throws DotDataException {
-            dotConnect.executeUpdate(connection,
+            final int rows = dotConnect.executeUpdate(connection,
                     storageInsertSQL.get(),
                     path, groupName, objectHash,
                     objectHash, path, groupName, hashRef);
+            Logger.debug(DataBaseStoragePersistenceAPIImpl.class,"pushObjectReference inserted rows "+rows);
         }
 
         /**
@@ -1004,10 +1005,11 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
         @Override
         void pushDataChunk(final Connection connection, final String chunkHash, final byte [] data)
                 throws DotDataException {
-            dotConnect.executeUpdate(connection,
+            final int rows = dotConnect.executeUpdate(connection,
                     dataInsertSQL.get(),
                     chunkHash, data,
                     chunkHash, data);
+            Logger.debug(DataBaseStoragePersistenceAPIImpl.class,"pushDataChunk inserted rows "+rows);
         }
 
         /**
@@ -1023,9 +1025,10 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
             final String sql = hashReferenceInsertSQL.get();
             int order = 1;
             for (final String chunkHash : chunkHashes) {
-                dotConnect.executeUpdate(connection, sql,
+                final int rows = dotConnect.executeUpdate(connection, sql,
                         objectHash, chunkHash, order,
                         objectHash, chunkHash, order++);
+                Logger.debug(DataBaseStoragePersistenceAPIImpl.class,"pushHashReference inserted rows "+rows);
             }
         }
 
