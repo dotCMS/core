@@ -115,10 +115,15 @@ public class BinaryViewStrategy extends AbstractTransformStrategy<Contentlet> {
                         + (contentLanguageSize > 1 ? "?language_id=" + contentlet.getLanguageId()
                         : StringPool.BLANK));
         map.put("name", assetName);
-        map.put("size", metadata.getLength());
+        map.put("size", metadata.getSize());
         map.put("mime", metadata.getContentType());
         map.put("isImage", metadata.isImage());
-
+        map.put("width", metadata.getWidth());
+        map.put("height", metadata.getHeight());
+        map.put("path", metadata.getPath());
+        map.put("title", metadata.getTitle());
+        map.put("sha256", metadata.getSha256());
+        map.put("modDate", metadata.getModDate());
         return map;
     }
 }
