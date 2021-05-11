@@ -38,7 +38,10 @@ public class Task210510UpdateStorageTableDropMetadataColumnTest {
         return "ALTER TABLE storage ADD metadata NCLOB ";
     }
 
-
+    /**
+     * Returns the SQL Script depending on the db 
+     * @return
+     */
     private String getScript() {
         if(DbConnectionFactory.isPostgres()){
             return getPostgresScript();
