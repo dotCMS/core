@@ -47,7 +47,7 @@ public abstract class BundleOutput implements Closeable {
      * @param destinationPath destination path to copy into the output
      * @throws IOException
      */
-    public void copyFile(File source, String destinationPath) throws IOException {
+    public final void copyFile(File source, String destinationPath) throws IOException {
         final boolean userHardLink =
                 Config.getBooleanProperty("CONTENT_VERSION_HARD_LINK", true)
                         && this.useHardLinkByDefault();
@@ -59,6 +59,13 @@ public abstract class BundleOutput implements Closeable {
         }
     }
 
+    /**
+     * Copy method to be override by sub clss if it need it
+     *
+     * @param source
+     * @param destinationPath
+     * @throws IOException
+     */
     protected void innerCopyFile(final File source, final String destinationPath) throws IOException {
         FileUtil.copyFile(source, getFile(destinationPath), useHardLinkByDefault());
     }
