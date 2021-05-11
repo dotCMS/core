@@ -181,7 +181,7 @@ public class Task201014UpdateColumnsValuesInIdentifierTable extends AbstractJDBC
                 .append("AND temp.structure_inode = struc.inode) WHERE r = 1)\n")
                 .append("               WHERE  myID = tt.id)\n");
 
-        query.append("ALTER TABLE identifier ENABLE ALL TRIGGERS;\n");
+        query.append("ALTER TABLE identifier ENABLE ALL TRIGGERS\n");
 
         return query.toString();
     }
