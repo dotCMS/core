@@ -113,6 +113,12 @@ public class ContentResource {
     private final WebResource webResource = new WebResource();
     private final ContentHelper contentHelper = ContentHelper.getInstance();
 
+
+    // set this only from an environmental variable so it cannot be overrriden in our Config class
+    private final boolean USE_XSTREAM_FOR_DESERIALIZATION = System.getenv("USE_XSTREAM_FOR_DESERIALIZATION")!=null && "true".equals(System.getenv("USE_XSTREAM_FOR_DESERIALIZATION"));
+
+
+
     /**
      * performs a call to APILocator.getContentletAPI().searchIndex() with the specified parameters.
      * Example call using curl: curl -XGET http://localhost:8080/api/content/indexsearch/+structurename:webpagecontent/sortby/modDate/limit/20/offset/0
@@ -1370,7 +1376,11 @@ public class ContentResource {
             final FormDataMultiPart multipart, final String params, final String method)
             throws URISyntaxException, DotDataException {
 
-        final InitDataObject init = webResource.init(params, request, response, false, null);
+        InitDataObject init = new WebResource.InitBuilder(request, response)
+                        .requiredAnonAccess(AnonymousAccess.WRITE)
+                        .params(params)
+                        .init();
+
         final Contentlet contentlet = new Contentlet();
         setRequestMetadata(contentlet, request);
 
@@ -1565,7 +1575,13 @@ public class ContentResource {
     private Response singlePUTandPOST(HttpServletRequest request, HttpServletResponse response,
             String params, String method)
             throws URISyntaxException {
-        InitDataObject init = webResource.init(params, request, response,false, null);
+
+        // this take AnonymousAccess.WRITE
+        InitDataObject init = new WebResource.InitBuilder(request, response)
+                        .requiredAnonAccess(AnonymousAccess.WRITE)
+                        .params(params)
+                        .init();
+
 
         Contentlet contentlet = new Contentlet();
         setRequestMetadata(contentlet, request);
@@ -1847,6 +1863,13 @@ public class ContentResource {
     @SuppressWarnings("unchecked")
     protected void processXML(Contentlet contentlet, InputStream inputStream)
             throws IOException, DotSecurityException, DotDataException {
+
+        // github issue #20364
+        if(!USE_XSTREAM_FOR_DESERIALIZATION) {
+            SecurityLogger.logInfo(ContentResource.class, "Insecure XML PUT or Post Detected - possible vunerability probing");
+            throw new DotStateException("Unable to deserialize XML");
+        }
+
 
         String input = IOUtils.toString(inputStream, "UTF-8");
         // deal with XXE or SSRF security vunerabilities in XML docs
