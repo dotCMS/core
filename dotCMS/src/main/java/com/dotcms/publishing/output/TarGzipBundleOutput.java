@@ -116,9 +116,12 @@ public class TarGzipBundleOutput extends BundleOutput {
 
         private void putEntry(byte[] bytes, TarArchiveEntry tarArchiveEntry) throws IOException {
             synchronized (tarArchiveOutputStream) {
-                tarArchiveOutputStream.putArchiveEntry(tarArchiveEntry);
-                IOUtils.copy(new ByteArrayInputStream(bytes), tarArchiveOutputStream);
-                tarArchiveOutputStream.closeArchiveEntry();
+                try {
+                    tarArchiveOutputStream.putArchiveEntry(tarArchiveEntry);
+                    IOUtils.copy(new ByteArrayInputStream(bytes), tarArchiveOutputStream);
+                } finally {
+                    tarArchiveOutputStream.closeArchiveEntry();
+                }
             }
         }
 
