@@ -138,3 +138,5 @@ This release includes the following code fixes:
 66. https://github.com/dotCMS/core/issues/19723 : Only 10 parent related contents retrieved when editing a child content
 
 67. https://github.com/dotCMS/core/issues/19412 : "Permission Individually" on a folder defaults to all permissions of its parent, not just the inheritable ones
+
+68. https://github.com/dotCMS/core/issues/20364 : XStream throws exception when posting bad XML
