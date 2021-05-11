@@ -97,11 +97,13 @@ public class TarGzipBundleOutput extends BundleOutput {
     public void mkdirs(final String path) {
         final TarArchiveEntry tarArchiveEntry = new TarArchiveEntry(path);
 
-        try {
-            tarArchiveOutputStream.putArchiveEntry(tarArchiveEntry);
-            tarArchiveOutputStream.closeArchiveEntry();
-        } catch (IOException e) {
-            throw new DotRuntimeException(e);
+        synchronized (tarArchiveOutputStream) {
+            try {
+                tarArchiveOutputStream.putArchiveEntry(tarArchiveEntry);
+                tarArchiveOutputStream.closeArchiveEntry();
+            } catch (IOException e) {
+                throw new DotRuntimeException(e);
+            }
         }
     }
 
