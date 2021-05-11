@@ -104,8 +104,8 @@ public class VanityUrlFilterTest {
 
     /**
      * Method to test: {@link VanityURLFilter#doFilter(ServletRequest, ServletResponse, FilterChain)}
-     * Given Scenario: try a success 301 to the same url with / at the end
-     * ExpectedResult: response code = 301 and location is the forward to
+     * Given Scenario: the url is the same of the forward to, so even if match the vanity does not need the redirect
+     * ExpectedResult: response code = 200, the 301 is not needed
      *
      */
     @Test
