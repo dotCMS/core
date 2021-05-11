@@ -124,6 +124,7 @@ public class BinaryViewStrategy extends AbstractTransformStrategy<Contentlet> {
         map.put("title", metadata.getTitle());
         map.put("sha256", metadata.getSha256());
         map.put("modDate", metadata.getModDate());
+        map.put("focalPoint",  Try.of(()->  metadata.getCustomMeta().get("focalPoint").toString()).getOrElse("0.0"));
         return map;
     }
 }

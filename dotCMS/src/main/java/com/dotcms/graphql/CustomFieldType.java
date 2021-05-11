@@ -67,6 +67,7 @@ public enum CustomFieldType {
         binaryTypeFields.put("width", GraphQLLong);
         binaryTypeFields.put("height", GraphQLLong);
         binaryTypeFields.put("modDate", GraphQLLong);
+        binaryTypeFields.put("focalPoint", GraphQLString);
         customFieldTypes.put("BINARY", TypeUtil.createObjectType(BINARY.getTypeName(), binaryTypeFields,
             new MapFieldPropertiesDataFetcher()));
 
