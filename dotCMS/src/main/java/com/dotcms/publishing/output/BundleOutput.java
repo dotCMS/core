@@ -60,11 +60,15 @@ public abstract class BundleOutput implements Closeable {
     }
 
     /**
-     * Copy method to be override by sub clss if it need it
      *
-     * @param source
-     * @param destinationPath
-     * @throws IOException
+     * Copy {@code source } to {@code destinationPath}, this method use by
+     * {@link BundleOutput#copyFile(File, String)} when {@link BundleOutput#useHardLinkByDefault()}
+     * return false, the default implementacion use {@link FileUtil#copyFile(File, File, boolean)} method to
+     * copy the file but it can be override by subclases to have a custom implementation.
+     *
+     * @param source file to be copied
+     * @param destinationPath destiniton path to copy
+     * @throws IOException if any is wrong in the copy
      */
     protected void innerCopyFile(final File source, final String destinationPath) throws IOException {
         FileUtil.copyFile(source, getFile(destinationPath), useHardLinkByDefault());
