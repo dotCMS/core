@@ -1,5 +1,7 @@
 package com.dotcms.publishing.output;
 
+import static com.liferay.util.FileUtil.validateEmptyFile;
+
 import com.dotcms.publishing.PublisherConfig;
 import com.dotmarketing.util.Config;
 
@@ -51,6 +53,8 @@ public abstract class BundleOutput implements Closeable {
         final boolean userHardLink =
                 Config.getBooleanProperty("CONTENT_VERSION_HARD_LINK", true)
                         && this.useHardLinkByDefault();
+
+        validateEmptyFile(source);
 
         if (userHardLink) {
             FileUtil.copyFile(source, getFile(destinationPath), true);
