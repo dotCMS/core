@@ -409,9 +409,16 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
             count += dotConnect.executeUpdate(connection,
                     "DELETE FROM storage_x_data WHERE storage_hash = ?", storageHash);
 
-            for (final String hashId : dataIdHashSet) {
-                count += dotConnect.executeUpdate(connection,
-                        "DELETE FROM storage_data WHERE hash_id = ?", hashId);
+            for (final String daataHash : dataIdHashSet) {
+
+                //Check it is safe to remove the data chunk if none else's still referencing it from another entry.
+                if (dotConnect
+                        .setSQL("SELECT data_hash FROM storage_x_data WHERE data_hash = ?")
+                        .addParam(daataHash).loadObjectResults().isEmpty()) {
+                    count += dotConnect.executeUpdate(connection,
+                            "DELETE FROM storage_data WHERE hash_id = ?", daataHash);
+                }
+
             }
 
         }
