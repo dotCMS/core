@@ -79,7 +79,8 @@ public class TarGzipBundleOutput extends BundleOutput {
     public void setLastModified(String myFile, long timeInMillis){
 
     }
-
+    
+    @Override
     public void innerCopyFile(final File source, final String destinationPath) throws IOException {
         synchronized (tarArchiveOutputStream) {
             try {
