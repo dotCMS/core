@@ -884,19 +884,15 @@
 									"    pm.expect(JSON.stringify(visitor[\"tags\"])==JSON.stringify([",
 									"                        {",
 									"                            \"tag\": \"snowmobile\",",
-									"                            \"count\": 26",
+									"                            \"count\": 2",
 									"                        },",
 									"                        {",
 									"                            \"tag\": \"skiing\",",
-									"                            \"count\": 26",
+									"                            \"count\": 2",
 									"                        },",
 									"                        {",
 									"                            \"tag\": \"snowboarding\",",
-									"                            \"count\": 26",
-									"                        },",
-									"                        {",
-									"                            \"tag\": \"diving\",",
-									"                            \"count\": 1",
+									"                            \"count\": 2",
 									"                        }",
 									"                    ]), 'FAILED:[visitorPersona.tags]').equal(true);",
 									"",
@@ -964,7 +960,7 @@
 						"body": {
 							"mode": "graphql",
 							"graphql": {
-								"query": "{\n  page(url:\"/destinations/costa-rica\", pageMode: \"live\", languageId: \"1\") {\n     viewAs {\n      persona {\n        name\n        description\n        photo {\n          idPath\n        }\n        keyTag\n        tags\n      }\n      visitor {\n        persona {\n          name\n          description\n          photo {\n            idPath\n          }\n          keyTag\n          tags\n        }\n        device\n        isNew\n        tags {\n          tag\n          count\n        }\n        userAgent {\n          operatingSystem\n          browser\n          id\n          browserVersion {\n            version\n            majorVersion\n            minorVersion\n          }\n        }\n        personas {\n          persona \n          count\n        }\n      }\n      mode\n      language {\n        id\n        country\n        countryCode\n        language\n        languageCode\n      }\n    }\n  }\n}",
+								"query": "{\n  page(url:\"/destinations/costa-rica\", pageMode: \"live\", languageId: \"1\", persona:\"WinterEnthusiast\") {\n     viewAs {\n      persona {\n        name\n        description\n        photo {\n          idPath\n        }\n        keyTag\n        tags\n      }\n      visitor {\n        persona {\n          name\n          description\n          photo {\n            idPath\n          }\n          keyTag\n          tags\n        }\n        device\n        isNew\n        tags {\n          tag\n          count\n        }\n        userAgent {\n          operatingSystem\n          browser\n          id\n          browserVersion {\n            version\n            majorVersion\n            minorVersion\n          }\n        }\n        personas {\n          persona \n          count\n        }\n      }\n      mode\n      language {\n        id\n        country\n        countryCode\n        language\n        languageCode\n      }\n    }\n  }\n}",
 								"variables": ""
 							}
 						},
