@@ -3937,17 +3937,17 @@
 			]
 		},
 		{
-			"name": "Test GraphQL Image Field fields ",
+			"name": "Test GraphQL File/Image Field fields",
 			"item": [
 				{
-					"name": "Create Image ContentType",
+					"name": "Create File/Image ContentType",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
 									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"imageContentTypeVariable\", jsonData.entity[0].variable);"
+									"pm.collectionVariables.set(\"fileImageContentTypeVariable\", jsonData.entity[0].variable);"
 								],
 								"type": "text/javascript"
 							}
@@ -3980,7 +3980,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"defaultType\": false,\n  \"fixed\": false,\n  \"system\": false,\n  \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableFileAssetContentType\",\n  \"description\": \"\",\n  \"host\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n  \"folder\": \"SYSTEM_FOLDER\",\n  \"name\": \"myImageType{{$randomBankAccount}}\",\n  \"systemActionMappings\": {\n    \"NEW\": \"\"\n  },\n  \"workflow\": [\n    \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n  ]\n}"
+							"raw": "{\n  \"defaultType\": false,\n  \"fixed\": false,\n  \"system\": false,\n  \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableFileAssetContentType\",\n  \"description\": \"\",\n  \"host\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n  \"folder\": \"SYSTEM_FOLDER\",\n  \"name\": \"myFileImageType{{$randomBankAccount}}\",\n  \"systemActionMappings\": {\n    \"NEW\": \"\"\n  },\n  \"workflow\": [\n    \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n  ]\n}"
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/contenttype",
@@ -4042,7 +4042,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"My Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"My Custom Type {{$randomBankAccount}}\",\n\t\"host\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n\t\"fixed\": false,\n\t\"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"],\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 1,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"fixed\": true\n\t\t}, \n\t\t{\n              \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableImageField\",\n              \"dataType\": \"TEXT\",\n              \"fieldType\": \"Image\",\n              \"fieldTypeLabel\": \"Image\",\n              \"fieldVariables\": [],\n              \"fixed\": false,\n              \"iDate\": 1585605564000,\n              \"indexed\": false,\n              \"listed\": false,\n              \"modDate\": 1585605564000,\n              \"name\": \"myImage\",\n              \"readOnly\": false,\n              \"required\": false,\n              \"searchable\": false,\n              \"sortOrder\": 2,\n              \"unique\": false\n       },\n\t   {\n\t\t      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableFileField\",\n\t\t      \"name\": \"myFile\",\n\t\t      \"required\": false,\n\t\t      \"hint\": \"\"\n\t   }\n\t]\n}"
+							"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"My Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"My Custom Type {{$randomBankAccount}}\",\n\t\"host\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n\t\"fixed\": false,\n\t\"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"],\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 1,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"fixed\": true\n\t\t}, \n        {\n\t\t      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableFileField\",\n\t\t      \"name\": \"myFile\",\n\t\t      \"required\": false,\n\t\t      \"hint\": \"\", \n              \"sortOrder\": 2, \n              \"indexed\": true\n\t    }, \n\t\t{\n              \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableImageField\",\n              \"dataType\": \"TEXT\",\n              \"fieldType\": \"Image\",\n              \"fieldTypeLabel\": \"Image\",\n              \"fieldVariables\": [],\n              \"fixed\": false,\n              \"iDate\": 1585605564000,\n              \"indexed\": true,\n              \"listed\": false,\n              \"modDate\": 1585605564000,\n              \"name\": \"myImage\",\n              \"readOnly\": false,\n              \"required\": false,\n              \"searchable\": false,\n              \"sortOrder\": 3,\n              \"unique\": false\n       }\n\t]\n}"
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/contenttype",
@@ -4055,6 +4055,69 @@
 								"contenttype"
 							]
 						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create File Content",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"fileContentIdentifier\", jsonData.entity.identifier);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "json",
+									"value": "{\n    \"contentlet\": {\n       \"contentType\":\"{{fileImageContentTypeVariable}}\",\n       \"title\":\"My Image\", \n       \"hostFolder\":\"default\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"showOnMenu\":\"true\",\n       \"sortOrder\":\"2\"\n    }\n}",
+									"type": "text"
+								},
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/Test_GraphQL_Image_Field_fields/Readme18005.md"
+								}
+							],
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						},
+						"description": "This is to fire the added default action\n\nhttp://localhost:8080/api/v1/workflow/actions/default/fire/PUBLISH\n\nIn this case I'm using the \"test\" content type that just have a name filed (text)"
 					},
 					"response": []
 				},
@@ -4096,76 +4159,13 @@
 							"formdata": [
 								{
 									"key": "json",
-									"value": "{\n    \"contentlet\": {\n       \"contentType\":\"{{imageContentTypeVariable}}\",\n       \"title\":\"My Image\", \n       \"hostFolder\":\"default\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"showOnMenu\":\"true\",\n       \"sortOrder\":2\n    }\n}",
+									"value": "{\n    \"contentlet\": {\n       \"contentType\":\"{{fileImageContentTypeVariable}}\",\n       \"title\":\"My Image\", \n       \"hostFolder\":\"default\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"showOnMenu\":\"true\",\n       \"sortOrder\":2\n    }\n}",
 									"type": "text"
 								},
 								{
 									"key": "file",
 									"type": "file",
 									"src": "resources/GraphQL/Test_GraphQL_Image_Field_fields/tommylee18005.jpeg"
-								}
-							],
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"actions",
-								"default",
-								"fire",
-								"PUBLISH"
-							]
-						},
-						"description": "This is to fire the added default action\n\nhttp://localhost:8080/api/v1/workflow/actions/default/fire/PUBLISH\n\nIn this case I'm using the \"test\" content type that just have a name filed (text)"
-					},
-					"response": []
-				},
-				{
-					"name": "Create File Content",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"fileContentIdentifier\", jsonData.entity.identifier);"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "formdata",
-							"formdata": [
-								{
-									"key": "json",
-									"value": "{\n    \"contentlet\": {\n       \"contentType\":\"{{imageContentTypeVariable}}\",\n       \"title\":\"My Image\", \n       \"hostFolder\":\"default\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"showOnMenu\":\"true\",\n       \"sortOrder\":\"2\"\n    }\n}",
-									"type": "text"
-								},
-								{
-									"key": "file",
-									"type": "file",
-									"src": "resources/GraphQL/Test_GraphQL_Image_Field_fields/Readme18005.md"
 								}
 							],
 							"options": {
@@ -4219,7 +4219,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"contentlet\": {\n       \"contentType\":\"{{contentTypeVariable}}\",\n       \"name\":\"Content With Image\", \n       \"contentHost\":\"default\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"{{imageFieldVariable}}\":\"{{imageContentIdentifier}}\",\n       \"{{fileFieldVariable}}\":\"{{fileContentIdentifier}}\"\n    }\n}",
+							"raw": "{\n    \"contentlet\": {\n       \"contentType\":\"{{contentTypeVariable}}\",\n       \"name\":\"Content With Image\", \n       \"contentHost\":\"default\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"{{fileFieldVariable}}\":\"{{fileContentIdentifier}}\", \n       \"{{imageFieldVariable}}\":\"{{imageContentIdentifier}}\"\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -4246,7 +4246,7 @@
 					"response": []
 				},
 				{
-					"name": "Request content with Image field",
+					"name": "Request content with Image and File fields",
 					"event": [
 						{
 							"listen": "test",
@@ -4280,7 +4280,7 @@
 									"    pm.expect(hasProperty(imageFieldJson.metaData, \"width\", \"139\"), 'FAILED:[width]').to.be.true;",
 									"    pm.expect(hasProperty(imageFieldJson.metaData, \"contentType\", \"image/jpeg\"), 'FAILED:[contentType]').to.be.true;",
 									"    pm.expect(hasProperty(imageFieldJson.metaData, \"height\", \"186\"), 'FAILED:[height]').to.be.true;",
-									"    pm.expect(hasProperty(imageFieldJson.metaData, \"path\", \"c/4/c4233194-5b0a-487e-a7e7-35bef0051b97/fileAsset/tommylee18005.jpeg\"), 'FAILED:[path]').to.be.true;",
+									"    pm.expect(metaDataIncludes(imageFieldJson.metaData, \"path\", \"/fileAsset/tommylee18005.jpeg\"), 'FAILED:[path]').to.be.true;",
 									"    pm.expect(hasProperty(imageFieldJson.metaData, \"sha256\", \"d6b09b7a7d42e6a84e455e7257faf32c4351aa9bb491ceb939f7f3443c2150ae\"), 'FAILED:[sha256]').to.be.true;",
 									"    pm.expect(hasProperty(imageFieldJson.metaData, \"title\", \"tommylee18005.jpeg\"), 'FAILED:[title]').to.be.true;",
 									"    pm.expect(hasProperty(imageFieldJson.metaData, \"isImage\", \"true\"), 'FAILED:[isImage]').to.be.true;",
@@ -4294,37 +4294,48 @@
 									"    var fileFieldJson = jsonData.data[collectionName][0][fileFieldVariable];",
 									"    ",
 									"    // general attributes",
-									"    pm.expect(fileFieldJson.fileName).to.eql(\"Readme18005.md\");",
-									"    pm.expect(fileFieldJson.sortOrder).to.eql(2);",
-									"    pm.expect(fileFieldJson.showOnMenu[0]).to.eql(\"true\");",
+									"    pm.expect(fileFieldJson.fileName, 'FAILED:[fileName]').to.eql(\"Readme18005.md\");",
+									"    pm.expect(fileFieldJson.sortOrder, 'FAILED:[sortOrder]').to.eql(2);",
+									"    pm.expect(fileFieldJson.showOnMenu[0], 'FAILED:[showOnMenu]').to.eql(\"true\");",
 									"    ",
 									"    // fileAsset",
-									"    pm.expect(fileFieldJson.fileAsset.name).to.eql(\"Readme18005.md\");",
-									"    pm.expect(fileFieldJson.fileAsset.size).to.eql(14);",
-									"    pm.expect(fileFieldJson.fileAsset.mime).to.eql(\"text/plain; charset=ISO-8859-1\");",
+									"    pm.expect(fileFieldJson.fileAsset.name, 'FAILED:[name]').to.eql(\"Readme18005.md\");",
+									"    pm.expect(fileFieldJson.fileAsset.size, 'FAILED:[size]').to.eql(14);",
+									"    pm.expect(fileFieldJson.fileAsset.mime, 'FAILED:[mime]').to.eql(\"text/plain; charset=ISO-8859-1\");",
 									"    ",
 									"    pm.expect(fileFieldJson.metaData.length).to.eql(9);",
 									"",
 									"    // console.log(fileFieldJson.metaData)",
 									"    ",
-									"    pm.expect(hasProperty(fileFieldJson.metaData, \"fileSize\", \"14\")).to.be.true;",
-									"    pm.expect(hasProperty(fileFieldJson.metaData, \"length\", \"14\")).to.be.true;",
-									"    pm.expect(hasProperty(fileFieldJson.metaData, \"contentType\", \"text/plain; charset=ISO-8859-1\")).to.be.true;",
+									"    pm.expect(hasProperty(fileFieldJson.metaData, \"fileSize\", \"14\"), 'FAILED:[fileSize]').to.be.true;",
+									"    pm.expect(hasProperty(fileFieldJson.metaData, \"length\", \"14\"), 'FAILED:[length]').to.be.true;",
+									"    pm.expect(hasProperty(fileFieldJson.metaData, \"contentType\", \"text/plain; charset=ISO-8859-1\"), 'FAILED:[contentType]').to.be.true;",
 									"    // not sure if this should be returned, but it's not anymore",
-									"    // pm.expect(hasProperty(fileFieldJson.metaData, \"content\", \"This is a test\")).to.be.true;",
+									"    pm.expect(hasProperty(fileFieldJson.metaData, \"content\", \"This is a test\"), 'FAILED:[content]').to.be.true;",
 									"    ",
 									"});",
 									"",
 									"function hasProperty(metaData, name, value) {",
-									"        var hasProperty = false;",
-									"        metaData.forEach(function (item) {",
-									"            if(item.key==name && item.value.trim()==value) {",
-									"                hasProperty = true;",
-									"            }",
-									"        });",
+									"    var hasProperty = false;",
+									"    metaData.forEach(function (item) {",
+									"        if(item.key==name && item.value.trim()==value) {",
+									"            hasProperty = true;",
+									"        }",
+									"    });",
 									"",
-									"        return hasProperty;",
-									"    }",
+									"    return hasProperty;",
+									"}",
+									"",
+									"function metaDataIncludes(metaData, name, value) {",
+									"    var metaDataIncludes = false;",
+									"    metaData.forEach(function (item) {",
+									"        if(item.key==name && item.value.trim().includes(value)) {",
+									"            metaDataIncludes = true;",
+									"        }",
+									"    });",
+									"",
+									"    return metaDataIncludes;",
+									"}",
 									""
 								],
 								"type": "text/javascript"
@@ -5184,11 +5195,11 @@
 		},
 		{
 			"key": "contentTypeVariable",
-			"value": "MyCustomType65285537"
+			"value": "MyCustomType94382829"
 		},
 		{
 			"key": "contentIdentifier",
-			"value": "8dab3bd8-70e6-4de1-bb89-892a54c0aa43"
+			"value": "671144d9-739d-4dd2-b8a0-5ea9c32f9daa"
 		},
 		{
 			"key": "structureVariable",
@@ -5200,11 +5211,11 @@
 		},
 		{
 			"key": "imageContentIdentifier",
-			"value": "cdbfaa35-8c93-4cfe-8366-19a8922b542f"
+			"value": "d3915dc0-ba86-48e7-a1f1-856478b06cfe"
 		},
 		{
 			"key": "imageFieldVariable",
-			"value": "myImage"
+			"value": "myFile"
 		},
 		{
 			"key": "showOnMenu",
@@ -5216,11 +5227,11 @@
 		},
 		{
 			"key": "fileFieldVariable",
-			"value": "myFile"
+			"value": "myImage"
 		},
 		{
 			"key": "fileContentIdentifier",
-			"value": "93568d9e-cbfa-4fe2-8825-9f9b18294662"
+			"value": "35bd8a93-0d74-44e6-8a89-cb57735114f1"
 		},
 		{
 			"key": "childContentTypeVariable",
@@ -5241,6 +5252,10 @@
 		{
 			"key": "parentContentIdentifier",
 			"value": "5f487236-01fb-4ff1-a25e-8eecc99b2312"
+		},
+		{
+			"key": "fileImageContentTypeVariable",
+			"value": "MyFileImageType68267192"
 		}
 	]
 }
