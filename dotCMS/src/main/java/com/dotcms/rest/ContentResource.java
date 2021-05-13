@@ -101,6 +101,8 @@ import static com.dotmarketing.util.NumberUtil.toLong;
 @Path("/content")
 public class ContentResource {
 
+    private final boolean USE_XSTREAM_FOR_DESERIALIZATION = System.getenv("USE_XSTREAM_FOR_DESERIALIZATION")!=null && "true".equals(System.getenv("USE_XSTREAM_FOR_DESERIALIZATION"));
+
     public static final String[] ignoreFields = {"disabledWYSIWYG", "lowIndexPriority"};
 
     private static final String RELATIONSHIP_KEY = "__##relationships##__";
@@ -1490,7 +1492,10 @@ public class ContentResource {
             final FormDataMultiPart multipart, final String params, final String method)
             throws URISyntaxException, DotDataException {
 
-        final InitDataObject init = webResource.init(params, request, response, false, null);
+        final InitDataObject init = new WebResource.InitBuilder(request, response)
+                .requiredAnonAccess(AnonymousAccess.WRITE)
+                .params(params)
+                .init();
         final Contentlet contentlet = new Contentlet();
         setRequestMetadata(contentlet, request);
 
@@ -1541,7 +1546,12 @@ public class ContentResource {
                 }
             } else if (mediaType.equals(MediaType.APPLICATION_XML_TYPE) || name.equals("xml")) {
                 try {
-                    processXML(contentlet, part.getEntityAs(InputStream.class));
+                    if(!USE_XSTREAM_FOR_DESERIALIZATION) {
+                        SecurityLogger.logInfo(ContentResource.class, "Insecure XML PUT or Post Detected - possible vunerability probing");
+                        throw new IllegalArgumentException("Unable to deserialize XML");
+                    } else {
+                        processXML(contentlet, part.getEntityAs(InputStream.class));
+                    }
                 } catch (Exception e) {
                     if (e instanceof DotSecurityException) {
                         SecurityLogger.logInfo(this.getClass(),
@@ -1685,7 +1695,10 @@ public class ContentResource {
     private Response singlePUTandPOST(HttpServletRequest request, HttpServletResponse response,
             String params, String method)
             throws URISyntaxException {
-        InitDataObject init = webResource.init(params, request, response,false, null);
+        final InitDataObject init = new WebResource.InitBuilder(request, response)
+                .requiredAnonAccess(AnonymousAccess.WRITE)
+                .params(params)
+                .init();
 
         Contentlet contentlet = new Contentlet();
         setRequestMetadata(contentlet, request);
@@ -1695,7 +1708,12 @@ public class ContentResource {
                 processJSON(contentlet, request.getInputStream());
             } else if (request.getContentType().startsWith(MediaType.APPLICATION_XML)) {
                 try {
-                    processXML(contentlet, request.getInputStream());
+                    if(!USE_XSTREAM_FOR_DESERIALIZATION) {
+                        SecurityLogger.logInfo(ContentResource.class, "Insecure XML PUT or Post Detected - possible vunerability probing");
+                        throw new IllegalArgumentException("Unable to deserialize XML");
+                    } else {
+                        processXML(contentlet, request.getInputStream());
+                    }
                 } catch (DotSecurityException se) {
                     SecurityLogger.logInfo(this.getClass(),
                             "Invalid XML POSTED to ContentTypeResource from " + request
