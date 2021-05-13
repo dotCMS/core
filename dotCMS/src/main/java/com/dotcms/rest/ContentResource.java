@@ -1547,13 +1547,8 @@ public class ContentResource {
                 }
             } else if (mediaType.equals(MediaType.APPLICATION_XML_TYPE) || name.equals("xml")) {
                 try {
-                    // github issue #20364
-                    if(!USE_XSTREAM_FOR_DESERIALIZATION) {
-                        SecurityLogger.logInfo(ContentResource.class, "Insecure XML PUT or Post Detected - possible vunerability probing");
-                        throw new IllegalArgumentException("Unable to deserialize XML");
-                    } else {
-                        processXML(contentlet, part.getEntityAs(InputStream.class));
-                    }
+
+                    processXML(contentlet, part.getEntityAs(InputStream.class));
                 } catch (Exception e) {
                     if (e instanceof DotSecurityException) {
                         SecurityLogger.logInfo(this.getClass(),
@@ -1710,13 +1705,8 @@ public class ContentResource {
                 processJSON(contentlet, request.getInputStream());
             } else if (request.getContentType().startsWith(MediaType.APPLICATION_XML)) {
                 try {
-                    // github issue #20364
-                    if(!USE_XSTREAM_FOR_DESERIALIZATION) {
-                        SecurityLogger.logInfo(ContentResource.class, "Insecure XML PUT or Post Detected - possible vunerability probing");
-                        throw new IllegalArgumentException("Unable to deserialize XML");
-                    } else {
-                        processXML(contentlet, request.getInputStream());
-                    }
+
+                    processXML(contentlet, request.getInputStream());
                 } catch (DotSecurityException se) {
                     SecurityLogger.logInfo(this.getClass(),
                             "Invalid XML POSTED to ContentTypeResource from " + request
@@ -1989,6 +1979,12 @@ public class ContentResource {
     protected void processXML(Contentlet contentlet, InputStream inputStream)
             throws IOException, DotSecurityException, DotDataException {
 
+        // github issue #20364
+        if(!USE_XSTREAM_FOR_DESERIALIZATION) {
+            SecurityLogger.logInfo(ContentResource.class, "Insecure XML PUT or Post Detected - possible vunerability probing");
+            throw new DotStateException("Unable to deserialize XML");
+        }
+        
         String input = IOUtils.toString(inputStream, "UTF-8");
         // deal with XXE or SSRF security vunerabilities in XML docs
         // besides, we do not expect a fully formed xml doc - only an xml doc that can be transformed into a java.util.Map
