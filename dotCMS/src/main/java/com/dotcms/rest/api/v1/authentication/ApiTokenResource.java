@@ -55,7 +55,6 @@ public class ApiTokenResource implements Serializable {
 
     private final ApiTokenAPI tokenApi;
     private final WebResource webResource;
-    private Client restClient;
 
     /**
      * Default constructor.

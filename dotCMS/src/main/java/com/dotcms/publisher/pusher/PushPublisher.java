@@ -100,7 +100,6 @@ public class PushPublisher extends Publisher {
 	private PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
 	private PublishingEndPointAPI publishingEndPointAPI = APILocator.getPublisherEndPointAPI();
 	private LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
-	private Client restClient;
 
 	public static final String PROTOCOL_HTTP  = "http";
 	public static final String PROTOCOL_HTTPS = "https";
