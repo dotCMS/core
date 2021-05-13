@@ -140,3 +140,5 @@ This release includes the following code fixes:
 67. https://github.com/dotCMS/core/issues/19412 : "Permission Individually" on a folder defaults to all permissions of its parent, not just the inheritable ones
 
 68. https://github.com/dotCMS/core/issues/20364 : XStream throws exception when posting bad XML
+
+69. https://github.com/dotCMS/core/issues/19500 : SQL Injection Vulnerability in api /api/v1/containers
