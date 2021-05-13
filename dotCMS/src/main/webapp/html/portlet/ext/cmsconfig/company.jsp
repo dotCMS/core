@@ -60,21 +60,77 @@ final boolean hasAdminRole = user.isAdmin();
 		return true;
 	}
 
+	const overrideCheckbox = document.getElementById('override_logo');
+	const overrideDropZone = document.getElementById('override__drop-zone');
+	const logoDeleteButton = document.getElementById('logo--delete');
+	const dotAssetDropZoneMain = document.getElementById('dot-asset-drop-zone-main');
+
+	overrideCheckbox.addEventListener('change', toggleOverrideLogo)
+	logoDeleteButton.addEventListener('click', logoDelete)
+
+	function toggleOverrideLogo(e) {
+    const isChecked = e.target.checked;
+		overrideDropZone.style.display = isChecked ? 'block' : 'none'
+}
+
+function logoDelete(event, b) {
+	event.target.parentElement.remove();
+	dotAssetDropZoneMain.style.display = 'block'
+}
+
 </script>
 
+<style type="text/css">
+	dot-asset-drop-zone {
+		width: 40rem;
+	}
+	dot-asset-drop-zone .dot-asset-drop-zone__indicators {
+			position: static;
+	}
+
+	.listingTable__form-control {
+		display: flex;
+		justify-content: space-between;
+		margin-bottom: 1rem;
+	}
+
+	.listingTable__form-control label {
+		align-self: center;
+    margin-left: auto;
+    margin-right: 1.5rem;
+	}
+
+	.listingTable__form-control h3 {
+		margin-left: auto;
+		margin-right: 1.5rem;
+		font-weight: normal;
+	}
+
+	.listingTable__form-control span.clusterid {
+			display: block;
+			width: 250px;
+	}
+
+	.listingTable__form {
+		width: 33rem;
+	}
+
+	#bgButton .colorIcon {
+		display: none;
+	}
+</style>
 
 <table class="listingTable">
     <tr>
         <th><%= LanguageUtil.get(pageContext, "basic-information") %></th>
-        <th><!--<%= LanguageUtil.get(pageContext, "logo") %>--></th>
     </tr>
     <tr>
-        <td>
+        <td style="display: flex">
         	<div class="form-horizontal">
 	            <dl>
 	                <dt><%= LanguageUtil.get(pageContext, "portal-url") %></dt>
 	                <dd><input dojoType="dijit.form.TextBox" id="companyPortalUrl" name="companyPortalUrl" size="25" type="text" value="<%= company.getPortalURL() %>" style="width: 250px"></dd>
-				</dl>
+							</dl>
 				<dl>
 	                <dt><%= LanguageUtil.get(pageContext, "mail-domain") %></dt>
 	                <dd><input dojoType="dijit.form.TextBox" id="companyMX" name="companyMX" size="25" type="text" value="<%= company.getMx() %>" style="width: 250px"></dd>
@@ -205,8 +261,32 @@ final boolean hasAdminRole = user.isAdmin();
 					</table>
 				</div>
 			</div>
+			  <div style="margin-left: 10rem;">
+						<h3 style="font-weight: normal; margin-bottom: 1rem;">Login Screen Logo</h3>
+            <div style="position: relative; max-width: 200px;">
+							<button style="position: absolute; right: 0;" id="logo--delete">delete</button>
+							<img style="max-width: 200px;" border="1" hspace="0" src="<%= IMAGE_PATH %>/company_logo?img_id=<%= company.getCompanyId() %>&key=<%= ImageKey.get(company.getCompanyId()) %>" vspace="0">
+						</div>
+						<dot-asset-drop-zone id="dot-asset-drop-zone-main" style="display: none;" drop-files-text="Drop Image" upload-file-text="Uploading Image..." display-indicator="true"></dot-asset-drop-zone>
+						<p style="margin-top: 1rem; color: grey;">This is the logo used for the site lorem ipsum dolor sit amet
+hello world.</p> <br>
+							
+							<div style="margin-top: 2rem;">
+								<label for="override_logo">
+								<input type="checkbox" name="override" id="override_logo">
+								Overrider Navbar Logo
+							</label> <br>
+							<p style="margin-top: 1rem; color: grey;">If you want to override the main logo check this option and
+upload an image lorem ipsum.</p>
+								<div id="override__drop-zone" style="display: none;">
+									<h3 style="font-weight: normal; margin-bottom: 1rem;">Navbar Logo</h3>
+								<dot-asset-drop-zone id="dot-asset-drop-zone" drop-files-text="Drop Image" upload-file-text="Uploading Image..." display-indicator="true"></dot-asset-drop-zone>
+								<p style="margin-top: 1rem; color: grey;">The image must be 300x300 px lorem ipsum dolor sit amet</p>
+								</div><!-- /.override__drop-zone -->
+							</div>
+        </div>
         </td>
-        <td valign="top">
+        <!-- <td valign="top">
             <img style="max-width: 300px;" border="1" hspace="0" src="<%= IMAGE_PATH %>/company_logo?img_id=<%= company.getCompanyId() %>&key=<%= ImageKey.get(company.getCompanyId()) %>" vspace="0"><br>
             <form action="/api/config/saveCompanyLogo" enctype="multipart/form-data" id="companyLogoForm" name="companyLogoForm" method="post">
             	<div style="margin-top:32px;">
@@ -218,7 +298,7 @@ final boolean hasAdminRole = user.isAdmin();
                     </div>
             	</div>
             </form>
-        </td>
+        </td> -->
     </tr>
 </table>
 
