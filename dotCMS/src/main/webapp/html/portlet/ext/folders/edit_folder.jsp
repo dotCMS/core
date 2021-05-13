@@ -60,10 +60,6 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 				alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.folder.name.required.url")) %>');
 				return false;
 			}
-			else if (document.getElementById("titleField").value.indexOf(" ")>-1) {
-				alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.folder.name.no.space.in.url")) %>');
-				return false;
-			}
 		}
 		form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/folders/edit_folder" /></portlet:actionURL>';
 		submitForm(form);
@@ -222,8 +218,8 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 								ignoreCase="true"
 								labelAttr="name"
 								searchAttr="name"
-								value="<%=InodeUtils.isSet(folder.getInode())?folder.getDefaultFileType():defaultFileAssetStructure.getInode() %>"
-							invalidMessage="<%=LanguageUtil.get(pageContext, "Invalid-option-selected")%>">
+								value="<%=InodeUtils.isSet(folder.getInode())?folder.getDefaultFileType():(parentFolder!=null?parentFolder.getDefaultFileType():defaultFileAssetStructure.getInode()) %>"
+							    invalidMessage="<%=LanguageUtil.get(pageContext, "Invalid-option-selected")%>">
 						</select>
 					</dd>
 				</dl>
@@ -245,8 +241,10 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 	<!-- START permissions -->
 	<%
 		PermissionAPI perAPI = APILocator.getPermissionAPI();
-		boolean canEditAsset = perAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user);
-		if (canEditAsset) {
+
+		if (UtilMethods.isSet(folder.getIdentifier()) &&
+				perAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_EDIT_PERMISSIONS,
+						user)) {
 	%>
 		<div id="permissionsTab" refreshOnShow="true" preload="true"  dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Permissions") %>" onShow="hideEditButtonsRow()" >
 			<%

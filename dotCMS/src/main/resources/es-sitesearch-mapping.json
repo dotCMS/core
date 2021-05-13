@@ -4,6 +4,7 @@
       "content": {
         "type": "text",
         "analyzer": "standard_content",
+        "term_vector":"with_positions_offsets",
         "fields": {
           "untouched": {
             "type": "keyword",

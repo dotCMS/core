@@ -38,6 +38,15 @@ public interface RelationshipFactory {
 
     List<Relationship> byContentType(final String contentTypeInode, String orderBy);
 
+    /**
+     * Gets related content from database, given a parent/child content and a relationship object. <p>
+     * In case of a self-join relationship, the resulting list will contain a merged list where the provided
+     * content exists as a parent or as a child on that relationship
+     * @param relationship
+     * @param contentlet
+     * @return
+     * @throws DotDataException
+     */
     List<Contentlet> dbRelatedContent(final Relationship relationship, final Contentlet contentlet)
             throws DotDataException;
 

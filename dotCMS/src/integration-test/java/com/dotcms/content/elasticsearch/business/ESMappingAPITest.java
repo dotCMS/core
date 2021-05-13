@@ -1,6 +1,11 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.INCLUDE_DOTRAW_METADATA_FIELDS;
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.INDEX_DOTRAW_METADATA_FIELDS;
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.TEXT;
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.WRITE_METADATA_ON_REINDEX;
 import static com.dotcms.datagen.TestDataUtils.getCommentsLikeContentType;
+import static com.dotcms.datagen.TestDataUtils.getMultipleImageBinariesContent;
 import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
 import static com.dotcms.datagen.TestDataUtils.relateContentTypes;
 import static com.dotcms.util.CollectionsUtils.list;
@@ -10,6 +15,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
@@ -18,6 +24,7 @@ import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
+import com.dotcms.contenttype.model.field.ImmutableHiddenField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.RelationshipField;
@@ -32,6 +39,7 @@ import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -44,6 +52,7 @@ import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -52,6 +61,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
@@ -66,6 +76,9 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -132,7 +145,8 @@ public class ESMappingAPITest {
         fileAsset.setIndexPolicy(IndexPolicy.FORCE);
 
         // Create a piece of content for the default host
-        final Map<String,Object>  contentletMap = esMappingAPI.toMap(APILocator.getContentletAPI().checkin(fileAsset, user, false));
+        final Contentlet newContent = APILocator.getContentletAPI().checkin(fileAsset, user, false);
+        final Map<String,Object>  contentletMap = esMappingAPI.toMap(newContent);
 
         assertNotNull(contentletMap);
         assertEquals(fileNameField1.toLowerCase(), contentletMap.get(contentTypeVariable + ".filename"));
@@ -141,6 +155,226 @@ public class ESMappingAPITest {
         assertEquals(4, contentletMap.get("metadata.filesize"));
         assertTrue( contentletMap.get("metadata.content").toString().contains("lol!"));
 
+    }
+
+    /**
+     * Method to test: {@link ESMappingAPIImpl#toMap(Contentlet)}
+     * Given Scenario: When a hidden field is a date, it should be mapped as
+     * a string with a datetime format
+     * ExpectedResult: The result map should contain the hidden date field with the right format
+     */
+    @Test
+    public void test_toMap_hidden_date_fields_shouldSuccess() throws Exception {
+
+        final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+        Field hiddenField = ImmutableHiddenField.builder()
+                .name("MyHiddenField")
+                .variable("MyHiddenField")
+                .contentTypeId(contentType.id())
+                .dataType(DataTypes.DATE)
+                .indexed(true)
+                .build();
+
+        hiddenField = fieldAPI.save(hiddenField, user);
+        final Date hiddenDate = new Date();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .setProperty(hiddenField.variable(), hiddenDate).nextPersisted();
+
+        final Map<String, Object> contentletMap = esMappingAPI.toMap(contentlet);
+
+        assertNotNull(contentletMap);
+
+        final String fullFieldKey =
+                contentType.variable().toLowerCase() + "." + hiddenField.variable().toLowerCase();
+        assertTrue(contentletMap.get(fullFieldKey) instanceof String);
+        assertEquals(ESMappingAPIImpl.elasticSearchDateTimeFormat.format(hiddenDate).toLowerCase(),
+                contentletMap.get(fullFieldKey));
+    }
+
+    /**
+     * Method to test: {@link ESMappingAPIImpl#toMap(Contentlet)}
+     * Given Scenario: When the property `CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS` is set to false, _text fields shouldn't be included in the map
+     * ExpectedResult: The result map should not contain any _text field
+     */
+    @Test
+    public void test_toMap_when_textFieldShouldNotBeIncluded(){
+        final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl();
+        Config.setProperty("CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS", false);
+
+        final Map<String, Object> contentletMap = esMappingAPI.toMap(TestDataUtils
+                .getNewsContent(true, language.getId(), getNewsLikeContentType().id()));
+
+        assertNotNull(contentletMap);
+
+        assertFalse(contentletMap.containsKey((ESMappingConstants.STRUCTURE_TYPE + TEXT).toLowerCase()));
+        assertFalse(contentletMap.containsKey((ESMappingConstants.BASE_TYPE + TEXT).toLowerCase()));
+        assertFalse(contentletMap.containsKey((ESMappingConstants.MOD_DATE + TEXT).toLowerCase()));
+        assertFalse(contentletMap.containsKey((ESMappingConstants.LIVE + TEXT).toLowerCase()));
+        assertFalse(contentletMap.containsKey((ESMappingConstants.WORKING + TEXT).toLowerCase()));
+        assertFalse(contentletMap.containsKey((ESMappingConstants.LOCKED + TEXT).toLowerCase()));
+        assertFalse(contentletMap.containsKey((ESMappingConstants.DELETED + TEXT).toLowerCase()));
+        assertFalse(contentletMap.containsKey((ESMappingConstants.LANGUAGE_ID + TEXT).toLowerCase()));
+        assertFalse(contentletMap.containsKey((ESMappingConstants.PUBLISH_DATE + TEXT).toLowerCase()));
+        assertFalse(contentletMap.containsKey((ESMappingConstants.EXPIRE_DATE + TEXT).toLowerCase()));
+        assertFalse(contentletMap.containsKey((ESMappingConstants.VERSION_TS + TEXT).toLowerCase()));
+
+        assertFalse(contentletMap.containsKey((ESMappingConstants.WORKFLOW_MOD_DATE + TEXT).toLowerCase()));
+
+        assertFalse(contentletMap.containsKey((ESMappingConstants.OWNER_CAN_READ + TEXT).toLowerCase()));
+        assertFalse(contentletMap.containsKey((ESMappingConstants.OWNER_CAN_WRITE + TEXT).toLowerCase()));
+        assertFalse(contentletMap.containsKey((ESMappingConstants.OWNER_CAN_PUBLISH + TEXT).toLowerCase()));
+    }
+
+    /**
+     * Method to test: {@link ESMappingAPIImpl#toMap(Contentlet)}
+     * Given Scenario: When the property `CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS` is set to true, _text fields should be included in the map
+     * ExpectedResult: The result map should contain all _text fields
+     */
+    @Test
+    public void test_toMap_when_textFieldShouldBeIncluded(){
+        final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl();
+
+        Config.setProperty("CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS", true);
+        try {
+            final Map<String, Object> contentletMap = esMappingAPI.toMap(TestDataUtils
+                    .getNewsContent(true, language.getId(), getNewsLikeContentType().id()));
+
+            assertNotNull(contentletMap);
+
+            assertTrue(contentletMap
+                    .containsKey((ESMappingConstants.STRUCTURE_TYPE + TEXT).toLowerCase()));
+            assertTrue(
+                    contentletMap.containsKey((ESMappingConstants.BASE_TYPE + TEXT).toLowerCase()));
+            assertTrue(
+                    contentletMap.containsKey((ESMappingConstants.MOD_DATE + TEXT).toLowerCase()));
+            assertTrue(contentletMap.containsKey((ESMappingConstants.LIVE + TEXT).toLowerCase()));
+            assertTrue(
+                    contentletMap.containsKey((ESMappingConstants.WORKING + TEXT).toLowerCase()));
+            assertTrue(contentletMap.containsKey((ESMappingConstants.LOCKED + TEXT).toLowerCase()));
+            assertTrue(
+                    contentletMap.containsKey((ESMappingConstants.DELETED + TEXT).toLowerCase()));
+            assertTrue(contentletMap
+                    .containsKey((ESMappingConstants.LANGUAGE_ID + TEXT).toLowerCase()));
+            assertTrue(contentletMap
+                    .containsKey((ESMappingConstants.PUBLISH_DATE + TEXT).toLowerCase()));
+            assertTrue(contentletMap
+                    .containsKey((ESMappingConstants.EXPIRE_DATE + TEXT).toLowerCase()));
+            assertTrue(contentletMap
+                    .containsKey((ESMappingConstants.VERSION_TS + TEXT).toLowerCase()));
+
+            assertTrue(contentletMap
+                    .containsKey((ESMappingConstants.WORKFLOW_MOD_DATE + TEXT).toLowerCase()));
+
+            assertTrue(contentletMap
+                    .containsKey((ESMappingConstants.OWNER_CAN_READ + TEXT).toLowerCase()));
+            assertTrue(contentletMap
+                    .containsKey((ESMappingConstants.OWNER_CAN_WRITE + TEXT).toLowerCase()));
+            assertTrue(contentletMap
+                    .containsKey((ESMappingConstants.OWNER_CAN_PUBLISH + TEXT).toLowerCase()));
+        } finally {
+            Config.setProperty("CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS", false);
+        }
+
+    }
+
+    /**
+     * Method to Test: {@link ESMappingAPIImpl#toMap(Contentlet)}
+     * When: The contentlet has a invalid host
+     * Should: Throw a {@link DotDataException}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test(expected = DotMappingException.class)
+    public void whenContentletHasInvalidHostId(){
+        final ESMappingAPIImpl esMappingAPI    = new ESMappingAPIImpl();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).next();
+
+        contentlet.setHost("not_exist_host");
+
+        esMappingAPI.toMap(contentlet);
+    }
+
+    /**
+     * Method to Test: {@link ESMappingAPIImpl#toMap(Contentlet)}
+     * When: The contentlet has a invalid folder
+     * Should: Throw a {@link DotDataException}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test(expected = DotMappingException.class)
+    public void whenContentletHasInvalidFolderId(){
+        final ESMappingAPIImpl esMappingAPI    = new ESMappingAPIImpl();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).next();
+
+        contentlet.setFolder("not_exist_folder");
+
+        esMappingAPI.toMap(contentlet);
+    }
+
+    /**
+     * Method to Test: {@link ESMappingAPIImpl#toMap(Contentlet)}
+     * When: The contentlet has a invalid content type
+     * Should: Throw a {@link DotDataException}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test(expected = DotMappingException.class)
+    public void whenContentletHasInvalidContentTypeId(){
+        final ESMappingAPIImpl esMappingAPI    = new ESMappingAPIImpl();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).next();
+
+        contentlet.setContentTypeId("not_exist_content_type");
+
+        esMappingAPI.toMap(contentlet);
+    }
+
+    /**
+     * Method to Test: {@link ESMappingAPIImpl#toMap(Contentlet)}
+     * When: The contentlet has not {@link com.dotmarketing.beans.Identifier}
+     * Should: Throw a {@link DotDataException}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test(expected = DotMappingException.class)
+    public void whenContentletHasNotIdentifier() {
+        final ESMappingAPIImpl esMappingAPI    = new ESMappingAPIImpl();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).next();
+
+        esMappingAPI.toMap(contentlet);
+    }
+
+    /**
+     * Method to Test: {@link ESMappingAPIImpl#toMap(Contentlet)}
+     * When: The contentlet has not {@link ContentletVersionInfo}
+     * Should: Throw a {@link DotDataException}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test(expected = DotMappingException.class)
+    public void whenContentletHasNotContentletVersionInfo() throws DotDataException {
+        final ESMappingAPIImpl esMappingAPI    = new ESMappingAPIImpl();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).nextPersisted();
+
+        APILocator.getVersionableAPI().deleteContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
+        esMappingAPI.toMap(contentlet);
     }
 
     @Test
@@ -213,13 +447,96 @@ public class ESMappingAPITest {
         assertNotNull(contentletMap);
         assertEquals(varname, contentletMap.get("structurename"));
         assertEquals("image/jpeg", contentletMap.get("metadata.contenttype"));
-        assertEquals("320", contentletMap.get("metadata.width"));
-        assertEquals("235", contentletMap.get("metadata.height"));
+        assertEquals(320, contentletMap.get("metadata.width"));
+        assertEquals(235, contentletMap.get("metadata.height"));
+        assertEquals(true, contentletMap.get("metadata.isimage"));
         assertTrue( contentletMap.get("metadata.content").toString().trim().isEmpty());
 
     }
 
+    /**
+     * Method to Test: {@link ESMappingAPIImpl#toMap(Contentlet)}
+     * Given scenario: When we call {@link ESMappingAPIImpl#toMap(Contentlet)} setting on or off properties we can control the inclusion/exclusion of metadata.something_dotraw fields
+     * Expected:
+     *      When we specify via `EXCLUDE_DOTRAW_METADATA_FIELDS` a group of fields that need to be excluded from the resulting map we should not see those in the resulting dotraw metadata fields
+     *      if we set the prop `EXCLUDE_DOTRAW_METADATA_FIELDS` to en empty string nothing gets excluded not even the defaults
+     *      if we turn off the prop `INDEX_DOTRAW_METADATA_FIELDS` we should not see any metadata-dotraw field
+     */
     @Test
+    public void Test_toMap_Metadata_dotRaw() {
+
+        final boolean writeMetadataOnReindex = Config.getBooleanProperty(WRITE_METADATA_ON_REINDEX, true);
+        final boolean indexDotRowMetaDataFields = Config
+                .getBooleanProperty(INDEX_DOTRAW_METADATA_FIELDS,true);
+        final String[] includeDotRawFields = Config
+                .getStringArrayProperty(INCLUDE_DOTRAW_METADATA_FIELDS);
+
+        try {
+            Config.setProperty(WRITE_METADATA_ON_REINDEX, true);
+            Config.setProperty(INDEX_DOTRAW_METADATA_FIELDS, true);
+
+            final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl();
+            final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+            final Contentlet multipleBinariesContent = getMultipleImageBinariesContent(true, langId,
+                    null);
+
+            final Set<String> includedDotRawFields = Stream
+                    .of(ESMappingAPIImpl.defaultIncludedDotRawMetadataFields)
+                    .map(s -> "metadata." + s + "_dotraw").map(String::toLowerCase)
+                    .collect(Collectors.toSet());
+
+            final Map<String, Object> contentletMap = esMappingAPI.toMap(multipleBinariesContent);
+            Assert.assertNotNull(contentletMap);
+            //We get the list of metadata dot-raw keys
+            final List<String> dotRawMetaList = contentletMap.keySet().stream()
+                    .filter(s -> s.startsWith("metadata") && s.endsWith("dotraw"))
+                    .collect(Collectors.toList());
+
+            //Test that with the dotRaw fields generated are part of the list of inclusions
+            Assert.assertTrue(includedDotRawFields.containsAll(dotRawMetaList));
+
+            //Now lets set an empty list to force skipping the defaults
+            Config.setProperty(INCLUDE_DOTRAW_METADATA_FIELDS, "");
+            final Map<String, Object> contentletMapIncludingNone = esMappingAPI
+                    .toMap(multipleBinariesContent);
+
+            //Now lets get the list of metadata keys
+            final List<String> dotRawMetaListForceNoneExclusion = contentletMapIncludingNone.keySet()
+                    .stream()
+                    .filter(s -> s.startsWith("metadata") && s.endsWith("dotraw"))
+                    .collect(Collectors.toList());
+
+            Assert.assertTrue(dotRawMetaListForceNoneExclusion.isEmpty());
+
+            //Now lets set a list with entries to exclude
+            Config.setProperty(INCLUDE_DOTRAW_METADATA_FIELDS, "isImage,content");
+            final Map<String, Object> contentletMapCustomInclude = esMappingAPI
+                    .toMap(multipleBinariesContent);
+
+            assertTrue(contentletMapCustomInclude.containsKey("metadata.isimage"));
+            assertTrue(contentletMapCustomInclude.containsKey("metadata.isimage_dotraw"));
+
+            assertTrue(contentletMapCustomInclude.containsKey("metadata.content"));
+            assertTrue(contentletMapCustomInclude.containsKey("metadata.content_dotraw"));
+
+            //Test disconnecting the dot raw fields generation
+            Config.setProperty(INDEX_DOTRAW_METADATA_FIELDS, false);
+            final Map<String, Object> noneDotRaw = esMappingAPI
+                    .toMap(multipleBinariesContent);
+            //Verify no dotRaw metadata fields has been returned
+            assertFalse(
+                    noneDotRaw.keySet().stream()
+                            .anyMatch(s -> s.startsWith("metadata") && s.endsWith("dotraw")));
+        } finally {
+            Config.setProperty(WRITE_METADATA_ON_REINDEX, writeMetadataOnReindex);
+            Config.setProperty(INDEX_DOTRAW_METADATA_FIELDS, indexDotRowMetaDataFields);
+            Config.setProperty(INCLUDE_DOTRAW_METADATA_FIELDS, includeDotRawFields);
+        }
+
+    }
+
+
+        @Test
     public void testLoadRelationshipFields_whenUsingLegacyRelationships_shouldSuccess()
             throws DotDataException, DotSecurityException {
 

@@ -1,0 +1,689 @@
+{
+	"info": {
+		"_postman_id": "6a47659d-90a1-4e1c-b3c5-abca182ef816",
+		"name": "ToolGroupResource",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Add ToolGroup to current user Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "3202f1ec-00ee-4f43-8a57-6df506430993",
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/toolgroups/gettingstarted/_addtouser",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"toolgroups",
+						"gettingstarted",
+						"_addtouser"
+					]
+				}
+			},
+			"response": []
+		},
+        {
+          "name": "Add ToolGroup to specific user Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "f62472f3-b080-4d94-8494-53ce9d7c7880",
+                "exec": [
+                  "pm.test(\"Status code should be ok 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "password",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "admin@dotcms.com",
+                  "type": "string"
+                },
+                {
+                  "key": "saveHelperData",
+                  "type": "any"
+                },
+                {
+                  "key": "showPassword",
+                  "value": false,
+                  "type": "boolean"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/toolgroups/gettingstarted/_addtouser=dotcms.org.1",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "toolgroups",
+                "gettingstarted",
+                "_addtouser"
+              ],
+              "query": [
+                {
+                  "key": "userid",
+                  "value": "dotcms.org.1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+		{
+			"name": "Add ToolGroup to current user BadRequest Id Not Exist",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "950dc3ae-f80f-44d9-a1ee-6035193254e6",
+						"exec": [
+							"pm.test(\"Status code should be ok 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/toolgroups/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/_addtouser",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"toolgroups",
+						"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+						"_addtouser"
+					]
+				}
+			},
+			"response": []
+		},
+        {
+          "name": "Add ToolGroup to an invalid user should fail",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "fe2cfe7a-ea40-4e4d-9191-d9f1cfae6086",
+                "exec": [
+                  "pm.test(\"Status code should be ok 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "password",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "admin@dotcms.com",
+                  "type": "string"
+                },
+                {
+                  "key": "saveHelperData",
+                  "type": "any"
+                },
+                {
+                  "key": "showPassword",
+                  "value": false,
+                  "type": "boolean"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/toolgroups/gettingstarted/_addtouser?userid=invalidUser",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "toolgroups",
+                "gettingstarted",
+                "_addtouser"
+              ],
+              "query": [
+                {
+                  "key": "userid",
+                  "value": "invalidUser"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+		{
+			"name": "Re-Add ToolGroup to current user Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "8a238c19-5128-47a6-9e78-773a779526cd",
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/toolgroups/gettingstarted/_addtouser",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"toolgroups",
+						"gettingstarted",
+						"_addtouser"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Remove ToolGroup from current user Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "006aa86f-cc7b-45d6-9315-294c6370fd78",
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/toolgroups/gettingstarted/_removefromuser",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"toolgroups",
+						"gettingstarted",
+						"_removefromuser"
+					]
+				}
+			},
+			"response": []
+		},
+        {
+          "name": "Remove ToolGroup from specific user Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "14c497e6-ffb4-444a-90c7-e4ea03701caa",
+                "exec": [
+                  "pm.test(\"Status code should be ok 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "password",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "admin@dotcms.com",
+                  "type": "string"
+                },
+                {
+                  "key": "saveHelperData",
+                  "type": "any"
+                },
+                {
+                  "key": "showPassword",
+                  "value": false,
+                  "type": "boolean"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/toolgroups/gettingstarted/_removefromuser?userid=dotcms.org.1",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "toolgroups",
+                "gettingstarted",
+                "_removefromuser"
+              ],
+              "query": [
+                {
+                  "key": "userid",
+                  "value": "dotcms.org.1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+		{
+			"name": "Remove ToolGroup from current user BadRequest Id Not Exist",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "e22e7d91-9f0a-4f4c-87ed-a4bb05d1c0a7",
+						"exec": [
+							"pm.test(\"Status code should be ok 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/toolgroups/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/_removefromuser",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"toolgroups",
+						"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+						"_removefromuser"
+					]
+				}
+			},
+			"response": []
+		},
+        {
+          "name": "Remove ToolGroup from invalid user should fail",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "39083dc7-fef3-4adf-a7f0-e3139499ef9f",
+                "exec": [
+                  "pm.test(\"Status code should be ok 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "password",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "admin@dotcms.com",
+                  "type": "string"
+                },
+                {
+                  "key": "saveHelperData",
+                  "type": "any"
+                },
+                {
+                  "key": "showPassword",
+                  "value": false,
+                  "type": "boolean"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/toolgroups/gettingstarted/_removefromuser?userid=invalidUser",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "toolgroups",
+                "gettingstarted",
+                "_removefromuser"
+              ],
+              "query": [
+                {
+                  "key": "userid",
+                  "value": "invalidUser"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+		{
+			"name": "Re-Remove ToolGroup from current user Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "6265b37a-366d-4a2e-bd8c-c88578208156",
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/toolgroups/gettingstarted/_removefromuser",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"toolgroups",
+						"gettingstarted",
+						"_removefromuser"
+					]
+				}
+			},
+			"response": []
+		},
+      {
+        "name": "DoesUserHaveLayout Success",
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test(\"Status code should be ok 200\", function () {",
+                "    pm.response.to.have.status(200);",
+                "});",
+                "",
+                "var jsonData = pm.response.json().entity;",
+                "",
+                "pm.test(\"Response check\", function () {",
+                "    pm.expect(false).to.eql(jsonData.message);",
+                "});"
+              ],
+              "type": "text/javascript"
+            }
+          }
+        ],
+        "request": {
+          "auth": {
+            "type": "basic",
+            "basic": [
+              {
+                "key": "password",
+                "value": "admin",
+                "type": "string"
+              },
+              {
+                "key": "username",
+                "value": "admin@dotcms.com",
+                "type": "string"
+              },
+              {
+                "key": "saveHelperData",
+                "type": "any"
+              },
+              {
+                "key": "showPassword",
+                "value": false,
+                "type": "boolean"
+              }
+            ]
+          },
+          "method": "GET",
+          "header": [],
+          "url": {
+            "raw": "{{serverURL}}/api/v1/toolgroups/gettingstarted/_userHasLayout?userid=dotcms.org.1",
+            "host": [
+              "{{serverURL}}"
+            ],
+            "path": [
+              "api",
+              "v1",
+              "toolgroups",
+              "gettingstarted",
+              "_userHasLayout"
+            ]
+          },
+          "description": "Given a layoutId and a userId, it returns true if the layout is associated to the user's role"
+        },
+        "response": []
+      }
+	],
+	"protocolProfileBehavior": {}
+}

@@ -24,6 +24,8 @@
         dojo.require("dojo.aspect");
 
         const DOTCMS_DATAVIEW_MODE = 'dotcms.dataview.mode';
+        const DOTCMS_DEFAULT_CONTENT_SORT_BY = "score,modDate desc";
+        
         var state = {
           data: [],
           view: localStorage.getItem(DOTCMS_DATAVIEW_MODE) || 'list',
@@ -45,7 +47,7 @@
         var structureInode;
         var currentStructureFields;
         var currentPage = 1;
-        var currentSortBy = "score,modDate desc";
+        var currentSortBy = DOTCMS_DEFAULT_CONTENT_SORT_BY;
         var setDotFieldTypeStr = "";
         var DOT_FIELD_TYPE = "dotFieldType";
         var cbContentInodeList = new Array();
@@ -640,7 +642,7 @@
 
                         var result = [
                             "<div class=\"tagsWrapper\" id=\"" + fieldId + "Wrapper" + "\">",
-                            "<input type=\"hidden\" value=\"" + value + "\" id=\"" + searchFieldId + "\" onchange=\"setTimeout(doSearch, 500);\" />",
+                            "<input type=\"hidden\" value=\"" + value + "\" id=\"" + searchFieldId + "\" onchange=\"setTimeout(doSearch, 500); resizeAdvancedSearch();\" />",
                             "<input type=\"hidden\" style=\"border: solid 1px red\" id=\"" + fieldId + "Content" + "\" value=\"" + value + "\"  />",
                             "<input type=\"text\" dojoType=\"dijit.form.TextBox\" id=\"" + fieldId + "\" name=\"" + selectedStruct+"."+ fieldContentlet + "Field\" />",
                             "<span class='hint-text'><%= LanguageUtil.get(pageContext, "Type-your-tag-You-can-enter-multiple-comma-separated-tags") %></span>",
@@ -975,7 +977,7 @@
 
                 var categoriesValues = new Array ();
                 var form = document.getElementById("search_form");
-                var categories = form.categories;
+                var categories = document.getElementsByName("categories");
                 if (categories != null) {
                         if (categories.options != null) {
                                 var opts = categories.options;
@@ -1626,7 +1628,7 @@
                 document.getElementById('fieldsValues').value = fieldsValues;
                 document.getElementById('categoriesValues').value = categoriesValues;
                 document.getElementById('showDeleted').value = showDeleted;
-                document.getElementById('currentSortBy').value = currentSortBy;
+               // document.getElementById('currentSortBy').value = currentSortBy;
                 document.getElementById('filterSystemHost').value = filterSystemHost;
                 document.getElementById('filterLocked').value = filterLocked;
                 document.getElementById('filterUnpublish').value = filterUnpublish;
@@ -2147,7 +2149,7 @@
 
         function clearSearch () {
 
-
+                document.getElementById('currentSortBy').value=DOTCMS_DEFAULT_CONTENT_SORT_BY;
                 dijit.byId("scheme_id").set("value",'catchall');
      			dijit.byId("showingSelect").set("value", "all");
      			dijit.byId("allFieldTB").set("value", "");
@@ -2284,7 +2286,7 @@
 
 
 	        hideMatchingResults ();
-
+            doSearch(1, DOTCMS_DEFAULT_CONTENT_SORT_BY);
 
         }
 
@@ -2450,14 +2452,56 @@
                         div.style.display = "none";
         }
 
+        function queryContentJSONPost(url, queryRaw, sortBy) {
+            queryRaw = queryRaw.replace(/%27/g, "'").replace(/%22/g, '&quot;');
+            var query = `{
+    		    "query" : "${queryRaw}" },
+	    	    "sort" : { "moddate":"${sortBy}" },
+	    	    "size": 20,
+	    	    "from": 0
+            }`;
+            
+            var xhrArgs = {
+             url: url,
+             postData: query,
+             headers: {
+                 "Accept" : "application/json",
+                 "Content-Type" : "application/json"
+              },
+             handleAs : "json",
+             load: function(data) {
+                var myWindow = window.open("", "_blank");
+                data = JSON.stringify(data).replace(/[<>&\n]/g, function(x) {
+                    return {
+                        '<': '&lt;',
+                        '>': '&gt;',
+                        '&': '&amp;',
+                        '\n': '<br />',
+                    }[x];
+                });
+                myWindow.document.write(data);
+             }
+         }
+         dojo.xhrPost(xhrArgs);
+
+        }
+
         function fillQuery (counters) {
                         <%
                         String restBaseUrl="http://"+
                            APILocator.getHostAPI().find((String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID), user, false).getHostname()+
                            ((request.getLocalPort()!=80) ? ":"+request.getLocalPort() : "")+
                            "/api/content/render/false";
+                        
+                        String restBasePostUrl="http://"+
+                           APILocator.getHostAPI().find((String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID), user, false).getHostname()+
+                           ((request.getLocalPort()!=80) ? ":"+request.getLocalPort() : "")+
+                           "/api/content/_search";
                         %>
+                        
+
                         queryRaw = counters["luceneQueryRaw"];
+                        var encodedQueryRaw = queryRaw.replace(/'/g, "%27").replace(/"/g, "%22");
                         var queryfield=document.getElementById("luceneQuery");
                         queryfield.value=queryRaw;
                         var queryFrontend = counters["luceneQueryFrontend"];
@@ -2477,24 +2521,45 @@
                         div.innerHTML = "<div class='contentViewDialog' style=\"white-space: pre;\">" +
 
                             "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "frontend-query") %></div>"+
-                            "<div class='contentViewQuery'>#foreach($con in $dotcontent.pull(\"" + queryFrontend + "\",10,\"" + sortBy + "\"))<br/>...<br/>#end</div>";
+                            "<div class='contentViewQuery'><code>#foreach($con in $dotcontent.pull(\"" + queryFrontend + "\",10,\"" + sortBy + "\"))<br/>...<br/>#end</code></div>";
 
                         if (relatedQueryByChild == null){
                             div.innerHTML += "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "The-actual-query-") %></div>"+
-                                "<div class='contentViewQuery'>"+queryRaw+"</div>";
+                                "<div class='contentViewQuery'><code>"+queryRaw+"</code></div>";
                         } else{
                             test_api_xml_link +=  "/related/" + relatedQueryByChild;
                             test_api_json_link += "/related/" + relatedQueryByChild;
                             apicall_urlencode += "/related/" + relatedQueryByChild;
                         }
 
-                        div.innerHTML += "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "rest-api-call-urlencoded") %></div>"+
-                            "<div class='contentViewQuery'>"+apicall_urlencode+"</div>"+
-                            "<div class='contentViewQuery' style='padding:20px;padding-top:10px;color:#333;'>REST API: " +
+                        div.innerHTML +=
+                            "<style>" +
+                                ".dot-api-link {" +
+                                    "align-items: center; border-radius: 2px; border: solid 1px var(--color-sec); color: var(--color-sec); " +
+                                    "display: inline-flex; line-height: 1em; padding: 0.25rem 6px 0.25rem 0.5rem; text-decoration: none; " +
+                                    "text-transform: uppercase; transition: background-color 150ms ease, color 150ms ease; cursor: pointer;" +
+                                "}" +
+                                ".dot-api-link:hover {" +
+                                    "background-color: var(--color-sec);" +
+                                    "color: white;" +
+                                "}" +
+                            "</style>" +
+                            "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "rest-api-call-post") %></div>"+
+                            "<div class='contentViewQuery'><code>" + "curl -XPOST '<%= restBasePostUrl %>' \\<br/>" +
+                            "-H 'Content-Type: application/json' \\<br/>" +
+                            "-d '{<br/>" +
+                            "<span style='margin-left: 20px'>\"query\": \"" + queryRaw + "\",</span><br/>" +
+                            "<span style='margin-left: 20px'>\"sort\": \"" + sortBy + "\",</span><br/>" +
+                            "<span style='margin-left: 20px'>\"limit\": 20,</span><br/>" +
+                            "<span style='margin-left: 20px'>\"offset\": 0</span><br/>" +
+                            "}'</code></div>" +
 
-	                            "<a href='" + test_api_xml_link +"' target='_blank'><%= LanguageUtil.get(pageContext, "xml") %></a>"+
-	                            "&nbsp;|&nbsp;"+
-	                            "<a href='" + test_api_json_link +"' target='_blank'><%= LanguageUtil.get(pageContext, "json") %></a>"+
+                            "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "rest-api-call-urlencoded") %></div>"+
+                            "<div class='contentViewQuery'><code>"+apicall_urlencode+"</code></div>"+
+
+                            "<div class='contentViewQuery' style='padding:20px;padding-top:10px;color:#333;'>REST API: " +
+	                            "<span class='dot-api-link' " +
+                                "onClick=\"queryContentJSONPost('<%= restBasePostUrl %>', '" + encodedQueryRaw + "', '" + sortBy + "')\">API</span></a>"+
 
                             "</div>"+
 

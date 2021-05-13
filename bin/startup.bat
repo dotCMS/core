@@ -54,7 +54,7 @@ rem Java VM configuration options
 
 if not "%JAVA_OPTS%" == "" goto noDefaultJavaOpts
 
-rem set JAVA_OPTS=-Djava.awt.headless=true -Xverify:none -Dfile.encoding=UTF8 -Xmx1G -Djava.endorsed.dirs=%DOTCMS_HOME%/WEB-INF/endorsed_libs -XX:+UseG1GC -javaagent:%DOTCMS_HOME%/WEB-INF/lib/byte-buddy-agent-1.6.12.jar
+rem set JAVA_OPTS=-Djava.awt.headless=true -Xverify:none -Dfile.encoding=UTF8 -Xmx1G -Djava.endorsed.dirs=%DOTCMS_HOME%/WEB-INF/endorsed_libs -XX:+UseG1GC -javaagent:%DOTCMS_HOME%/WEB-INF/lib/byte-buddy-agent-1.9.0.jar
 set JAVA_OPTS=%JAVA_OPTS% -Djava.awt.headless=true -Xverify:none -Dfile.encoding=UTF8 -server -XX:+DisableExplicitGC -Dsun.jnu.encoding=UTF-8
 
 rem Set Memory sizing
@@ -66,7 +66,7 @@ set JAVA_OPTS=%JAVA_OPTS% -XX:+UseG1GC
 set JAVA_OPTS=%JAVA_OPTS% -Djava.endorsed.dirs=%DOTCMS_HOME%/WEB-INF/endorsed_libs
 
 rem Set agent opts
-set JAVA_OPTS=%JAVA_OPTS% -javaagent:%DOTCMS_HOME%/WEB-INF/lib/byte-buddy-agent-1.6.12.jar
+set JAVA_OPTS=%JAVA_OPTS% -javaagent:%DOTCMS_HOME%/WEB-INF/lib/byte-buddy-agent-1.9.0.jar
 
 rem Uncomment the next line if you want to enable JMX
 rem set JAVA_OPTS=%JAVA_OPTS% -Dcom.sun.management.jmxremote.port=7788 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false -Djava.endorsed.dirs=$DOTCMS_HOME/WEB-INF/endorsed_libs

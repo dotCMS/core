@@ -15,6 +15,7 @@ public class VanityUrlResult {
     private final String queryString;
     private final String rewrite;
     private final boolean resolved;
+    private final int responseCode;
 
     /**
      * Create a Vanity URL Object
@@ -26,6 +27,20 @@ public class VanityUrlResult {
         this.rewrite = rewrite;
         this.queryString = queryString;
         this.resolved = resolved;
+        this.responseCode = 200;
+    }
+
+    /**
+     * Create a Vanity Result that takes into account the responseCode of the vanity URL
+     * @param rewrite
+     * @param queryString
+     * @param responseCode
+     */
+    VanityUrlResult(final String rewrite, final String queryString, final int responseCode) {
+        this.rewrite = rewrite;
+        this.queryString = queryString;
+        this.resolved = false;
+        this.responseCode = responseCode;
     }
 
     /**
@@ -56,4 +71,11 @@ public class VanityUrlResult {
         return resolved;
     }
 
+    /**
+     * VanityURL response Code
+     * @return
+     */
+    public int getResponseCode() {
+        return responseCode;
+    }
 }

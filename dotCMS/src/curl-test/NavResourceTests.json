@@ -1,0 +1,647 @@
+{
+	"info": {
+		"_postman_id": "bb357993-bedf-4fe1-b8d7-9ff2a100dd8a",
+		"name": "NavResource",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "loadJson",
+			"item": [
+				{
+					"name": "invalidateSession",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "f6610816-75db-4e1b-a7fd-f212fb91cfd7",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UserAuthentification",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "fe178174-293b-4630-b2ee-30333a6bba1a",
+								"exec": [
+									"",
+									"pm.test(\"Status code is 401, Need credentials\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Response body matches\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Invalid User\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/nav/contact-us?Host=demo.dotcms.com",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"nav",
+								"contact-us"
+							],
+							"query": [
+								{
+									"key": "Host",
+									"value": "demo.dotcms.com"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "pre_ImportBundleWithContext",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "37fc80c5-a938-47ec-84e5-99a480a887be",
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"contact-us-folder.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/NavResource/contact-us-folder.tar.gz"
+								}
+							],
+							"options": {
+								"formdata": {}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* HTMLPage /blog/index\n* HTMLPage /blog/destinations/costa-rica\n* Contentlet [Blog] Ecotourism in Costa Rica\n* Blog Detail Page /blog/blog-detail"
+					},
+					"response": []
+				},
+				{
+					"name": "Switch Host",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/site/switch/48190c8c-42c4-46af-8d1a-0cd5db894797",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"site",
+								"switch",
+								"48190c8c-42c4-46af-8d1a-0cd5db894797"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "SuccessRequest",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "b8f2a460-513f-417d-9e76-27991b965374",
+								"exec": [
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Include child page\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"index\");",
+									"});",
+									"",
+									"pm.test(\"Inlude child page\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"thank-you\");",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Basic YWRtaW5AZG90Y21zLmNvbTphZG1pbg=="
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/nav/contact-us?depth=2",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"nav",
+								"contact-us"
+							],
+							"query": [
+								{
+									"key": "depth",
+									"value": "2"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "InvalidURL",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "1416ebfd-c163-4cfe-9549-c4c75a883892",
+								"exec": [
+									"",
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"URL not found\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"This URL does not exist\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Basic YWRtaW5AZG90Y21zLmNvbTphZG1pbg=="
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/nav/about-usa?depth=2",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"nav",
+								"about-usa"
+							],
+							"query": [
+								{
+									"key": "depth",
+									"value": "2"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "InvalidDepthParamether",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "c7418fe0-b505-4720-9062-039f813634ce",
+								"exec": [
+									"",
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"URL not found\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Invalid value for Depth. Depth must be a number\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Basic YWRtaW5AZG90Y21zLmNvbTphZG1pbg=="
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/nav/about-us?depth=a",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"nav",
+								"about-us"
+							],
+							"query": [
+								{
+									"key": "depth",
+									"value": "a"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "InvalidLanguageId",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "0e6e1581-90fb-41f1-bcff-9a6c38426839",
+								"exec": [
+									"",
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid message\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"The provided languageId does not exist\");",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Basic YWRtaW5AZG90Y21zLmNvbTphZG1pbg=="
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/nav/about-us?depth=2&languageId=123",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"nav",
+								"about-us"
+							],
+							"query": [
+								{
+									"key": "depth",
+									"value": "2"
+								},
+								{
+									"key": "languageId",
+									"value": "123"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "SuccessRequestWithLanguageId",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "eea8039c-1202-4f90-8699-757edc42325c",
+								"exec": [
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Include child page\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"index\");",
+									"});",
+									"",
+									"pm.test(\"Inlude child page\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"thank-you\");",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Basic YWRtaW5AZG90Y21zLmNvbTphZG1pbg=="
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/nav/contact-us?depth=2&languageId=1",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"nav",
+								"contact-us"
+							],
+							"query": [
+								{
+									"key": "depth",
+									"value": "2"
+								},
+								{
+									"key": "languageId",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Returns navigation metadata in JSON format for objects that have been marked show on menu\n\nFormat:\n  http://localhost:8080/api/v1/nav/{start-url}?depth={}\n  \nExample - will send the navigation under the /about-us folder, 2 levels deep\n  http://localhost:8080/api/v1/nav/about-us?depth=2",
+			"protocolProfileBehavior": {}
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "a4df79c0-78da-4b26-a9f0-31b4190bfcbc",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "9258f3d1-5bfd-42f1-b3f8-44b32ff2d5d4",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"id": "159b295d-ed03-4702-881d-bda2d0e9b9b0",
+			"key": "serverURL",
+			"value": "http://localhost:8080",
+			"type": "string"
+		}
+	],
+	"protocolProfileBehavior": {}
+}

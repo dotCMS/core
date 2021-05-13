@@ -1,9 +1,7 @@
 package com.dotmarketing.portlets.cmsmaintenance.action;
 
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
-import com.dotcms.content.elasticsearch.business.IndiciesInfo;
-import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
+import com.dotcms.publishing.PushPublishFiltersInitializer;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
@@ -13,50 +11,23 @@ import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-import com.dotcms.util.transform.TransformerLocator;
-import com.dotmarketing.beans.Clickstream;
-import com.dotmarketing.beans.Clickstream404;
-import com.dotmarketing.beans.ClickstreamRequest;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.Inode;
-import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.beans.PermissionReference;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.NoSuchUserException;
-import com.dotmarketing.cms.factories.PublicCompanyFactory;
-import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.ReindexEntry;
-import com.dotmarketing.common.reindex.ReindexQueueFactory;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portal.struts.DotPortletAction;
-import com.dotmarketing.portlets.calendar.model.CalendarReminder;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
 import com.dotmarketing.portlets.cmsmaintenance.struts.CmsMaintenanceForm;
-import com.dotmarketing.portlets.cmsmaintenance.util.AssetFileNameFilter;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotReindexStateException;
-import com.dotmarketing.portlets.dashboard.model.DashboardSummary404;
-import com.dotmarketing.portlets.dashboard.model.DashboardUserPreferences;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.rules.util.RulesImportExportUtil;
-import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.portlets.structure.model.FieldVariable;
-import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
-import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.tag.model.TagInode;
+import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.ExportStarterUtil;
-import com.dotmarketing.util.HibernateCollectionConverter;
-import com.dotmarketing.util.HibernateMapConverter;
-import com.dotmarketing.util.ImportStarterUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
@@ -66,43 +37,24 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.ZipUtil;
 import com.google.common.collect.ImmutableList;
-import com.liferay.portal.ejb.ImageLocalManagerUtil;
-import com.liferay.portal.ejb.PortletPreferencesLocalManagerUtil;
-import com.liferay.portal.model.Company;
-import com.liferay.portal.model.User;
-import com.liferay.portal.util.PortalUtil;
-import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.portlet.ActionResponseImpl;
 import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
-import com.liferay.util.servlet.UploadPortletRequest;
-import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.DomDriver;
-import com.thoughtworks.xstream.mapper.Mapper;
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.zip.ZipOutputStream;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.jsp.PageContext;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.commons.lang.StringUtils;
 
@@ -233,6 +185,10 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 				final String msgLogger = isAllCachesFlush ? "Flushing All Caches" : "Flushing " + cacheToFlush +" Cache";
 				Logger.info(this, msgLogger);
 				_flush(cacheToFlush);
+				//Reloads PushPublishing Filters if all cache or system cache is flushed
+				if(isAllCachesFlush || cacheToFlush.equalsIgnoreCase("system")){
+					new PushPublishFiltersInitializer().init();
+				}
 				message = isAllCachesFlush ? "message.cmsmaintenance.cache.flushallcache" : "message.cmsmaintenance.cache.flushcache";
 			} else {
 				Logger.info(this, "Flushing Live and Working File Cache");
@@ -264,7 +220,9 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 		//Not being used this is being called using ajax
 		else if(cmd.equals("fixAssetsInconsistencies")){
            // this one NOT
-		}
+		} else if(cmd.equals("deleteSystemJob")) {
+            _deleteScheduler(req);
+        }
 		//Not being used this is being called using ajax
 		else if(cmd.equals("dropoldassets")){
 
@@ -325,6 +283,15 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			}
 		APILocator.getPermissionAPI().resetAllPermissionReferences();
 	}
+
+    private void _deleteScheduler(ActionRequest req) throws Exception {
+	    final String jobName = req.getParameter("systemJobName");
+	    final String jobGroup = req.getParameter("systemJobGroup");
+        Logger.info(this, "Deleting job with name=" + jobName + " and group=" + jobGroup);
+	    QuartzUtils.removeJob(jobName, jobGroup);
+        SessionMessages.add(req, "message", "message.Scheduler.delete");
+        Logger.info(this, "Job with name=" + jobName + " and group=" + jobGroup + " deleted");
+    }
 
 	private void _deleteMenusCache()throws Exception{
 		MaintenanceUtil.deleteMenuCache();

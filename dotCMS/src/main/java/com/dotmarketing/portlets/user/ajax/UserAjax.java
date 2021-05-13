@@ -2,7 +2,16 @@ package com.dotmarketing.portlets.user.ajax;
 
 import static com.dotmarketing.business.ajax.DwrUtil.getLoggedInUser;
 import static com.dotmarketing.business.ajax.DwrUtil.validateUsersPortletPermissions;
-
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.velocity.tools.generic.SortTool;
 import com.dotcms.api.system.user.UserServiceFactory;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
@@ -10,7 +19,6 @@ import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.WebResource;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.NoSuchUserException;
@@ -28,8 +36,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.UserFirstNameException;
 import com.dotmarketing.exception.UserLastNameException;
-import com.dotmarketing.portlets.categories.business.CategoryAPI;
-import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -45,24 +51,10 @@ import com.liferay.portal.NoSuchRoleException;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
-import com.liferay.portal.model.Address;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
-
 import io.vavr.control.Try;
 import jersey.repackaged.com.google.common.collect.ImmutableMap;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.velocity.tools.generic.SortTool;
 
 /**
  * Provides utility methods that are accessed via DWR to build up the UI of the
@@ -93,7 +85,7 @@ public class UserAjax {
 		//auth
 		User modUser = getLoggedInUser();
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-		UserProxyAPI uProxyWebAPI = APILocator.getUserProxyAPI();
+
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
 
@@ -107,9 +99,7 @@ public class UserAjax {
 			Map<String, Object> aRecord = user.toMap();
 
 
-			
-			UserProxy up = uProxyWebAPI.getUserProxy(user, modUser, !uWebAPI.isLoggedToBackend(request));
-			aRecord.putAll(up.getMap());
+
 
 			return aRecord;
 
@@ -582,265 +572,6 @@ public class UserAjax {
 	/**
 	 * 
 	 * @param userId
-	 * @return
-	 * @throws DotDataException
-	 * @throws PortalException
-	 * @throws SystemException
-	 * @throws DotSecurityException
-	 */
-	public List<Map<String, String>> loadUserAddresses(String userId) throws DotDataException, PortalException, SystemException, DotSecurityException {
-		//auth
-		User modUser = getLoggedInUser();
-		UserAPI uAPI = APILocator.getUserAPI();
-		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest request = ctx.getHttpServletRequest();
-
-		User user = null;
-		List<Address> userAddresses = new ArrayList<Address>();
-		try {
-			if(UtilMethods.isSet(userId)){
-				user = uAPI.loadUserById(userId, modUser, !uWebAPI.isLoggedToBackend(request));
-				userAddresses = uAPI.loadUserAddresses(user, modUser, !uWebAPI.isLoggedToBackend(request));
-			}
-		} catch (NoSuchUserException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
-		} catch (DotRuntimeException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
-		} catch (PortalException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
-		} catch (SystemException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
-		} catch (DotSecurityException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
-		}
-
-		List<Map<String, String>> addressesToReturn = new ArrayList<Map<String,String>>();
-		for(Address add : userAddresses) {
-			addressesToReturn.add(add.toMap());
-		}
-		return addressesToReturn;
-	}
-
-	/**
-	 * 
-	 * @param userId
-	 * @param addressDescription
-	 * @param street1
-	 * @param street2
-	 * @param city
-	 * @param state
-	 * @param zip
-	 * @param country
-	 * @param phone
-	 * @param fax
-	 * @param cell
-	 * @return
-	 * @throws DotDataException
-	 * @throws PortalException
-	 * @throws SystemException
-	 * @throws DotSecurityException
-	 */
-	public Map<String, String> addNewUserAddress(String userId, String addressDescription, String street1, String street2, String city, String state,
-			String zip, String country, String phone, String fax, String cell) throws DotDataException, PortalException, SystemException, DotSecurityException {
-
-		//Validate if this logged in user has the required permissions to access the users portlet
-		validateUsersPortletPermissions(getLoggedInUser());
-
-		//auth
-		User modUser = getAdminUser();
-		UserAPI uAPI = APILocator.getUserAPI();
-		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest request = ctx.getHttpServletRequest();
-
-		User user = null;
-		try {
-			user = uAPI.loadUserById(userId, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
-		} catch (NoSuchUserException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
-		} catch (DotRuntimeException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
-		} catch (PortalException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
-		} catch (SystemException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
-		} catch (DotSecurityException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
-		}
-
-		Address ad = new Address();
-		ad.setDescription(addressDescription);
-		ad.setStreet1(street1);
-		ad.setStreet2(street2);
-		ad.setCity(city);
-		ad.setState(state);
-		ad.setZip(zip);
-		ad.setCountry(country);
-		ad.setPhone(phone);
-		ad.setFax(fax);
-		ad.setCell(cell);
-
-		try {
-			uAPI.saveAddress(user, ad, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
-		} catch (DotDataException e) {
-			throw new DotDataException(e.getCause().toString(), e);
-		} catch (DotRuntimeException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
-		} catch (PortalException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
-		} catch (SystemException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
-		} catch (DotSecurityException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
-		}
-
-		return ad.toMap();
-
-	}
-
-	/**
-	 * 
-	 * @param userId
-	 * @param addressId
-	 * @param addressDescription
-	 * @param street1
-	 * @param street2
-	 * @param city
-	 * @param state
-	 * @param zip
-	 * @param country
-	 * @param phone
-	 * @param fax
-	 * @param cell
-	 * @return
-	 * @throws DotDataException
-	 * @throws PortalException
-	 * @throws SystemException
-	 * @throws DotSecurityException
-	 */
-	public Map<String, String> saveUserAddress(String userId, String addressId, String addressDescription, String street1, String street2, String city, String state,
-			String zip, String country, String phone, String fax, String cell) throws DotDataException, PortalException, SystemException, DotSecurityException {
-
-		//auth
-		User modUser = getLoggedInUser();
-
-		//Validate if this logged in user has the required permissions to access the users portlet
-		validateUsersPortletPermissions(modUser);
-
-		UserAPI uAPI = APILocator.getUserAPI();
-		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest request = ctx.getHttpServletRequest();
-
-		User user = null;
-		try {
-			user = uAPI.loadUserById(userId, modUser, false);
-		} catch (NoSuchUserException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
-		} catch (DotRuntimeException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
-		} catch (DotSecurityException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
-		}
-
-		Address ad = new Address();
-		ad.setAddressId(addressId);
-		ad.setDescription(addressDescription);
-		ad.setStreet1(street1);
-		ad.setStreet2(street2);
-		ad.setCity(city);
-		ad.setState(state);
-		ad.setZip(zip);
-		ad.setCountry(country);
-		ad.setPhone(phone);
-		ad.setFax(fax);
-		ad.setCell(cell);
-
-		try {
-			uAPI.saveAddress(user, ad, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
-		} catch (DotRuntimeException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
-		} catch (PortalException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
-		} catch (SystemException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
-		} catch (DotSecurityException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
-		}
-
-		return ad.toMap();
-
-	}
-
-	/**
-	 * 
-	 * @param userId
-	 * @param addressId
-	 * @return
-	 * @throws DotDataException
-	 * @throws PortalException
-	 * @throws SystemException
-	 * @throws DotSecurityException
-	 */
-	public String deleteAddress(String userId, String addressId) throws DotDataException, PortalException, SystemException, DotSecurityException {
-
-		//auth
-		User modUser = getLoggedInUser();
-
-		//Validate if this logged in user has the required permissions to access the users portlet
-		validateUsersPortletPermissions(modUser);
-
-		UserAPI uAPI = APILocator.getUserAPI();
-		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest request = ctx.getHttpServletRequest();
-
-		Address ad;
-		try {
-			ad = uAPI.loadAddressById(addressId, modUser, !uWebAPI.isLoggedToBackend(request));
-			uAPI.deleteAddress(ad, modUser, !uWebAPI.isLoggedToBackend(request));
-		} catch (DotRuntimeException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
-		} catch (PortalException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
-		} catch (SystemException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
-		} catch (DotSecurityException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
-		}
-
-		return addressId;
-	}
-
-	/**
-	 * 
-	 * @param userId
 	 * @param active
 	 * @param prefix
 	 * @param suffix
@@ -853,7 +584,7 @@ public class UserAjax {
 	 * @throws SystemException
 	 * @throws DotSecurityException
 	 */
-	public void saveUserAddittionalInfo(String userId, boolean active, String prefix, String suffix, String title, String company, String website, String[] additionalVars)
+	public void saveUserAdditionalInfo(String userId, boolean active, String prefix, String suffix, String title, String company, String website, String[] additionalVars)
 	 	throws DotDataException, PortalException, SystemException, DotSecurityException {
 
 		//auth
@@ -868,30 +599,29 @@ public class UserAjax {
 		HttpServletRequest request = ctx.getHttpServletRequest();
 		try {
 
-			User user = uAPI.loadUserById(userId,uWebAPI.getLoggedInUser(request),false);
+			final User user = uAPI.loadUserById(userId, modUser, !uWebAPI.isLoggedToBackend(request));
 
-			UserProxyAPI uProxyAPI = APILocator.getUserProxyAPI();
-			User u = uAPI.loadUserById(userId, modUser, !uWebAPI.isLoggedToBackend(request));
-			UserProxy up = uProxyAPI.getUserProxy(u, modUser, !uWebAPI.isLoggedToBackend(request));
-
-
-			if(!active && u.getUserId().equals(modUser.getUserId())){
+			if(!active && user.getUserId().equals(modUser.getUserId())){
 				throw new DotRuntimeException(LanguageUtil.get(uWebAPI.getLoggedInUser(request),"deactivate-your-own-user-error"));
 			}
 
-			u.setActive(active);
-			up.setPrefix(prefix);
-			up.setSuffix(suffix);
-			up.setTitle(title);
-			up.setCompany(company);
-			up.setWebsite(website);
-			for(int i = 1; i <= additionalVars.length; i++) {
-				up.setVar(i, additionalVars[i - 1]);
-			}
+			user.setActive(active);
 
-			uAPI.save(u, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
-			uProxyAPI.saveUserProxy(up, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
+			final Map<String, String> additionalUserInfo = new HashMap<>();
 
+			additionalUserInfo.put("prefix", prefix);
+            additionalUserInfo.put("suffix", suffix);
+            additionalUserInfo.put("title", title);
+            additionalUserInfo.put("company", company);
+            additionalUserInfo.put("website", website);
+
+            for(int i = 1; i <= additionalVars.length; i++) {
+                additionalUserInfo.put("var" + i, additionalVars[i - 1]);
+            }
+
+            user.setAdditionalInfo(additionalUserInfo);
+			uAPI.save(user, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
+	
 
 			String date = DateUtil.getCurrentDate();
 
@@ -1507,76 +1237,9 @@ public class UserAjax {
 		return roleAPI.doesUserHaveRoles(userId, Arrays.asList(roles));
 	}
 
-	/**
-	 * 
-	 * @param userId
-	 * @return
-	 * @throws PortalException
-	 * @throws SystemException
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
-	public List<Map<String, Object>> getUserCategories(String userId) throws PortalException, SystemException, DotDataException, DotSecurityException {
-		//auth
-		User modUser = getLoggedInUser();
-		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest request = ctx.getHttpServletRequest();
-		UserProxyAPI userProxyAPI = APILocator.getUserProxyAPI();
 
-		CategoryAPI catAPI = APILocator.getCategoryAPI();
-		UserProxy uProxy = userProxyAPI.getUserProxy(userId, uWebAPI.getLoggedInUser(request), uWebAPI.isLoggedToBackend(request));
-		List<Category> children = catAPI.getChildren(uProxy, uWebAPI.getLoggedInUser(request), uWebAPI.isLoggedToBackend(request));
 
-		List<Map<String, Object>> toReturn = new ArrayList<Map<String,Object>>();
-		for(Category child: children) {
-			toReturn.add(child.getMap());
-		}
 
-		return toReturn;
-	}
-
-	/**
-	 * 
-	 * @param userId
-	 * @param categories
-	 * @throws PortalException
-	 * @throws SystemException
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 */
-	public void updateUserCategories(String userId, String[] categories) throws PortalException, SystemException, DotSecurityException, DotDataException {
-		//auth
-		User modUser = getLoggedInUser();
-		
-		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest request = ctx.getHttpServletRequest();
-		UserProxyAPI userProxyAPI = APILocator.getUserProxyAPI();
-
-		User user = uWebAPI.getLoggedInUser(request);
-		boolean respectFrontend = uWebAPI.isLoggedToBackend(request);
-
-		CategoryAPI catAPI = APILocator.getCategoryAPI();
-		UserProxy userProxy = userProxyAPI.getUserProxy(userId, uWebAPI.getLoggedInUser(request), uWebAPI.isLoggedToBackend(request));
-
-		HibernateUtil.startTransaction();
-		List<Category> myUserCategories = catAPI.getChildren(userProxy, user, respectFrontend);
-		for (Object o : myUserCategories) {
-			if(o instanceof Category && catAPI.canUseCategory((Category)o, user, respectFrontend)){
-				catAPI.removeChild(userProxy, (Category)o, user, respectFrontend);
-			}
-		}
-		for(int i = 0;i < categories.length;i++)
-		{
-			Category category = catAPI.find(categories[i], user, respectFrontend);
-			if(InodeUtils.isSet(category.getInode()))
-			{
-				catAPI.addChild(userProxy, category, user, respectFrontend);
-			}
-		}
-		HibernateUtil.closeAndCommitTransaction();
-	}
 
 	/**
 	 * 
@@ -1606,33 +1269,7 @@ public class UserAjax {
 
 	}
 
-	/**
-	 * 
-	 * @param userId
-	 * @param disabled
-	 * @throws PortalException
-	 * @throws SystemException
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 */
-	public void disableUserClicktracking(String userId, boolean disabled) throws PortalException, SystemException, DotSecurityException, DotDataException {
-		//auth
-		User modUser = getLoggedInUser();
-		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest request = ctx.getHttpServletRequest();
-		UserProxyAPI userProxyAPI = APILocator.getUserProxyAPI();
 
-		User user = uWebAPI.getLoggedInUser(request);
-		boolean respectFrontEndRoles = uWebAPI.isLoggedToBackend(request);
-
-		HibernateUtil.startTransaction();
-		UserProxy toUpdate = userProxyAPI.getUserProxy(userId, user, respectFrontEndRoles);
-		toUpdate.setNoclicktracking(disabled);
-		userProxyAPI.saveUserProxy(toUpdate, user, respectFrontEndRoles);
-		HibernateUtil.closeAndCommitTransaction();
-
-	}
 
 	// Helper classes. They implement the template method design pattern.
 	@SuppressWarnings("unused")

@@ -4,9 +4,13 @@ import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATI
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.PERSONA_KEY_TAG;
 import static com.dotcms.contenttype.model.field.LegacyFieldTypes.CUSTOM_FIELD;
 import static com.dotcms.contenttype.model.type.PersonaContentType.PERSONA_KEY_TAG_FIELD_VAR;
+import static com.dotcms.storage.model.BasicMetadataFields.IS_IMAGE_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.SHA256_META_KEY;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+import static com.liferay.util.StringPool.BLANK;
+import static com.liferay.util.StringPool.PERIOD;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.ContentMappingAPI;
@@ -14,13 +18,14 @@ import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
-import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.tika.TikaUtils;
+import com.dotcms.storage.FileMetadataAPI;
+import com.dotcms.storage.model.ContentletMetadata;
+import com.dotcms.storage.model.Metadata;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -59,16 +64,16 @@ import com.dotmarketing.util.ThreadSafeSimpleDateFormat;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -82,6 +87,8 @@ import org.apache.commons.lang.time.FastDateFormat;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.indices.GetFieldMappingsRequest;
+import org.elasticsearch.client.indices.GetFieldMappingsResponse;
 import org.elasticsearch.client.indices.GetMappingsRequest;
 import org.elasticsearch.client.indices.GetMappingsResponse;
 import org.elasticsearch.client.indices.PutMappingRequest;
@@ -99,8 +106,40 @@ import org.elasticsearch.common.xcontent.XContentType;
  */
 public class ESMappingAPIImpl implements ContentMappingAPI {
 
+    //This property basically tells the Metadata-API whether or not we should generate metadata upon reindexing a piece of content
+	public static final String WRITE_METADATA_ON_REINDEX = "write.metadata.on.reindex";
+
+	//If you want to skip indexing metadata dotraw fields set this prop to false
+	static final String INDEX_DOTRAW_METADATA_FIELDS = "index.dotraw.metadata.fields";
+
+	//If you want to override and specify a set of particular fields to be included in the dotRaw generation it can be accomplished through this prop.
+	static final String INCLUDE_DOTRAW_METADATA_FIELDS = "include.dotraw.metadata.fields";
+
+    //These are the fields included by default to be used as  metadata.fieldname_dotraw
+	static final String[] defaultIncludedDotRawMetadataFields = {
+			"author",
+			"contenttype",
+			"filesize",
+			"height",
+			"length",
+			"moddate",
+			"name",
+			"path",
+			"title",
+			"width"
+	};
+
+	// if you want to limit the size of the field `metadata.content`
+	// it can be accomplished by setting this property to the number of chars desired
+	// by default it'll attempt to include the whole thing returned by the FileMetadataAPI
+	public static final String INDEX_METADATA_CONTENT_LENGTH = "index.metadata.content.length";
+
 	public static final String TEXT = "_text";
+	public static final String DOTRAW = "_dotraw";
+	public static final String NO_METADATA = "NO_METADATA";
+
 	static ObjectMapper mapper = null;
+    private FileMetadataAPI fileMetadataAPI;
 
 	public ESMappingAPIImpl() {
 		if (mapper == null) {
@@ -112,20 +151,24 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				}
 			}
 		}
+		fileMetadataAPI = APILocator.getFileMetadataAPI();
 	}
 
-	/**
-	 * This method takes a mapping string, a type and puts it as the mapping
-	 * @param indexName
-	 * @param mapping
-	 * @return
-	 * @throws ElasticsearchException
-	 * @throws IOException
-	 */
-	public  boolean putMapping(final String indexName, final String mapping) throws ElasticsearchException, IOException{
+    /**
+     * This method takes a mapping string and puts it in a collection of
+     * indexes
+     * @param indexes
+     * @param mapping
+     * @return
+     * @throws ElasticsearchException
+     * @throws IOException
+     */
+    public boolean putMapping(final List<String> indexes, final String mapping)
+            throws ElasticsearchException, IOException {
 
         final PutMappingRequest request = new PutMappingRequest(
-                APILocator.getESIndexAPI().getNameWithClusterIDPrefix(indexName));
+                indexes.stream().map(indexName -> APILocator.getESIndexAPI()
+                        .getNameWithClusterIDPrefix(indexName)).toArray(String[]::new));
         request.setTimeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
         request.source(mapping, XContentType.JSON);
 
@@ -134,7 +177,21 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 .putMapping(request, RequestOptions.DEFAULT);
 
         return putMappingResponse.isAcknowledged();
-	}
+    }
+
+    /**
+     * This method takes a mapping string and puts it in the specified index
+     * @param indexName
+     * @param mapping
+     * @return
+     * @throws ElasticsearchException
+     * @throws IOException
+     */
+    public boolean putMapping(final String indexName, final String mapping)
+            throws ElasticsearchException, IOException {
+
+        return putMapping(CollectionsUtils.list(indexName), mapping);
+    }
 
 
 	/**
@@ -154,6 +211,17 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 		return getMappingResponse.mappings().get(index).source().string();
 	}
+
+	public Map<String, Object> getFieldMappingAsMap(final String index, final String fieldName) throws IOException {
+	    final GetFieldMappingsRequest request = new GetFieldMappingsRequest();
+	    request.indices(index).fields(fieldName);
+        final GetFieldMappingsResponse getMappingResponse = RestHighLevelClientProvider.getInstance().getClient()
+                .indices().getFieldMapping(request, RequestOptions.DEFAULT);
+
+        return getMappingResponse.mappings().get(index).get(fieldName) != null ? getMappingResponse
+                .mappings().get(index).get(fieldName).sourceAsMap() : Collections
+                .emptyMap();
+    }
 
 	@SuppressWarnings("unchecked")
 	public String toJson(final Contentlet contentlet) throws DotMappingException {
@@ -181,18 +249,44 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		try {
 			final StringWriter sw = new StringWriter();
 			final User systemUser = APILocator.getUserAPI().getSystemUser();
-			final Map<String,Object> contentletMap = new HashMap();
-			final Map<String,Object> mlowered	   = new HashMap();
+			final Map<String,Object> contentletMap = new HashMap<>();
+			final Map<String,Object> mlowered	   = new HashMap<>();
 			loadCategories(contentlet, contentletMap);
 			loadFields(contentlet, contentletMap);
 			loadPermissions(contentlet, contentletMap);
             loadRelationshipFields(contentlet, contentletMap, sw);
 
 			final Identifier contentIdentifier = APILocator.getIdentifierAPI().find(contentlet);
-			final ContentletVersionInfo versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(contentIdentifier.getId(), contentlet.getLanguageId());
+            if (null == contentIdentifier || !UtilMethods.isSet(contentIdentifier.getId())) {
+                final String errorMsg = String.format("Identifier '%s' was not found via API.", contentlet
+                        .getIdentifier());
+                throw new DotDataException(errorMsg);
+            }
+			final Optional<ContentletVersionInfo> versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(contentIdentifier.getId(), contentlet.getLanguageId());
+            if (!versionInfo.isPresent()) {
+                final String errorMsg = String.format("Version Info for Identifier '%s' and Language '%s' was not" +
+                        " found via API.", contentIdentifier.getId(), contentlet.getLanguageId());
+                throw new DotDataException(errorMsg);
+            }
 			final ContentType contentType = CacheLocator.getContentTypeCache2().byVarOrInode(contentlet.getContentTypeId());
+            if (null == contentType || !UtilMethods.isSet(contentType.id())) {
+                final String errorMsg = String.format("Content Type with ID '%s' was not found via API.",
+                        contentlet.getContentTypeId());
+                throw new DotDataException(errorMsg);
+            }
 			final Folder contentFolder = APILocator.getFolderAPI().findFolderByPath(contentIdentifier.getParentPath(), contentIdentifier.getHostId(), systemUser, false);
+            if (null == contentFolder || !UtilMethods.isSet(contentFolder.getIdentifier())) {
+                final String errorMsg = String.format("Parent folder '%s' in Site '%s' was not found via API. Please " +
+                        "check that the specified value points to a valid folder.", contentIdentifier.getParentPath()
+                        , contentIdentifier.getHostId());
+                throw new DotDataException(errorMsg);
+            }
 			final Host contentSite = APILocator.getHostAPI().find(contentIdentifier.getHostId(), systemUser, false);
+            if (null == contentSite || !UtilMethods.isSet(contentSite.getIdentifier())) {
+                final String errorMsg = String.format("Site with ID '%s' was not found via API. Please check that the" +
+                        " specified value points to a valid Site.", contentIdentifier.getHostId());
+                throw new DotDataException(errorMsg);
+            }
 
 			contentletMap.put(ESMappingConstants.TITLE, contentlet.getTitle());
 			contentletMap.put(ESMappingConstants.STRUCTURE_NAME, contentType.variable()); // marked for DEPRECATION
@@ -234,9 +328,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				contentletMap.put(ESMappingConstants.PUBLISH_DATE + TEXT,
 						datetimeFormat.format(contentIdentifier.getSysPublishDate()));
 			}else {
-				contentletMap.put(ESMappingConstants.PUBLISH_DATE, elasticSearchDateTimeFormat.format(versionInfo.getVersionTs()));
+				contentletMap.put(ESMappingConstants.PUBLISH_DATE,
+						elasticSearchDateTimeFormat.format(versionInfo.get().getVersionTs()));
 				contentletMap.put(ESMappingConstants.PUBLISH_DATE + TEXT,
-						datetimeFormat.format(versionInfo.getVersionTs()));
+						datetimeFormat.format(versionInfo.get().getVersionTs()));
 			}
 
 			if(UtilMethods.isSet(contentIdentifier.getSysExpireDate())) {
@@ -248,10 +343,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				contentletMap.put(ESMappingConstants.EXPIRE_DATE + TEXT, "29990101000000");
 			}
 
-			contentletMap.put(ESMappingConstants.VERSION_TS, elasticSearchDateTimeFormat.format(versionInfo.getVersionTs()));
-			contentletMap.put(ESMappingConstants.VERSION_TS + TEXT, datetimeFormat.format(versionInfo.getVersionTs()));
+			contentletMap.put(ESMappingConstants.VERSION_TS, elasticSearchDateTimeFormat.format(versionInfo.get().getVersionTs()));
+			contentletMap.put(ESMappingConstants.VERSION_TS + TEXT, datetimeFormat.format(versionInfo.get().getVersionTs()));
 
-			String urlMap = null;
+			String urlMap;
 			try{
 				urlMap = APILocator.getContentletAPI().getUrlMapForContentlet(contentlet, APILocator.getUserAPI().getSystemUser(), true);
 				if(urlMap != null){
@@ -281,35 +376,28 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 						//for example: when lowerCaseValue=moddate, moddate_dotraw must be created from its moddate_text if exists
 						//when the moddate_text is evaluated.
 						if (!contentletMap.containsKey(entry.getKey() + TEXT)){
-							mlowered.put(lowerCaseKey + "_dotraw", lowerCaseValue);
+							mlowered.put(lowerCaseKey + DOTRAW, lowerCaseValue);
 						}
 					}else{
-						mlowered.put(lowerCaseKey.replace(TEXT, "_dotraw"), lowerCaseValue);
+                        mlowered.put(lowerCaseKey.replace(TEXT, DOTRAW), lowerCaseValue);
 					}
 				}
-
-				mlowered.put(lowerCaseKey, lowerCaseValue);
 
 				//exclude null values and relationships because they where appended on the loadRelationships method
 				if(lowerCaseValue!=null && !(lowerCaseValue instanceof List)) {
 					sw.append(lowerCaseValue.toString()).append(' ');
 				}
+
+                if (lowerCaseKey.endsWith(TEXT) && !Config
+                        .getBooleanProperty("CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS", false)) {
+                    continue;
+                }
+
+                mlowered.put(lowerCaseKey, lowerCaseValue);
 			}
 
-			final Optional<Field> binaryField = this.findFirstBinaryFieldIndexable(contentlet);
-			if (binaryField.isPresent()) {
+			writeMetadata(contentlet, sw, mlowered);
 
-				this.generateBinaryMetadata(contentlet, sw, mlowered, binaryField.get());
-
-				if (BaseContentType.FILEASSET.equals(contentlet.getContentType().baseType())) {
-					// see if we have content metadata
-					final File contentMeta = APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode());
-					if (contentMeta.exists() && contentMeta.length() > 0) {
-						final String contentData = APILocator.getFileAssetAPI().getContentMetadataAsString(contentMeta);
-						mlowered.put(FileAssetAPI.META_DATA_FIELD.toLowerCase() + StringPool.PERIOD + "content", contentData);
-					}
-				}
-			}
 			//The url is now stored under the identifier for html pages, so we need to index that also.
 			if (contentlet.getContentType().baseType().getType() == BaseContentType.HTMLPAGE.getType()) {
 				mlowered.put(contentlet.getContentType().variable().toLowerCase() + ".url", contentIdentifier.getAssetName());
@@ -320,86 +408,94 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 			return mlowered;
 		} catch (final Exception e) {
-			Logger.error(this, "An error occurred when mapping properties of Contentlet '" + contentlet.getIdentifier
-					() + "' : " + e.getMessage(), e);
-			throw new DotMappingException(e.getMessage(), e);
+            final String errorMsg = String.format("An error occurred when mapping properties of Contentlet with ID " +
+                    "'%s': %s", contentlet.getIdentifier(), e.getMessage());
+            Logger.error(this, errorMsg, e);
+            throw new DotMappingException(errorMsg, e);
 		}
 	}
 
-	private void generateBinaryMetadata(final Contentlet contentlet,
-										final StringWriter stringWriter,
-										final Map<String, Object> mapLowered,
-										final Field field) throws Exception {
+	/**
+	 * Metadata generation happens here
+	 * @param contentlet
+	 * @param stringWriter
+	 * @param mapLowered
+	 * @throws IOException
+	 * @throws DotDataException
+	 */
+	private void writeMetadata(final Contentlet contentlet, final StringWriter stringWriter,
+			final Map<String, Object> mapLowered) throws IOException, DotDataException {
+		if (Config.getBooleanProperty(WRITE_METADATA_ON_REINDEX, true)) {
 
-		//Verify if it is enabled the option to regenerate missing metadata files on reindex
-		final boolean regenerateMissingMetadata = Config
-				.getBooleanProperty("regenerate.missing.metadata.on.reindex", true);
+			final ContentletMetadata metadata = fileMetadataAPI
+					.generateContentletMetadata(contentlet);
+			final Map<String, Metadata> fullMetadataMap = metadata
+					.getFullMetadataMap();
 
-		/*
-		Verify if it is enabled the option to always regenerate metadata files on reindex,
-		enabling this could affect greatly the performance of a reindex process.
-		 */
-		final boolean alwaysRegenerateMetadata = Config
-				.getBooleanProperty("always.regenerate.metadata.on.reindex", false);
+			//Full metadata map is expected to have one single entry with everything
+			fullMetadataMap.forEach((field, metadataValues) -> {
+				if (null != metadataValues) {
 
-		Map<String, Object> metadataMap = null;
+					final Set<String> dotRawInclude = Sets.newHashSet(
+							Config.getStringArrayProperty(
+									INCLUDE_DOTRAW_METADATA_FIELDS,
+									defaultIncludedDotRawMetadataFields));
 
-		if (contentlet.isLive() || contentlet.isWorking()) {
+					metadataValues.getFieldsMeta().forEach((metadataKey, metadataValue) -> {
 
-			final Optional<com.dotcms.contenttype.model.field.FieldVariable> customIndexMetaDataFieldsOpt =
-					FactoryLocator.getFieldFactory().byFieldVariableKey(field.getIdentifier(), BinaryField.INDEX_METADATA_FIELDS);
-			final TikaUtils tikaUtils = new TikaUtils();
+						final String contentData =
+								metadataValue != null ? metadataValue.toString() : BLANK;
+						final String compositeKey =
+								FileAssetAPI.META_DATA_FIELD.toLowerCase() + PERIOD + metadataKey
+										.toLowerCase();
+						final Object value = preProcessMetadataValue(compositeKey, metadataValue);
+						mapLowered.put(compositeKey, value);
 
-			final Set<String> metadataFields = customIndexMetaDataFieldsOpt.isPresent()?
-					new HashSet<>(Arrays.asList(customIndexMetaDataFieldsOpt.get().value().split(StringPool.COMMA))):
-					tikaUtils.getConfiguredMetadataFields();  // gets the metadata fields to filter from the tika metadata
-
-			final File binaryField = contentlet.getBinary(field.getVelocityVarName());
-			if (null != binaryField && binaryField.exists() && binaryField.canRead()) {
-
-				if (alwaysRegenerateMetadata) {
-					metadataMap = tikaUtils.generateMetaDataForce(contentlet, binaryField, field.getVelocityVarName(), metadataFields);
-				} else if (regenerateMissingMetadata) {
-					metadataMap = tikaUtils.generateMetaData(contentlet, binaryField, field.getVelocityVarName(), metadataFields);
-				}
-			}
-
-			// see if we have content metadata
-			if(null != metadataMap) {
-
-				for (final String metadataKey : metadataFields) {
-
-					final Object metadataValue = metadataMap.get(metadataKey);
-					if (null != metadataValue) {
-						mapLowered.put(FileAssetAPI.META_DATA_FIELD.toLowerCase() + StringPool.PERIOD + metadataKey.toLowerCase(), metadataValue);
-						if (metadataKey.contains(FileAssetAPI.CONTENT_FIELD)) {
-							stringWriter.append(metadataValue.toString()).append(' ');
+						if (Config.getBooleanProperty(INDEX_DOTRAW_METADATA_FIELDS, true)
+								&& dotRawInclude.contains(metadataKey)) {
+							mapLowered.put(compositeKey + DOTRAW, value);
 						}
-					}
+
+						if (metadataKey.contains(FileAssetAPI.CONTENT_FIELD)) {
+							stringWriter.append(contentData).append(' ');
+						}
+
+					});
 				}
-			}
+			});
+
 		}
 	}
 
-	private Optional<Field> findFirstBinaryFieldIndexable(final Contentlet contentlet) {
-
-		final List<Field> fields  = new ArrayList<>(
-				FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode()));
-
-		return fields.stream().filter(Field::isIndexed)
-				.filter(field -> field.getFieldType().equals(Field.FieldType.BINARY.toString()))
-				.findFirst();
-	}
-
+	/**
+	 * logic extract to pre-process and ensure proper value added to the index
+	 * @param compositeKey
+	 * @param value
+	 * @return
+	 */
+	private Object preProcessMetadataValue(final String compositeKey, final Object value) {
+        if ("metadata.content".equals(compositeKey)) {
+            if (null == value) {
+                //This "NO_METADATA" constant is getting relocated from tika utils
+                return NO_METADATA;
+            }
+            //This is not a dupe of META_DATA_MAX_SIZE since that one is the flag used to set the number of bytes read by tika
+            //This one allows me to set a max number of chars on the content field itself
+            final int length = Config.getIntProperty(INDEX_METADATA_CONTENT_LENGTH, 0);
+            final String string = value.toString().toLowerCase();
+            return  length > 0 ? string.substring(0, Math.min(length, string.length())) : string;
+        }
+        return value;
+    }
 
 	/**
      * Adds the current workflow task to the contentlet in order to be reindexed.
-     * 
+     *
      * @param contentlet {@link Contentlet}
      * @return {@link Map}
      */
     protected Map<String, Object> getWorkflowInfoForContentlet(final Contentlet contentlet) {
-        
+
         final Map<String, Object> workflowMap = new HashMap<>();
         final WorkflowAPI workflowAPI 		  = APILocator.getWorkflowAPI();
 
@@ -418,7 +514,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 workflowMap.put(ESMappingConstants.WORKFLOW_MOD_DATE, elasticSearchDateTimeFormat.format(task.getModDate()));
                 workflowMap.put(ESMappingConstants.WORKFLOW_MOD_DATE + TEXT, datetimeFormat.format(task.getModDate()));
             }
-                
+
         } catch (Exception e) {
             Logger.debug(this.getClass(), "No workflow info for contentlet " +  contentlet.getIdentifier());
         }
@@ -437,7 +533,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                         stepIds.add(entryStep);
                     }
                 }
-    
+
                 workflowMap.put(ESMappingConstants.WORKFLOW_SCHEME, String.join(" ", schemeWriter));
                 workflowMap.put(ESMappingConstants.WORKFLOW_STEP, stepIds);
 				workflowMap.put(ESMappingConstants.WORKFLOW_CURRENT_STEP, ESMappingConstants.WORKFLOW_CURRENT_STEP_NOT_ASSIGNED_VALUE); // multiple steps -> not assigned.
@@ -472,12 +568,12 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 String::toLowerCase).collect(Collectors.toList());
 
         m.put(ESMappingConstants.CATEGORIES, catsVarNames);
-        
+
 
 	    for(final com.dotcms.contenttype.model.field.Field f : catFields){
 	        // I don't think we care if we put all the categories in each field
             m.put(type.variable() + "." + f.variable(), catsVarNames);
-	    
+
 	    }
 	}
 
@@ -538,7 +634,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		StringBuilder keyNameBuilder;
 		String keyName;
 		String keyNameText;
-		final TikaUtils tikaUtils = new TikaUtils();
 
 		for (final Field field : fields) {
 
@@ -634,7 +729,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 									&& structure.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET;
 					if(LicenseUtil.getLevel()>= LicenseLevel.STANDARD.level) {
 
-						this.loadKeyValueField(contentletMap, keyName, tikaUtils, field, (String) valueObj, fileMetadata);
+						this.loadKeyValueField(contentletMap, keyName, field, valueObj, fileMetadata);
 					}
 				} else if(field.getFieldType().equals(Field.FieldType.TAG.toString())) {
 
@@ -658,8 +753,19 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 						contentletMap.put(keyName, valueObj);
 						contentletMap.put(keyNameText, numFormatter.format(valueObj));
 					} else {
-						contentletMap.put(keyName, valueObj);
-						contentletMap.put(keyNameText, valueObj.toString());
+					    if (valueObj instanceof Date){
+                            try {
+                                String datetimeString = datetimeFormat.format(valueObj);
+                                contentletMap.put(keyName, elasticSearchDateTimeFormat.format(valueObj));
+                                contentletMap.put(keyNameText, datetimeString);
+                            } catch(Exception ex) {
+                                contentletMap.put(keyName, valueObj);
+                                contentletMap.put(keyNameText, valueObj.toString());
+                            }
+                        } else{
+                            contentletMap.put(keyName, valueObj);
+                            contentletMap.put(keyNameText, valueObj.toString());
+                        }
 					}
 				}
 
@@ -709,12 +815,12 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 	private void loadKeyValueField(final Map<String, Object> contentletMap,
 								   final String keyName,
-								   final TikaUtils tikaUtils,
 								   final Field field,
-								   final String valueObj,
+								   final Object valueObj,
 								   final boolean fileMetadata) throws DotDataException, DotSecurityException {
+		@SuppressWarnings("unchecked")
+		final Map<String,Object> keyValueMap = keyValueMap(valueObj);
 
-		final Map<String,Object> keyValueMap = KeyValueFieldUtil.JSONValueToHashMap(valueObj);
 		Set<String> allowedFields = new HashSet<>();
 
 		if(fileMetadata) {
@@ -733,18 +839,34 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			}
 
 			allowedFields
-					.addAll(tikaUtils.getConfiguredMetadataFields());
+					.addAll(fileMetadataAPI.getConfiguredMetadataFields());
 
-			tikaUtils.filterMetadataFields(keyValueMap, allowedFields);
+			fileMetadataAPI.filterMetadataFields(keyValueMap, allowedFields);
 
             final String keyValuePrefix = FileAssetAPI.META_DATA_FIELD.toLowerCase();
-            keyValueMap.forEach((k, v) -> contentletMap.put(keyValuePrefix + StringPool.PERIOD + k, v));
+            keyValueMap.forEach((k, v) -> contentletMap.put(keyValuePrefix + PERIOD + k, v));
 		} else {
 			keyValueMap.forEach((k, v) -> {
 				((List)contentletMap.computeIfAbsent(keyName, key -> new ArrayList<>())).add(
 						ImmutableMap.of( "key", k, "value", v));
 			});
 		}
+	}
+
+	/**
+	 * value object must be resolved to an iterable map so the fields can be extracted
+	 * @param valueObj
+	 * @return
+	 */
+	private final Map<String,Object> keyValueMap(final Object valueObj){
+	    if(valueObj instanceof Map){
+	       return new HashMap<>((Map<String,Object>)valueObj);
+	    }
+		if(valueObj instanceof Metadata){
+			final Metadata metadata = (Metadata)valueObj;
+			return new HashMap<>(metadata.getFieldsMeta());
+		}
+		return KeyValueFieldUtil.JSONValueToHashMap((String) valueObj);
 	}
 
 	public String toJsonString(Map<String, Object> map) throws IOException{

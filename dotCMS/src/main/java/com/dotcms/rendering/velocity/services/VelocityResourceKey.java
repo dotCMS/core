@@ -59,26 +59,13 @@ public class VelocityResourceKey implements Serializable {
     public VelocityResourceKey(final String filePath) {
 
         path = cleanKey(filePath);
-        // if it is like this: 1/EDIT_MODE///demo.dotcms.com/application/containers/large-column//1551200983126.container
-        final boolean isFileAssetContainer = filePath.endsWith("." + VelocityType.CONTAINER.fileExtension) && filePath.contains(HOST_INDICATOR);
 
-        // if it is a container and container fs with a path as key
-        final Tuple2<String, String> containerPathIdAndNormalizedPathTuple = isFileAssetContainer?
-                this.getPathNormalizedFileAssetContainerPath(this.path):null;
 
-        final String[] pathArry = isFileAssetContainer
-                    && null != containerPathIdAndNormalizedPathTuple
-                    && UtilMethods.isSet(containerPathIdAndNormalizedPathTuple._2)?
-                containerPathIdAndNormalizedPathTuple._2.split("[/\\.]", 0): // getting the path
-                path.split("[/\\.]", 0);
+        final String[] pathArry = path.split("[/\\.]", 0);
 
         this.mode = PageMode.get(pathArry[1]);
 
-        this.id1 = isFileAssetContainer && null != containerPathIdAndNormalizedPathTuple
-                    && UtilMethods.isSet(containerPathIdAndNormalizedPathTuple._1)?
-
-                    containerPathIdAndNormalizedPathTuple._1:
-                    pathArry[2].indexOf("_") > -1 ? pathArry[2].substring(0, pathArry[2].indexOf("_")) : pathArry[2];
+        this.id1 = pathArry[2].indexOf("_") > -1 ? pathArry[2].substring(0, pathArry[2].indexOf("_")) : pathArry[2];
 
         this.language = pathArry[2].indexOf("_") > -1 ? pathArry[2].substring(pathArry[2].indexOf("_") + 1, pathArry[2].length())
                 : String.valueOf(APILocator.getLanguageAPI().getDefaultLanguage().getId());

@@ -21,6 +21,7 @@ import javax.management.ObjectName;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
+
 import org.apache.commons.lang.SystemUtils;
 import org.apache.felix.framework.OSGIUtil;
 import org.apache.lucene.search.BooleanQuery;
@@ -28,7 +29,7 @@ import org.quartz.SchedulerException;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.cluster.business.HazelcastUtil;
 import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
+import com.maxmind.geoip2.exception.GeoIp2Exception;
 
 import com.dotcms.util.GeoIp2CityDbUtil;
 import com.dotmarketing.beans.Host;
@@ -143,8 +144,6 @@ public class InitServlet extends HttpServlet {
             CacheLocator.getCacheAdministrator().flushGroupLocalOnly("navCache", false);
         }
 
-        
-        
         try {
 
           APILocator.getVanityUrlAPI().populateAllVanityURLsCache();

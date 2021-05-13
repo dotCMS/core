@@ -1,5 +1,7 @@
 package com.dotmarketing.util;
 
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.templates.model.Template;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -89,10 +91,13 @@ public class ExportStarterUtil {
         try {
 
             /* get a list of all our tables */
-            //Including Identifier.class and Language.class because it is not mapped with Hibernate anymore
+            //Including classes that are no longer mapped with Hibernate anymore
             _tablesToDump.add(Identifier.class);
             _tablesToDump.add(Language.class);
             _tablesToDump.add(Relationship.class);
+            _tablesToDump.add(ContentletVersionInfo.class);
+            _tablesToDump.add(Template.class);
+            //end classes no longer mapped with Hibernate
             _tablesToDump.addAll(HibernateUtil.getSession().getSessionFactory().getAllClassMetadata().keySet());
 
             _tablesToDump.removeIf(c->c.equals(Inode.class));
@@ -167,6 +172,14 @@ public class ExportStarterUtil {
                         dc = new DotConnect();
                         dc.setSQL("SELECT * FROM relationship order by inode")
                                 .setStartRow(i).setMaxRows(step);
+                    } else if (ContentletVersionInfo.class.equals(clazz)) {
+                        dc = new DotConnect();
+                        dc.setSQL("SELECT * FROM contentlet_version_info ORDER BY identifier")
+                                .setStartRow(i).setMaxRows(step);
+                    } else if (Template.class.equals(clazz)) {
+                        dc = new DotConnect();
+                        dc.setSQL("SELECT * FROM template ORDER BY inode")
+                                .setStartRow(i).setMaxRows(step);
                     }
                     else {
                         _dh.setQuery("from " + clazz.getName() + " order by 1");
@@ -181,6 +194,14 @@ public class ExportStarterUtil {
                     } else if (Relationship.class.equals(clazz)) {
                         _list = TransformerLocator
                                 .createRelationshipTransformer(dc.loadObjectResults()).asList();
+                    } else if (ContentletVersionInfo.class.equals(clazz)) {
+                        _list = TransformerLocator
+                                .createContentletVersionInfoTransformer(dc.loadObjectResults())
+                                .asList();
+                    } else if (Template.class.equals(clazz)) {
+                        _list = TransformerLocator
+                                .createTemplateTransformer(dc.loadObjectResults())
+                                .asList();
                     } else {
                         _list = _dh.list();
                     }

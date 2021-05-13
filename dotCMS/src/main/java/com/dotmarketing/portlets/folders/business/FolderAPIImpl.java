@@ -61,6 +61,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.Lazy;
+import io.vavr.control.Try;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -84,38 +86,38 @@ public class FolderAPIImpl implements FolderAPI  {
 	private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
 	/**
-	 * Will get a folder for you on a given path for a particular host
+	 * Will get a folder on a given path for a particular host.
 	 *
-	 * @param path
-	 * @param hostId
-	 * @return
-	 * @throws DotHibernateException
+	 * If the folder does not exists will return a folder with null values.
+	 * If the user does not have permissions over the folder a DotSecurityException will be thrown.
+	 *
+	 * @param path path of the requested folder
+	 * @param host host where the folder should live
+	 * @return the requested folder if the user has permissions, if not an exception.
+	 * @throws DotSecurityException
 	 */
+
 	private final FolderFactory folderFactory = FactoryLocator.getFolderFactory();
 	private final PermissionAPI permissionAPI = getPermissionAPI();
 
 	@CloseDBIfOpened
 	public Folder findFolderByPath(final String path, final Host host,
-								   final User user, final boolean respectFrontEndPermissions) throws DotStateException,
+			final User user, final boolean respectFrontEndPermissions) throws DotStateException,
 			DotDataException, DotSecurityException {
-
 		final Folder folder = folderFactory.findFolderByPath(path, host);
-
-		if (folder != null && InodeUtils.isSet(folder.getInode()) &&
-				!permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
-
-			// SYSTEM_FOLDER means if the user has permissions to the host, then they can see host.com/
-			if(FolderAPI.SYSTEM_FOLDER.equals(folder.getInode())) {
-				if(!Host.SYSTEM_HOST.equals(host.getIdentifier())){
-					if(!permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
-						throw new DotSecurityException("User " + (user.getUserId() != null ? user.getUserId() : BLANK) + " does not have permission to read folder " + folder.getPath());
-					}
-				}
-			}
-
+		if (folder == null || UtilMethods.isEmpty(folder.getInode()) ||
+				permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)){
+			return folder;
 		}
 
-		return folder;
+		if(FolderAPI.SYSTEM_FOLDER.equals(folder.getInode()) &&
+				(permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions) || host.isSystemHost())){
+					return findSystemFolder();
+		}
+
+		final String errorMsg = "User " + (user.getUserId() != null ? user.getUserId() : BLANK) + " does not have permission to read folder " + folder.getPath()+ " on host " + host.getHostname();
+		Logger.error(FolderAPIImpl.class,errorMsg);
+		throw new DotSecurityException(errorMsg);
 	}
 
 
@@ -604,9 +606,15 @@ public class FolderAPIImpl implements FolderAPI  {
 
 	}
 
+	final Lazy<Folder> loadSystemFolder = Lazy.of(
+	                ()-> { return Try.of(()->folderFactory.findSystemFolder())
+	                                .getOrElseThrow(e->new DotRuntimeException(e));
+	                                                });
+	
+	
 	@CloseDBIfOpened
 	public Folder findSystemFolder() throws DotDataException {
-		return folderFactory.findSystemFolder();
+		return loadSystemFolder.get();
 	}
 
 
@@ -622,6 +630,14 @@ public class FolderAPIImpl implements FolderAPI  {
 
 		Folder parent = null;
 
+		
+		final String defaultFileAssetType=Try.of(
+                        ()->
+                        APILocator.getContentTypeAPI(APILocator.systemUser()).find(APILocator.getFileAssetAPI().DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).id())
+		                .getOrElseThrow(e-> new DotRuntimeException("unable to find default fileAssetType"));
+		
+		
+		
 		while (st.hasMoreTokens()) {
 			final String name = st.nextToken();
 			sb.append(name + "/");
@@ -634,7 +650,9 @@ public class FolderAPIImpl implements FolderAPI  {
 				f.setSortOrder(0);
 				f.setFilesMasks("");
 				f.setHostId(host.getIdentifier());
-				f.setDefaultFileType(CacheLocator.getContentTypeCache().getStructureByVelocityVarName(APILocator.getFileAssetAPI().DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode());
+				f.setDefaultFileType((parent!=null && parent.getDefaultFileType() !=null) 
+				                ? parent.getDefaultFileType() 
+				                : defaultFileAssetType);
 				final Identifier newIdentifier = !UtilMethods.isSet(parent)?
 						APILocator.getIdentifierAPI().createNew(f, host):
 						APILocator.getIdentifierAPI().createNew(f, parent);

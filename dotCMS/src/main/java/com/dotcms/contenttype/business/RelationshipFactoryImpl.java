@@ -307,9 +307,16 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         final boolean selfJoinRelationship = relationship.getParentStructureInode().equalsIgnoreCase(stInode)
                 && relationship.getChildStructureInode().equalsIgnoreCase(stInode);
 
-        final boolean hasParent = !selfJoinRelationship && relationship.getParentStructureInode().equalsIgnoreCase(stInode);
+        if(!selfJoinRelationship) {
+            final boolean hasParent = relationship.getParentStructureInode()
+                    .equalsIgnoreCase(stInode);
 
-        return dbRelatedContent(relationship, contentlet, hasParent);
+            return dbRelatedContent(relationship, contentlet, hasParent);
+        } else{//if the relationship is self joined, get the related content where the contentlet is parent or child
+            List<Contentlet> contentletList = dbRelatedContent(relationship, contentlet, true);
+            contentletList.addAll(dbRelatedContent(relationship, contentlet, false));
+            return contentletList;
+        }
     }
 
     @Override

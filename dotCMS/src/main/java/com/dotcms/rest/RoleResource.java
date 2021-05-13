@@ -17,7 +17,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.LinkedHashMap;
@@ -240,7 +239,6 @@ public class RoleResource {
 	 * @throws DotDataException
 	 * @throws JSONException
 	 */
-
 	@GET
 	@Path("/loadbyname/{params:.*}")
 	@Produces("application/json")
@@ -365,5 +363,7 @@ public class RoleResource {
 		}
 		return jsonChildren;
 	}
+
+
 
 }

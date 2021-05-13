@@ -1,0 +1,105 @@
+<com.dotcms.publisher.pusher.wrapper.FolderWrapper>
+    <folder>
+        <iDate class="sql-timestamp">2021-01-22 21:53:44.116</iDate>
+        <type>folder</type>
+        <owner></owner>
+        <inode>__inode__</inode>
+        <identifier>__id__</identifier>
+        <name>__name__</name>
+        <sortOrder>__sort_order__</sortOrder>
+        <showOnMenu>false</showOnMenu>
+        <hostId>__host_id__</hostId>
+        <title>__title__</title>
+        <filesMasks></filesMasks>
+        <defaultFileType>33888b6f-7a8e-4069-b1b6-5c1aa9d0a48d</defaultFileType>
+        <modDate class="sql-timestamp">2021-01-22 21:53:44.12</modDate>
+    </folder>
+    <folderId>
+        <id>__id__</id>
+        <assetName>__asset_name__</assetName>
+        <assetType>folder</assetType>
+        <parentPath>__parent_path__</parentPath>
+        <hostId>__host_id__</hostId>
+        <owner></owner>
+        <createDate class="sql-timestamp">2021-01-22 21:53:44.116</createDate>
+    </folderId>
+    <host>
+        <map class="com.dotmarketing.portlets.contentlet.model.Contentlet$ContentletHashMap" serialization="custom">
+            <unserializable-parents/>
+            <concurrent-hash-map>
+                <default>
+                    <segmentMask>15</segmentMask>
+                </default>
+                <string>owner</string>
+                <string>system</string>
+                <string>identifier</string>
+                <string>__host_id__</string>
+                <string>nullProperties</string>
+                <java.util.concurrent.ConcurrentHashMap_-KeySetView>
+                    <map/>
+                    <value class="boolean">true</value>
+                </java.util.concurrent.ConcurrentHashMap_-KeySetView>
+                <string>hostName</string>
+                <string>__host_name__</string>
+                <string>modDate</string>
+                <date>2021-01-22 21:53:39.76 UTC</date>
+                <string>runDashboard</string>
+                <boolean>false</boolean>
+                <string>_is_test_mode</string>
+                <boolean>true</boolean>
+                <string>languageId</string>
+                <long>1</long>
+                <string>type</string>
+                <string>host</string>
+                <string>title</string>
+                <string>__host_title__</string>
+                <string>inode</string>
+                <string>__host_inode__</string>
+                <string>isDefault</string>
+                <boolean>false</boolean>
+                <string>hostname</string>
+                <string>__host_name__</string>
+                <string>folder</string>
+                <string>SYSTEM_FOLDER</string>
+                <string>__DOTNAME__</string>
+                <string>test1611352417108.dotcms.com</string>
+                <string>__disable_workflow__</string>
+                <boolean>true</boolean>
+                <string>disabledWYSIWYG</string>
+                <list/>
+                <string>isSystemHost</string>
+                <boolean>false</boolean>
+                <string>sortOrder</string>
+                <long>0</long>
+                <string>modUser</string>
+                <string>system</string>
+                <string>host</string>
+                <string>SYSTEM_HOST</string>
+                <string>stInode</string>
+                <string>__host_inode__</string>
+                <null/>
+                <null/>
+            </concurrent-hash-map>
+            <com.dotmarketing.portlets.contentlet.model.Contentlet_-ContentletHashMap>
+                <default>
+                    <outer-class>
+                        <map class="com.dotmarketing.portlets.contentlet.model.Contentlet$ContentletHashMap" reference="../../../.."/>
+                        <lowIndexPriority>false</lowIndexPriority>
+                    </outer-class>
+                </default>
+            </com.dotmarketing.portlets.contentlet.model.Contentlet_-ContentletHashMap>
+        </map>
+        <lowIndexPriority>false</lowIndexPriority>
+    </host>
+    <hostId>
+        <id>__host_id__</id>
+        <assetName>host_asset_name</assetName>
+        <assetType>contentlet</assetType>
+        <parentPath>__parent_path__</parentPath>
+        <hostId>SYSTEM_HOST</hostId>
+        <owner>system</owner>
+        <createDate class="sql-timestamp">2021-01-22 21:53:39.08</createDate>
+        <assetSubType>Host</assetSubType>
+    </hostId>
+    <operation>PUBLISH</operation>
+</com.dotcms.publisher.pusher.wrapper.FolderWrapper>

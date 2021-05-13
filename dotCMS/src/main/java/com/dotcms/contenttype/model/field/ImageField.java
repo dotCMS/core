@@ -15,6 +15,7 @@ import static com.dotcms.util.CollectionsUtils.list;
 @JsonSerialize(as = ImmutableImageField.class)
 @JsonDeserialize(as = ImmutableImageField.class)
 @Value.Immutable
+@com.dotcms.business.Unexportable
 public abstract class ImageField extends Field {
 
 	/**

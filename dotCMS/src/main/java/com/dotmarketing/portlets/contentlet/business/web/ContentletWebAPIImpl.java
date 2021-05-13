@@ -4,21 +4,33 @@ import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.*;
-import com.dotmarketing.portlets.calendar.business.EventAPI;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotLanguageException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.calendar.model.Event;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -40,7 +52,15 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships.Content
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Constants;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.PortletURLUtil;
+import com.dotmarketing.util.UtilHTML;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
@@ -48,22 +68,28 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.text.DateFormat;
 import java.text.MessageFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 import static com.dotmarketing.portlets.contentlet.util.ActionletUtil.hasPushPublishActionlet;
 import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER;
-import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WHERE_TO_SEND;
 import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.getEnvironmentsToSendTo;
 
-/*
- *     //http://jira.dotmarketing.net/browse/DOTCMS-2273
- *     To save content via ajax.
+/**
+ * Implementation class for the {@link ContentletWebAPI} class.
  */
 public class ContentletWebAPIImpl implements ContentletWebAPI {
 
@@ -76,10 +102,11 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 	private UserAPI userAPI;
 	private FolderAPI folderAPI;
 	private IdentifierAPI identAPI;
-	private EventAPI eventAPI;
 
 	private static DateFormat eventRecurrenceStartDateF = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 	private static DateFormat eventRecurrenceEndDateF = new SimpleDateFormat("yyyy-MM-dd");
+	private static final boolean RESPECT_FRONT_END_ROLES = Boolean.TRUE;
+    private static final boolean DONT_RESPECT_FRONT_END_ROLES = Boolean.FALSE;
 
 	private final ContentletSystemEventUtil contentletSystemEventUtil;
 
@@ -92,7 +119,6 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		this.userAPI = APILocator.getUserAPI();
 		this.folderAPI = APILocator.getFolderAPI();
 		this.identAPI = APILocator.getIdentifierAPI();
-        this.eventAPI = APILocator.getEventAPI();
 		contentletSystemEventUtil = ContentletSystemEventUtil.getInstance();
 	}
 
@@ -273,11 +299,11 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 								&& (htmlContentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE)) {
 							String pageIdentifier = htmlContentlet.getIdentifier();
 							long contentletLang = contentlet.getLanguageId();
-							ContentletVersionInfo versionInfo = APILocator
+							Optional<ContentletVersionInfo> versionInfo = APILocator
 									.getVersionableAPI()
 									.getContentletVersionInfo(pageIdentifier,
 											contentletLang);
-							if (versionInfo != null) {
+							if (versionInfo.isPresent()) {
 							    APILocator.getMultiTreeAPI().saveMultiTree(mTree);
 							} else {
 								// The language in the page and the contentlet 
@@ -310,7 +336,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		}
 	}
 
-	private void saveWebAsset(Map<String, Object> contentletFormData,
+	private void  saveWebAsset(Map<String, Object> contentletFormData,
 			boolean isAutoSave, boolean isCheckin, User user, boolean generateSystemEvent) throws Exception, DotContentletValidationException {
 
 		final HttpServletRequest request = WebContextFactory.get().getHttpServletRequest();
@@ -318,8 +344,14 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 		// Getting the contentlets variables to work
 		Contentlet currentContentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
+
+        if (!APILocator.getContentTypeAPI(user).isContentTypeAllowed(currentContentlet.getContentType())) {
+            SessionMessages.add(request, "message", "An enterprise license is required to perform this operation");
+            throw new DotSecurityException("An enterprise license is required to perform this operation");
+        }
+		final Map<String, Object> oldContentletMap = currentContentlet.getMap();
 		//Form doesn't always contain this value upfront. And since populateContentlet sets 0 we better set it upfront
-		contentletFormData.put("identifier", currentContentlet.getIdentifier());
+		contentletFormData.put(Contentlet.IDENTIFIER_KEY, currentContentlet.getIdentifier());
 		final boolean isNew = !InodeUtils.isSet(currentContentlet.getInode());
 
 		if (!isNew && Host.HOST_VELOCITY_VAR_NAME.equals(currentContentlet.getStructure().getVelocityVarName())) {
@@ -329,24 +361,26 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		/***
 		 * Workflow
 		 */
-		currentContentlet.setStringProperty("wfActionId", (String) contentletFormData.get("wfActionId"));
-		currentContentlet.setStringProperty("wfActionComments", (String) contentletFormData.get("wfActionComments"));
-		currentContentlet.setStringProperty("wfActionAssign", (String) contentletFormData.get("wfActionAssign"));
+		currentContentlet.setStringProperty(Contentlet.WORKFLOW_ACTION_KEY, (String) contentletFormData.get(Contentlet.WORKFLOW_ACTION_KEY));
+		currentContentlet.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, (String) contentletFormData.get(Contentlet.WORKFLOW_COMMENTS_KEY));
+		currentContentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, (String) contentletFormData.get(Contentlet.WORKFLOW_ASSIGN_KEY));
 
 		/**
 		 * Push Publishing Actionlet
 		 */
-		currentContentlet.setStringProperty("wfPublishDate", (String) contentletFormData.get("wfPublishDate"));
-		currentContentlet.setStringProperty("wfPublishTime", (String) contentletFormData.get("wfPublishTime"));
-		currentContentlet.setStringProperty("wfExpireDate", (String) contentletFormData.get("wfExpireDate"));
-		currentContentlet.setStringProperty("wfExpireTime", (String) contentletFormData.get("wfExpireTime"));
-		currentContentlet.setStringProperty("wfNeverExpire", (String) contentletFormData.get("wfNeverExpire"));
-		currentContentlet.setStringProperty("whereToSend", (String) contentletFormData.get("whereToSend"));
-		currentContentlet.setStringProperty("forcePush", (String) contentletFormData.get("forcePush"));
+		currentContentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE, (String) contentletFormData.get(Contentlet.WORKFLOW_PUBLISH_DATE));
+		currentContentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME, (String) contentletFormData.get(Contentlet.WORKFLOW_PUBLISH_TIME));
+		currentContentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE, (String) contentletFormData.get(Contentlet.WORKFLOW_EXPIRE_DATE));
+		currentContentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME, (String) contentletFormData.get(Contentlet.WORKFLOW_EXPIRE_TIME));
+		currentContentlet.setStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE, (String) contentletFormData.get(Contentlet.WORKFLOW_NEVER_EXPIRE));
+		currentContentlet.setStringProperty(Contentlet.WHERE_TO_SEND, (String) contentletFormData.get(Contentlet.WHERE_TO_SEND));
+		currentContentlet.setStringProperty(Contentlet.FILTER_KEY, (String) contentletFormData.get(Contentlet.FILTER_KEY));
+		currentContentlet.setStringProperty(Contentlet.I_WANT_TO, (String) contentletFormData.get(Contentlet.I_WANT_TO));
 
 
 		contentletFormData.put(WebKeys.CONTENTLET_FORM_EDIT, currentContentlet);
 		contentletFormData.put(WebKeys.CONTENTLET_EDIT, currentContentlet);
+
 		try{
 			populateContent(contentletFormData, user, currentContentlet, isAutoSave);
 			//http://jira.dotmarketing.net/browse/DOTCMS-1450
@@ -423,11 +457,12 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			}
 		 }
 
-		if (categoriesList != null && categoriesList.size() > 0) {
-			for (final Iterator iterator = categoriesList.iterator(); iterator.hasNext();) {
-
-				final String tmpString = (String) iterator.next();
-				categories.add(catAPI.find(tmpString, user, false));
+		if (UtilMethods.isSet(categoriesList)) {
+			for (final Iterator<String> iterator = categoriesList.iterator(); iterator.hasNext();) {
+				final String categoryId = iterator.next();
+				if (UtilMethods.isSet(categoryId)) {
+					categories.add(catAPI.find(categoryId, user, PageMode.get().respectAnonPerms));
+				}
 			}
 		}
 
@@ -482,9 +517,9 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				}
 			}
 
-			if (UtilMethods.isSet((String) contentletFormData.get("wfActionId"))) {
+			if (shouldUseWorkflow(contentletFormData)) {
 
-				currentContentlet = APILocator.getWorkflowAPI().fireContentWorkflow(currentContentlet,
+				final ContentletDependencies.Builder contentletDependencies =
 						new ContentletDependencies.Builder().respectAnonymousPermissions(PageMode.get(request).respectAnonPerms)
 								.modUser(user)
 								.relationships(contentletRelationships)
@@ -492,26 +527,52 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 								.workflowActionComments((String) contentletFormData.get("wfActionComments"))
 								.workflowAssignKey((String) contentletFormData.get("wfActionAssign"))
 								.categories(categories)
-                                .indexPolicy(IndexPolicyProvider.getInstance().forSingleContent())
-								.generateSystemEvent(generateSystemEvent).build());
+								.indexPolicy(IndexPolicyProvider.getInstance().forSingleContent())
+								.generateSystemEvent(generateSystemEvent);
+
+				if (UtilMethods.isSet((String) contentletFormData.get("wfFilterKey"))) {
+
+					contentletDependencies.workflowFilterKey((String) contentletFormData.get("wfFilterKey"));
+				}
+
+				if (UtilMethods.isSet((String) contentletFormData.get("wfiWantTo"))) {
+
+					contentletDependencies.workflowIWantTo((String) contentletFormData.get("wfiWantTo"));
+				}
+
+				currentContentlet = APILocator.getWorkflowAPI().fireContentWorkflow(currentContentlet, contentletDependencies.build());
 
 				if (hasPushPublishActionlet(APILocator.getWorkflowAPI().findAction((String) contentletFormData.get("wfActionId"), user))) {
-					final String whoToSendTmp = (String)currentContentlet.get(WHERE_TO_SEND);
+					final String whoToSendTmp = (String)currentContentlet.get(Contentlet.WHERE_TO_SEND);
 					final List<Environment> envsToSendTo = getEnvironmentsToSendTo(whoToSendTmp);
 					request.getSession().setAttribute( WebKeys.SELECTED_ENVIRONMENTS + user.getUserId(), envsToSendTo );
 				}
-
 			} else {
 
 				Logger.warn(this, "Calling Save Web Asset: " + currentContentlet.getIdentifier() +
 								", without an action.");
-				if (Host.HOST_VELOCITY_VAR_NAME.equals(currentContentlet.getStructure().getVelocityVarName())) {
+				if (currentContentlet.isHost()) {
 
 					Logger.info(this, "Saving the Host");
 					currentContentlet.setInode(null);
                     currentContentlet.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
 					currentContentlet = this.conAPI.checkin
 							(currentContentlet, contentletRelationships, categories, null, user, false, generateSystemEvent);
+
+					if (!currentContentlet.isNew() &&
+							!currentContentlet.getTitle().equals(oldContentletMap.get(Host.HOST_NAME_KEY))) {
+						UpdateContainersPathsJob.triggerUpdateContainersPathsJob(
+								oldContentletMap.get(Host.HOST_NAME_KEY).toString(),
+								(String) currentContentlet.get("hostName")
+						);
+						UpdatePageTemplatePathJob.triggerUpdatePageTemplatePathJob(
+								oldContentletMap.get(Host.HOST_NAME_KEY).toString(),
+								(String) currentContentlet.get("hostName")
+						);
+					}
+				} else {
+					Logger.warn(this, "Calling Save Web Asset: " + currentContentlet.getIdentifier() +
+							", without an action is just allow to Host.");
 				}
 			}
 		} catch(DotContentletValidationException ve) {
@@ -563,53 +624,53 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 	}
 
 	/**
-     * {@inheritDoc}
+	 * return true if should use workflow with to save the contentlet
+	 * @param contentletFormData
+	 * @return
 	 */
+	private boolean shouldUseWorkflow(Map<String, Object> contentletFormData) {
+		return UtilMethods.isSet((String) contentletFormData.get("wfActionId"));
+	}
 
     @Override
-	public String validateNewContentPage(Contentlet contentPage) {
-		String parentFolderId = contentPage.getFolder();
-		String pageUrl = contentPage.getMap().get("url") == null ? "" : contentPage.getMap().get("url").toString();
-		String status = null;
+	public String validateNewContentPage(final Contentlet contentPage) {
+		final String parentFolderId = contentPage.getFolder();
+        final String pageUrl = !UtilMethods.isSet(contentPage.getMap().get(PageContentType.PAGE_URL_FIELD_VAR)) ?
+                StringUtils.EMPTY : contentPage.getMap().get(PageContentType.PAGE_URL_FIELD_VAR).toString();
+        String status = null;
 		try {
-			User systemUser = userAPI.getSystemUser();
-			Folder parentFolder = folderAPI.find(parentFolderId, systemUser,
-					false);
-			if (parentFolder != null
-					&& InodeUtils.isSet(parentFolder.getInode())) {
-
-				Host host = hostAPI.find(parentFolder.getHostId(), systemUser,
-						true);
-
+            final Folder parentFolder = this.folderAPI.find(parentFolderId, this.userAPI.getSystemUser(), DONT_RESPECT_FRONT_END_ROLES);
+            if (parentFolder != null && InodeUtils.isSet(parentFolder.getInode())) {
+				final String siteId = SYSTEM_FOLDER.equals(parentFolder.getInode()) ? contentPage.getHost() :
+						parentFolder.getHostId();
+				final Host site = this.hostAPI.find(siteId, this.userAPI.getSystemUser(), RESPECT_FRONT_END_ROLES);
 				String parentFolderPath = parentFolder.getPath();
 				if (UtilMethods.isSet(parentFolderPath)) {
-					if (!parentFolderPath.startsWith("/")) {
-						parentFolderPath = "/" + parentFolderPath;
+					if (!parentFolderPath.startsWith(StringPool.SLASH)) {
+						parentFolderPath = StringPool.SLASH + parentFolderPath;
 					}
-					if (!parentFolderPath.endsWith("/")) {
-						parentFolderPath = parentFolderPath + "/";
+					if (!parentFolderPath.endsWith(StringPool.SLASH)) {
+						parentFolderPath = parentFolderPath + StringPool.SLASH;
 					}
-					String fullPageUrl = parentFolderPath + pageUrl;
+					final String fullPageUrl = parentFolderPath + pageUrl;
 					if (!pageUrl.endsWith(".html")) {
-						List<Identifier> folders = identAPI
-								.findByURIPattern("folder", fullPageUrl,true, host);
-						if (folders.size() > 0) {
+						final List<Identifier> folders = this.identAPI
+								.findByURIPattern("folder", fullPageUrl,true, site);
+						if (!folders.isEmpty()) {
 							// Found a folder with same path
 							status = "message.htmlpage.error.htmlpage.exists.folder";
 						}
 					}
 					if (!UtilMethods.isSet(status)) {
-						Identifier i = identAPI.find(host, fullPageUrl);
-						if (i != null && InodeUtils.isSet(i.getId())) {
+						final Identifier identifier = this.identAPI.find(site, fullPageUrl);
+						if (identifier != null && InodeUtils.isSet(identifier.getId())) {
 							try {
-								Contentlet existingContent = conAPI
-										.findContentletByIdentifier(i.getId(),
-												true,
-												contentPage.getLanguageId(),
-												systemUser, false);
+                                final Contentlet existingContent = this.conAPI.findContentletByIdentifier(identifier
+                                        .getId(), true, contentPage.getLanguageId(), this.userAPI.getSystemUser(),
+                                        DONT_RESPECT_FRONT_END_ROLES);
 								if (null != existingContent) {
-									if (existingContent.getStructure()
-											.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET && !existingContent.getIdentifier().equals(contentPage.getIdentifier())) {
+                                    if (existingContent.getContentType().baseType().equals(BaseContentType.FILEASSET)
+                                            && !existingContent.getIdentifier().equals(contentPage.getIdentifier())) {
 										// Found a file asset with same path
 										status = "message.htmlpage.error.htmlpage.exists.file";
 									} else if (!existingContent.getIdentifier().equals(contentPage.getIdentifier())) {
@@ -617,33 +678,27 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 										status = "message.htmlpage.error.htmlpage.exists";
 									}
 								}
-							} catch (DotContentletStateException e) {
+							} catch (final DotContentletStateException e) {
 								// If it's a brand new page...
-								if (!UtilMethods.isSet(contentPage
-										.getIdentifier())) {
+								if (!UtilMethods.isSet(contentPage.getIdentifier())) {
 									// Found page with same path
 									status = "message.htmlpage.error.htmlpage.exists";
-								} else {
-									Logger.info(getClass(),
-											"Page with same URI and same language does not exist, so we are OK");
 								}
 							}
 						}
 					}
 				}
 			}
-		} catch (DotDataException e) {
-			Logger.debug(this,
-					"Error trying to retreive information from page '"
-							+ contentPage.getIdentifier() + "'");
-			throw new DotRuntimeException("Page information is not valid", e);
-		} catch (DotSecurityException e) {
-			Logger.debug(this,
-					"Current user has no permission to perform the selected action on page '"
-							+ contentPage.getIdentifier() + "'");
-			throw new DotRuntimeException(
-					"Current user has no permission to perform the selected action",
-					e);
+        } catch (final DotDataException e) {
+            final String errorMsg = String.format("An error occurred when validating page '%s' [%s]: %s", pageUrl,
+                    contentPage.getIdentifier(), e.getMessage());
+            Logger.error(this, errorMsg, e);
+            throw new DotRuntimeException(errorMsg, e);
+        } catch (final DotSecurityException e) {
+            final String errorMsg = String.format("The current user has no permission to perform the selected action " +
+                    "on page '%s' [%s]: %s", pageUrl, contentPage.getIdentifier(), e.getMessage());
+            Logger.error(this, errorMsg, e);
+            throw new DotRuntimeException(errorMsg, e);
 		}
 		return status;
 	}
@@ -845,8 +900,9 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		} catch (DotContentletStateException e) {
 			throw e;
 		} catch (Exception e) {
-			Logger.error(this, "Unable to populate content. ", e);
-			throw new Exception("Unable to populate content");
+			final String message = String.format("Unable to populate content: %s", e.getMessage());
+			Logger.error(this, message, e);
+			throw new Exception(message, e);
 		}
 
 		return contentlet;

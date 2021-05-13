@@ -26,19 +26,17 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.control.Try;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DELETE;
@@ -98,7 +96,15 @@ public class LanguagesResource {
                 languageAPI.getAvailableContentLanguages(contentInode, user) :
                 languageAPI.getLanguages();
 
-        return Response.ok(new ResponseEntityView(ImmutableList.copyOf(languages))).build();
+        return Response.ok(
+                new ResponseEntityView(languages.stream()
+                        .map(instanceLanguageView())
+                        .collect(Collectors.toList())))
+                .build();
+    }
+
+    public Function<Language, LanguageView> instanceLanguageView() {
+        return LanguageView::new;
     }
 
     /**

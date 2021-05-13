@@ -145,7 +145,7 @@ public class PushNowActionlet extends WorkFlowActionlet {
             identifiers.add(contentlet.getIdentifier());
             final String filterKey = params.get(PARAM_FILTER_KEY).getValue();
             final FilterDescriptor filterDescriptor = APILocator.getPublisherAPI().getFilterDescriptorByKey(filterKey);
-            final boolean forcePush = (boolean) filterDescriptor.getFilters().getOrDefault("forcePush",false);
+            final boolean forcePush = (boolean) filterDescriptor.getFilters().getOrDefault(FilterDescriptor.FORCE_PUSH_KEY,false);
             final Bundle bundle = new Bundle(null, publishDate, null, user.getUserId(), forcePush,filterDescriptor.getKey());
             this.bundleAPI.saveBundle(bundle, finalEnvs);
             this.publisherAPI.addContentsToPublish(identifiers, bundle.getId(), publishDate, user);

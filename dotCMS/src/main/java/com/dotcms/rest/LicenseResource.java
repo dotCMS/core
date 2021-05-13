@@ -7,7 +7,6 @@ import com.dotcms.enterprise.cluster.action.model.ServerActionBean;
 import com.dotcms.enterprise.license.DotLicenseRepoEntry;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.license.LicenseManager;
-import com.dotcms.repackage.com.ibm.icu.text.SimpleDateFormat;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.json.JSONArray;
 import com.dotcms.repackage.org.json.JSONObject;
@@ -26,7 +25,9 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -86,6 +87,7 @@ public class LicenseResource {
                 obj.put("level",  LicenseManager.getInstance().getLevelName(lic.dotLicense.level));
                 obj.put("id", lic.dotLicense.serial);
                 obj.put("licenseType", lic.dotLicense.licenseType);
+                obj.put("startupTime", (lic.startupTime==0) ? "n/a" : new Date(lic.startupTime));
                 if(lic.lastPing.after(cal.getTime())){
                     obj.put("lastPingStr", DateUtil.prettyDateSince(lic.lastPing));
                 }

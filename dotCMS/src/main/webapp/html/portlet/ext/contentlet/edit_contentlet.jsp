@@ -81,10 +81,10 @@
 
 	}
 
-	boolean canUserPublishContentlet = conPerAPI.doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_PUBLISH,user);
+	boolean canUserPublishContentlet = conPerAPI.doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_PUBLISH,user, PageMode.get(request).respectAnonPerms);
 
 	if(!InodeUtils.isSet(contentlet.getInode())) {
-		canUserPublishContentlet = conPerAPI.doesUserHavePermission(structure,PermissionAPI.PERMISSION_PUBLISH,user);
+		canUserPublishContentlet = conPerAPI.doesUserHavePermission(structure,PermissionAPI.PERMISSION_PUBLISH,user, PageMode.get(request).respectAnonPerms);
 		//Set roles = conPerAPI.getPublishRoles();
 		if(!canUserPublishContentlet){
 			canUserPublishContentlet = conPerAPI.doesRoleHavePermission(structure, PermissionAPI.PERMISSION_PUBLISH,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSOwnerRole());
@@ -176,13 +176,17 @@
 		}
 	}
 
-	boolean canEditAsset = conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user);
+	boolean canEditAsset = conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user, PageMode.get(request).respectAnonPerms);
 	final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
     boolean canSeeRules = layoutAPI.doesUserHaveAccessToPortlet("rules", user)
-            && conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_USE, user)
-               && conPerAPI.doesUserHavePermissions(contentlet.getParentPermissionable(), "RULES: " + PermissionAPI.PERMISSION_USE, user);
+            && conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_USE, user, PageMode.get(request).respectAnonPerms)
+            && conPerAPI.doesUserHavePermissions(contentlet.getParentPermissionable(), "RULES: " + PermissionAPI.PERMISSION_USE, user, PageMode.get(request).respectAnonPerms);
+    
+    boolean hasViewPermision = layoutAPI.doesUserHaveAccessToPortlet("permissions", user)
+            && conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_USE, user, PageMode.get(request).respectAnonPerms)
+            && conPerAPI.doesUserHavePermissions(contentlet.getParentPermissionable(), "PERMISSIONS: " + PermissionAPI.PERMISSION_USE, user, PageMode.get(request).respectAnonPerms);
 
-	Boolean isContentEditable = (Boolean) request.getAttribute(com.dotmarketing.util.WebKeys.CONTENT_EDITABLE);
+    Boolean isContentEditable = (Boolean) request.getAttribute(com.dotmarketing.util.WebKeys.CONTENT_EDITABLE);
 	isContentEditable = isContentEditable != null ? isContentEditable : false;
 	boolean contentEditable = (UtilMethods.isSet(contentlet.getInode()) ? isContentEditable : false);
 
@@ -194,7 +198,7 @@
 	   targetFrame = (String)request.getSession().getAttribute(WebKeys.FRAME);
 	}
 
-	boolean isLocked=(request.getParameter("sibbling") != null) ? false : contentlet.isLocked();
+    boolean isLocked=(request.getParameter("sibbling") != null) ? false : contentlet.isLocked();
 
 %>
 
@@ -216,6 +220,8 @@
 	<input name="wfExpireTime" id="wfExpireTime" type="hidden" value="">
 	<input name="wfNeverExpire" id="wfNeverExpire" type="hidden" value="">
 	<input name="whereToSend" id="wfWhereToSend" type="hidden" value="">
+	<input name="wfiWantTo" id="wfiWantTo" type="hidden" value="">
+	<input name="wfFilterKey" id="wfFilterKey" type="hidden" value="">
 
 
 	<div dojoAttachPoint="cmsFileBrowserImage" currentView="thumbnails" jsId="cmsFileBrowserImage" onFileSelected="addFileImageCallback" mimeTypes="image" sortBy="modDate" sortByDesc="true" dojoType="dotcms.dijit.FileBrowserDialog"></div>
@@ -226,7 +232,7 @@
 	<!--  START TABS -->
 	<div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer" class="content-edit__main">
 		<!--  IF THE FIRST FIELD IS A TAB-->
-		<% if(fields != null &&
+        <% if(fields != null &&
 			fields.size()>0 &&
 			fields.get(0) != null &&
 			fields.get(0).getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())){
@@ -377,27 +383,6 @@
                         } else {
                             formValue = (Object) contentletForm.getFieldValueByVar(f.getVelocityVarName());
 
-                            //We need to verify for the metadata field cached data
-                            if ( Contentlet.isMetadataFieldCached( contentletForm.getStructureInode(), f.getVelocityVarName(), formValue ) ) {
-
-                                /*
-                                 If we populated the information using another language we should use the contentlet used
-                                 for that language in order to get the cached metadata.
-                                */
-                                if ( !InodeUtils.isSet( request.getParameter( "inode" ) )
-                                        && UtilMethods.isSet( request.getSession().getAttribute( "ContentletForm_lastLanguage" ) ) ) {
-
-                                    if ( !InodeUtils.isSet( request.getParameter( "inode" ) )
-                                            && (UtilMethods.isSet( request.getParameter( "reuseLastLang" ) )
-                                            && Boolean.parseBoolean( request.getParameter( "reuseLastLang" ) )) ) {
-
-                                        ContentletForm reusedForm = (ContentletForm) request.getSession().getAttribute( "ContentletForm_lastLanguage" );
-                                        //Load its content from cache
-                                        formValue = reusedForm.getFieldValueByVar( f.getVelocityVarName() );
-                                    }
-                                }
-
-                            }
                         }
                         request.setAttribute("value", formValue);
 
@@ -425,7 +410,7 @@
                                 Host host = APILocator.getHostAPI().findSystemHost();
 
                                 String hostId = host.getIdentifier();
-                                if (!conPerAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user)) {
+                                if (!conPerAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, PageMode.get(request).respectAnonPerms)) {
                                     hostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
                                 }
 
@@ -525,13 +510,14 @@
 	<% } %>
 
 
-	<!-- Permissions -->
-	
+    <!-- Permissions -->
+    <% if (hasViewPermision) { %>
 		<div id="permissionsTab" disabled="<%=!UtilMethods.isSet(contentlet.getInode()) %>" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Permissions") %>" onShow="refreshPermissionsTab()">
 			<div id="permissionsTabDiv">
                 <%-- This loads the edit_permission_tab_inc_wrapper.jsp passing in the contentletId as a request parameter --%>
 			</div>
-		</div>
+        </div>
+    <% } %>
 
 
 

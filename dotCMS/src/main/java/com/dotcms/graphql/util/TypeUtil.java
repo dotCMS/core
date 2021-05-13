@@ -7,6 +7,7 @@ import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import graphql.GraphQLException;
+import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
 import java.util.ArrayList;
 import java.util.List;
@@ -60,13 +61,22 @@ public class TypeUtil {
         List<GraphQLFieldDefinition> fieldDefinitionList = new ArrayList<>();
         fieldsTypesAndFetchers.forEach((key, value) -> {
             try {
-                fieldDefinitionList.add(newFieldDefinition()
-                        .name(key)
-                        .type(value.getType())
-                        .dataFetcher(value.getDataFetcher() != null
-                                ? value.getDataFetcher()
-                                : new PropertyDataFetcher<String>(key)).build()
-                );
+                if(value.getArgument()!=null) {
+                    fieldDefinitionList.add(newFieldDefinition()
+                            .name(key)
+                            .argument(value.getArgument())
+                            .type(value.getType())
+                            .dataFetcher(value.getDataFetcher() != null
+                                    ? value.getDataFetcher()
+                                    : new PropertyDataFetcher<String>(key)).build());
+                } else {
+                    fieldDefinitionList.add(newFieldDefinition()
+                            .name(key)
+                            .type(value.getType())
+                            .dataFetcher(value.getDataFetcher() != null
+                                    ? value.getDataFetcher()
+                                    : new PropertyDataFetcher<String>(key)).build());
+                }
             } catch (GraphQLException e) {
                 Logger.error("Error creating GraphQL Type. Type name: " + key, e);
             }
@@ -79,11 +89,22 @@ public class TypeUtil {
                                                            final TypeResolver typeResolver) {
         final GraphQLInterfaceType.Builder builder = GraphQLInterfaceType.newInterface().name(typeName);
 
-        fieldsTypesAndFetchers.forEach((key, value) -> builder.field(newFieldDefinition()
-                .name(key)
-                .type(value.getType())
-                .dataFetcher(value.getDataFetcher())
-        ));
+        fieldsTypesAndFetchers.forEach((key, value) -> {
+            if(value.getArgument()!=null) {
+                builder.field(newFieldDefinition()
+                        .name(key)
+                        .argument(value.getArgument())
+                        .type(value.getType())
+                        .dataFetcher(value.getDataFetcher())
+                );
+            } else {
+                builder.field(newFieldDefinition()
+                        .name(key)
+                        .type(value.getType())
+                        .dataFetcher(value.getDataFetcher())
+                );
+            }
+        });
 
         builder.typeResolver(typeResolver);
         return builder.build();
@@ -91,6 +112,10 @@ public class TypeUtil {
 
     public static String collectionizedName(final String typeName) {
         return typeName + "Collection";
+    }
+
+    public static String oldCollectionizedName(final String typeName) {
+        return typeName.substring(0, 1).toLowerCase() + typeName.substring(1) + "Collection";
     }
 
     public static String singularizeCollectionName(final String collectionName) {
@@ -104,15 +129,21 @@ public class TypeUtil {
     public static class TypeFetcher {
         private final GraphQLOutputType type;
         private final DataFetcher dataFetcher;
+        private final GraphQLArgument argument;
 
         public TypeFetcher(GraphQLOutputType type) {
-            this.type = type;
-            this.dataFetcher = new FieldDataFetcher();
+            this(type, new FieldDataFetcher(), null);
         }
 
         public TypeFetcher(final GraphQLOutputType type, final DataFetcher dataFetcher) {
+            this(type, dataFetcher, null);
+        }
+
+        public TypeFetcher(final GraphQLOutputType type, final DataFetcher dataFetcher,
+                final GraphQLArgument argument) {
             this.type = type;
             this.dataFetcher = dataFetcher;
+            this.argument = argument;
         }
 
         public GraphQLOutputType getType() {
@@ -121,6 +152,10 @@ public class TypeUtil {
 
         public DataFetcher getDataFetcher() {
             return dataFetcher;
+        }
+
+        public GraphQLArgument getArgument() {
+            return argument;
         }
     }
 }

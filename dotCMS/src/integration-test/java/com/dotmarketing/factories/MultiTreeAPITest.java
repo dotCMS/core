@@ -8,15 +8,21 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.Ruleable;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.startup.runonce.Task04315UpdateMultiTreePK;
 import com.dotmarketing.util.Logger;
@@ -784,4 +790,220 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         assertFalse(multiTreeContentlets.contains(espContentlet.getIdentifier()));
         assertFalse(multiTreeContentlets.contains(enContentlet.getIdentifier()));
     }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#getPageMultiTrees(IHTMLPage, boolean)}
+     * When: Advanced Template with 2 {@link FileAssetContainer} (one empty) and 2 {@link Container} (one empty)
+     * Should: Return the 4 containers
+     * */
+    @Test
+    public void testEmptyContainersInAdvancedTemplate() throws DotDataException, DotSecurityException {
+        final Container container = new ContainerDataGen().nextPersisted();
+        FileAssetContainer fileAssetContainer = new ContainerAsFileDataGen().nextPersisted();
+        fileAssetContainer = (FileAssetContainer) APILocator.getContainerAPI().find(fileAssetContainer.getInode(), APILocator.systemUser(), false);
+
+        final Container emptyContainer = new ContainerDataGen().nextPersisted();
+        FileAssetContainer emptyFileAssetContainer = new ContainerAsFileDataGen().nextPersisted();
+        emptyFileAssetContainer = (FileAssetContainer) APILocator.getContainerAPI().find(emptyFileAssetContainer.getInode(), APILocator.systemUser(), false);
+
+        final Template template = new TemplateDataGen()
+                .withContainer(container, ContainerUUID.UUID_START_VALUE)
+                .withContainer(fileAssetContainer, ContainerUUID.UUID_START_VALUE)
+                .withContainer(emptyContainer, ContainerUUID.UUID_START_VALUE)
+                .withContainer(emptyFileAssetContainer, ContainerUUID.UUID_START_VALUE)
+                .nextPersisted();
+
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+
+        createContentAndMultiTree(container, fileAssetContainer, page);
+
+        final Table<String, String, Set<PersonalizedContentlet>> pageMultiTrees = APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
+
+        pageMultiTrees.rowKeySet().contains(container.getIdentifier());
+        pageMultiTrees.rowKeySet().contains(emptyContainer.getIdentifier());
+        pageMultiTrees.rowKeySet().contains(fileAssetContainer.getIdentifier());
+        pageMultiTrees.rowKeySet().contains(emptyFileAssetContainer.getIdentifier());
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#getPageMultiTrees(IHTMLPage, boolean)}
+     * When: Drawed Template with 2 {@link FileAssetContainer} (one empty) and 2 {@link Container} (one empty)
+     * Should: Return the 4 containers
+     * */
+    @Test
+    public void testEmptyContainersInDrawedTemplate() throws DotDataException, DotSecurityException {
+        final Container container = new ContainerDataGen().nextPersisted();
+        FileAssetContainer fileAssetContainer = new ContainerAsFileDataGen().nextPersisted();
+        fileAssetContainer = (FileAssetContainer) APILocator.getContainerAPI().find(fileAssetContainer.getInode(), APILocator.systemUser(), false);
+
+        final Container emptyContainer = new ContainerDataGen().nextPersisted();
+        FileAssetContainer emptyFileAssetContainer = new ContainerAsFileDataGen().nextPersisted();
+        emptyFileAssetContainer = (FileAssetContainer) APILocator.getContainerAPI().find(emptyFileAssetContainer.getInode(), APILocator.systemUser(), false);
+
+        final TemplateLayout templateLayout = new TemplateLayoutDataGen()
+                .withContainer(container)
+                .withContainer(fileAssetContainer)
+                .withContainer(emptyContainer)
+                .withContainer(emptyFileAssetContainer)
+                .next();
+
+        final Template template = new TemplateDataGen()
+                .drawedBody(templateLayout)
+                .nextPersisted();
+
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+
+        createContentAndMultiTree(container, fileAssetContainer, page);
+
+        final Table<String, String, Set<PersonalizedContentlet>> pageMultiTrees = APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
+
+        System.out.println("multiTrees = " + pageMultiTrees);
+
+        pageMultiTrees.rowKeySet().contains(container.getIdentifier());
+        pageMultiTrees.rowKeySet().contains(emptyContainer.getIdentifier());
+        pageMultiTrees.rowKeySet().contains(fileAssetContainer.getIdentifier());
+        pageMultiTrees.rowKeySet().contains(emptyFileAssetContainer.getIdentifier());
+    }
+
+    private void createContentAndMultiTree(Container container, FileAssetContainer fileAssetContainer, HTMLPageAsset page) {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId())
+                .nextPersisted();
+
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId())
+                .nextPersisted();
+
+        final MultiTree multiTree_1 = new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet_1)
+                .setInstanceID(ContainerUUID.UUID_START_VALUE)
+                .setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1)
+                .nextPersisted();
+
+        final MultiTree multiTree_2 = new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(fileAssetContainer)
+                .setContentlet(contentlet_2)
+                .setInstanceID(ContainerUUID.UUID_START_VALUE)
+                .setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1)
+                .nextPersisted();
+    }
+
+    ///
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional)}}
+     * When: Two pages shares the same contentlets, them one of these pages overrides their multitree
+     * Should: Make sure the multitree of the another page still there (previously the share contentlets were removed on both tree, but just added in the one that overrides)
+     */
+    @Test
+    public void after_override_multitrees_should_keep_other_pages_contentlet_references() throws Exception {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet1 = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId())
+                .nextPersisted();
+
+        final Contentlet contentlet2 = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId())
+                .nextPersisted();
+
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page1 = new HTMLPageDataGen(folder, template).nextPersisted();
+        final HTMLPageAsset page2 = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(1).withStructure(structure, "").nextPersisted();
+
+        final MultiTree newMultiTreeEnContent1 = new MultiTreeDataGen()
+                .setPage(page1)
+                .setContainer(container)
+                .setContentlet(contentlet1)
+                .setInstanceID(UUIDGenerator.shorty())
+                .setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1)
+                .nextPersisted();
+
+        final MultiTree newMultiTreeEnContent2 = new MultiTreeDataGen()
+                .setPage(page1)
+                .setContainer(container)
+                .setContentlet(contentlet2)
+                .setInstanceID(UUIDGenerator.shorty())
+                .setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(2)
+                .nextPersisted();
+
+        //
+        new MultiTreeDataGen()
+                .setPage(page2)
+                .setContainer(container)
+                .setContentlet(contentlet1)
+                .setInstanceID(UUIDGenerator.shorty())
+                .setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page2)
+                .setContainer(container)
+                .setContentlet(contentlet2)
+                .setInstanceID(UUIDGenerator.shorty())
+                .setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(2)
+                .nextPersisted();
+
+        final Contentlet newEnContentlet = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId())
+                .nextPersisted();
+
+        final MultiTree newMultiTreeEnContent = new MultiTreeDataGen()
+                .setPage(page1)
+                .setContainer(container)
+                .setContentlet(newEnContentlet)
+                .setInstanceID(UUIDGenerator.shorty())
+                .setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1)
+                .next();
+
+        APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                page1.getIdentifier(),
+                MultiTree.DOT_PERSONALIZATION_DEFAULT,
+                list(newMultiTreeEnContent1, newMultiTreeEnContent2, newMultiTreeEnContent),
+                Optional.of(defaultLanguage.getId())
+        );
+
+        CacheLocator.getMultiTreeCache().clearCache();
+
+        final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(page1.getIdentifier());
+
+        final Set<String> multiTreeContentlets = multiTrees.stream()
+                .map(multiTree -> multiTree.getContentlet())
+                .collect(Collectors.toSet());
+
+        assertEquals(3, multiTreeContentlets.size());
+        assertTrue(multiTreeContentlets.contains(newEnContentlet.getIdentifier()));
+        assertTrue(multiTreeContentlets.contains(contentlet2.getIdentifier()));
+        assertTrue(multiTreeContentlets.contains(contentlet1.getIdentifier()));
+
+        final List<MultiTree> multiTrees2 = APILocator.getMultiTreeAPI().getMultiTrees(page2.getIdentifier());
+
+        final Set<String> multiTreeContentlets2 = multiTrees2.stream()
+                .map(multiTree -> multiTree.getContentlet())
+                .collect(Collectors.toSet());
+
+        assertEquals(2, multiTreeContentlets2.size());
+        assertTrue(multiTreeContentlets.contains(contentlet1.getIdentifier()));
+        assertTrue(multiTreeContentlets.contains(contentlet2.getIdentifier()));
+    }
+    ///
 }

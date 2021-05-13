@@ -36,6 +36,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -60,6 +61,7 @@ import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -378,9 +380,9 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 			new TestCaseFindByIdLanguageFallback(en, en, en, null, false, new User()),
 			new TestCaseFindByIdLanguageFallback(es,en, en, null, true, new User()),
 				new TestCaseFindByIdLanguageFallback(en, -1, es,
-						ResourceNotFoundException.class, false, new User()),
+						DoesNotExistException.class, false, new User()),
 				new TestCaseFindByIdLanguageFallback(en, -1, es,
-						ResourceNotFoundException.class, false, new User()),
+						DoesNotExistException.class, false, new User()),
 			new TestCaseFindByIdLanguageFallback(en, en, en, DotSecurityException.class, false, null),
 		};
 	}
@@ -470,10 +472,12 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 						page.getURI());
 		final String identifierId = id.getId();
 
-		ContentletVersionInfo cvi = APILocator.getVersionableAPI()
+		Optional<ContentletVersionInfo> cvi = APILocator.getVersionableAPI()
 				.getContentletVersionInfo(id.getId(), 1);
+
+		assertTrue(cvi.isPresent());
 		Contentlet contentlet = APILocator.getContentletAPI()
-				.checkout(cvi.getWorkingInode(), APILocator.systemUser(), true);
+				.checkout(cvi.get().getWorkingInode(), APILocator.systemUser(), true);
 		//Validations
 		assertNotNull(contentlet);
 		assertNotNull(contentlet.getStringProperty(URL_FIELD));

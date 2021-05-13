@@ -41,11 +41,9 @@ public class TagAPIImpl implements TagAPI {
     @Override
     public List<Tag> getTagsForUserByUserId ( String userId ) throws DotDataException, DotSecurityException {
 
-        //First lets seach for the user
-        UserProxy user = APILocator.getUserProxyAPI().getUserProxy(userId, APILocator.getUserAPI().getSystemUser(), false);
-
+        
         //And return the tags related to the user
-        return getTagsForUserByUserInode(user.getInode());
+        return getTagsForUserByUserInode(userId);
     }
 
     @CloseDBIfOpened

@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.content.business.DotMappingException;
+import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
@@ -405,27 +406,6 @@ public abstract class ContentletFactory {
     
     protected abstract long indexCount(String query);
 
-	/**
-	 * This indexCount will use the thirdparty mechanism to async known when the query is returning something.
-	 * @param query          {@link String} query to test if get results
-	 * @param timeoutMillis  {@link Long}   time in millis to timeout
-	 */
-	protected abstract long indexCount(final String query,
-							  final long timeoutMillis);
-
-	/**
-	 * This indexCount will use the thirdparty mechanism to async known when the query is returning something.
-	 * this one use an async response, the indexCountSuccess will be called if the count is success, otherwise if the indexCountFailure is not null will be invoked.
-	 * @param query
-	 * @param timeoutMillis
-	 * @param indexCountSuccess
-	 * @param indexCountFailure
-	 */
-	protected abstract void indexCount(final String query,
-					final long timeoutMillis,
-					final Consumer<Long> indexCountSuccess,
-					final Consumer<Exception> indexCountFailure);
-    
     /**
      * Gets the top viewed contents identifier and numberOfViews for a particular structure for a specified date interval
      * 
@@ -455,4 +435,9 @@ public abstract class ContentletFactory {
 
     public abstract Optional<Contentlet> findInDb(String inode) ;
 
+	public static void rebuildRestHighLevelClientIfNeeded(final Exception e) {
+		if(e != null && e.getMessage().contains("reactor status: STOPPED")) {
+			RestHighLevelClientProvider.getInstance().rebuildClient();
+		}
+	}
 }

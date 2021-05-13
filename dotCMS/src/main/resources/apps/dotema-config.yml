@@ -1,0 +1,12 @@
+name: "EMA APP"
+iconUrl: "https://static.dotcms.com/assets/icons/apps/ema-icon.png"
+allowExtraParameters: false
+description: "EMA - or Edit Mode Anywhere, allows you to proxy your edit mode requests to a 3rd party server or web site.  If that site is configured to use the dotCMS Page API then EMA enables remote content management of content, layouts and pages that are hosted remotely."
+params:
+  proxyEditModeURL:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Proxy Edit Mode URL"
+    hint: "Your rendering server and endpoint that dotCMS will be proxying the request to, including the port, e.g. https://myspa.com:3000"
+    required: true

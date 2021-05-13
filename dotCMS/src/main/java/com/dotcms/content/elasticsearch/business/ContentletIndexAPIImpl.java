@@ -3,7 +3,6 @@ package com.dotcms.content.elasticsearch.business;
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotmarketing.common.reindex.ReindexThread.ELASTICSEARCH_CONCURRENT_REQUESTS;
 import static com.dotmarketing.util.StringUtils.builder;
-import com.dotcms.api.system.event.SystemEvent;
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
@@ -13,11 +12,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.content.business.DotMappingException;
-import com.dotcms.contenttype.business.ContentTypeAPI;
-import com.dotcms.contenttype.business.FieldFactory;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldVariable;
-import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.content.elasticsearch.util.ESMappingUtilHelper;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
@@ -25,8 +20,6 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.RelationshipAPI;
-import com.dotmarketing.business.Role;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.BulkProcessorListener;
 import com.dotmarketing.common.reindex.ReindexEntry;
@@ -39,6 +32,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
@@ -50,16 +44,12 @@ import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.ThreadUtils;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.json.JSONObject;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
-import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
-import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
-import io.vavr.API;
 import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
@@ -72,7 +62,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -156,7 +145,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     public synchronized boolean createContentIndex(String indexName) throws ElasticsearchException, IOException {
-        return createContentIndex(indexName, 0);
+        boolean result = createContentIndex(indexName, 0);
+        ESMappingUtilHelper.getInstance().addCustomMapping(indexName);
+
+        return result;
     }
 
     @Override
@@ -187,145 +179,11 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         }
 
         mappingAPI.putMapping(indexName, mapping);
-        addCustomMapping(indexName);
 
         return true;
     }
 
-    /**
-     * Sets a custom index mapping for relationships and also for mapping defined on field variables
-     * using `esCustomMapping` property
-     * @param indexName - Index where mapping will be updated
-     */
-    private void addCustomMapping(final String indexName)  {
 
-        final Set<String> mappedRelationships = addCustomMappingFromFieldVariables(indexName);
-
-        addCustomMappingForRelationships(indexName, mappedRelationships);
-    }
-
-    /**
-     * Sets a mapping for all relationships except for those that contains its custom mapping using field variables
-     * @param indexName - Index where mapping will be updated
-     * @param mappedRelationships - Mapping already set for relationships through field variables
-     * View {@link ContentletIndexAPIImpl#addCustomMappingFromFieldVariables(String)}
-     */
-    private void addCustomMappingForRelationships(final String indexName,
-            final Set<String> mappedRelationships) {
-        final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
-        final List<Relationship> relationships = relationshipAPI.dbAll();
-
-        for(final Relationship relationship: relationships){
-            final String relationshipName = relationship.getRelationTypeValue().toLowerCase();
-            if (!mappedRelationships.contains(relationshipName)) {
-                final JSONObject properties = new JSONObject();
-                try{
-                    properties.put("properties", new JSONObject()
-                            .put(relationshipName,
-                                    new JSONObject("{\n"
-                                            + "\"type\":  \"keyword\",\n"
-                                            + "\"ignore_above\": 8191\n"
-                                            + "}")));
-                    mappingAPI.putMapping(indexName, properties.toString());
-                } catch (Exception e) {
-                    handleInvalidCustomMappingError(indexName, relationshipName);
-                    final String message = "Error updating index mapping for relationship " + relationshipName
-                            + ". This custom mapping will be ignored for index: " + indexName;
-                    Logger.warn(this, message, e);
-                }
-            }
-        }
-    }
-
-    /**
-     *
-     * @param indexName
-     * @param fieldName
-     */
-    private void handleInvalidCustomMappingError(final String indexName, final String fieldName) {
-
-        final SystemMessageEventUtil systemMessageEventUtil = SystemMessageEventUtil.getInstance();
-
-        try {
-            systemMessageEventUtil.pushMessage(
-                    new SystemMessageBuilder()
-                            .setMessage(LanguageUtil.format(Locale.getDefault(),
-                                    "notification.reindexing.custom.mapping.error",
-                                    new String[]{fieldName, indexName}, false))
-                            .setSeverity(MessageSeverity.ERROR)
-                            .setType(MessageType.SIMPLE_MESSAGE)
-                            .setLife(6000)
-                            .create(), null);
-        } catch (LanguageException ex) {
-            throw new RuntimeException(ex);
-        }
-    }
-
-    /**
-     * Sets a mapping defined on field variables
-     * @param indexName - Index where mapping will be updated
-     * @return Collection of relationship names whose mapping was set
-     */
-    private Set<String> addCustomMappingFromFieldVariables(final String indexName) {
-        final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
-        final FieldFactory fieldFactory = FactoryLocator.getFieldFactory();
-        final Set<String> mappedRelationships = new HashSet<>();
-
-        final User user;
-        try {
-            user = APILocator.getUserAPI().getSystemUser();
-
-            //Find field variables
-            final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
-            final List<FieldVariable> fieldVariables = fieldFactory
-                    .byFieldVariableKey(FieldVariable.ES_CUSTOM_MAPPING_KEY);
-
-            for (final FieldVariable fieldVariable : fieldVariables) {
-                Field field = null;
-                ContentType type = null;
-                try {
-                    field = fieldFactory.byId(fieldVariable.fieldId());
-                    type = contentTypeAPI.find(field.contentTypeId());
-                    final JSONObject jsonObject = new JSONObject();
-                    final JSONObject properties = new JSONObject();
-
-                    jsonObject.put(type.variable().toLowerCase(),
-                            new JSONObject()
-                                    .put("properties", new JSONObject()
-                                            .put(field.variable()
-                                                            .toLowerCase(),
-                                                    new JSONObject(fieldVariable.value()))));
-                    properties.put("properties", jsonObject);
-                    mappingAPI.putMapping(indexName, properties.toString());
-
-                    if (field instanceof RelationshipField) {
-                        final Relationship relationship = relationshipAPI
-                                .getRelationshipFromField(field, user);
-                        mappedRelationships.add(relationship.getRelationTypeValue().toLowerCase());
-                    }
-                } catch (Exception e) {
-                    handleInvalidCustomMappingError(indexName,
-                            type != null ? type.variable() + "." + field.variable() : "[]");
-                    String message = "Error setting custom index mapping from field variable "
-                            + fieldVariable.key();
-
-                    if (field != null){
-                        message += ". Field: " + field.name();
-                    }
-
-                    if (type != null) {
-                        message += ". Content Type: " + type.name();
-                    }
-
-                    message += ". Custom mapping will be ignored for index: " + indexName;
-                    Logger.warn(this, message, e);
-                }
-            }
-        } catch (DotDataException e) {
-            Logger.warn(this, "Error setting custom index mapping for index " + indexName, e);
-        }
-        return mappedRelationships;
-    }
 
     /**
      * Creates new indexes /working_TIMESTAMP (aliases working_read, working_write and workinglive) and
@@ -354,6 +212,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             createContentIndex(info.getLive(), 0);
 
             APILocator.getIndiciesAPI().point(info);
+
+            ESMappingUtilHelper.getInstance()
+                    .addCustomMapping(info.getWorking(), info.getLive());
             return timeStamp;
         } catch (Exception e) {
             throw new ElasticsearchException(e.getMessage(), e);
@@ -397,10 +258,11 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * @throws SQLException An error occurred when interacting with the database.
      * @throws DotDataException The process to switch to the new failed.
      * @throws InterruptedException The established pauses to switch to the new index failed.
+     * @return
      */
     @Override
     @CloseDBIfOpened
-    public void reindexSwitchover(boolean forceSwitch) throws DotDataException {
+    public boolean reindexSwitchover(boolean forceSwitch) throws DotDataException {
 
         // We double check again. Only one node will enter this critical
         // region, then others will enter just to see that the switchover is
@@ -409,10 +271,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         if (forceSwitch || queueApi.recordsInQueue() == 0) {
             Logger.info(this, "Running Reindex Switchover");
             // Wait a bit while all records gets flushed to index
-            this.fullReindexSwitchover(forceSwitch);
+            return this.fullReindexSwitchover(forceSwitch);
             // Wait a bit while elasticsearch flushes it state
         }
-
+        return false;
     }
 
     /**
@@ -442,6 +304,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 createContentIndex(info.getReindexLive(), 0);
 
                 APILocator.getIndiciesAPI().point(info);
+
+                ESMappingUtilHelper.getInstance()
+                        .addCustomMapping(info.getReindexWorking(), info.getReindexLive());
 
                 return timeStamp;
             } catch (Exception e) {
@@ -473,10 +338,14 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     public boolean fullReindexSwitchover(Connection conn, final boolean forceSwitch) {
 
 
-        if(reindexTimeElapsedInLong()<Config.getLongProperty("REINDEX_THREAD_MINIMUM_RUNTIME_IN_SEC", 15)*1000) {
-          Logger.info(this.getClass(), "Reindex has been running only " +reindexTimeElapsed().get() + ". Letting the reindex settle.");
-          ThreadUtils.sleep(3000);
-          return false;
+        if(reindexTimeElapsedInLong()<Config.getLongProperty("REINDEX_THREAD_MINIMUM_RUNTIME_IN_SEC", 30)*1000) {
+            if(reindexTimeElapsed().isPresent()){
+                Logger.info(this.getClass(), "Reindex has been running only " +reindexTimeElapsed().get() + ". Letting the reindex settle.");
+            }else{
+                Logger.info(this.getClass(), "Reindex Time Elapsed not set.");
+            }
+            ThreadUtils.sleep(3000);
+            return false;
         }
         try {
             final IndiciesInfo oldInfo = APILocator.getIndiciesAPI().loadIndicies();
@@ -486,9 +355,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                     return false;
                 }
                 if (!luckyServer.equals(ConfigUtils.getServerId())) {
-                    Logger.info(this.getClass(), "fullReindexSwitchover: Letting server [" + luckyServer + "] make the switch. My id : ["
-                            + ConfigUtils.getServerId() + "]");
-                    DateUtil.sleep(4000);
+                    logSwitchover(oldInfo, luckyServer);
+                    DateUtil.sleep(5000);
                     return false;
                 }
             }
@@ -501,7 +369,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
             final IndiciesInfo newInfo = builder.build();
 
-            logSwitchover(oldInfo);
+            logSwitchover(oldInfo, luckyServer);
             APILocator.getIndiciesAPI().point(newInfo);
 
             DotConcurrentFactory.getInstance().getSubmitter().submit(() -> {
@@ -572,13 +440,16 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     return Optional.empty();
   }
 
-    private void logSwitchover(IndiciesInfo oldInfo) {
+    private void logSwitchover(final IndiciesInfo oldInfo, final String luckyServer) {
         Logger.info(this, "-------------------------------");
-        Optional<String> duration = reindexTimeElapsed();
+        final String myServerId=APILocator.getServerAPI().readServerId();
+        final Optional<String> duration = reindexTimeElapsed();
         if (duration.isPresent()) {
             Logger.info(this, "Reindex took        : " + duration.get() );
         }
-        Logger.info(this, "Switching Server Id : " + ConfigUtils.getServerId() );
+        
+        Logger.info(this, "Switching Server Id : " + luckyServer + (luckyServer.equals(myServerId) ? " (this server) " : " (NOT this server)") );
+        
         Logger.info(this, "Old indicies        : [" + esIndexApi
                 .removeClusterIdFromName(oldInfo.getWorking()) + "," + esIndexApi
                 .removeClusterIdFromName(oldInfo.getLive()) + "]");
@@ -610,7 +481,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             return;
         }
 
-        Logger.info(this, "Indexing: " + parentContenlet.getIdentifier()
+        Logger.info(this, "Indexing: " + parentContenlet.getIdentifier() + " : " + parentContenlet.getTitle()
                 + ", includeDependencies: " + includeDependencies +
                 ", policy: " + parentContenlet.getIndexPolicy());
 
@@ -625,8 +496,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 .build()
                 : ImmutableList.of(parentContenlet);
 
-        if (ESReadOnlyMonitor.getInstance().isIndexOrClusterReadOnly()) {
-            ESReadOnlyMonitor.getInstance().sendReadOnlyMessage();
+
+        if (ElasticReadOnlyCommand.getInstance().isIndexOrClusterReadOnly()) {
+            ElasticReadOnlyCommand.getInstance().sendReadOnlyMessage();
         }
 
         if(parentContenlet.getIndexPolicy()==IndexPolicy.DEFER) {
@@ -701,23 +573,32 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     @Override
     public void putToIndex(final BulkRequest bulkRequest,
             final ActionListener<BulkResponse> listener) {
-        if (bulkRequest != null && bulkRequest.numberOfActions() > 0) {
-            bulkRequest.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
 
-            if (listener != null) {
-                RestHighLevelClientProvider.getInstance()
-                        .getClient().bulkAsync(bulkRequest, RequestOptions.DEFAULT, listener);
-            } else {
-                BulkResponse response = Sneaky.sneak(() -> RestHighLevelClientProvider.getInstance().getClient()
-                        .bulk(bulkRequest, RequestOptions.DEFAULT));
+        try {
+            if (bulkRequest != null && bulkRequest.numberOfActions() > 0) {
+                bulkRequest.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
 
-                if (response != null && response.hasFailures()) {
-                    Logger.error(this,
-                            "Error reindexing (" + response.getItems().length + ") content(s) "
-                                    + response.buildFailureMessage());
+                if (listener != null) {
+                    RestHighLevelClientProvider.getInstance()
+                            .getClient().bulkAsync(bulkRequest, RequestOptions.DEFAULT, listener);
+                } else {
+                    BulkResponse response = Sneaky.sneak(() -> RestHighLevelClientProvider.getInstance().getClient()
+                            .bulk(bulkRequest, RequestOptions.DEFAULT));
+
+                    if (response != null && response.hasFailures()) {
+                        Logger.error(this,
+                                "Erro" +
+                                        "r reindexing (" + response.getItems().length + ") content(s) "
+                                        + response.buildFailureMessage());
+                    }
                 }
             }
-
+        } catch (final Exception e) {
+            if(ExceptionUtil.causedBy(e, IllegalStateException.class)) {
+                ContentletFactory.rebuildRestHighLevelClientIfNeeded(e);
+            }
+            Logger.warnAndDebug(ContentletIndexAPIImpl.class, e);
+            throw new DotRuntimeException(e.getMessage(), e);
         }
     }
 

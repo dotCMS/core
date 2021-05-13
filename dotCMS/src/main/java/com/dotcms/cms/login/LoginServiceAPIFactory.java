@@ -1,7 +1,18 @@
 package com.dotcms.cms.login;
 
 import static com.dotmarketing.util.CookieUtil.createJsonWebTokenCookie;
-
+import java.io.Serializable;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.business.CloseDBIfOpened;
@@ -17,7 +28,6 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
-import com.dotmarketing.cms.login.struts.LoginForm;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
@@ -42,18 +52,6 @@ import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.InstancePool;
-import java.io.Serializable;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 /**
  * Login Service Factory that allows developers to inject custom login services.
@@ -64,9 +62,10 @@ import org.apache.commons.logging.LogFactory;
  */
 public class LoginServiceAPIFactory implements Serializable {
 
-     private static final String BACKEND_LOGIN = "backendLogin";
+    private static final String BACKEND_LOGIN = "backendLogin";
+    public static final String LOG_OUT_ATTRIBUTE = "LOG_OUT";
 
-	/**
+    /**
 	 * Used to keep the instance of the {@link LoginServiceAPI}. Should be volatile
 	 * to avoid thread-caching
 	 */
@@ -209,6 +208,7 @@ public class LoginServiceAPIFactory implements Serializable {
                 }
 
                 log.debug("Logout - Invalidating http session...");
+                session.setAttribute(LOG_OUT_ATTRIBUTE, true);
                 session.invalidate();
 
                 log.debug("Logout - Events Processor Post Logout events.");
@@ -438,14 +438,7 @@ public class LoginServiceAPIFactory implements Serializable {
         }
 
 
-        @Override
-        @CloseDBIfOpened
-        public boolean doLogin(final LoginForm form,
-                               final HttpServletRequest request,
-                               final HttpServletResponse response) throws NoSuchUserException {
 
-            return LoginServiceAPI.super.doLogin(form, request, response);
-        }
 
         @Override
         public void doRememberMe(final HttpServletRequest req,

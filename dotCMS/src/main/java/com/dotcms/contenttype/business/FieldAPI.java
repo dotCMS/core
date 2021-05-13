@@ -128,7 +128,19 @@ public interface FieldAPI {
 	 * @throws DotSecurityException The user does not have permissions to perform this action.
 	 */
 	Field save(Field field, User user) throws DotDataException, DotSecurityException;
-	
+
+	/**
+	 * Saves a new Field
+	 *
+	 * @param field
+	 * @param user
+	 * @param reorderIfNeed  if it’s true then reorder all the fields relative to the order of the field being saved
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	Field save(Field field, User user, boolean reorderIfNeed) throws DotDataException, DotSecurityException;
+
 	/**
 	 * Saves a new Field Variable.
 	 * 
@@ -253,4 +265,13 @@ public interface FieldAPI {
 			final Map<String, Object> fieldMap,
 			final User user
 	);
+
+	/**
+	 * Given a field load and return its variables.
+	 *
+	 * @param field field variables belong to
+	 * @return list of variables
+	 * @throws DotDataException when SQL error happens
+	 */
+	List<FieldVariable> loadVariables(Field field) throws DotDataException;
 }

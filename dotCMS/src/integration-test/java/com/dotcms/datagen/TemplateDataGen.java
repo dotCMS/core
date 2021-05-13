@@ -1,5 +1,10 @@
 package com.dotcms.datagen;
 
+
+import static com.dotmarketing.business.ModDateTestUtil.updateContentletModeDate;
+import static com.dotmarketing.business.ModDateTestUtil.updateTemplateModeDate;
+import static com.dotmarketing.business.ModDateTestUtil.updateTemplateVersionDate;
+
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
@@ -47,6 +52,8 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
 
     private static final TemplateAPI templateAPI = APILocator.getTemplateAPI();
     private static final String type = "template";
+    private boolean setBodyAsNull = false;
+    private Date modDate;
 
     /**
      * Sets body property to the TemplateDataGen instance. This will be used when a new {@link
@@ -80,6 +87,11 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
             throw new DotRuntimeException(e);
         }
 
+        return this;
+    }
+
+    public TemplateDataGen drawedBody(final String drawedBody) {
+        this.drawedBody = drawedBody;
         return this;
     }
 
@@ -144,14 +156,13 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
     }
     
     /**
-     * Sets title property to the TemplateDataGen instance. This will be used when a new {@link
-     * Template} instance is created
+     * Sets the host where the template lives.
      *
-     * @param title the title of this template
-     * @return TemplateDataGen with title property set
+     * @param host the host of this template
+     * @return TemplateDataGen with host property set
      */
     public TemplateDataGen host(Host host) {
-        this.host = host;
+        super.host = host;
         return this;
     }
     public TemplateDataGen site(Host site) {
@@ -255,6 +266,8 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
         template.setBody(body);
         template.setDrawedBody(drawedBody);
         template.setTheme(theme);
+        template.setCountAddContainer(0);
+        template.setCountContainers(0);
         return template;
     }
 
@@ -262,7 +275,7 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
     @Override
     public Template persist(Template template) {
 
-        if (Strings.isNullOrEmpty(body)) {
+        if (Strings.isNullOrEmpty(body) && !setBodyAsNull) {
 
             if (containers.isEmpty()) {
                 withContainer(new ContainerDataGen().nextPersisted().getIdentifier());
@@ -289,13 +302,26 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
         }
 
         try {
-            final Template savedTemplate = templateAPI.saveTemplate(template, host, user, false);
+            final Template savedTemplate = save(template, host);
             APILocator.getVersionableAPI().setLive(savedTemplate);
 
+            if (modDate != null) {
+                updateTemplateModeDate(savedTemplate, modDate);
+                updateTemplateVersionDate(savedTemplate, modDate);
+            }
             return savedTemplate;
         } catch (DotDataException | DotSecurityException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static Template save(final Template template, final Host host) throws DotDataException, DotSecurityException {
+        return templateAPI.saveTemplate(template, host, user, false);
+    }
+
+    public static Template save(final Template template) throws DotDataException, DotSecurityException {
+        final Host defaultHost = APILocator.getHostAPI().findDefaultHost(user, false);
+        return templateAPI.saveTemplate(template, defaultHost, user, false);
     }
 
     @WrapInTransaction
@@ -312,5 +338,15 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
             throws DotSecurityException, WebAssetException, DotDataException {
         PublishFactory.publishAsset(template, APILocator.systemUser(),
                 false, false);
+    }
+
+    public TemplateDataGen setBodyAsNull() {
+        this.setBodyAsNull = true;
+        return this;
+    }
+
+    public TemplateDataGen modDate(Date modDate) {
+        this.modDate = modDate;
+        return this;
     }
 }

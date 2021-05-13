@@ -84,7 +84,19 @@
 				<table  class="listingTable" style="margin-bottom: 50px;">
 					<tr>
 						<th width="100%" onclick="goToEditBundle('<%=bundle.getId()%>')" style="cursor:pointer">
-							<b><%=StringEscapeUtils.unescapeJava(bundle.getName())%></b> (<span> <%=bundle.getId() %> </span>)
+							<b><%=StringEscapeUtils.unescapeJava(bundle.getName())%></b> 
+                            (<span> <%=bundle.getId() %> </span>)
+                            <%if(bundle.bundleTgzExists()){%>
+                                - <%=LanguageUtil.get(pageContext, "Already Generated") %> / Filter:  
+                                <%if(bundle.getOperation()==null || bundle.getOperation()==0){%> 
+                                    <%=(bundle.getFilterKey()!=null) ?bundle.getFilterKey().replace(".yml", "")  :""%>
+                                 <%}else{ %>
+                                    Unpublish
+                                 <%}%>
+                                 
+                  
+                            <%} %>
+
 						</th>
 						<th align="right" nowrap="nowrap">
 							
@@ -97,14 +109,19 @@
 									<div data-dojo-type="dijit/MenuItem" onClick="deleteSavedBundle('<%=bundle.getId()%>')">
 										<%= LanguageUtil.get(pageContext, "Delete") %>
 									</div>
-									
-									<div data-dojo-type="dijit/MenuItem" disabled="<%= assets.isEmpty() %>" onClick="downloadUnpushedBundle('<%=bundle.getId()%>','publish')">
-										<%=LanguageUtil.get(pageContext, "download-for-Publish") %>
+                                    <%if(bundle.bundleTgzExists()){%>
+                                        <div data-dojo-type="dijit/MenuItem" onClick="window.open('/api/bundle/_download/<%=bundle.getId()%>','_blank');">
+                                            <%= LanguageUtil.get(pageContext, "Download") %>
+                                        </div>
+                                    <%} %>
+                     
+									<div data-dojo-type="dijit/MenuItem" disabled="<%= assets.isEmpty() %>" onClick="openDownloadBundleDialog('<%=bundle.getId()%>')">
+                                        <%if(bundle.bundleTgzExists()){%>
+                                            <%=LanguageUtil.get(pageContext, "Regenerate") %> / <%= LanguageUtil.get(pageContext, "Download") %>
+                                        <%}else{ %>
+										  <%=LanguageUtil.get(pageContext, "Generate") %> / <%= LanguageUtil.get(pageContext, "Download") %>
+                                        <%} %>
 									</div>
-									<div data-dojo-type="dijit/MenuItem" disabled="<%= assets.isEmpty() %>" onClick="downloadUnpushedBundle('<%=bundle.getId()%>','unpublish')">
-										<%=LanguageUtil.get(pageContext, "download-for-UnPublish") %>
-									</div>
-		
 									<div data-dojo-type="dijit/MenuItem" disabled="<%= assets.isEmpty() %>" onClick="remotePublish('<%=bundle.getId()%>'); ">
 										<%= LanguageUtil.get(pageContext, "Remote-Publish") %>
 									</div>

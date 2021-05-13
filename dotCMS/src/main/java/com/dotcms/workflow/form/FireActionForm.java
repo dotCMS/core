@@ -17,7 +17,10 @@ public class FireActionForm extends Validated {
     private final String expireTime;
     private final String neverExpire;
     private final String whereToSend;
-    private final String forcePush;
+    private final String filterKey;
+    private final String iWantTo;
+    private final String query;
+
     private final Map<String, Object> contentletFormData;
 
     public String getComments() {
@@ -52,12 +55,20 @@ public class FireActionForm extends Validated {
         return whereToSend;
     }
 
-    public String getForcePush() {
-        return forcePush;
+    public String getFilterKey() {
+        return filterKey;
+    }
+
+    public String getIWantTo() {
+        return iWantTo;
     }
 
     public Map<String, Object> getContentletFormData() {
         return contentletFormData;
+    }
+
+    public String getQuery() {
+        return query;
     }
 
     public FireActionForm(final Builder builder) {
@@ -70,7 +81,9 @@ public class FireActionForm extends Validated {
         this.expireTime  = builder.expireTime;
         this.neverExpire = builder.neverExpire;
         this.whereToSend = builder.whereToSend;
-        this.forcePush   = builder.forcePush;
+        this.filterKey   = builder.filterKey;
+        this.iWantTo     = builder.iWantTo;
+        this.query       = builder.query;
         this.contentletFormData =
                 builder.contentlet;
     }
@@ -94,12 +107,21 @@ public class FireActionForm extends Validated {
         @JsonProperty()
         private String whereToSend;
         @JsonProperty()
-        private String forcePush;
+        private String filterKey;
+        @JsonProperty()
+        private String iWantTo;
+        @JsonProperty()
+        private String query;
         @JsonProperty("contentlet")
         private Map<String, Object> contentlet;
 
         public Builder comments(final String comments) {
             this.comments = comments;
+            return this;
+        }
+
+        public Builder query(final String query) {
+            this.query = query;
             return this;
         }
 
@@ -138,8 +160,13 @@ public class FireActionForm extends Validated {
             return this;
         }
 
-        public Builder forcePush(final String forcePush) {
-            this.forcePush = forcePush;
+        public Builder filterKey(final String filterKey) {
+            this.filterKey = filterKey;
+            return this;
+        }
+
+        public Builder iWantTo(final String iWantTo) {
+            this.iWantTo = iWantTo;
             return this;
         }
 

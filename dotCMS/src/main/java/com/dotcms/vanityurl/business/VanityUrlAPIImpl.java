@@ -1,12 +1,6 @@
 package com.dotcms.vanityurl.business;
 
 
-import java.text.MessageFormat;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
@@ -35,6 +29,13 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+
+import java.text.MessageFormat;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Implementation class for the {@link VanityUrlAPI}.
@@ -125,11 +126,11 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
           vanityUrls.stream().map(vanity -> vanity.get("live_inode").toString()).collect(Collectors.toList());
       final List<Contentlet> contentlets = this.contentletAPI.findContentlets(vanityUrlInodes);
 
-      return contentlets.stream().map(contentlet -> new CachedVanityUrl(this.fromContentlet(contentlet))).collect(Collectors.toList());
+      return contentlets.stream().map(contentlet -> new CachedVanityUrl(this.fromContentlet(contentlet))).sorted().collect(Collectors.toList());
 
     } catch (final Exception e) {
       Logger.error(this,
-          String.format("An error occurred when retrieving Vanity URLs: siteId=[%s], " + "languageId=[%s], includeSystemHost=[%s]",
+          String.format("An error occurred when retrieving Vanity URLs: siteId=[%s], languageId=[%s]",
               host.getIdentifier(), language.getId()),
           e);
       throw new DotStateException(e);
@@ -137,10 +138,6 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
   }
 
-
-  
-  
-  
   private List<CachedVanityUrl> load(final Host host, final Language language) {
 
     List<CachedVanityUrl> cachedVanities = cache.getSiteMappings(host, language);
@@ -171,15 +168,15 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     }
 
     // tries specific site, language and url
-    Optional<CachedVanityUrl> matched = load(host, language).parallelStream()
+    Optional<CachedVanityUrl> matched = load(host, language).stream()
             .filter(cachedVanityUrl ->
-                    cachedVanityUrl.url.equalsIgnoreCase(url)).findAny();
+                    cachedVanityUrl.url.equalsIgnoreCase(url)).findFirst();
 
     // tries specific site, language and pattern
     if(!matched.isPresent()) {
-      matched = load(host, language).parallelStream()
+      matched = load(host, language).stream()
               .filter(cachedVanityUrl ->
-                      cachedVanityUrl.pattern.matcher(url).matches()).findAny();
+                      cachedVanityUrl.pattern.matcher(url).matches()).findFirst();
     }
 
     

@@ -224,8 +224,10 @@
                         else{
                             dojo.create("td", { innerHTML: expiredSpan + licenseAdmin.displayId(lic.serverId) + closeSpan }, row);
                         }
+                        
                         dojo.create("td", { innerHTML: expiredSpan + licenseAdmin.displayId(lic.serial) + closeSpan}, row);
-                        dojo.create("td", { innerHTML: !lic.available || lic.serverId ? lic.lastPingStr : ""}, row);
+                        dojo.create("td", { innerHTML: lic.serverId ? lic.startupTime  : ""}, row);
+                        dojo.create("td", { innerHTML: lic.serverId ? lic.lastPingStr : ""}, row);
                         
                         
                         
@@ -302,21 +304,17 @@
                 return;
             }
 
-            dojo.io.iframe.send({
-
-                form: dojo.byId("uploadPackForm"),
-                load: function(message, ioArgs) {
-                    console.log(message);
-                    licenseAdmin.refreshLayout('<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "licenses-uploaded") )%>');
-                },
-                error: function(error){
-                    //showDotCMSSystemMessage("ERROR:" + error,true);
-                licenseAdmin.refreshLayout('<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "licenses-uploaded") )%>');
-                
-                }
-            });
+            var xhr = new XMLHttpRequest();
             
-            //dojo.byId('uploadPackForm').submit();
+            xhr.open("POST", "/api/license/upload/"); 
+            
+            xhr.onload = function(event){ 	
+                console.log(event);
+                licenseAdmin.refreshLayout('<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "licenses-uploaded") )%>');
+            }; 
+            var formData = new FormData(document.getElementById("uploadPackForm")); 
+            xhr.send(formData);
+            
             return false;
         }
     });
@@ -537,7 +535,10 @@
                     <th>&nbsp;</th>
                     <th><%= LanguageUtil.get(pageContext, "license-repo-serverid") %></th>
                     <th><%= LanguageUtil.get(pageContext, "license-serial") %></th>
-                    <th><%= LanguageUtil.get(pageContext, "license-repo-last-ping") %></th>
+                    <th><%= LanguageUtil.getOrDefaultValue("license-repo-running-since", "Started") %></th>
+                    <th>
+                        <%= LanguageUtil.get(pageContext, "license-repo-last-ping") %>
+                    </th>
                     <th><%= LanguageUtil.get(pageContext, "license-repo-validuntil") %></th>
                     <th><%= LanguageUtil.get(pageContext, "license-repo-level") %></th>
                     <th><%= LanguageUtil.get(pageContext, "license-repo-type") %></th>

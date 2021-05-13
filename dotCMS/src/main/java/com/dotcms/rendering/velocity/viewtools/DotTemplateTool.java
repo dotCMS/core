@@ -1,11 +1,13 @@
 package com.dotcms.rendering.velocity.viewtools;
 
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.Theme;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
 import com.dotcms.contenttype.transform.JsonTransformer;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -27,6 +29,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
@@ -118,7 +121,6 @@ public class DotTemplateTool implements ViewTool {
         }
 
         TemplateLayout layout = layoutCache.getIfPresent(key);
-
         if(layout == null) {
             layout = getLayout(themeInode, isPreview, getDrawedBody(themeInode, user));
         }
@@ -126,15 +128,21 @@ public class DotTemplateTool implements ViewTool {
         return layout;
     }
 
-    private static DrawedBody getDrawedBody(String themeInode, User user) throws DotDataException, DotSecurityException {
-        final Identifier ident = APILocator.getIdentifierAPI().findFromInode(themeInode);
-        final Template template = APILocator.getTemplateAPI().findWorkingTemplate(ident.getId(), user, false);
+    public static void removeFromLayoutCache(final String templateInode){
+        layoutCache.invalidate(templateInode + false);
+        layoutCache.invalidate(templateInode + true);
+    }
 
-        if (!template.isDrawed()){
-            throw new RuntimeException("Template with inode: " + themeInode + " is not drawed");
+    private static DrawedBody getDrawedBody(String themeInodeOrId, User user) throws DotDataException, DotSecurityException {
+        final Template template = FactoryLocator.getTemplateFactory().find(themeInodeOrId);//If null themeInodeOrId is a Id
+        final String identifier = template!=null ? template.getIdentifier() : themeInodeOrId;
+        final Template workingTemplate = APILocator.getTemplateAPI().findWorkingTemplate(identifier, user, false);
+
+        if (!workingTemplate.isDrawed()){
+            throw new RuntimeException("Template with inode: " + themeInodeOrId + " is not drawed");
         }
 
-        return new DrawedBody(template.getTitle(), template.getDrawedBody());
+        return new DrawedBody(workingTemplate.getTitle(), workingTemplate.getDrawedBody());
     }
 
     private DrawedBody getDrawedBody() {
@@ -186,15 +194,31 @@ public class DotTemplateTool implements ViewTool {
             throw new RuntimeException("Template with inode: " + themeInode + " has not drawedBody");
         }
 
+        layout = getTemplateLayout(isPreview, drawedBodyAsString);
+
+        layout.setTitle(drawedBody.getTitle());
+        layoutCache.put(key, layout);
+
+        return layout;
+    }
+
+    public static TemplateLayout getTemplateLayout(String drawedBodyAsString) {
+        TemplateLayout layout;
+        try {
+            layout = getTemplateLayoutFromJSON(drawedBodyAsString);
+        } catch (IOException e) {
+            layout = DesignTemplateUtil.getDesignParameters(drawedBodyAsString, false);
+        }
+        return layout;
+    }
+
+    private static TemplateLayout getTemplateLayout(Boolean isPreview, String drawedBodyAsString) {
+        TemplateLayout layout;
         try {
             layout = getTemplateLayoutFromJSON(drawedBodyAsString);
         } catch (IOException e) {
             layout = DesignTemplateUtil.getDesignParameters(drawedBodyAsString, isPreview);
         }
-
-        layout.setTitle(drawedBody.getTitle());
-        layoutCache.put(key, layout);
-
         return layout;
     }
 
@@ -217,7 +241,7 @@ public class DotTemplateTool implements ViewTool {
             throws DotDataException, DotSecurityException {
 
         //Get the theme folder
-        Folder themeFolder = APILocator.getFolderAPI().find( themeFolderInode, APILocator.getUserAPI().getSystemUser(), false );
+        final Folder themeFolder = APILocator.getThemeAPI().findThemeById(themeFolderInode, APILocator.systemUser(),false);
         return setThemeData( themeFolder, hostId );
     }
 
@@ -315,6 +339,8 @@ public class DotTemplateTool implements ViewTool {
         String themeTemplatePath;
         if ( UtilMethods.isSet( themeTemplate ) && InodeUtils.isSet( themeTemplate.getInode() ) ) {
             themeTemplatePath = themeTemplate.getFileAsset().getPath();
+        } else if(themeFolder.getIdentifier().equals(Theme.SYSTEM_THEME)){
+            themeTemplatePath = "static/system_theme/" + Template.THEME_TEMPLATE;
         } else {//If the theme doesn't provide a template.vtl file lest use ours
             themeTemplatePath = "static/template/" + Template.THEME_TEMPLATE;
         }
@@ -330,4 +356,32 @@ public class DotTemplateTool implements ViewTool {
         return themeMap;
     }
 
+    public static Map<String, Long> getMaxUUID(final Template template){
+        if (template.isDrawed()) {
+
+            if (template.getDrawedBody() == null) {
+                return new HashMap<>();
+            }
+
+            final TemplateLayout templateLayout = DotTemplateTool.getTemplateLayout(template.getDrawedBody());
+            final Set<ContainerUUID> containersUUID = templateLayout.getContainersUUID();
+
+            final Map<String, Long> result = new HashMap<>();
+
+            for (final ContainerUUID containerUUID : containersUUID) {
+                final Long maxUUID = result.get(containerUUID.getIdentifier());
+                final long uuid = Long.parseLong(containerUUID.getUUID());
+
+                if (maxUUID == null ) {
+                    result.put(containerUUID.getIdentifier(), uuid);
+                } else {
+                    result.put(containerUUID.getIdentifier(), maxUUID > uuid ? maxUUID : uuid);
+                }
+            }
+
+            return result;
+        } else {
+            return new HashMap<>();
+        }
+    }
 }

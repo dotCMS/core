@@ -1,12 +1,19 @@
 package com.dotmarketing.portlets.contentlet.action;
 
-import static com.dotmarketing.portlets.calendar.action.EventFormUtils.editEvent;
-import static com.dotmarketing.portlets.calendar.action.EventFormUtils.setEventDefaults;
-import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isFieldTypeAllowedOnImportExport;
-
 import com.dotcms.api.system.event.Visibility;
+import com.dotcms.api.system.event.message.MessageSeverity;
+import com.dotcms.api.system.event.message.MessageType;
+import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.builder.SystemMessage;
+import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.DateField;
+import com.dotcms.contenttype.model.field.DateTimeField;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TagField;
+import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.notifications.bean.NotificationLevel;
@@ -73,7 +80,6 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
@@ -88,6 +94,7 @@ import com.dotmarketing.util.PortletURLUtil;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
@@ -101,12 +108,20 @@ import com.liferay.util.FileUtil;
 import com.liferay.util.LocaleUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
+import java.util.Optional;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.net.URLDecoder;
 import java.sql.Timestamp;
 import java.text.DateFormat;
+import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -122,11 +137,10 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+
+import static com.dotmarketing.portlets.calendar.action.EventFormUtils.editEvent;
+import static com.dotmarketing.portlets.calendar.action.EventFormUtils.setEventDefaults;
+import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isNewFieldTypeAllowedOnImportExport;
 
 /**
  * This class processes all the interactions with contentlets that are
@@ -277,7 +291,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		
 		User user = _getUser(req);
 
-		if(user ==null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(reqImpl.getPortletName(), user)){
+		if(user ==null || !user.isBackendUser()){
 		  Logger.warn(this.getClass(), "User is not set or user does not have access to portlet:" + reqImpl.getPortletName());
 		  _sendToReferral(req, res, "/api/v1/logout");
 		  return;
@@ -628,12 +642,20 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			_sendToReferral(req, res, referer);
 		}else if(cmd != null && cmd.equals("export")){
 			try {
-				String structureInode = req.getParameter("expStructureInode");
+				final String contentTypeId = req.getParameter("expStructureInode");
+				final ActionResponseImpl resImpl = (ActionResponseImpl) res;
+				final HttpServletResponse response = resImpl.getHttpServletResponse();
 
-				ActionResponseImpl resImpl = (ActionResponseImpl) res;
-				HttpServletResponse response = resImpl.getHttpServletResponse();
-
-				downloadToExcel(response, user,searchContentlets(req,res,config,form,user,"Excel"), structureInode);
+                final Structure contentType = CacheLocator.getContentTypeCache().getStructureByInode(contentTypeId);
+                final String startMsg = String.format("Exporting contents of type '%s' to CSV file. Please wait...",
+                        contentType.getName());
+				final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder();
+				final SystemMessage systemMessage = systemMessageBuilder.setMessage(startMsg).setType(MessageType
+						.SIMPLE_MESSAGE).setSeverity(MessageSeverity.INFO).setLife(10000).create();
+				SystemMessageEventUtil.getInstance().pushMessage(systemMessage, ImmutableList.of(user.getUserId()));
+                Logger.info(this, String.format("Exporting contents of type ID '%s' to CSV file. Retrieving results" +
+                        " from ES index...", contentTypeId));
+				downloadToExcel(response, user,searchContentlets(req,res,config,form,user,"Excel"), contentTypeId);
 			} catch (Exception ae) {
 				_handleException(ae, req);
 			}
@@ -1301,8 +1323,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		}
 		else if(perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user) && workingContentlet.isLocked()){
 
-			String lockedUserId = APILocator.getVersionableAPI().getLockedBy(workingContentlet);
-			if(user.getUserId().equals(lockedUserId)){
+			Optional<String> lockedUserId = APILocator.getVersionableAPI().getLockedBy(workingContentlet);
+			if(lockedUserId.isPresent() && user.getUserId().equals(lockedUserId.get())){
 				req.setAttribute(WebKeys.CONTENT_EDITABLE, true);
 			}else{
 				req.setAttribute(WebKeys.CONTENT_EDITABLE, false);
@@ -1354,11 +1376,12 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	private void unLockIfNecessary(final Contentlet content, final User user) {
 		try {
 			if (content.isLocked()) {
-				ContentletVersionInfo contentletVersionInfo =
+				Optional<ContentletVersionInfo> contentletVersionInfo =
 						APILocator.getVersionableAPI().getContentletVersionInfo(content.getIdentifier(), content.getLanguageId());
 
-				if (user.getUserId().equals(contentletVersionInfo.getLockedBy())) {
-						conAPI.unlock(content, user, false);
+				if (contentletVersionInfo.isPresent()
+						&& user.getUserId().equals(contentletVersionInfo.get().getLockedBy())) {
+					conAPI.unlock(content, user, false);
 				}
 			}
 		} catch (DotDataException|DotSecurityException e) {
@@ -1920,10 +1943,17 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			}
 
 			List<Structure> structures = StructureFactory.getStructuresWithWritePermissions(user, false);
-			if(!structures.contains(structure)) {
-				structures.add(structure);
+
+			//Add the structure to the collection if not exists.
+            //In case of PERSONA AND FORM, the structure will be included only if the license is enterprise
+            if (!structures.contains(structure) &&
+                    APILocator.getContentTypeAPI(user)
+                            .isContentTypeAllowed(new StructureTransformer(structure).from())) {
+                    //avoid exception if the list is immutable
+                    structures = new ArrayList<>(structures);
+                    structures.add(structure);
 			}
-			contentletForm.setAllStructures(structures);
+			contentletForm.setAllStructures(ImmutableList.of(structures));
 
 			String cmd = req.getParameter(Constants.CMD);
 			if ((cmd.equals("new") || !InodeUtils.isSet(contentletForm.getStructure().getInode())) && contentletForm.isAllowChange()) {
@@ -1989,12 +2019,9 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	public void downloadToExcel(HttpServletResponse response, User user, List<Map<String, String>> contentletList, String contentTypeInode) throws DotSecurityException{
 		PrintWriter writer = null;
 		if(contentletList.size() > 0) {
-			String[] inodes = new String[0];
-
-			Structure contentType = null;
 			List<Map<String, String>> contentlets = contentletList;
-
-			List<String> contentletsInodes = new ArrayList<String>();
+			Logger.info(this, String.format("Generating CSV data. Mapping content list of type '%s'", contentTypeInode));
+			final List<String> contentletsInodes = new ArrayList<>();
 			Map<String, String> contentletMap;
 			for (int i = 2; i < contentlets.size(); ++i) {
 				Object map = contentlets.get(i);
@@ -2004,50 +2031,61 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				}
 			}
 
-			inodes = contentletsInodes.toArray(new String[0]);
+            final String[] inodes = contentletsInodes.toArray(new String[0]);
 
-			List<Contentlet> contentletsList2 = new ArrayList<Contentlet>();
+			final List<Contentlet> contentletsList2 = new ArrayList<>();
 			for(String inode  : inodes){
 				Contentlet contentlet = new Contentlet();
 				try{
 					contentlet = conAPI.find(inode, user, false);
 				}catch (DotDataException ex){
-					Logger.error(this, "Unable to find contentlet with indoe " + inode);
+					Logger.warn(this, "Unable to find contentlet with Inode: " + inode);
 				}
 				contentletsList2.add(contentlet);
 			}
+			final NotificationAPI notificationAPI = APILocator.getNotificationAPI();
+            int totalSize = 0;
 			// If contentletList.size() then contentletsList2 are not empty
-			contentType = CacheLocator.getContentTypeCache().getStructureByInode(contentTypeInode);
-
+            final Structure contentType = CacheLocator.getContentTypeCache().getStructureByInode(contentTypeInode);
+            final String csvFileName = contentType.getName() + "_contents_" + UtilMethods.dateToHTMLDate(new java
+                    .util.Date(), "M_d_yyyy") + ".csv";
 			try {
 				response.setContentType("application/octet-stream; charset=UTF-8");
-				response.setHeader("Content-Disposition", "attachment; filename=\""+contentType.getName()+"_contents_" + UtilMethods.dateToHTMLDate(new java.util.Date(),"M_d_yyyy") +".csv\"");
+				response.setHeader("Content-Disposition", "attachment; filename=\"" + csvFileName +"\"");
 				writer = response.getWriter();
 
-				List<Field> contentTypeFields = FieldsCache.getFieldsByStructureInode(contentType.getInode());
+				List<com.dotcms.contenttype.model.field.Field> contentTypeFields =
+						APILocator.getContentTypeFieldAPI().byContentTypeId((contentType.getInode()));
+
 				writer.print("Identifier");
 				writer.print(",languageCode");
 				writer.print(",countryCode");
-				for (Field field : contentTypeFields) {
+				for (com.dotcms.contenttype.model.field.Field field : contentTypeFields) {
 					//we cannot export fields of these types
-					if(isFieldTypeAllowedOnImportExport(field)){
-						writer.print("," + field.getVelocityVarName());
+					if(isNewFieldTypeAllowedOnImportExport(field)){
+						writer.print("," + field.variable());
 					}
 				}
 
 				writer.print("\r\n");
+				int counter = 0;
+				int loggingPoint = 2000;
+                totalSize = contentletsList2.size();
 				for(Contentlet content :  contentletsList2 ){
-
-					List<Category> catList = (List<Category>) catAPI.getParents(content, user, false);
+                    counter += 1;
+                    if (counter % loggingPoint == 0) {
+                        Logger.info(this, String.format("Exporting %d out of %d contentlet(s)", counter, totalSize));
+                    }
+					List<Category> catList = catAPI.getParents(content, user, false);
 					writer.print(content.getIdentifier());
 					Language lang =APILocator.getLanguageAPI().getLanguage(content.getLanguageId());
 					writer.print("," +lang.getLanguageCode());
 					writer.print(","+lang.getCountryCode());
 
-					for (Field field : contentTypeFields) {
+					for (com.dotcms.contenttype.model.field.Field field: contentTypeFields) {
 						try {
 							//we cannot export fields of these types
-							if(!isFieldTypeAllowedOnImportExport(field)){
+							if(!isNewFieldTypeAllowedOnImportExport(field)){
                                continue;
 							}
 
@@ -2056,9 +2094,9 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 								value = conAPI.getFieldValue(content,field);
 							}
 							String text = "";
-							if(field.getFieldType().equals(Field.FieldType.CATEGORY.toString())){
+							if (field instanceof CategoryField) {
 
-								Category category = catAPI.find(field.getValues(), user, false);
+								Category category = catAPI.find(field.values(), user, false);
 								List<Category> children = catList;
 								List<Category> allChildren= catAPI.getAllChildren(category, user, false);
 								if (children.size() >= 1 && catAPI.canUseCategory(category, user, false)) {
@@ -2075,9 +2113,9 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 								if(UtilMethods.isSet(text)){
 									text=text.substring(1);
 								}
-							} else if(field.getFieldType().equals(Field.FieldType.TAG.toString())){
+							} else if (field instanceof TagField) {
 							    //Get Content Tags per field's Velocity Var Name
-							    List<Tag> tags = tagAPI.getTagsByInodeAndFieldVarName(content.getInode(), field.getVelocityVarName());
+							    List<Tag> tags = tagAPI.getTagsByInodeAndFieldVarName(content.getInode(), field.variable());
 							    if(tags!= null){
 							        for(Tag t:tags){
 							            if(text.equals(StringPool.BLANK)) {
@@ -2087,17 +2125,17 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 							            }
 							        }
 							    }
-							} else if (field.getFieldType().equals(FieldType.RELATIONSHIP.toString())) {
+							} else if (field instanceof RelationshipField) {
 								text = loadRelationships(((ContentletRelationships)value).getRelationshipsRecords());
 							} else{
 								if (value instanceof Date || value instanceof Timestamp) {
-									if(field.getFieldType().equals(Field.FieldType.DATE.toString())) {
+									if (field instanceof DateField) {
 										SimpleDateFormat formatter = new SimpleDateFormat (WebKeys.DateFormats.EXP_IMP_DATE);
 										text = formatter.format(value);
-									} else if(field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
+									} else if (field instanceof DateTimeField) {
 										SimpleDateFormat formatter = new SimpleDateFormat (WebKeys.DateFormats.EXP_IMP_DATETIME);
 										text = formatter.format(value);
-									} else if(field.getFieldType().equals(Field.FieldType.TIME.toString())) {
+									} else if (field instanceof TimeField) {
 										SimpleDateFormat formatter = new SimpleDateFormat (WebKeys.DateFormats.EXP_IMP_TIME);
 										text = formatter.format(value);
 									}
@@ -2117,9 +2155,10 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 							} else {
 								writer.print(","+text);
 							}
-						}catch(Exception e){
+						} catch (final Exception e) {
 							writer.print(",");
-							Logger.error(this,e.getMessage(),e);
+                            Logger.error(this, String.format("An error occurred when exporting field '%s' [%s] to CSV" +
+                                    " file '%s': %s", field.name(), field.inode(), csvFileName, e.getMessage()), e);
 						}
 					}
 					writer.print("\r\n");
@@ -2127,11 +2166,25 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				writer.flush();
 				writer.close();
 				HibernateUtil.closeSession();
-			}catch(Exception p){
-				Logger.error(this,p.getMessage(),p);
+			} catch (final Exception p) {
+                final String errorMsg = String.format("An error occurred when exporting contents of type '%s' [%s] to" +
+                        " CSV file '%s': %s", contentType.getName(), contentTypeInode, csvFileName, p.getMessage());
+                final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder();
+                final SystemMessage systemMessage = systemMessageBuilder.setMessage(errorMsg).setType(MessageType
+                        .SIMPLE_MESSAGE).setSeverity(MessageSeverity.ERROR).setLife(10000).create();
+                SystemMessageEventUtil.getInstance().pushMessage(systemMessage, ImmutableList.of(user.getUserId()));
+                Logger.error(this, errorMsg, p);
 			}
-		}
-		else {
+            final DecimalFormat decimalFormat = new DecimalFormat("###,###");
+            final String endMsg = String.format("A total of %s contents of type '%s' [%s] have been successfully " +
+                            "exported to CSV file '%s'", decimalFormat.format(totalSize), contentType.getName(),
+                    contentTypeInode, csvFileName);
+            final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder();
+            final SystemMessage systemMessage = systemMessageBuilder.setMessage(endMsg).setType(MessageType
+                    .SIMPLE_MESSAGE).setSeverity(MessageSeverity.INFO).setLife(10000).create();
+            SystemMessageEventUtil.getInstance().pushMessage(systemMessage, ImmutableList.of(user.getUserId()));
+            Logger.info(this, endMsg);
+        } else {
 			try {writer.print("\r\n");} catch (Exception e) {	Logger.debug(this,"Error: download to excel "+e);	}
 		}
 	}

@@ -51,9 +51,32 @@
 
 	function reloadTail(){
 		var x = dijit.byId("fileName").getValue();
-		dojo.byId("tailingFrame").src='/dotTailLogServlet/?fileName='+x;
-
+        if(x) {
+		    dojo.byId("tailingFrame").src='/dotTailLogServlet/?fileName='+x;
+            disableFollowOnScrollUp();
+            dijit.byId("downloadLog").attr("disabled", false);
+        } else {
+            dijit.byId("downloadLog").attr("disabled", true);
+        }
 	}
+
+    function disableFollowOnScrollUp() {
+        var iframe = dojo.byId('tailingFrame');
+        var logWindow = iframe.contentWindow;
+        var lastScrollTop = 0;
+        var followCB = dojo.byId("scrollMe");
+        var cbWidget = dijit.getEnclosingWidget(followCB);
+        setTimeout(() => {
+            logWindow.addEventListener("scroll", function(){
+                var st = logWindow.pageYOffset || logWindow.document.documentElement.scrollTop;
+                //scroll up
+                if (st < lastScrollTop && cbWidget.get('checked')){
+                    cbWidget.set('checked', false);
+                }
+                lastScrollTop = st <= 0 ? 0 : st; // For Mobile or negative scrolling
+            }, false);
+        }, 200)
+    };
 
 	function doPopup(){
 			var x = dijit.byId("fileName").getValue();
@@ -206,6 +229,10 @@
         var dialog = dijit.byId("logman_dia");
     	dojo.connect(dialog, "onShow", null, getCurrentLogs);
     	dojo.connect(dialog, "onCancel", null, destroyCheckboxNodes);
+
+
+
+
     });
 
 </script>
@@ -228,6 +255,9 @@
             </div>
             <button dojoType="dijit.form.Button" onClick="doPopup()" value="popup" name="popup">
                 <%= com.liferay.portal.language.LanguageUtil.get(pageContext,"popup") %>
+            </button>
+            <button dojoType="dijit.form.Button" onclick="location.href='/api/v1/maintenance/_downloadLog/' + document.getElementById('fileName').value"  id="downloadLog" value="download" name="download" disabled>
+                <%= com.liferay.portal.language.LanguageUtil.get(pageContext,"Download") %>
             </button>
         </div>
     </div>

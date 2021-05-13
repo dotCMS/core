@@ -22,9 +22,9 @@ public abstract class AppsCache implements Cachable {
 
     static final char[] CACHE_404 = new char[] {'4', '0', '4'};
 
-    public abstract List<AppDescriptorMeta> getAppDescriptorsMeta(Supplier<List<AppDescriptorMeta>> supplier);
+    public abstract List<AppDescriptor> getAppDescriptorsMeta(Supplier<List<AppDescriptor>> supplier);
 
-    public abstract Map<String, AppDescriptorMeta> getAppDescriptorsMap(final Supplier<List<AppDescriptorMeta>> supplier);
+    public abstract Map<String, AppDescriptor> getAppDescriptorsMap(final Supplier<List<AppDescriptor>> supplier);
 
     public abstract void invalidateDescriptorsCache();
 

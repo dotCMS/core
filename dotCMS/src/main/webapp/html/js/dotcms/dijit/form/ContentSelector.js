@@ -65,7 +65,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	structureInode: '',
 	structureVelVar: '',
 	setDotFieldTypeStr: '',
-	currentSortBy: "",
+	currentSortBy: "score,modDate desc",
 	DOT_FIELD_TYPE: 'dotFieldType',
 	hasHostFolderField: false,
 	counter_radio: 0,
@@ -94,6 +94,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
     useRelateContentOnSelect: false,
 
 	postCreate: function () {
+        this.containerStructures = this._decodeQuoteChars(this.containerStructures);
         var structuresParam = this.containerStructures.toString();
         this.containerStructures = structuresParam.length ? JSON.parse(structuresParam) : [];
 
@@ -131,7 +132,11 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	hide: function () {
 		this._clearSearch();
 		!isNg && this.dialog.hide();
-	},
+    },
+    
+    _decodeQuoteChars: function (structures) {
+        return structures.map(chunk => chunk.replace(/%27/g, "'").replace(/%22/g, '&quot;'))
+    },
 
 	_structureDetailsCallback: function (structure) {
 
@@ -155,7 +160,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	},
 
 	_structureChanged: function () {
-        this.currentSortBy = "";
+        this.currentSortBy = "score,modDate desc";
         this.setDotFieldTypeStr = "";
 		LanguageAjax.getLanguagesWithAllOption(dojo.hitch(this, this._fillLanguages));
 		StructureAjax.getSearchableStructureFields (this.structureInode,dojo.hitch(this, this._fillFields));
@@ -537,6 +542,10 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	},
 
 	_doSearch: function (page, sortBy) {
+        if (sortBy && sortBy[0] === '.') {
+            sortBy = sortBy.slice(1)
+        }
+
 
         var fieldsValues = new Array ();
 
@@ -546,12 +555,13 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 //		fieldsValues[fieldsValues.length] = this.htmlPageLanguage.value;
 //		else
 //		fieldsValues[fieldsValues.length] = this.languageId;
-
-		if(dijit.byId("langcombo+"+this.dialogCounter).get('displayedValue') != "")
-			fieldsValues[fieldsValues.length] = dijit.byId("langcombo+"+this.dialogCounter).get('value');
-		else
+		let obj = dijit.byId("langcombo+"+this.dialogCounter);
+		if(obj && obj.get('displayedValue') != ""){
+			fieldsValues[fieldsValues.length] = obj.get('value');
+		}
+		else{
             fieldsValues[fieldsValues.length] = "";
-            
+		}
         var allField = this.generalSearch.value;
 
         if (allField != undefined && allField.length>0 ) {

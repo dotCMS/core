@@ -21,7 +21,10 @@ public class FolderDataGen extends AbstractDataGen<Folder> {
     private String fileMasks = "";
     private Folder parent;
     private Host site = host;
-
+    private String defaultFileType = CacheLocator.getContentTypeCache()
+                    .getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME)
+                    .getInode();
+    
     @SuppressWarnings("unused")
     public FolderDataGen name(String name) {
         this.name = name;
@@ -40,6 +43,13 @@ public class FolderDataGen extends AbstractDataGen<Folder> {
         return this;
     }
 
+    @SuppressWarnings("unused")
+    public FolderDataGen defaultFileType(String defaultFileType) {
+        this.defaultFileType = defaultFileType;
+        return this;
+    }
+    
+    
     @SuppressWarnings("unused")
     public FolderDataGen sortOrder(int sortOrder) {
         this.sortOrder = sortOrder;
@@ -83,9 +93,7 @@ public class FolderDataGen extends AbstractDataGen<Folder> {
         f.setSortOrder(sortOrder);
         f.setFilesMasks(fileMasks);
         f.setHostId(site.getIdentifier());
-        f.setDefaultFileType(CacheLocator.getContentTypeCache()
-            .getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME)
-            .getInode());
+        f.setDefaultFileType(defaultFileType);
         return f;
     }
 
@@ -102,11 +110,11 @@ public class FolderDataGen extends AbstractDataGen<Folder> {
 
             folder.setIdentifier(newIdentifier.getId());
             APILocator.getFolderAPI().save(folder, user, false);
+
+            return APILocator.getFolderAPI().find(newIdentifier.getId(), APILocator.systemUser(), false);
         } catch (DotDataException | DotSecurityException e) {
             throw new RuntimeException("Unable to persist folder.", e);
         }
-
-        return folder;
 
     }
 

@@ -17,6 +17,7 @@
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowTask"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowSearcher"%>
 <%@ page import="java.util.stream.Collectors" %>
+<%@ page import="java.util.Optional" %>
 <%request.setAttribute("requiredPortletAccess", "workflow"); %>
 <%@ include file="/html/common/uservalidation.jsp"%>
 <%
@@ -187,7 +188,7 @@
 		<tr class="alternate_1">
 			<td>
 
-				<input <%if(!singleStep){ %>disabled="true"<%} %> type="checkbox" dojoType="dijit.form.CheckBox" id="<%=task.getWebasset() %>" class="taskCheckBox" value="<%=task.getId() %>"  data-action-inode="<%=contentlet.getInode()%>" />
+				<input <%if(!singleStep){ %>disabled="true"<%} %> type="checkbox" dojoType="dijit.form.CheckBox" id="<%=contentlet.getInode() %>" class="taskCheckBox" value="<%=task.getId() %>"  data-action-inode="<%=contentlet.getInode()%>" />
 
 
 			</td>
@@ -203,10 +204,15 @@
 				<span class="workingIcon"></span>
 				<%}%>
 				<%if (contentlet.isLocked()) {
-
-					User u = APILocator.getUserAPI().loadUserById(APILocator.getVersionableAPI().getLockedBy(contentlet), APILocator.getUserAPI().getSystemUser(), false); %>
-				<span class="lockIcon"  title="<%=UtilMethods.javaScriptify(u.getFullName()) %>"></span>
-				<%} %>
+					Optional<String> lockedBy = APILocator.getVersionableAPI().getLockedBy(contentlet);
+					if(lockedBy.isPresent()) {
+					User u = APILocator.getUserAPI().loadUserById(lockedBy.get(), APILocator.getUserAPI().getSystemUser(), false); %>
+					<span class="lockIcon"  title="<%=UtilMethods.javaScriptify(u.getFullName()) %>"></span>
+					<%} else {
+						Logger.error(this, "Can't find LockedBy for Contentlet. Identifier: "
+								+ contentlet.getIdentifier() + ". Lang: " + contentlet.getLanguageId());
+					}
+				}%>
 
 			</td>
 			<td>

@@ -1,18 +1,653 @@
 {
 	"info": {
-		"_postman_id": "72bfa87a-27fd-4b8f-8811-f7c007f82114",
+		"_postman_id": "bea4dc47-91f4-4d8a-b065-19dc1cb1969e",
 		"name": "ApiToken Resource",
 		"description": "Tests for the api token",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
+			"name": "remote",
+			"item": [
+				{
+					"name": "set ENABLE_PROXY_TOKEN_REQUESTS to false",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"ENABLE_PROXY_TOKEN_REQUESTS\": false\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api//v1/configuration",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"",
+								"v1",
+								"configuration"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "createToken remote (disabled)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 403\", function () {",
+									"    pm.response.to.have.status(403);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth\": {\n        \"login\": \"admin@dotcms.com\", \n        \"password\": \"YWRtaW4=\"\n    },\n    \"remote\": {\n        \"host\": \"{{remoteTokenHost}}\", \n        \"port\": \"{{remoteTokenPort}}\", \n        \"protocol\": \"http\"\n    },\n    \"token\": {\n        \"expirationSeconds\": 94575023, \n        \"network\": \"0.0.0.0/0\", \n        \"userId\": \"dotcms.org.1\",\n        \"claims\": {\n            \"label\": \"Push Publish\"            \n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apitoken/remote",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apitoken",
+								"remote"
+							]
+						},
+						"description": "Create a new remote token should response 403 when ENABLE_PROXY_TOKEN_REQUESTS is set to false"
+					},
+					"response": []
+				},
+				{
+					"name": "set ENABLE_PROXY_TOKEN_REQUESTS to true",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"ENABLE_PROXY_TOKEN_REQUESTS\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api//v1/configuration",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"",
+								"v1",
+								"configuration"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "createToken remote",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"User Id should be dotcms.org.1\", function () {",
+									"    pm.expect(jsonData.entity.token.userId).to.eql('dotcms.org.1');",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"tokenid\", jsonData.entity.token.id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth\": {\n        \"login\": \"admin@dotcms.com\", \n        \"password\": \"YWRtaW4=\"\n    },\n    \"remote\": {\n        \"host\": \"{{remoteTokenHost}}\", \n        \"port\": \"{{remoteTokenPort}}\", \n        \"protocol\": \"http\"\n    },\n    \"token\": {\n        \"expirationSeconds\": 94575023, \n        \"network\": \"0.0.0.0/0\", \n        \"userId\": \"dotcms.org.1\",\n        \"claims\": {\n            \"label\": \"Push Publish\"            \n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apitoken/remote",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apitoken",
+								"remote"
+							]
+						},
+						"description": "Create a new remote token"
+					},
+					"response": []
+				},
+				{
+					"name": "logout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						},
+						"description": "Logout before try with invalid user"
+					},
+					"response": []
+				},
+				{
+					"name": "createToken remote with invalid local user",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "invalid_user",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth\": {\n        \"login\": \"admin@dotcms.com\", \n        \"password\": \"YWRtaW4=\"\n    },\n    \"remote\": {\n        \"host\": \"{{remoteTokenHost}}\", \n        \"port\": \"{{remoteTokenPort}}\", \n        \"protocol\": \"http\"\n    },\n    \"token\": {\n        \"expirationSeconds\": 94575023, \n        \"network\": \"0.0.0.0/0\", \n        \"userId\": \"dotcms.org.1\",\n        \"claims\": {\n            \"label\": \"Push Publish\"            \n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apitoken/remote",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apitoken",
+								"remote"
+							]
+						},
+						"description": "Try to create a new remote token with a invalid local user, it mean send a invalid_user in the auth header"
+					},
+					"response": []
+				},
+				{
+					"name": "createToken remote with invalid remote host",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth\": {\n        \"login\": \"admin@dotcms.com\", \n        \"password\": \"YWRtaW4=\"\n    },\n    \"remote\": {\n        \"host\": \"not_exists\", \n        \"port\": \"{{remoteTokenPort}}\", \n        \"protocol\": \"http\"\n    },\n    \"token\": {\n        \"expirationSeconds\": 94575023, \n        \"network\": \"0.0.0.0/0\", \n        \"userId\": \"dotcms.org.1\",\n        \"claims\": {\n            \"label\": \"Push Publish\"            \n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apitoken/remote",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apitoken",
+								"remote"
+							]
+						},
+						"description": "Try to create a new remote token with a invalid local user, it mean send a invalid_user in the auth header"
+					},
+					"response": []
+				},
+				{
+					"name": "createToken remote with invalid remote host witn numbers",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth\": {\n        \"login\": \"admin@dotcms.com\", \n        \"password\": \"YWRtaW4=\"\n    },\n    \"remote\": {\n        \"host\": \"123\",  \n        \"port\": \"{{remoteTokenPort}}\", \n        \"protocol\": \"http\"\n    },\n    \"token\": {\n        \"expirationSeconds\": 94575023, \n        \"network\": \"0.0.0.0/0\", \n        \"userId\": \"dotcms.org.1\",\n        \"claims\": {\n            \"label\": \"Push Publish\"            \n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apitoken/remote",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apitoken",
+								"remote"
+							]
+						},
+						"description": "Try to create a new remote token with a invalid local user, it mean send a invalid_user in the auth header"
+					},
+					"response": []
+				},
+				{
+					"name": "createToken remote with invalid remote user",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth\": {\n        \"login\": \"invalid_user\", \n        \"password\": \"YWRtaW4=\"\n    },\n    \"remote\": {\n        \"host\": \"{{remoteTokenHost}}\", \n        \"port\": \"{{remoteTokenPort}}\", \n        \"protocol\": \"http\"\n    },\n    \"token\": {\n        \"expirationSeconds\": 94575023, \n        \"network\": \"0.0.0.0/0\", \n        \"userId\": \"dotcms.org.1\",\n        \"claims\": {\n            \"label\": \"Push Publish\"            \n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apitoken/remote",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apitoken",
+								"remote"
+							]
+						},
+						"description": "Try to create a new remote token with a remote user, it mean send a inavlid user in the body request auth section"
+					},
+					"response": []
+				},
+				{
+					"name": "createToken remote with empty remote user",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth\": {\n        \"login\": \"\", \n        \"password\": \"\"\n    },\n    \"remote\": {\n        \"host\": \"{{remoteTokenHost}}\", \n        \"port\": \"{{remoteTokenPort}}\", \n        \"protocol\": \"http\"\n    },\n    \"token\": {\n        \"expirationSeconds\": 94575023, \n        \"network\": \"0.0.0.0/0\", \n        \"userId\": \"dotcms.org.1\",\n        \"claims\": {\n            \"label\": \"Push Publish\"            \n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apitoken/remote",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apitoken",
+								"remote"
+							]
+						},
+						"description": "Create a new remote token should response 403 when ENABLE_PROXY_TOKEN_REQUESTS is set to false"
+					},
+					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"serverURL = pm.environment.get(\"serverURL\");",
+							"console.log('serverURL', serverURL);",
+							"",
+							"endProtocol = serverURL.indexOf(\"://\");",
+							"console.log('endProtocol', endProtocol);",
+							"startPort = serverURL.indexOf(\":\", endProtocol + 3);",
+							"console.log('startPort', startPort);",
+							"",
+							"serverName = serverURL.substring(endProtocol + 3, startPort);",
+							"console.log('serverName', serverName);",
+							"",
+							"endPort = serverURL.indexOf(\"/\", startPort);",
+							"console.log('endPort', endPort);",
+							"",
+							"if (endPort == -1) {",
+							"    endPort = serverURL.length;",
+							"}",
+							"",
+							"port = serverURL.substring(startPort + 1, endPort);",
+							"console.log('port', port);",
+							"",
+							"pm.collectionVariables.set(\"remoteTokenPort\", port);",
+							"pm.collectionVariables.set(\"remoteTokenHost\", serverName);"
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
 			"name": "createToken",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
-						"id": "c2bf4bbe-1e0d-4605-9129-7329ef64f57b",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -31,6 +666,21 @@
 				}
 			],
 			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
 				"method": "POST",
 				"header": [
 					{
@@ -64,12 +714,82 @@
 			"response": []
 		},
 		{
+			"name": "createToken with userId equal to null",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"User Id should be dotcms.org.1\", function () {",
+							"    pm.expect(jsonData.entity.token.userId).to.eql('dotcms.org.1');",
+							"});",
+							"",
+							"pm.collectionVariables.set(\"tokenid\", jsonData.entity.token.id);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"tokenId\":\"123\",\n\t\"expirationSeconds\":\"100000\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/apitoken",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"apitoken"
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "getApiTokens",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
-						"id": "0434eb2c-4aa7-4533-946b-092833c7eed3",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function() {",
 							"    pm.response.to.have.status(200);",
@@ -126,7 +846,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "f697558f-94ed-4f74-9992-349bf63fb7de",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function() {",
 							"    pm.response.to.have.status(200);",
@@ -176,7 +895,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "f697558f-94ed-4f74-9992-349bf63fb7de",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function() {",
 							"    pm.response.to.have.status(200);",
@@ -226,7 +944,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "f697558f-94ed-4f74-9992-349bf63fb7de",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function() {",
 							"    pm.response.to.have.status(200);",
@@ -275,7 +992,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "b338181a-6425-4eab-9277-46182a2fd06e",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function() {",
 							"    pm.response.to.have.status(200);",
@@ -286,6 +1002,21 @@
 				}
 			],
 			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
 				"method": "PUT",
 				"header": [],
 				"url": {
@@ -311,7 +1042,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "b338181a-6425-4eab-9277-46182a2fd06e",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function() {",
 							"    pm.response.to.have.status(200);",
@@ -322,6 +1052,21 @@
 				}
 			],
 			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
 				"method": "PUT",
 				"header": [],
 				"url": {
@@ -343,11 +1088,16 @@
 	],
 	"variable": [
 		{
-			"id": "523ae86b-2f57-474e-bb5b-e1ac657aea62",
 			"key": "tokenid",
-			"value": "api9c8d5eb4-631a-4419-b0cb-af8efc3fafbb",
-			"type": "string"
+			"value": "apiec1d0bc7-4122-499a-8b29-1006684c9059"
+		},
+		{
+			"key": "remoteTokenHost",
+			"value": "localhost"
+		},
+		{
+			"key": "remoteTokenPort",
+			"value": "8080"
 		}
-	],
-	"protocolProfileBehavior": {}
+	]
 }

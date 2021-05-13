@@ -55,6 +55,9 @@ public class ContentletDataFetcher implements DataFetcher<List<Contentlet>> {
                 .filter(contentlet -> contentlet.getContentType().variable().matches(TYPES_AND_FIELDS_VALID_NAME_REGEX))
                 .collect(Collectors.toList());
 
+            ((DotGraphQLContext) environment.getContext()).addFieldCount(queriedFieldName,
+                    filteredContentletList.size());
+
             final DotContentletTransformer transformer = new DotTransformerBuilder()
                     .graphQLDataFetchOptions().content(filteredContentletList).build();
             return transformer.hydrate();

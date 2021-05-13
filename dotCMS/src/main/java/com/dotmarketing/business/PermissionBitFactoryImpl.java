@@ -5,6 +5,8 @@ import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATI
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotConcurrentFactory.SubmitterConfigBuilder;
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
@@ -60,7 +62,11 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.Lazy;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import jersey.repackaged.com.google.common.collect.Lists;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -92,14 +98,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 	private static final String LOCK_PREFIX = "PermissionID:";
 
-	private AssetPermissionReferencesSQLProvider assetPermissionReferencesSQLProvider =
-		  DbConnectionFactory.isH2() ? new H2AssetPermissionReferencesSQLProvider()
-		: DbConnectionFactory.isMsSql() ? new MsSqlAssetPermissionReferencesSQLProvider()
-		: DbConnectionFactory.isMySql() ? new MySqlAssetPermissionReferencesSQLProvider()
-		: DbConnectionFactory.isOracle() ? new OracleAssetPermissionReferencesSQLProvider()
-		: DbConnectionFactory.isPostgres() ? new PostgresAssetPermissionReferencesSQLProvider()
-		: null
-	;
 
 	//SQL Queries used to maintain permissions
 	/*
@@ -126,14 +124,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		" permission_reference where reference_id = ?";
 
 
-	/*
-	 * To update a permission reference by who it is currently pointing to
-	 * Parameters
-	 * 1. New reference id to set
-	 * 2. Permission type
-	 * 3. Reference id to be updated
-	 */
-	private static final String UPDATE_PERMISSION_REFERENCE_BY_REFERENCEID_SQL = "update permission_reference set reference_id = ? where permission_type = ? and reference_id = ?";
 
 	/*
 	 * To update a permission reference by the owner asset
@@ -206,15 +196,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		"delete from permission_reference where asset_id in " +
 		"	(" + SELECT_CHILD_TEMPLATE_SQL + ")";
 
-    /*
-     * To insert permission references to all templates attached to a host, it only inserts the references if the template does not have
-     * a reference already and does not have individual permissions
-     *
-     * Parameters
-     * 1. The host id you want the new reference to point to
-     * 2. The host id the templates belong to
-     */
-    private final String insertTemplateReferencesToAHostSQL = assetPermissionReferencesSQLProvider.getInsertTemplateReferencesToAHostSQL();
 
 	/*
 	 * To load container identifiers that are children of a host
@@ -252,15 +233,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	private final String deleteContainerReferencesSQL =
 		"delete from permission_reference where asset_id in " +
 		"	(" + SELECT_CHILD_CONTAINER_SQL + ")";
-    /*
-     * To insert permission references to all containers attached to a host, it only inserts the reference if the container does not have
-     * a reference already and does not have individual permissions
-     *
-     * Parameters
-     * 1. The host id you want the new reference to point to
-     * 2. The host id the templates belong to
-     */
-    private final String insertContainerReferencesToAHostSQL = assetPermissionReferencesSQLProvider.getInsertContainerReferencesToAHostSQL();
 
 	/**
 	 * Function name to get the folder path. MSSql need owner prefix dbo
@@ -333,38 +305,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			" WHERE c.identifier = reference_id)" +
 			")";
 
-	/*
-	 * To insert permission references to sub-folders of a given parent folder, it only insert the references if the folder does not have already a reference or
-	 * individual permissions
-	 *
-	 * Parameters
-	 * 1. folder/host id the new references are going to point to
-	 * 2. host the sub-folders belong to
-	 * 3. path like for sub-folder E.G /about/% (everything under /about/)
-	 * 4. exact path E.G. /about/ (notice end / that is the way dotCMS saves paths for folders in the identifier table)
-	 * 5. same as 3
-	 */
-	private final String insertSubfolderReferencesSQL =
-		(DbConnectionFactory.isMySql() || DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
-				"insert into permission_reference (asset_id, reference_id, permission_type) " +
-				"select ":
-		 DbConnectionFactory.isOracle() ?
-				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
-				"select permission_reference_seq.NEXTVAL, ":
-				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
-				"select nextval('permission_reference_seq'), ") +
-		" folder.inode, ?, '" + Folder.class.getCanonicalName() + "'" +
-		"	from folder where folder.inode in (" +
-		"		" + SELECT_CHILD_FOLDER_SQL + " and " +
-		"		folder.inode not in (" +
-		"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode) where " +
-		"			"+DOT_FOLDER_PATH+"(parent_path,asset_name) like ? and permission_type = '" + Folder.class.getCanonicalName() + "'" +
-		"		) and " +
-		"		folder.inode not in (" +
-		"			select inode_id from permission where " +
-		"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
-		"		) " +
-		"	) and not exists (SELECT asset_id from permission_reference where asset_id = folder.inode)";
 
 	/*
 	 * To load html page identifiers that are in the same tree/hierarchy of a parent host/folder
@@ -459,17 +399,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 */
 	private static final String DELETE_PERMISSION_BY_INODE = "delete from permission where inode_id=?";
 
-    /*
-     * To insert permission references to HTML pages under a parent folder hierarchy, it only insert the references if the page
-     * does not have already a reference or individual permissions assigned
-     *
-     * Parameters
-     * 1. folder/host id the new references are going to point to
-     * 2. host the pages belong to
-     * 3. path like to the folder hierarchy the pages live under E.G /about/% (pages under /about/)
-     * 4. same as 3
-     */
-    private final String insertHTMLPageReferencesSQL = assetPermissionReferencesSQLProvider.getInsertHTMLPageReferencesSQL();
 
 	/*
 	 * To load link identifiers that are in the same tree/hierarchy of a parent host/folder
@@ -535,17 +464,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		"  WHERE c.identifier = reference_id)	" +
 		")";
 
-    /*
-     * To insert permission references to menu links under a parent folder hierarchy, it only insert the references if the link
-     * does not have already a reference or individual permissions assigned
-     *
-     * Parameters
-     * 1. folder/host id the new references are going to point to
-     * 2. host the files belong to
-     * 3. path like to the folder hierarchy the files live under E.G /about/% (files under /about/)
-     * 4. same as 3
-     */
-    private final String insertLinkReferencesSQL = assetPermissionReferencesSQLProvider.getInsertLinkReferencesSQL();
 
 	/*
 	 * To load content identifiers that are in the same tree/hierarchy of a parent host/folder
@@ -648,48 +566,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		" and permission_reference.permission_type = 'com.dotmarketing.portlets.contentlet.model.Contentlet' " +
 		" group by contentlet.identifier)";
 
-    /*
-     * //TODO: We can improve this queries just like I did with Oracle.
-     * 
-     * To insert permission references for content under a parent folder hierarchy, it only inserts the references if the content
-     * does not already have a reference or individual permissions assigned
-     *
-     * Parameters
-     * 1. folder/host id the new references are going to point to
-     * 2. host the files belong to
-     * 3. path like to the folder hierarchy the files live under E.G /about/% (files under /about/)
-     * 4. same as 3
-     */
-    private final String insertContentReferencesByPathSQL = assetPermissionReferencesSQLProvider.getInsertContentReferencesByPathSQL();
-
-	/*
-	 * To insert permission references for content under a parent folder hierarchy, it only inserts the references if the content
-	 * does not already have a reference or individual permissions assigned
-	 *
-	 * Parameters
-	 * 1. content type id
-	 */
-	private final String insertContentReferencesByStructureSQL =
-		(DbConnectionFactory.isMySql() || DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
-				"insert into permission_reference (asset_id, reference_id, permission_type) " +
-				"select ":
-		 DbConnectionFactory.isOracle()?
-				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
-				"select permission_reference_seq.NEXTVAL, ":
-				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
-				"select nextval('permission_reference_seq'), ") +
-		"	identifier.id, ?, '" + Contentlet.class.getCanonicalName() + "' " +
-		"	from identifier where identifier.id in (" +
-		"		" + SELECT_CHILD_CONTENT_BY_CONTENTTYPE_SQL + " and " +
-		"		identifier.id not in (" +
-		"			select asset_id from permission_reference " +
-		"		) and " +
-		"		identifier.id not in (" +
-		"			select inode_id from permission where " +
-		"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
-		"		) " +
-		"	) " +
-		"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)";
 
 
 
@@ -803,76 +679,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			")";
 
 
-	/*
-	 * To insert permission references for content type under a parent folder hierarchy, it only inserts the references if the structure
-	 * does not already have a reference or individual permissions assigned
-	 *
-	 * Parameters
-	 * 1. folder/host id the new references are going to point to
-	 * 2. path like to the folder hierarchy the content type lives under E.G /about/% (files under /about/)
-	 * 3. host the content type belongs to
-	 * 4. host the content type belongs to
-	 * 5. same as 2
-	 */
-	private static final String INSERT_CONTENTTYPE_REFERENCES_BY_PATH_SQL =
-		(DbConnectionFactory.isMySql() || DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
-				"insert into permission_reference (asset_id, reference_id, permission_type) " +
-				"select ":
-		 DbConnectionFactory.isOracle() ?
-				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
-				"select permission_reference_seq.NEXTVAL, ":
-				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
-				"select nextval('permission_reference_seq'), ") +
-		"	structure.inode, ?, '" + Structure.class.getCanonicalName() + "' " +
-		"	from structure where structure.inode in (" +
-		"		" + SELECT_CHILD_CONTENTTYPE_BY_PATH_SQL + " and" +
-		"		structure.inode not in (" +
-		"			select asset_id from permission_reference join folder ref_folder on(reference_id = ref_folder.inode) " +
-		"                                join identifier on (ref_folder.identifier=identifier.id) where " +
-		"			"+DOT_FOLDER_PATH+"(parent_path,asset_name) like ? and permission_type = '" + Structure.class.getCanonicalName() + "'" +
-		"		) and " +
-		"		structure.inode not in (" +
-		"			select inode_id from permission where " +
-		"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
-		"		) " +
-		"	) " +
-		"and not exists (SELECT asset_id from permission_reference where asset_id = structure.inode)";
 
 
-	/*
-	 * To insert permission references for content type under a parent folder hierarchy, it only inserts the references if the structure
-	 * does not already have a reference or individual permissions assigned
-	 *
-	 * Parameters
-	 * 1. folder/host id the new references are going to point to
-	 * 2. path like to the folder hierarchy the content type lives under E.G /about/% (files under /about/)
-	 * 3. host the content type belongs to
-	 * 4. host the content type belongs to
-	 * 5. same as 2
-	 */
-	private final String insertStructureReferencesByPathSQLFolder =
-		(DbConnectionFactory.isMySql() || DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
-				"insert into permission_reference (asset_id, reference_id, permission_type) " +
-				"select ":
-		 DbConnectionFactory.isOracle() ?
-				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
-				"select permission_reference_seq.NEXTVAL, ":
-				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
-				"select nextval('permission_reference_seq'), ") +
-		"	structure.inode, ?, '" + Structure.class.getCanonicalName() + "' " +
-		"	from structure where structure.inode in (" +
-		"		" + SELECT_CHILD_CONTENTTYPE_BY_PATH_SQL_FOLDER + " and" +
-		"		structure.inode not in (" +
-		"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode) " +
-		"                               join identifier on (ref_folder.identifier=identifier.id) where " +
-		"			"+DOT_FOLDER_PATH+"(parent_path,asset_name) like ? and permission_type = '" + Structure.class.getCanonicalName() + "'" +
-		"		) and " +
-		"		structure.inode not in (" +
-		"			select inode_id from permission where " +
-		"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
-		"		) " +
-		"	) " +
-		"and not exists (SELECT asset_id from permission_reference where asset_id = structure.inode)";
 
 	/*
 	 * To remove all permissions of structures under a given parent folder
@@ -1071,7 +879,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		String parentPermissionableId = permissionable.getPermissionId();
 
 		final boolean isHost = permissionable instanceof Host ||
-		(permissionable instanceof Contentlet && ((Contentlet)permissionable).getStructure().getVelocityVarName().equals("Host"));
+		(permissionable instanceof Contentlet && ((Contentlet)permissionable).isHost());
 		final boolean isFolder = permissionable instanceof Folder;
 		final boolean isCategory = permissionable instanceof Category;
 		final boolean isContentType = permissionable instanceof Structure || permissionable instanceof ContentType;
@@ -1134,14 +942,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						dc.addParam(permissionable.getPermissionId());
 						dc.loadResult();
 
-						if (shouldInsertPermissionReferencesEagerly()) {
-							// Adding new references to the new host
-							dc.setSQL(this.insertContainerReferencesToAHostSQL);
-							dc.addParam(permissionable.getPermissionId());
-							dc.addParam(permissionable.getPermissionId());
-							dc.loadResult();
-						}
-
 						// Retrieving the list of container changed to clear
 						// their caches
 						dc.setSQL(SELECT_CHILD_CONTAINER_SQL);
@@ -1162,16 +962,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						dc.addParam(path);
 						dc.loadResult();
 
-						if (shouldInsertPermissionReferencesEagerly()) {
-							// Adding new references to the new host
-							dc.setSQL(this.insertSubfolderReferencesSQL);
-							dc.addParam(permissionable.getPermissionId());
-							dc.addParam(parentHost.getPermissionId());
-							dc.addParam(path + "%");
-							dc.addParam(isHost ? " " : path);
-							dc.addParam(path + "%");
-							dc.loadResult();
-						}
 
 						// Retrieving the list of container changed to clear
 						// their caches
@@ -1199,20 +989,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						dc.addParam(path);
 						dc.loadResult();
 
-						if (shouldInsertPermissionReferencesEagerly()) {
-							// Adding new references to the new host
-							dc.setSQL( this.insertHTMLPageReferencesSQL );
-							// Insert new references pointing to the host
-							dc.addParam(permissionable.getPermissionId());
-							// Under the same host
-							dc.addParam(parentHost.getPermissionId());
-							// Under any folder
-							dc.addParam(path + "%");
-	                        dc.addParam(parentHost.getPermissionId());
-	                        dc.addParam(path + "%");
-							dc.addParam(path + "%");
-							dc.loadResult();
-						}
 
 						// Retrieving the list of pages changed to clear their
 						// caches
@@ -1238,18 +1014,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						dc.addParam(path);
 						dc.loadResult();
 
-						if (shouldInsertPermissionReferencesEagerly()) {
-							// Adding new references to the new host
-							dc.setSQL(this.insertLinkReferencesSQL);
-							// Insert new references pointing to the host
-							dc.addParam(permissionable.getPermissionId());
-							// For all the pages that belong to the host
-							dc.addParam(parentHost.getPermissionId());
-							// Under any folder
-							dc.addParam(path + "%");
-							dc.addParam(path + "%");
-							dc.loadResult();
-						}
+
 
 						// Retrieving the list of links changed to clear their
 						// caches
@@ -1274,18 +1039,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						dc.addParam(path);
 						dc.loadResult();
 
-						if (shouldInsertPermissionReferencesEagerly()) {
-							// Adding new references to the new host
-							dc.setSQL(this.insertContentReferencesByPathSQL);
-							// Insert new references pointing to the host
-							dc.addParam(permissionable.getPermissionId());
-							// For all the content that belong to the host
-							dc.addParam(parentHost.getPermissionId());
-							// Under any folder
-							dc.addParam(path + "%");
-							dc.addParam(path + "%");
-							dc.loadResult();
-						}
+
 
 						// Retrieving the list of links changed to clear their
 						// caches
@@ -1310,17 +1064,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 							dc.addParam(path);
 							dc.loadResult();
 
-							if (shouldInsertPermissionReferencesEagerly()) {
-								// Adding new references to the new host
-								// Insert new references pointing to the host
-								dc.setSQL(INSERT_CONTENTTYPE_REFERENCES_BY_PATH_SQL);
-								dc.addParam(permissionable.getPermissionId());
-								dc.addParam(path + "%");
-								dc.addParam(parentHost.getPermissionId());
-								dc.addParam(parentHost.getPermissionId());
-								dc.addParam(path + "%");
-								dc.loadResult();
-							}
+
 
 							// Retrieving the list of structures changed to clear
 							// their caches
@@ -1342,16 +1086,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 							dc.addParam(path);
 							dc.loadResult();
 
-							if (shouldInsertPermissionReferencesEagerly()) {
-								// Adding new references to the new host
-								// Insert new references pointing to the host
-								dc.setSQL(this.insertStructureReferencesByPathSQLFolder);
-								dc.addParam(permissionable.getPermissionId());
-								dc.addParam(path + "%");
-								dc.addParam(parentHost.getPermissionId());
-								dc.addParam(path + "%");
-								dc.loadResult();
-							}
 
 							// Retrieving the list of structures changed to clear
 							// their caches
@@ -1516,16 +1250,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 
 
-
-
-	private boolean containsPermission(List<Permission> permissions, Permission permission) {
-        for(Permission p : permissions) {
-                if(p.getInode().equals(permission.getInode()) && p.getRoleId().equals(permission.getRoleId())
-                                && p.getType().equals(permission.getType()) && p.getPermission()!=0)
-                        return true;
-        }
-        return false;
-	}
 
 	/* 
 	 * @deprecated Use savePermission(permission) instead.
@@ -1872,32 +1596,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 	}
 
-	/**
-	 * This method return true if exists in db that permission object
-	 * @param p permission
-	 * @return boolean
-	 * @version 1.7
-	 * @since 1.0
-	 */
-	private boolean permissionExists(Permission p) {
-		HibernateUtil persistanceService = new HibernateUtil(Permission.class);
-		try {
-			if (p.isBitPermission()) {
-				Permission permission = (Permission) persistanceService.load(p.getId());
-				if (permission != null) {
-					return true;
-				}
-			} else {
-				Permission permission = findPermissionByInodeAndRole(p.getInode(), p.getRoleId(), p.getType());
-				if (permission != null && permission.getId() > 0 && ((permission.getPermission() & p.getPermission()) > 0)) {
-					return true;
-				}
-			}
-			return false;
-		} catch (DotHibernateException e) {
-			throw new DataAccessException(e.getMessage(), e);
-		}
-	}
+
 
 	/**
 	 * This method let you convert a list of bit permission to the old non bit kind of permission, so you
@@ -1975,7 +1674,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
   }
 
   @CloseDBIfOpened
-  @SuppressWarnings("unchecked")
   private List<Permission> loadPermissions(final Permissionable permissionable, final boolean forceDB) throws DotDataException {
      	if(forceDB){
      	   permissionCache.remove(permissionable.getPermissionId());
@@ -1983,6 +1681,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
      	return loadPermissions(permissionable);
   }
 
+  
+  private Lazy<DotSubmitter> submitter = Lazy.of(()-> DotConcurrentFactory.getInstance().getSubmitter("permissionreferences", new SubmitterConfigBuilder().poolSize(1).maxPoolSize(5).queueCapacity(10000).build()));
+  
+  
   @CloseDBIfOpened
   @SuppressWarnings("unchecked")
   private List<Permission> loadPermissions(final Permissionable permissionable) throws DotDataException {
@@ -2003,26 +1705,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
      * permission_reference table We lock to lookup, check if cache has been loaded while we have been
      * waiting, and if so, use it, otherwise we query the permission_reference table
      */
+    permissionList = _loadPermissionsFromDb(permissionable,permissionKey);
 
-    permissionList = Try.of(() -> lockManager.tryLock(LOCK_PREFIX + permissionKey, () -> {
-      List<Permission> bitPermissionsList = permissionCache.getPermissionsFromCache(permissionKey);
-      if (bitPermissionsList != null) {
-        return bitPermissionsList;
-      }
-      HibernateUtil persistenceService = new HibernateUtil(Permission.class);
-      persistenceService.setSQLQuery(LOAD_PERMISSION_SQL);
-      persistenceService.setParam(permissionable.getPermissionId());
-      persistenceService.setParam(permissionable.getPermissionId());
-      bitPermissionsList = (List<Permission>) persistenceService.list();
-
-      bitPermissionsList.forEach(p -> p.setBitPermission(true));
-      // adding to cache if found
-      
-      permissionCache.addToPermissionCache(permissionKey, bitPermissionsList);
-      
-      return bitPermissionsList;
-
-    })).getOrElseThrow(e -> new DotDataException(e));
 
     // if we've found permissions, return'em
     if (!permissionList.isEmpty()) {
@@ -2035,41 +1719,79 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
      * cache or entries in the permission_reference table, we need to find our "parent permissionable"
      * and store that in the permission_reference table for a faster lookup in Step 2.
      */
-
     final String type = resolvePermissionType(permissionable);
-
-    Permissionable parentPermissionable = permissionable.getParentPermissionable();
-
-    while (parentPermissionable != null) {
-      permissionList = getInheritablePermissions(parentPermissionable, type);
-      if (!permissionList.isEmpty() || Host.SYSTEM_HOST.equals(parentPermissionable.getPermissionId())) {
-        break;
-      }
-      parentPermissionable = parentPermissionable.getParentPermissionable();
-    }
-
-    final Permissionable finalNewReference = (parentPermissionable == null) ? APILocator.systemHost() : parentPermissionable;
-
+    final Tuple2<Permissionable,List<Permission>> parentPerms =_loadParentPermissions(permissionable,permissionKey);
+    final Permissionable finalNewReference = parentPerms._1;
+    permissionList = parentPerms._2;
+    permissionCache.addToPermissionCache(permissionKey, permissionList);
     /*
      * Step 4. Upsert into the permission_reference table 
      * We have found our "parent permissionable", now
      * we have to lock again in order to UPSERT our parent permissionable in the permission_reference
      * table
      */
-
-    Try.run(() -> lockManager.tryLock(LOCK_PREFIX + permissionKey, () -> {
-      deleteInsertPermission(permissionable, type, finalNewReference);
-    })).onFailure(e -> {
-      throw new DotRuntimeException(e);
-    });
-  	Logger.debug(this.getClass(), () -> "permission inherited: " + Try
-			  .of(() -> type.substring(type.lastIndexOf(".") + 1)).getOrElse(type)
-			  + " : " + permissionKey + " -> " + finalNewReference);
-	permissionCache.addToPermissionCache(permissionKey, permissionList);
+    
+    if(Config.getBooleanProperty("PERMISSION_REFERENCES_UPDATE_ASYNC", true)) {
+        submitter.get().submit( () -> {
+            try {
+                upsertPermissionReferences(permissionable, type, finalNewReference);
+            }
+            catch(Exception e) {
+                Logger.warnAndDebug(this.getClass(), "Permission References failed to update for permissionable:" + permissionable + " TYPE:" + type + " finalNewReference:" + finalNewReference, e);
+            }
+        });
+    }
+    else {
+        upsertPermissionReferences(permissionable, type, finalNewReference);
+    }
+    
+    Logger.debug(this.getClass(), ()-> "Permission inherited for permissionable:" + permissionable + " TYPE:" + type + " finalNewReference:" + finalNewReference);
+	
     return permissionList;
 
   }
 
+  private List<Permission> _loadPermissionsFromDb(final Permissionable permissionable, final String permissionKey) throws DotDataException {
+      return Try.of(() -> lockManager.tryLock(LOCK_PREFIX + permissionKey, () -> {
+          List<Permission> bitPermissionsList = permissionCache.getPermissionsFromCache(permissionKey);
+          if (bitPermissionsList != null) {
+            return bitPermissionsList;
+          }
+          HibernateUtil persistenceService = new HibernateUtil(Permission.class);
+          persistenceService.setSQLQuery(LOAD_PERMISSION_SQL);
+          persistenceService.setParam(permissionable.getPermissionId());
+          persistenceService.setParam(permissionable.getPermissionId());
+          bitPermissionsList = (List<Permission>) persistenceService.list();
+    
+          // adding to cache if found
+          if (!bitPermissionsList.isEmpty()) {
+              bitPermissionsList.forEach(p -> p.setBitPermission(true));
+              permissionCache.addToPermissionCache(permissionKey, bitPermissionsList);
+          }
+          return bitPermissionsList;
+      })).getOrElseThrow(e -> new DotDataException(e));
+  }
+  
+  private Tuple2<Permissionable,List<Permission>> _loadParentPermissions(final Permissionable permissionable, final String permissionKey) throws DotDataException {
+
+      List<Permission> permissionList = Lists.newArrayList();
+      final String type = resolvePermissionType(permissionable);
+
+      Permissionable parentPermissionable = permissionable.getParentPermissionable();
+
+      while (parentPermissionable != null) {
+        permissionList = getInheritablePermissions(parentPermissionable, type);
+        if (!permissionList.isEmpty() || Host.SYSTEM_HOST.equals(parentPermissionable.getPermissionId())) {
+           break;
+        }
+        parentPermissionable = parentPermissionable.getParentPermissionable();
+      }
+
+      final Permissionable finalNewReference = (parentPermissionable == null) ? APILocator.systemHost() : parentPermissionable;
+      return Tuple.of(finalNewReference,permissionList);
+
+  }
+  
   private String resolvePermissionType(final Permissionable permissionable) {
     // Need to determine who this asset should inherit from
     String type = permissionable.getPermissionType();
@@ -2129,46 +1851,28 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	protected static final String PERMISSION_TYPE = "permission_type";
 	protected static final String ID = "id";
 
-  @WrapInTransaction
-	private void deleteInsertPermission(Permissionable permissionable, String type,
-            Permissionable newReference) throws DotDataException {
+    @WrapInTransaction
+    private void upsertPermissionReferences(Permissionable permissionable, final String type,
+                    final Permissionable newReference) throws DotDataException {
 
+        if (permissionable==null || permissionable.getPermissionId() == null || newReference == null || newReference.getPermissionId() == null) {
+            throw new DotRuntimeException("Failed to insert Permission Ref.  Permissionable:" + permissionable
+                            + " Parent : " + newReference + " Type: " + type);
+        }
+        
         final String permissionId = permissionable.getPermissionId();
 
-        try{
-            Logger.debug(this.getClass(), "PERMDEBUG: " + Thread.currentThread().getName() + " - " + permissionId
-                    + " - started");
+        Logger.debug(this.getClass(),
+                        () -> "PERMDEBUG: " + Thread.currentThread().getName() + " - " + permissionId + " - started");
 
-            DotConnect dc1 = new DotConnect();
-            dc1.setSQL("SELECT inode FROM inode WHERE inode = ?");
-            dc1.addParam(permissionId);
-            List<Map<String, Object>> inodeList = dc1.loadObjectResults();
+        DotConnect dc1 = new DotConnect();
 
-            dc1.setSQL("SELECT id FROM identifier WHERE id = ?");
-            dc1.addParam(permissionId);
-            List<Map<String, Object>> identifierList = dc1.loadObjectResults();
+        Logger.debug(this.getClass(), () -> "UPSERTING permission_reference = assetId:" + permissionId + " type:" + type
+                        + " reference:" + newReference.getPermissionId());
 
-            if((inodeList != null && inodeList.size()>0) || (identifierList!=null && identifierList.size()>0)){
-                dc1.executeUpdate(DELETE_PERMISSIONABLE_REFERENCE_SQL, permissionId);
+        upsertPermission(dc1, permissionId, newReference, type);
 
-				upsertPermission(dc1, permissionId, newReference, type);
-            }
 
-        } catch(Exception exception){
-            if(permissionable != null && newReference != null){
-                Logger.warn(this.getClass(), "Failed to insert Permission Ref. Usually not a problem. Permissionable:" + permissionId
-                        + " Parent : " + newReference.getPermissionId() + " Type: " + type);
-            }
-            else{
-                Logger.warn(this.getClass(), "Failed to insert Permission Ref. Usually not a problem. Setting Parent Permissions to null value: Permissionable:" + permissionable + " Parent:" + newReference + " Type: " + type);
-            }
-            Logger.debug(this.getClass(), "Failed to insert Permission Ref. : " + exception.toString(), exception);
-
-            throw new DotDataException(exception.getMessage(), exception);
-        } finally {
-            Logger.debug(this.getClass(), "PERMDEBUG: " + Thread.currentThread().getName() + " - " + permissionId
-                    + " - ended");
-        }
     }
 
 	/**
@@ -2236,14 +1940,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		return filteredList;
 	}
 
-	private List<Permission> filterAssetOnlyPermissions(List<Permission> permissions, String permissionableId) {
-		List<Permission> filteredList = new ArrayList<Permission>();
-		for(Permission p: permissions) {
-			if(p.getInode().equals(permissionableId))
-				filteredList.add(p);
-		}
-		return filteredList;
-	}
+
 
 	@SuppressWarnings("unchecked")
 	@Override
@@ -2320,13 +2017,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				dc.setSQL(deleteTemplatePermissionsSQL);
 				dc.addParam(host.getPermissionId());
 				dc.loadResult();
-				if (shouldInsertPermissionReferencesEagerly()) {
-					//Pointing the children templates to reference the current host
-					dc.setSQL(insertTemplateReferencesToAHostSQL);
-					dc.addParam(host.getPermissionId());
-					dc.addParam(host.getPermissionId());
-					dc.loadResult();
-				}
+
 				//Retrieving the list of templates to clear their caches later
 				dc.setSQL(SELECT_CHILD_TEMPLATE_SQL);
 				dc.addParam(host.getPermissionId());
@@ -2339,13 +2030,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				dc.setSQL(deleteContainerPermissionsSQL);
 				dc.addParam(host.getPermissionId());
 				dc.loadResult();
-				if (shouldInsertPermissionReferencesEagerly()) {
-					//Pointing the children containers to reference the current host
-					dc.setSQL(insertContainerReferencesToAHostSQL);
-					dc.addParam(host.getPermissionId());
-					dc.addParam(host.getPermissionId());
-					dc.loadResult();
-				}
+
 				//Retrieving the list of containers to clear their caches later
 				dc.setSQL(SELECT_CHILD_CONTAINER_SQL);
 				dc.addParam(host.getPermissionId());
@@ -2367,16 +2052,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			dc.addParam(isHost?"%":folderPath+"%");
 			dc.addParam(isHost?" ":folderPath+"");
 			dc.loadResult();
-			if (shouldInsertPermissionReferencesEagerly()) {
-				//Pointing the children subfolders to reference the current host
-				dc.setSQL(insertSubfolderReferencesSQL);
-				dc.addParam(permissionable.getPermissionId());
-				dc.addParam(host.getPermissionId());
-				dc.addParam(isHost?"%":folderPath+"%");
-				dc.addParam(isHost?" ":folderPath+"");
-				dc.addParam(isHost?"%":folderPath+"%");
-				dc.loadResult();
-			}
+
 			//Retrieving the list of sub folders changed to clear their caches
 			dc.setSQL(SELECT_CHILD_FOLDER_SQL);
 			dc.addParam(host.getPermissionId());
@@ -2397,17 +2073,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
             dc.addParam( host.getPermissionId() );
             dc.addParam(isHost?"%":folderPath+"%");
 			dc.loadResult();
-			if (shouldInsertPermissionReferencesEagerly()) {
-				//Pointing the children containers to reference the current host
-				dc.setSQL(insertHTMLPageReferencesSQL);
-				dc.addParam(permissionable.getPermissionId());
-				dc.addParam(host.getPermissionId());
-				dc.addParam(isHost?"%":folderPath+"%");
-	            dc.addParam(host.getPermissionId());
-	            dc.addParam(isHost?"%":folderPath+"%");
-				dc.addParam(isHost?"%":folderPath+"%");
-				dc.loadResult();
-			}
+
 			//Retrieving the list of htmlpages changed to clear their caches
 			dc.setSQL(SELECT_CHILD_HTMLPAGE_SQL);
 			dc.addParam(host.getPermissionId());
@@ -2425,15 +2091,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			dc.addParam(host.getPermissionId());
 			dc.addParam(isHost?"%":folderPath+"%");
 			dc.loadResult();
-			if (shouldInsertPermissionReferencesEagerly()) {
-				//Pointing the children containers to reference the current host
-				dc.setSQL(insertLinkReferencesSQL);
-				dc.addParam(permissionable.getPermissionId());
-				dc.addParam(host.getPermissionId());
-				dc.addParam(isHost?"%":folderPath+"%");
-				dc.addParam(isHost?"%":folderPath+"%");
-				dc.loadResult();
-			}
+
 			//Retrieving the list of links changed to clear their caches
 			dc.setSQL(SELECT_CHILD_LINK_SQL);
 			dc.addParam(host.getPermissionId());
@@ -2449,15 +2107,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			dc.addParam(host.getPermissionId());
 			dc.addParam(isHost?"%":folderPath+"%");
 			dc.loadResult();
-			if (shouldInsertPermissionReferencesEagerly()) {
-				//Pointing the children containers to reference the current host
-				dc.setSQL(insertContentReferencesByPathSQL);
-				dc.addParam(permissionable.getPermissionId());
-				dc.addParam(host.getPermissionId());
-				dc.addParam(isHost?"%":folderPath+"%");
-				dc.addParam(isHost?"%":folderPath+"%");
-				dc.loadResult();
-			}
+
 			//Retrieving the list of content changed to clear their caches
 			dc.setSQL(SELECT_CHILD_CONTENT_BY_PATH_SQL);
 			dc.addParam(host.getPermissionId());
@@ -2479,16 +2129,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				dc.addParam(host.getPermissionId());
 				dc.addParam(host.getPermissionId());
 				dc.loadResult();
-				if (shouldInsertPermissionReferencesEagerly()) {
-					//Pointing the children structures to reference the current host
-					dc.setSQL(INSERT_CONTENTTYPE_REFERENCES_BY_PATH_SQL);
-					dc.addParam(permissionable.getPermissionId());
-					dc.addParam(isHost?"%":folderPath+"%");
-					dc.addParam(host.getPermissionId());
-					dc.addParam(host.getPermissionId());
-					dc.addParam(isHost?"%":folderPath+"%");
-					dc.loadResult();
-				}
+
 				// Retrieving the list of structures changed to clear their caches
 
 				dc.setSQL(SELECT_CHILD_CONTENTTYPE_BY_PATH_SQL);
@@ -2509,15 +2150,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				dc.addParam(isHost?"%":folderPath+"%");
 				dc.addParam(host.getPermissionId());
 				dc.loadResult();
-				if (shouldInsertPermissionReferencesEagerly()) {
-					//Pointing the children structures to reference the current host
-					dc.setSQL(this.insertStructureReferencesByPathSQLFolder);
-					dc.addParam(permissionable.getPermissionId());
-					dc.addParam(isHost?"%":folderPath+"%");
-					dc.addParam(host.getPermissionId());
-					dc.addParam(isHost?"%":folderPath+"%");
-					dc.loadResult();
-				}
+
 				// Retrieving the list of structures changed to clear their caches
 				dc.setSQL(SELECT_CHILD_CONTENTTYPE_BY_PATH_SQL_FOLDER);
 				dc.addParam(isHost?"%":folderPath+"%");
@@ -2536,13 +2169,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			dc.setSQL(deleteContentPermissionsByStructureSQL);
 			dc.addParam(permissionable.getPermissionId());
 			dc.loadResult();
-			if (shouldInsertPermissionReferencesEagerly()) {
-				//Pointing the children containers to reference the current host
-				dc.setSQL(insertContentReferencesByStructureSQL);
-				dc.addParam(permissionable.getPermissionId());
-				dc.addParam(permissionable.getPermissionId());
-				dc.loadResult();
-			}
+
 			//Retrieving the list of content changed to clear their caches
 			dc.setSQL(SELECT_CHILD_CONTENT_BY_CONTENTTYPE_SQL);
 			dc.addParam(permissionable.getPermissionId());
@@ -3082,9 +2709,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		return dc.getInt("cc")==0;
 	}
 
-	private boolean shouldInsertPermissionReferencesEagerly(){
-		return ! Config.getBooleanProperty("PERMISSIONS_REFERENCES_INSERT_LAZILY", true);
-	}
 
 	private interface AssetPermissionReferencesSQLProvider {
 		String getInsertContainerReferencesToAHostSQL();

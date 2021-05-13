@@ -83,11 +83,11 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     private static final String DELETE_ALL_MULTI_TREE_SQL = "delete from multi_tree where parent1=? AND relation_type != ?";
     private static final String DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION = "delete from multi_tree where parent1=? AND relation_type != ? and personalization = ?";
     private static final String DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION_PER_LANGUAGE_NOT_SQL =
-            "delete from multi_tree where relation_type != ? and personalization = ? and " +
+            "delete from multi_tree where relation_type != ? and personalization = ? and multi_tree.parent1 = ?  and " +
                     "child in (select distinct identifier from contentlet,multi_tree where multi_tree.child = contentlet.identifier and multi_tree.parent1 = ? and language_id = ?)";
 
     private static final String DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION_PER_LANGUAGE_SQL =
-            "delete from multi_tree where relation_type != ? and personalization = ? and child in (%s)";
+            "delete from multi_tree where relation_type != ? and personalization = ? and multi_tree.parent1 = ?  and child in (%s)";
     private static final String SELECT_MULTI_TREE_BY_LANG =
             "select distinct contentlet.identifier from contentlet,multi_tree where multi_tree.child = contentlet.identifier and multi_tree.parent1 = ? and language_id = ?";
 
@@ -568,6 +568,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                         .addParam(ContainerUUID.UUID_DEFAULT_VALUE)
                         .addParam(personalization)
                         .addParam(pageId)
+                        .addParam(pageId)
                         .addParam(languageIdOpt.get())
                         .loadResult();
             }
@@ -617,6 +618,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             db.setSQL(String.format(DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION_PER_LANGUAGE_SQL, Utility.joinList(",", multiTreesId)))
                     .addParam(ContainerUUID.UUID_DEFAULT_VALUE)
                     .addParam(personalization)
+                    .addParam(pageId)
                     .loadResult();
         }
     }
@@ -874,7 +876,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
                 if (container != null) {
 
-                    myContents.add(new PersonalizedContentlet(multiTree.getContentlet(), personalization));
+                    myContents.add(new PersonalizedContentlet(multiTree.getContentlet(), personalization, multiTree.getTreeOrder()));
                 }
 
                 pageContents.put(containerId, multiTree.getRelationType(), myContents);
@@ -940,9 +942,11 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
                 Container container = null;
                 try {
-                    // this read path or id.
-                    container = liveMode ? this.getLiveContainerById(containerUUID.getIdentifier(), APILocator.systemUser(), template):
-                            this.getWorkingContainerById(containerUUID.getIdentifier(), APILocator.systemUser(), template);
+
+                    final Optional<Container> optionalContainer =
+                            APILocator.getContainerAPI().findContainer(containerUUID.getIdentifier(), APILocator.systemUser(), liveMode, false);
+
+                    container = optionalContainer.isPresent() ? optionalContainer.get() : null;
 
                     if (container == null && !liveMode) {
                         continue;
@@ -976,7 +980,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             final ContainerUUID containerUUID,
             final Container container) {
 
-        if(pageContents.contains(container.getIdentifier(), containerUUID.getUUID())){
+
+         if(pageContents.contains(container.getIdentifier(), containerUUID.getUUID())){
             return true;
         } else if(pageContents.contains(container.getIdentifier(), ParseContainer.PARSE_CONTAINER_UUID_PREFIX + containerUUID.getUUID())) {
             return true;
@@ -991,34 +996,5 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         } else {
             return false;
         }
-    }
-
-    private Container getLiveContainerById(final String containerIdOrPath, final User user, final Template template) throws NotFoundInDbException {
-
-        final LiveContainerFinderByIdOrPathStrategyResolver strategyResolver =
-                LiveContainerFinderByIdOrPathStrategyResolver.getInstance();
-        final Optional<ContainerFinderByIdOrPathStrategy> strategy           = strategyResolver.get(containerIdOrPath);
-
-        return this.geContainerById(containerIdOrPath, user, template, strategy, strategyResolver.getDefaultStrategy());
-    }
-
-    private Container getWorkingContainerById(final String containerIdOrPath, final User user, final Template template) throws NotFoundInDbException {
-
-        final WorkingContainerFinderByIdOrPathStrategyResolver strategyResolver =
-                WorkingContainerFinderByIdOrPathStrategyResolver.getInstance();
-        final Optional<ContainerFinderByIdOrPathStrategy> strategy           = strategyResolver.get(containerIdOrPath);
-
-        return this.geContainerById(containerIdOrPath, user, template, strategy, strategyResolver.getDefaultStrategy());
-    }
-
-    private Container geContainerById(final String containerIdOrPath, final User user, final Template template,
-                                      final Optional<ContainerFinderByIdOrPathStrategy> strategy,
-                                      final ContainerFinderByIdOrPathStrategy defaultContainerFinderByIdOrPathStrategy) throws NotFoundInDbException  {
-
-        final Supplier<Host> resourceHostSupplier = Sneaky.sneaked(()->APILocator.getTemplateAPI().getTemplateHost(template));
-
-        return strategy.isPresent()?
-                strategy.get().apply(containerIdOrPath, user, false, resourceHostSupplier):
-                defaultContainerFinderByIdOrPathStrategy.apply(containerIdOrPath, user, false, resourceHostSupplier);
     }
 }

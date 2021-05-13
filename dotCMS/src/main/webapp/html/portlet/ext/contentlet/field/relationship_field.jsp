@@ -90,7 +90,9 @@
 		relationName = relationship.getParentRelationName();
         isParent="no";
 	}
-	
+
+	// issue-19204
+	double randomNumber = Math.random();
 %>
     <style type="text/css" media="all">
         @import url(/html/portlet/ext/contentlet/field/relationship_field.css);
@@ -131,15 +133,16 @@
 		var <%= relationJsName %>_Contents = new Array ();
 
          function getCurrentLanguageIndex(o) {
-             var languageName = document.getElementById("langcombo").value.split(' ')[0].toLowerCase();
-             var index = 0;
-             for (var sibIndex = 0; sibIndex < o['siblings'].length ; sibIndex++) {
-                 if (o['siblings'][sibIndex]['langName'].toLowerCase() === languageName) {
-                     index = sibIndex;
-                 }
-             }
+              var index = 0;
 
-             return index;
+              for (var sibIndex = 0; sibIndex < o['siblings'].length ; sibIndex++) {
+                  if (o['langCode'].toLowerCase() === o['siblings'][sibIndex]['langCode'].toLowerCase()) {
+                      index = sibIndex;
+                      break;
+                  }
+              }
+             
+              return index;
          }
 
 		//Function used to render language id
@@ -704,10 +707,10 @@
          useRelateContentOnSelect="true"
 		 selectButtonLabel='<%= LanguageUtil.get(pageContext, "Relate")%>'
 	     title="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %>" 
-	     counter_radio="<%= System.currentTimeMillis() %>" 
-	     searchCounter="<%= System.currentTimeMillis() %>" 
+	     counter_radio="<%= randomNumber %>"
+	     searchCounter="<%= randomNumber %>"
 	     contentletLanguageId="<%=contentlet.getLanguageId() %>"
-	     dialogCounter="<%= System.currentTimeMillis() %>">
+	     dialogCounter="<%= randomNumber %>">
 	 </div>
 
 

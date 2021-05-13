@@ -4,6 +4,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -64,8 +65,8 @@ public class AppsCacheImpl extends AppsCache {
      * @param supplier Supplier delegated expected to load AppDescriptors
      * @return
      */
-    public List<AppDescriptorMeta> getAppDescriptorsMeta( final Supplier<List<AppDescriptorMeta>> supplier){
-        List<AppDescriptorMeta> appDescriptors = (List<AppDescriptorMeta>) cache.getNoThrow(DESCRIPTORS_LIST_KEY, DESCRIPTORS_CACHE_GROUP);
+    public List<AppDescriptor> getAppDescriptorsMeta( final Supplier<List<AppDescriptor>> supplier){
+        List<AppDescriptor> appDescriptors = (List<AppDescriptor>) cache.getNoThrow(DESCRIPTORS_LIST_KEY, DESCRIPTORS_CACHE_GROUP);
         if (!UtilMethods.isSet(appDescriptors) && null != supplier) {
            appDescriptors = supplier.get();
         }
@@ -77,7 +78,7 @@ public class AppsCacheImpl extends AppsCache {
      * This will simply put a list of descriptor into memory.
      * @param appDescriptors
      */
-    private void putAppDescriptor(final List<AppDescriptorMeta> appDescriptors) {
+    private void putAppDescriptor(final List<AppDescriptor> appDescriptors) {
         cache.put(DESCRIPTORS_LIST_KEY, appDescriptors, DESCRIPTORS_CACHE_GROUP);
     }
 
@@ -89,19 +90,27 @@ public class AppsCacheImpl extends AppsCache {
      * @param supplier
      * @return
      */
-    public Map<String, AppDescriptorMeta> getAppDescriptorsMap(final Supplier<List<AppDescriptorMeta>> supplier) {
-        Map<String, AppDescriptorMeta> descriptorsByKey = (Map<String, AppDescriptorMeta>) cache.getNoThrow(
+    public Map<String, AppDescriptor> getAppDescriptorsMap(final Supplier<List<AppDescriptor>> supplier) {
+        Map<String, AppDescriptor> descriptorsByKey = (Map<String, AppDescriptor>) cache.getNoThrow(
                 DESCRIPTORS_MAPPED_BY_KEY, DESCRIPTORS_CACHE_GROUP);
-        if (!UtilMethods.isSet(descriptorsByKey) && null != supplier) {
-            synchronized (AppsCacheImpl.class) {
-                descriptorsByKey = getAppDescriptorsMeta(supplier).stream().collect(
-                        Collectors.toMap(serviceDescriptorMeta -> serviceDescriptorMeta
-                                        .getAppDescriptor().getKey().toLowerCase(), Function.identity(),
-                                (serviceDescriptor, serviceDescriptor2) -> serviceDescriptor));
-
-                putDescriptorsByKey(descriptorsByKey);
-            }
+        
+        if(descriptorsByKey!=null) {
+            return descriptorsByKey;
         }
+
+        if(null == supplier) {
+            return null;
+        }
+
+        synchronized (AppsCacheImpl.class) {
+            descriptorsByKey = getAppDescriptorsMeta(supplier).stream().collect(
+                    Collectors.toMap(serviceDescriptorMeta -> serviceDescriptorMeta
+                                    .getKey().toLowerCase(), Function.identity(),
+                            (serviceDescriptor, serviceDescriptor2) -> serviceDescriptor));
+
+            putDescriptorsByKey(descriptorsByKey);
+        }
+        
         return descriptorsByKey;
     }
 
@@ -110,7 +119,7 @@ public class AppsCacheImpl extends AppsCache {
      * A Map like structure, Where the key is the app-key and the entry is the AppDescriptor.
      * @param descriptorsByKey
      */
-    private void putDescriptorsByKey(final Map<String, AppDescriptorMeta> descriptorsByKey){
+    private void putDescriptorsByKey(final Map<String, AppDescriptor> descriptorsByKey){
         cache.put(DESCRIPTORS_MAPPED_BY_KEY, descriptorsByKey, DESCRIPTORS_CACHE_GROUP);
     }
 
@@ -130,14 +139,24 @@ public class AppsCacheImpl extends AppsCache {
      */
     public Set<String> getKeysFromCache(final Supplier<Set<String>> supplier)
             throws DotCacheException {
-        synchronized (AppsCacheImpl.class) {
-            Set<String> keys = (Set<String>) cache.get(SECRETS_CACHE_KEY, SECRETS_CACHE_KEYS_GROUP);
-            if (!UtilMethods.isSet(keys) && null != supplier) {
+        
+        Set<String> keys = (Set<String>) cache.get(SECRETS_CACHE_KEY, SECRETS_CACHE_KEYS_GROUP);
+        if (keys!=null) {
+            return keys;
+        }
+        if(null ==supplier) {
+            return ImmutableSet.of();
+        }
+        // try again
+
+            keys = (Set<String>) cache.get(SECRETS_CACHE_KEY, SECRETS_CACHE_KEYS_GROUP);
+            if(keys==null) {
                 keys = supplier.get();
                 putKeys(keys);
             }
-            return keys;
-        }
+
+        return keys;
+        
     }
 
     /**
@@ -157,14 +176,26 @@ public class AppsCacheImpl extends AppsCache {
      * @return encrypted secret from cache.
      */
     public char[] getFromCache(final String key, final Supplier<char[]> supplier) {
-        synchronized (AppsCacheImpl.class) {
-            char[] retVal = (char[]) cache.getNoThrow(key, SECRETS_CACHE_GROUP);
-            if (retVal == null && null != supplier) {
-                retVal = supplier.get();
-                putSecret(key, retVal);
-            }
+
+        char[] retVal = (char[]) cache.getNoThrow(key, SECRETS_CACHE_GROUP);
+        
+        if(retVal!=null) {
             return retVal;
         }
+        
+        if (null == supplier) {
+            return null;
+        }
+        
+        // try again
+        retVal = (char[]) cache.getNoThrow(key, SECRETS_CACHE_GROUP);
+        if (retVal == null) {
+            retVal = supplier.get();
+            putSecret(key, retVal);
+        }
+        
+        return retVal;
+        
     }
 
     /**
@@ -190,10 +221,8 @@ public class AppsCacheImpl extends AppsCache {
      * All Secrets flush.
      */
     public  void flushSecret() {
-        synchronized (AppsCacheImpl.class) {
            cache.flushGroup(SECRETS_CACHE_GROUP);
            cache.flushGroup(SECRETS_CACHE_KEYS_GROUP);
-        }
     }
 
     /**
@@ -202,14 +231,15 @@ public class AppsCacheImpl extends AppsCache {
      * @throws DotCacheException
      */
     public void flushSecret(final String key) throws DotCacheException {
-        synchronized (AppsCacheImpl.class) {
-            cache.remove(key, SECRETS_CACHE_GROUP);
-            final Set<String> keys = (Set<String>)cache.get(SECRETS_CACHE_KEY, SECRETS_CACHE_KEYS_GROUP);
-            if(UtilMethods.isSet(keys)){
-                keys.remove(key);
-                putKeys(keys);
-            }
+
+        cache.remove(key, SECRETS_CACHE_GROUP);
+        final Set<String> keys = (Set<String>) cache
+                .get(SECRETS_CACHE_KEY, SECRETS_CACHE_KEYS_GROUP);
+        if (UtilMethods.isSet(keys)) {
+            keys.remove(key);
+            putKeys(keys);
         }
+
     }
 
     /**

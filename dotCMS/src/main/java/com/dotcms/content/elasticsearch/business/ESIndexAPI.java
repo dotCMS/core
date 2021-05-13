@@ -20,8 +20,10 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.ZipUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -126,6 +128,7 @@ public class ESIndexAPI {
 	final private ContentletIndexAPI iapi;
 	final private ESIndexHelper esIndexHelper;
 
+	final private Lazy<String> clusterPrefix;
 	public enum Status { ACTIVE("active"), INACTIVE("inactive"), PROCESSING("processing");
 		private final String status;
 
@@ -138,10 +141,16 @@ public class ESIndexAPI {
 		}
 	}
 
-	public ESIndexAPI(){
-		this.iapi = new ContentletIndexAPIImpl();
-		this.esIndexHelper = ESIndexHelper.getInstance();
-	}
+    @VisibleForTesting
+    ESIndexAPI(Lazy<String> clusterPrefix) {
+        this.iapi = new ContentletIndexAPIImpl();
+        this.esIndexHelper = ESIndexHelper.getInstance();
+        this.clusterPrefix = clusterPrefix;
+    }
+     
+    public ESIndexAPI() {
+        this(Lazy.of(() -> CLUSTER_PREFIX + ClusterFactory.getClusterId() + "."));
+    }
 
     private class IndexSortByDate implements Comparator<String> {
         public int compare(String o1, String o2) {
@@ -612,10 +621,12 @@ public class ESIndexAPI {
 
 		map.put("number_of_shards", shards);
 		map.put("index.auto_expand_replicas", "0-all");
-		map.put("index.mapping.total_fields.limit",
-			Config.getIntProperty("ES_INDEX_MAPPING_TOTAL_FIELD_LIMITS", 5000));
-        map.put("index.mapping.nested_fields.limit",
-                Config.getIntProperty("ES_INDEX_MAPPING_NESTED_FIELDS_LIMITS", 5000));
+		if (!map.containsKey("index.mapping.total_fields.limit")) {
+			map.put("index.mapping.total_fields.limit", 10000);
+		}
+		if (!map.containsKey("index.mapping.nested_fields.limit")) {
+			map.put("index.mapping.nested_fields.limit", 10000);
+		}
 
 		map.put("index.query.default_field",
 				Config.getStringProperty("ES_INDEX_QUERY_DEFAULT_FIELD", "catchall"));
@@ -882,8 +893,10 @@ public class ESIndexAPI {
 	}
 
 	boolean hasClusterPrefix(final String indexName) {
-        final String clusterId = getClusterIdFromIndexName(indexName).orElse(null);
-        return clusterId != null && clusterId.equals(ClusterFactory.getClusterId());
+	    
+	    return indexName!=null && indexName.startsWith(clusterPrefix.get());
+	    
+
     }
 
     /**
@@ -895,25 +908,14 @@ public class ESIndexAPI {
      * @return Index name or alias without the cluster id prefix
      */
     public String removeClusterIdFromName(final String name) {
-        if (name == null){
-            return Strings.EMPTY;
-        }
-		final String[] indexNameSplit = name.split("\\.");
-		return indexNameSplit.length == 1 ?
-				indexNameSplit[0] :
-				indexNameSplit[1];
+        if(name==null) return "";
+        return name.indexOf(".")>-1 
+                        ? name.substring(name.lastIndexOf(".")+1, name.length()) 
+                        : name;
+
 	}
 
-	private Optional<String> getClusterIdFromIndexName(final String indexName) {
-        if (indexName != null) {
-            final String[] indexNameSplit = indexName.split("\\.");
-            if (indexNameSplit.length > 1 && indexNameSplit[0].split("_").length > 1) {
-                return Optional.of(indexNameSplit[0].split("_")[1]);
-            }
-        }
 
-		return Optional.empty();
-	}
 
 	public List<String> getClosedIndexes() {
 
@@ -995,6 +997,7 @@ public class ESIndexAPI {
 		}
 	}
 
+	
     /**
      * Given an alias or index name, this method will return the full name including the cluster id,
      * using this format: <b>{@link IndiciesInfo#CLUSTER_PREFIX CLUSTER_PREFIX}_{id}.{name}</b>
@@ -1003,8 +1006,7 @@ public class ESIndexAPI {
      */
     public String getNameWithClusterIDPrefix(final String name) {
         return hasClusterPrefix(name) ? name
-                : new StringBuilder(CLUSTER_PREFIX).append(ClusterFactory.getClusterId())
-                        .append(".").append(name).toString();
+                : clusterPrefix.get() + name;
     }
 
     /**

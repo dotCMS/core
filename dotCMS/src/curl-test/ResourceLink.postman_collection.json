@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "f82236f5-bb37-47b7-92c8-b7c950db1c52",
+		"_postman_id": "4593a9ca-bb11-43e3-9733-27ee8931b539",
 		"name": "ResourceLink",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -11,7 +11,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "dd4d3880-bd2e-4cff-8c8d-54270b27a49f",
+						"id": "8924c522-65d4-4ce6-b488-da84f8d08e4f",
 						"exec": [
 							"var jsonData = pm.response.json();",
 							"",
@@ -64,12 +64,10 @@
 					}
 				},
 				"url": {
-					"raw": "http://localhost:8080/api/v1/temp/byUrl",
-					"protocol": "http",
+					"raw": "{{serverURL}}/api/v1/temp/byUrl",
 					"host": [
-						"localhost"
+						"{{serverURL}}"
 					],
-					"port": "8080",
 					"path": [
 						"api",
 						"v1",
@@ -86,7 +84,7 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "a90bc5b7-7f90-4305-80c1-2604a85af86f",
+						"id": "d3a959f3-446d-47f9-b998-c42d2e869bd2",
 						"exec": [
 							"console.log(\"temporalFileId\", \"{{temporalFileId}}\")"
 						],
@@ -96,7 +94,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "e1c4d689-cac6-4e46-aaf6-a531a452c4ba",
+						"id": "5a87e8d5-e9f9-4f93-be8d-be1bd1687fa1",
 						"exec": [
 							"var jsonData = pm.response.json();",
 							"",
@@ -175,7 +173,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "ebd3e30d-2722-4a0f-8bc6-fc677433990c",
+						"id": "2400ec5c-1aaf-4604-bb2b-9402d1475073",
 						"exec": [
 							"",
 							"pm.test(\"Status code should be 200\", function () {",
@@ -245,7 +243,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "3c77845b-e3c8-4965-a6fa-cb9ae6a90545",
+						"id": "1e6abb06-e6af-4878-978c-c2ec7df59628",
 						"exec": [
 							"",
 							"pm.test(\"Status code should be 404\", function () {",
@@ -304,7 +302,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "1c06f536-2e85-4c47-b72c-6efc91049c3e",
+						"id": "6f8508a8-253c-4f30-96e6-52bc6e3078d4",
 						"exec": [
 							"",
 							"pm.test(\"Status code should be 200\", function () {",
@@ -362,16 +360,14 @@
 	],
 	"variable": [
 		{
-			"id": "8e48d138-0e90-45f0-9265-d554f6db6586",
+			"id": "17faa57f-92cf-4b74-8106-fa095523b368",
 			"key": "temporalFileId",
-			"value": "temp_375c8b0a41",
-			"type": "string"
+			"value": "temp_d43e95ed10"
 		},
 		{
-			"id": "6084fa34-c476-470b-8760-1fbf417c0115",
+			"id": "33f604b6-f00b-4b3f-a402-4ed5b82af15d",
 			"key": "identifier",
-			"value": "3a60f7ae-a2a9-496c-a4f5-348dd39e13ee",
-			"type": "string"
+			"value": "6384e295-3c03-45b4-a2d1-b63a6a2b1b7f"
 		}
 	],
 	"protocolProfileBehavior": {}

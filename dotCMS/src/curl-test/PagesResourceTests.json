@@ -1,21 +1,171 @@
 {
 	"info": {
-		"_postman_id": "9101cc46-59f9-4129-a24c-1acf5744f0a9",
-		"name": "Pages Resource Tests",
+		"_postman_id": "467aef97-8193-4d1e-a3c1-08e9b01bc5f3",
+		"name": "Page API - [api/v1/page]",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "loadJson",
+			"name": "CreateTestContext",
 			"item": [
 				{
-					"name": "UserAuthenticationValidation",
+					"name": "pre_ImportBundleWithContext",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "5f1dba43-1d08-457c-b67e-4f0534157b55",
-								"type": "text/javascript",
+								"id": "6ceb004f-c477-409f-9a1d-8c7bee1f5350",
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"assets.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/assets.tar.gz"
+								}
+							],
+							"options": {
+								"formdata": {}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* HTMLPage /blog/index\n* HTMLPage /blog/destinations/costa-rica\n* Contentlet [Blog] Ecotourism in Costa Rica\n* Blog Detail Page /blog/blog-detail"
+					},
+					"response": []
+				}
+			],
+			"description": "Imports a Bundle that includes:\n* HTMLPage /blog/index\n* HTMLPage /blog/destinations/costa-rica\n* Contentlet [Blog] Ecotourism in Costa Rica\n* Blog Detail Page /blog/blog-detail",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "50f00108-83ec-4a2b-8304-ed81942b73c0",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "4afcb734-0af1-495f-a366-7717d14f6777",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "JSON [api/v1/page/json]",
+			"item": [
+				{
+					"name": "invalidateSession",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "8cf66b1c-0003-4610-8e96-c1b38e2aaf27",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GivenInvalidUser_ShouldReturn401",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "118b41c4-c724-48cf-89af-d20c89d2f3cf",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 401, Need credentials\", function () {",
@@ -25,18 +175,22 @@
 									"",
 									"",
 									"pm.test(\"Response body matches\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"Invalid User\");",
+									"    pm.expect(pm.response.text()).to.eq(\"Invalid User\");",
 									"});",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
 					"request": {
+						"auth": {
+							"type": "noauth"
+						},
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/json/about-us/index",
+							"raw": "{{serverURL}}/api/v1/page/json/destinations/costa-rica",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -45,22 +199,21 @@
 								"v1",
 								"page",
 								"json",
-								"about-us",
-								"index"
+								"destinations",
+								"costa-rica"
 							]
 						},
-						"description": "http://localhost:8080/api/v1/page/json/{page-url}"
+						"description": "Given no user, should return 401 and \"Invalid User\" message"
 					},
 					"response": []
 				},
 				{
-					"name": "SuccessRequest",
+					"name": "GivenValidPageURL_ShouldReturnPageInfo",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "1c741cde-3a18-46ac-84c9-c28fb17f845a",
-								"type": "text/javascript",
+								"id": "a5a07df6-57f7-4ec5-80a3-c8e452773b73",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 200\", function () {",
@@ -80,8 +233,71 @@
 									"pm.test(\"Include Containers\", function () {",
 									"    pm.expect(pm.response.text()).to.include(\"containers\");",
 									"});",
+									"",
+									"pm.test(\"'page' element includes all properties\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var page = jsonData[\"entity\"][\"page\"];",
+									"    pm.expect(page[\"__icon__\"]).equal(\"pageIcon\");",
+									"    pm.expect(page[\"archived\"], 'FAILED:[archived]').equal(false);",
+									"    pm.expect(page[\"baseType\"]).equal(\"HTMLPAGE\");",
+									"    pm.expect(page[\"cachettl\"]).equal(\"0\");",
+									"    pm.expect(page[\"canEdit\"], 'FAILED:[canEdit]').equal(true);",
+									"    pm.expect(page[\"canLock\"], 'FAILED:[canLock]').equal(true);",
+									"    pm.expect(page[\"canRead\"], 'FAILED:[canRead]').equal(true);",
+									"    pm.expect(page[\"deleted\"], 'FAILED:[deleted]').equal(false);",
+									"    pm.expect(page[\"description\"]).equal(\"Costa Rica Rain Forest\");",
+									"    pm.expect(page[\"extension\"]).equal(\"page\");",
+									"    pm.expect(page[\"folder\"]).equal(\"6c8a2ac4-36a7-4b01-b9c0-c2c1d91ddfdb\");",
+									"    pm.expect(page[\"friendlyName\"]).equal(\"Costa Rica Rain Forest\");",
+									"    pm.expect(page[\"hasLiveVersion\"], 'FAILED:[hasLiveVersion]').equal(true);",
+									"    pm.expect(page[\"hasTitleImage\"], 'FAILED:[hasTitleImage]').equal(true);",
+									"    pm.expect(page[\"host\"]).equal(\"48190c8c-42c4-46af-8d1a-0cd5db894797\");",
+									"    pm.expect(page[\"hostName\"]).equal(\"demo.dotcms.com\");",
+									"    ////",
+									"    pm.expect(page[\"httpsRequired\"], 'FAILED:[httpsRequired]').equal(false);",
+									"    pm.expect(page[\"identifier\"]).equal(\"bec7b960-a8bf-4f14-a22b-0d94caf217f0\");",
+									"    pm.expect(page[\"image\"]).equal(\"/dA/bec7b960-a8bf-4f14-a22b-0d94caf217f0/image/costa-rica-tree-frog.jpg\");",
+									"    pm.expect(page[\"imageContentAsset\"]).equal(\"bec7b960-a8bf-4f14-a22b-0d94caf217f0/image\");",
+									"    pm.expect(page[\"inode\"]).not.equal(null)",
+									"    pm.expect(page[\"isContentlet\"], 'FAILED:[isContentlet]').equal(true);",
+									"    pm.expect(page[\"languageId\"]).equal(1);",
+									"    pm.expect(page[\"live\"], 'FAILED:[live]').equal(true);",
+									"    pm.expect(page[\"liveInode\"]).not.equal(null)",
+									"    pm.expect(page[\"locked\"], 'FAILED:[locked]').equal(false);",
+									"    pm.expect(page[\"mimeType\"]).equal(\"application/dotpage\");",
+									"    pm.expect(page[\"modDate\"]).not.equal(null)",
+									"    ///",
+									"    pm.expect(page[\"modUser\"]).equal(\"system\");",
+									"    pm.expect(page[\"modUserName\"]).equal(\"system user system user\");",
+									"    pm.expect(page[\"name\"]).equal(\"costa-rica\");",
+									"    pm.expect(page[\"owner\"]).equal(\"dotcms.org.1\");",
+									"    pm.expect(page[\"pageURI\"]).equal(\"/destinations/costa-rica\");",
+									"    pm.expect(page[\"pageUrl\"]).equal(\"costa-rica\");",
+									"    pm.expect(page[\"path\"]).equal(\"/destinations/costa-rica\");",
+									"    pm.expect(page[\"publishDate\"]).not.equal(null)",
+									"    pm.expect(page[\"seoTitle\"]).equal(\"Costa Rica Travel Destinations\");",
+									"    pm.expect(page[\"seodescription\"]).equal(\"Visit Costa Rica a rugged, rainforested Central American country with coastlines on the Caribbean and Pacific.\");",
+									"    pm.expect(page[\"shortDescription\"]).equal(\"Costa Rica is a rugged, rainforested Central American country with coastlines on the Caribbean and Pacific. Costa Rica is known for its beaches, volcanoes, and biodiversity. Roughly a quarter of its area is made up of protected jungle, teeming with wildlife including spider monkeys and quetzal birds.\");",
+									"    pm.expect(page[\"shortyLive\"]).not.equal(null)",
+									"    //",
+									"    pm.expect(page[\"shortyWorking\"]).not.equal(null)",
+									"    pm.expect(page[\"sortOrder\"]).equal(0);",
+									"    pm.expect(page[\"stInode\"]).equal(\"91812c8b-0441-4139-8d4d-7423cfb0e979\");",
+									"    pm.expect(page[\"statusIcons\"]).equal(\"<span class='greyDotIcon' style='opacity:.4'></span><span class='liveIcon'></span>\");",
+									"    pm.expect(page[\"tags\"]).equal(\"diving\");",
+									"    pm.expect(page[\"template\"]).equal(\"0c556e37-99e0-4458-a2cd-d42cc7a11045\");",
+									"    pm.expect(page[\"title\"]).equal(\"Costa Rica Rain Forest\");",
+									"    pm.expect(page[\"titleImage\"]).equal(\"image\");",
+									"    pm.expect(page[\"type\"]).equal(\"htmlpage\");",
+									"    pm.expect(page[\"url\"]).equal(\"/destinations/costa-rica\");",
+									"    pm.expect(page[\"working\"], 'FAILED:[working]').equal(true);",
+									"    pm.expect(page[\"workingInode\"]).not.equal(null)",
+									"",
+									"});",
+									"",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -104,7 +320,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/json/about-us/index",
+							"raw": "{{serverURL}}/api/v1/page/json/destinations/costa-rica",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -113,8 +329,8 @@
 								"v1",
 								"page",
 								"json",
-								"about-us",
-								"index"
+								"destinations",
+								"costa-rica"
 							]
 						},
 						"description": "http://localhost:8080/api/v1/page/json/{page-url}"
@@ -122,75 +338,45 @@
 					"response": []
 				},
 				{
-					"name": "ValidateReadPermissions",
+					"name": "invalidateSession",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "868a9218-423c-4fe9-bc04-9dcb0231ef75",
-								"type": "text/javascript",
+								"id": "0050f56c-6806-48f1-8140-522ebfe3476b",
 								"exec": [
-									"pm.test(\"Status code is 403\", function () {",
-									"    pm.response.to.have.status(403);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"User: Bill Intranet : dotcms.org.2806 does not have permissions\");",
-									"});",
-									"",
-									"",
-									"",
-									""
-								]
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "bill",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "bill@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/json/about-us/index",
+							"raw": "{{serverURL}}/api/v1/logout",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
 								"v1",
-								"page",
-								"json",
-								"about-us",
-								"index"
+								"logout"
 							]
-						},
-						"description": "http://localhost:8080/api/v1/page/json/{page-url}"
+						}
 					},
 					"response": []
 				},
 				{
-					"name": "InvalidPageURL",
+					"name": "GivenInvalidPageURL_ShouldReturn404",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "55b28507-62ac-4176-807f-a9a4f49743ec",
-								"type": "text/javascript",
+								"id": "91f5ac16-ef60-48bd-bbe6-9fb751962c4b",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 404\", function () {",
@@ -200,13 +386,14 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"Page '/about-us/index2' is not found\");",
+									"    pm.expect(pm.response.text()).to.include(\"Page \\'about-us/index2\\' not found\");",
 									"});",
 									"",
 									"",
 									"",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -241,18 +428,17 @@
 								"about-us",
 								"index2"
 							]
-						},
-						"description": "http://localhost:8080/api/v1/page/json/{page-url}"
+						}
 					},
 					"response": []
 				},
 				{
-					"name": "Validate contents on advanced templates",
+					"name": "GivenURLMappedPage_ShouldReturnPageInfo",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "da875510-87f2-4848-b004-710215a08d80",
+								"id": "10f6e94d-6a0e-4cc2-84ed-21c458f26126",
 								"exec": [
 									"pm.test(\"No errors\", function () {",
 									"    ",
@@ -296,7 +482,6 @@
 									"    ",
 									"    var jsonData = pm.response.json();",
 									"    ",
-									"    pm.expect(jsonData.entity.site.name).to.equal('demo.dotcms.com');",
 									"    pm.expect(jsonData.entity.site.hostname).to.equal('demo.dotcms.com');",
 									"    pm.expect(jsonData.entity.site.type).to.equal('contentlet');",
 									"     ",
@@ -314,8 +499,8 @@
 									"pm.test(\"Contentlets checks\", function () {",
 									"    ",
 									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.entity.containers[\"/application/containers/default/\"].contentlets[\"uuid-1\"][0].title).to.equal('Travel Blog Header');",
-									"    pm.expect(jsonData.entity.containers[\"/application/containers/default/\"].contentlets[\"uuid-1\"][0].contentType).to.equal('webPageContent');",
+									"    pm.expect(jsonData.entity.containers[\"//demo.dotcms.com/application/containers/default/\"].contentlets[\"uuid-1\"][0].title).to.equal('Travel Blog Header');",
+									"    pm.expect(jsonData.entity.containers[\"//demo.dotcms.com/application/containers/default/\"].contentlets[\"uuid-1\"][0].contentType).to.equal('webPageContent');",
 									"});",
 									"",
 									"",
@@ -367,19 +552,73 @@
 				}
 			],
 			"description": "Returns the metadata in JSON format of the objects that make up an HTML Page in the system.\n\nhttp://localhost:8080/api/v1/page/json/{page-url}",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "19700d59-0a68-4594-a323-45ba94108915",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "51981d37-7ad1-47b3-a322-63f72aea3e62",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			],
 			"protocolProfileBehavior": {}
 		},
 		{
-			"name": "RenderPage",
+			"name": "Render [api/v1/page/render]",
 			"item": [
 				{
-					"name": "UserAuthenticationValidation",
+					"name": "invalidateSession",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "7008ae74-9119-4235-8670-397376f19f79",
-								"type": "text/javascript",
+								"id": "ce4a7239-5543-4571-9a78-66f75c502601",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GivenInvalidUser_ShouldReturn401",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "aac23bda-c2f5-400f-9700-72ffd0398b95",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 401, Need credentials\", function () {",
@@ -392,7 +631,8 @@
 									"    pm.expect(pm.response.text()).to.include(\"Invalid User\");",
 									"});",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -403,7 +643,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/render/about-us/index",
+							"raw": "{{serverURL}}/api/v1/page/render/destinations/costa-rica",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -412,21 +652,20 @@
 								"v1",
 								"page",
 								"render",
-								"about-us",
-								"index"
+								"destinations",
+								"costa-rica"
 							]
 						}
 					},
 					"response": []
 				},
 				{
-					"name": "SuccessRequest",
+					"name": "GivenValidPageURL_ShouldReturnPageInfoAndRenderHTML",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "fea8cb7e-1c13-432c-9acf-3f5ab66caccb",
-								"type": "text/javascript",
+								"id": "132942c5-35ae-4a57-a4f2-045c5c483058",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 200\", function () {",
@@ -442,8 +681,69 @@
 									"pm.test(\"Response body contains\", function () {",
 									"    pm.expect(pm.response.text()).to.include(\"uuid\");",
 									"});",
-									""
-								]
+									"",
+									"pm.test(\"'page' element includes all properties\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var page = jsonData[\"entity\"][\"page\"];",
+									"    pm.expect(page[\"__icon__\"]).equal(\"pageIcon\");",
+									"    pm.expect(page[\"archived\"], 'FAILED:[archived]').equal(false);",
+									"    pm.expect(page[\"baseType\"]).equal(\"HTMLPAGE\");",
+									"    pm.expect(page[\"cachettl\"]).equal(\"0\");",
+									"    pm.expect(page[\"canEdit\"], 'FAILED:[canEdit]').equal(true);",
+									"    pm.expect(page[\"canLock\"], 'FAILED:[canLock]').equal(true);",
+									"    pm.expect(page[\"canRead\"], 'FAILED:[canRead]').equal(true);",
+									"    pm.expect(page[\"deleted\"], 'FAILED:[deleted]').equal(false);",
+									"    pm.expect(page[\"description\"]).equal(\"Costa Rica Rain Forest\");",
+									"    pm.expect(page[\"extension\"]).equal(\"page\");",
+									"    pm.expect(page[\"folder\"]).equal(\"6c8a2ac4-36a7-4b01-b9c0-c2c1d91ddfdb\");",
+									"    pm.expect(page[\"friendlyName\"]).equal(\"Costa Rica Rain Forest\");",
+									"    pm.expect(page[\"hasLiveVersion\"], 'FAILED:[hasLiveVersion]').equal(true);",
+									"    pm.expect(page[\"hasTitleImage\"], 'FAILED:[hasTitleImage]').equal(true);",
+									"    pm.expect(page[\"host\"]).equal(\"48190c8c-42c4-46af-8d1a-0cd5db894797\");",
+									"    pm.expect(page[\"hostName\"]).equal(\"demo.dotcms.com\");",
+									"    ////",
+									"    pm.expect(page[\"httpsRequired\"], 'FAILED:[httpsRequired]').equal(false);",
+									"    pm.expect(page[\"identifier\"]).equal(\"bec7b960-a8bf-4f14-a22b-0d94caf217f0\");",
+									"    pm.expect(page[\"image\"]).equal(\"/dA/bec7b960-a8bf-4f14-a22b-0d94caf217f0/image/costa-rica-tree-frog.jpg\");",
+									"    pm.expect(page[\"imageContentAsset\"]).equal(\"bec7b960-a8bf-4f14-a22b-0d94caf217f0/image\");",
+									"    pm.expect(page[\"inode\"]).not.equal(null)",
+									"    pm.expect(page[\"isContentlet\"], 'FAILED:[isContentlet]').equal(true);",
+									"    pm.expect(page[\"languageId\"]).equal(1);",
+									"    pm.expect(page[\"live\"], 'FAILED:[live]').equal(true);",
+									"    pm.expect(page[\"liveInode\"]).not.equal(null)",
+									"    pm.expect(page[\"locked\"], 'FAILED:[locked]').equal(false);",
+									"    pm.expect(page[\"mimeType\"]).equal(\"application/dotpage\");",
+									"    pm.expect(page[\"modDate\"]).not.equal(null)",
+									"    ///",
+									"    pm.expect(page[\"modUser\"]).equal(\"system\");",
+									"    pm.expect(page[\"modUserName\"]).equal(\"system user system user\");",
+									"    pm.expect(page[\"name\"]).equal(\"costa-rica\");",
+									"    pm.expect(page[\"owner\"]).equal(\"dotcms.org.1\");",
+									"    pm.expect(page[\"pageURI\"]).equal(\"/destinations/costa-rica\");",
+									"    pm.expect(page[\"pageUrl\"]).equal(\"costa-rica\");",
+									"    pm.expect(page[\"path\"]).equal(\"/destinations/costa-rica\");",
+									"    pm.expect(page[\"publishDate\"]).not.equal(null)",
+									"    pm.expect(page[\"seoTitle\"]).equal(\"Costa Rica Travel Destinations\");",
+									"    pm.expect(page[\"seodescription\"]).equal(\"Visit Costa Rica a rugged, rainforested Central American country with coastlines on the Caribbean and Pacific.\");",
+									"    pm.expect(page[\"shortDescription\"]).equal(\"Costa Rica is a rugged, rainforested Central American country with coastlines on the Caribbean and Pacific. Costa Rica is known for its beaches, volcanoes, and biodiversity. Roughly a quarter of its area is made up of protected jungle, teeming with wildlife including spider monkeys and quetzal birds.\");",
+									"    pm.expect(page[\"shortyLive\"]).not.equal(null)",
+									"    //",
+									"    pm.expect(page[\"shortyWorking\"]).not.equal(null)",
+									"    pm.expect(page[\"sortOrder\"]).equal(0);",
+									"    pm.expect(page[\"stInode\"]).equal(\"91812c8b-0441-4139-8d4d-7423cfb0e979\");",
+									"    pm.expect(page[\"statusIcons\"]).equal(\"<span class='greyDotIcon' style='opacity:.4'></span><span class='liveIcon'></span>\");",
+									"    pm.expect(page[\"tags\"]).equal(\"diving\");",
+									"    pm.expect(page[\"template\"]).equal(\"0c556e37-99e0-4458-a2cd-d42cc7a11045\");",
+									"    pm.expect(page[\"title\"]).equal(\"Costa Rica Rain Forest\");",
+									"    pm.expect(page[\"titleImage\"]).equal(\"image\");",
+									"    pm.expect(page[\"type\"]).equal(\"htmlpage\");",
+									"    pm.expect(page[\"url\"]).equal(\"/destinations/costa-rica\");",
+									"    pm.expect(page[\"working\"], 'FAILED:[working]').equal(true);",
+									"    pm.expect(page[\"workingInode\"]).not.equal(null)",
+									"",
+									"});"
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -466,7 +766,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/render/about-us/index",
+							"raw": "{{serverURL}}/api/v1/page/render/destinations/costa-rica",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -475,21 +775,20 @@
 								"v1",
 								"page",
 								"render",
-								"about-us",
-								"index"
+								"destinations",
+								"costa-rica"
 							]
 						}
 					},
 					"response": []
 				},
 				{
-					"name": "InvalidURL",
+					"name": "GivenInvalidPageURL_ShouldReturn404",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "8baa5207-fc13-4a97-b86d-170b5b2b2074",
-								"type": "text/javascript",
+								"id": "f376d622-1c54-4b00-8713-4cfb68f69692",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 404\", function () {",
@@ -498,11 +797,12 @@
 									"",
 									"",
 									"pm.test(\"Response body contains\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"is not found\");",
+									"    pm.expect(pm.response.text()).to.eq(\"{\\\"message\\\":\\\"Page \\'about-us/index2\\' not found\\\"}\");",
 									"});",
 									"",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -542,70 +842,12 @@
 					"response": []
 				},
 				{
-					"name": "ReadPermissionsValidation",
+					"name": "GivenURLMappedPage_ShouldReturnPageInfo",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "84ababef-6a09-4292-a32e-e0317c2335c3",
-								"type": "text/javascript",
-								"exec": [
-									"pm.test(\"Status code is 403, Need permissions to read\", function () {",
-									"    pm.response.to.have.status(403);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Response body matches\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"User: Bill Intranet : dotcms.org.2806 does not have permissions READ\");",
-									"});",
-									""
-								]
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "bill",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "bill@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/page/render/about-us/index",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"page",
-								"render",
-								"about-us",
-								"index"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get Url Content Map",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "da875510-87f2-4848-b004-710215a08d80",
+								"id": "5caf7a93-f793-4f75-a1f0-d2178bd4b350",
 								"exec": [
 									"pm.test(\"No errors\", function () {",
 									"    ",
@@ -649,7 +891,6 @@
 									"    ",
 									"    var jsonData = pm.response.json();",
 									"    ",
-									"    pm.expect(jsonData.entity.site.name).to.equal('demo.dotcms.com');",
 									"    pm.expect(jsonData.entity.site.hostname).to.equal('demo.dotcms.com');",
 									"    pm.expect(jsonData.entity.site.type).to.equal('contentlet');",
 									"     ",
@@ -659,15 +900,15 @@
 									"    ",
 									"    var jsonData = pm.response.json();",
 									"    ",
-									"    pm.expect(jsonData.entity.template.title).to.equal('anonymous_layout_1563211383718');",
+									"    pm.expect(jsonData.entity.template.title).to.equal('anonymous_layout_1582562696562');",
 									"    pm.expect(jsonData.entity.template.type).to.equal('template');",
 									"     ",
 									"});",
 									"",
-									"pm.test(\"Url Contente Map checks\", function () {",
+									"pm.test(\"Url Content Map checks\", function () {",
 									"    ",
 									"    var jsonData = pm.response.json();",
-									"    ",
+									"",
 									"    pm.expect(jsonData.entity.urlContentMap.hostName).to.equal('demo.dotcms.com');",
 									"    pm.expect(jsonData.entity.urlContentMap.baseType).to.equal('CONTENT');",
 									"    pm.expect(jsonData.entity.urlContentMap.contentType).to.equal('Blog');",
@@ -733,16 +974,48 @@
 			"protocolProfileBehavior": {}
 		},
 		{
-			"name": "Layout",
+			"name": "Layout [/api/v1/page/{page-id}/layout]",
 			"item": [
 				{
-					"name": "UserAuthenticationValidation",
+					"name": "invalidateSession",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "a4bbfcaa-009e-4b9d-a8a6-444699c8211b",
-								"type": "text/javascript",
+								"id": "9be95091-e3a8-4497-970d-726befd7191d",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GivenInvalidUser_ShouldReturn401",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "7027be93-a9c5-4b06-a258-d17b0f6d1bc8",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 401, Need credentials\", function () {",
@@ -755,7 +1028,8 @@
 									"    pm.expect(pm.response.text()).to.include(\"Invalid User\");",
 									"});",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -775,7 +1049,7 @@
 							"raw": "{\"title\":null,\"layout\":{\"body\":{\"rows\":[{\"columns\":[{\"leftOffset\":1,\"width\":7,\"containers\":[{\"identifier\":\"a050073a-a31e-4aab-9307-86bfb248096a\",\"uuid\":\"1\"}]},{\"leftOffset\":8,\"width\":4,\"containers\":[{\"identifier\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid\":\"1\"}]}]}]},\"header\":true,\"footer\":true,\"sidebar\":{\"location\":\"\",\"containers\":[],\"width\":\"small\"}}}"
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/c12fe7e6-d338-49d5-973b-2d974d57015b/layout",
+							"raw": "{{serverURL}}/api/v1/page/bec7b960-a8bf-4f14-a22b-0d94caf217f0/layout",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -783,7 +1057,7 @@
 								"api",
 								"v1",
 								"page",
-								"c12fe7e6-d338-49d5-973b-2d974d57015b",
+								"bec7b960-a8bf-4f14-a22b-0d94caf217f0",
 								"layout"
 							]
 						},
@@ -792,29 +1066,75 @@
 					"response": []
 				},
 				{
-					"name": "SuccessRequest",
+					"name": "GivenValidLayout_ShouldSaveLayout",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "63adc218-5d09-43f5-9298-29a015edbedc",
-								"type": "text/javascript",
+								"id": "561037e7-8cb8-459c-b602-05aa9357dc61",
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
+									"pm.test(\"Response code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"",
-									"",
-									"pm.test(\"Response body contains\", function () {",
+									"pm.test(\"Response body contains 'rendered'\", function () {",
 									"    pm.expect(pm.response.text()).to.include(\"rendered\");",
 									"});",
 									"",
-									"pm.test(\"Response body contains\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"uuid-1\");",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"'Containers' section contains expected containers\", function () {",
+									"    var containers = jsonData[\"entity\"][\"containers\"];",
+									"    pm.expect(containers[\"//demo.dotcms.com/application/containers/default/\"].container.identifier).equal(\"69b3d24d-7e80-4be6-b04a-d352d16493ee\");",
+									"",
+									"    pm.expect(containers[\"5a07f889-4536-4956-aa6e-e7967969ec3f\"].container.identifier).equal(\"5a07f889-4536-4956-aa6e-e7967969ec3f\");",
 									"});",
+									"",
+									"",
+									"var layout = jsonData[\"entity\"][\"layout\"];",
+									"var rows = layout[\"body\"][\"rows\"];",
+									"var columns = layout[\"body\"][\"rows\"][0][\"columns\"];",
+									"pm.expect(columns.length).equal(2);",
+									"",
+									"// column 1 ",
+									"var column1 = columns[0];",
+									"var containersColumn1 = column1[\"containers\"];",
+									"",
+									"// column 2",
+									"var column2 = columns[1];",
+									"var containersColumn2 = column2[\"containers\"];",
+									"",
+									"",
+									"",
+									"pm.test(\"Layout has 1 row\", function () {",
+									"    pm.expect(rows.length).equal(1);",
+									"});",
+									"",
+									"pm.test(\"First row has 2 columns\", function () {",
+									"    pm.expect(columns.length).equal(2);",
+									"});",
+									"",
+									"pm.test(\"First column has width of 7 \", function () {",
+									"    pm.expect(column1[\"width\"]).equal(7);",
+									"});   ",
+									"",
+									"pm.test(\"First column has 1 container with expected identifier\", function () {",
+									"    pm.expect(containersColumn1.length).equal(1);",
+									"    pm.expect(containersColumn1[0].identifier).equal(\"//demo.dotcms.com/application/containers/default/\");",
+									"}); ",
+									"",
+									"pm.test(\"Second column has width of 4 \", function () {",
+									"    pm.expect(column2[\"width\"]).equal(4);",
+									"}); ",
+									"",
+									"pm.test(\"Second column has 1 container with expected identifier\", function () {",
+									"    pm.expect(containersColumn2.length).equal(1);",
+									"    pm.expect(containersColumn2[0].identifier).equal(\"5a07f889-4536-4956-aa6e-e7967969ec3f\");",
+									"}); ",
+									"",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -843,10 +1163,10 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\"title\":null,\"layout\":{\"body\":{\"rows\":[{\"columns\":[{\"leftOffset\":1,\"width\":7,\"containers\":[{\"identifier\":\"a050073a-a31e-4aab-9307-86bfb248096a\",\"uuid\":\"1\"}]},{\"leftOffset\":8,\"width\":4,\"containers\":[{\"identifier\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid\":\"1\"}]}]}]},\"header\":true,\"footer\":true,\"sidebar\":{\"location\":\"\",\"containers\":[],\"width\":\"small\"}}}"
+							"raw": "{\n    \"title\": null,\n    \"layout\": {\n        \"body\": {\n            \"rows\": [\n                {\n                    \"columns\": [\n                        {\n                            \"leftOffset\": 1,\n                            \"width\": 7,\n                            \"containers\": [\n                                {\n                                    \"identifier\": \"//demo.dotcms.com/application/containers/default/\", \n                                    \"uuid\": \"1\"\n                                }\n                            ]\n                        },\n                        {\n                            \"leftOffset\": 8,\n                            \"width\": 4,\n                            \"containers\": [\n                                {\n                                    \"identifier\": \"5a07f889-4536-4956-aa6e-e7967969ec3f\",\n                                    \"uuid\": \"1\"\n                                }\n                            ]\n                        }\n                    ]\n                }\n            ]\n        },\n        \"header\": true,\n        \"footer\": true,\n        \"sidebar\": {\n            \"location\": \"\",\n            \"containers\": [],\n            \"width\": \"small\"\n        }\n    }\n}"
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/c12fe7e6-d338-49d5-973b-2d974d57015b/layout",
+							"raw": "{{serverURL}}/api/v1/page/bec7b960-a8bf-4f14-a22b-0d94caf217f0/layout",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -854,7 +1174,7 @@
 								"api",
 								"v1",
 								"page",
-								"c12fe7e6-d338-49d5-973b-2d974d57015b",
+								"bec7b960-a8bf-4f14-a22b-0d94caf217f0",
 								"layout"
 							]
 						},
@@ -863,83 +1183,12 @@
 					"response": []
 				},
 				{
-					"name": "UserPermissionsValidation",
+					"name": "GivenInvalidPageId_ShouldReturn404",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "68e21ce5-5979-4bb2-83b4-6c8f541343c8",
-								"type": "text/javascript",
-								"exec": [
-									"",
-									"pm.test(\"Status code is 403\", function () {",
-									"    pm.response.to.have.status(403);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Response body contains\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"User:dotcms.org.2806 does not have permissions\");",
-									"});",
-									"",
-									"",
-									""
-								]
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "bill",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "bill@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\"title\":null,\"layout\":{\"body\":{\"rows\":[{\"columns\":[{\"leftOffset\":1,\"width\":7,\"containers\":[{\"identifier\":\"a050073a-a31e-4aab-9307-86bfb248096a\",\"uuid\":\"1\"}]},{\"leftOffset\":8,\"width\":4,\"containers\":[{\"identifier\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid\":\"1\"}]}]}]},\"header\":true,\"footer\":true,\"sidebar\":{\"location\":\"\",\"containers\":[],\"width\":\"small\"}}}"
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/page/c12fe7e6-d338-49d5-973b-2d974d57015b/layout",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"page",
-								"c12fe7e6-d338-49d5-973b-2d974d57015b",
-								"layout"
-							]
-						},
-						"description": "@Path(\"/{pageId}/layout\")"
-					},
-					"response": []
-				},
-				{
-					"name": "InvalidPageId",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "74b443a9-5159-4eb6-8882-103877ef54fa",
-								"type": "text/javascript",
+								"id": "8f51f28c-97cd-4242-9441-028d65110363",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 404\", function () {",
@@ -949,11 +1198,12 @@
 									"",
 									"",
 									"pm.test(\"Response body contains\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"not found\");",
+									"    pm.expect(pm.response.text()).to.include(\"Unable to find page with Identifier: 2c12fe7e6-d338-49d5-973b-2d974d57015b\");",
 									"});",
 									"",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -1007,8 +1257,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "6caa4cb3-f829-47da-8a44-c8d6572ddcc6",
-								"type": "text/javascript",
+								"id": "1214f122-f772-4fa2-9d32-323761993dc7",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 400\", function () {",
@@ -1022,7 +1271,8 @@
 									"});",
 									"",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -1054,7 +1304,7 @@
 							"raw": ""
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/c12fe7e6-d338-49d5-973b-2d974d57015b/layout",
+							"raw": "{{serverURL}}/api/v1/page/bec7b960-a8bf-4f14-a22b-0d94caf217f0/layout",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -1062,7 +1312,7 @@
 								"api",
 								"v1",
 								"page",
-								"c12fe7e6-d338-49d5-973b-2d974d57015b",
+								"bec7b960-a8bf-4f14-a22b-0d94caf217f0",
 								"layout"
 							]
 						},
@@ -1076,8 +1326,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f763b6fa-d689-43d0-a942-9a4ea16f21df",
-								"type": "text/javascript",
+								"id": "ff40a3fa-4c77-4169-b30f-f0d6daeeadee",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 400\", function () {",
@@ -1091,7 +1340,8 @@
 									"});",
 									"",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -1123,7 +1373,7 @@
 							"raw": "{\"2title\":null,\"layout\":{\"body\":{\"rows\":[{\"columns\":[{\"leftOffset\":1,\"width\":7,\"containers\":[{\"identifier\":\"a050073a-a31e-4aab-9307-86bfb248096a\",\"uuid\":\"1\"}]},{\"leftOffset\":8,\"width\":4,\"containers\":[{\"identifier\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid\":\"1\"}]}]}]},\"header\":true,\"footer\":true,\"sidebar\":{\"location\":\"\",\"containers\":[],\"width\":\"small\"}}}"
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/c12fe7e6-d338-49d5-973b-2d974d57015b/layout",
+							"raw": "{{serverURL}}/api/v1/page/bec7b960-a8bf-4f14-a22b-0d94caf217f0/layout",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -1131,7 +1381,7 @@
 								"api",
 								"v1",
 								"page",
-								"c12fe7e6-d338-49d5-973b-2d974d57015b",
+								"bec7b960-a8bf-4f14-a22b-0d94caf217f0",
 								"layout"
 							]
 						},
@@ -1140,19 +1390,73 @@
 					"response": []
 				}
 			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "0ede8298-d750-4861-a630-94ab13f4aa01",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "0b775efe-c719-44a3-8ee2-1899eb16bbd5",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			],
 			"protocolProfileBehavior": {}
 		},
 		{
-			"name": "addContent ",
+			"name": "Add Content [/api/v1/page/{page-id}/content]",
 			"item": [
+				{
+					"name": "invalidateSession",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "def1169a-c6b8-43fd-9c73-c5b03f9aefaf",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
 				{
 					"name": "UserAuthenticationValidation",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "7c944694-ddc4-458d-9b82-5dac72060430",
-								"type": "text/javascript",
+								"id": "9a46bac9-2486-419e-b665-57554d5084a1",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 401, Need credentials\", function () {",
@@ -1165,7 +1469,8 @@
 									"    pm.expect(pm.response.text()).to.include(\"Invalid User\");",
 									"});",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -1182,10 +1487,10 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "[{\"id\":\"a050073a-a31e-4aab-9307-86bfb248096a\",\"uuid\":\"1\",\"contentlets\":[\"767509b1-2392-4661-a16b-e0e31ce27719\",\"3c30df49-ea78-417a-93ce-631cd25bc66c\"]},{\"id\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid\":\"1\",\"contentlets\":[\"2efc77b4-a54f-479b-8a81-a133b9e6da04\",\"5aef0c62-b7d6-4805-9e7c-77a67f4822f3\",\"66d47ebf-7b11-4076-85b0-b6c8c373d000\"]}]"
+							"raw": "[{\"identifier\":\"a050073a-a31e-4aab-9307-86bfb248096a\",\"uuid\":\"1\",\"contentletsId\":[\"767509b1-2392-4661-a16b-e0e31ce27719\",\"3c30df49-ea78-417a-93ce-631cd25bc66c\"]},{\"identifier\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid\":\"1\",\"contentletsId\":[\"2efc77b4-a54f-479b-8a81-a133b9e6da04\",\"5aef0c62-b7d6-4805-9e7c-77a67f4822f3\",\"66d47ebf-7b11-4076-85b0-b6c8c373d000\"]}]"
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/c12fe7e6-d338-49d5-973b-2d974d57015b/content",
+							"raw": "{{serverURL}}/api/v1/page/bec7b960-a8bf-4f14-a22b-0d94caf217f0/content",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -1193,7 +1498,7 @@
 								"api",
 								"v1",
 								"page",
-								"c12fe7e6-d338-49d5-973b-2d974d57015b",
+								"bec7b960-a8bf-4f14-a22b-0d94caf217f0",
 								"content"
 							]
 						},
@@ -1207,8 +1512,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "78a8ed85-648a-4a40-b82a-be6079b4bf96",
-								"type": "text/javascript",
+								"id": "6fb9f84a-1ea2-4c83-87d3-0457a56cff6e",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1221,7 +1525,8 @@
 									"});",
 									"",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -1250,10 +1555,10 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "[{\"id\":\"a050073a-a31e-4aab-9307-86bfb248096a\",\"uuid\":\"1\",\"contentlets\":[\"767509b1-2392-4661-a16b-e0e31ce27719\",\"3c30df49-ea78-417a-93ce-631cd25bc66c\"]},{\"id\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid\":\"1\",\"contentlets\":[\"2efc77b4-a54f-479b-8a81-a133b9e6da04\",\"5aef0c62-b7d6-4805-9e7c-77a67f4822f3\",\"66d47ebf-7b11-4076-85b0-b6c8c373d000\"]}]"
+							"raw": "[{\"identifier\":\"a050073a-a31e-4aab-9307-86bfb248096a\",\"uuid\":\"1\",\"contentletsId\":[\"767509b1-2392-4661-a16b-e0e31ce27719\",\"3c30df49-ea78-417a-93ce-631cd25bc66c\"]},{\"identifier\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid\":\"1\",\"contentletsId\":[\"2efc77b4-a54f-479b-8a81-a133b9e6da04\",\"5aef0c62-b7d6-4805-9e7c-77a67f4822f3\",\"66d47ebf-7b11-4076-85b0-b6c8c373d000\"]}]"
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/c12fe7e6-d338-49d5-973b-2d974d57015b/content",
+							"raw": "{{serverURL}}/api/v1/page/bec7b960-a8bf-4f14-a22b-0d94caf217f0/content",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -1261,76 +1566,7 @@
 								"api",
 								"v1",
 								"page",
-								"c12fe7e6-d338-49d5-973b-2d974d57015b",
-								"content"
-							]
-						},
-						"description": "@Path(\"{pageId}/content\")"
-					},
-					"response": []
-				},
-				{
-					"name": "UserPermissionsValidation",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "005421ca-d134-473c-93d8-623f3f15d33e",
-								"type": "text/javascript",
-								"exec": [
-									"pm.test(\"Status code is 403\", function () {",
-									"    pm.response.to.have.status(403);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Response body contains\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"User:dotcms.org.2806 does not have permissions\");",
-									"});",
-									"",
-									"",
-									""
-								]
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "bill",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "bill@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "[{\"id\":\"a050073a-a31e-4aab-9307-86bfb248096a\",\"uuid\":\"1\",\"contentlets\":[\"767509b1-2392-4661-a16b-e0e31ce27719\",\"3c30df49-ea78-417a-93ce-631cd25bc66c\"]},{\"id\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid\":\"1\",\"contentlets\":[\"2efc77b4-a54f-479b-8a81-a133b9e6da04\",\"5aef0c62-b7d6-4805-9e7c-77a67f4822f3\",\"66d47ebf-7b11-4076-85b0-b6c8c373d000\"]}]"
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/page/c12fe7e6-d338-49d5-973b-2d974d57015b/content",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"page",
-								"c12fe7e6-d338-49d5-973b-2d974d57015b",
+								"bec7b960-a8bf-4f14-a22b-0d94caf217f0",
 								"content"
 							]
 						},
@@ -1344,8 +1580,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "7c13bece-d440-4275-9dc1-4f818253e075",
-								"type": "text/javascript",
+								"id": "751c8de8-764c-4a9d-be86-ec00f79800c0",
 								"exec": [
 									"pm.test(\"Status code is 404\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -1354,12 +1589,13 @@
 									"",
 									"",
 									"pm.test(\"Response body contains\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"not found\");",
+									"    pm.expect(pm.response.text()).to.include(\"Unable to find Page\");",
 									"});",
 									"",
 									"",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -1388,7 +1624,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "[{\"id\":\"a050073a-a31e-4aab-9307-86bfb248096a\",\"uuid\":\"1\",\"contentlets\":[\"767509b1-2392-4661-a16b-e0e31ce27719\",\"3c30df49-ea78-417a-93ce-631cd25bc66c\"]},{\"id\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid\":\"1\",\"contentlets\":[\"2efc77b4-a54f-479b-8a81-a133b9e6da04\",\"5aef0c62-b7d6-4805-9e7c-77a67f4822f3\",\"66d47ebf-7b11-4076-85b0-b6c8c373d000\"]}]"
+							"raw": "[{\"identifier\":\"a050073a-a31e-4aab-9307-86bfb248096a\",\"uuid\":\"1\",\"contentletsId\":[\"767509b1-2392-4661-a16b-e0e31ce27719\",\"3c30df49-ea78-417a-93ce-631cd25bc66c\"]},{\"identifier\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid\":\"1\",\"contentletsId\":[\"2efc77b4-a54f-479b-8a81-a133b9e6da04\",\"5aef0c62-b7d6-4805-9e7c-77a67f4822f3\",\"66d47ebf-7b11-4076-85b0-b6c8c373d000\"]}]"
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/page/2c12fe7e6-d338-49d5-973b-2d974d57015b/content",
@@ -1413,22 +1649,22 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "7ac328db-c8d9-41c1-9ff2-620969e3d431",
-								"type": "text/javascript",
+								"id": "59a98246-f925-418b-a44e-5a815f83803e",
 								"exec": [
 									"",
-									"pm.test(\"Status code is 404\", function () {",
+									"pm.test(\"Status code is 400\", function () {",
 									"    pm.response.to.have.status(400);",
 									"});",
 									"",
 									"",
 									"",
-									"pm.test(\"Response body contains\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"required\");",
+									"pm.test(\"Layout is required\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Layout is required\");",
 									"});",
 									"",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -1460,7 +1696,7 @@
 							"raw": ""
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/2c12fe7e6-d338-49d5-973b-2d974d57015b/content",
+							"raw": "{{serverURL}}/api/v1/page/bec7b960-a8bf-4f14-a22b-0d94caf217f0/content",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -1468,7 +1704,7 @@
 								"api",
 								"v1",
 								"page",
-								"2c12fe7e6-d338-49d5-973b-2d974d57015b",
+								"bec7b960-a8bf-4f14-a22b-0d94caf217f0",
 								"content"
 							]
 						},
@@ -1482,22 +1718,22 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "0203c365-047e-4081-88d6-3bf273277574",
-								"type": "text/javascript",
+								"id": "541d2bb1-8f85-4d12-95fb-c9f6cce6ce70",
 								"exec": [
 									"",
-									"pm.test(\"Status code is 404\", function () {",
-									"    pm.response.to.have.status(404);",
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
 									"});",
 									"",
 									"",
 									"",
 									"pm.test(\"Response body contains\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"not found\");",
+									"    pm.expect(pm.response.text()).to.include(\"Container id and uuid are required\");",
 									"});",
 									"",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -1526,10 +1762,10 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "[{\"id\":\"a050073a-a31e-4aab-9307-86bfb248096a\",\"uuid\":\"1\",\"contentlets\":[\"767509b1-2392-4661-a16b-e0e31ce27719\",\"3c30df49-ea78-417a-93ce-631cd25bc66c\"]},{\"id\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid\":\"1\",\"contentlets\":[\"2efc77b4-a54f-479b-8a81-a133b9e6da04\",\"5aef0c62-b7d6-4805-9e7c-77a67f4822f3\",\"66d47ebf-7b11-4076-85b0-b6c8c373d000\"]}]"
+							"raw": "[{\"id222\":\"a050073a-a31e-4aab-9307-86bfb248096a\",\"uuid\":\"1\",\"contentlets\":[\"767509b1-2392-4661-a16b-e0e31ce27719\",\"3c30df49-ea78-417a-93ce-631cd25bc66c\"]},{\"id\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid22\":\"1\",\"contentlets\":[\"2efc77b4-a54f-479b-8a81-a133b9e6da04\",\"5aef0c62-b7d6-4805-9e7c-77a67f4822f3\",\"66d47ebf-7b11-4076-85b0-b6c8c373d000\"]}]"
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/2c12fe7e6-d338-49d5-973b-2d974d57015b/content",
+							"raw": "{{serverURL}}/api/v1/page/bec7b960-a8bf-4f14-a22b-0d94caf217f0/content",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -1537,7 +1773,7 @@
 								"api",
 								"v1",
 								"page",
-								"2c12fe7e6-d338-49d5-973b-2d974d57015b",
+								"bec7b960-a8bf-4f14-a22b-0d94caf217f0",
 								"content"
 							]
 						},
@@ -1547,19 +1783,73 @@
 				}
 			],
 			"description": " @Path(\"{pageId}/content\")",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "3e52e9e7-4c7a-49c7-b6dc-98c0d723166f",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "2af39cb2-ef94-499b-adff-b3e530a1a2e2",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			],
 			"protocolProfileBehavior": {}
 		},
 		{
-			"name": "renderHTMLOnly",
+			"name": "Render HTML [/api/v1/page/renderHTML]",
 			"item": [
+				{
+					"name": "invalidateSession",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "ae617066-c1b0-4d10-8711-61aa9de44acb",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
 				{
 					"name": "UserAuthenticationValidation",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "fac4ed61-53e7-4b71-99d9-e924639e7321",
-								"type": "text/javascript",
+								"id": "cf356d37-b7eb-4ee5-a42c-c8238d07191d",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 401, Need credentials\", function () {",
@@ -1568,19 +1858,23 @@
 									"",
 									"",
 									"",
-									"pm.test(\"Response body matches\", function () {",
+									"pm.test(\"Invalid User\", function () {",
 									"    pm.expect(pm.response.text()).to.include(\"Invalid User\");",
 									"});",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
 					"request": {
+						"auth": {
+							"type": "noauth"
+						},
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/renderHTML/about-us/our-team/index",
+							"raw": "{{serverURL}}/api/v1/page/renderHTML/destinations/costa-rica",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -1589,12 +1883,176 @@
 								"v1",
 								"page",
 								"renderHTML",
-								"about-us",
-								"our-team",
-								"index"
+								"destinations",
+								"costa-rica"
 							]
 						},
 						"description": "@Path(\"/renderHTML/{uri: .*}\")"
+					},
+					"response": []
+				},
+				{
+					"name": "pre_ImportBundleWithDemoHost",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "1a4e07ba-e1eb-487d-a3f6-e24a62315f50",
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"demo.dotcms.com.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/demo.dotcms.com.tar.gz"
+								}
+							],
+							"options": {
+								"formdata": {}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* Imports demo.dotcms.com"
+					},
+					"response": []
+				},
+				{
+					"name": "Switch site to 'demo.dotcms.com'",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "9e987f4f-2900-43d1-a10c-851802c0138b",
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    var jsonData = pm.response.json();",
+									"",
+									"    pm.expect(jsonData.entity.hostSwitched).equal(true);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site/switch/48190c8c-42c4-46af-8d1a-0cd5db894797",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site",
+								"switch",
+								"48190c8c-42c4-46af-8d1a-0cd5db894797"
+							]
+						}
 					},
 					"response": []
 				},
@@ -1604,8 +2062,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "609e169d-e92d-4f55-a1b9-7193064e035e",
-								"type": "text/javascript",
+								"id": "b330ae54-53bb-4714-9e94-72df072c10aa",
 								"exec": [
 									"",
 									"",
@@ -1615,13 +2072,15 @@
 									"",
 									"",
 									"",
-									"pm.test(\"Include template\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"body\");",
+									"pm.test(\"renders expected HTML only\", function () {",
+									"    pm.expect(pm.response.text().startsWith(\"<!doctype html>\")).to.be.true;",
+									"    pm.expect(pm.response.text()).to.include(\"body id=\\\"costa-rica-rain-forest\\\"\");",
 									"});",
 									"",
 									"",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -1644,7 +2103,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/renderHTML/about-us/our-team/index",
+							"raw": "{{serverURL}}/api/v1/page/renderHTML/destinations/costa-rica",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -1653,9 +2112,8 @@
 								"v1",
 								"page",
 								"renderHTML",
-								"about-us",
-								"our-team",
-								"index"
+								"destinations",
+								"costa-rica"
 							]
 						},
 						"description": "@Path(\"/renderHTML/{uri: .*}\")"
@@ -1668,8 +2126,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "b320adf6-f6da-4888-a082-b081fb06edf4",
-								"type": "text/javascript",
+								"id": "f5f1f95a-0009-4f18-995f-e8231305579b",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 404\", function () {",
@@ -1679,14 +2136,15 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"is not found\");",
+									"    pm.expect(pm.response.text()).to.include(\"{\\\"message\\\":\\\"Page 'about-us/our-team/index2' not found\\\"}\");",
 									"});",
 									"",
 									"",
 									"",
 									"",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -1726,71 +2184,28 @@
 						"description": "@Path(\"/renderHTML/{uri: .*}\")"
 					},
 					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "2cad31a6-5e3b-4d96-890a-c065fe37e5ed",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
 				},
 				{
-					"name": "ValidateReadPermissions",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "c409fc37-784f-47c3-a84c-d6b7a35b30c2",
-								"type": "text/javascript",
-								"exec": [
-									"",
-									"pm.test(\"Status code is 403\", function () {",
-									"    pm.response.to.have.status(403);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"User: Bill Intranet : dotcms.org.2806 does not have permissions\");",
-									"});",
-									"",
-									"",
-									"",
-									"",
-									""
-								]
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "bill",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "bill@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/page/renderHTML/about-us/our-team/index",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"page",
-								"renderHTML",
-								"about-us",
-								"our-team",
-								"index"
-							]
-						},
-						"description": "@Path(\"/renderHTML/{uri: .*}\")"
-					},
-					"response": []
+					"listen": "test",
+					"script": {
+						"id": "95ee9761-ac29-4f0a-9dcb-9e30ae15cee2",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
 				}
 			],
 			"protocolProfileBehavior": {}
@@ -1800,7 +2215,7 @@
 		{
 			"listen": "prerequest",
 			"script": {
-				"id": "17b24941-e433-430c-b903-d784411a71cb",
+				"id": "f75c5da0-665f-420f-9870-35c5b163ac5c",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -1810,7 +2225,7 @@
 		{
 			"listen": "test",
 			"script": {
-				"id": "495355db-92ee-4689-8a32-3e6bec0bd95c",
+				"id": "3ec395f1-18cf-4f65-828a-d9df7d9426e1",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -1820,10 +2235,9 @@
 	],
 	"variable": [
 		{
-			"id": "518c9428-019a-4f13-80f5-ab48226df65b",
+			"id": "02e8ed2f-e41f-4449-b666-f76ed9d8936f",
 			"key": "serverURL",
-			"value": "http://localhost:8080",
-			"type": "string"
+			"value": "http://localhost:8080"
 		}
 	],
 	"protocolProfileBehavior": {}

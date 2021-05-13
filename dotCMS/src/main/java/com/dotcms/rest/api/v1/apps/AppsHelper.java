@@ -1,5 +1,8 @@
 package com.dotcms.rest.api.v1.apps;
 
+import static com.dotmarketing.util.UtilMethods.isNotSet;
+
+import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.apps.view.AppView;
 import com.dotcms.rest.api.v1.apps.view.SecretView;
@@ -7,6 +10,7 @@ import com.dotcms.rest.api.v1.apps.view.SiteView;
 import com.dotcms.security.apps.AppDescriptor;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.AppsAPI;
+import com.dotcms.security.apps.AppsUtil;
 import com.dotcms.security.apps.ParamDescriptor;
 import com.dotcms.security.apps.Secret;
 import com.dotcms.security.apps.Type;
@@ -15,10 +19,11 @@ import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
@@ -26,12 +31,13 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
+import com.liferay.util.EncryptorException;
 import io.vavr.Tuple;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.security.Key;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -45,8 +51,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
-import jersey.repackaged.com.google.common.collect.Sets;
-import jersey.repackaged.com.google.common.collect.Sets.SetView;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 
 /**
@@ -57,18 +61,18 @@ class AppsHelper {
 
     private final AppsAPI appsAPI;
     private final HostAPI hostAPI;
-    private final ContentletAPI contentletAPI;
+    private final PermissionAPI permissionAPI;
 
     @VisibleForTesting
     AppsHelper(
-            final AppsAPI appsAPI, final HostAPI hostAPI, final ContentletAPI contentletAPI) {
+            final AppsAPI appsAPI, final HostAPI hostAPI, final PermissionAPI permissionAPI) {
         this.appsAPI = appsAPI;
         this.hostAPI = hostAPI;
-        this.contentletAPI = contentletAPI;
+        this.permissionAPI = permissionAPI;
     }
 
     AppsHelper() {
-        this(APILocator.getAppsAPI(), APILocator.getHostAPI(), APILocator.getContentletAPI());
+        this(APILocator.getAppsAPI(), APILocator.getHostAPI(), APILocator.getPermissionAPI());
     }
 
     private static Comparator<AppView> compareByCountAndName = (o1, o2) -> {
@@ -161,7 +165,7 @@ class AppsHelper {
                 .computeWarningsBySite(appDescriptor, sitesWithConfigurations, user);
 
         final PaginationUtil paginationUtil = new PaginationUtil(new SiteViewPaginator(
-                () -> sitesWithConfigurations, ()-> warningsBySite, hostAPI, contentletAPI));
+                () -> sitesWithConfigurations, ()-> warningsBySite, hostAPI, permissionAPI));
         return paginationUtil
                 .getPage(request, user,
                         paginationContext.getFilter(),
@@ -195,7 +199,7 @@ class AppsHelper {
         if (appDescriptorOptional.isPresent()) {
             final AppDescriptor appDescriptor = appDescriptorOptional.get();
             final Host host = hostAPI.find(siteId, user, false);
-            if (null == host) {
+            if (null == host || host.isArchived()) {
                 throw new DoesNotExistException(
                       String.format(" Couldn't find any host with identifier `%s` ", siteId)
                 );
@@ -372,7 +376,7 @@ class AppsHelper {
         }
         appsAPI.saveSecrets(secrets, host, user);
 
-        //This operation needs to executed at the very end.
+        //This operation needs to be executed at the very end.
         appSecretsOptional.ifPresent(AppSecrets::destroy);
     }
 
@@ -480,7 +484,7 @@ class AppsHelper {
     /**
      * Validate the incoming params match the params described by an appDescriptor yml.
      * This validation is intended to behave as a form validation. It'll make sure that all required values are present at save time.
-     * And nothing else besides the params described are allowed. Unless they app-desciptor establishes that extraParams are allowed.
+     * And nothing else besides the params described are allowed. Unless they app-descriptor establishes that extraParams are allowed.
      * @param form a set of paramNames.
      * @param appDescriptor the app template.
      * @throws IllegalArgumentException This will give back an exception if you send an invalid param.
@@ -489,65 +493,34 @@ class AppsHelper {
             final AppDescriptor appDescriptor)
             throws IllegalArgumentException {
 
-        final Map<String, Input> params = form.getInputParams();
-        if (!UtilMethods.isSet(params)) {
+        if (!UtilMethods.isSet(form.getInputParams())) {
             throw new IllegalArgumentException("Required Params aren't set.");
         }
 
-        //Param/Property names are case sensitive.
-        final Map<String, ParamDescriptor> appDescriptorParams = appDescriptor.getParams();
+        final Map<String, Input> params = form.getInputParams().entrySet().stream()
+                .collect(Collectors.toMap(stringInputEntry -> stringInputEntry.getKey().trim(),
+                        Entry::getValue));
 
-        for (final Entry<String, ParamDescriptor> appDescriptorParam : appDescriptorParams
-                .entrySet()) {
-            final String describedParamName = appDescriptorParam.getKey();
-            final Input input = params.get(describedParamName);
-            if (appDescriptorParam.getValue().isRequired() && (input == null || UtilMethods
-                    .isNotSet(input.getValue()))) {
-                throw new IllegalArgumentException(
-                        String.format(
-                                "Param `%s` is marked required in the descriptor but does not come with a value.",
-                                describedParamName
-                        )
-                );
-            }
 
-            if(null == input){
-              //Param wasn't sent but it doesn't matter since it isn't required.
-              Logger.debug(AppsHelper.class, ()-> String.format("Non required param `%s` was not sent in the request.",describedParamName));
-              continue;
-            }
+        AppsUtil.validateForSave(mapForValidation(params), appDescriptor);
 
-            if (Type.BOOL.equals(appDescriptorParam.getValue().getType()) && UtilMethods
-                    .isSet(input.getValue())) {
-                final String asString = new String(input.getValue());
-                final boolean bool = (asString.equalsIgnoreCase(Boolean.TRUE.toString())
-                        || asString.equalsIgnoreCase(Boolean.FALSE.toString()));
-                if (!bool) {
-                    throw new IllegalArgumentException(
-                            String.format(
-                                    "Can not convert value `%s` to type BOOL for param `%s`.",
-                                    asString, describedParamName
-                            )
-                    );
-                }
-            }
-        }
-
-        if (!appDescriptor.isAllowExtraParameters()) {
-            final SetView<String> extraParamsFound = Sets
-                    .difference(params.keySet(), appDescriptorParams.keySet());
-
-            if (!extraParamsFound.isEmpty()) {
-                throw new IllegalArgumentException(
-                        String.format(
-                                "Unknown additional params `%s` not allowed by the app descriptor.",
-                                String.join(", ", extraParamsFound)
-                        )
-                );
-            }
-        }
         return params;
     }
+
+    /**
+     * Map of optionals is a middle ground between {@link SecretForm} and {@link AppSecrets}
+     * used by {@link com.dotcms.security.apps.AppsUtil#validateForSave(Map, AppDescriptor)}
+     * @return
+     */
+    private Map<String, Optional<char[]>> mapForValidation(final Map<String, Input> params) {
+        return params.entrySet().stream()
+            .collect(Collectors.toMap(Entry::getKey, stringInputEntry -> {
+                final Input input = stringInputEntry.getValue();
+                return input == null ? Optional.empty() : Optional.of(input.getValue());
+                })
+            );
+    }
+
 
     /**
      * This method is meant to validate inputs for an update that can be performed on individual
@@ -576,7 +549,7 @@ class AppsHelper {
                         paramName));
             } else {
                 if (null != paramDescriptor && paramDescriptor.isRequired() && null != entry
-                        .getValue() && UtilMethods.isNotSet(entry.getValue().getValue())) {
+                        .getValue() && isNotSet(entry.getValue().getValue())) {
                     throw new IllegalArgumentException(
                             String.format(
                                     "Param `%s` is marked required in the descriptor but does not come with a value.",
@@ -604,6 +577,7 @@ class AppsHelper {
 
         return params;
     }
+
 
     /**
      * Validate the incoming param names match the params described by an appDescriptor yml.
@@ -642,23 +616,18 @@ class AppsHelper {
      * @throws DotDataException
      */
     List<AppView> createApp(final FormDataMultiPart multipart, final User user)
-            throws IOException, DotDataException {
-        final List<File> files = new MultiPartUtils().getBinariesFromMultipart(multipart);
-        if(!UtilMethods.isSet(files)){
-            throw new DotDataException("Unable to extract any files from multi-part request.");
-        }
-        List<AppView> appViews = new ArrayList<>(files.size());
-        for (final File file : files) {
-            try(final InputStream inputStream = Files.newInputStream(Paths.get(file.getPath()))){
-                final AppDescriptor appDescriptor = appsAPI
-                        .createAppDescriptor(inputStream, user);
-                appViews.add(new AppView(appDescriptor,0, 0));
-            }catch (Exception e){
-               Logger.error(AppsHelper.class, e);
-               throw new DotDataException(e.getMessage(), e);
+            throws IOException, DotDataException, JSONException {
+
+        return processMultipart(multipart, (file, bodyMultipart) -> {
+            final AppDescriptor appDescriptor;
+            try {
+                appDescriptor = appsAPI.createAppDescriptor(file, user);
+                return new AppView(appDescriptor, 0, 0);
+            } catch (AlreadyExistException | DotSecurityException  e) {
+                throw new DotDataException(e.getMessage(), e);
             }
-        }
-        return appViews;
+        });
+
     }
 
     /**
@@ -679,12 +648,137 @@ class AppsHelper {
      * @return
      */
     private boolean isAllFilledWithAsters(final char [] chars){
+         if(isNotSet(chars)){
+           return false;
+         }
          for(final char chr: chars){
             if(chr != '*'){
                return false;
             }
          }
          return true;
+    }
+
+    /**
+     * Secrets export
+     * @param form
+     * @param user
+     * @return
+     * @throws DotSecurityException
+     * @throws IOException
+     * @throws DotDataException
+     */
+    InputStream exportSecrets(final ExportSecretForm form, final User user)
+            throws DotSecurityException, IOException, DotDataException {
+
+        Logger.info(AppsHelper.class,"Secrets export: "+form);
+        final Key key = AppsUtil.generateKey(AppsUtil.loadPass(form::getPassword));
+            return  Files.newInputStream(appsAPI
+                    .exportSecrets(key, form.isExportAll(), form.getAppKeysBySite(), user));
+    }
+
+    /**
+     * Secrets import
+     * @param multipart
+     * @param user
+     * @throws IOException
+     * @throws DotDataException
+     * @throws JSONException
+     */
+    void importSecrets(final FormDataMultiPart multipart, final User user)
+            throws IOException, DotDataException, JSONException {
+
+        processMultipart(multipart, new FileConsumer<Void>() {
+            private Key key = null;
+            @Override
+            public Void apply(final File file, final Map<String, Object> bodyMultipart)
+                    throws DotDataException {
+                if(null == key){
+                    final String password = (String) bodyMultipart.get("password");
+                    key = AppsUtil.generateKey(AppsUtil.loadPass(() -> password));
+                }
+                try {
+                    appsAPI.importSecretsAndSave(file.toPath(), key, user);
+                    return null;
+                } catch (DotSecurityException | IOException | EncryptorException e) {
+                    throw new DotDataException(e.getMessage(), e);
+                }
+            }
+        });
+    }
+
+    @FunctionalInterface
+    interface FileConsumer<T> {
+
+        /**
+         * Whatever need to happen with the file and the multipart.Should be halded
+         * @param file
+         * @param bodyMultipart
+         * @return
+         * @throws DotDataException
+         */
+        T apply (File file, Map<String, Object> bodyMultipart)
+                throws DotDataException;
+    }
+
+    /**
+     * Multipart common process function
+     * whatever specific needs be done in between has to take place in the fileConsumer
+     * @param multipart
+     * @param consumer
+     * @param <T>
+     * @return
+     * @throws IOException
+     * @throws DotDataException
+     * @throws JSONException
+     * @throws AlreadyExistException
+     * @throws DotSecurityException
+     */
+   private <T> List<T> processMultipart(final FormDataMultiPart multipart, final FileConsumer<T> consumer)
+           throws IOException, DotDataException, JSONException {
+        final MultiPartUtils multiPartUtils = new MultiPartUtils();
+        final List<File> files = multiPartUtils.getBinariesFromMultipart(multipart);
+        try {
+            if (!UtilMethods.isSet(files)) {
+                throw new DotDataException(
+                        "Unable to extract any files from multi-part request.");
+            }
+
+            final Map<String, Object> bodyMapFromMultipart = multiPartUtils.getBodyMapFromMultipart(multipart);
+            final List<T> result = new ArrayList<>(files.size());
+            for (final File file : files) {
+                try {
+                    if (0 == file.length()) {
+                        throw new IllegalArgumentException("Zero length file.");
+                    }
+                    result.add(consumer.apply(file, bodyMapFromMultipart));
+                } finally {
+                    file.delete();
+                }
+            }
+              return result;
+        } finally {
+            removeTempFolder(files.get(0).getParentFile());
+        }
+    }
+
+    /**
+     * cleanup our mess
+     * @param parentFolder
+     */
+    private void removeTempFolder(final File parentFolder) {
+        final String parentFolderName = parentFolder.getName();
+        if (parentFolder.isDirectory() && parentFolderName.startsWith("tmp_upload")) {
+            if (parentFolder.delete()) {
+                Logger.info(AppsHelper.class,
+                        String.format(" tmp upload directory `%s` removed successfully. ",
+                                parentFolder.getAbsolutePath()));
+            } else {
+                Logger.info(AppsHelper.class,
+                        String.format(" Unable to remove tmp upload directory `%s`. ",
+                                parentFolder.getAbsolutePath()));
+            }
+        }
     }
 
 }

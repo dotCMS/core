@@ -2,10 +2,11 @@ package com.dotcms.vanityurl.business;
 
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
+import java.util.stream.Collectors;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -15,7 +16,6 @@ import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.FiltersUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.vanityurl.cache.VanityUrlCache;
-import com.dotcms.vanityurl.cache.VanityUrlCacheImpl;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.DefaultVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrl;
@@ -26,7 +26,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -72,6 +71,65 @@ public class VanityUrlAPITest {
         defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
     }
 
+    
+    /**
+     * tests that we correctly order the cached vanites.  This ordering is done
+     * by the findInDb method, which should return a hosts' vanities in order asc
+     * 
+     * It also tests that the vanityUrlAPI.resolveVanityUrl returns
+     * the first matching vanity in the list
+     * 
+     * @throws Exception
+     */
+    @Test
+    public void testing_vanityurl_ordering() throws Exception {
+        final String baseUri = '/' + UUIDGenerator.shorty();
+        final String site = defaultHost.getIdentifier();
+        final int action = 200;
+        final int numberOfTestVanities = 10;
+        
+        
+        for (int i = numberOfTestVanities; i > 0; i--) {
+            final String title = "VanityURLOrder" + i;
+            final int randomOrder = new Random().nextInt(100);
+            Contentlet vanity = filtersUtil.createVanityUrl(title, site, baseUri, baseUri,
+                            action, randomOrder, defaultLanguage.getId());
+            filtersUtil.publishVanityUrl(vanity);
+        }
+
+
+        // this list of CachedVanityUrl is ordered based on the order of the vanities - asc
+        List<CachedVanityUrl> cachedVanities = vanityUrlAPI.findInDb(defaultHost, defaultLanguage)
+                        .stream()
+                        .filter(v -> v.forwardTo.equals(baseUri))
+                        .collect(Collectors.toList());
+
+        // testing we have all the vanities we just saved
+        assert(cachedVanities.size() == numberOfTestVanities);
+
+        
+        // testing they have different order
+        assert(cachedVanities.get(0).order < cachedVanities.get(numberOfTestVanities-1).order);
+        
+
+
+        CachedVanityUrl previousCachedVanity = cachedVanities.get(0);
+        
+        // the vanities are in order, from lowest to highest
+        for (final CachedVanityUrl cached : cachedVanities) {
+            assert(cached.order >= previousCachedVanity.order);
+            previousCachedVanity = cached;
+        }
+        
+        // testing resolve returns the first matching vanity
+        Optional<CachedVanityUrl> resolvedVanity = vanityUrlAPI.resolveVanityUrl(baseUri, defaultHost, defaultLanguage);
+        
+        assert(resolvedVanity.isPresent());
+        
+        assert(resolvedVanity.get().equals(cachedVanities.get(0)));
+    }
+    
+    
     
     
     /**

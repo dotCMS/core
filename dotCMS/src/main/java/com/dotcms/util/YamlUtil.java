@@ -48,7 +48,7 @@ public class YamlUtil {
 
             return parse(inputStream, tClass);
         }catch (Exception e){
-            Logger.error(YamlUtil.class,e.getMessage(),e);
+            Logger.debug(YamlUtil.class,e.getMessage(),e);
             throw new DotRuntimeException(e);
         }
     }
@@ -66,7 +66,7 @@ public class YamlUtil {
             return ymlMapper
                     .readValue(inputStream, tClass);
         } catch (Exception e) {
-            Logger.error(YamlUtil.class,e.getMessage(),e);
+            Logger.debug(YamlUtil.class,e.getMessage(),e);
             throw new DotRuntimeException(e);
         }
     }
@@ -82,7 +82,7 @@ public class YamlUtil {
         try {
             ymlMapper.writeValue(file, yaml);
         } catch (Exception e) {
-            Logger.error(YamlUtil.class,e.getMessage(),e);
+            Logger.debug(YamlUtil.class,e.getMessage(),e);
             throw new DotRuntimeException(e);
         }
     }

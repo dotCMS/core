@@ -47,6 +47,15 @@ public interface RelationshipAPI {
 
   List<Relationship> byContentType(ContentTypeIf type, String orderBy);
 
+    /**
+     * Gets related content from database, given a parent/child content and a relationship object. <p>
+     * In case of a self-join relationship, the resulting list will contain a merged list where the provided
+     * content exists as a parent or as a child on that relationship
+     * @param relationship
+     * @param contentlet
+     * @return
+     * @throws DotDataException
+     */
   List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet)
           throws DotDataException;
 

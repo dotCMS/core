@@ -2,6 +2,9 @@ package com.dotcms.rest;
 
 import static com.liferay.util.StringPool.BLANK;
 
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotmarketing.exception.InvalidLicenseException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -760,6 +763,7 @@ public  class WebResource {
         private String[] requiredPortlet = null;
         private final Set<String> requiredRolesSet = new HashSet<>();
         private AnonymousAccess anonAccess=AnonymousAccess.NONE;
+        private boolean requireLicense = false;
         
         public InitBuilder() {
           this(new WebResource());
@@ -834,6 +838,11 @@ public  class WebResource {
             return this;
         }
 
+        public InitBuilder requireLicense(final boolean requireLicense){
+            this.requireLicense = requireLicense;
+            return this;
+        }
+
         public InitDataObject init() {
 
             response = (response == null ? new EmptyHttpResponse() : response);
@@ -861,7 +870,12 @@ public  class WebResource {
                 Logger.debug(InitBuilder.class,
                         () -> request.getRequestURI()+" calling webResource.init(..) with AnonymousAccess set to `" + anonAccess + "`");
             }
-            
+
+            if(requireLicense){
+                if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
+                    throw new InvalidLicenseException("Need an enterprise license to run this");
+                }
+            }
 
             try {
                 return webResource.init(this);

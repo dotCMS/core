@@ -7,6 +7,7 @@ import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
@@ -48,7 +49,7 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
         this.jsonWebTokenUtils = jsonWebTokenUtils;
     }
 
-    protected User internalProcessAuthHeaderFromJWT(final String authorizationHeader,
+    protected Optional<JWToken> internalProcessAuthHeaderFromJWT(final String authorizationHeader,
             final String ipAddress, final boolean rejectIfNotApiToken) {
 
         if (StringUtils.isNotEmpty(authorizationHeader) && authorizationHeader.trim()
@@ -62,7 +63,7 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
             }
 
             try {
-
+                Logger.info(JsonWebTokenAuthCredentialProcessorImpl.class, String.format("Token from remote IP: %s", jsonWebToken.trim()));
                 final Optional<JWToken> token = APILocator.getApiTokenAPI().fromJwt(jsonWebToken.trim(), ipAddress);
 
                 if (rejectIfNotApiToken && token.isPresent() && !(token.get() instanceof ApiToken)) {
@@ -70,7 +71,7 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
                     throw new SecurityException("The Api token sent on the request header must be api token", Response.Status.BAD_REQUEST);
                 }
 
-                return token.isPresent() ? token.get().getActiveUser().get() : null;
+                return token;
             } catch(SecurityException se) {
 
                 this.jsonWebTokenUtils.handleInvalidTokenExceptions(this.getClass(), se, null, null);
@@ -82,14 +83,16 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
 
         }
 
-        return null;
+        return Optional.empty();
     }
 
     @Override
     public User processAuthHeaderFromJWT(final String authorizationHeader,
             final HttpSession session, final String ipAddress) {
 
-        final User user = internalProcessAuthHeaderFromJWT(authorizationHeader, ipAddress, false);
+        final Optional<JWToken> jwToken = internalProcessAuthHeaderFromJWT(authorizationHeader, ipAddress, false);
+        final User user = jwToken.isPresent() ? jwToken.get().getActiveUser().get() : null;
+
         if (user != null && null != session) {
             session.setAttribute(WebKeys.CMS_USER, user);
             session.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
@@ -103,7 +106,9 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
 
         // Extract authentication credentials
         final String authentication = request.getHeader(ContainerRequest.AUTHORIZATION);
-        final User user =  internalProcessAuthHeaderFromJWT(authentication, request.getRemoteAddr(), true);
+
+        final Optional<JWToken> jwToken = internalProcessAuthHeaderFromJWT(authentication, request.getRemoteAddr(), false);
+        final User user = jwToken.isPresent() ? jwToken.get().getActiveUser().get() : null;
 
         if(user != null) {
 
@@ -112,6 +117,25 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
         }
 
         return user;
+    } // processAuthCredentialsFromJWT.
+
+    @Override
+    public Optional<JWToken> processJWTAuthHeader(final HttpServletRequest request) {
+
+        // Extract authentication credentials
+        final String authentication = request.getHeader(ContainerRequest.AUTHORIZATION);
+        Logger.info(JsonWebTokenAuthCredentialProcessorImpl.class, String.format("Authentication header: %s", authentication));
+        final Optional<JWToken> jwToken = internalProcessAuthHeaderFromJWT(authentication, request.getRemoteAddr(), false);
+        final User user = jwToken.isPresent()  && jwToken.get().getActiveUser().isPresent() ?
+                jwToken.get().getActiveUser().get() : null;
+
+        if(user != null) {
+
+            request.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
+            request.setAttribute(com.liferay.portal.util.WebKeys.USER, user);
+        }
+
+        return jwToken;
     } // processAuthCredentialsFromJWT.
 
 } // E:O:F:JsonWebTokenAuthCredentialProcessorImpl.

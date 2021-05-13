@@ -20,6 +20,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.util.HostNameComparator;
@@ -69,9 +70,11 @@ import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -99,7 +102,7 @@ public class BrowserAjax {
 	String activeHostId = "";
     volatile String activeFolderInode = "";
     private static String SELECTED_BROWSER_PATH_OBJECT = "SELECTED_BROWSER_PATH_OBJECT";
-    List<String> openFolders = new ArrayList<String> ();
+	Set<String> openFolders = new LinkedHashSet<>();
 
     String lastSortBy = "name";
     boolean lastSortDirectionDesc = false;
@@ -131,8 +134,15 @@ public class BrowserAjax {
      * @throws DotSecurityException
      */
     public List<Map> getTree(String hostId) throws DotDataException, DotSecurityException {
+
+		final WebContext ctx         = WebContextFactory.get();
+		final HttpSession session    = ctx.getSession();
+
+		if (null != session && null != session.getAttribute("siteBrowserActiveFolderInode")) {
+			activeFolderInode = (String)session.getAttribute("siteBrowserActiveFolderInode");
+		}
+
         hostId = UtilMethods.isSet(hostId) ? hostId : getCurrentHost();
-        WebContext ctx = WebContextFactory.get();
         User usr = getUser(ctx.getHttpServletRequest());
         User systemUser = userAPI.getSystemUser();
         Role[] roles = new Role[]{};
@@ -251,6 +261,35 @@ public class BrowserAjax {
         return getFoldersTree (f, roles);
     }
 
+	/**
+	 * Set the logic to select next time the site browser is open to select a folder
+	 * @param parentInode {@link String}
+	 * @param hostId {@link String}
+	 * @param usr {@link User}
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+    public void setCurrentOpenFolder(final String parentInode, final String hostId, final User usr) throws DotDataException, DotSecurityException {
+
+    	openFolders.clear();
+		final Folder leafFolder = APILocator.getFolderAPI().find(parentInode, usr, false);
+
+		if (null != leafFolder) {
+
+			activeHostId = hostId;
+			openFolders.clear();
+			openFolders.add(parentInode);
+			Permissionable parent = leafFolder.getParentPermissionable();
+			while (parent != null) {
+
+				if (parent instanceof Folder) {
+					openFolders.add(Folder.class.cast(parent).getInode());
+				}
+				parent = parent.getParentPermissionable();
+			}
+		}
+	}
+
     /**
      * Action called everytime a user closes a folder using the - (left hand side)
      * @param parentInode Parent folder to be opened
@@ -264,7 +303,17 @@ public class BrowserAjax {
     @SuppressWarnings("unchecked")
 	public List<Map<String, Object>> openFolderContent (String parentInode, String sortBy, boolean showArchived, long languageId) throws DotHibernateException, DotSecurityException, DotDataException {
 
-        activeFolderInode = parentInode;
+		final WebContext ctx         = WebContextFactory.get();
+		final HttpSession session    = ctx.getSession();
+		String siteBrowserActiveFolderInode = null;
+
+		if (null != session && null != session.getAttribute("siteBrowserActiveFolderInode")) {
+			siteBrowserActiveFolderInode = (String)session.getAttribute("siteBrowserActiveFolderInode");
+			session.removeAttribute("siteBrowserActiveFolderInode");
+		}
+
+        activeFolderInode = null != siteBrowserActiveFolderInode?siteBrowserActiveFolderInode:parentInode;
+
         this.lastSortBy = sortBy;
 
     	if (sortBy != null && UtilMethods.isSet(sortBy)) {
@@ -459,7 +508,8 @@ public class BrowserAjax {
 
 		// Examine only the pages with more than 1 assigned language
 		for (Map<String, Object> content : results) {
-			if ((boolean) content.get("isContentlet")) {
+		    
+			if(Try.of(()->(boolean) content.get("isContentlet")).getOrElse(false)) {
 				String ident = (String) content.get("identifier");
 				if (contentLangCounter.containsKey(ident)) {
 					int counter = contentLangCounter.get(ident);
@@ -629,13 +679,19 @@ public class BrowserAjax {
 		}
 
 		if(ident!=null && InodeUtils.isSet(ident.getId()) && ident.getAssetType().equals("contentlet")) {
-		    ContentletVersionInfo vinfo=versionAPI.getContentletVersionInfo(ident.getId(), languageId);
+		    Optional<ContentletVersionInfo> vinfo=versionAPI.getContentletVersionInfo(ident.getId(), languageId);
 
-			if(vinfo==null && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)) {
+			if(!vinfo.isPresent() && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)) {
 				languageId = languageAPI.getDefaultLanguage().getId();
 				vinfo=versionAPI.getContentletVersionInfo(ident.getId(), languageId);
 			}
-		    boolean live = respectFrontendRoles || vinfo.getLiveInode()!=null;
+
+			if(!vinfo.isPresent()) {
+				throw new DotDataException("Can't find ContentletVersionInfo. Identifier: "
+						+ ident.getId() + ". Lang: " + languageId);
+			}
+
+		    boolean live = respectFrontendRoles || vinfo.get().getLiveInode()!=null;
 			Contentlet cont = contentletAPI.findContentletByIdentifier(ident.getId(),live, languageId , user, respectFrontendRoles);
 			if(cont.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
     			FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(cont);

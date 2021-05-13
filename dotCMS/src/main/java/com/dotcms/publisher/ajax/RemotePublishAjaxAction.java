@@ -1,6 +1,5 @@
 package com.dotcms.publisher.ajax;
 
-import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher;
 import com.dotcms.publisher.bundle.bean.Bundle;
@@ -13,15 +12,11 @@ import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
-import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
-import com.dotcms.publisher.pusher.PushUtils;
 import com.dotcms.publisher.util.PublisherUtil;
-import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.BundlerUtil;
-import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.DotPublishingException;
-import com.dotcms.publishing.IBundler;
+import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
@@ -32,7 +27,7 @@ import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import com.dotcms.rest.PublishThread;
+import com.dotcms.rest.PushPublisherJob;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -48,7 +43,6 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONArray;
@@ -71,16 +65,13 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.Arrays;
 
 import javax.servlet.ServletException;
-import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -207,7 +198,8 @@ public class RemotePublishAjaxAction extends AjaxAction {
             List<String> whereToSend = Arrays.asList(whoToSendTmp.split(","));
             List<Environment> envsToSendTo = new ArrayList<Environment>();
             final String filterKey = request.getParameter("filterKey");
-            final boolean forcePush = (boolean) APILocator.getPublisherAPI().getFilterDescriptorByKey(filterKey).getFilters().getOrDefault("forcePush",false);
+            final boolean forcePush = (boolean) APILocator.getPublisherAPI().getFilterDescriptorByKey(filterKey).getFilters().getOrDefault(
+                    FilterDescriptor.FORCE_PUSH_KEY,false);
 
 
 
@@ -339,7 +331,9 @@ public class RemotePublishAjaxAction extends AjaxAction {
             }
 
             //We will be able to retry failed and successfully bundles
-            if ( !(status.getStatus().equals( Status.FAILED_TO_PUBLISH ) || status.getStatus().equals( Status.SUCCESS )) ) {
+            if (!(status.getStatus().equals(Status.FAILED_TO_PUBLISH) || status.getStatus()
+                    .equals(Status.SUCCESS) || status.getStatus()
+                    .equals(Status.SUCCESS_WITH_WARNINGS))) {
                 appendMessage( responseMessage, "publisher_retry.error.only.failed.publish", bundleId, true );
                 continue;
             }
@@ -433,7 +427,8 @@ public class RemotePublishAjaxAction extends AjaxAction {
 					appendMessage(responseMessage, "publisher_retry.error.not.found", bundleId, true);
 					continue;
 				}
-				if (status.getStatus().equals(Status.SUCCESS)) {
+                if (status.getStatus().equals(Status.SUCCESS) || status.getStatus()
+                        .equals(Status.SUCCESS_WITH_WARNINGS)) {
 					bundle.setForcePush(Boolean.TRUE);
 				} else {
 					bundle.setForcePush(isForcePush);
@@ -542,7 +537,8 @@ public class RemotePublishAjaxAction extends AjaxAction {
      * @param response HttpResponse
      * @throws IOException If fails sending back to the user response information
      */
-    public void downloadUnpushedBundle ( HttpServletRequest request, HttpServletResponse response ) throws IOException {
+    public void downloadUnpushedBundle ( HttpServletRequest request, HttpServletResponse response )
+            throws IOException, DotDataException {
     	try {
 			if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("publishing-queue", getUser())){
 				response.sendError(401);
@@ -557,6 +553,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
         final Map<String, String> map = getURIParams();
         final String bundleId = map.get( "bundleId" );
         final String paramOperation = map.get( "operation" );
+        final String bundleFilter = UtilMethods.isSet(map.get("filterKey")) ? map.get("filterKey") : "";
         if ( bundleId == null || bundleId.isEmpty() ) {
             Logger.error( this.getClass(), "No Bundle Found with id: " + bundleId );
             response.sendError( 500, "No Bundle Found with id: " + bundleId );
@@ -570,14 +567,25 @@ public class RemotePublishAjaxAction extends AjaxAction {
         }
 
         final Bundle dbBundle = Try.of(()->APILocator.getBundleAPI().getBundleById(bundleId)).getOrElseThrow(e->new DotRuntimeException(e));
+        
+        
         final String bundleName = dbBundle.getName().replaceAll("[^\\w.-]", "_");
         
         
         File bundle;
         try {
+            //set Filter to the bundle
+            dbBundle.setFilterKey(bundleFilter);
+            //set ForcePush value of the filter to the bundle
+            dbBundle.setForcePush(
+                    (boolean) APILocator.getPublisherAPI().getFilterDescriptorByKey(bundleFilter).getFilters().getOrDefault(FilterDescriptor.FORCE_PUSH_KEY,false));
+            dbBundle.setOperation(operation.ordinal());
+            //Update Bundle
+            APILocator.getBundleAPI().updateBundle(dbBundle);
+
             //Generate the bundle file for this given operation
-            Map<String, Object> bundleData = generateBundle( bundleId, operation );
-            bundle = (File) bundleData.get( "file" );
+
+            bundle = APILocator.getBundleAPI().generateTarGzipBundleFile(dbBundle);
         } catch ( Exception e ) {
             Logger.error( this.getClass(), "Error trying to generate bundle with id: " + bundleId, e );
             response.sendError( 500, "Error trying to generate bundle with id: " + bundleId );
@@ -589,7 +597,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
         BufferedInputStream in = null;
         try {
             in = new BufferedInputStream( Files.newInputStream(bundle.toPath()) );
-            byte[] buf = new byte[4096];
+            final byte[] buf = new byte[4096];
             int len;
 
             while ( (len = in.read( buf, 0, buf.length )) != -1 ) {
@@ -606,8 +614,8 @@ public class RemotePublishAjaxAction extends AjaxAction {
             }
 
             //Clean the just created bundle because on each download we will generate a new bundle file with a new id in order to avoid conflicts with ids
-            File bundleRoot = BundlerUtil.getBundleRoot( bundleId );
-            File compressedBundle = new File( ConfigUtils.getBundlePath() + File.separator + bundleId + ".tar.gz" );
+            final File bundleRoot = BundlerUtil.getBundleRoot( bundleId );
+            final File compressedBundle = new File( ConfigUtils.getBundlePath() + File.separator + bundleId + ".tar.gz" );
             if ( compressedBundle.exists() ) {
                 compressedBundle.delete();
                 if ( bundleRoot.exists() ) {
@@ -617,84 +625,6 @@ public class RemotePublishAjaxAction extends AjaxAction {
         }
     }
 
-    /**
-     * Generates an Unpublish bundle for a given bundle id  operation (publish/unpublish)
-     *
-     * @param bundleId The Bundle id of the Bundle we want to generate
-     * @param operation Download for publish or un-publish
-     * @return The generated requested Bundle file
-     * @throws DotPublisherException If fails retrieving the Bundle contents
-     * @throws DotDataException If fails finding the system user
-     * @throws DotPublishingException If fails initializing the Publisher
-     * @throws IllegalAccessException If fails creating new Bundlers instances
-     * @throws InstantiationException If fails creating new Bundlers instances
-     * @throws DotBundleException If fails generating the Bundle
-     * @throws IOException If fails compressing the all the Bundle contents into the final Bundle file
-     */
-    @CloseDBIfOpened
-    @SuppressWarnings ("unchecked")
-    private Map<String, Object> generateBundle ( String bundleId, PushPublisherConfig.Operation operation ) throws DotPublisherException, DotDataException, DotPublishingException, IllegalAccessException, InstantiationException, DotBundleException, IOException {
-
-        final PushPublisherConfig pushPublisherConfig = new PushPublisherConfig();
-        final PublisherAPI publisherAPI = PublisherAPI.getInstance();
-
-        final List<PublishQueueElement> tempBundleContents = publisherAPI.getQueueElementsByBundleId( bundleId );
-        final List<PublishQueueElement> assetsToPublish = new ArrayList<PublishQueueElement>();
-
-        for ( final PublishQueueElement publishQueueElement : tempBundleContents ) {
-                assetsToPublish.add( publishQueueElement );
-        }
-
-        pushPublisherConfig.setDownloading( true );
-        pushPublisherConfig.setOperation(operation);
-
-        pushPublisherConfig.setAssets( assetsToPublish );
-        //Queries creation
-        pushPublisherConfig.setLuceneQueries( PublisherUtil.prepareQueries( tempBundleContents ) );
-        pushPublisherConfig.setId( bundleId );
-        pushPublisherConfig.setUser( APILocator.getUserAPI().getSystemUser() );
-
-        //BUNDLERS
-
-        final List<Class<IBundler>> bundlers = new ArrayList<Class<IBundler>>();
-        final List<IBundler> confBundlers = new ArrayList<IBundler>();
-
-        final Publisher publisher = new PushPublisher();
-        publisher.init( pushPublisherConfig );
-        //Add the bundles for this publisher
-        for ( final Class clazz : publisher.getBundlers() ) {
-            if ( !bundlers.contains( clazz ) ) {
-                bundlers.add( clazz );
-            }
-        }
-        final File bundleRoot = BundlerUtil.getBundleRoot( pushPublisherConfig );
-
-        // Run bundlers
-        BundlerUtil.writeBundleXML( pushPublisherConfig );
-        for ( final Class<IBundler> clazzBundler : bundlers ) {
-
-            final IBundler bundler = clazzBundler.newInstance();
-            confBundlers.add( bundler );
-            bundler.setConfig( pushPublisherConfig );
-            bundler.setPublisher(publisher);
-            final BundlerStatus bundlerStatus = new BundlerStatus( bundler.getClass().getName() );
-            //Generate the bundler
-            Logger.info(this, "Start of Bundler: " + clazzBundler.getSimpleName());
-            bundler.generate( bundleRoot, bundlerStatus );
-            Logger.info(this, "End of Bundler: " + clazzBundler.getSimpleName());
-        }
-
-        pushPublisherConfig.setBundlers( confBundlers );
-
-        //Compressing bundle
-        final ArrayList<File> fileList = new ArrayList<File>();
-        fileList.add( bundleRoot );
-        final File bundle = new File( bundleRoot + File.separator + ".." + File.separator + pushPublisherConfig.getId() + ".tar.gz" );
-
-        final Map<String, Object> bundleData = new HashMap<String, Object>();
-        bundleData.put( "file", PushUtils.compressFiles( fileList, bundle, bundleRoot.getAbsolutePath() ) );
-        return bundleData;
-    }
 
     /**
      * Publish a given Bundle file
@@ -737,7 +667,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
             FileUtil.writeToFile( bundle, bundlePath + bundleName );
 
             if ( !status.getStatus().equals( Status.PUBLISHING_BUNDLE ) ) {
-                new Thread( new PublishThread( bundleName, null, endpointId, status ) ).start();
+                PushPublisherJob.triggerPushPublisherJob(bundleName, status);
             }
 
             out.print( "<html><head><script>isLoaded = true;</script></head><body><textarea>{'status':'success'}</textarea></body></html>" );
@@ -942,7 +872,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
             final String iWantTo = request.getParameter( "iWantTo" );
             final String whoToSendTmp = request.getParameter( "whoToSend" );
             final String filterKey = request.getParameter("filterKey");
-            final boolean forcePush = (boolean) APILocator.getPublisherAPI().getFilterDescriptorByKey(filterKey).getFilters().getOrDefault("forcePush",false);
+            final boolean forcePush = (boolean) APILocator.getPublisherAPI().getFilterDescriptorByKey(filterKey).getFilters().getOrDefault(FilterDescriptor.FORCE_PUSH_KEY,false);
             
             List<String> whereToSend = Arrays.asList(whoToSendTmp.split(","));
             List<Environment> envsToSendTo = new ArrayList<Environment>();

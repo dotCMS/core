@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.index;
 
+import com.dotcms.content.elasticsearch.util.ESMappingUtilHelper;
 import com.liferay.portal.language.LanguageUtil;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -118,11 +119,20 @@ public class ESIndexResource {
                                   final HttpServletRequest request,
                                   final HttpServletResponse response) {
 
+        return auth(request, response, null);
+    }
+
+    protected InitDataObject auth(
+            final HttpServletRequest request,
+            final HttpServletResponse response,
+            final String params) {
+
         return new WebResource
-                        .InitBuilder(request, response)
-                        .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
-                        .requiredPortlet("maintenance")
-                        .init();
+                .InitBuilder(request, response)
+                .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
+                .requiredPortlet("maintenance")
+                .params(params)
+                .init();
     }
     
     
@@ -265,6 +275,7 @@ public class ESIndexResource {
             indexName = (live) ? "live_" + indexName : "working_" + indexName;
 
             APILocator.getContentletIndexAPI().createContentIndex(indexName, shards);
+            ESMappingUtilHelper.getInstance().addCustomMapping(indexName);
 
             return Response.ok(indexName).build();
         } catch (Exception de) {
@@ -462,7 +473,7 @@ public class ESIndexResource {
     @Produces("text/plain")
     public Response getActive(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) {
         try {
-            InitDataObject init=auth(httpServletRequest,httpServletResponse);
+            InitDataObject init=auth(httpServletRequest,httpServletResponse, params);
 
             //Creating an utility response object
             ResourceResponse responseResource = new ResourceResponse( init.getParamsMap() );

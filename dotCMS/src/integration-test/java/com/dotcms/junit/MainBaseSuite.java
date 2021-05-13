@@ -1,9 +1,12 @@
 package com.dotcms.junit;
 
 import com.dotcms.util.StdOutErrLog;
+import com.dotmarketing.db.DbConnectionFactory;
 import java.util.LinkedList;
 import java.util.List;
+import org.junit.runner.Description;
 import org.junit.runner.Runner;
+import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.Suite;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.RunnerBuilder;
@@ -31,10 +34,33 @@ public class MainBaseSuite extends Suite {
         List<Runner> runners = new LinkedList<>();
 
         for (Class<?> klazz : classes) {
-            runners.add(new CustomDataProviderRunner(klazz));
+            runners.add(new DotRunner(new CustomDataProviderRunner(klazz)));
         }
 
         return runners;
     }
 
+
+    private static class DotRunner extends Runner {
+
+        private Runner runner;
+
+        DotRunner(Runner runner) {
+            this.runner = runner;
+        }
+
+        @Override
+        public Description getDescription() {
+            return this.runner.getDescription();
+        }
+
+        @Override
+        public void run(RunNotifier notifier) {
+            try {
+                this.runner.run(notifier);
+            } finally {
+                DbConnectionFactory.closeSilently();
+            }
+        }
+    }
 }

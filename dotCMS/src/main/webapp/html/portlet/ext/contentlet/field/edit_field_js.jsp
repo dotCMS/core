@@ -9,6 +9,7 @@
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.liferay.portal.model.User"%>
+<%@ page import="org.apache.commons.lang.StringUtils" %>
 
 <script type='text/javascript' src='/dwr/interface/StructureAjax.js'></script>
 <script type='text/javascript' src='/dwr/interface/CategoryAjax.js'></script>
@@ -399,10 +400,17 @@ var cmsfile=null;
 					     var <%=field.variable()%>tinyPropOverride={};
 					     try{
 					    	   <%ctx.put("field", field);%>
-					    	  <%=field.variable()%>tinyPropOverride =  <%= com.dotcms.rendering.velocity.util.VelocityUtil.getInstance().parseVelocity(field.fieldVariablesMap().get("tinymceprops").value(),ctx) %>;
+					    	   <%
+					    	     String propsOverride = com.dotcms.rendering.velocity.util.VelocityUtil.getInstance().parseVelocity(field.fieldVariablesMap().get("tinymceprops").value(),ctx);
+					    	     if(StringUtils.isEmpty(propsOverride) || StringUtils.isBlank(propsOverride) ){
+					    	        propsOverride = "{}";
+					    	        //This is here to prevent a javascript syntax err
+					    	     }
+					    	   %>
+					    	   <%=field.variable()%>tinyPropOverride =  <%=propsOverride%>;
 					     }
 					     catch(e){
-					    	 showDotCMSErrorMessage("Enable to initialize WYSIWYG " + e.message);
+					    	 showDotCMSErrorMessage("unable to initialize WYSIWYG " + e.message);
 					     }
 
 					 <%}else{%>
@@ -506,13 +514,16 @@ var cmsfile=null;
 
 	function cmsFileBrowser(callback, value, meta) {
 		tinyMCEFilePickerCallback=callback;
-		if(meta.filetype=="image"){
-			cmsFileBrowserImage.show();
-		}
-		else{
-			cmsFileBrowserFile.show();
-		}
-		dojo.query('.mce-window .mce-close')[0].click();
+
+		if (meta.filetype=="image") {
+            dojo.query('.mce-window .mce-close')[0].click();
+            cmsFileBrowserImage.show();
+        } else {
+            cmsFileBrowserFile.show()
+            dojo.style(dojo.query('.mce-window')[0], { zIndex: '100' })
+		    dojo.style(dojo.byId('mce-modal-block'), { zIndex: '90' })
+        }
+
 	}
 
 	//Glossary terms search
@@ -720,19 +731,21 @@ var cmsfile=null;
 
 	}
 
-
 	function addFileCallback(file) {
-		var ident
+		var ident, assetURI;
 		var ext = file.extension;
 		var ident = file.identifier;
 		var fileExt = getFileExtension(file.name).toString();
 		<% String extension = com.dotmarketing.util.Config.getStringProperty("VELOCITY_PAGE_EXTENSION"); %>
-		if(fileExt == '<%= extension %>' || ext == 'page'){
-			tinyMCEFilePickerCallback(file.pageURI, {});
-		}else {
-			var assetURI = [file.path, file.name].join("");
-			tinyMCEFilePickerCallback(assetURI, {});
+		if (fileExt == "<%= extension %>" || ext == "page") {
+			assetURI = file.pageURI;
+		} else if (file.baseType === "FILEASSET") {
+			assetURI = `${file.path}`;
+		} else {
+			assetURI = `/dA/${file.path.split(".")[1]}/${file.name}`;
 		}
+
+		tinyMCEFilePickerCallback(assetURI, {});
 	}
 
 	function replaceAll(find, replace, str) {

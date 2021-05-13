@@ -345,4 +345,14 @@ public class StringUtilsTest {
         final List<String> strings = StringUtils.quotedLiteral(textBlock);
         assertEquals(strings.size(), expectedResult);
     }
+
+    @Test
+    public void Test_Has_White_Spaces(){
+        assertTrue(StringUtils.hasWhiteSpaces("/test-folder/file-name 123.jpg"));
+        assertTrue(StringUtils.hasWhiteSpaces("/test folder/file-name-123.jpg"));
+        assertTrue(StringUtils.hasWhiteSpaces(" /test-folder/file-name 123.jpg"));
+        assertFalse(StringUtils.hasWhiteSpaces(""));
+        assertFalse(StringUtils.hasWhiteSpaces("lol"));
+    }
+
 }

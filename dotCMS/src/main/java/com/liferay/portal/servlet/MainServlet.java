@@ -19,6 +19,8 @@
 
 package com.liferay.portal.servlet;
 
+import com.dotcms.enterprise.license.LicenseManager;
+import com.dotmarketing.startup.runalways.Task00030ClusterInitialize;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
@@ -33,6 +35,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.PageContext;
+
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.beanutils.SuppressPropertiesBeanIntrospector;
 import org.apache.commons.logging.Log;
@@ -50,7 +53,6 @@ import com.dotcms.repackage.org.apache.struts.action.ActionServlet;
 import com.dotcms.repackage.org.apache.struts.tiles.TilesUtilImpl;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.servlets.InitServlet;
 import com.dotmarketing.startup.StartupTasksExecutor;
@@ -111,19 +113,27 @@ public class MainServlet extends ActionServlet {
       new ESIndexAPI().waitUtilIndexReady();
       
       
-      
-      
+
+
 
       // Checking for execute upgrades
       try {
         StartupTasksExecutor.getInstance().executeStartUpTasks();
         StartupTasksExecutor.getInstance().executeUpgrades();
 
+        final Task00030ClusterInitialize clusterInitializeTask = new Task00030ClusterInitialize();
+        if(clusterInitializeTask.forceRun()){
+          clusterInitializeTask.executeUpgrade();
+        }
+
       } catch (Exception e1) {
         throw new DotRuntimeException(e1);
       } finally {
         DbConnectionFactory.closeSilently();
       }
+
+      // Update license with server start time
+      LicenseManager.getInstance().updateServerStartTime();
 
       HashSet<String> suppressProperties = new HashSet<>();
       suppressProperties.add("class");
@@ -166,15 +176,6 @@ public class MainServlet extends ActionServlet {
         throw new DotRuntimeException(e);
       }
 
-      // Check web settings
-
-      try {
-        String xml = Http.URLtoString(ctx.getResource("/WEB-INF/web.xml"));
-
-        _checkWebSettings(xml);
-      } catch (Exception e) {
-        Logger.error(this, e.getMessage(), e);
-      }
 
       // Scheduler
 
@@ -480,26 +481,7 @@ public class MainServlet extends ActionServlet {
     super.destroy();
   }
 
-  private void _checkWebSettings(String xml) throws DocumentException {
-    SAXReader reader = new SAXReader();
-    reader.setEntityResolver(null);
 
-    Document doc = reader.read(new StringReader(xml));
-
-    Element root = doc.getRootElement();
-
-    int timeout = GetterUtil.getInteger(PropsUtil.get(PropsUtil.SESSION_TIMEOUT));
-
-    Element sessionConfig = root.element("session-config");
-
-    if (sessionConfig != null) {
-      String sessionTimeout = sessionConfig.elementText("session-timeout");
-
-      timeout = GetterUtil.get(sessionConfig.elementText("session-timeout"), timeout);
-    }
-
-    PropsUtil.set(PropsUtil.SESSION_TIMEOUT, Integer.toString(timeout));
-  }
 
   private static final Log _log = LogFactory.getLog(MainServlet.class);
 

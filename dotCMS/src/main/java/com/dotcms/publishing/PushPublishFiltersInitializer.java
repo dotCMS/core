@@ -3,6 +3,7 @@ package com.dotcms.publishing;
 import com.dotcms.config.DotInitializer;
 import com.dotcms.util.YamlUtil;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import java.io.File;
 import java.io.IOException;
@@ -19,19 +20,21 @@ public class PushPublishFiltersInitializer implements DotInitializer {
     public void init() {
 
         try {
+            //Clear filtersMap
+            PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
             //Path where the YAML files are stored
             final String filtersDirectoryString =
                     APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator + "server"
                             + File.separator + "publishing-filters" + File.separator;
             final File basePath = new File(filtersDirectoryString);
             if (!basePath.exists()) {
+                Logger.debug(PushPublishFiltersInitializer.class, ()->"PushPublishing Filters directory does not exists, creating under: " + filtersDirectoryString);
                 basePath.mkdir();
                 //If the directory does not exists, copy the YAML files that are ship with
                 //dotcms to the created directory
-                final String systemFiltersDirectory = "com" + File.separator + "dotcms" +
-                        File.separator + "publishing-filters" + File.separator;
-                final String systemFiltersPathString = Thread.currentThread()
-                        .getContextClassLoader().getResource(systemFiltersDirectory).getPath();
+                final String systemFiltersDirectory = "publishing-filters" + File.separator;
+                final String systemFiltersPathString = Config.CONTEXT
+                        .getRealPath("/WEB-INF/" + systemFiltersDirectory);
                 final File systemFilters = new File(systemFiltersPathString);
                 Files.list(systemFilters.toPath()).forEach(filter -> {
                     try {
@@ -43,7 +46,7 @@ public class PushPublishFiltersInitializer implements DotInitializer {
                 });
                 Logger.debug(PushPublishFiltersInitializer.class, ()->" dotcms filters files copied");
             }
-            Logger.info(PushPublishFiltersInitializer.class, " ymlFiles are set under:  " + filtersDirectoryString);
+            Logger.debug(PushPublishFiltersInitializer.class, ()->" PushPublishing Filters Directory: " + filtersDirectoryString);
             //For each YAML file under the directory,
             // read it and load the Filter to the PublisherAPI.loadedFilters
             Files.list(basePath.toPath()).forEach(this::loadFilter);
@@ -54,10 +57,15 @@ public class PushPublishFiltersInitializer implements DotInitializer {
 
     protected void loadFilter(final Path path){
         final String fileName = path.getFileName().toString();
-        Logger.info(PushPublishFiltersInitializer.class, " ymlFileName:  " + fileName);
-        final FilterDescriptor filterDescriptor = YamlUtil.parse(path,FilterDescriptor.class);
-        filterDescriptor.setKey(fileName);
-        Logger.info(PushPublishFiltersInitializer.class, filterDescriptor.toString());
-        APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor);
+        Logger.info(PushPublishFiltersInitializer.class, " Loading PushPublish Filter:  " + fileName);
+        try {
+            final FilterDescriptor filterDescriptor = YamlUtil.parse(path, FilterDescriptor.class);
+            filterDescriptor.setKey(fileName);
+            Logger.info(PushPublishFiltersInitializer.class, filterDescriptor.toString());
+            filterDescriptor.validate();
+            APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor);
+        }catch(Exception e) {
+            Logger.warnAndDebug(this.getClass(), "unable to load PP filter:" + path.toString() + " cause: " + e.getMessage(), e);
+        }
     }
 }

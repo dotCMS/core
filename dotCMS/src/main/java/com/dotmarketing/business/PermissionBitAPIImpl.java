@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -23,6 +24,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.PermissionableProxy;
+import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -88,7 +90,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 	/**
 	 * Sets a Permission Factory for this API
-	 * @param PermissionFactory service reference
+	 * @param permissionFactory service reference
 	 * @return Nothing
 	 */
 	public void setPermissionFactory(PermissionFactory permissionFactory) {
@@ -153,7 +155,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 	/**
 	 * This is not intended to be used to check permission because it doesn't check for cms administrator privileges
-	 * @param user
+	 * @param userRoleIDs
 	 * @param permissions
 	 * @param requiredPermissionType
 	 * @return If the user has the required permission for the collection of permissions passed in
@@ -254,33 +256,47 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		return doesUserHavePermission(permissionable, permissionType, user, true);
 	}
 
+	private boolean userPermissions(final UserProxy userProxy, final User userIn) {
+	    
+	    if(userProxy.getPermissionId().equals("user:"+userIn.getUserId())) {
+	        return true;
+	    }
+	    return Try.of(()-> APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("user", userIn)).getOrElse(false);
+	}
+	
+	
+	
 	@CloseDBIfOpened
 	@Override
 	public boolean doesUserHavePermission(final Permissionable permissionable, int permissionType, final User userIn, final boolean respectFrontendRoles) throws DotDataException {
 	    
+	    User user = (userIn==null || userIn.getUserId()==null) ? APILocator.getUserAPI().getAnonymousUser() : userIn;
 	    
-	    final User user = (userIn==null || userIn.getUserId()==null) ? APILocator.getUserAPI().getAnonymousUser() : userIn;
-	    
-	    
-	    
-	    
-        if(user.getUserId().equals(APILocator.getUserAPI().getSystemUser().getUserId())){
+        if(user.getUserId().equals(APILocator.systemUser().getUserId())){
             return true;
         }
         
-		// if we have bad data
-		if ((permissionable == null) || (!InodeUtils.isSet(permissionable.getPermissionId()))) {
-			if(permissionable != null){
-				Logger.debug(this.getClass(), "Trying to get permissions on null inode of type :" + permissionable.getPermissionType()) ;
-				Logger.debug(this.getClass(), "Trying to get permissions on null inode of class :" + permissionable.getClass()) ;
-			}
-			if(permissionable == null){
-				Logger.error(this, "Permissionable object is null");
-				throw new NullPointerException("Permissionable object is null");
-			}
-			return false;
-		}
+        if(user.isAdmin()) {
+            return true;
+        }
+        
+        if (permissionable == null) {
+            Logger.warn(this, "Permissionable object is null");
+            throw new NullPointerException("Permissionable object is null");
+        }
+        
+        if(UtilMethods.isEmpty(permissionable.getPermissionId())){
+            Logger.debug(this.getClass(), "Trying to get permissions on null inode of type :" + permissionable.getPermissionType()) ;
+            Logger.debug(this.getClass(), "Trying to get permissions on null inode of class :" + permissionable.getClass()) ;
+            return false;
+            
+        }
 
+        // short circut for UserProxy
+        if(permissionable instanceof UserProxy) {
+            return userPermissions((UserProxy) permissionable, user);
+        }
+		
 
 		
 		// Folders do not have PUBLISH, use EDIT instead
@@ -375,7 +391,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
      */
     private boolean isLiveContentlet(Permissionable permissionable) {
         return permissionable!=null && permissionable instanceof Contentlet
-                && Sneaky.sneak(()->((Contentlet) permissionable).isLive());
+                && Try.of(()->((Contentlet) permissionable).isLive()).getOrElse(false);
     }
 
     @WrapInTransaction
@@ -545,7 +561,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
     /**
      * Saves passed in permission
-	 * @param Permission to save
+	 * @param permission to save
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
@@ -1415,24 +1431,39 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 	@Override
     public boolean doesUserHavePermissions(PermissionableType permType, int permissionType, User user) throws DotDataException {
-    	if(user==null) return false;
+    	return doesUserHavePermissions(null,permType,permissionType,user);
+    }
 
-    	if(APILocator.getUserAPI().isCMSAdmin(user)) return true;
+	@Override
+	public boolean doesUserHavePermissions(final String assetId, final PermissionableType permType, final int permissionType, final User user) throws DotDataException {
+		if(user==null) {
+			return false;
+		}
 
-    	Boolean hasPerm = false;
-    	RoleAPI roleAPI = APILocator.getRoleAPI();
-		List<com.dotmarketing.business.Role> roles = roleAPI.loadRolesForUser(user.getUserId(), false);
-		for(com.dotmarketing.business.Role r : roles) {
-			List<Permission> perms = APILocator.getPermissionAPI().getPermissionsByRole(r, false);
-			for (Permission p : perms) {
-				if(p.getType().equals(permType.getCanonicalName())) {
-					hasPerm = hasPerm | p.getPermission()>=permissionType;
+		if(APILocator.getUserAPI().isCMSAdmin(user)){
+			return true;
+		}
+
+		Boolean hasPerm = false;
+		final RoleAPI roleAPI = APILocator.getRoleAPI();
+		final List<com.dotmarketing.business.Role> roles = roleAPI.loadRolesForUser(user.getUserId(), false);
+		for(final com.dotmarketing.business.Role role : roles) {
+			List<Permission> perms = APILocator.getPermissionAPI().getPermissionsByRole(role, false);
+			if(UtilMethods.isSet(assetId)) {
+				perms = perms.stream()
+						.filter(permission -> permission.getInode().equalsIgnoreCase(assetId))
+						.collect(
+								Collectors.toList());
+			}
+			for (final Permission permission : perms) {
+				if(permission.getType().equals(permType.getCanonicalName())) {
+					hasPerm = hasPerm | permission.getPermission()>=permissionType;
 				}
 			}
 		}
 
 		return hasPerm;
-    }
+	}
 
     /**
      * @Deprecated: use permissionIndividually(Permissionable parent, Permissionable permissionable,
@@ -1491,102 +1522,136 @@ public class PermissionBitAPIImpl implements PermissionAPI {
     /**
      * Retrieves all the parent permissions in order to be applied to the permissionable.
      */
-    private List<Permission> getNewPermissions(Permissionable parent, Permissionable permissionable,
-            User user) throws DotDataException, DotSecurityException {
+	private List<Permission> getNewPermissions(Permissionable parent, Permissionable permissionable,
+			User user) throws DotDataException, DotSecurityException {
 
-        ImmutableList.Builder<Permission> immutablePermissionList = new Builder<>();
-        List<Permission> newSetOfPermissions = new ArrayList<>();
+		final ImmutableList.Builder<Permission> builder = new Builder<>();
+		final List<Permission> newSetOfPermissions = new ArrayList<>();
 
-        if (!doesUserHavePermission(permissionable, PermissionAPI.PERMISSION_EDIT_PERMISSIONS,
-                user)) {
-            throw new DotSecurityException("User id: " + user.getUserId()
-                    + " does not have permission to alter permissions on asset " + permissionable
-                    .getPermissionId());
-        }
+		if (!doesUserHavePermission(permissionable, PermissionAPI.PERMISSION_EDIT_PERMISSIONS,
+				user)) {
+			throw new DotSecurityException("User id: " + user.getUserId()
+					+ " does not have permission to alter permissions on asset " + permissionable
+					.getPermissionId());
+		}
 
-        if (parent.isParentPermissionable()) {
+		if (parent.isParentPermissionable()) {
 
-            String type = permissionable.getPermissionType();
-            immutablePermissionList.addAll(permissionFactory.getInheritablePermissions(parent));
-            immutablePermissionList.addAll(permissionFactory.getPermissions(parent, true));
-            List<Permission> permissionList = immutablePermissionList.build();
+			builder.addAll(permissionFactory.getInheritablePermissions(parent))
+					.addAll(permissionFactory.getPermissions(parent, true));
 
-            Host host = APILocator.getHostAPI()
-                    .find(permissionable.getPermissionId(), APILocator.getUserAPI().getSystemUser(),
-                            false);
-            if (host != null) {
-                type = Host.class.getCanonicalName();
-            }
+			final List<Permission> permissionList = builder.build();
 
-            final Set<String> classesToIgnoreFolder = Sets
-                    .newHashSet(Template.class.getCanonicalName(),
-                            Container.class.getCanonicalName(),
-                            Category.class.getCanonicalName(),
-                            Host.class.getCanonicalName());
+			String permissionableType = permissionable.getPermissionType();
 
-            final Set<String> classesToIgnoreHost = Sets
-                    .newHashSet(Category.class.getCanonicalName());
+			final Host host = APILocator.getHostAPI()
+					.find(permissionable.getPermissionId(), APILocator.systemUser(), false);
+			if (host != null) {
+				permissionableType = Host.class.getCanonicalName();
+			}
 
-            for (Permission permission : permissionList) {
+			final Set<String> classesToIgnoreFolder = Sets.newHashSet(
+					Template.class.getCanonicalName(),
+					Container.class.getCanonicalName(),
+					Category.class.getCanonicalName(),
+					Host.class.getCanonicalName()
+			);
 
-                if (type.equals(Folder.class.getCanonicalName()) && classesToIgnoreFolder
-                        .contains(permission.getType())) {
-                    continue;
-                }
+			final Set<String> classesToIgnoreHost = Sets
+					.newHashSet(Category.class.getCanonicalName());
 
-                if (type.equals(Host.class.getCanonicalName()) && classesToIgnoreHost
-                        .contains(permission.getType())) {
-                    continue;
-                }
+            //Organize permission by role
+			final Map<String, List<Permission>> permissionsByRole = permissionList.stream()
+					.collect(Collectors.groupingBy(Permission::getRoleId));
 
-                if (type.equals(permission.getType()) || permission.isIndividualPermission()) {
-                    Permission duplicatedPermission = null;
-                    ImmutableList.Builder<Permission> immutableDuplicatedList = new Builder<>();
+			final String finalPermissionableType = permissionableType;
+			permissionsByRole.forEach((roleId, permissions) -> {
 
-                    for (Permission newPermission : newSetOfPermissions) {
-                        if (newPermission.isIndividualPermission() && newPermission.getRoleId()
-                                .equals(permission.getRoleId())
-                                && newPermission.getPermission() > permission
-                                .getPermission()) {
-                            duplicatedPermission = newPermission;
-                            break;
-                        } else if (newPermission.isIndividualPermission() && newPermission
-                                .getRoleId()
-                                .equals(permission.getRoleId())) {
-                            immutableDuplicatedList.add(newPermission);
-                        }
-                    }
-                    List<Permission> duplicatedPermissionList = immutableDuplicatedList.build();
-                    if (duplicatedPermission == null) {
-                        newSetOfPermissions.removeAll(duplicatedPermissionList);
-                        if (permission.isIndividualPermission()) {
-                            newSetOfPermissions.add(new Permission(permission.getType(),
-                                    permissionable.getPermissionId(), permission.getRoleId(),
-                                    permission.getPermission(), true));
-                            continue;
-                        } else {
-                            newSetOfPermissions.add(new Permission(permissionable.getPermissionId(),
-                                    permission.getRoleId(), permission.getPermission(), true));
-                        }
-                    }
-                    if (!permission.isIndividualPermission()) {
-                        newSetOfPermissions
-                                .add(new Permission(permission.getType(),
-                                        permissionable.getPermissionId(),
-                                        permission.getRoleId(), permission.getPermission(), true));
-                    }
-                } else {
-                    newSetOfPermissions
-                            .add(new Permission(permission.getType(),
-                                    permissionable.getPermissionId(),
-                                    permission.getRoleId(), permission.getPermission(), true));
-                }
-            }
+                //Then find out if the group of role permissions we're looking at least has one perm type matching the permissionable type that has been passed.
+				final Optional<Permission> hasRolesMatchingParentPermissionable = permissions
+						.stream()
+						.filter(permission -> finalPermissionableType
+								.equals(permission.getType())).findAny();
+
+				final boolean onlyHasIndividualPermissions = permissions.stream().allMatch(
+						permission -> INDIVIDUAL_PERMISSION_TYPE.equals(permission.getType()));
+
+				if (hasRolesMatchingParentPermissionable.isPresent() || onlyHasIndividualPermissions) {
+
+					for (final Permission permission : permissions) {
+
+						if (finalPermissionableType.equals(Folder.class.getCanonicalName())
+								&& classesToIgnoreFolder.contains(permission.getType())) {
+							continue;
+						}
+
+						if (finalPermissionableType.equals(Host.class.getCanonicalName())
+								&& classesToIgnoreHost.contains(permission.getType())) {
+							continue;
+						}
+
+						if (finalPermissionableType.equals(permission.getType()) || permission
+								.isIndividualPermission()) {
+							Permission duplicatedPermission = null;
+							ImmutableList.Builder<Permission> dupesListBuilder = new Builder<>();
+
+							for (final Permission newPermission : newSetOfPermissions) {
+								if (newPermission.isIndividualPermission() && newPermission
+										.getRoleId().equals(permission.getRoleId())
+										&& newPermission.getPermission() > permission
+										.getPermission()) {
+									duplicatedPermission = newPermission;
+									break;
+								} else if (newPermission.isIndividualPermission() && newPermission
+										.getRoleId().equals(permission.getRoleId())) {
+									dupesListBuilder.add(newPermission);
+								}
+							}
+
+							final List<Permission> dupesPermissionList = dupesListBuilder
+									.build();
+							if (duplicatedPermission == null) {
+								newSetOfPermissions.removeAll(dupesPermissionList);
+								if (permission.isIndividualPermission()) {
+									newSetOfPermissions.add(new Permission(permission.getType(),
+											permissionable.getPermissionId(),
+											permission.getRoleId(), permission.getPermission(),
+											true));
+									continue;
+								} else {
+									//inheritable non-dupe perm added as individual perm
+									newSetOfPermissions
+											.add(new Permission(permissionable.getPermissionId(),
+													permission.getRoleId(),
+													permission.getPermission(), true));
+								}
+							}
+
+							if (!permission.isIndividualPermission()) {
+								//inheritable non-dupe perm
+								newSetOfPermissions.add(new Permission(permission.getType(),
+										permissionable.getPermissionId(), permission.getRoleId(),
+										permission.getPermission(), true));
+							}
+
+						} else {
+							//Any other inheritable permission different from the permissionable type ends here.
+							newSetOfPermissions.add(new Permission(permission.getType(),
+									permissionable.getPermissionId(), permission.getRoleId(),
+									permission.getPermission(), true));
+						}
+					}
 
 
-        }
-        return newSetOfPermissions;
-    }
+				}
+
+
+			});
+
+
+		}
+		return newSetOfPermissions;
+	}
 
     @CloseDBIfOpened
     @Override

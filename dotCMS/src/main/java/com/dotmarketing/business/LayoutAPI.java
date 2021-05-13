@@ -116,4 +116,24 @@ public interface LayoutAPI {
 	 * @return Optional LayoutsRoles, present and LayoutsRoles identifier set if exists.
 	 */
 	Optional<LayoutsRoles> findLayoutByRole(final Layout layout, final Role role);
+
+	String GETTING_STARTED_LAYOUT_ID="2df9f117-b140-44bf-93d7-5b10a36fb7f9";
+
+	String GETTING_STARTED_LAYOUT_NAME = "Getting Started";
+
+	/**
+	 * returns or create the getting started layout
+	 * @return
+	 */
+    Layout findGettingStartedLayout();
+
+    /**
+     * Adds a layout to a user (using the user's role)
+     * @param layout layout to be added
+     * @param user user that the layout will be added
+     */
+    void addLayoutForUser(Layout layout, User user) throws DotDataException;
+	
+	
+	
 }

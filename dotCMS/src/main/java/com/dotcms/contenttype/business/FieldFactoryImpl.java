@@ -296,10 +296,8 @@ public class FieldFactoryImpl implements FieldFactory {
 
     if(throwAwayField.variable() == null) {
       variable = suggestVelocityVar(throwAwayField.name(), throwAwayField, takenFieldVars);
-    } else if(ContentAPIGraphQLTypesProvider.INSTANCE.isFieldVariableGraphQLCompatible(throwAwayField.variable(), throwAwayField)) {
-       variable = throwAwayField.variable();
     } else {
-      throw new DotDataException("Field variable not compatible with GraphQL. Field variable:" + throwAwayField.variable());
+       variable = throwAwayField.variable();
     }
     return variable;
   }

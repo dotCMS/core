@@ -6,12 +6,14 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.personas.model.Persona;
+import com.liferay.util.StringPool;
 
 public class MultiTreeDataGen extends AbstractDataGen<MultiTree> {
     private Container container;
     private Contentlet contentlet;
     private String instanceID;
-    private String personalization;
+    private String personalization = MultiTree.DOT_PERSONALIZATION_DEFAULT;
     private int treeOrder;
     private HTMLPageAsset page;
 
@@ -24,7 +26,6 @@ public class MultiTreeDataGen extends AbstractDataGen<MultiTree> {
         multiTree.setInstanceId(instanceID);
         multiTree.setTreeOrder(treeOrder);
         multiTree.setPersonalization(personalization);
-        multiTree.setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT);
         multiTree.setTreeOrder(1);
 
         return multiTree;
@@ -67,6 +68,11 @@ public class MultiTreeDataGen extends AbstractDataGen<MultiTree> {
 
     public MultiTreeDataGen setTreeOrder(final int treeOrder) {
         this.treeOrder = treeOrder;
+        return this;
+    }
+
+    public MultiTreeDataGen setPersona(Persona persona) {
+        personalization = Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + persona.getKeyTag();
         return this;
     }
 }

@@ -362,6 +362,21 @@ public class DotDatabaseMetaData {
         return exists;
     }
 
+    public static ResultSet getColumnsMetaData(final Connection connection, final String tableName) throws SQLException {
+        final DatabaseMetaData databaseMetaData = connection.getMetaData();
+        String schema = null;
+        String table = tableName;
+
+        if (DbConnectionFactory.isOracle()) {
+            table = table.toUpperCase();
+            schema = databaseMetaData.getUserName();
+        }
+
+        return databaseMetaData.getColumns
+                (connection.getCatalog(), schema, table, null);
+    }
+
+
     /**
      * Returns the columns list of the table as a list
      * @param connection {@link Connection}
@@ -371,23 +386,11 @@ public class DotDatabaseMetaData {
     public Set<String> getColumnNames (final Connection connection, final String tableName) throws SQLException {
 
         final Set<String> columns = new LinkedHashSet<>();
-        DatabaseMetaData databaseMetaData     = null;
         ResultSet        resultSet            = null;
-        ForeignKey       foreignKey           = null;
-        String           schema               = null;
-        String           table                = tableName;
 
         try {
 
-            databaseMetaData = connection.getMetaData();
-
-            if (DbConnectionFactory.isOracle()) {
-                table = table.toUpperCase();
-                schema = databaseMetaData.getUserName();
-            }
-
-            resultSet = databaseMetaData.getColumns
-                    (connection.getCatalog(), schema, table, null);
+            resultSet = this.getColumnsMetaData(connection, tableName);
 
             // Iterates over the foreign foreignKey columns
             while (resultSet.next()) {
@@ -578,6 +581,18 @@ public class DotDatabaseMetaData {
         }
 
         throw new DotDataException("Unknown database type.");
+    }
+
+    /**
+     * Indicates if a column exists on a given table
+     * @param tableName
+     * @param columnName
+     * @return - boolean indicating if the column exists on the referenced table
+     * @throws SQLException
+     */
+    public boolean hasColumn(final String tableName, final String columnName) throws SQLException {
+       return this.getColumnNames(DbConnectionFactory.getConnection(), tableName).stream()
+                .anyMatch(dbcolumn -> dbcolumn.equalsIgnoreCase(columnName));
     }
 
     private static String POSTGRES_CONSTRAINT_SQL =

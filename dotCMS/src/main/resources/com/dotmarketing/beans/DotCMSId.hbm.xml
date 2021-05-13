@@ -249,31 +249,6 @@
 			<property column="mod_date" length="23" name="modDate" type="java.util.Date" />
 		</joined-subclass>
 
-		<joined-subclass name="com.dotmarketing.portlets.templates.model.Template" table="template">
-			<key column="inode" />
-			<property column="show_on_menu" name="showOnMenu" type="boolean" />
-			<property column="title" length="255" name="title" type="string" />
-			<property column="mod_date" length="23" name="modDate" type="java.util.Date" />
-			<property column="mod_user" name="modUser" length="100" type="string">
-				<column name="mod_user" index="idx_template_1" />
-			</property>
-			<property column="sort_order" length="4" name="sortOrder" type="integer" />
-			<property column="friendly_name" name="friendlyName" length="255" type="string" />
-			<property column="body" name="body" type="string" length="123456789" />
-			<property column="header" name="header" type="string" length="123456789" />
-			<property column="footer" name="footer" type="string" length="123456789" />
-			<property column="image" name="image" length="36" type="string" />
-			<property column="identifier" length="36" name="identifier" type="string" />
-			<!-- *********************** BEGIN GRAZIANO issue-12-dnd-template -->
-			<property column="drawed" name="drawed" type="boolean" />
-			<property column="drawed_body" name="drawedBody" type="string" length="123456789" />
-			<property column="add_container_links" length="4" name="countAddContainer" type="integer" />
-			<property column="containers_added" length="4" name="countContainers" type="integer" />
-			<property column="head_code" name="headCode" type="string" length="123456789" />
-			<!-- *********************** END GRAZIANO issue-12-dnd-template -->
-			<property column="theme" name="theme" length="255" type="string" />
-		</joined-subclass>
-
 		<joined-subclass name="com.dotmarketing.portlets.links.model.Link" table="links">
 			<key column="inode" />
 			<!-- Web Asset properties -->
@@ -295,125 +270,6 @@
 			<property column="identifier" length="36" name="identifier" type="string" />
 		</joined-subclass>
 	
-
-		<joined-subclass name="com.dotmarketing.beans.UserProxy" table="user_proxy">
-			<key column="inode" />
-			<property name="userId" type="string" not-null="true">
-				<column name="user_id" length="255" unique-key="idx_user_proxy_1" />
-			</property>
-			<property name="prefix" type="string">
-				<column length="255" name="prefix" />
-			</property>
-			<property name="suffix" type="string">
-				<column length="255" name="suffix" />
-			</property>
-			<property name="title" type="string">
-				<column length="255" name="title" />
-			</property>
-			<property name="school" type="string">
-				<column length="255" name="school" />
-			</property>
-			<property name="howHeard" type="string">
-				<column length="255" name="how_heard" />
-			</property>
-			<property name="company" type="string">
-				<column length="255" name="company" />
-			</property>
-			<property name="longLivedCookie" type="string">
-				<column length="255" name="long_lived_cookie" />
-			</property>
-			<property name="website" type="string">
-				<column length="255" name="website" />
-			</property>
-			<property name="graduationYear" type="java.lang.Integer">
-				<column name="graduation_year" />
-			</property>
-			<property name="organization" type="string">
-				<column length="255" name="organization" />
-			</property>
-			<property column="mail_subscription" name="mailSubscription" type="boolean" />
-			<property name="var1" type="string">
-				<column length="255" name="var1" />
-			</property>
-			<property name="var2" type="string">
-				<column length="255" name="var2" />
-			</property>
-			<property name="var3" type="string">
-				<column length="255" name="var3" />
-			</property>
-			<property name="var4" type="string">
-				<column length="255" name="var4" />
-			</property>
-			<property name="var5" type="string">
-				<column length="255" name="var5" />
-			</property>
-			<property name="var6" type="string">
-				<column length="255" name="var6" />
-			</property>
-			<property name="var7" type="string">
-				<column length="255" name="var7" />
-			</property>
-			<property name="var8" type="string">
-				<column length="255" name="var8" />
-			</property>
-			<property name="var9" type="string">
-				<column length="255" name="var9" />
-			</property>
-			<property name="var10" type="string">
-				<column length="255" name="var10" />
-			</property>
-			<property name="var11" type="string">
-				<column length="255" name="var11" />
-			</property>
-			<property name="var12" type="string">
-				<column length="255" name="var12" />
-			</property>
-			<property name="var13" type="string">
-				<column length="255" name="var13" />
-			</property>
-			<property name="var14" type="string">
-				<column length="255" name="var14" />
-			</property>
-			<property name="var15" type="string">
-				<column length="255" name="var15" />
-			</property>
-			<property name="var16" type="string">
-				<column length="255" name="var16" />
-			</property>
-			<property name="var17" type="string">
-				<column length="255" name="var17" />
-			</property>
-			<property name="var18" type="string">
-				<column length="255" name="var18" />
-			</property>
-			<property name="var19" type="string">
-				<column length="255" name="var19" />
-			</property>
-			<property name="var20" type="string">
-				<column length="255" name="var20" />
-			</property>
-			<property name="var21" type="string">
-				<column length="255" name="var21" />
-			</property>
-			<property name="var22" type="string">
-				<column length="255" name="var22" />
-			</property>
-			<property name="var23" type="string">
-				<column length="255" name="var23" />
-			</property>
-			<property name="var24" type="string">
-				<column length="255" name="var24" />
-			</property>
-			<property name="var25" type="string">
-				<column length="255" name="var25" />
-			</property>
-			<property column="last_result" length="10" name="lastResult" type="integer" />
-			<property column="last_message" length="255" name="lastMessage" type="string" />
-			<property column="no_click_tracking" name="noclicktracking" type="boolean" />
-			<property column="cquestionid" name="challengeQuestionId" type="string" />
-			<property column="cqanswer" name="challengeQuestionAnswer" type="string" />
-			<property column="chapter_officer" length="255" name="chapterOfficer" type="string" />
-		</joined-subclass>
 
 		<joined-subclass name="com.dotmarketing.portlets.structure.model.Field" table="field">
 			<key column="inode" />
@@ -561,6 +417,7 @@
 			<key-property name="child" column="child" type="string" length="36" />
 			<key-property name="parent1" column="parent1" type="string" length="36" />
 			<key-property name="parent2" column="parent2" type="string" length="36" />
+			<key-property name="personalization" column="personalization" length="255" type="string" />
 		</composite-id>
 		<property name="relationType" type="string">
 			<column name="relation_type" length="64" index="idx_multitree_1" />
@@ -971,22 +828,6 @@
 	</class>
 
 	<!-- Dashboard -->
-
-    <class name="com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo" table="contentlet_version_info">
-        <composite-id>
-            <key-property name="identifier" type="string" column="identifier" length="36"/>
-            <key-property name="lang" type="long" column="lang" />
-        </composite-id>
-        <property column="working_inode" name="workingInode" length="36"  type="string"  not-null="true" />
-        <property column="live_inode"    name="liveInode"    length="36"  type="string"  not-null="false"/>
-        <property column="deleted"       name="deleted"                   type="boolean" not-null="true" />
-        <property column="locked_by"     name="lockedBy"     length="100" type="string"  not-null="false"/>
-
-
-       <property column="locked_on"     name="lockedOn"                  type="java.util.Date"    not-null="false"/>
-        <property column="version_ts"     name="versionTs"  type="java.util.Date"    not-null="true"/>
-
-   </class>
     <class name="com.dotmarketing.portlets.templates.model.TemplateVersionInfo" table="template_version_info">
         <id column="identifier"    name="identifier"   length="36" type="string">
             <generator class="assigned"/>

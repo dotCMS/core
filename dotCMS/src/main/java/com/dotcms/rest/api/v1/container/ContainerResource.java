@@ -1,13 +1,13 @@
 package com.dotcms.rest.api.v1.container;
 
 
-import com.beust.jcommander.internal.Maps;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Maps;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -151,7 +151,6 @@ public class ContainerResource implements Serializable {
 
         final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true, null);
         final User user = initData.getUser();
-
         final Optional<String> checkedHostId = this.checkHost(httpRequest, hostId, user);
 
         try {
@@ -165,7 +164,6 @@ public class ContainerResource implements Serializable {
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
             return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-
         }
     }
 

@@ -11,26 +11,24 @@ import com.dotmarketing.business.APILocator;
 @SuppressWarnings("unused")
 public class ContentTypeAndFieldsModsListeners {
 
-    private final GraphqlAPI graphqlAPI = APILocator.getGraphqlAPI();
-
     @Subscriber
     public void onContentTypeSaved(final ContentTypeSavedEvent event) {
-        graphqlAPI.invalidateSchema();
+        APILocator.getGraphqlAPI().invalidateSchema();
     }
 
     @Subscriber
     public void onContentTypeDeleted(final ContentTypeDeletedEvent event) {
-        graphqlAPI.invalidateSchema();
+        APILocator.getGraphqlAPI().invalidateSchema();
     }
 
     @Subscriber
     public void onFieldCreated(final FieldSavedEvent event) {
-        graphqlAPI.invalidateSchema();
+        APILocator.getGraphqlAPI().invalidateSchema();
     }
 
     @Subscriber
     public void onFieldDeleted(final FieldDeletedEvent event) {
-        graphqlAPI.invalidateSchema();
+        APILocator.getGraphqlAPI().invalidateSchema();
     }
 
 }

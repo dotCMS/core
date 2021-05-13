@@ -11,11 +11,22 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.MultiTreeDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TemplateLayoutDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.rendering.velocity.directive.ParseContainer;
+import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -25,15 +36,24 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
+import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import org.apache.velocity.VelocityContext;
+import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -219,5 +239,132 @@ public class ContainerWebAPIIntegrationTest extends IntegrationTestBase {
         HibernateUtil.commitTransaction();
 
         return containerSaved;
+    }
+
+    /**
+     * Method to Test: {@link ContainerWebAPI#getPersonalizedContentList(String, String, String)}
+     * When: A Page with a advanced template has a content
+     * Should: Return the content's id
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void whenPageUseAdvanceTemplate() throws DotDataException, DotSecurityException {
+        final String uuid = ParseContainer.getDotParserContainerUUID("1");
+        final PageMode mode = PageMode.PREVIEW_MODE;
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().nextPersisted();
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+
+        final HttpServletRequest request = mockHttpServletRequest(mode);
+
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        final MultiTree multiTree = new MultiTreeDataGen()
+                .setContentlet(contentlet)
+                .setPage(htmlPageAsset)
+                .setContainer(container)
+                .setInstanceID(uuid)
+                .nextPersisted();
+
+        final PageRenderUtil pageRenderUtil = new PageRenderUtil(
+                htmlPageAsset,
+                APILocator.systemUser(),
+                mode,
+                1,
+                host
+        );
+
+        final Context velocityContext  = pageRenderUtil
+                .addAll(VelocityUtil.getInstance().getContext(request, response));
+
+        final ContainerWebAPI containerWebAPI = new ContainerWebAPI();
+        containerWebAPI.init(velocityContext);
+        final List<String> personalizedContentList =
+                containerWebAPI.getPersonalizedContentList(
+                        htmlPageAsset.getIdentifier(),
+                        container.getIdentifier(),
+                        uuid
+                );
+
+        assertEquals(1, personalizedContentList.size());
+        assertEquals(contentlet.getIdentifier(), personalizedContentList.get(0));
+    }
+
+    @NotNull
+    private HttpServletRequest mockHttpServletRequest(PageMode mode) {
+        final HttpSession session = mock(HttpSession.class);
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getSession()).thenReturn(session);
+        when(request.getSession(false)).thenReturn(session);
+        when(request.getSession(true)).thenReturn(session);
+        when(request.getParameter(com.dotmarketing.util.WebKeys.PAGE_MODE_PARAMETER)).thenReturn(mode.toString());
+        when(request.getAttribute(WebKeys.USER)).thenReturn(APILocator.systemUser());
+        return request;
+    }
+
+    /**
+     * Method to Test: {@link ContainerWebAPI#getPersonalizedContentList(String, String, String)}
+     * When: A Page with a not advanced template has a content
+     * Should: Return the content's id
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void whenPageUseNotAdvanceTemplate() throws DotDataException, DotSecurityException {
+        final String uuid = "1";
+        final PageMode mode = PageMode.PREVIEW_MODE;
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final TemplateLayout templateLayout = new TemplateLayoutDataGen()
+                .withContainer(container.getIdentifier())
+                .next();
+        final Template template = new TemplateDataGen()
+            .drawedBody(templateLayout)
+            .nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
+
+
+        final HttpServletRequest request = mockHttpServletRequest(mode);
+
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        final MultiTree multiTree = new MultiTreeDataGen()
+                .setContentlet(contentlet)
+                .setPage(htmlPageAsset)
+                .setContainer(container)
+                .setInstanceID(uuid)
+                .nextPersisted();
+
+        final PageRenderUtil pageRenderUtil = new PageRenderUtil(
+                htmlPageAsset,
+                APILocator.systemUser(),
+                mode,
+                1,
+                host
+        );
+
+        final Context velocityContext  = pageRenderUtil
+                .addAll(VelocityUtil.getInstance().getContext(request, response));
+
+        final ContainerWebAPI containerWebAPI = new ContainerWebAPI();
+        containerWebAPI.init(velocityContext);
+        final List<String> personalizedContentList =
+                containerWebAPI.getPersonalizedContentList(
+                        htmlPageAsset.getIdentifier(),
+                        container.getIdentifier(),
+                        uuid
+                );
+
+        assertEquals(1, personalizedContentList.size());
+        assertEquals(contentlet.getIdentifier(), personalizedContentList.get(0));
     }
 }

@@ -25,8 +25,8 @@ import com.dotcms.publisher.business.EndpointDetail;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
+import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.business.PublishQueueElement;
-import com.dotcms.publisher.business.PublisherAPIImpl;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.receiver.handler.IHandler;
 import com.dotcms.publishing.BundlerUtil;
@@ -60,6 +60,7 @@ import java.util.Map;
 import java.util.zip.GZIPInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.tools.tar.TarBuffer;
 
@@ -133,8 +134,9 @@ public class BundlePublisher extends Publisher {
             throw new RuntimeException( "need an enterprise license to run this" );
         }
 
+        boolean hasWarnings = false;
         String bundleName = config.getId();
-        String bundleFolder = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
+        String bundleID = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
         String bundlePath =
                 ConfigUtils.getBundlePath() + File.separator + BundlePublisherResource.MY_TEMP;
 
@@ -152,13 +154,13 @@ public class BundlePublisher extends Publisher {
             String endPointId = (String) currentStatusHistory.getEndpointsMap().keySet().toArray()[0];
             currentStatusHistory.addOrUpdateEndpoint(endPointId, endPointId, detail);
 
-            auditAPI.updatePublishAuditStatus(bundleFolder, PublishAuditStatus.Status.PUBLISHING_BUNDLE,
+            auditAPI.updatePublishAuditStatus(bundleID, PublishAuditStatus.Status.PUBLISHING_BUNDLE,
                 currentStatusHistory);
         } catch (Exception e) {
             Logger.error(BundlePublisher.class, "Unable to update audit table for bundle with ID '" + bundleName + "': " + e.getMessage(), e);
         }
 
-        File folderOut = new File(bundlePath + bundleFolder);
+        File folderOut = new File(bundlePath + bundleID);
         if(folderOut.exists()){
           FileUtil.deltree(folderOut);
         }
@@ -179,7 +181,7 @@ public class BundlePublisher extends Publisher {
 
         try {
             //Read the bundle to see what kind of configuration we need to apply
-            String finalBundlePath = ConfigUtils.getBundlePath() + File.separator + bundleFolder;
+            String finalBundlePath = ConfigUtils.getBundlePath() + File.separator + bundleID;
             File xml = new File(finalBundlePath + File.separator + "bundle.xml");
             PushPublisherConfig readConfig = (PushPublisherConfig) BundlerUtil.xmlToObject(xml);
 
@@ -201,6 +203,16 @@ public class BundlePublisher extends Publisher {
             // Execute the handlers
             for (IHandler handler : handlers) {
                 handler.handle(folderOut);
+
+                if (!handler.getWarnings().isEmpty()){
+                    detail.setStatus(Status.SUCCESS_WITH_WARNINGS.getCode());
+                    if (!hasWarnings) {
+                        detail.setInfo(StringUtils.join(handler.getWarnings(), "\n"));
+                    } else {
+                        detail.setInfo(detail.getInfo() + "\n" + StringUtils.join(handler.getWarnings(), "\n"));
+                    }
+                    hasWarnings = true;
+                }
             }
             HibernateUtil.commitTransaction();
         } catch (Exception e) {
@@ -208,9 +220,9 @@ public class BundlePublisher extends Publisher {
             try {
                 HibernateUtil.rollbackTransaction();
             } catch (DotHibernateException e1) {
-                Logger.error(PublisherAPIImpl.class, e.getMessage(), e1);
+                Logger.error(BundlePublisher.class, e.getMessage(), e1);
             }
-            Logger.error(PublisherAPIImpl.class, "Error publishing bundle with ID '" + bundleName + "': " + e.getMessage(), e);
+            Logger.error(BundlePublisher.class, "Error publishing bundle with ID '" + bundleName + "': " + e.getMessage(), e);
 
             //Update audit
             try {
@@ -222,7 +234,7 @@ public class BundlePublisher extends Publisher {
                 currentStatusHistory.setPublishEnd(new Date());
                 currentStatusHistory.setAssets(assetsDetails);
 
-                auditAPI.updatePublishAuditStatus(bundleFolder, PublishAuditStatus.Status.FAILED_TO_PUBLISH,
+                auditAPI.updatePublishAuditStatus(bundleID, PublishAuditStatus.Status.FAILED_TO_PUBLISH,
                         currentStatusHistory);
             } catch (DotPublisherException e1) {
                 throw new DotPublishingException("Cannot update audit of bundle with ID '" + bundleName + "': ", e);
@@ -234,13 +246,18 @@ public class BundlePublisher extends Publisher {
 
         try {
             //Update audit
-            detail.setStatus(PublishAuditStatus.Status.SUCCESS.getCode());
-            detail.setInfo("Everything ok");
+            if (!hasWarnings) {
+                detail.setStatus(PublishAuditStatus.Status.SUCCESS.getCode());
+                detail.setInfo("Everything ok");
+            }
             String endPointId = (String) currentStatusHistory.getEndpointsMap().keySet().toArray()[0];
             currentStatusHistory.addOrUpdateEndpoint(endPointId, endPointId, detail);
             currentStatusHistory.setPublishEnd(new Date());
             currentStatusHistory.setAssets(assetsDetails);
-            auditAPI.updatePublishAuditStatus(bundleFolder, PublishAuditStatus.Status.SUCCESS, currentStatusHistory);
+            auditAPI.updatePublishAuditStatus(bundleID,
+                    hasWarnings ? Status.SUCCESS_WITH_WARNINGS : PublishAuditStatus.Status.SUCCESS,
+                    currentStatusHistory);
+            config.setPublishAuditStatus(auditAPI.getPublishAuditStatus(bundleID));
         } catch (Exception e) {
             Logger.error(BundlePublisher.class, "Unable to update audit table for bundle with ID '" + bundleName + "': " + e.getMessage(), e);
         }
@@ -316,12 +333,12 @@ public class BundlePublisher extends Publisher {
                   SecurityLogger.logInfo(this.getClass(),  " Evil entry"  + entry );
                   throw new DotPublishingException("Bundle contains a symlink:" + fileOrDir);
                 }
-                
-                
-                
+
+                fileOrDir.getParentFile().mkdirs();
+
                 // write to file
                 byte[] buf = new byte[1024];
-                outputStream = Files.newOutputStream(Paths.get(pathWithoutName + entry.getName()));
+                outputStream = Files.newOutputStream(fileOrDir.toPath());
                 while ((bytesRead = inputStream.read(buf, 0, 1024)) > -1) {
                     outputStream.write(buf, 0, bytesRead);
                 }

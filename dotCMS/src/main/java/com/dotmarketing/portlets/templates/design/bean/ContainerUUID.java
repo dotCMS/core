@@ -16,14 +16,14 @@ public class ContainerUUID implements Serializable{
     public static final String UUID_DEFAULT_VALUE = "-1";
 
     private final String identifier;
-    private final String uuid;
+    private String uuid;
 
 
     public ContainerUUID(final @JsonProperty("identifier") String containerIdentifier,
-                         final @JsonProperty("uuid") String containerUUID) {
+                         final @JsonProperty("uuid") String containerIdOrPath) {
 
         this.identifier = containerIdentifier;
-        this.uuid = containerUUID == null ? UUID_DEFAULT_VALUE : containerUUID;
+        this.uuid = containerIdOrPath == null ? UUID_DEFAULT_VALUE : containerIdOrPath;
     }
 
     public String getIdentifier() {
@@ -41,5 +41,9 @@ public class ContainerUUID implements Serializable{
         } catch (JsonProcessingException e) {
             return super.toString();
         }
+    }
+
+    public void setUuid(final String uuid){
+        this.uuid = uuid;
     }
 }

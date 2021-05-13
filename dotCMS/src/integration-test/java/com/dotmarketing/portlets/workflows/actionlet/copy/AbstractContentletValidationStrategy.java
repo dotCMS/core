@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotcms.repackage.org.apache.commons.io.FilenameUtils;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import java.util.Date;
@@ -19,9 +20,10 @@ import org.apache.commons.lang.StringUtils;
 
 public abstract class AbstractContentletValidationStrategy {
 
-    private static final String SYSYEM = "system";
+    private static final String SYSTEM = "system";
 
-    public final void apply(final Contentlet original, final Contentlet copy) {
+    public final void apply(final Contentlet original, final Contentlet copy)
+            throws DotDataException {
         final Map<String, AssertionStrategy> assertionsMap = getAssertionsToApply();
         final Set<String> propertyNames = assertionsMap.keySet();
         for (final String propertyName : propertyNames) {
@@ -67,7 +69,7 @@ public abstract class AbstractContentletValidationStrategy {
         final String originalModUser = (String) original.get("modUser");
         final String copyModUser = (String) copy.get("modUser");
         assertEquals(copyModUser, "system");
-        if (!SYSYEM.equals(originalModUser)) {
+        if (!SYSTEM.equals(originalModUser)) {
             assertNotEquals("modUser", originalModUser, copyModUser);
         }
     };

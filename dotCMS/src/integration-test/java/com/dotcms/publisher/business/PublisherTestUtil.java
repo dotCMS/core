@@ -25,6 +25,7 @@ import com.dotcms.publishing.IBundler;
 import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -364,7 +365,6 @@ public class PublisherTestUtil {
         PublishStatus         publishStatus   = null;
 
         try {
-
             publishStatus = APILocator.getPublisherAPI().publish(publisherConfig);
         } catch (DotPublishingException e) {
 
@@ -495,9 +495,10 @@ public class PublisherTestUtil {
         }
 
         final File bundleRoot = BundlerUtil.getBundleRoot( pconf );
+        final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(pconf);
 
         // Run bundlers
-        BundlerUtil.writeBundleXML( pconf );
+        BundlerUtil.writeBundleXML( pconf, directoryBundleOutput);
         for ( final Class<IBundler> aClass : bundlers ) {
 
             final IBundler bundler = aClass.newInstance();
@@ -505,9 +506,10 @@ public class PublisherTestUtil {
             bundler.setConfig( pconf );
             bundler.setPublisher(publisher);
             final BundlerStatus bundlerStatus = new BundlerStatus( bundler.getClass().getName() );
+
             //Generate the bundler
             Logger.info(PublisherTestUtil.class, "Start of Bundler: " + aClass.getSimpleName());
-            bundler.generate( bundleRoot, bundlerStatus );
+            bundler.generate( directoryBundleOutput, bundlerStatus );
             Logger.info(PublisherTestUtil.class, "End of Bundler: " + aClass.getSimpleName());
         }
 

@@ -32,7 +32,7 @@ public class TestUserUtils {
 
     static final String ADMIN_DEFAULT_MAIL = "admin@dotcms.com";
     static final String ADMIN_NAME = "User Admin";
-    static final String ANONYMOUS_MAIL = "anonymous@dotcmsfakeemail.org";
+    static final String ANONYMOUS_MAIL = "anonymous@dotcms.anonymoususer";
 
     public static Role getOrCreatePublisherRole() throws DotDataException, DotSecurityException {
         return getOrCreatePublisherRole(APILocator.systemHost());
