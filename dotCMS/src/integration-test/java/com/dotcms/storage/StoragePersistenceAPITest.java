@@ -345,7 +345,6 @@ public class StoragePersistenceAPITest {
      * @throws IOException
      * @throws NoSuchAlgorithmException
      */
-    @Ignore //Ignored since it's failing on mySQL  with Packet for query is too large (4,194,425 > 4,194,304). You can change this value on the server by setting the 'max_allowed_packet' variable.
     @Test
     @UseDataProvider("getLargeFileTestCases")
     public void Test_Push_Large_File(final TestCase testCase)
