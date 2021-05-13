@@ -101,6 +101,7 @@ import static com.dotmarketing.util.NumberUtil.toLong;
 @Path("/content")
 public class ContentResource {
 
+    // set this only from an environmental variable so it cannot be overrriden in our Config class
     private final boolean USE_XSTREAM_FOR_DESERIALIZATION = System.getenv("USE_XSTREAM_FOR_DESERIALIZATION")!=null && "true".equals(System.getenv("USE_XSTREAM_FOR_DESERIALIZATION"));
 
     public static final String[] ignoreFields = {"disabledWYSIWYG", "lowIndexPriority"};
@@ -1546,6 +1547,7 @@ public class ContentResource {
                 }
             } else if (mediaType.equals(MediaType.APPLICATION_XML_TYPE) || name.equals("xml")) {
                 try {
+                    // github issue #20364
                     if(!USE_XSTREAM_FOR_DESERIALIZATION) {
                         SecurityLogger.logInfo(ContentResource.class, "Insecure XML PUT or Post Detected - possible vunerability probing");
                         throw new IllegalArgumentException("Unable to deserialize XML");
@@ -1708,6 +1710,7 @@ public class ContentResource {
                 processJSON(contentlet, request.getInputStream());
             } else if (request.getContentType().startsWith(MediaType.APPLICATION_XML)) {
                 try {
+                    // github issue #20364
                     if(!USE_XSTREAM_FOR_DESERIALIZATION) {
                         SecurityLogger.logInfo(ContentResource.class, "Insecure XML PUT or Post Detected - possible vunerability probing");
                         throw new IllegalArgumentException("Unable to deserialize XML");
