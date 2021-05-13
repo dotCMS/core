@@ -532,10 +532,7 @@ public class PushPublisher extends Publisher {
 	 * @return The REST {@link Client}.
 	 */
 	private Client getRestClient() {
-		if (null == this.restClient) {
-			this.restClient = RestClientBuilder.newClient();
-		}
-		return this.restClient;
+		return RestClientBuilder.newClient();
 	}
 
 	/**

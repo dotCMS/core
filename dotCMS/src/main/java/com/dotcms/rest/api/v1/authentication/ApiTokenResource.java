@@ -309,10 +309,7 @@ public class ApiTokenResource implements Serializable {
     }
 
     private Client getRestClient() {
-        if (null == this.restClient) {
-            this.restClient = RestClientBuilder.newClient();
-        }
-        return this.restClient;
+        return RestClientBuilder.newClient();
     }
 
     /**
