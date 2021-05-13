@@ -136,7 +136,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 	@SuppressWarnings("unchecked")
 	public Template findWorkingTemplateByName(String name, Host host) throws DotDataException {
-
+	    name = SQLUtil.sanitizeCondition(name);
 		DotConnect dc = new DotConnect();
 		dc.setSQL(templateWithNameSQL);
 		dc.addParam(host.getIdentifier());
@@ -156,9 +156,9 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 
 	@Override
-    public List<Template> findTemplates(final User user, final boolean includeArchived,
-            Map<String, Object> params, final String hostId, final String inode, String identifier, String parent,
-            int offset, int limit, final String orderByIncoming) throws DotSecurityException,
+	public List<Template> findTemplates(final User user, final boolean includeArchived,
+			Map<String, Object> params, final String hostId, final String inode, String identifier, String parent,
+			int offset, int limit, final String orderByIncoming) throws DotSecurityException,
 			DotDataException {
 
 
@@ -177,26 +177,26 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 		List<Object> paramValues =null;
 		if(params!=null && params.size()>0){
-            conditionBuffer.append(" and ( false ");
+			conditionBuffer.append(" and ( false ");
 			paramValues = new ArrayList<>();
 			for (Map.Entry<String, Object> entry : params.entrySet()) {
-					if(entry.getValue() instanceof String){
-						if(entry.getKey().equalsIgnoreCase("inode")){
+				if(entry.getValue() instanceof String){
+					if(entry.getKey().equalsIgnoreCase("inode")){
 						conditionBuffer.append(" OR asset.inode = ? ");
 						paramValues.add((String)entry.getValue());
-						}else{
-							conditionBuffer.append(" OR lower(asset.");
-							conditionBuffer.append(entry.getKey());
-							conditionBuffer.append(") like ? ");
-							paramValues.add("%"+ ((String)entry.getValue()).toLowerCase()+"%");
-						}
 					}else{
-						conditionBuffer.append(" OR asset.");
+						conditionBuffer.append(" OR lower(asset.");
 						conditionBuffer.append(entry.getKey());
+						conditionBuffer.append(") like ? ");
+						paramValues.add("%"+ ((String)entry.getValue()).toLowerCase()+"%");
+					}
+				}else{
+					conditionBuffer.append(" OR asset.");
+					conditionBuffer.append(entry.getKey());
                     conditionBuffer.append(" = ? ");
                     paramValues.add((String)entry.getValue());
-					}
 				}
+			}
 			conditionBuffer.append(" ) ");
 		}
 		DotConnect dc = new DotConnect();
@@ -232,8 +232,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			additionalParams.add(identifier);
 		}
 
-		String orderBy = SQLUtil.sanitizeSortBy(orderByIncoming) ;
-		orderBy = UtilMethods.isSet(orderBy) ? orderBy : "mod_date desc";
+		final String orderBy = UtilMethods.isSet(orderByIncoming) ? SQLUtil.sanitizeSortBy(orderByIncoming) : "mod_date desc";
 
 
 		List<Template> resultList;
