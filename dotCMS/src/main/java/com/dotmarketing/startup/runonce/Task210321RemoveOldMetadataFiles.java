@@ -106,9 +106,9 @@ public class Task210321RemoveOldMetadataFiles implements StartupTask {
                                         if (file.delete()) {
                                             if (file.getName().equals("metaData")) {
                                                 dirsCount.increment();
+                                                Logger.debug(Task210321RemoveOldMetadataFiles.class,
+                                                        "Removed metaData dir: " + file);
                                             }
-                                            Logger.debug(Task210321RemoveOldMetadataFiles.class,
-                                                    "Removed metaData dir: " + file);
                                         }
                                     });
                         }
