@@ -11,6 +11,7 @@ import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.CheckboxField;
 import com.dotcms.contenttype.model.field.ColumnField;
+import com.dotcms.contenttype.model.field.CustomField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FileField;
@@ -21,7 +22,9 @@ import com.dotcms.contenttype.model.field.MultiSelectField;
 import com.dotcms.contenttype.model.field.RelationshipsTabField;
 import com.dotcms.contenttype.model.field.RowField;
 import com.dotcms.contenttype.model.field.TagField;
+import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.graphql.ContentFields;
 import com.dotcms.graphql.CustomFieldType;
@@ -146,7 +149,6 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
     }
 
     private GraphQLObjectType createType(ContentType contentType) {
-
         DotPreconditions.checkArgument(contentType.variable()
                 .matches(TYPES_AND_FIELDS_VALID_NAME_REGEX),
                 "Content Type variable does not conform to naming rules",
@@ -184,7 +186,6 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                     Logger.error(this, "Unable to generate GraphQL Field for field: " + field.variable(), e);
                 }
             }
-
         });
 
         // add CONTENT interface fields
