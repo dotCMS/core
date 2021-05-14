@@ -62,20 +62,50 @@ final boolean hasAdminRole = user.isAdmin();
 
 	const overrideCheckbox = document.getElementById('override_logo');
 	const overrideDropZone = document.getElementById('override__drop-zone');
-	const logoDeleteButton = document.getElementById('logo--delete');
-	const dotAssetDropZoneMain = document.getElementById('dot-asset-drop-zone-main');
-
-	overrideCheckbox.addEventListener('change', toggleOverrideLogo)
-	logoDeleteButton.addEventListener('click', logoDelete)
+	const logoDeleteButtons = document.querySelectorAll('.logo--delete');
+	const dotAssetDropZones = document.getElementsByTagName('dot-asset-drop-zone');
+	
+	(function prepareEventListeners() {
+			overrideCheckbox.addEventListener('change', toggleOverrideLogo)
+			logoDeleteButtons.forEach(elem => elem.addEventListener('click', logoDelete))
+			Array.from(dotAssetDropZones).forEach(elem => elem.addEventListener('uploadComplete', uploadComplete))
+	})()
 
 	function toggleOverrideLogo(e) {
     const isChecked = e.target.checked;
 		overrideDropZone.style.display = isChecked ? 'block' : 'none'
-}
+	}
 
-function logoDelete(event, b) {
-	event.target.parentElement.remove();
-	dotAssetDropZoneMain.style.display = 'block'
+	function logoDelete(event, b) {
+		const logoContainer = event.target.parentElement
+		logoContainer.style.display = 'none'
+		const logo = logoContainer.querySelector('img').remove()
+		logoContainer.nextElementSibling.style.display = 'block'
+	}
+
+	function uploadComplete(e) {
+		// Grab the dropzone element
+		const dropZone = e.target;
+
+		// create a new logo element to append it later
+		const logo = document.createElement('img');
+
+		// details from the dotAssets upload event
+		const [details] = e.detail;
+		
+		// Once we reveived a response add the image URL to the src attribute
+
+		logo.src = details.asset;
+		logo.style.maxWidth = '200px';
+		logo.style.width = '100%';
+
+		// Grab the previous sibling and append the loo
+		dropZone.previousElementSibling.querySelector('.logo__container').append(logo);
+		dropZone.previousElementSibling.querySelector('.logo__container').style.backgroundColor = dojo.byId("bgColor").value
+
+		// Reset our values
+		dropZone.style.display = 'none';
+		dropZone.previousElementSibling.style.display = 'block';
 }
 
 </script>
@@ -261,30 +291,52 @@ function logoDelete(event, b) {
 					</table>
 				</div>
 			</div>
-			  <div style="margin-left: 10rem;">
-						<h3 style="font-weight: normal; margin-bottom: 1rem;">Login Screen Logo</h3>
-            <div style="position: relative; max-width: 200px;">
-							<button style="position: absolute; right: 0;" id="logo--delete">delete</button>
-							<img style="max-width: 200px;" border="1" hspace="0" src="<%= IMAGE_PATH %>/company_logo?img_id=<%= company.getCompanyId() %>&key=<%= ImageKey.get(company.getCompanyId()) %>" vspace="0">
-						</div>
-						<dot-asset-drop-zone id="dot-asset-drop-zone-main" style="display: none;" drop-files-text="Drop Image" upload-file-text="Uploading Image..." display-indicator="true"></dot-asset-drop-zone>
-						<p style="margin-top: 1rem; color: grey;">This is the logo used for the site lorem ipsum dolor sit amet
-hello world.</p> <br>
-							
-							<div style="margin-top: 2rem;">
-								<label for="override_logo">
-								<input type="checkbox" name="override" id="override_logo">
-								Overrider Navbar Logo
-							</label> <br>
-							<p style="margin-top: 1rem; color: grey;">If you want to override the main logo check this option and
-upload an image lorem ipsum.</p>
-								<div id="override__drop-zone" style="display: none;">
-									<h3 style="font-weight: normal; margin-bottom: 1rem;">Navbar Logo</h3>
-								<dot-asset-drop-zone id="dot-asset-drop-zone" drop-files-text="Drop Image" upload-file-text="Uploading Image..." display-indicator="true"></dot-asset-drop-zone>
-								<p style="margin-top: 1rem; color: grey;">The image must be 300x300 px lorem ipsum dolor sit amet</p>
-								</div><!-- /.override__drop-zone -->
-							</div>
-        </div>
+
+
+
+
+
+
+								<div style="margin-left: 10rem;">
+										<h3 style="font-weight: normal; margin-bottom: 1rem;">Login Screen Logo</h3>
+										<div style="position: relative; max-width: 200px;">
+												<button style="position: absolute; right: 0;" class="logo--delete">delete</button>
+												<div class="logo__container" style="width: 200px; padding: 1rem; height: 62px; border: 1px solid lightgray; border-radius: 2px;">
+														<img class="login-logo" style="max-width: 200px; width: 100%;" border="1" hspace="0" src="<%= IMAGE_PATH %>/company_logo?img_id=<%= company.getCompanyId() %>&key=<%= ImageKey.get(company.getCompanyId()) %>" vspace="0" />
+												</div>
+										</div>
+										<dot-asset-drop-zone id="dot-asset-drop-zone-main" style="display: none;" drop-files-text="Drop Image" upload-file-text="Uploading Image..." display-indicator="true"></dot-asset-drop-zone>
+										<p style="margin-top: 1rem; color: grey;">This is the logo used for the site lorem ipsum dolor sit amet hello world.</p>
+										<br />
+
+										<div style="margin-top: 2rem;">
+												<label for="override_logo">
+														<input type="checkbox" name="override" id="override_logo" />
+														Override Navbar Logo
+												</label>
+												<br />
+												<p style="margin-top: 1rem; color: grey;">If you want to override the main logo check this option and upload an image lorem ipsum.</p>
+
+												<div id="override__drop-zone" style="display: none;">
+														<h3 style="font-weight: normal; margin-bottom: 1rem;">Navbar Logo</h3>
+														<div style="position: relative; max-width: 200px;">
+																<button style="position: absolute; right: 0;" class="logo--delete">delete</button>
+																<div class="logo__container" style="width: 200px; padding: 1rem; height: 62px; border: 1px solid lightgray; border-radius: 2px;">
+																		<img class="login-logo" style="max-width: 200px;" border="1" hspace="0" src="<%= IMAGE_PATH %>/company_logo?img_id=<%= company.getCompanyId() %>&key=<%= ImageKey.get(company.getCompanyId()) %>" vspace="0" />
+																</div>
+														</div>
+														<dot-asset-drop-zone style="display: none;" id="dot-asset-drop-zone-navbar" drop-files-text="Drop Image" upload-file-text="Uploading Image..." display-indicator="true"></dot-asset-drop-zone>
+														<p style="margin-top: 1rem; color: grey;">The image must be 300x300 px lorem ipsum dolor sit amet</p>
+												</div>
+												
+												<!-- /.override__drop-zone -->
+										</div>
+								</div>
+
+
+
+			  
+			
         </td>
         <!-- <td valign="top">
             <img style="max-width: 300px;" border="1" hspace="0" src="<%= IMAGE_PATH %>/company_logo?img_id=<%= company.getCompanyId() %>&key=<%= ImageKey.get(company.getCompanyId()) %>" vspace="0"><br>
