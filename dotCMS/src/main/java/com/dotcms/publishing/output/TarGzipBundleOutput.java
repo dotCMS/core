@@ -79,14 +79,31 @@ public class TarGzipBundleOutput extends BundleOutput {
 
     }
 
+    @Override
+    public void innerCopyFile(final File source, final String destinationPath) throws IOException {
+        synchronized (tarArchiveOutputStream) {
+            try {
+                final TarArchiveEntry tarArchiveEntry = new TarArchiveEntry(destinationPath);
+                tarArchiveEntry.setSize(source.length());
+
+                tarArchiveOutputStream.putArchiveEntry(tarArchiveEntry);
+                IOUtils.copy(new FileInputStream(source), tarArchiveOutputStream);
+            } finally {
+                tarArchiveOutputStream.closeArchiveEntry();
+            }
+        }
+    }
+
     public void mkdirs(final String path) {
         final TarArchiveEntry tarArchiveEntry = new TarArchiveEntry(path);
 
-        try {
-            tarArchiveOutputStream.putArchiveEntry(tarArchiveEntry);
-            tarArchiveOutputStream.closeArchiveEntry();
-        } catch (IOException e) {
-            throw new DotRuntimeException(e);
+        synchronized (tarArchiveOutputStream) {
+            try {
+                tarArchiveOutputStream.putArchiveEntry(tarArchiveEntry);
+                tarArchiveOutputStream.closeArchiveEntry();
+            } catch (IOException e) {
+                throw new DotRuntimeException(e);
+            }
         }
     }
 
