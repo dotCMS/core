@@ -792,8 +792,8 @@ public class SiteResource implements Serializable {
             }
         }
 
-        newSite.setIdentifier(null);
-        newSite.setInode(null);
+        newSite.setIdentifier(newSiteForm.getIdentifier());
+        newSite.setInode(newSiteForm.getInode());
 
         if (UtilMethods.isSet(newSiteForm.getAliases())) {
             newSite.setAliases(newSiteForm.getAliases());
