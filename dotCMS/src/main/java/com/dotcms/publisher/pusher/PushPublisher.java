@@ -140,6 +140,9 @@ public class PushPublisher extends Publisher {
 			throw new RuntimeException("An Enterprise Pro License is required to run this publisher.");
 		}
 		PublishAuditHistory currentStatusHistory = null;
+
+		Client client = getRestClient();
+
 		try {
 			//Compressing bundle
 			File bundleRoot = BundlerUtil.getBundleRoot(this.config.getName(), false);
@@ -158,7 +161,6 @@ public class PushPublisher extends Publisher {
 
 			List<Environment> environments = APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(this.config.getId());
 
-			Client client = getRestClient();
 			client.property(ClientProperties.REQUEST_ENTITY_PROCESSING, "CHUNKED");
 			client.property(ClientProperties.CHUNKED_ENCODING_SIZE, 1024);
 
@@ -338,6 +340,8 @@ public class PushPublisher extends Publisher {
 			}
 			Logger.error(this.getClass(), e.getMessage(), e);
 			throw new DotPublishingException(e.getMessage(),e);
+		} finally {
+			client.close();
 		}
 	}
 

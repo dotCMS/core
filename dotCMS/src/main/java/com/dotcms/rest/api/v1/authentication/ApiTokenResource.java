@@ -265,18 +265,19 @@ public class ApiTokenResource implements Serializable {
         }
 
         final String protocol = formData.protocol();
+        final String remoteURL = String.format("%s://%s:%d/api/v1/apitoken", protocol, formData.host(), formData.port());
         final Client client = getRestClient();
 
-        final String remoteURL = String.format("%s://%s:%d/api/v1/apitoken", protocol, formData.host(), formData.port());
-        final WebTarget webTarget = client.target(remoteURL);
-
-        String password = "";
-
-        if (UtilMethods.isSet(formData.password())) {
-            password = Base64.decodeAsString(formData.password());
-        }
-
         try {
+
+            final WebTarget webTarget = client.target(remoteURL);
+
+            String password = "";
+
+            if (UtilMethods.isSet(formData.password())) {
+                password = Base64.decodeAsString(formData.password());
+            }
+
             final Response response = webTarget.request(MediaType.APPLICATION_JSON)
                     .header("Authorization", "Basic " + Base64.encodeAsString(formData.login() + ":" + password))
                     .post(Entity.entity(formData.getTokenInfo(), MediaType.APPLICATION_JSON));
@@ -304,6 +305,8 @@ public class ApiTokenResource implements Serializable {
             } else {
                 throw e;
             }
+        } finally {
+            client.close();
         }
     }
 
