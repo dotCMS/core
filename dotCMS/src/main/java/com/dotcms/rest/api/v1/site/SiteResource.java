@@ -844,6 +844,117 @@ public class SiteResource implements Serializable {
     }
 
     /**
+     * Updates a site
+     * @param httpServletRequest
+     * @param httpServletResponse
+     * @param newSiteForm
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws PortalException
+     * @throws SystemException
+     * @throws ParseException
+     * @throws SchedulerException
+     * @throws ClassNotFoundException
+     */
+    @PUT
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response updateSite(@Context final HttpServletRequest httpServletRequest,
+                                  @Context final HttpServletResponse httpServletResponse,
+                                  @QueryParam("id") final String  siteIdentifier,
+                                  final SiteForm newSiteForm)
+            throws DotDataException, DotSecurityException, PortalException, SystemException, ParseException, SchedulerException, ClassNotFoundException {
+
+        final User user = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(httpServletRequest, httpServletResponse)
+                .requiredBackendUser(true)
+                .rejectWhenNoUser(true)
+                .requireLicense(true)
+                .init().getUser();
+
+        if (!UtilMethods.isSet(siteIdentifier)) {
+
+            throw new IllegalArgumentException("The id query string parameter can not be null");
+        }
+
+        final Host site = siteHelper.getSite(user, siteIdentifier);
+
+        if (null == site) {
+
+            throw new IllegalArgumentException("Site: " + siteIdentifier + " does not exists");
+        }
+
+        final PageMode      pageMode      = PageMode.get(httpServletRequest);
+        final TempFileAPI tempFileAPI = APILocator.getTempFileAPI();
+
+        if (UtilMethods.isNotSet(newSiteForm.getSiteName())) {
+
+            throw new IllegalArgumentException("siteName can not be Null");
+        }
+
+        Logger.debug(this, ()->"Updating the site: " + siteIdentifier +
+                ", with: " + newSiteForm);
+        site.setHostname(newSiteForm.getSiteName());
+        if (UtilMethods.isSet(newSiteForm.getSiteThumbnail())) {
+
+            final Optional<DotTempFile> dotTempFileOpt = tempFileAPI.getTempFile(httpServletRequest, newSiteForm.getSiteThumbnail());
+            if (dotTempFileOpt.isPresent()) {
+                site.setHostThumbnail(dotTempFileOpt.get().file);
+            }
+        }
+
+
+        if (UtilMethods.isSet(newSiteForm.getAliases())) {
+            site.setAliases(newSiteForm.getAliases());
+        }
+
+        if (UtilMethods.isSet(newSiteForm.getTagStorage())) {
+            site.setTagStorage(newSiteForm.getTagStorage());
+        }
+
+        site.setProperty("runDashboard", newSiteForm.isRunDashboard());
+        if (UtilMethods.isSet(newSiteForm.getKeywords())) {
+            site.setProperty("keywords", newSiteForm.getKeywords());
+        }
+
+        if (UtilMethods.isSet(newSiteForm.getDescription())) {
+            site.setProperty("description", newSiteForm.getDescription());
+        }
+
+        if (UtilMethods.isSet(newSiteForm.getGoogleMap())) {
+            site.setProperty("googleMap", newSiteForm.getGoogleMap());
+        }
+
+        if (UtilMethods.isSet(newSiteForm.getGoogleAnalytics())) {
+            site.setProperty("googleAnalytics", newSiteForm.getGoogleAnalytics());
+        }
+
+        if (UtilMethods.isSet(newSiteForm.getAddThis())) {
+            site.setProperty("addThis", newSiteForm.getAddThis());
+        }
+
+        if (UtilMethods.isSet(newSiteForm.getProxyUrlForEditMode())) {
+            site.setProperty("proxyEditModeUrl", newSiteForm.getProxyUrlForEditMode());
+        }
+
+        if (UtilMethods.isSet(newSiteForm.getEmbeddedDashboard())) {
+            site.setProperty("embeddedDashboard", newSiteForm.getEmbeddedDashboard());
+        }
+
+        final long languageId = 0 == newSiteForm.getLanguageId()?
+                APILocator.getLanguageAPI().getDefaultLanguage().getId(): site.getLanguageId();
+
+        site.setLanguageId(languageId);
+
+        Logger.debug(this, ()-> "Creating new Host: " + newSiteForm);
+
+        return Response.ok(new ResponseEntityView(
+                this.toView(this.siteHelper.save(site, user, pageMode.respectAnonPerms)))).build();
+    }
+
+    /**
      * Copy a site
      * - Creates a new site,
      * - Copies the assets based on the copy options
