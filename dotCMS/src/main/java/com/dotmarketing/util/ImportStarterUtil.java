@@ -310,9 +310,19 @@ public class ImportStarterUtil {
             final long defaultLangId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
             if(defaultLangId!=1) {
                 Logger.info(this,"Updating contentlets to the new default language");
-                new DotConnect()
-                        .setSQL("update contentlet set language_id = ? where language_id = 1 and identifier not in (select identifier from contentlet where language_id = ?)")
-                        .addParam(defaultLangId).addParam(defaultLangId).loadResult();
+                if (DbConnectionFactory.isMySql()) {
+                    new DotConnect()
+                            .setSQL("update contentlet set language_id = ? where language_id = 1 and"
+                                    + " identifier not in (select * from (select identifier from "
+                                    + "contentlet where language_id = ?) as id)")
+                            .addParam(defaultLangId).addParam(defaultLangId).loadResult();
+                } else {
+                    new DotConnect()
+                            .setSQL("update contentlet set language_id = ? where language_id = 1 and"
+                                    + " identifier not in (select identifier from contentlet "
+                                    + "where language_id = ?)")
+                            .addParam(defaultLangId).addParam(defaultLangId).loadResult();
+                }
             }
         }
 
@@ -361,9 +371,19 @@ public class ImportStarterUtil {
                 final long defaultLangId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
                 if (defaultLangId != 1) {
                     Logger.info(this, "Updating contentlet_version_info to the new default language");
-                    new DotConnect()
-                            .setSQL("update contentlet_version_info set lang = ? where lang = 1 and identifier not in (select identifier from contentlet_version_info where lang = ?)")
-                            .addParam(defaultLangId).addParam(defaultLangId).loadResult();
+                    if (DbConnectionFactory.isMySql()) {
+                        new DotConnect()
+                                .setSQL("update contentlet_version_info set lang = ? where lang = 1 "
+                                        + "and identifier not in (select * from (select identifier "
+                                        + "from contentlet_version_info where lang = ?) as id)")
+                                .addParam(defaultLangId).addParam(defaultLangId).loadResult();
+                    } else {
+                        new DotConnect()
+                                .setSQL("update contentlet_version_info set lang = ? where lang = 1 "
+                                        + "and identifier not in (select identifier from "
+                                        + "contentlet_version_info where lang = ?)")
+                                .addParam(defaultLangId).addParam(defaultLangId).loadResult();
+                    }
                 }
             }
 
@@ -378,8 +398,16 @@ public class ImportStarterUtil {
             final long defaultLangId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
             if (defaultLangId != 1) {
                 Logger.info(this, "Updating workflow_task to the new default language");
-                new DotConnect().setSQL("update workflow_task set language_id = ? where language_id = 1 and webasset not in (select webasset from workflow_task where language_id = ?)")
-                        .addParam(defaultLangId).addParam(defaultLangId).loadResult();
+                if (DbConnectionFactory.isMySql()) {
+                    new DotConnect().setSQL("update workflow_task set language_id = ? where language_id = 1 "
+                            + "and webasset not in (select * from (select webasset "
+                            + "from workflow_task where language_id = ?) as id)")
+                            .addParam(defaultLangId).addParam(defaultLangId).loadResult();
+                } else {
+                    new DotConnect().setSQL("update workflow_task set language_id = ? where language_id = 1 "
+                            + "and webasset not in (select webasset from workflow_task where language_id = ?)")
+                            .addParam(defaultLangId).addParam(defaultLangId).loadResult();
+                }
             }
         }
         for (File file : contains("com.dotmarketing.portlets.workflows.model.WorkflowHistory_")) {
