@@ -73,14 +73,14 @@ public class Task210321RemoveOldMetadataFiles implements StartupTask {
                             .collect(Collectors.toSet());
                     for (final Path current:paths) {
 
-                        Logger.info(Task210321RemoveOldMetadataFiles.class,"current dir: "+current);
+                        Logger.debug(Task210321RemoveOldMetadataFiles.class,"current dir: "+current);
 
                         final Set<Path> metadataFiles = Files.list(current)
                         .filter(path -> !Files.isDirectory(path))
                         .filter(path -> path.getFileName().toString().toLowerCase().endsWith("-metadata.json")).collect(Collectors.toSet());
 
                         for (final Path metadataFile : metadataFiles) {
-                            Logger.info(Task210321RemoveOldMetadataFiles.class,"Removing metadata file: " + metadataFile.toString());
+                            Logger.debug(Task210321RemoveOldMetadataFiles.class,"Removing metadata file: " + metadataFile.toString());
                             if (metadataFile.toFile().delete()) {
                                 filesCount.increment();
                             }
@@ -93,7 +93,7 @@ public class Task210321RemoveOldMetadataFiles implements StartupTask {
                         metaDataDir.ifPresent(path -> {
                             if(path.toFile().delete()){
                                 dirsCount.increment();
-                                Logger.info(Task210321RemoveOldMetadataFiles.class,"Removed metaData dir: " + path);
+                                Logger.debug(Task210321RemoveOldMetadataFiles.class,"Removed metaData dir: " + path);
                             }
                         });
                     }

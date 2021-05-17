@@ -16,7 +16,7 @@ public class EsReadOnlyMonitorJob implements StatefulJob {
     public void execute(final JobExecutionContext jobExecutionContext) throws JobExecutionException {
 
         final ElasticReadOnlyCommand command = ElasticReadOnlyCommand.getInstance();
-        Logger.info(this, "Running the EsReadOnlyMonitorJob...");
+        Logger.debug(this, ()->"Running the EsReadOnlyMonitorJob...");
         command.executeCheck();
     }
 }

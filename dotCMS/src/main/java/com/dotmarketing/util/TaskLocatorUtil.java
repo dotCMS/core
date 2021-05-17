@@ -296,6 +296,7 @@ public class TaskLocatorUtil {
 		.add(Task210316UpdateLayoutIcons.class)
         .add(Task210319CreateStorageTable.class)
 		.add(Task210321RemoveOldMetadataFiles.class)
+        .add(Task210506UpdateStorageTable.class)
         .build();
         
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());

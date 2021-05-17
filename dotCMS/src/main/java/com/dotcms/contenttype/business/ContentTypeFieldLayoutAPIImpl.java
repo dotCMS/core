@@ -2,17 +2,17 @@ package com.dotcms.contenttype.business;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.RelationshipFieldBuilder;
 import com.dotcms.contenttype.model.field.layout.FieldLayout;
 import com.dotcms.contenttype.model.field.layout.FieldUtil;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
 
-import javax.ws.rs.core.Response;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -100,8 +100,8 @@ public class ContentTypeFieldLayoutAPIImpl implements ContentTypeFieldLayoutAPI 
 
         final FieldLayout fieldLayout = new FieldLayout(contentType);
         this.deleteUnecessaryLayoutFields(fieldLayout, user);
-
-        fieldAPI.saveFields(newFieldLayout.getFields(), user);
+        final List<Field> fields = addSkipForRelationshipCreation(newFieldLayout.getFields());
+        fieldAPI.saveFields(fields, user);
 
         final ContentType contentTypeFfromDB = APILocator.getContentTypeAPI(user).find(contentType.id());
         return new FieldLayout(contentTypeFfromDB);
@@ -154,6 +154,19 @@ public class ContentTypeFieldLayoutAPIImpl implements ContentTypeFieldLayoutAPI 
         return new DeleteFieldResult(fieldLayoutUpdated, deletedIds);
     }
 
+    /**
+     * Analyzes the field layout for the field that is being updated or deleted in order to check if it also needs to be
+     * fixed. Layout inconsistencies include, for example: Having more than the allowed number of columns, invalid or
+     * missing Row or Column fields, among others.
+     *
+     * @param contentType The {@link ContentType} whose field layout will be validated.
+     * @param user        The {@link User} performing this action.
+     *
+     * @return
+     *
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The specified user doesn't have the required permissions to perform this action.
+     */
     private FieldLayout fixLayoutIfNecessary(final ContentType contentType, final User user)
             throws DotDataException, DotSecurityException {
 
@@ -174,14 +187,54 @@ public class ContentTypeFieldLayoutAPIImpl implements ContentTypeFieldLayoutAPI 
                 .findFirst();
     }
 
+    /**
+     * If the current field layout of a Content Type is not valid, this method takes care of updating the required
+     * values and structures to fix that. For more information about valid layouts, please see the Javadoc for the
+     * {@link FieldLayout} class.
+     *
+     * @param fieldLayout The {@link FieldLayout} for a given Content Type.
+     * @param user        The {@link User} performing this action.
+     *
+     * @throws DotSecurityException The specified user doesn't have the required permissions to perform this action.
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     */
     private void fixLayout(final FieldLayout fieldLayout, final User user)
             throws DotSecurityException, DotDataException {
-
         deleteUnecessaryLayoutFields(fieldLayout, user);
-
-        fieldAPI.saveFields(fieldLayout.getLayoutFieldsToCreateOrUpdate(), user);
+        final List<Field> fields = addSkipForRelationshipCreation(fieldLayout.getLayoutFieldsToCreateOrUpdate());
+        fieldAPI.saveFields(fields, user);
     }
 
+    /**
+     * Finds any Relationship field in the list of {@link Field} objects, and changes its setting to skip the creation
+     * of the Relationship, which is not necessary at all when fixing/adjusting the field layout. Such an operation is
+     * executed when fields are moved or deleted from a Content Type, where creating/re-creating a relationship is NOT
+     * necessary at all.
+     *
+     * @param layoutFields The list of Fields that will be updated.
+     *
+     * @return The updated list of Fields, with the appropriate setting for Relationship fields.
+     */
+    private List<Field> addSkipForRelationshipCreation(final List<Field> layoutFields) {
+        return layoutFields.stream()
+                .map(field -> {
+                    if (field instanceof RelationshipField) {
+                        return RelationshipFieldBuilder.builder(field).skipRelationshipCreation(true).build();
+                    }
+                    return field;
+                }).collect(Collectors.toList());
+    }
+
+    /**
+     * Based on the field layout validation process, the unnecessary fields in a Content Type are deleted altogether, if
+     * any.
+     *
+     * @param fieldLayout The {@link FieldLayout} containing potential fields that need to be deleted.
+     * @param user        The {@link User} performing this action.
+     *
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The specified user doesn't have the required permissions to perform this action.
+     */
     private void deleteUnecessaryLayoutFields(final FieldLayout fieldLayout, final User user)
             throws DotDataException, DotSecurityException {
 
