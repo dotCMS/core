@@ -153,6 +153,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 		Language language = getLanguage (Config.getStringProperty("DEFAULT_LANGUAGE_CODE", "en"), Config.getStringProperty("DEFAULT_LANGUAGE_COUNTRY_CODE","US"));
 		//If the default language does not exist, create it
 		if(!UtilMethods.isSet(language)) {
+			Logger.info(this,"Creating Default Language");
 			language = new Language();
 			language.setCountry(
 					Config.getStringProperty("DEFAULT_LANGUAGE_COUNTRY", "United States"));

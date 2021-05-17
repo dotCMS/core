@@ -307,6 +307,13 @@ public class ImportStarterUtil {
         // We have all identifiers, structures and users. Ready to import contentlets!
         for (File file : contains(Contentlet.class.getCanonicalName() + "_")) {
             doXMLFileImport(file);
+            final long defaultLangId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+            if(defaultLangId!=1) {
+                Logger.info(this,"Updating contentlets to the new default language");
+                new DotConnect()
+                        .setSQL("update contentlet set language_id = ? where language_id = 1 and identifier not in (select identifier from contentlet where language_id = ?)")
+                        .addParam(defaultLangId).addParam(defaultLangId).loadResult();
+            }
         }
 
 
@@ -349,8 +356,16 @@ public class ImportStarterUtil {
 
         // finally as all assets are loaded we can import versionInfo files
         for (File file : contains("VersionInfo_")) {
-
             doXMLFileImport(file);
+            if(file.getName().contains("ContentletVersionInfo")) {
+                final long defaultLangId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+                if (defaultLangId != 1) {
+                    Logger.info(this, "Updating contentlet_version_info to the new default language");
+                    new DotConnect()
+                            .setSQL("update contentlet_version_info set lang = ? where lang = 1 and identifier not in (select identifier from contentlet_version_info where lang = ?)")
+                            .addParam(defaultLangId).addParam(defaultLangId).loadResult();
+                }
+            }
 
         }
         // We install rules after Version info.
@@ -360,6 +375,12 @@ public class ImportStarterUtil {
 
         for (File file : contains("com.dotmarketing.portlets.workflows.model.WorkflowTask_")) {
             doXMLFileImport(file);
+            final long defaultLangId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+            if (defaultLangId != 1) {
+                Logger.info(this, "Updating workflow_task to the new default language");
+                new DotConnect().setSQL("update workflow_task set language_id = ? where language_id = 1 and webasset not in (select webasset from workflow_task where language_id = ?)")
+                        .addParam(defaultLangId).addParam(defaultLangId).loadResult();
+            }
         }
         for (File file : contains("com.dotmarketing.portlets.workflows.model.WorkflowHistory_")) {
             doXMLFileImport(file);
