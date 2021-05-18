@@ -343,7 +343,7 @@ enum FactoryIndex
             case SERVER_ACTION_FACTORY: return new ServerActionFactoryImplProxy();
             case RULES_FACTORY: return new RulesFactoryProxy();
             case PERSONA_FACTORY: return new PersonaFactoryImpl();
-            case RELATIONSHIP_FACTORY: return new RelationshipFactoryImpl();
+            case RELATIONSHIP_FACTORY: return RelationshipFactoryImpl.instance();
             case TAG_FACTORY: return new TagFactoryImpl();
             case FileAsset_Factory: return new FileAssetFactoryImpl();
 		}

@@ -258,7 +258,7 @@ public class StructuresWebAPI implements ViewTool {
 	 * @throws DotDataException 
 	 */
 	public List<Relationship> getStructureRelationShips(Structure st) throws DotDataException{
-		return FactoryLocator.getRelationshipFactory().byContentType(st);
+		return APILocator.getRelationshipAPI().byContentType(st);
 	}
 
 	public boolean isFieldConstant(Field field){
