@@ -138,7 +138,7 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         // let's log if we are including dupe types
         final Map<String, ContentType> localTypesMap = new HashMap<>();
         allTypes.forEach((type)-> {
-            if(localTypesMap.get(type.variable())!=null) {
+            if(localTypesMap.containsKey(type.variable())) {
                 Logger.warn(this, "Dupe Content Type detected!: " + type.variable());
             }
             localTypesMap.put(type.variable(), type);

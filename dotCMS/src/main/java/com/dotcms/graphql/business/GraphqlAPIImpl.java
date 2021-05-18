@@ -6,6 +6,7 @@ import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLList.list;
 import static graphql.schema.GraphQLNonNull.nonNull;
 import static graphql.schema.GraphQLObjectType.newObject;
+
 import com.dotcms.concurrent.Debouncer;
 import com.dotcms.graphql.InterfaceType;
 import com.dotcms.graphql.datafetcher.ContentletDataFetcher;
@@ -27,7 +28,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -150,7 +150,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         // let's log if we are including dupe types
         final Map<String, GraphQLType> localTypesMap = new HashMap<>();
         graphQLTypes.forEach((type)-> {
-            if(localTypesMap.get(type.getName())!=null) {
+            if(localTypesMap.containsKey(type.getName())) {
                 Logger.warn(this, "Dupe GraphQLType detected!: " + type.getName());
                 // removing dupes based on Config property
                 if(Config.getBooleanProperty("GRAPHQL_REMOVE_DUPLICATED_TYPES", false)) {
