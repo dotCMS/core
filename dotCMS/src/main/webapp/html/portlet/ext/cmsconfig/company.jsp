@@ -89,9 +89,6 @@
 		logoContainer.nextElementSibling.style.display = "block";
 	}
 
-	// TODO: Add variable to pass to endpoint
-	// TODO: Add to hidden input
-
 	function uploadComplete(e) {
 		// Grab the dropzone element
 		const dropZone = e.target;
@@ -362,7 +359,7 @@
             </div>
             <dot-asset-drop-zone id="dot-asset-drop-zone-main" style="display: none;" drop-files-text="Drop Image" upload-file-text="Uploading Image..." display-indicator="true"></dot-asset-drop-zone>
             <input type="hidden" name="loginScreenLogoInput" id="loginScreenLogoInput" value="">	
-            <p style="margin-top: 1rem; color: grey;">This is the logo used for the site lorem ipsum dolor sit amet hello world.</p>
+            <p style="margin-top: 1rem; color: grey;">This is the logo used for the login screen and communications (e.g. emails, etc)</p>
             <br />
             <div style="margin-top: 2rem;">
                <label for="topNav_logo">
@@ -370,7 +367,7 @@
                Override Navbar Logo
                </label>
                <br />
-               <p style="margin-top: 1rem; color: grey;">If you want to override the main logo check this option and upload an image lorem ipsum.</p>
+               <p style="margin-top: 1rem; color: grey;">If you want to override DotCMS' Nav Bar logo check this option and upload a new image</p>
                <div id="topNav__drop-zone" style="display: none;">
                   <h3 style="font-weight: normal; margin-bottom: 1rem;">Navbar Logo</h3>
                   <div class="logo">
@@ -381,7 +378,7 @@
                   </div>
                   <dot-asset-drop-zone style="display: none;" id="dot-asset-drop-zone-navbar" drop-files-text="Drop Image" upload-file-text="Uploading Image..." display-indicator="true"></dot-asset-drop-zone>
                   <input type="hidden" name="topNavLogoInput" id="topNavLogoInput" value="">	
-                  <p style="margin-top: 1rem; color: grey;">The image must be 300x300 px lorem ipsum dolor sit amet</p>
+                  <p style="margin-top: 1rem; color: grey;">Make sure the image is 258px wide and 48px tall</p>
                </div>
             </div>
          </div>
