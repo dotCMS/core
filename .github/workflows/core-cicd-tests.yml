@@ -11,7 +11,9 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-18.04
     env:
-      DOT_CICD_BRANCH: 20088-automated-vulnerability-scan
+      DOT_CICD_BRANCH: 20246-move-dotcms-image-to-core
+      DOT_CICD_CLOUD_PROVIDER: github
+      DOT_CICD_TARGET: core
       EXPORT_REPORTS: true
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
@@ -59,8 +61,9 @@ jobs:
     name: Curl Tests
     runs-on: ubuntu-18.04
     env:
-      DOT_CICD_BRANCH: 20088-automated-vulnerability-scan
-      DOCKER_BRANCH: 20088-automated-vulnerability-scan
+      DOT_CICD_BRANCH: 20246-move-dotcms-image-to-core
+      DOT_CICD_CLOUD_PROVIDER: github
+      DOT_CICD_TARGET: core
       EXPORT_REPORTS: true
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
@@ -106,6 +109,11 @@ jobs:
           else
             echo "jobRun=false" >> $GITHUB_ENV
           fi
+      - name: Checkout core
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+          ref: ${{ env.CURRENT_BRANCH }}
       - name: Prepare dot-cicd
         run: |
           sh -c "$(curl -fsSL https://raw.githubusercontent.com/dotCMS/dot-cicd/${DOT_CICD_BRANCH}/seed/install-dot-cicd.sh)"
@@ -128,7 +136,9 @@ jobs:
       matrix:
         databaseType: [ postgres, mysql, oracle, mssql ]
     env:
-      DOT_CICD_BRANCH: 20088-automated-vulnerability-scan
+      DOT_CICD_BRANCH: 20246-move-dotcms-image-to-core
+      DOT_CICD_CLOUD_PROVIDER: github
+      DOT_CICD_TARGET: core
       EXPORT_REPORTS: true
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
