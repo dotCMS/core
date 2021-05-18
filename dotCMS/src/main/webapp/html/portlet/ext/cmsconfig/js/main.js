@@ -52,15 +52,19 @@ var saveCompanyBasicInfo = function () {
     var primaryColor = dijit.byId("pColor").get("value");
     var secondaryColor = dijit.byId("sColor").get("value");
     var bgURL = dijit.byId("bgURL").get("value");
+    var loginScreenLogoPath = document.getElementById('loginScreenLogoInput').value
+    var topNavLogoPath = document.getElementById('topNavLogoInput').value
 
     var content = {
-        'portalURL': companyPortalUrl,
-        'mx': companyMX,
-        'emailAddress': companyEmailAddress,
-        'size': bgColor,
-        'type': primaryColor,
-        'street': secondaryColor,
-        'homeURL': bgURL
+      portalURL: companyPortalUrl,
+      mx: companyMX,
+      emailAddress: companyEmailAddress,
+      size: bgColor,
+      type: primaryColor,
+      street: secondaryColor,
+      homeURL: bgURL,
+      city: loginScreenLogoPath,
+      state: topNavLogoPath,
     };
 
     var xhrArgs = {
