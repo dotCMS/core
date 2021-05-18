@@ -3,31 +3,19 @@ package com.dotcms.graphql.datafetcher;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.CustomField;
 import com.dotcms.contenttype.model.field.DataTypes;
-import com.dotcms.contenttype.model.field.DateField;
-import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.field.TextField;
-import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.graphql.DotGraphQLContext;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.User;
-
-import io.vavr.control.Try;
-import java.io.StringWriter;
-import java.sql.Timestamp;
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.util.Date;
-
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import io.vavr.control.Try;
+import java.io.StringWriter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -59,7 +47,7 @@ public class FieldDataFetcher implements DataFetcher<Object> {
                     .getOrElse(false);
 
             return renderField && isFieldRenderable(field)
-                    ? renderFieldValue(environment, fieldValue)
+                    ? renderFieldValue(environment, fieldValue, contentlet)
                     : fieldValue;
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
@@ -67,7 +55,9 @@ public class FieldDataFetcher implements DataFetcher<Object> {
         }
     }
 
-    private Object renderFieldValue(DataFetchingEnvironment environment, Object fieldValue) {
+    private Object renderFieldValue(final DataFetchingEnvironment environment,
+            final Object fieldValue,
+            final Contentlet contentlet) {
         final String fieldValueAsStr = fieldValue.toString();
 
         final HttpServletRequest request = ((DotGraphQLContext) environment.getContext())
@@ -79,14 +69,16 @@ public class FieldDataFetcher implements DataFetcher<Object> {
         final org.apache.velocity.context.Context context = VelocityUtil
                 .getInstance().getContext(request, response);
 
+        context.put("content", contentlet);
+        context.put("contentlet", contentlet);
+
         final StringWriter evalResult = new StringWriter();
 
         com.dotmarketing.util.VelocityUtil
                 .getEngine()
                 .evaluate(context, evalResult, "", fieldValueAsStr);
 
-        fieldValue = evalResult.toString();
-        return fieldValue;
+        return evalResult.toString();
     }
 
     private boolean isFieldRenderable(final Field field) {
