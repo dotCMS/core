@@ -1,19 +1,25 @@
 @use "variables" as *;
 
-:host {
-    display: block;
-    box-sizing: border-box;
-    padding: $spacing-3 0;
+p-skeleton {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
+dot-spinner {
+    margin: 0 auto;
+
+    width: max-content;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 h1 {
     margin: 0;
 }
 
 .dot-cdn__container {
-    box-shadow: $md-shadow-1;
     background: $white;
-    margin: $spacing-3 $spacing-5;
     display: block;
 }
 
@@ -40,7 +46,7 @@ h1 {
 }
 
 .dot-cdn__col {
-    color: $brand-primary_mod;
+    color: $brand-primary;
     margin-bottom: $spacing-3;
     display: grid;
     column-gap: $spacing-3;
@@ -59,7 +65,20 @@ h1 {
 }
 
 .dot-cdn__chart {
-    margin-top: $spacing-4;
+    margin-bottom: $spacing-6;
+}
+
+.dot-cdn__tab-content-meta {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: $spacing-0;
+}
+.dot-cdn__tab-domain small {
+    color: $gray;
+}
+
+.dot-cdn__tab-domain p {
+    margin-top: $spacing-1;
 }
 
 .dot-cdn__tab-content-label {
@@ -69,6 +88,15 @@ h1 {
 
 .dot-cdn__tab-content__row:first-child {
     margin-bottom: $spacing-8;
+}
+
+.dot-cdn__tab-content__row {
+    button {
+        min-width: 12.71rem;
+    }
+    button:focus {
+        color: white;
+    }
 }
 
 @media (min-width: $screen-md-min) {
@@ -89,6 +117,7 @@ h1 {
     .dot-cdn__stats {
         flex-direction: row;
         justify-content: space-between;
+        margin: $spacing-2 0 $spacing-5 0;
     }
 
     .dot-cdn__col {

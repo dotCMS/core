@@ -1,16 +1,16 @@
 {
-  "name": "dotcms-webcomponents",
-  "version": "1",
-  "main": "../../dist/libs/dotcms-webcomponents/dist/index.js",
-  "module": "../../dist/libs/dotcms-webcomponents/dist/index.mjs",
-  "es2015": "../../dist/libs/dotcms-webcomponents/dist/esm/index.mjs",
-  "es2017": "../../dist/libs/dotcms-webcomponents/dist/esm/index.mjs",
-  "types": "../../dist/libs/dotcms-webcomponents/dist/types/index.d.ts",
-  "collection": "../../dist/libs/dotcms-webcomponents/dist/collection/collection-manifest.json",
-  "collection:main": "../../dist/libs/dotcms-webcomponents/dist/collection/index.js",
-  "unpkg": "../../dist/libs/dotcms-webcomponents/dist/dotcms-webcomponents/dotcms-webcomponents.js",
-  "files": [
-    "../../dist/libs/dotcms-webcomponents/dist/",
-    "../../dist/libs/dotcms-webcomponents/loader/"
-  ]
+    "name": "dotcms-webcomponents",
+    "version": "1",
+    "main": "../../dist/libs/dotcms-webcomponents/dist/index.js",
+    "module": "../../dist/libs/dotcms-webcomponents/dist/index.mjs",
+    "es2015": "../../dist/libs/dotcms-webcomponents/dist/esm/index.mjs",
+    "es2017": "../../dist/libs/dotcms-webcomponents/dist/esm/index.mjs",
+    "types": "../../dist/libs/dotcms-webcomponents/dist/types/index.d.ts",
+    "collection": "../../dist/libs/dotcms-webcomponents/dist/collection/collection-manifest.json",
+    "collection:main": "../../dist/libs/dotcms-webcomponents/dist/collection/index.js",
+    "unpkg": "../../dist/libs/dotcms-webcomponents/dist/dotcms-webcomponents/dotcms-webcomponents.js",
+    "files": [
+        "../../dist/libs/dotcms-webcomponents/dist/",
+        "../../dist/libs/dotcms-webcomponents/loader/"
+    ]
 }

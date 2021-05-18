@@ -1,6 +1,6 @@
 import { getGreeting } from '../support/app.po';
 
-describe('dot-cdn', () => {
+describe('dotcdn', () => {
     beforeEach(() => cy.visit('/'));
 
     it('should display welcome message', () => {
@@ -8,6 +8,6 @@ describe('dot-cdn', () => {
         cy.login('my-email@something.com', 'myPassword');
 
         // Function helper example, see `../support/app.po.ts` file
-        getGreeting().contains('Welcome to dot-cdn!');
+        getGreeting().contains('Welcome to dotcdn!');
     });
 });

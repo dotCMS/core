@@ -1,5 +1,5 @@
 module.exports = {
-    displayName: 'dot-cdn',
+    displayName: 'dotcdn',
     preset: '../../jest.preset.js',
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
     globals: {
@@ -14,7 +14,7 @@ module.exports = {
             }
         }
     },
-    coverageDirectory: '../../coverage/apps/dot-cdn',
+    coverageDirectory: '../../coverage/apps/dotcdn',
     snapshotSerializers: [
         'jest-preset-angular/build/AngularNoNgAttributesSnapshotSerializer.js',
         'jest-preset-angular/build/AngularSnapshotSerializer.js',

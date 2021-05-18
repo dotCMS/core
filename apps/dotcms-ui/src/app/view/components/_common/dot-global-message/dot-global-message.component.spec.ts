@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DotGlobalMessageComponent } from './dot-global-message.component';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { DotIconModule } from '@dotcms/ui';
-import { DotSpinnerModule } from '@components/_common/dot-spinner/dot-spinner.module';
+import { DotSpinnerModule } from '@dotcms/ui';
 import { By } from '@angular/platform-browser';
 
 describe('DotGlobalMessageComponent', () => {
