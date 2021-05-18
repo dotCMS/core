@@ -31,7 +31,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
 
     private static final int POOL_SIZE_VAL = 10;
     private static final int MAXPOOL_SIZE_VAL = 50;
-    private static final int QUEUE_CAPACITY_VAL = 1000;
+    private static final int QUEUE_CAPACITY_VAL = Integer.MAX_VALUE;
 
 
     /**
@@ -433,7 +433,8 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
                         this.submitterConfigCreatorMap.get(name).getPoolSize(),
                         this.submitterConfigCreatorMap.get(name).getMaxPoolSize(),
                         this.submitterConfigCreatorMap.get(name).getKeepAliveMillis(),
-                        this.submitterConfigCreatorMap.get(name).getQueueCapacity()
+                        this.submitterConfigCreatorMap.get(name).getQueueCapacity(),
+                        name
                 ):
                 new DotConcurrentImpl(
                         this.getDefaultThreadFactory(name),
@@ -442,7 +443,8 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
                         Config.getIntProperty (name  + DOTCMS_CONCURRENT_POOLSIZE,                 this.defaultPoolSize),
                         Config.getIntProperty (name  + DOTCMS_CONCURRENT_MAXPOOLSIZE,              this.defaultMaxPoolSize),
                         Config.getLongProperty(name  + DOTCMS_CONCURRENT_KEEPALIVEMILLIS,          this.defaultKeepAliveMillis),
-                        Config.getIntProperty (name  + DOTCMS_CONCURRENT_QUEUECAPACITY,            this.defaultQueueCapacity)
+                        Config.getIntProperty (name  + DOTCMS_CONCURRENT_QUEUECAPACITY,            this.defaultQueueCapacity),
+                        name
                 );
 
         this.submitterMap.put(name, submitter);
@@ -747,6 +749,41 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
             this.executorService.execute(command);
         }
     }
+
+    private final class DotThreadPoolExecutor extends ThreadPoolExecutor {
+
+        private final String name;
+
+        public DotThreadPoolExecutor(final int corePoolSize, final int maximumPoolSize, final long keepAliveTime, final TimeUnit unit,
+                                     final BlockingQueue<Runnable> workQueue, final String name) {
+            super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue);
+            this.name = name;
+        }
+
+        public DotThreadPoolExecutor(final int corePoolSize, final int maximumPoolSize, final long keepAliveTime, final TimeUnit unit,
+                                     final BlockingQueue<Runnable> workQueue, final ThreadFactory threadFactory, final String name) {
+            super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory);
+            this.name = name;
+        }
+
+        public DotThreadPoolExecutor(final int corePoolSize, final int maximumPoolSize, final long keepAliveTime, final TimeUnit unit,
+                                     final BlockingQueue<Runnable> workQueue, final RejectedExecutionHandler handler, final String name) {
+            super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, handler);
+            this.name = name;
+        }
+
+        public DotThreadPoolExecutor(final int corePoolSize, final int maximumPoolSize, final long keepAliveTime, final TimeUnit unit,
+                                     final BlockingQueue<Runnable> workQueue, final ThreadFactory threadFactory, final RejectedExecutionHandler handler, final String name) {
+            super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory, handler);
+            this.name = name;
+        }
+
+        @Override
+        public String toString() {
+            return "name = " + this.name + " {"+ super.toString() + "}";
+        }
+    }
+
     /// DotSubmitter
     private final class DotConcurrentImpl implements DotSubmitter {
 
@@ -771,13 +808,14 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
                 final int poolSize,
                 final int maxPoolSize,
                 final long keepAliveMillis,
-                final int queueCapacity
+                final int queueCapacity,
+                final String name
                 ) {
 
             final BlockingQueue<Runnable> queue = this.createQueue(queueCapacity);
-            this.threadPoolExecutor  = new ThreadPoolExecutor(
+            this.threadPoolExecutor  = new DotThreadPoolExecutor(
                     poolSize, maxPoolSize, keepAliveMillis, TimeUnit.MILLISECONDS,
-                    queue, threadFactory, rejectedExecutionHandler);
+                    queue, threadFactory, rejectedExecutionHandler, name);
 
             if (allowCoreThreadTimeOut) {
 
