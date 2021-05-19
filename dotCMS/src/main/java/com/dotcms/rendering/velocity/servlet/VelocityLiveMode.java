@@ -47,6 +47,11 @@ public class VelocityLiveMode extends VelocityModeHandler {
         );
     }
 
+    final static ThreadLocal<StringWriter> stringWriter = ThreadLocal.withInitial(StringWriter::new);
+    
+    
+    
+    
     protected VelocityLiveMode(
             final HttpServletRequest request,
             final HttpServletResponse response,
@@ -141,31 +146,46 @@ public class VelocityLiveMode extends VelocityModeHandler {
 
             final PageCacheParameters cacheParameters =
                     new BlockPageCache.PageCacheParameters(userId, language, urlMap, queryString, persona);
+            
+            
 
-            final String key = VelocityUtil.getPageCacheKey(request, htmlPage);
-            if (key != null) {
-                String cachedPage = CacheLocator.getBlockPageCache().get(htmlPage, cacheParameters);
+            
+            
+            final String cacheKey = VelocityUtil.getPageCacheKey(request, htmlPage);
+            if(response.getHeader("Cache-Control")==null) {
+                // set cache control headers based on page cache
+                final String cacheControl = htmlPage.getCacheTTL() >= 0 ? "max-age=" +  htmlPage.getCacheTTL() : "no-cache";
+                response.setHeader("Cache-Control",  cacheControl);
+            }
+            
+            
+            if (cacheKey != null) {
+
+                final String cachedPage = CacheLocator.getBlockPageCache().get(htmlPage, cacheParameters);
                 if (cachedPage != null) {
                     // have cached response and are not refreshing, send it
                     out.write(cachedPage.getBytes());
                     return;
                 }
             }
-
-            try (Writer tmpOut = (key != null) ? new StringWriter(4096) : new BufferedWriter(new OutputStreamWriter(out))) {
+            
+            
+            
+            try (final Writer tmpOut = (cacheKey != null) ? stringWriter.get() : new BufferedWriter(new OutputStreamWriter(out))) {
 
                 HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
                 this.getTemplate(htmlPage, mode).merge(context, tmpOut);
 
-                if (key != null) {
-                    String trimmedPage = tmpOut.toString().trim();
+                if (cacheKey != null) {
+                    final String trimmedPage = tmpOut.toString().trim();
                     out.write(trimmedPage.getBytes());
-                    synchronized (key.intern()) {
+                    synchronized (cacheKey.intern()) {
                         CacheLocator.getBlockPageCache().add(htmlPage, trimmedPage, cacheParameters);
                     }
                 }
             }
         } finally {
+            stringWriter.get().getBuffer().setLength(0);
             LicenseUtil.stopLiveMode();
         }
     }
