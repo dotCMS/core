@@ -10,6 +10,7 @@ import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
@@ -448,24 +449,14 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
 	@Override
 	protected boolean isIdentifier(String identifierInode) {
-		DotConnect dc = new DotConnect();
-		dc.setSQL("select count(1) as count from identifier where id = ?");
-		dc.addParam(identifierInode);
-		ArrayList<Map<String, String>> results = new ArrayList<Map<String, String>>();
-		try {
-			results = dc.getResults();
-		} catch (DotDataException e) {
-			Logger.error(IdentifierFactoryImpl.class, e.getMessage(), e);
-		}
-		int count = Parameter.getInt(results.get(0).get("count"), 0);
-		if (count > 0) {
-			return true;
-		}
-		return false;
+        return new DotConnect()
+                        .setSQL("select count(id) as test from identifier where id=?")
+                        .addParam(identifierInode)
+                        .getInt("test")>0;
 	}
 
 	@Override
-	protected Identifier find(final String identifier) throws DotStateException, DotDataException {
+	protected Identifier find(final String identifier) throws DotDataException {
 
 		Identifier id = ic.getIdentifier(identifier);
 		if (id != null && UtilMethods.isSet(id.getId())) {
@@ -479,51 +470,48 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		return check404(id);
 	}
 
-	@Override
-	protected Identifier saveIdentifier(final Identifier id) throws DotDataException {
-		String query;
-		if (id != null) {
-			if (UtilMethods.isSet(id.getId())) {
+    @Override
+    protected Identifier saveIdentifier(final Identifier id) throws DotDataException {
+        if (id == null) {
+            throw new DotRuntimeException("identifier to save cannot be null");
+        }
 
-				if (isIdentifier(id.getId())) {
-                    query = "UPDATE identifier set parent_path=?, asset_name=?, host_inode=?, asset_type=?, syspublish_date=?, sysexpire_date=?, owner=?, create_date=?, asset_subtype=? where id=?";
-				} else{
-					query = "INSERT INTO identifier (parent_path,asset_name,host_inode,asset_type,syspublish_date,sysexpire_date,owner,create_date,asset_subtype,id) values (?,?,?,?,?,?,?,?,?,?)";
-				}
-			} else {
-				id.setId(UUIDGenerator.generateUuid());
-				query = "INSERT INTO identifier (parent_path,asset_name,host_inode,asset_type,syspublish_date,sysexpire_date,owner,create_date,asset_subtype,id) values (?,?,?,?,?,?,?,?,?,?)";
-			}
+        String query;
+        if (UtilMethods.isSet(id.getId())) {
+            if (isIdentifier(id.getId())) {
+                query = "UPDATE identifier set parent_path=?, asset_name=?, host_inode=?, asset_type=?, syspublish_date=?, sysexpire_date=?, owner=?, create_date=?, asset_subtype=? where id=?";
+            } else {
+                query = "INSERT INTO identifier (parent_path,asset_name,host_inode,asset_type,syspublish_date,sysexpire_date,owner,create_date,asset_subtype,id) values (?,?,?,?,?,?,?,?,?,?)";
+            }
+        } else {
+            id.setId(UUIDGenerator.generateUuid());
+            query = "INSERT INTO identifier (parent_path,asset_name,host_inode,asset_type,syspublish_date,sysexpire_date,owner,create_date,asset_subtype,id) values (?,?,?,?,?,?,?,?,?,?)";
+        }
 
-			DotConnect dc = new DotConnect();
-			dc.setSQL(query);
+        DotConnect dc = new DotConnect();
+        dc.setSQL(query);
 
-			dc.addParam(id.getParentPath());
-			dc.addParam(id.getAssetName());
-			dc.addParam(id.getHostId());
-			dc.addParam(id.getAssetType());
-			dc.addParam(id.getSysPublishDate());
-			dc.addParam(id.getSysExpireDate());
+        dc.addParam(id.getParentPath());
+        dc.addParam(id.getAssetName());
+        dc.addParam(id.getHostId());
+        dc.addParam(id.getAssetType());
+        dc.addParam(id.getSysPublishDate());
+        dc.addParam(id.getSysExpireDate());
 
-            dc.addParam(id.getOwner());
-            dc.addParam(id.getCreateDate());
-            dc.addParam(id.getAssetSubType());
-            dc.addParam(id.getId());
+        dc.addParam(id.getOwner());
+        dc.addParam(id.getCreateDate());
+        dc.addParam(id.getAssetSubType());
+        dc.addParam(id.getId());
 
-			try{
-				dc.loadResult();
-			}catch(DotDataException e){
-				Logger.error(IdentifierFactoryImpl.class, "saveIdentifier failed:" + e, e);
-				throw new DotDataException(e);
-			}
+        
+        dc.loadResult();
 
 
-			ic.removeFromCacheByIdentifier(id.getId());
-			ic.removeFromCacheByURI(id.getHostId(), id.getURI());
-			return id;
-		}
-		return null;
-	}
+        ic.removeFromCacheByIdentifier(id.getId());
+        ic.removeFromCacheByURI(id.getHostId(), id.getURI());
+        return id;
+
+    }
 
     @Override
     protected void deleteIdentifier(Identifier ident) throws DotDataException {

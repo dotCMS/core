@@ -1,22 +1,37 @@
 package com.dotmarketing.business;
 
 import com.dotmarketing.exception.DotSecurityException;
+import java.io.StringWriter;
 import java.util.List;
-
+import java.util.UUID;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.bouncycastle.crypto.digests.SHA256Digest;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
+import com.dotmarketing.beans.WebAsset;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.personas.business.PersonaAPI;
+import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
+import io.vavr.control.Try;
 
 public class IdentifierAPIImpl implements IdentifierAPI {
 
@@ -141,24 +156,112 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 	    return createNew(asset,parent,null);
 	}
 
+	@VisibleForTesting
+	@CloseDBIfOpened
+    String generateKnownId(Contentlet asset, final Treeable parent) {
+        if(asset.isHost()) {
+            return Host.SYSTEM_HOST + "/" + asset.getStringProperty(Host.HOST_NAME_KEY);
+        }
+        
+        
+        final Language lang = APILocator.getLanguageAPI().getLanguage(asset.getLanguageId());
+        
+        final StringWriter writer = new StringWriter();
+        
+        if(parent instanceof Host) {
+            writer.append(((Host)parent).getHostname());
+            writer.append( "/" + lang );
+            writer.append("/");
+        }
+        if(parent instanceof Folder) {
+            Host host = Try.of(()-> APILocator.getHostAPI().find(((Folder)parent).getHostId(),APILocator.systemUser(),false)).getOrElseThrow(e->new DotRuntimeException(e));
+            Folder folder = (Folder) parent;
+            writer.append(host.getHostname());
+            writer.append( "/" + lang );
+            writer.append(folder.getPath());
+        }
+
+
+        if(asset.isFileAsset()) {
+            writer.append(Try.of(()-> asset.getBinary("fileAsset").getName()).getOrElseThrow(e->new DotRuntimeException(e)));
+            return writer.toString();
+            
+        }
+        if(asset.isHTMLPage()) {
+            writer.append(Try.of(()-> asset.getStringProperty(HTMLPageAssetAPI.URL_FIELD)).getOrElseThrow(e->new DotRuntimeException(e)));
+            return writer.toString();
+        }
+
+        if(asset.isPersona()) {
+            writer.append(Try.of(()-> asset.getStringProperty(PersonaAPI.KEY_TAG_FIELD)).getOrElseThrow(e->new DotRuntimeException(e)));
+            return writer.toString();
+            
+        }
+        
+        return UUIDGenerator.generateUuid();
+    }
+	
+	@VisibleForTesting
+	@CloseDBIfOpened
+    String generateKnownId(Versionable asset, final Treeable parent) {
+        if(asset instanceof Contentlet) {
+            return generateKnownId((Contentlet) asset, parent);
+        }
+        final StringWriter writer = new StringWriter();
+        if(parent instanceof Host) {
+            writer.append(((Host)parent).getHostname());
+            writer.append("/");
+        }
+        if(parent instanceof Folder) {
+            Host host = Try.of(()-> APILocator.getHostAPI().find(((Folder)parent).getHostId(),APILocator.systemUser(),false)).getOrElseThrow(e->new DotRuntimeException(e));
+            Folder folder = (Folder) parent;
+            writer.append(host.getHostname());
+            writer.append(folder.getPath());
+        }
+        if(asset instanceof WebAsset) {
+            writer.append(asset.getClass().getSimpleName());
+            writer.append("/");
+            writer.append(((WebAsset) asset).getTitle());
+            return writer.toString();
+        }
+        return UUIDGenerator.generateUuid();
+    }
+	
+	@VisibleForTesting
+    @CloseDBIfOpened
+    String bestEffortsKnowableId(final String stringToHash) {
+        
+        final String hashed =  DigestUtils.sha256Hex(stringToHash.toLowerCase()).substring(0,36);
+        Logger.info(this.getClass(), "hashing id:" + stringToHash + " to " + hashed);
+        if(new DotConnect()
+                        .setSQL("select count(id) as test from identifier where id=?")
+                        .addParam(hashed)
+                        .getInt("test")>0) {
+            return bestEffortsKnowableId(UUIDGenerator.generateUuid());
+        }
+        return hashed;
+    }
+    
+    
+    
 	@WrapInTransaction
 	public Identifier createNew(final Versionable asset, final Treeable parent,
 								final String existingId) throws DotDataException {
 
+	    final String validId = UtilMethods.isSet(existingId)
+	                    ? existingId 
+                        : bestEffortsKnowableId(generateKnownId(asset, parent));
+
 		if(parent instanceof Folder){
-		    if(UtilMethods.isSet(existingId))
-		        return identifierFactory.createNewIdentifier(asset, (Folder) parent, existingId);
-		    else
-		        return identifierFactory.createNewIdentifier(asset, (Folder) parent);
-		}else if(parent instanceof Host){
-		    if(UtilMethods.isSet(existingId))
-		        return identifierFactory.createNewIdentifier(asset, (Host) parent, existingId);
-		    else
-		        return identifierFactory.createNewIdentifier(asset, (Host) parent);
+		    return identifierFactory.createNewIdentifier(asset, (Folder) parent, validId);
 		}
-		else{
-			throw new DotStateException("You can only create an identifier on a host of folder.  Trying: " + parent);
+		
+		if(parent instanceof Host){
+		    return identifierFactory.createNewIdentifier(asset, (Host) parent, validId);
 		}
+
+		throw new DotStateException("You can only create an identifier on a host of folder.  Trying: " + parent);
+		
 	}
 
 	@WrapInTransaction

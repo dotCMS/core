@@ -1407,7 +1407,18 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public boolean isDotAsset() {
 		return getContentType().baseType() == BaseContentType.DOTASSET;
 	}
-
+    /**
+     * It'll tell you if you're dealing with content of type Persona
+     * @return
+     */
+    public boolean isPersona() {
+        return getContentType().baseType() == BaseContentType.PERSONA;
+    }
+    
+    public boolean isForm() {
+        return getContentType().baseType() == BaseContentType.FORM;
+    }
+    
 	/**
 	 * It'll tell you if you're dealing with content of type FileAsset that is used as container
 	 * see Containers as files
