@@ -1,0 +1,44 @@
+#!/bin/bash
+set -e
+export DOTCLI_WORKDIR=$(cd $(dirname $0) && pwd)
+# shellcheck source=common
+. "$DOTCLI_WORKDIR/common"
+
+cli_help() {
+  cli_name=${0##*/}
+  echo -e "
+$cli_name
+dotCMS CLI
+Version: $(cat $DOTCLI_WORKDIR/VERSION)
+https://github.com/dotCMS/core
+
+Usage: `basename "$0"` [command]
+
+${GREEN} Commands: ${NC}
+  content-type  Imports content type into dotCMS
+  *             Help
+"
+  exit 1
+}
+
+cli_log "Exporting config ..."
+[ ! -f "$DOTCLI_WORKDIR/config" ] \
+  && echo "ERROR: No $DOTCLI_WORKDIR/config file found. " \
+  && exit 1
+
+export $(cat "$DOTCLI_WORKDIR/config" | xargs)
+
+case "$1" in
+  --bundle|-b|-B)
+    "$DOTCLI_WORKDIR/commands/bundle" "$2" "$3" | tee -ia "$DOTCLI_WORKDIR/logs/bundle_${2}.log"
+    ;;
+  --content-type|-ct|-CT)
+    "$DOTCLI_WORKDIR/commands/content-type" "$2" "$3" | tee -ia "$DOTCLI_WORKDIR/logs/content-type_${2}.log"
+    ;;
+  --site|-S)
+    "$DOTCLI_WORKDIR/commands/site" "$2" "$3" | tee -ia "$DOTCLI_WORKDIR/logs/site_${2}.log"
+    ;;
+  *)
+    cli_help
+    ;;
+esac

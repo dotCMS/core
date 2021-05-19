@@ -1,0 +1,56 @@
+#!/bin/bash
+set -e
+. "$DOTCLI_WORKDIR/common"
+
+help_push_content_type() {
+  echo "
+Command: content-type
+
+Usage:
+  ./dot-cli --content-type -f ~/code/etc/content-type.json
+  or
+  ./dot-cli --content-type --file ~/code/etc/content-type.json
+   "
+  exit 1
+}
+
+[[ ! -n "$1" ]] && help_push_content_type
+
+cli_log "Pushing ContentType"
+
+case $1 in
+    --file|-f|-F)
+    file="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    *)
+    help_push_content_type
+    ;;
+esac
+
+if [[ ! -f "$file" ]]; then
+    echo " The file $file does not exist."
+    exit 1
+fi
+
+jsonContentType=$(<$file)
+
+contentTypeVar=$(jq -r  '.variable' <<< "$jsonContentType")
+
+echo "Content-type Variable name loaded is $contentTypeVar verifying against remote host."
+
+code=$(curl -s -o /dev/null --head -w "%{http_code}" --header "Authorization: Bearer ${JSON_WEB_TOKEN}" "${DOTCMS_BASE_URL}/api/v1/contenttype/id/${contentTypeVar}" )
+
+if [[ $code = 404 ]]
+then
+   echo "Content-type does not exists on remote site add will be attempted."
+
+   response=$(curl -s "${DOTCMS_BASE_URL}/api/v1/contenttype"  --header "Authorization: Bearer ${JSON_WEB_TOKEN}" --header 'Content-Type: application/json' --data-raw  "$jsonContentType"  --compressed)
+
+  else
+  echo "A content type named $contentTypeVar already exists."
+fi
+
+
+cli_log "done."
