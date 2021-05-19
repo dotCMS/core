@@ -196,8 +196,6 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 
         return asset.getClass().getSimpleName();
 
-
-
     }
 	
 	@VisibleForTesting
@@ -222,7 +220,7 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 	
 	@VisibleForTesting
     @CloseDBIfOpened
-    String bestEffortsKnowableId(final String stringToHash) {
+    String bestEffortsKnowableIdHash(final String stringToHash) {
         
         final String hashed =  DigestUtils.sha256Hex(stringToHash.toLowerCase()).substring(0,36);
         Logger.info(this.getClass(), "");
@@ -232,7 +230,7 @@ public class IdentifierAPIImpl implements IdentifierAPI {
                         .setSQL("select count(id) as test from identifier where id=?")
                         .addParam(hashed)
                         .getInt("test")>0) {
-            return bestEffortsKnowableId(UUIDGenerator.generateUuid());
+            return bestEffortsKnowableIdHash(UUIDGenerator.generateUuid());
         }
         return hashed;
     }
@@ -245,7 +243,7 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 
 	    final String validId = UtilMethods.isSet(existingId)
 	                    ? existingId 
-                        : bestEffortsKnowableId(generateKnownId(asset, parent));
+                        : bestEffortsKnowableIdHash(generateKnownId(asset, parent));
 
 		if(parent instanceof Folder){
 		    return identifierFactory.createNewIdentifier(asset, (Folder) parent, validId);
