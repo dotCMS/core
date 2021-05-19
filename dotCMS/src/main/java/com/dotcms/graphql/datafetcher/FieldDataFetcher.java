@@ -83,6 +83,7 @@ public class FieldDataFetcher implements DataFetcher<Object> {
 
     private boolean isFieldRenderable(final Field field) {
         return field instanceof WysiwygField || field instanceof TextField ||
-                field instanceof TextAreaField || field instanceof CustomField;
+                field instanceof TextAreaField || field instanceof CustomField
+                || field instanceof ConstantField;
     }
 }
