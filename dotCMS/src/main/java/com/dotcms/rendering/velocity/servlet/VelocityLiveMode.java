@@ -47,7 +47,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
         );
     }
 
-    final static ThreadLocal<StringWriter> stringWriter = ThreadLocal.withInitial(StringWriter::new);
+    final static ThreadLocal<StringWriter> stringWriterLocal = ThreadLocal.withInitial(StringWriter::new);
     
     
     
@@ -147,17 +147,12 @@ public class VelocityLiveMode extends VelocityModeHandler {
             final PageCacheParameters cacheParameters =
                     new BlockPageCache.PageCacheParameters(userId, language, urlMap, queryString, persona);
             
-            
-
-            
-            
             final String cacheKey = VelocityUtil.getPageCacheKey(request, htmlPage);
             if(response.getHeader("Cache-Control")==null) {
                 // set cache control headers based on page cache
                 final String cacheControl = htmlPage.getCacheTTL() >= 0 ? "max-age=" +  htmlPage.getCacheTTL() : "no-cache";
                 response.setHeader("Cache-Control",  cacheControl);
             }
-            
             
             if (cacheKey != null) {
 
@@ -169,9 +164,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
                 }
             }
             
-            
-            
-            try (final Writer tmpOut = (cacheKey != null) ? stringWriter.get() : new BufferedWriter(new OutputStreamWriter(out))) {
+            try (final Writer tmpOut = (cacheKey != null) ? stringWriterLocal.get() : new BufferedWriter(new OutputStreamWriter(out))) {
 
                 HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
                 this.getTemplate(htmlPage, mode).merge(context, tmpOut);
@@ -185,7 +178,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
                 }
             }
         } finally {
-            stringWriter.get().getBuffer().setLength(0);
+            stringWriterLocal.get().getBuffer().setLength(0);
             LicenseUtil.stopLiveMode();
         }
     }
