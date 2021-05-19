@@ -157,74 +157,67 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 	}
 
 	@VisibleForTesting
-	@CloseDBIfOpened
-    String generateKnownId(Contentlet asset, final Treeable parent) {
-        if(asset.isHost()) {
-            return Host.SYSTEM_HOST + "/" + asset.getStringProperty(Host.HOST_NAME_KEY);
-        }
+    String resolveAssetName(Versionable asset) {
+	    
+	    if(asset instanceof Contentlet){
+	        final Contentlet contentlet = (Contentlet)asset;
+            return Try.of(()-> 
+                contentlet.isHost()
+                    ? contentlet.getStringProperty(Host.HOST_NAME_KEY)
+                    : contentlet.isFileAsset() 
+                        ? contentlet.getBinary("fileAsset").getName()
+                        : contentlet.isHTMLPage()            
+                            ? contentlet.getStringProperty(HTMLPageAssetAPI.URL_FIELD)
+                            : contentlet.isPersona()
+                                ? contentlet.getStringProperty(PersonaAPI.KEY_TAG_FIELD)
+                                : UUIDGenerator.generateUuid()
+                    
+            )
+            .getOrElseThrow(e->new DotRuntimeException(e));
+	    }
+	    if(asset instanceof WebAsset) {
+	        return ((WebAsset)asset).getTitle();
+	    }
+	    if(asset instanceof Folder) {
+	        return ((Folder)asset).getName();
+	    }
+	    
+	    return UUIDGenerator.generateUuid();
+
+    }
+	
+    @VisibleForTesting
+    String resolveAssetType(Versionable asset) {
         
-        
-        final Language lang = APILocator.getLanguageAPI().getLanguage(asset.getLanguageId());
-        
-        final StringWriter writer = new StringWriter();
-        
-        if(parent instanceof Host) {
-            writer.append(((Host)parent).getHostname());
-            writer.append( "/" + lang );
-            writer.append("/");
-        }
-        if(parent instanceof Folder) {
-            Host host = Try.of(()-> APILocator.getHostAPI().find(((Folder)parent).getHostId(),APILocator.systemUser(),false)).getOrElseThrow(e->new DotRuntimeException(e));
-            Folder folder = (Folder) parent;
-            writer.append(host.getHostname());
-            writer.append( "/" + lang );
-            writer.append(folder.getPath());
+        if(asset instanceof Contentlet){
+            final Contentlet contentlet = (Contentlet)asset;
+            return contentlet.getContentType().variable();
         }
 
+        return asset.getClass().getSimpleName();
 
-        if(asset.isFileAsset()) {
-            writer.append(Try.of(()-> asset.getBinary("fileAsset").getName()).getOrElseThrow(e->new DotRuntimeException(e)));
-            return writer.toString();
-            
-        }
-        if(asset.isHTMLPage()) {
-            writer.append(Try.of(()-> asset.getStringProperty(HTMLPageAssetAPI.URL_FIELD)).getOrElseThrow(e->new DotRuntimeException(e)));
-            return writer.toString();
-        }
 
-        if(asset.isPersona()) {
-            writer.append(Try.of(()-> asset.getStringProperty(PersonaAPI.KEY_TAG_FIELD)).getOrElseThrow(e->new DotRuntimeException(e)));
-            return writer.toString();
-            
-        }
-        
-        return UUIDGenerator.generateUuid();
+
     }
 	
 	@VisibleForTesting
 	@CloseDBIfOpened
-    String generateKnownId(Versionable asset, final Treeable parent) {
-        if(asset instanceof Contentlet) {
-            return generateKnownId((Contentlet) asset, parent);
-        }
+    String generateKnownId(final Versionable asset, final Treeable parent) {
+
+        final Host parentHost = (parent instanceof Host) ? (Host) parent : Try.of(()-> APILocator.getHostAPI().find(((Folder)parent).getHostId(),APILocator.systemUser(),false)).getOrElseThrow(e->new DotRuntimeException(e));
+        final Folder parentFolder = (parent instanceof Folder) ? (Folder) parent : Try.of(()-> APILocator.getFolderAPI().findSystemFolder()).getOrElseThrow(e->new DotRuntimeException(e));
+        final Language lang = (asset instanceof Contentlet) ? APILocator.getLanguageAPI().getLanguage(((Contentlet)asset).getLanguageId())
+                        : APILocator.getLanguageAPI().getDefaultLanguage();
+
+
         final StringWriter writer = new StringWriter();
-        if(parent instanceof Host) {
-            writer.append(((Host)parent).getHostname());
-            writer.append("/");
-        }
-        if(parent instanceof Folder) {
-            Host host = Try.of(()-> APILocator.getHostAPI().find(((Folder)parent).getHostId(),APILocator.systemUser(),false)).getOrElseThrow(e->new DotRuntimeException(e));
-            Folder folder = (Folder) parent;
-            writer.append(host.getHostname());
-            writer.append(folder.getPath());
-        }
-        if(asset instanceof WebAsset) {
-            writer.append(asset.getClass().getSimpleName());
-            writer.append("/");
-            writer.append(((WebAsset) asset).getTitle());
-            return writer.toString();
-        }
-        return UUIDGenerator.generateUuid();
+        writer.append(resolveAssetType(asset) + ":");
+        writer.append(parentHost.getHostname());
+        writer.append("/" + lang );
+        writer.append(parentFolder.getPath());
+        writer.append(resolveAssetName(asset));
+        return writer.toString();
+
     }
 	
 	@VisibleForTesting
@@ -232,7 +225,9 @@ public class IdentifierAPIImpl implements IdentifierAPI {
     String bestEffortsKnowableId(final String stringToHash) {
         
         final String hashed =  DigestUtils.sha256Hex(stringToHash.toLowerCase()).substring(0,36);
-        Logger.info(this.getClass(), "hashing id:" + stringToHash + " to " + hashed);
+        Logger.info(this.getClass(), "");
+        Logger.info(this.getClass(), "hashing id: " + stringToHash + " to " + hashed);
+        Logger.info(this.getClass(), "");
         if(new DotConnect()
                         .setSQL("select count(id) as test from identifier where id=?")
                         .addParam(hashed)
