@@ -194,7 +194,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
             final String _contentPushPublishTime = request.getParameter( "remotePublishTime" );
             final String _contentPushExpireDate = request.getParameter( "remotePublishExpireDate" );
             final String _contentPushExpireTime = request.getParameter( "remotePublishExpireTime" );
-            final String timezone = request.getParameter( "timezone" );
+            final String timezoneId = request.getParameter( "timezoneId" );
             final String _contentFilterDate = request.getParameter( "remoteFilterDate" );
             final String _iWantTo = request.getParameter( "iWantTo" );
             final String whoToSendTmp = request.getParameter( "whoToSend" );
@@ -219,12 +219,12 @@ public class RemotePublishAjaxAction extends AjaxAction {
             request.getSession().setAttribute( WebKeys.SELECTED_ENVIRONMENTS + getUser().getUserId(), envsToSendTo );
 
             final TimeZone currentTimeZone =
-                    UtilMethods.isSet(timezone) ? TimeZone.getTimeZone(timezone)
+                    UtilMethods.isSet(timezoneId) ? TimeZone.getTimeZone(timezoneId)
                             : TimeZone.getDefault();
 
             final Date publishDate = DateUtil
                     .convertDate(_contentPushPublishDate + "-" + _contentPushPublishTime,
-                            currentTimeZone);
+                            currentTimeZone, "yyyy-MM-dd-H-m");
 
             List<String> ids;
             if ( _assetId.startsWith( "query_" ) ) { //Support for lucene queries
@@ -255,7 +255,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 if ((UtilMethods.isSet( _contentPushExpireDate) && UtilMethods.isSet( _contentPushExpireTime.trim()))) {
                     final Date expireDate = DateUtil
                             .convertDate(_contentPushExpireDate + "-" + _contentPushExpireTime,
-                                    currentTimeZone);
+                                    currentTimeZone, "yyyy-MM-dd-H-m");
 
                     Bundle bundle = new Bundle(null, publishDate, expireDate, getUser().getUserId(), forcePush,filterKey);
                 	APILocator.getBundleAPI().saveBundle(bundle, envsToSendTo);
