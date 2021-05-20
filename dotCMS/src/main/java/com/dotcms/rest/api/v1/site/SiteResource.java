@@ -13,6 +13,7 @@ import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.rest.exception.ForbiddenException;
+import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.DotLambdas;
 import com.dotcms.util.I18NUtil;
@@ -703,7 +704,7 @@ public class SiteResource implements Serializable {
                 this.siteHelper.getSiteNoFrontEndRoles(user, siteId);
 
         if (null == site) {
-            throw new IllegalArgumentException("Site: " + siteId + " does not exists");
+            throw new NotFoundException("Site: " + siteId + " does not exists");
         }
 
         return Response.ok(new ResponseEntityView(this.toView(site))).build();
@@ -738,7 +739,7 @@ public class SiteResource implements Serializable {
                 .requiredPortlet("sites")
                 .init().getUser();
 
-        final String hostname = searchSiteByNameForm.getSitename();
+        final String hostname = searchSiteByNameForm.getSiteName();
 
         if (null == hostname) {
             throw new IllegalArgumentException("Sitename can not be null");
@@ -751,7 +752,7 @@ public class SiteResource implements Serializable {
                 this.siteHelper.getSiteByNameNoFrontEndRoles(user, hostname);
 
         if (null == host) {
-            throw new IllegalArgumentException("Site: " + hostname + " does not exists");
+            throw new NotFoundException("Site: " + hostname + " does not exists");
         }
 
         return Response.ok(new ResponseEntityView(this.toView(host))).build();
@@ -1008,7 +1009,7 @@ public class SiteResource implements Serializable {
                 this.siteHelper.getSiteNoFrontEndRoles(user, siteId);
 
         if (null == sourceHost) {
-            throw new IllegalArgumentException("Site: " + siteId + " does not exists");
+            throw new NotFoundException("Site: " + siteId + " does not exists");
         }
 
         final Response response  = this.createNewSite(httpServletRequest, httpServletResponse, copySiteForm.getSite());

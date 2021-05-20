@@ -1,6 +1,10 @@
 package com.dotmarketing.business;
 
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.liferay.util.StringPool;
 import java.io.StringWriter;
 import java.util.List;
 import java.util.UUID;
@@ -37,10 +41,16 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 
 	private final ContentletAPI contentletAPI;
 	private final IdentifierFactory identifierFactory;
+	private final LanguageAPI languageAPI;
+	private final FolderAPI folderAPI;
+	private final HostAPI hostAPI;
 
 	public IdentifierAPIImpl() {
 		contentletAPI = APILocator.getContentletAPI();
 		identifierFactory = FactoryLocator.getIdentifierFactory();
+		languageAPI = APILocator.getLanguageAPI();
+		folderAPI = APILocator.getFolderAPI();
+		hostAPI = APILocator.getHostAPI();
 	}
 
 	@CloseDBIfOpened
@@ -173,7 +183,7 @@ public class IdentifierAPIImpl implements IdentifierAPI {
                                 : UUIDGenerator.generateUuid()
                     
             )
-            .getOrElseThrow(e->new DotRuntimeException(e));
+            .getOrElseThrow(DotRuntimeException::new);
 	    }
 	    if(asset instanceof WebAsset) {
 	        return ((WebAsset)asset).getTitle();
@@ -197,32 +207,32 @@ public class IdentifierAPIImpl implements IdentifierAPI {
         return asset.getClass().getSimpleName();
 
     }
-	
+
 	@VisibleForTesting
 	@CloseDBIfOpened
-    String generateKnownId(final Versionable asset, final Treeable parent) {
+	String generateKnownId(final Versionable asset, final Treeable parent) {
 
-        final Host parentHost = (parent instanceof Host) ? (Host) parent : Try.of(()-> APILocator.getHostAPI().find(((Folder)parent).getHostId(),APILocator.systemUser(),false)).getOrElseThrow(e->new DotRuntimeException(e));
-        final Folder parentFolder = (parent instanceof Folder) ? (Folder) parent : Try.of(()-> APILocator.getFolderAPI().findSystemFolder()).getOrElseThrow(e->new DotRuntimeException(e));
-        final Language lang = (asset instanceof Contentlet) ? APILocator.getLanguageAPI().getLanguage(((Contentlet)asset).getLanguageId())
-                        : APILocator.getLanguageAPI().getDefaultLanguage();
+		final Host parentHost = (parent instanceof Host) ? (Host) parent : Try.of(
+				() -> hostAPI
+						.find(((Folder) parent).getHostId(), APILocator.systemUser(), false))
+				.getOrElseThrow(DotRuntimeException::new);
+		final Folder parentFolder = (parent instanceof Folder) ? (Folder) parent
+				: Try.of(folderAPI::findSystemFolder)
+						.getOrElseThrow(DotRuntimeException::new);
+		final Language lang = (asset instanceof Contentlet) ? languageAPI
+				.getLanguage(((Contentlet) asset).getLanguageId())
+				: languageAPI.getDefaultLanguage();
 
-
-        final StringWriter writer = new StringWriter();
-        writer.append(resolveAssetType(asset) + ":");
-        writer.append(parentHost.getHostname());
-        writer.append("/" + lang );
-        writer.append(parentFolder.getPath());
-        writer.append(resolveAssetName(asset));
-        return writer.toString();
-
-    }
+		return (resolveAssetType(asset) + StringPool.COLON + parentHost.getHostname()
+				+ StringPool.FORWARD_SLASH + lang + parentFolder
+				.getPath() + resolveAssetName(asset)).toLowerCase();
+	}
 	
 	@VisibleForTesting
     @CloseDBIfOpened
     String bestEffortsKnowableIdHash(final String stringToHash) {
         
-        final String hashed =  DigestUtils.sha256Hex(stringToHash.toLowerCase()).substring(0,36);
+        final String hashed = DigestUtils.sha256Hex(stringToHash.toLowerCase()).substring(0,32);
         Logger.info(this.getClass(), "");
         Logger.info(this.getClass(), "hashing id: " + stringToHash + " to " + hashed);
         Logger.info(this.getClass(), "");

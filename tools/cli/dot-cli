@@ -30,13 +30,13 @@ export $(cat "$DOTCLI_WORKDIR/config" | xargs)
 
 case "$1" in
   --bundle|-b|-B)
-    "$DOTCLI_WORKDIR/commands/bundle" "$2" "$3" | tee -ia "$DOTCLI_WORKDIR/logs/bundle_${2}.log"
+    "$DOTCLI_WORKDIR/commands/bundle" "$2"  | tee -ia "$DOTCLI_WORKDIR/logs/bundle_${1}.log"
     ;;
   --content-type|-ct|-CT)
-    "$DOTCLI_WORKDIR/commands/content-type" "$2" "$3" | tee -ia "$DOTCLI_WORKDIR/logs/content-type_${2}.log"
+    "$DOTCLI_WORKDIR/commands/content-type" "$2" | tee -ia "$DOTCLI_WORKDIR/logs/content-type_${1}.log"
     ;;
   --site|-S)
-    "$DOTCLI_WORKDIR/commands/site" "$2" "$3" | tee -ia "$DOTCLI_WORKDIR/logs/site_${2}.log"
+    "$DOTCLI_WORKDIR/commands/site" "$2" | tee -ia "$DOTCLI_WORKDIR/logs/site_${1}.log"
     ;;
   *)
     cli_help

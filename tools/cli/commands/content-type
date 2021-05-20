@@ -18,16 +18,7 @@ Usage:
 
 cli_log "Pushing ContentType"
 
-case $1 in
-    --file|-f|-F)
-    file="$2"
-    shift # past argument
-    shift # past value
-    ;;
-    *)
-    help_push_content_type
-    ;;
-esac
+file="$1"
 
 if [[ ! -f "$file" ]]; then
     echo " The file $file does not exist."

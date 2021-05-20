@@ -1,1 +1,90 @@
-#!/usr/bin/env bash
+#!/bin/bash
+set -e
+. "$DOTCLI_WORKDIR/common"
+
+
+help_push_bundle() {
+  echo "
+Command: bundle
+
+Usage:
+  ./dot-cli --bundle ~/code/etc/bundle
+  or
+  ./dot-cli --bundle ~/code/etc/bundle
+   "
+  exit 1
+}
+
+[[ ! -n "$1" ]] && help_push_bundle
+
+cli_log "Pushing Bundle "
+
+dir="$1"
+
+if [[ ! -d "$dir" ]]; then
+    echo " The directory $dir does not exist."
+    exit 1
+fi
+
+# for the given working directory we need to explore and determine what folder was meant to hold content-types, what folder was meant to hold sites files etc..
+for entry in "$dir"/*
+do
+     #echo "$entry"
+     case ${entry} in
+       *content-types|*contentTypes)
+       contentTypesDir=${entry}
+       ;;
+       *sites)
+       sitesDir=${entry}
+       ;;
+       *files)
+       filesDir=${entry}
+       ;;
+     esac
+done
+
+
+if [[ -z ${sitesDir+x} ]];
+   then cli_log "I wasn't able to find the sites directory";
+
+else
+    echo "Processing sites."
+
+    for entry in "$sitesDir"/*
+    do
+        echo "$entry"
+        if [[ -f "$entry" ]]
+         then
+             bash "$DOTCLI_WORKDIR/commands/site" "$entry"
+        fi
+    done
+
+    echo "done processing sites."
+
+fi
+
+if [[ -z ${contentTypesDir+x} ]];
+   then cli_log "I wasn't able to find the content types directory";
+
+else
+    echo "Processing content-types."
+
+    for entry in "$contentTypesDir"/*
+    do
+        echo "$entry"
+        if [[ -f "$entry" ]]
+         then
+             bash "$DOTCLI_WORKDIR/commands/content-type" "$entry"
+        fi
+    done
+
+    echo "done processing content-types."
+
+fi
+
+
+
+
+
+
+cli_log "Done Pushing Bundle "

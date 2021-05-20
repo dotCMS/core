@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "65e5acc7-cbd9-4ee3-bf14-72af0e6315da",
+		"_postman_id": "a08ed528-93ac-4665-9931-cd94de96952a",
 		"name": "Site Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -656,7 +656,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"sitename\":\"default\"\n}",
+					"raw": "{\n    \"siteName\":\"default\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"

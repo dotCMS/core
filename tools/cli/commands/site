@@ -4,12 +4,12 @@ set -e
 
 help_push_site() {
   echo "
-Command: content-type
+Command: site
 
 Usage:
-  ./dot-cli --site -f ~/code/etc/site.json
+  ./dot-cli --site ~/code/etc/site.json
   or
-  ./dot-cli --site --file ~/code/etc/site.json
+  ./dot-cli --site ~/code/etc/site.json
    "
   exit 1
 }
@@ -18,16 +18,9 @@ Usage:
 
 cli_log "Pushing Site"
 
-case $1 in
-    --file|-F|-f)
-    file="$2"
-    shift # past argument
-    shift # past value
-    ;;
-    *)
-    help_push_site
-    ;;
-esac
+
+
+file="$1"
 
 if [[ ! -f "$file" ]]; then
     echo " The file $file does not exist."
@@ -36,15 +29,15 @@ fi
 
 jsonSite=$(<$file)
 
-siteName=$(jq -r  '.sitename' <<< "$jsonSite")
+siteName=$(jq -r  '.siteName' <<< "$jsonSite")
 
 echo "Verifying $siteName against remote host."
 
-code=$(curl -s -X POST "${DOTCMS_BASE_URL}/api/v1/site/_byname" -o /dev/null --header "Authorization: Bearer ${JSON_WEB_TOKEN}" -w "%{http_code}" --header 'Content-Type: application/json' --data-raw "{ \"sitename\":\"$siteName\" }")
+code=$(curl -s -X POST "${DOTCMS_BASE_URL}/api/v1/site/_byname" -o /dev/null --header "Authorization: Bearer ${JSON_WEB_TOKEN}" -w "%{http_code}" --header 'Content-Type: application/json' --data-raw "{ \"siteName\":\"$siteName\" }")
 
 echo " response code was $code"
 
-if [[ $code = 404 ]]
+if [[ ${code} = 404 ]]
 then
    echo "A site named $siteName does not exist on the remote site. An Add will be attempted."
 
