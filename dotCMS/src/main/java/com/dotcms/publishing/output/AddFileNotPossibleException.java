@@ -1,8 +1,6 @@
 package com.dotcms.publishing.output;
 
-import com.dotcms.enterprise.publishing.bundlers.ShortyBundler;
-import com.dotmarketing.util.Logger;
-import java.io.File;
+
 import java.io.IOException;
 
 public class AddFileNotPossibleException extends IOException {
