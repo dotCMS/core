@@ -404,11 +404,8 @@ public class TikaUtils {
             }
         } catch (Throwable e) {
 
-            if (this.isZeroByteFileException(e)) {
-                logWarning(binFile, e);
-            } else {
-                logError(binFile, e);
-            }
+            logWarnDebug(binFile, e);
+
         } finally {
             metaMap.put(FileAssetAPI.SIZE_FIELD, binFile.length());
             metaMap.put("length", binFile.length());
@@ -436,7 +433,7 @@ public class TikaUtils {
                 metaMap.put(FileAssetAPI.CONTENT_FIELD, content);
             }
         } catch (Exception e) {
-            logError(binFile, e);
+            logWarnDebug(binFile, e);
         }
     }
 
@@ -497,7 +494,7 @@ public class TikaUtils {
                     //On error lets try a fallback operation
                     metaMap = fallbackParse(binFile, contentMetadataFile, ioExc);
                 } catch (Exception e) {
-                    logError(binFile, e);
+                    logWarnDebug(binFile, e);
                 }
             }
         } catch (Throwable e) {
@@ -505,7 +502,7 @@ public class TikaUtils {
             if (isZeroByteFileException(e)) {
                 logWarning(binFile, e);
             } else {
-                logError(binFile, e);
+                logWarnDebug(binFile, e);
             }
         } finally {
             metaMap.put(FileAssetAPI.SIZE_FIELD, String.valueOf(binFile.length()));
@@ -738,6 +735,12 @@ public class TikaUtils {
 
     private void logError(final File binFile, Throwable exception) {
         Logger.error(this.getClass(),
+                String.format("Could not parse file metadata for file [%s] [%s]",
+                        binFile.getAbsolutePath(), exception.getMessage()), exception);
+    }
+
+    private void logWarnDebug(final File binFile, Throwable exception) {
+        Logger.warnAndDebug(this.getClass(),
                 String.format("Could not parse file metadata for file [%s] [%s]",
                         binFile.getAbsolutePath(), exception.getMessage()), exception);
     }

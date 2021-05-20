@@ -888,7 +888,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 		if(relatedContentlets.size()>0) {
 
-			final List<Relationship> relationships = FactoryLocator.getRelationshipFactory()
+			final List<Relationship> relationships =APILocator.getRelationshipAPI()
 					.byContentType(contentlet.getContentType());
 
 			for(final Relationship relationship : relationships) {

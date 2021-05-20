@@ -1,11 +1,13 @@
 package com.dotcms.mock.response;
 
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpServletResponseWrapper;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Response mock to collect the response status and headers.
+ * @author jsanca
+ */
 public class MockHttpStatusAndHeadersResponse extends MockHttpStatusResponse {
 
     private final Map<String, String> headerMap = new HashMap<>();

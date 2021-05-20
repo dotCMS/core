@@ -280,7 +280,7 @@ public class ContentFromEmailJob implements Job {
 
 		Relationship relationship = new Relationship();
 
-		relationship = FactoryLocator.getRelationshipFactory().byTypeValue(relName);
+		relationship = APILocator.getRelationshipAPI().byTypeValue(relName);
 		if(relationship == null)
 			return new ContentletRelationships(contentlet);
 
