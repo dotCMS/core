@@ -4,16 +4,13 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.LocalTransaction;
-import com.dotmarketing.exception.DotDataException;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import java.sql.SQLException;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class Task210601UpdateAnonymousEmailTest {
+public class Task210520UpdateAnonymousEmailTest {
 
     @BeforeClass
     public static void prepare() throws Exception {

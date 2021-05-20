@@ -96,6 +96,7 @@ import com.dotmarketing.startup.runonce.Task210218MigrateUserProxyTableTest;
 import com.dotmarketing.startup.runonce.Task210319CreateStorageTableTest;
 import com.dotmarketing.startup.runonce.Task210321RemoveOldMetadataFilesTest;
 import com.dotmarketing.startup.runonce.Task210506UpdateStorageTableTest;
+import com.dotmarketing.startup.runonce.Task210520UpdateAnonymousEmailTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.TestConfig;
@@ -413,7 +414,8 @@ import org.junit.runners.Suite.SuiteClasses;
         FileAssetTemplateUtilTest.class,
         SiteSearchJobImplTest.class,
         Task210506UpdateStorageTableTest.class,
-        StaticPushPublishBundleGeneratorTest.class
+        StaticPushPublishBundleGeneratorTest.class,
+        Task210520UpdateAnonymousEmailTest.class
 })
 public class MainSuite {
 
