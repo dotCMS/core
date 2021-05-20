@@ -13,7 +13,7 @@ import java.util.Map;
  * Updates the anonymous email to avoid the "anonymous@dotcmsfakeemail.org"
  * @author jsanca
  */
-public class Task210601UpdateAnonymousEmail implements StartupTask {
+public class Task210520UpdateAnonymousEmail implements StartupTask {
 
     protected static final String OLD_ANONYMOUS_EMAIL = "anonymous@dotcmsfakeemail.org";
 

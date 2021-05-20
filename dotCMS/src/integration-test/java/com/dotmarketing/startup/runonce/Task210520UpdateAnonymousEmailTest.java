@@ -23,12 +23,12 @@ public class Task210520UpdateAnonymousEmailTest {
 
         LocalTransaction.wrapReturnWithListeners(()->
             new DotConnect().executeUpdate("UPDATE user_ SET emailaddress = ? where emailaddress = ?",
-                Task210601UpdateAnonymousEmail.OLD_ANONYMOUS_EMAIL, UserAPI.CMS_ANON_USER_EMAIL)
+                Task210520UpdateAnonymousEmail.OLD_ANONYMOUS_EMAIL, UserAPI.CMS_ANON_USER_EMAIL)
         );
 
 
         LocalTransaction.wrapReturnWithListeners(()-> {
-            final Task210601UpdateAnonymousEmail upgradeTask = new Task210601UpdateAnonymousEmail();
+            final Task210520UpdateAnonymousEmail upgradeTask = new Task210520UpdateAnonymousEmail();
             assertTrue(upgradeTask.forceRun());
             upgradeTask.executeUpgrade();
             assertFalse(upgradeTask.forceRun());
