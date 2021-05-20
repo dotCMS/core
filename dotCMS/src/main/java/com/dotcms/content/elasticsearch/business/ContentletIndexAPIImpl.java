@@ -1008,7 +1008,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
         for (final Relationship relationship : relationships) {
 
-            final boolean isSameStructRelationship = FactoryLocator.getRelationshipFactory().sameParentAndChild(relationship);
+            final boolean isSameStructRelationship = APILocator.getRelationshipAPI().sameParentAndChild(relationship);
 
             final String query = (isSameStructRelationship)
                     ? builder("+type:content +(", relationship.getRelationTypeValue(), "-parent:", contentlet.getIdentifier(),
@@ -1038,7 +1038,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         if (content == null || !UtilMethods.isSet(content.getIdentifier()))
             return;
 
-        List<Relationship> relationships = FactoryLocator.getRelationshipFactory().byContentType(content.getStructure());
+        List<Relationship> relationships = APILocator.getRelationshipAPI().byContentType(content.getStructure());
 
         // add a commit listener to index the contentlet if the entire
         // transaction finish clean

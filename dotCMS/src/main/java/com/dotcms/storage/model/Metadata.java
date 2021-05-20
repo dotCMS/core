@@ -4,6 +4,7 @@ import static com.dotcms.storage.model.BasicMetadataFields.CONTENT_TYPE_META_KEY
 import static com.dotcms.storage.model.BasicMetadataFields.HEIGHT_META_KEY;
 import static com.dotcms.storage.model.BasicMetadataFields.IS_IMAGE_META_KEY;
 import static com.dotcms.storage.model.BasicMetadataFields.LENGTH_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.MOD_DATE_META_KEY;
 import static com.dotcms.storage.model.BasicMetadataFields.NAME_META_KEY;
 import static com.dotcms.storage.model.BasicMetadataFields.PATH_META_KEY;
 import static com.dotcms.storage.model.BasicMetadataFields.SHA256_META_KEY;
@@ -117,6 +118,10 @@ public class Metadata implements Serializable {
 
     public int getHeight(){
         return Try.of(()->(int)getFieldsMeta().get(HEIGHT_META_KEY.key())).getOrElse(0);
+    }
+
+    public long getModDate(){
+        return Try.of(()->(long)getFieldsMeta().get(MOD_DATE_META_KEY.key())).getOrElse(0L);
     }
 
     @Override

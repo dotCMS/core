@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "479129b9-ae61-40eb-95f1-a5942d1e2c21",
+		"_postman_id": "e1678702-ef10-423d-be74-6a1438f7821c",
 		"name": "GraphQL",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -5159,6 +5159,159 @@
 							"mode": "graphql",
 							"graphql": {
 								"query": "{\n  MovieCollection(sortBy: \"Movie.title\") {\n    title\n    studio(query: \"+studio.name:\\\"Walt Disney Pictures\\\"\") {\n      name\n    }\n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "File Metadata",
+			"item": [
+				{
+					"name": "Create FileAsset Content",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"fileContentIdentifier\", jsonData.entity.identifier);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotCMS.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "json",
+									"value": "{\n    \"contentlet\": {\n       \"contentType\":\"FileAsset\",\n       \"title\":\"Legioss\", \n       \"hostFolder\":\"default\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"showOnMenu\":\"true\",\n       \"sortOrder\":\"2\"\n    }\n}",
+									"type": "text"
+								},
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/Test_GraphQL_Image_Field_fields/actn-legioss.jpg"
+								}
+							],
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						},
+						"description": "This is to fire the added default action\n\nhttp://localhost:8080/api/v1/workflow/actions/default/fire/PUBLISH\n\nIn this case I'm using the \"test\" content type that just have a name filed (text)"
+					},
+					"response": []
+				},
+				{
+					"name": "Request File Asset metada fields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"var imageFieldVariable = pm.collectionVariables.get(\"imageFieldVariable\");",
+									"var fileFieldVariable = pm.collectionVariables.get(\"fileFieldVariable\");",
+									"",
+									"var contentIdentifier = pm.collectionVariables.get(\"contentIdentifier\")",
+									"",
+									"pm.test(\"FileAsset metadata attributes\", function () {",
+									"     ",
+									"    var metadataFields = jsonData.data[\"FileAssetCollection\"][0][\"fileAsset\"];",
+									"    ",
+									"    // metadata attributes",
+									"    pm.expect(metadataFields.name).to.eql(\"actn-legioss.jpg\");",
+									"    pm.expect(metadataFields.title).to.eql(\"actn-legioss.jpg\");",
+									"    pm.expect(metadataFields.isImage).to.eql(true);",
+									"    pm.expect(metadataFields.modDate).to.eql(1621257337000);",
+									"    pm.expect(metadataFields.size).to.eql(215384);",
+									"    pm.expect(metadataFields.mime).to.eql(\"image/jpeg\");",
+									"    pm.expect(metadataFields.width).to.eql(1200);",
+									"    pm.expect(metadataFields.height).to.eql(900);",
+									"    pm.expect(metadataFields.sha256).to.eql(\"ffe7157a4b7c8dd772f57dc2de8694ea974b87653b5605f854924a43bbfbb0ce\");",
+									"    pm.expect(metadataFields.path).not.eql(null);",
+									"    pm.expect(metadataFields.versionPath).not.eql(null);",
+									"    pm.expect(metadataFields.focalPoint).to.eql(\"0.0\");",
+									"",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  \nFileAssetCollection(limit:20){\n    fileAsset{\n      modDate\n      sha256\n      mime\n      title\n      versionPath\n      mime\n      focalPoint\n      path\n      name\n      versionPath\n      width\n      height\n      size\n      isImage\n    }   \n  }\n\n}\n\n\n\n\n",
 								"variables": ""
 							}
 						},
