@@ -9,4 +9,5 @@ export interface DotPushPublishData {
     expireDate: string;
     environment: string[];
     filterKey: string;
+    timezoneId: string;
 }

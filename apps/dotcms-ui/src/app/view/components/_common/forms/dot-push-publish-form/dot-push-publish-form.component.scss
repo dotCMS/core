@@ -25,3 +25,16 @@ form,
     display: block;
     border-bottom: solid 1px $gray-light;
 }
+
+.push-publish-dialog__publish-dates-container {
+    margin-bottom: 0;
+
+    .push-publish-dialog__publish-date,
+    .push-publish-dialog__expire-date {
+        margin-bottom: 0.5rem;
+    }
+}
+
+.push-publish-dialog__timezone-label {
+    font-size: 0.85rem;
+}

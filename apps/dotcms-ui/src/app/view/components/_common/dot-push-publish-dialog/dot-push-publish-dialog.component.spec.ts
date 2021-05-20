@@ -61,7 +61,8 @@ describe('DotPushPublishDialogComponent', () => {
         publishDate: 'test',
         expireDate: 'test',
         environment: ['test'],
-        filterKey: 'test'
+        filterKey: 'test',
+        timezoneId: 'test'
     };
 
     beforeEach(() => {

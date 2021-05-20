@@ -1,7 +1,7 @@
 import { CoreWebService } from './core-web.service';
 import { Injectable } from '@angular/core';
 import { Observable, BehaviorSubject } from 'rxjs';
-import { pluck, filter } from 'rxjs/operators';
+import { pluck, filter, map } from 'rxjs/operators';
 import { LoggerService } from './logger.service';
 import { Menu } from './routing.service';
 
@@ -38,6 +38,13 @@ export interface WebSocketConfigParams {
     disabledWebsockets: boolean;
     websocketReconnectTime: number;
 }
+
+export interface DotTimeZone {
+    id: string;
+    label: string;
+    offset: string;
+}
+
 @Injectable()
 export class DotcmsConfigService {
     private configParamsSubject: BehaviorSubject<ConfigParams> = new BehaviorSubject(null);
@@ -90,5 +97,32 @@ export class DotcmsConfigService {
 
                 return res;
             });
+    }
+
+    /**
+     * Return a list of timezones.
+     * @returns Observable<DotTimeZone[]>
+     * @memberof DotcmsConfigService
+     */
+    getTimeZone(): Observable<DotTimeZone[]> {
+        return this.coreWebService
+            .requestView({
+                url: this.configUrl
+            })
+            .pipe(
+                pluck('entity', 'config', 'timezones'),
+                map((timezones: DotTimeZone[]) => {
+                    return timezones.sort((a: DotTimeZone, b: DotTimeZone) => {
+                        if (a.label > b.label) {
+                            return 1;
+                        }
+                        if (a.label < b.label) {
+                            return -1;
+                        }
+                        // a must be equal to b
+                        return 0;
+                    });
+                })
+            );
     }
 }
