@@ -29,7 +29,7 @@ public abstract class BundleOutput implements Closeable {
      * @return
      * @throws IOException
      */
-    public abstract OutputStream addFile(String filePath) throws IOException;
+    public abstract OutputStream addFile(String filePath) throws AddFileNotPossibleException;
 
     /**
      * Add a new file into the output
@@ -38,7 +38,7 @@ public abstract class BundleOutput implements Closeable {
      * @return
      * @throws IOException
      */
-    public OutputStream addFile(File file) throws IOException {
+    public OutputStream addFile(File file) throws AddFileNotPossibleException {
         return addFile(file.getPath());
     }
 

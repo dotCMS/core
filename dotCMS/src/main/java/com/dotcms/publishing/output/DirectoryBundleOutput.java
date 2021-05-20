@@ -58,15 +58,19 @@ public class DirectoryBundleOutput extends BundleOutput {
     }
 
     @Override
-    public OutputStream addFile(final String filePath) throws IOException {
+    public OutputStream addFile(final String filePath) throws AddFileNotPossibleException {
         final File fileAbsolute = getRealFile(filePath);
         fileAbsolute.getParentFile().mkdirs();
 
-        if (!fileAbsolute.exists()) {
-            fileAbsolute.createNewFile();
-        }
+        try {
+            if (!fileAbsolute.exists()) {
+                fileAbsolute.createNewFile();
+            }
 
-        return Files.newOutputStream( fileAbsolute.toPath());
+            return Files.newOutputStream(fileAbsolute.toPath());
+        } catch (IOException e) {
+            throw new AddFileNotPossibleException(e, filePath);
+        }
     }
 
     private File getRealFile(final String path) {
