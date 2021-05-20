@@ -2,13 +2,8 @@ package com.dotcms.publishing.output;
 
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.PublisherConfig;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.FileUtil;
-import io.vavr.Lazy;
-import io.vavr.control.Try;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -58,7 +53,7 @@ public class DirectoryBundleOutput extends BundleOutput {
     }
 
     @Override
-    public OutputStream addFile(final String filePath) throws AddFileNotPossibleException {
+    public OutputStream addFile(final String filePath) throws FileCreationException {
         final File fileAbsolute = getRealFile(filePath);
         fileAbsolute.getParentFile().mkdirs();
 
@@ -69,7 +64,7 @@ public class DirectoryBundleOutput extends BundleOutput {
 
             return Files.newOutputStream(fileAbsolute.toPath());
         } catch (IOException e) {
-            throw new AddFileNotPossibleException(e, filePath);
+            throw new FileCreationException(e, filePath);
         }
     }
 

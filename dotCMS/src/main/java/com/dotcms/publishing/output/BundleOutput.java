@@ -5,7 +5,6 @@ import static com.liferay.util.FileUtil.validateEmptyFile;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotmarketing.util.Config;
 
-import com.dotmarketing.util.Logger;
 import com.liferay.util.FileUtil;
 
 import java.io.*;
@@ -29,7 +28,7 @@ public abstract class BundleOutput implements Closeable {
      * @return
      * @throws IOException
      */
-    public abstract OutputStream addFile(String filePath) throws AddFileNotPossibleException;
+    public abstract OutputStream addFile(String filePath) throws FileCreationException;
 
     /**
      * Add a new file into the output
@@ -38,7 +37,7 @@ public abstract class BundleOutput implements Closeable {
      * @return
      * @throws IOException
      */
-    public OutputStream addFile(File file) throws AddFileNotPossibleException {
+    public OutputStream addFile(File file) throws FileCreationException {
         return addFile(file.getPath());
     }
 
