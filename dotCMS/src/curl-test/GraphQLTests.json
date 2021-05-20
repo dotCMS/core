@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "e1678702-ef10-423d-be74-6a1438f7821c",
+		"_postman_id": "2c0cd354-98c5-4b05-8430-d56a8faf896c",
 		"name": "GraphQL",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -5326,6 +5326,154 @@
 								"graphql"
 							]
 						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Test Render Content Fields",
+			"item": [
+				{
+					"name": "pre_ImportBundleWithContent",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"contentWithRendereableFields.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/contentWithRendereableFields.tar.gz"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* Imports personas"
+					},
+					"response": []
+				},
+				{
+					"name": "Render content fields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Filtered relationship fetched\", function () {",
+									"    var jsonData = pm.response.json();",
+									"",
+									"    var contentlet = jsonData.data.TypeWithRedereableFieldsCollection[0];",
+									"    ",
+									"    pm.expect(contentlet.textField).to.eql(\"401ca578-74ef-463b-9ad0-c863da1724e5\");",
+									"    pm.expect(contentlet.textareaField).to.eql(\"401ca578-74ef-463b-9ad0-c863da1724e5\");",
+									"    pm.expect(contentlet.wysiwygField).to.eql(\"401ca578-74ef-463b-9ad0-c863da1724e5\");",
+									"    pm.expect(contentlet.customField).to.eql(\"401ca578-74ef-463b-9ad0-c863da1724e5\");",
+									"    pm.expect(contentlet.constantField).to.eql(\"401ca578-74ef-463b-9ad0-c863da1724e5\");",
+									"    pm.expect(contentlet.rawText).to.eql(\"$content.identifier\");",
+									"    pm.expect(contentlet.rawTextarea).to.eql(\"$content.identifier\");",
+									"    pm.expect(contentlet.rawWysiwyg).to.eql(\"$content.identifier\");",
+									"    pm.expect(contentlet.rawCustom).to.eql(\"$content.identifier\");",
+									"    pm.expect(contentlet.rawConstant).to.eql(\"$content.identifier\");",
+									"    pm.expect(contentlet.rawText_default).to.eql(\"$content.identifier\");",
+									"    pm.expect(contentlet.rawTextarea_default).to.eql(\"$content.identifier\");",
+									"    pm.expect(contentlet.rawWysiwyg_default).to.eql(\"$content.identifier\");",
+									"    pm.expect(contentlet.rawCustom_default).to.eql(\"$content.identifier\");",
+									"    pm.expect(contentlet.rawConstant_default).to.eql(\"$content.identifier\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n \n    TypeWithRedereableFieldsCollection {\n      textField(render: true)\n      textareaField(render: true)\n      wysiwygField(render: true)\n      customField(render: true)\n      constantField(render: true)\n      rawText:textField(render: false)\n      rawTextarea:textareaField(render: false)\n      rawWysiwyg:wysiwygField(render: false)\n      rawCustom:customField(render: false)\n      rawConstant:constantField(render: false)\n      rawText_default:textField\n      rawTextarea_default:textareaField\n      rawWysiwyg_default:wysiwygField\n      rawCustom_default:customField\n      rawConstant_default:constantField\n    }\n  \n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "This tests that: \n* It's possible to request rendered content fields.\n* It's possible to request unrendered content fields. \n* It's possible to request the same field in both rendered and unrendered forms.   \n* If \"render\" argument is not specified, then it defaults to render:false"
 					},
 					"response": []
 				}
