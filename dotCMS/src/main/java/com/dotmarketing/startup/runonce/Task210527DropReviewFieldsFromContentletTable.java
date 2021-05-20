@@ -8,7 +8,7 @@ import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
 import java.sql.SQLException;
 
-public class Task210318DropReviewFieldsFromContentletTable implements StartupTask {
+public class Task210527DropReviewFieldsFromContentletTable implements StartupTask {
     @Override
     public boolean forceRun() {
         try {
