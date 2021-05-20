@@ -7,6 +7,8 @@ import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
+import com.dotcms.publishing.PublishStatus;
+import com.dotcms.publishing.output.TarGzipBundleOutput;
 import com.dotcms.util.DotPreconditions;
 
 import com.dotmarketing.util.*;
@@ -26,8 +28,6 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
-import com.dotcms.publisher.pusher.PushUtils;
-import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.GenerateBundlePublisher;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
@@ -227,6 +227,7 @@ public class BundleAPIImpl implements BundleAPI {
 		return new BundleDeleteResult(bundlesFailed.build(), bundlesDeleted.build());
 	}
 
+	@CloseDBIfOpened
 	private Stream<String> getOlderBundleIds(final Date olderThan, final String userId, final boolean isAdmin)
 			throws IOException {
 
@@ -402,34 +403,18 @@ public class BundleAPIImpl implements BundleAPI {
 	 * @return
 	 */
     @CloseDBIfOpened
-    private File generateBundleDirectory(final Bundle bundle) {
+    public File generateTarGzipBundleFile(final Bundle bundle) {
 
         final PushPublisherConfig pushPublisherConfig = new PushPublisherConfig(bundle);
         pushPublisherConfig.setPublishers(Arrays.asList(GenerateBundlePublisher.class));
+
         try {
-            APILocator.getPublisherAPI().publish(pushPublisherConfig);
+			final PublishStatus publishStatus =
+					APILocator.getPublisherAPI().publish(pushPublisherConfig);
+			return publishStatus.getOutputFiles().get(0);
         }
         catch(final Exception e) {
         	Logger.error(this,e.getMessage(),e);
-            throw new DotRuntimeException(e);
-        }
-        return BundlerUtil.getBundleRoot( pushPublisherConfig );
-
-    }
-
-    @CloseDBIfOpened
-    @Override
-    public File generateTarGzipBundleFile(final Bundle bundle) {
-        final File bundleRoot = generateBundleDirectory(bundle);
-        final File bundleFile = new File(  ConfigUtils.getBundlePath()  + File.separator + bundle.getId() + ".tar.gz" );
-        bundleFile.delete();
-        try {
-            final File tmpFile= PushUtils.tarGzipDirectory( bundleRoot );
-            tmpFile.renameTo(bundleFile);
-            return bundleFile;
-        }
-        catch(final Exception e) {
-			Logger.error(this,e.getMessage(),e);
             throw new DotRuntimeException(e);
         }
     }

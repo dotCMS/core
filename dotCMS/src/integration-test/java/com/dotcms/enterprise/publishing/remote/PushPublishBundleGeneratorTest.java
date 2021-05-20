@@ -33,7 +33,9 @@ import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.IBundler;
 import com.dotcms.publishing.Publisher;
+import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.publishing.PublisherConfig.Operation;
+import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.MultiTree;
@@ -75,8 +77,8 @@ import org.junit.Assert;
  */
 public class PushPublishBundleGeneratorTest extends IntegrationTestBase {
 
-    private static User systemUser;
-    private static String defaultFilterKey = "Intelligent.yml";
+    private static User systemUser = APILocator.systemUser();
+    static String defaultFilterKey = "Intelligent.yml";
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -87,7 +89,6 @@ public class PushPublishBundleGeneratorTest extends IntegrationTestBase {
 
         createFilter();
 
-        systemUser = APILocator.getUserAPI().getSystemUser();
         createFilterDescriptor(defaultFilterKey,true,true,false,null,null,null,null,true);
     }
 
@@ -97,7 +98,7 @@ public class PushPublishBundleGeneratorTest extends IntegrationTestBase {
      * @return a bundle
      * @throws DotDataException
      */
-    private static Bundle createBundle (final String bundleName, final boolean forcePush,final String filterKey)
+    static Bundle createBundle (final String bundleName, final boolean forcePush, final String filterKey)
             throws DotDataException {
 
         final BundleAPI bundleAPI         = APILocator.getBundleAPI();
@@ -146,6 +147,7 @@ public class PushPublishBundleGeneratorTest extends IntegrationTestBase {
         if(UtilMethods.isSet(excludeDependencyQuery)) {
             filtersMap.put("excludeDependencyQuery", excludeDependencyQuery);
         }
+
         APILocator.getPublisherAPI().addFilterDescriptor(new FilterDescriptor(key,key,filtersMap,defaultFilter,"DOTCMS_BACK_END_USER"));
     }
 
@@ -192,8 +194,10 @@ public class PushPublishBundleGeneratorTest extends IntegrationTestBase {
 
         final File bundleRoot = BundlerUtil.getBundleRoot(pconf);
 
+        final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(pconf, bundleRoot);
+
         // Run bundlers
-        BundlerUtil.writeBundleXML(pconf);
+        BundlerUtil.writeBundleXML(pconf, directoryBundleOutput);
         for (final Class<IBundler> aClass : bundlers) {
 
             final IBundler bundler = aClass.newInstance();
@@ -203,7 +207,7 @@ public class PushPublishBundleGeneratorTest extends IntegrationTestBase {
             final BundlerStatus bundlerStatus = new BundlerStatus(bundler.getClass().getName());
             //Generate the bundler
             Logger.info(PushPublishBundleGeneratorTest.class, "Start of Bundler: " + aClass.getSimpleName());
-            bundler.generate(bundleRoot, bundlerStatus);
+            bundler.generate(directoryBundleOutput, bundlerStatus);
             Logger.info(PushPublishBundleGeneratorTest.class, "End of Bundler: " + aClass.getSimpleName());
         }
 
@@ -495,6 +499,7 @@ public class PushPublishBundleGeneratorTest extends IntegrationTestBase {
         final String filterKey = "TestFilterWithDependenciesFalse.yml";
         createFilterDescriptor(filterKey,false,true,false,
                 null,null,null,null,false);
+
         //Create bundle with New filter
         final Bundle bundleWithNewFilter = createBundle("TestBundle"+System.currentTimeMillis(),false,filterKey);
         //Add assets to the bundle

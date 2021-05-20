@@ -188,4 +188,55 @@ public class FileAssetContainerUtilTest extends ContentletBaseTest {
                 APILocator.getContentletAPI().checkin(fileAsset, user, false));
     }
 
+    /**
+     * Method to test: {@link FileAssetContainerUtil#fromAssets(Host, Folder, List, boolean,
+     * boolean)} Given Scenario: Creates a container, but deletes the physical file container.vtl
+     * ExpectedResult: No Exception should be thrown but the container will be with the default
+     * config, so the config set on the container.vtl should not accessible.
+     */
+    @Test
+    public void test_fromAssets_File_Physical_Deleted() throws Exception {
+
+        //Getting the current default host
+        final Host currentDefaultHost = APILocator.getHostAPI()
+                .findDefaultHost(APILocator.systemUser(), false);
+        final String pathRoot = "/application/containers/test" + System.currentTimeMillis();
+        final Folder containerFolder = APILocator.getFolderAPI()
+                .createFolders(pathRoot, currentDefaultHost, APILocator.systemUser(), false);
+        final String contentTypeVariable = "testfa" + System.currentTimeMillis();
+        ContentType fileAssetContentType = ImmutableFileAssetContentType.builder()
+                .name("FileAssetTestContentType").variable(contentTypeVariable).build();
+        fileAssetContentType = contentTypeAPI.save(fileAssetContentType);
+
+        final FileAsset fileAsset = new FileAsset();
+        final File tempFile1 = File.createTempFile("container", ".vtl");
+        FileUtil.write(tempFile1, "$dotJSON.put(\"title\", \"Test VTL Deleted File NPE\")\n" +
+                "$dotJSON.put(\"max_contentlets\", 25)");
+        final String fileNameField1 = "container" + ".vtl";
+        fileAsset.setContentType(fileAssetContentType);
+        fileAsset.setFolder(containerFolder.getInode());
+        fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, tempFile1);
+        fileAsset.setStringProperty(FileAssetAPI.HOST_FOLDER_FIELD, containerFolder.getInode());
+        fileAsset.setStringProperty(FileAssetAPI.TITLE_FIELD, fileNameField1);
+        fileAsset.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, fileNameField1);
+        fileAsset.setIndexPolicy(IndexPolicy.FORCE);
+
+        final List<FileAsset> assets = Arrays.asList(APILocator.getFileAssetAPI()
+                .fromContentlet(APILocator.getContentletAPI().checkin(fileAsset, user, false)));
+        File.class.cast(APILocator.getContentletAPI()
+                .findContentletByIdentifierAnyLanguage(fileAsset.getIdentifier(), false).getMap()
+                .get("fileAsset")).delete();
+
+        final boolean showLive = false;
+        final boolean includeHostOnPath = false;
+
+        final Container container = FileAssetContainerUtil.getInstance()
+                .fromAssets(currentDefaultHost,
+                        containerFolder, assets, showLive, includeHostOnPath);
+
+        Assert.assertNotNull(container);
+        Assert.assertTrue(container instanceof FileAssetContainer);
+        Assert.assertNotEquals(25, container.getMaxContentlets());
+        Assert.assertNotEquals("Test VTL Deleted File NPE", container.getTitle());
+    }
 }

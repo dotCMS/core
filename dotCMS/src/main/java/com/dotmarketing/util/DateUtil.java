@@ -3,6 +3,7 @@ package com.dotmarketing.util;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.util.StringPool;
@@ -176,6 +177,23 @@ public class DateUtil {
 			Logger.warn(DateUtil.class, e.toString());
 		}
 		return result;
+	}
+
+	/**
+	 * This method try to parse a string into a Date object
+	 * Uses the contentlet default formats
+	 *
+	 * @see dotmarketing-config.properties: dotcontentlet_dateformats and {@link ContentletAPI#DEFAULT_DATE_FORMATS}
+	 *
+	 * @param date
+	 *            - the string to be parsed
+	 * @return return the Date object that represent the string
+	 * @throws java.text.ParseException
+	 */
+	public static Date convertDate(final String date) throws java.text.ParseException {
+
+		final String[] formats = Config.getStringArrayProperty("dotcontentlet_dateformats", ContentletAPI.DEFAULT_DATE_FORMATS);
+		return convertDate(date, companyTimeZone.get(), formats);
 	}
 
 	/**

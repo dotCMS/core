@@ -1,10 +1,16 @@
 package com.dotcms.datagen;
 
+
+import static com.dotmarketing.business.ModDateTestUtil.updateContentletModeDate;
+import static com.dotmarketing.business.ModDateTestUtil.updateContentletVersionDate;
+
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.contentlet.business.HostAPIImpl;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import java.util.Date;
 
 /**
  * @author Jonathan Gamba 2019-05-28
@@ -16,6 +22,7 @@ public class SiteDataGen extends AbstractDataGen<Host> {
     private String name = "test" + currentTime + ".dotcms.com";
     private String aliases;
     private boolean isDefault;
+    private Date modDate;
 
     public SiteDataGen name(final String name) {
         this.name = name;
@@ -56,12 +63,20 @@ public class SiteDataGen extends AbstractDataGen<Host> {
             site.setIndexPolicy(IndexPolicy.WAIT_FOR);
             site.setBoolProperty(Contentlet.IS_TEST_MODE, true);
             site.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+
             final Host newSite = APILocator.getHostAPI().save(site, user, false);
             if (publish) {
                 newSite.setIndexPolicy(IndexPolicy.WAIT_FOR);
                 newSite.setBoolProperty(Contentlet.IS_TEST_MODE, true);
                 newSite.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
                 APILocator.getHostAPI().publish(newSite, user, false);
+            }
+
+            if (modDate != null) {
+                updateContentletModeDate(newSite, modDate);
+                updateContentletVersionDate(newSite, modDate);
+
+                ((HostAPIImpl) APILocator.getHostAPI()).flush(newSite);
             }
 
             return newSite;
@@ -94,4 +109,8 @@ public class SiteDataGen extends AbstractDataGen<Host> {
         return persist(next(), publish);
     }
 
+    public SiteDataGen modDate(Date modDate) {
+        this.modDate = modDate;
+        return this;
+    }
 }

@@ -7,6 +7,8 @@ import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.output.BundleOutput;
+import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -24,8 +26,6 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashSet;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.set;
@@ -80,7 +80,7 @@ public class ContainerBundlerTest {
     }
 
     /**
-     * Method to Test: {@link ContainerBundler#generate(File, BundlerStatus)}
+     * Method to Test: {@link ContainerBundler#generate(BundleOutput, BundlerStatus)}
      * When: Add a {@link Container} in a bundle
      * Should:
      * - The file should be create in:
@@ -98,13 +98,14 @@ public class ContainerBundlerTest {
 
         final BundlerStatus status = mock(BundlerStatus.class);
         final ContainerBundler bundler = new ContainerBundler();
-        final File bundleRoot = FileUtil.createTemporaryDirectory("ContentTypeBundlerTest_addContentTypeInBundle_");
 
-        final FilterDescriptor filterDescriptor = new FileDescriptorDataGen().nextPersisted();
+        final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
 
         final PushPublisherConfig config = new PushPublisherConfig();
         config.setContainers(set(container.getIdentifier()));
         config.setOperation(PublisherConfig.Operation.PUBLISH);
+
+        final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config);
 
         new BundleDataGen()
                 .pushPublisherConfig(config)
@@ -113,19 +114,19 @@ public class ContainerBundlerTest {
                 .nextPersisted();
 
         bundler.setConfig(config);
-        bundler.generate(bundleRoot, status);
+        bundler.generate(directoryBundleOutput, status);
 
         final User systemUser = APILocator.systemUser();
         final Container workingContainer = APILocator.getContainerAPI()
                 .getWorkingContainerById(container.getIdentifier(), systemUser, false);
 
-        FileTestUtil.assertBundleFile(bundleRoot, workingContainer, testCase.expectedFilePath);
+        FileTestUtil.assertBundleFile(directoryBundleOutput.getFile(), workingContainer, testCase.expectedFilePath);
 
         final Container liveContainer = APILocator.getContainerAPI()
                 .getLiveContainerById(container.getIdentifier(), systemUser, false);
 
         if(liveContainer != null && !liveContainer.getInode().equals(workingContainer.getInode())){
-            FileTestUtil.assertBundleFile(bundleRoot, liveContainer, testCase.expectedFilePath);
+            FileTestUtil.assertBundleFile(directoryBundleOutput.getFile(), liveContainer, testCase.expectedFilePath);
         }
     }
 

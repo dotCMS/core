@@ -1,6 +1,5 @@
 package com.dotcms.storage;
 
-import com.dotmarketing.util.UtilMethods;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.function.Function;
@@ -11,12 +10,12 @@ import java.util.function.Supplier;
  * it could be by cache or file system
  * @author jsanca
  */
-public class RequestMetadata {
+public class FetchMetadataParams {
 
     /**
      * Provides the key for the storage
      */
-    private final StorageKey    storageKey;
+    private final StorageKey  storageKey;
 
     /**
      * If true, means the medatada output will be stores in the memory cache.
@@ -30,19 +29,25 @@ public class RequestMetadata {
 
     /**
      * In case the metadata is retrieved from the storage instead of the cache,
-     * you can wrap the metadata recovery from the storage in order to add, mod or remove values
+     * you can wrap the metadata recovered from the storage in order to add, mod or remove values
      */
-    private final Function<Map<String, Serializable>, Map<String, Serializable>> wrapMetadataMapForCache;
+    private final Function<Map<String, Serializable>, Map<String, Serializable>> projectionMapForCache;
+
+    /**
+     * on non existing entry found, force insertion
+     */
+    private final boolean forceInsertion;
 
     /**
      * Builder based constructor
      * @param builder
      */
-    private RequestMetadata(final Builder builder) {
+    private FetchMetadataParams(final Builder builder) {
         this.cache                   = builder.cache;
         this.cacheKeySupplier        = builder.cacheKeySupplier;
         this.storageKey              = builder.storageKey;
-        this.wrapMetadataMapForCache = builder.wrapMetadataMapForCache;
+        this.projectionMapForCache   = builder.projectionMapForCache;
+        this.forceInsertion          = builder.forceInsertion;
     }
 
     public StorageKey getStorageKey() {
@@ -61,8 +66,12 @@ public class RequestMetadata {
         return cacheKeySupplier;
     }
 
-    public Function<Map<String, Serializable>, Map<String, Serializable>> getWrapMetadataMapForCache() {
-        return wrapMetadataMapForCache;
+    public Function<Map<String, Serializable>, Map<String, Serializable>> getProjectionMapForCache() {
+        return projectionMapForCache;
+    }
+
+    public boolean isForceInsertion() {
+        return forceInsertion;
     }
 
     /**
@@ -89,7 +98,12 @@ public class RequestMetadata {
          * In case the metadata is retrieved from the storage instead of the cache,
          * you can wrap the metadata recovery from the storage in order to add, mod or remove values
          */
-        private Function<Map<String, Serializable>, Map<String, Serializable>> wrapMetadataMapForCache = map-> map;
+        private Function<Map<String, Serializable>, Map<String, Serializable>> projectionMapForCache = map-> map;
+
+        /**
+         * on none-existing entry force insertion
+         */
+        private boolean forceInsertion;
 
         public Builder cache(final boolean cache) {
 
@@ -110,14 +124,19 @@ public class RequestMetadata {
             return this;
         }
 
-        public Builder wrapMetadataMapForCache(final Function<Map<String, Serializable>, Map<String, Serializable>> wrapMetadataMapForCache) {
+        public Builder projectionMapForCache(final Function<Map<String, Serializable>, Map<String, Serializable>> projectionMapForCache) {
 
-            this.wrapMetadataMapForCache = wrapMetadataMapForCache;
+            this.projectionMapForCache = projectionMapForCache;
             return this;
         }
 
-        public RequestMetadata build() {
-            return new RequestMetadata(this);
+        public Builder forceInsert(final boolean forceInsertion){
+          this.forceInsertion = forceInsertion;
+          return this;
+        }
+
+        public FetchMetadataParams build() {
+            return new FetchMetadataParams(this);
         }
     }
 }

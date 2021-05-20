@@ -43,6 +43,7 @@ import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -3544,5 +3545,58 @@ public class UtilMethods {
             }
         }
         return adminMode;
+    }
+
+    /**
+     * Removes leading and trailing whitespaces from a char array
+     * @param myArray char[] to go over
+     * @return
+     */
+    public static char[] trimCharArray(final char[] myArray){
+        if (myArray == null || myArray.length == 0){
+            return myArray;
+        }
+
+        final int leftPosition = getTrimLeftPosition(myArray);
+        final int rightPosition = getTrimRightPosition(myArray);
+        return Arrays.copyOfRange(myArray, leftPosition, rightPosition + 1);
+    }
+
+    /**
+     * Finds the last position (from left to right) where a whitespace is found in a char array
+     * before the first non-whitespace character
+     * @param value char[] to go over
+     * @return
+     */
+    private static int getTrimLeftPosition(final char[] value){
+        int position = 0;
+        if(value == null){
+            return position;
+        }
+
+        while(position < value.length && value[position] == ' ') {
+            position++;
+        }
+
+        return position;
+    }
+
+    /**
+     * Finds the last position (from right to left) where a whitespace is found in a char array
+     * before the first non-whitespace character
+     * @param value char[] to go over
+     * @return
+     */
+    private static int getTrimRightPosition(final char[] value){
+        int position = value.length - 1;
+        if(value == null){
+            return position;
+        }
+
+        while(position >= 0 && value[position] == ' ') {
+            position--;
+        }
+
+        return position;
     }
 }

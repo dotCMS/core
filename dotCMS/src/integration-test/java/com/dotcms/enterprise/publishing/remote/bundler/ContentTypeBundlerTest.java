@@ -8,27 +8,24 @@ import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.output.BundleOutput;
+import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.FileUtil;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import io.vavr.API;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.*;
 import static org.jgroups.util.Util.assertEquals;
@@ -90,7 +87,7 @@ public class ContentTypeBundlerTest {
     }
 
     /**
-     * Method to Test: {@link ContentTypeBundler#generate(File, BundlerStatus)}
+     * Method to Test: {@link ContentTypeBundler#generate(BundleOutput, BundlerStatus)}
      * When: Add a {@link ContentType} in a bundle
      * Should:
      * - The file should be create in:
@@ -108,13 +105,14 @@ public class ContentTypeBundlerTest {
 
         final BundlerStatus status = mock(BundlerStatus.class);
         final ContentTypeBundler bundler = new ContentTypeBundler();
-        final File bundleRoot = FileUtil.createTemporaryDirectory("ContentTypeBundlerTest_addContentTypeInBundle_");
 
-        final FilterDescriptor filterDescriptor = new FileDescriptorDataGen().nextPersisted();
+        final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
 
         final PushPublisherConfig config = new PushPublisherConfig();
         config.setStructures(set(contentType.id()));
         config.setOperation(PublisherConfig.Operation.PUBLISH);
+
+        final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config);
 
         new BundleDataGen()
                 .pushPublisherConfig(config)
@@ -123,9 +121,9 @@ public class ContentTypeBundlerTest {
                 .nextPersisted();
 
         bundler.setConfig(config);
-        bundler.generate(bundleRoot, status);
+        bundler.generate(directoryBundleOutput, status);
 
-        FileTestUtil.assertBundleFile(bundleRoot, contentType, testCase.expectedFilePath);
+        FileTestUtil.assertBundleFile(directoryBundleOutput.getFile(), contentType, testCase.expectedFilePath);
     }
 
     private static class TestCase{

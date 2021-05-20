@@ -1,9 +1,17 @@
 package com.dotcms.filters;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.util.Collection;
+import javax.servlet.FilterChain;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import com.dotcms.mock.response.MockHttpStatusAndHeadersResponse;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotcms.datagen.SiteDataGen;
@@ -27,6 +35,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import org.mockito.Mockito;
 
 public class VanityUrlFilterTest {
 
@@ -59,6 +68,74 @@ public class VanityUrlFilterTest {
         defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
     }
 
+    /**
+     * Method to test: {@link VanityURLFilter#doFilter(ServletRequest, ServletResponse, FilterChain)}
+     * Given Scenario: try a success 301 to the same url with / at the end
+     * ExpectedResult: response code = 301 and location is the forward to
+     *
+     */
+    @Test
+    public void test_vanity_trailing_slash_301_success() throws Exception {
+
+
+        String title = "VanityURL"  + System.currentTimeMillis();
+        String site = defaultHost.getIdentifier();
+        String uri = "/redirect-me/";
+        String forwardTo = "/redirect-me";
+        int action = 301;
+        int order = 1;
+
+        Contentlet contentlet1 = filtersUtil.createVanityUrl(title, site, uri,
+                forwardTo, action, order, defaultLanguage.getId());
+        filtersUtil.publishVanityUrl(contentlet1);
+
+        final HttpServletRequest request = new MockHttpRequest(defaultHost.getHostname(), uri).request();
+
+        final HttpServletResponse response = new MockHttpStatusAndHeadersResponse(
+                new MockHttpResponse().response()).response();
+
+        final VanityURLFilter filter = new VanityURLFilter();
+
+        filter.doFilter(request, response, null);
+
+        Assert.assertEquals(301,  response.getStatus());
+        Assert.assertEquals(forwardTo,  response.getHeader("Location"));
+    }
+
+    /**
+     * Method to test: {@link VanityURLFilter#doFilter(ServletRequest, ServletResponse, FilterChain)}
+     * Given Scenario: the url is the same of the forward to, so even if match the vanity does not need the redirect
+     * ExpectedResult: response code = 200, the 301 is not needed
+     *
+     */
+    @Test
+    public void test_vanity_trailing_slash_200_success() throws Exception {
+
+
+        String title = "VanityURL"  + System.currentTimeMillis();
+        String site = defaultHost.getIdentifier();
+        String uri = "/redirect-me/";
+        String forwardTo = "/redirect-me";
+        int action = 301;
+        int order = 1;
+
+        Contentlet contentlet1 = filtersUtil.createVanityUrl(title, site, uri,
+                forwardTo, action, order, defaultLanguage.getId());
+        filtersUtil.publishVanityUrl(contentlet1);
+
+        final HttpServletRequest request = new MockHttpRequest(defaultHost.getHostname(), forwardTo).request();
+
+        final HttpServletResponse response = new MockHttpStatusAndHeadersResponse(
+                new MockHttpResponse().response()).response();
+
+        final FilterChain filterChain = Mockito.mock(FilterChain.class);
+
+        final VanityURLFilter filter = new VanityURLFilter();
+
+        filter.doFilter(request, response, filterChain);
+
+        Assert.assertEquals(200,  response.getStatus());
+    }
 
     /**
      * this tests that the vanityURL proxies requests that are made to different hosts.
@@ -84,19 +161,21 @@ public class VanityUrlFilterTest {
   
         final File tmp = File.createTempFile("testingVanity", "test");
         tmp.deleteOnExit();
-        
-        final HttpServletResponse response = new MockHttpCaptureResponse(new MockHttpResponse().response(), tmp).response();
 
-        final VanityURLFilter filter = new VanityURLFilter();
-        
-        filter.doFilter(request, response, null);
-        
-        assert(tmp.exists());
-        String content = FileUtil.read(tmp);
-        assert(content!=null);
-        assert(content.contains("All rights reserved"));
-        assert(content.contains("<meta property=\"og:url\" content=\"https://dotcms.com/\">"));
-        
+        try(OutputStream outputStream = new FileOutputStream(tmp)) {
+            final HttpServletResponse response = new MockHttpCaptureResponse(
+                    new MockHttpResponse().response(), outputStream).response();
+
+            final VanityURLFilter filter = new VanityURLFilter();
+
+            filter.doFilter(request, response, null);
+
+            assert (tmp.exists());
+            String content = FileUtil.read(tmp);
+            assert (content != null);
+            assert (content.contains("All rights reserved"));
+            assert (content.contains("<meta property=\"og:url\" content=\"https://dotcms.com/\">"));
+        }
 
     }
 

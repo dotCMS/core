@@ -598,7 +598,7 @@ public class ContentletBaseTest extends IntegrationTestBase {
         relationship.setCardinality(cardinality);
 
         //Save it
-        FactoryLocator.getRelationshipFactory().save( relationship );
+        APILocator.getRelationshipAPI().save( relationship );
 
         return relationship;
     }
@@ -635,7 +635,7 @@ public class ContentletBaseTest extends IntegrationTestBase {
 
         final boolean internalHasParent = hasParent!=null
             ? hasParent
-            : FactoryLocator.getRelationshipFactory().isParent( relationship, structure );
+            : APILocator.getRelationshipAPI().isParent( relationship, structure );
 
         //Adding the relationships records
         final ContentletRelationships.ContentletRelationshipRecords contentletRelationshipRecords =

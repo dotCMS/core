@@ -1,11 +1,11 @@
 package com.dotcms.concurrent;
 
+import com.dotmarketing.util.Logger;
+
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * Encapsulate a Submitter for {@link Runnable} and {@link Callable}, in addition to the usual {@link Executor} functionality.
@@ -101,4 +101,24 @@ public interface DotSubmitter extends Executor, Serializable {
     public boolean isAborting();
 
 
+    /**
+     * The current Thread wait until all the Thread finish
+     */
+    void waitForAll(final long timeout, final TimeUnit unit) throws ExecutionException;
+
+    default void waitForAll(final Collection<Future<Void>> futures) throws ExecutionException {
+        for(final Future future : futures) {
+            try {
+                future.get();
+            } catch(ExecutionException e) {
+                Logger.error(DotSubmitter.class, e);
+                throw e;
+            } catch(InterruptedException e) {
+                Logger.error(DotSubmitter.class, e);
+                continue;
+            }
+        }
+    }
+
+    long getTaskCount();
 } // E:O:F:DotExecutor.

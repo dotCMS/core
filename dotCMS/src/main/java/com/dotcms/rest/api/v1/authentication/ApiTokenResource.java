@@ -19,6 +19,8 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import java.net.ConnectException;
+import javax.ws.rs.core.Response.ResponseBuilder;
 import org.glassfish.jersey.internal.util.Base64;
 import org.glassfish.jersey.server.JSONP;
 
@@ -290,9 +292,14 @@ public class ApiTokenResource implements Serializable {
                 }
             }
 
-            return response;
+            return Response
+                    .status(response.getStatus())
+                    .entity(response.readEntity(String.class))
+                    .build();
         } catch (ProcessingException e){
-            if (e.getCause().getClass() == UnknownHostException.class || e.getCause().getClass() == NoRouteToHostException.class) {
+            if (e.getCause().getClass() == UnknownHostException.class ||
+                    e.getCause().getClass() == NoRouteToHostException.class ||
+                    e.getCause().getClass() == ConnectException.class) {
                 Logger.error(ApiTokenResource.class, String.format("Invalid server URL: %s", remoteURL));
                 return Response.status(Response.Status.NOT_FOUND).build();
             } else {

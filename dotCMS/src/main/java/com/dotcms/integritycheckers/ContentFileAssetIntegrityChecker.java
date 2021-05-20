@@ -526,49 +526,55 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
     }
 
     /**
-     * Move inode folder to a new location
+     * Moves the Inode folder to a new location. That is, copies the existing File Asset data from one location - the
+     * old Inode - to the new final location - the new Inode.
      * 
-     * @param oldContentlet
-     * @param newInode
-     * @throws DotDataException
-     * @throws IOException 
+     * @param oldContentlet The existing File Asset that is being fixed.
+     * @param newInode      The new Inode that will represent the binary file for the existing File Asset.
+     *
+     * @throws DotDataException An error occurred when interacting with the data source.
+     * @throws IOException      An error occured when interacting with the File System.
      */
-    private void moveInodeFolder(Contentlet oldContentlet, final String newInode)
+    private void moveInodeFolder(final Contentlet oldContentlet, final String newInode)
             throws DotDataException {
-
-        // We need to copy files and folder from inode folder
-        File currentInodeFolder = getInodeFolder(oldContentlet);
+        // We need to copy the files and folders from the "old" inode folder to the new one
+        final File currentInodeFolder = getInodeFolder(oldContentlet);
         if (currentInodeFolder == null) {
-            Logger.error(this,
-                    "We cannot move file assets because inode=[" + oldContentlet.getInode()
-                            + "] folder doesn't exists.");
+            Logger.warn(this, String.format("Failed to move File Asset with Inode '%s' because its respective asset " +
+                    "folder doesn't exist.", oldContentlet.getInode()));
             return;
         }
 
-        final String folderTree = new StringBuilder(String.valueOf(newInode.charAt(0)))
+        final String newInodePath = new StringBuilder(String.valueOf(newInode.charAt(0)))
                 .append(File.separator).append(String.valueOf(newInode.charAt(1)))
                 .append(File.separator).append(newInode).toString();
         final String realAssetsPath = APILocator.getFileAssetAPI().getRealAssetsRootPath();
-        File newInodeFolder = new File(realAssetsPath + File.separator + folderTree);
+        final File newInodeAbsolutePath = new File(realAssetsPath + File.separator + newInodePath);
 
-        if (!newInodeFolder.exists()) {
-            if (newInodeFolder.mkdirs()) {
+        if (!newInodeAbsolutePath.exists()) {
+            if (newInodeAbsolutePath.mkdirs()) {
                 try {
-                    FileUtil.copyDirectory(currentInodeFolder, newInodeFolder);
+                    FileUtil.copyDirectory(currentInodeFolder, newInodeAbsolutePath);
                     FileUtil.deltree(currentInodeFolder, true);
-                    Logger.info(this, "Relocated file assets from inode=[" + oldContentlet.getInode()
+                    Logger.info(this, "Relocated File Asset from inode = [" + oldContentlet.getInode()
                         + "] to inode = [" + newInode + "]");
-                }catch(IOException e){
-                    throw new DotDataException(e.getMessage(),e);
+                } catch (final IOException e) {
+                    throw new DotDataException(String.format("An error occurred when copying File Asset from old " +
+                            "Inode '%s' to new Inode '%s': %s", oldContentlet.getInode(), newInode, e.getMessage()), e);
                 }
-                return;
+            } else {
+                throw new DotDataException(String.format("An error occurred when creating folder using Inode '%s'. " +
+                        "Please check OS file system permissions.", newInode));
             }
+        } else {
+            // At this point, it means that "newInodeFolder" DOES exist, so the incoming Inode is NOT new and is
+            // pointing to an existing contentlet. This is an inconsistency, and must be manually verified and fixed
+            // by a dev
+            final String errorMsg = String.format("Failed to copy File Asset from old inode '%s' to the new Inode " +
+                    "'%s' because the new Inode folder already exists.", oldContentlet.getInode(), newInode);
+            Logger.error(this, errorMsg);
+            throw new DotStateException(errorMsg);
         }
-
-        final String errorMsg = "Error while copying the assets to the new folder.  Info: old inode=["
-                + oldContentlet.getInode() + "] - new inode=[" + newInode + "]";
-        Logger.error(this, errorMsg);
-        throw new DotStateException(errorMsg);
     }
-}
 
+}

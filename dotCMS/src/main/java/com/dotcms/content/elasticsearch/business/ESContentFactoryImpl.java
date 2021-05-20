@@ -1424,11 +1424,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
         
     }
 
-    private void rebuildRestHighLevelClientIfNeeded(Exception e) {
-        if(e != null && e.getMessage().contains("reactor status: STOPPED")) {
-            RestHighLevelClientProvider.getInstance().rebuildClient();
-        }
-    }
 
     /**
      * if enabled CountRequest are executed and then cached
@@ -1629,6 +1624,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
             Logger.warnAndDebug(ESContentFactoryImpl.class, e);
             throw new DotRuntimeException(e);
         } catch (final Exception e) {
+            if(ExceptionUtil.causedBy(e, IllegalStateException.class)) {
+                rebuildRestHighLevelClientIfNeeded(e);
+            }
             final String errorMsg = String.format("An error occurred when executing the Lucene Query [ %s ] : %s",
                     searchRequest.source().toString(), e.getMessage());
             Logger.warnAndDebug(ESContentFactoryImpl.class, errorMsg, e);

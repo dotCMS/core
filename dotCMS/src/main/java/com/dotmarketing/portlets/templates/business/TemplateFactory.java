@@ -6,6 +6,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
@@ -104,4 +105,19 @@ public interface TemplateFactory {
 	 * @throws DotDataException
 	 */
 	List<Template> findTemplatesByContainerInode(final String containerInode) throws DotDataException;
+
+	/**
+	 * Get a template based on a folder (non-db)
+	 * A folder could be considered as a template if:
+	 * 1) Is under /application/templates
+	 * 2) Has a file called properties.vtl
+	 * @param site site where the folder lives
+	 * @param folder folder that should be a template
+	 * @param user
+	 * @param showLive
+	 * @return Template
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	Template getTemplateByFolder(final Host site, final Folder folder, final User user, final boolean showLive) throws DotDataException,DotSecurityException;
 }

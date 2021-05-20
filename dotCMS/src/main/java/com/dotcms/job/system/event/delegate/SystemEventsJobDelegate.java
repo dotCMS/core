@@ -1,8 +1,8 @@
 package com.dotcms.job.system.event.delegate;
 
 import com.dotcms.api.system.event.SystemEvent;
+import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
-import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.job.system.event.AbstractJobDelegate;
 import com.dotcms.job.system.event.SystemEventsJob;
 import com.dotcms.job.system.event.delegate.bean.JobDelegateDataBean;
@@ -61,7 +61,13 @@ public class SystemEventsJobDelegate extends AbstractJobDelegate {
 				// the owner server does not need to send the message again!
 				if (!SERVER_ID.equals(event.getServerId())) {
 
-					webSocketEndPoint.sendSystemEvent(event);
+					if (this.isClusterWideEventWrapped(event)) {
+
+						this.notifyLocalSystemEvent(event);
+					} else {
+
+						webSocketEndPoint.sendSystemEvent(event);
+					}
 				} else {
 
 					Logger.info(this, "The event: " + event.getId() +
@@ -70,5 +76,15 @@ public class SystemEventsJobDelegate extends AbstractJobDelegate {
 			}
 		}
 	} // executeDelegate.
+
+	private void notifyLocalSystemEvent(final SystemEvent event) {
+
+		APILocator.getLocalSystemEventsAPI().asyncNotify(event.getPayload().getData());
+	}
+
+	private boolean isClusterWideEventWrapped(final SystemEvent event) {
+
+		return event.getEventType() == SystemEventType.CLUSTER_WIDE_EVENT;
+	}
 
 }

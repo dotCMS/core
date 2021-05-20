@@ -294,6 +294,9 @@ public class TaskLocatorUtil {
         .add(Task201014UpdateColumnsValuesInIdentifierTable.class)
 		.add(Task210218MigrateUserProxyTable.class)
 		.add(Task210316UpdateLayoutIcons.class)
+        .add(Task210319CreateStorageTable.class)
+		.add(Task210321RemoveOldMetadataFiles.class)
+        .add(Task210506UpdateStorageTable.class)
         .add(Task210318DropReviewFieldsFromContentletTable.class)
         .build();
         

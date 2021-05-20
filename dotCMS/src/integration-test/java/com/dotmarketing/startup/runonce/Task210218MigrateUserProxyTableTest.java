@@ -229,6 +229,12 @@ public class Task210218MigrateUserProxyTableTest {
         createUserProxyTable();
     }
 
+    private void dropAdditionalInfoColumnFromUserTable() throws SQLException {
+
+        final DotConnect dotConnect = new DotConnect();
+        dotConnect.executeStatement("ALTER TABLE user_ DROP COLUMN additional_info");
+    }
+
     private static void createUserProxyTable() throws SQLException, DotDataException {
         DotConnect dotConnect = new DotConnect();
 
@@ -257,7 +263,7 @@ public class Task210218MigrateUserProxyTableTest {
      * @throws DotSecurityException
      */
     @Test
-    public void testUpgradeTask() throws DotDataException, DotSecurityException {
+    public void testUpgradeTask() throws DotDataException, DotSecurityException, SQLException {
 
         //Create user with additional info
         final User userWithAdditionalInfo = new UserDataGen()
@@ -278,10 +284,14 @@ public class Task210218MigrateUserProxyTableTest {
         final User userWithoutAdditionalInfo = new UserDataGen()
                 .firstName("backendUser" + System.currentTimeMillis()).nextPersisted();
 
+        dropAdditionalInfoColumnFromUserTable();
+
         final Task210218MigrateUserProxyTable task = new Task210218MigrateUserProxyTable();
 
         assertTrue(task.forceRun());
         task.executeUpgrade();
+
+        assertFalse(task.forceRun());
 
         User userResult = userAPI.loadUserById(userWithoutAdditionalInfo.getUserId());
         assertFalse(UtilMethods.isSet(userResult.getAdditionalInfo()));
