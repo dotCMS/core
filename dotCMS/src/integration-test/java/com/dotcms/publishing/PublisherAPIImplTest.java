@@ -4,6 +4,14 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.*;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
+import com.dotcms.publisher.bundle.bean.Bundle;
+import com.dotcms.publisher.bundle.business.BundleFactoryImpl;
+import com.dotcms.publisher.business.DotPublisherException;
+import com.dotcms.publisher.business.PublishAuditAPI;
+import com.dotcms.publisher.business.PublishAuditHistory;
+import com.dotcms.publisher.business.PublishAuditStatus;
+import com.dotcms.publisher.endpoint.bean.impl.PushPublishingEndPoint;
+import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.receiver.BundlePublisher;
@@ -38,17 +46,25 @@ import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -62,18 +78,12 @@ import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.*;
 import static org.jgroups.util.Util.assertEquals;
+import static org.jgroups.util.Util.assertTrue;
 
 @RunWith(DataProviderRunner.class)
 public class PublisherAPIImplTest {
 
     private static Contentlet languageVariableCreated;
-
-    public static class PushPublisherMock extends PushPublisher {
-        @Override
-        public PublisherConfig process ( final PublishStatus status ) throws DotPublishingException {
-            return this.config;
-        }
-    }
 
     public static void prepare() throws Exception {
 
@@ -122,7 +132,7 @@ public class PublisherAPIImplTest {
     public static Object[] publishers() throws Exception {
         prepare();
 
-        final List<TestAsset> assets = list(
+        return  new TestAsset[]{
                 getContentTypeWithHost(),
                 getTemplateWithDependencies(),
                 getContainerWithDependencies(),
@@ -132,22 +142,7 @@ public class PublisherAPIImplTest {
                 getWorkflowWithDependencies(),
                 getLanguageWithDependencies(),
                 getRuleWithDependencies()
-        );
-        final List<Class<? extends Publisher>> publishers = list(
-                GenerateBundlePublisher.class,
-                PushPublisherMock.class
-        );
-
-        final List<TestCase> cases = new ArrayList<>();
-
-        for (final Class<? extends Publisher> publisher : publishers) {
-            for (TestAsset asset : assets) {
-                cases.add(new TestCase(publisher, asset));
-                cases.add(new TestCase(publisher, asset));
-            }
-        }
-
-        return cases.toArray();
+        };
     }
 
     private static TestAsset getRuleWithDependencies() {
@@ -352,20 +347,19 @@ public class PublisherAPIImplTest {
     }
 
     /**
-     * Method to Test: {@link PublisherAPIImpl#publish(PublisherConfig, BundleOutput)}
-     * When: Add different assets into a bundle
+     * Method to Test: {@link PublisherAPIImpl#publish(PublisherConfig)}
+     * When: Add different assets into a bundle, and generate it
      * Should: Create all the files
      */
     @Test
     @UseDataProvider("publishers")
-    public void publish(final TestCase testCase) throws DotPublishingException, DotSecurityException, IOException, DotDataException {
-        final Class<? extends Publisher> publisher = testCase.publisher;
-        final TestAsset testAsset = testCase.asset;
+    public void generateBundle(final TestAsset testAsset) throws DotPublishingException, DotSecurityException, IOException, DotDataException {
+        final Class<? extends Publisher> publisher = GenerateBundlePublisher.class;
         final Collection<Object> dependencies = new HashSet<>();
         dependencies.addAll(testAsset.expectedInBundle);
 
         createLanguageVariableIfNeeded();
-        addLanguageVariableDependencies(dependencies, testCase.asset.addLanguageVariableDependencies);
+        addLanguageVariableDependencies(dependencies, testAsset.addLanguageVariableDependencies);
 
         final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
 
@@ -387,13 +381,93 @@ public class PublisherAPIImplTest {
         final PublishStatus publish = publisherAPI.publish(config);
         File bundleRoot = publish.getOutputFiles().get(0);
 
-        if (GenerateBundlePublisher.class.equals(publisher)) {
+        final File extractHere = new File(bundleRoot.getParent() + File.separator + config.getName());
+        extractTarArchive(bundleRoot, extractHere);
+        assertBundle(testAsset, dependencies, extractHere);
+    }
+
+    /**
+     * Method to Test: {@link PublisherAPIImpl#publish(PublisherConfig)}
+     * When: Add different assets into a bundle, and send it
+     * Should: Create all the files
+     */
+    @Test
+    @UseDataProvider("publishers")
+    public void sendPushPublishBundle(final TestAsset testAsset)
+            throws DotPublishingException, DotSecurityException, IOException, DotDataException, DotPublisherException {
+        final Class<? extends Publisher> publisher = PushPublisher.class;
+
+        final Environment environment = new EnvironmentDataGen().nextPersisted();
+
+        final PushPublishingEndPoint publishingEndPoint = new PushPublishingEndPointDataGen()
+                .environment(environment)
+                .nextPersisted();
+
+        final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
+
+        final PushPublisherConfig config = new PushPublisherConfig();
+        config.setPublishers(list(publisher));
+        config.setOperation(PublisherConfig.Operation.PUBLISH);
+        config.setLuceneQueries(list());
+        config.setId("sendPushPublishBundle_" + System.currentTimeMillis());
+
+        final Bundle bundle = new BundleDataGen()
+                .pushPublisherConfig(config)
+                .addAssets(list(testAsset.asset))
+                .filter(filterDescriptor)
+                .nextPersisted();
+
+        final BundleFactoryImpl bundleFactory = new BundleFactoryImpl();
+        bundleFactory.saveBundleEnvironment(bundle, environment);
+
+        final Collection<Object> dependencies = new HashSet<>();
+        dependencies.addAll(testAsset.expectedInBundle);
+
+        createLanguageVariableIfNeeded();
+        addLanguageVariableDependencies(dependencies, testAsset.addLanguageVariableDependencies);
+
+        final PublisherAPIImpl publisherAPI = new PublisherAPIImpl();
+
+        final PublishAuditStatus publishAuditStatus = new PublishAuditStatus(bundle.getId());
+
+        final PublishAuditHistory publishAuditHistory = new PublishAuditHistory();
+        publishAuditStatus.setStatusPojo(publishAuditHistory);
+
+        PublishAuditAPI.getInstance().insertPublishAuditStatus(publishAuditStatus);
+
+        final File tempFile = com.dotmarketing.util.FileUtil
+                .createTemporaryFile("sendPushPublishBundle_");
+
+        HttpServer httpServer = createHttpServer(tempFile);
+
+        try {
+            httpServer.start();
+            final PublishStatus publish = publisherAPI.publish(config);
+            File bundleRoot = publish.getOutputFiles().get(0);
+
+            assertTrue(tempFile.exists());
+            assertTrue(tempFile.length() > 0                            );
+
             final File extractHere = new File(bundleRoot.getParent() + File.separator + config.getName());
             extractTarArchive(bundleRoot, extractHere);
-            bundleRoot = extractHere;
+            assertBundle(testAsset, dependencies, extractHere);
+        } finally {
+            httpServer.stop(0);
         }
+    }
 
-        assertBundle(testAsset, dependencies, bundleRoot);
+    @NotNull
+    private HttpServer createHttpServer(File tempFile) throws IOException {
+        final HttpServer httpServer = HttpServer.create(new InetSocketAddress("127.0.0.1", 8080), 0);
+
+        httpServer.createContext("/api/bundlePublisher/publish", exchange -> {
+            final InputStream responseBody = exchange.getRequestBody();
+            FileUtils.copyInputStreamToFile(responseBody, tempFile);
+            exchange.sendResponseHeaders( HttpURLConnection.HTTP_OK, 0);
+            exchange.close();
+        });
+
+        return httpServer;
     }
 
     private void assertBundle(TestAsset testAsset, Collection<Object> dependencies, File bundleRoot)
@@ -454,18 +528,6 @@ public class PublisherAPIImplTest {
         return differences;
     }
 
-    private static class TestCase {
-        Class<? extends Publisher> publisher;
-        TestAsset asset;
-
-        public TestCase(
-                final Class<? extends Publisher> publisher,
-                TestAsset asset) {
-
-            this.publisher = publisher;
-            this.asset = asset;
-        }
-    }
 
     public static List<Contentlet> getLanguageVariables() throws DotDataException, DotSecurityException {
         final User systemUser = APILocator.systemUser();
