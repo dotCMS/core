@@ -43,7 +43,7 @@ public interface RelationshipAPI {
 
   Relationship byTypeValue(String typeValue);
 
-  List<Relationship> byContentType(ContentTypeIf type) throws DotDataException;
+  List<Relationship> byContentType(ContentTypeIf type) ;
 
   List<Relationship> byContentType(ContentTypeIf type, String orderBy);
 
@@ -171,4 +171,7 @@ public interface RelationshipAPI {
      * @return
      */
     List<Relationship> dbAll();
+
+    List<Contentlet> dbRelatedContent(Relationship rel, Contentlet contentlet, boolean hAS_PARENT,
+                    boolean wORKING_VERSION, String string, int limit, int offset) throws DotDataException;
 }
