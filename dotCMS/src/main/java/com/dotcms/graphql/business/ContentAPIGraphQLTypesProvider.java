@@ -146,7 +146,6 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
     }
 
     private GraphQLObjectType createType(ContentType contentType) {
-
         DotPreconditions.checkArgument(contentType.variable()
                 .matches(TYPES_AND_FIELDS_VALID_NAME_REGEX),
                 "Content Type variable does not conform to naming rules",
@@ -184,7 +183,6 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                     Logger.error(this, "Unable to generate GraphQL Field for field: " + field.variable(), e);
                 }
             }
-
         });
 
         // add CONTENT interface fields
