@@ -10,7 +10,7 @@
 <script type="text/javascript">
 	dojo.require("dojox.widget.ColorPicker");
 	dojo.require("dojo.parser"); // scan page for widgets and instantiate them
-
+   
 	const topNavCheckbox = document.getElementById("topNav_logo");
 	const topNavDropZone = document.getElementById("topNav__drop-zone");
 	const logoDeleteButtons = document.querySelectorAll(".logo__delete");
@@ -68,36 +68,40 @@
 	}
 
 	(function prepareEventListeners() {
-		topNavCheckbox.addEventListener("change", toggletopNavLogo);
-		logoDeleteButtons.forEach((elem) =>
-			elem.addEventListener("click", logoDelete)
-		);
-		Array.from(dotAssetDropZones).forEach((elem) =>
-			elem.addEventListener("uploadComplete", uploadComplete)
-		);
+
+      setTimeout(() => {
+         const navBarLogoCheckbox = dijit.byId('topNav_logo')
+         navBarLogoCheckbox.on('change', handleTopNavLogoDisplay)
+      }, 0)
+
+      document.addEventListener('click', logoDelete)
+      document.addEventListener('uploadComplete', uploadComplete)
 	})();
 
-	function toggletopNavLogo(e) {
-		const isChecked = e.target.checked;
-		topNavDropZone.style.display = isChecked ? "block" : "none";
+	function handleTopNavLogoDisplay(checked) {
+		topNavDropZone.style.display = checked ? "block" : "none";
 	}
 
-	function logoDelete(event, b) {
+	function logoDelete(event) {
+      if(!event.target.matches('.logo__delete')) return;
+
 		const logoContainer = event.target.parentElement;
 		logoContainer.style.display = "none";
+
 		const logo = logoContainer.querySelector("img").remove();
 		logoContainer.nextElementSibling.style.display = "block";
 	}
 
-	function uploadComplete(e) {
+	function uploadComplete(event) {
+      if(!event.target.matches('dot-asset-drop-zone')) return;
 		// Grab the dropzone element
-		const dropZone = e.target;
+		const dropZone = event.target;
 
 		// create a new logo element to append it later
 		const logo = document.createElement("img");
 
 		// details from the dotAssets upload event
-		const [details] = e.detail;
+		const [details] = event.detail;
 
 		// Once we received a response add the image URL to the src attribute
 
@@ -110,23 +114,18 @@
 			.querySelector(".logo__container")
 			.append(logo);
 
-		if (e.target.id !== "dot-asset-drop-zone-main") {
-			topNavLogoInput.value = details.asset;
-			dropZone.previousElementSibling.querySelector(
-				".logo__container"
-			).style.backgroundColor = dojo.byId("bgColor").value;
-		} else {
-			loginScreenLogoInput.value = details.asset;
-		}
-
 		// Reset our values
 		dropZone.style.display = "none";
-		dropZone.previousElementSibling.style.display = "block";
+		dropZone.parentElement.querySelector('.logo').style.display = "block";
+      topNavDropZone.querySelector(".logo__container").style.display = 'block'
 	}
 </script>
 <style type="text/css">
+
 	dot-asset-drop-zone {
-		width: 40rem;
+
+      width: 200px;
+      display: block;
 	}
 
 	dot-asset-drop-zone .dot-asset-drop-zone__indicators {
@@ -164,9 +163,22 @@
 		display: none;
 	}
 
+   .logo__container {
+      width: 200px; 
+      padding: 1rem; 
+      border-radius: 2px;
+   }
+
 	.logo {
 		position: relative;
-		max-width: 200px;
+      width: 200px;
+      height: 100px;
+      border: 1px solid lightgray;
+      display: flex;
+      justify-content: center;
+      align-content: center;
+      align-items: center;
+      border-radius: 2px;
 	}
 
 	.logo:hover .logo__delete {
@@ -174,19 +186,47 @@
 	}
 
 	.logo__delete {
-		cursor: pointer;
-		position: absolute;
-		right: 0;
-		display: none;
-		background: white;
-		border: 0;
-		border-radius: 50%;
-		width: 22px;
-		height: 22px;
-		justify-content: center;
-		font-size: 16px;
-		box-shadow: 0px 0px 0px 3px rgba(0, 0, 0, 0.1);
+      cursor: pointer;
+      position: absolute;
+      right: 0;
+      display: none;
+      background: white;
+      border: 0;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      justify-content: center;
+      font-size: 16px;
+      box-shadow: 0px 0px 0px 3px rgba(0, 0, 0, 0.1);
+      top: 20%;
 	}
+
+   .logo__image {
+      max-width: 200px; 
+      width: 100%;
+   }
+
+   dot-asset-drop-zone {
+      box-sizing: border-box;
+   }
+
+   dot-asset-drop-zone .dot-asset-drop-zone__indicators {
+      padding: 11px 0;
+   }
+
+   dot-asset-drop-zone .dot-asset-drop-zone__indicators .dot-asset-drop-zone__icon {
+      display: flex !important;
+      flex-direction: column;
+      align-items: center;
+   }
+
+   dot-asset-drop-zone .dot-asset-drop-zone__indicators .dot-asset-drop-zone__icon mwc-icon {
+      --mdc-icon-size: 48px;
+   }
+
+    dot-asset-drop-zone .dot-asset-drop-zone__indicators .dot-asset-drop-zone__icon span {
+       margin-top: 0;
+    }
 </style>
 <table class="listingTable">
    <tr>
@@ -353,8 +393,8 @@
             <h3 style="font-weight: normal; margin-bottom: 1rem;">Login Screen Logo</h3>
             <div class="logo">
                <button class="logo__delete">&times;</button>
-               <div class="logo__container" style="width: 200px; padding: 1rem; border-radius: 2px;">
-                  <img style="max-width: 200px; width: 100%;" border="1" hspace="0" src="<%= IMAGE_PATH %>/company_logo?img_id=<%= company.getCompanyId() %>&key=<%= ImageKey.get(company.getCompanyId()) %>" vspace="0" />
+               <div class="logo__container">
+                  <img class="logo__image" border="1" hspace="0" src="<%= IMAGE_PATH %>/company_logo?img_id=<%= company.getCompanyId() %>&key=<%= ImageKey.get(company.getCompanyId()) %>" vspace="0" />
                </div>
             </div>
             <dot-asset-drop-zone id="dot-asset-drop-zone-main" style="display: none;" drop-files-text="Drop Image" upload-file-text="Uploading Image..." display-indicator="true"></dot-asset-drop-zone>
@@ -363,22 +403,21 @@
             <br />
             <div style="margin-top: 2rem;">
                <label for="topNav_logo">
-               <input type="checkbox" name="topNav" id="topNav_logo" />
+               <input dojoType="dijit.form.CheckBox" type="checkbox" name="topNav" id="topNav_logo" />
                Override Navbar Logo
                </label>
                <br />
-               <p style="margin-top: 1rem; color: grey;">If you want to override DotCMS' Nav Bar logo check this option and upload a new image</p>
+               <p style="margin-top: 1rem; color: grey;">You can white-label your instance of DotCMS uploading a new logo.</p>
                <div id="topNav__drop-zone" style="display: none;">
                   <h3 style="font-weight: normal; margin-bottom: 1rem;">Navbar Logo</h3>
                   <div class="logo">
                      <button class="logo__delete">&times;</button>
-                     <div class="logo__container" style="width: 200px; padding: 1rem; border-radius: 2px;">
-                        <img style="max-width: 200px; width: 100%;" border="1" hspace="0" src="<%= IMAGE_PATH %>/company_logo?img_id=<%= company.getCompanyId() %>&key=<%= ImageKey.get(company.getCompanyId()) %>" vspace="0" />
+                     <div class="logo__container" style="display: none;">
                      </div>
                   </div>
-                  <dot-asset-drop-zone style="display: none;" id="dot-asset-drop-zone-navbar" drop-files-text="Drop Image" upload-file-text="Uploading Image..." display-indicator="true"></dot-asset-drop-zone>
+                  <dot-asset-drop-zone id="dot-asset-drop-zone-navbar" drop-files-text="Drop Image" upload-file-text="Uploading Image..." display-indicator="true"></dot-asset-drop-zone>
                   <input type="hidden" name="topNavLogoInput" id="topNavLogoInput" value="">	
-                  <p style="margin-top: 1rem; color: grey;">Make sure the image is 258px wide and 48px tall</p>
+                  <p style="margin-top: 1rem; color: grey;">Your logo needs to be horizontal with at least 32:9 ratio</p>
                </div>
             </div>
          </div>
