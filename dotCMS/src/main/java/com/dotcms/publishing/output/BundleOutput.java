@@ -1,9 +1,10 @@
 package com.dotcms.publishing.output;
 
+import static com.liferay.util.FileUtil.validateEmptyFile;
+
 import com.dotcms.publishing.PublisherConfig;
 import com.dotmarketing.util.Config;
 
-import com.dotmarketing.util.Logger;
 import com.liferay.util.FileUtil;
 
 import java.io.*;
@@ -27,7 +28,7 @@ public abstract class BundleOutput implements Closeable {
      * @return
      * @throws IOException
      */
-    public abstract OutputStream addFile(String filePath) throws IOException;
+    public abstract OutputStream addFile(String filePath) throws FileCreationException;
 
     /**
      * Add a new file into the output
@@ -36,7 +37,7 @@ public abstract class BundleOutput implements Closeable {
      * @return
      * @throws IOException
      */
-    public OutputStream addFile(File file) throws IOException {
+    public OutputStream addFile(File file) throws FileCreationException {
         return addFile(file.getPath());
     }
 
@@ -52,16 +53,28 @@ public abstract class BundleOutput implements Closeable {
                 Config.getBooleanProperty("CONTENT_VERSION_HARD_LINK", true)
                         && this.useHardLinkByDefault();
 
+        validateEmptyFile(source);
+
         if (userHardLink) {
             FileUtil.copyFile(source, getFile(destinationPath), true);
         } else {
-            try(final OutputStream outputStream = addFile(destinationPath)) {
-                FileUtil.copyFile(source, outputStream);
-            } catch(IOException e) {
-                Logger.error(FileUtil.class, e);
-                throw e;
-            }
+            innerCopyFile(source, destinationPath);
         }
+    }
+
+    /**
+     *
+     * Copy {@code source } to {@code destinationPath}, this method use by
+     * {@link BundleOutput#copyFile(File, String)} when {@link BundleOutput#useHardLinkByDefault()}
+     * return false, the default implementacion use {@link FileUtil#copyFile(File, File, boolean)} method to
+     * copy the file but it can be override by subclases to have a custom implementation.
+     *
+     * @param source file to be copied
+     * @param destinationPath destiniton path to copy
+     * @throws IOException if any is wrong in the copy
+     */
+    protected void innerCopyFile(final File source, final String destinationPath) throws IOException {
+        FileUtil.copyFile(source, getFile(destinationPath), useHardLinkByDefault());
     }
 
     /**
