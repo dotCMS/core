@@ -137,6 +137,7 @@ public class SiteResource implements Serializable {
               .requestAndResponse(httpServletRequest, httpServletResponse)
               .requiredBackendUser(true)
               .requiredFrontendUser(true)
+              .requiredPortlet("sites")
               .init().getUser();
           
             Host currentSite = siteHelper.getCurrentSite(httpServletRequest, user);
@@ -183,6 +184,7 @@ public class SiteResource implements Serializable {
             .requestAndResponse(httpServletRequest, httpServletResponse)
             .requiredBackendUser(true)
             .rejectWhenNoUser(true)
+            .requiredPortlet("sites")
             .init().getUser();
 
         String filter = (null != filterParam && filterParam.endsWith(NO_FILTER))?
@@ -227,6 +229,7 @@ public class SiteResource implements Serializable {
             .requestAndResponse(httpServletRequest, httpServletResponse)
             .requiredBackendUser(true)
             .rejectWhenNoUser(true)
+            .requiredPortlet("sites")
             .init().getUser();
         boolean switchDone = false;
         Host hostFound = null;
@@ -280,6 +283,7 @@ public class SiteResource implements Serializable {
           .requestAndResponse(request, response)
           .requiredBackendUser(true)
           .rejectWhenNoUser(true)
+          .requiredPortlet("sites")
           .init().getUser();
 
         Logger.debug(this, "Switching to default host for user: " + user.getUserId());
@@ -320,6 +324,7 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
+                .requiredPortlet("sites")
                 .init().getUser();
 
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
@@ -374,6 +379,7 @@ public class SiteResource implements Serializable {
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
                 .requireLicense(true)
+                .requiredPortlet("sites")
                 .init().getUser();
 
         Logger.debug(this, ()-> "Publishing site: " + siteId);
@@ -413,6 +419,7 @@ public class SiteResource implements Serializable {
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
                 .requireLicense(true)
+                .requiredPortlet("sites")
                 .init().getUser();
 
         Logger.debug(this, ()-> "Unpublishing site: " + siteId);
@@ -454,6 +461,7 @@ public class SiteResource implements Serializable {
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
                 .requireLicense(true)
+                .requiredPortlet("sites")
                 .init().getUser();
 
         Logger.debug(this, ()-> "Archiving site: " + siteId);
@@ -513,6 +521,7 @@ public class SiteResource implements Serializable {
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
                 .requireLicense(true)
+                .requiredPortlet("sites")
                 .init().getUser();
 
         Logger.debug(this, ()-> "unarchiving site: " + siteId);
@@ -556,6 +565,7 @@ public class SiteResource implements Serializable {
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
                 .requireLicense(true)
+                .requiredPortlet("sites")
                 .init().getUser();
 
         Logger.debug(this, ()-> "deleting the site: " + siteId);
@@ -614,6 +624,7 @@ public class SiteResource implements Serializable {
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
                 .requireLicense(true)
+                .requiredPortlet("sites")
                 .init().getUser();
 
         Logger.debug(this, ()-> "making the site: " + siteId + " as a default");
@@ -682,6 +693,7 @@ public class SiteResource implements Serializable {
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
                 .requireLicense(true)
+                .requiredPortlet("sites")
                 .init().getUser();
 
         Logger.debug(this, ()-> "Finding the site: " + siteId);
@@ -723,6 +735,7 @@ public class SiteResource implements Serializable {
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
                 .requireLicense(true)
+                .requiredPortlet("sites")
                 .init().getUser();
 
         final String hostname = searchSiteByNameForm.getSitename();
@@ -772,6 +785,7 @@ public class SiteResource implements Serializable {
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
                 .requireLicense(true)
+                .requiredPortlet("sites")
                 .init().getUser();
         final PageMode      pageMode      = PageMode.get(httpServletRequest);
         final Host newSite = new Host();
@@ -792,8 +806,8 @@ public class SiteResource implements Serializable {
             }
         }
 
-        newSite.setIdentifier(null);
-        newSite.setInode(null);
+        newSite.setIdentifier(newSiteForm.getIdentifier());
+        newSite.setInode(newSiteForm.getInode());
 
         if (UtilMethods.isSet(newSiteForm.getAliases())) {
             newSite.setAliases(newSiteForm.getAliases());
@@ -844,6 +858,118 @@ public class SiteResource implements Serializable {
     }
 
     /**
+     * Updates a site
+     * @param httpServletRequest
+     * @param httpServletResponse
+     * @param newSiteForm
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws PortalException
+     * @throws SystemException
+     * @throws ParseException
+     * @throws SchedulerException
+     * @throws ClassNotFoundException
+     */
+    @PUT
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response updateSite(@Context final HttpServletRequest httpServletRequest,
+                                  @Context final HttpServletResponse httpServletResponse,
+                                  @QueryParam("id") final String  siteIdentifier,
+                                  final SiteForm newSiteForm)
+            throws DotDataException, DotSecurityException, PortalException, SystemException, ParseException, SchedulerException, ClassNotFoundException {
+
+        final User user = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(httpServletRequest, httpServletResponse)
+                .requiredBackendUser(true)
+                .rejectWhenNoUser(true)
+                .requireLicense(true)
+                .requiredPortlet("sites")
+                .init().getUser();
+
+        if (!UtilMethods.isSet(siteIdentifier)) {
+
+            throw new IllegalArgumentException("The id query string parameter can not be null");
+        }
+
+        final Host site = siteHelper.getSite(user, siteIdentifier);
+
+        if (null == site) {
+
+            throw new IllegalArgumentException("Site: " + siteIdentifier + " does not exists");
+        }
+
+        final PageMode      pageMode      = PageMode.get(httpServletRequest);
+        final TempFileAPI tempFileAPI = APILocator.getTempFileAPI();
+
+        if (UtilMethods.isNotSet(newSiteForm.getSiteName())) {
+
+            throw new IllegalArgumentException("siteName can not be Null");
+        }
+
+        Logger.debug(this, ()->"Updating the site: " + siteIdentifier +
+                ", with: " + newSiteForm);
+        site.setHostname(newSiteForm.getSiteName());
+        if (UtilMethods.isSet(newSiteForm.getSiteThumbnail())) {
+
+            final Optional<DotTempFile> dotTempFileOpt = tempFileAPI.getTempFile(httpServletRequest, newSiteForm.getSiteThumbnail());
+            if (dotTempFileOpt.isPresent()) {
+                site.setHostThumbnail(dotTempFileOpt.get().file);
+            }
+        }
+
+
+        if (UtilMethods.isSet(newSiteForm.getAliases())) {
+            site.setAliases(newSiteForm.getAliases());
+        }
+
+        if (UtilMethods.isSet(newSiteForm.getTagStorage())) {
+            site.setTagStorage(newSiteForm.getTagStorage());
+        }
+
+        site.setProperty("runDashboard", newSiteForm.isRunDashboard());
+        if (UtilMethods.isSet(newSiteForm.getKeywords())) {
+            site.setProperty("keywords", newSiteForm.getKeywords());
+        }
+
+        if (UtilMethods.isSet(newSiteForm.getDescription())) {
+            site.setProperty("description", newSiteForm.getDescription());
+        }
+
+        if (UtilMethods.isSet(newSiteForm.getGoogleMap())) {
+            site.setProperty("googleMap", newSiteForm.getGoogleMap());
+        }
+
+        if (UtilMethods.isSet(newSiteForm.getGoogleAnalytics())) {
+            site.setProperty("googleAnalytics", newSiteForm.getGoogleAnalytics());
+        }
+
+        if (UtilMethods.isSet(newSiteForm.getAddThis())) {
+            site.setProperty("addThis", newSiteForm.getAddThis());
+        }
+
+        if (UtilMethods.isSet(newSiteForm.getProxyUrlForEditMode())) {
+            site.setProperty("proxyEditModeUrl", newSiteForm.getProxyUrlForEditMode());
+        }
+
+        if (UtilMethods.isSet(newSiteForm.getEmbeddedDashboard())) {
+            site.setProperty("embeddedDashboard", newSiteForm.getEmbeddedDashboard());
+        }
+
+        final long languageId = 0 == newSiteForm.getLanguageId()?
+                APILocator.getLanguageAPI().getDefaultLanguage().getId(): site.getLanguageId();
+
+        site.setLanguageId(languageId);
+
+        Logger.debug(this, ()-> "Creating new Host: " + newSiteForm);
+
+        return Response.ok(new ResponseEntityView(
+                this.toView(this.siteHelper.save(site, user, pageMode.respectAnonPerms)))).build();
+    }
+
+    /**
      * Copy a site
      * - Creates a new site,
      * - Copies the assets based on the copy options
@@ -873,7 +999,7 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requireLicense(true)
+                .requiredPortlet("sites")
                 .init().getUser();
 
         final String siteId = copySiteForm.getCopyFromSiteId();

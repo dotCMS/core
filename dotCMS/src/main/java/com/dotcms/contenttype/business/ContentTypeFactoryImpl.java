@@ -688,23 +688,23 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
   private void deleteRelationships(ContentType type) throws DotDataException {
     List<Relationship> relationships;
     //Deletes the child relationship field (if exists) if the parent is deleted.
-    relationships = FactoryLocator.getRelationshipFactory().byParent(type);
+    relationships = APILocator.getRelationshipAPI().byParent(type);
     for (final Relationship rel : relationships) {
       if(UtilMethods.isSet(rel.getParentRelationName()) && rel.isRelationshipField()) {
         final Field fieldToDelete = APILocator.getContentTypeFieldAPI().byContentTypeIdAndVar(rel.getChildStructureInode(), rel.getParentRelationName());
         APILocator.getContentTypeFieldAPI().delete(fieldToDelete);
       }
-      FactoryLocator.getRelationshipFactory().delete(rel);
+      APILocator.getRelationshipAPI().delete(rel);
     }
 
     //Deletes the parent relationship field if the child is deleted.
-    relationships = FactoryLocator.getRelationshipFactory().byChild(type);
+    relationships = APILocator.getRelationshipAPI().byChild(type);
     for (final Relationship rel : relationships) {
       if(UtilMethods.isSet(rel.getChildRelationName()) && rel.isRelationshipField()) {
         final Field fieldToDelete = APILocator.getContentTypeFieldAPI().byContentTypeIdAndVar(rel.getParentStructureInode(), rel.getChildRelationName());
         APILocator.getContentTypeFieldAPI().delete(fieldToDelete);
       }
-      FactoryLocator.getRelationshipFactory().delete(rel);
+      APILocator.getRelationshipAPI().delete(rel);
     }
 
   }
