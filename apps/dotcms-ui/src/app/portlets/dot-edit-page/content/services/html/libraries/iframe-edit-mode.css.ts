@@ -50,6 +50,10 @@ export const getEditPageCss = (timestampId: string): string => {
         margin-top: 40px !important;
     }
 
+    ${timestampId} [data-dot-object="container"].inline-editing [data-dot-object="contentlet"] .dotedit-contentlet__toolbar {
+        visibility: hidden;
+    }
+
     /*
         When you start D&D in a contentlet dragula clones the elements and append it to the end
         the body and position to the mouse movement. This styles are for that element
@@ -66,7 +70,6 @@ export const getEditPageCss = (timestampId: string): string => {
         z-index: 2147483648 !important;
         pointer-events: none !important;
         user-select: none !important;
-
     }
 
     /*

@@ -6,6 +6,7 @@ export const INLINE_TINYMCE_SCRIPTS = `
             const content = ed.getContent();
             const dataset = ed.targetElm.dataset;
             const element = ed.targetElm;
+            const container = ed.bodyElement.closest('[data-dot-object="container"]');
 
             const data = {
                 dataset,
@@ -19,10 +20,12 @@ export const INLINE_TINYMCE_SCRIPTS = `
             // this is the way we can capture the click to init in the editor itself, after the editor 
             // is initialized and clicked we set the pointer-events: auto so users can use the editor as intended.
             if (eventType === "focus" && dataset.mode) {
+                container.classList.add("inline-editing")
                 ed.bodyElement.classList.add("active");
             }
 
             if (eventType === "blur" && ed.bodyElement.classList.contains("active")) {
+                container.classList.remove("inline-editing")
                 ed.bodyElement.classList.remove("active");
             }
 
