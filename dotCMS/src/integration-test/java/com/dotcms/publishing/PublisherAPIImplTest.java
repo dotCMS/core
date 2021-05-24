@@ -446,7 +446,7 @@ public class PublisherAPIImplTest {
             File bundleRoot = publish.getOutputFiles().get(0);
 
             assertTrue(tempFile.exists());
-            assertTrue(tempFile.length() > 0                            );
+            assertTrue(tempFile.length() > 0);
 
             final File extractHere = new File(bundleRoot.getParent() + File.separator + config.getName());
             extractTarArchive(bundleRoot, extractHere);
