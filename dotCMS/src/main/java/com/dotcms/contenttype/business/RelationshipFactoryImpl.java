@@ -40,6 +40,20 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 
     private static final RelationshipCache cache = CacheLocator.getRelationshipCache();
 
+    private static class RelationshipFacotrySingleton {
+        private static final RelationshipFactoryImpl INSTANCE = new RelationshipFactoryImpl();
+    }
+    
+    private RelationshipFactoryImpl() {
+        
+    }
+    
+    
+    public static RelationshipFactoryImpl  instance() {
+
+        return RelationshipFacotrySingleton.INSTANCE;
+    }
+    
 	@Override
 	public void deleteByContentType(final ContentTypeIf type) throws DotDataException{
 	    new DotConnect()

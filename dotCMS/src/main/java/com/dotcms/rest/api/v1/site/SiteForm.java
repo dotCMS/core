@@ -9,6 +9,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class SiteForm {
 
+    private final String identifier;
+
+    private final String inode;
+
     private final String aliases;
 
     private final String siteName;
@@ -48,7 +52,9 @@ public class SiteForm {
                     @JsonProperty("addThis")         final String addThis,
                     @JsonProperty("proxyUrlForEditMode") final String proxyUrlForEditMode,
                     @JsonProperty("embeddedDashboard")   final String embeddedDashboard,
-                    @JsonProperty("languageId")          final long   languageId) {
+                    @JsonProperty("languageId")          final long   languageId,
+                    @JsonProperty("identifier")          final String   identifier,
+                    @JsonProperty("inode")               final String   inode) {
 
         this.aliases = aliases;
         this.siteName = siteName;
@@ -63,8 +69,17 @@ public class SiteForm {
         this.proxyUrlForEditMode = proxyUrlForEditMode;
         this.embeddedDashboard = embeddedDashboard;
         this.languageId        = languageId;
+        this.identifier        = identifier;
+        this.inode             = inode;
     }
 
+    public String getIdentifier() {
+        return identifier;
+    }
+
+    public String getInode() {
+        return inode;
+    }
 
     public long getLanguageId() {
         return languageId;

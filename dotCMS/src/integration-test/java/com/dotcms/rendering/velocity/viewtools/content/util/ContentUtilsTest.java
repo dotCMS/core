@@ -531,7 +531,7 @@ public class ContentUtilsTest {
         relationship.setCardinality(cardinality);
 
         //Save it
-        FactoryLocator.getRelationshipFactory().save( relationship );
+        APILocator.getRelationshipAPI().save( relationship );
 
         return relationship;
     }

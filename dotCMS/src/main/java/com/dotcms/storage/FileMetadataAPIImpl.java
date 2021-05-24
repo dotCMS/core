@@ -2,6 +2,7 @@ package com.dotcms.storage;
 
 import static com.dotmarketing.util.UtilMethods.isSet;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
@@ -243,6 +244,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @return
      */
     @VisibleForTesting
+    @CloseDBIfOpened
     Set<String> getMetadataFields (final String fieldIdentifier) {
 
         final Optional<FieldVariable> customIndexMetaDataFieldsOpt =
