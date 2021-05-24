@@ -670,7 +670,7 @@ public class DependencyManager {
 			return false;
 		}
 
-		if (!dependencyModDateUtil.excludeByModDate(asset, asset.getModDate())) {
+		if (!dependencyModDateUtil.excludeByModDate(asset)) {
 			config.add(asset, pusheableAsset);
 			return true;
 		} else {

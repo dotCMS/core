@@ -13,8 +13,16 @@ import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.rules.model.Rule;
+import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import org.apache.commons.lang.StringUtils;
@@ -120,38 +128,38 @@ public class DependencyModDateUtil extends HashSet<String> {
 		}
 	}
 
-	public boolean add(final String assetId, final Date assetModDate) {
-		return addOrClean( assetId, assetModDate, false,false);
+
+	public <T> boolean excludeByModDate ( final T asset) {
+		if (Contentlet.class.isInstance(asset)) {
+			final Contentlet contentlet = Contentlet.class.cast(asset);
+			return excludeByModDate(contentlet.getIdentifier(), contentlet.getModDate());
+		} else if (Folder.class.isInstance(asset)) {
+			final Folder folder = Folder.class.cast(asset);
+			return excludeByModDate(folder.getInode(), folder.getModDate());
+		} else if (Template.class.isInstance(asset)) {
+			final Template template = Template.class.cast(asset);
+			return excludeByModDate(template.getIdentifier(), template.getModDate());
+		} else if (Container.class.isInstance(asset)) {
+			final Container container = Container.class.cast(asset);
+			return excludeByModDate(container.getIdentifier(), container.getModDate());
+		} else if (Structure.class.isInstance(asset)) {
+			final Structure structure = Structure.class.cast(asset);
+			return excludeByModDate(structure.getInode(), structure.getModDate());
+		}  else if (Link.class.isInstance(asset)) {
+			final Link link = Link.class.cast(asset);
+			return excludeByModDate(link.getIdentifier(), link.getModDate());
+		}  else if (Rule.class.isInstance(asset)) {
+			final Rule rule = Rule.class.cast(asset);
+			return excludeByModDate(rule.getId(), rule.getModDate());
+		}   else if (Relationship.class.isInstance(asset)) {
+			final Relationship relationship = Relationship.class.cast(asset);
+			return excludeByModDate(relationship.getInode(), relationship.getModDate());
+		} else {
+			throw new IllegalArgumentException();
+		}
 	}
 
-	/**
-	 *
-	 * When isContentExplicitlyAdded set to true, is a way to skip the last push_date verification
-	 * when an element is explicitly added to the bundle.
-	 * So in that way we assure that the element will be in the bundle.
-	 * @param assetId id of the element (template, container, link, content, etc)
-	 * @param assetModDate modDate of the element
-	 * @param isContentExplicitlyAdded boolean true - will skip last push_date verification
-	 * @return
-	 */
-	public boolean add(final String assetId, final Date assetModDate, final boolean isContentExplicitlyAdded) {
-		return addOrClean( assetId, assetModDate, false, isContentExplicitlyAdded);
-	}
-
-	/**
-	 * Is this method is called and in case of an <strong>UN-PUBLISH</strong> instead of adding elements it will remove them
-	 * from cache.<br>
-	 * For <strong>PUBLISH</strong> do the same as the <strong>add</strong> method.
-	 *
-	 * @param assetId
-	 * @param assetModDate
-	 * @return
-	 */
-	public boolean addOrClean ( final String assetId, final Date assetModDate) {
-		return addOrClean( assetId, assetModDate, true, false);
-	}
-
-	private synchronized boolean excludeByModDate ( final String assetId, final Date assetModDate, final boolean cleanForUnpublish, final boolean isContentExplicitlyAdded) {
+	private synchronized boolean excludeByModDate ( final String assetId, final Date assetModDate) {
 
 		if ( !isPublish ) {
 
