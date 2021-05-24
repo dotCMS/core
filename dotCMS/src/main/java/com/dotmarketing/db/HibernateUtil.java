@@ -718,16 +718,21 @@ public class HibernateUtil {
 	}
 
 
+	public static Optional<Session> getSessionIfOpened() {
+		if (sessionFactory == null) {
+			buildSessionFactory();
+		}
+		return Optional.ofNullable(sessionHolder.get());
+	}
+
 	/**
 	 * Attempts to find a session associated with the Thread. If there isn't a
 	 * session, it will create one.
 	 */
 	public static Session getSession() {
 		try{
-			if (sessionFactory == null) {
-				buildSessionFactory();
-			}
-			Session session = sessionHolder.get();
+			final Optional<Session> sessionOptional = getSessionIfOpened();
+			Session session = sessionOptional.isPresent() ? sessionOptional.get() : null;
 
 			if (session == null) {
 					session = sessionFactory.openSession(DbConnectionFactory.getConnection());
@@ -1287,9 +1292,11 @@ public class HibernateUtil {
     }
 
     public static void evict(Object obj) throws DotHibernateException{
-        Session session = getSession();
-        try {
-            session.evict(obj);
+		final Optional<Session> sessionOptional = getSessionIfOpened();
+		try {
+        	if (sessionOptional.isPresent()) {
+				sessionOptional.get().evict(obj);
+			}
         } catch (HibernateException e) {
         	throw new DotHibernateException("Unable to evict from Hibernate Session ", e);
         }
