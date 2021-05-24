@@ -401,7 +401,7 @@ public class DependencyManager {
 		return APILocator.getHostAPI().find(hostId, user, false);
 	}
 
-	private Optional<List<Contentlet>> getContentletsByLink(final String linkId)
+	private List<Contentlet> getContentletsByLink(final String linkId)
 			throws DotDataException, DotSecurityException {
 
 		final Link link = APILocator.getMenuLinkAPI()
@@ -480,7 +480,7 @@ public class DependencyManager {
 		return APILocator.getMenuLinkAPI().findFolderMenuLinks(folder);
 	}
 
-	private Optional<Identifier> findIdentifier(final String id) {
+	private Identifier findIdentifier(final String id) {
 		try {
 			return APILocator.getIdentifierAPI().find(id);
 		} catch (DotDataException e) {
@@ -598,7 +598,7 @@ public class DependencyManager {
 		}
 	}
 
-	private Optional<Collection<WorkflowScheme>> getWorkflowSchemasByContentType(final Structure structure){
+	private Collection<WorkflowScheme> getWorkflowSchemasByContentType(final Structure structure){
 		try{
 			return APILocator.getWorkflowAPI().findSchemesForStruct(structure);
 		} catch (DotDataException e) {
@@ -783,23 +783,23 @@ public class DependencyManager {
 
 		// Content dependencies
 		tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET,
-				() -> Optional.of(getContentletByLuceneQuery("+conFolder:" + folder.getInode())));
+				() -> getContentletByLuceneQuery("+conFolder:" + folder.getInode()));
 
 		// Menu Link dependencies
 		tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET,
-				() -> Optional.of(getLinksByFolder(folder)));
+				() -> getLinksByFolder(folder));
 
 		// Structure dependencies
 		tryToAddAllAndProcessDependencies(PusheableAsset.CONTENT_TYPE,
-				() -> Optional.of(getContentTypeByFolder(folder)));
+				() -> getContentTypeByFolder(folder));
 
 		//Add the default structure of this folder
 		tryToAddAndProcessDependencies(PusheableAsset.CONTENT_TYPE,
-				() -> Optional.of(getContentTypeByFolder(folder)));
+				() -> getContentTypeByFolder(folder));
 
 		// SubFolders
 		APILocator.getFolderAPI().findSubFolders(folder, user, false).stream()
-				.forEach(subFolder -> dependencyProcessor.put(subFolder.getInode(), PusheableAsset.FOLDER));
+				.forEach(subFolder -> dependencyProcessor.addAsset(subFolder, PusheableAsset.FOLDER));
 	}
 
 	/**
@@ -866,7 +866,7 @@ public class DependencyManager {
 				if(!(workingTemplateWP instanceof FileAssetTemplate)) {
 					tryToAdd(PusheableAsset.TEMPLATE, () -> Optional.of(workingTemplateWP));
 				}
-				dependencyProcessor.put(workingPage.getTemplateId(), PusheableAsset.TEMPLATE);
+				dependencyProcessor.addAsset(workingPage.getTemplateId(), PusheableAsset.TEMPLATE);
 			}
 
 			final Template liveTemplateLP = livePage != null ?
@@ -878,7 +878,7 @@ public class DependencyManager {
 				if(!(liveTemplateLP instanceof FileAssetTemplate)) {
 					tryToAdd(PusheableAsset.TEMPLATE, () -> Optional.of(liveTemplateLP));
 				}
-				dependencyProcessor.put(livePage.getTemplateId(), PusheableAsset.TEMPLATE);
+				dependencyProcessor.addAsset(livePage.getTemplateId(), PusheableAsset.TEMPLATE);
 			}
 
 			// Contents dependencies
@@ -924,16 +924,14 @@ public class DependencyManager {
 		final List<Container> containerByTemplate = getContainerByTemplate(workingTemplate);
 
 		tryToAddAllAndProcessDependencies(PusheableAsset.CONTAINER, () ->
-				Optional.of(
-						containerByTemplate.stream()
-							.filter(FileAssetContainer.class::isInstance)
-							.collect(Collectors.toList())
-				)
+					containerByTemplate.stream()
+						.filter(FileAssetContainer.class::isInstance)
+						.collect(Collectors.toList())
 		);
 
 		containerByTemplate.stream()
 			.filter(container -> !FileAssetContainer.class.isInstance(container))
-			.forEach(container -> dependencyProcessor.put(container.getIdentifier(),
+			.forEach(container -> dependencyProcessor.addAsset(container.getIdentifier(),
 					PusheableAsset.CONTAINER));
 	}
 
@@ -1063,7 +1061,7 @@ public class DependencyManager {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	private void processContentDependency(final Contentlet contentlet3)
+	private void processContentDependency(final Contentlet contentlet)
 			throws  DotBundleException {
 
 		try {
@@ -1264,26 +1262,26 @@ public class DependencyManager {
 
 	@VisibleForTesting
 	Set getContents() {
-		return contents;
+		return config.getContentlets();
 	}
 
 	@VisibleForTesting
-	DependencyModDateUtil getRelationships() {
-		return relationships;
+	Set getRelationships() {
+		return config.getRelationships();
 	}
 
 	@VisibleForTesting
 	Set getTemplates() {
-		return templates;
+		return config.getTemplates();
 	}
 
 	@VisibleForTesting
 	Set getContainers() {
-		return containers;
+		return config.getContainers();
 	}
 
 	@VisibleForTesting
 	Set getFolders() {
-		return folders;
+		return config.getFolders();
 	}
 }
