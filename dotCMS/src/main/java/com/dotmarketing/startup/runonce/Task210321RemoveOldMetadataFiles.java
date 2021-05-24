@@ -10,11 +10,13 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -58,6 +60,12 @@ public class Task210321RemoveOldMetadataFiles implements StartupTask {
                   +- 5 (First level 1 char length )
                      +
                      +- a568fd-dff45fg- (identifier like folder name)
+                     +
+                     +- fileasset1-metadata.json
+                     +
+                     +- metaData
+                         +
+                         +- content
              */
 
             final Set<Path> firstLevelPaths = listDirectories(serverDir).stream()
@@ -88,14 +96,22 @@ public class Task210321RemoveOldMetadataFiles implements StartupTask {
 
                         final Optional<Path> metaDataDir = Files.list(current)
                                 .filter(path -> Files.isDirectory(path))
-                                .filter(path -> path.toString().equals("metaData"))
+                                .filter(path -> path.getFileName().toString().equals("metaData"))
                                 .findFirst();
-                        metaDataDir.ifPresent(path -> {
-                            if(path.toFile().delete()){
-                                dirsCount.increment();
-                                Logger.debug(Task210321RemoveOldMetadataFiles.class,"Removed metaData dir: " + path);
-                            }
-                        });
+                        if(metaDataDir.isPresent()){
+
+                            Files.walk(metaDataDir.get()).sorted(Comparator.reverseOrder())
+                                    .map(Path::toFile)
+                                    .forEach(file -> {
+                                        if (file.delete()) {
+                                            if (file.getName().equals("metaData")) {
+                                                dirsCount.increment();
+                                                Logger.debug(Task210321RemoveOldMetadataFiles.class,
+                                                        "Removed metaData dir: " + file);
+                                            }
+                                        }
+                                    });
+                        }
                     }
                 }
             }

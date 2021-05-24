@@ -98,11 +98,7 @@
 		<scope>request</scope>
 		<class>com.dotcms.rendering.velocity.viewtools.CommentsWebAPI</class>
 	</tool>
-	<tool>
-		<key>usercommentsapi</key>
-		<scope>application</scope>
-		<class>com.dotcms.rendering.velocity.viewtools.UserCommentsWebAPI</class>
-	</tool>
+
 	<tool>
 		<key>categories</key>
 		<scope>request</scope>

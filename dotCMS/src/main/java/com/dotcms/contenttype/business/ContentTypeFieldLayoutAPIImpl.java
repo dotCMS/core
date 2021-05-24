@@ -11,6 +11,7 @@ import com.dotcms.rest.exception.NotFoundException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 import java.util.Collection;
@@ -206,7 +207,8 @@ public class ContentTypeFieldLayoutAPIImpl implements ContentTypeFieldLayoutAPI 
     }
 
     /**
-     * Finds any Relationship field in the list of {@link Field} objects, and changes its setting to skip the creation
+     * Finds any Relationship field in the list of {@link Field} objects and checks of the id is set, if is not set
+     * means that is a new Field so the Relationship needs to be created, if is set changes its setting to skip the creation
      * of the Relationship, which is not necessary at all when fixing/adjusting the field layout. Such an operation is
      * executed when fields are moved or deleted from a Content Type, where creating/re-creating a relationship is NOT
      * necessary at all.
@@ -218,7 +220,8 @@ public class ContentTypeFieldLayoutAPIImpl implements ContentTypeFieldLayoutAPI 
     private List<Field> addSkipForRelationshipCreation(final List<Field> layoutFields) {
         return layoutFields.stream()
                 .map(field -> {
-                    if (field instanceof RelationshipField) {
+                    if (field instanceof RelationshipField &&
+                    UtilMethods.isSet(field.id())) {
                         return RelationshipFieldBuilder.builder(field).skipRelationshipCreation(true).build();
                     }
                     return field;

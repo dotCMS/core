@@ -9,6 +9,7 @@ import static com.dotcms.storage.model.BasicMetadataFields.SHA256_META_KEY;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+import static com.dotmarketing.util.UtilMethods.isNotSet;
 import static com.liferay.util.StringPool.BLANK;
 import static com.liferay.util.StringPool.PERIOD;
 
@@ -72,6 +73,7 @@ import java.io.StringWriter;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -436,10 +438,11 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			fullMetadataMap.forEach((field, metadataValues) -> {
 				if (null != metadataValues) {
 
-					final Set<String> dotRawInclude = Sets.newHashSet(
-							Config.getStringArrayProperty(
+					final Set<String> dotRawInclude =
+							Arrays.stream(Config.getStringArrayProperty(
 									INCLUDE_DOTRAW_METADATA_FIELDS,
-									defaultIncludedDotRawMetadataFields));
+									defaultIncludedDotRawMetadataFields)).map(String::toLowerCase)
+									.collect(Collectors.toSet());
 
 					metadataValues.getFieldsMeta().forEach((metadataKey, metadataValue) -> {
 
@@ -452,7 +455,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 						mapLowered.put(compositeKey, value);
 
 						if (Config.getBooleanProperty(INDEX_DOTRAW_METADATA_FIELDS, true)
-								&& dotRawInclude.contains(metadataKey)) {
+								&& dotRawInclude.contains(metadataKey.toLowerCase())) {
 							mapLowered.put(compositeKey + DOTRAW, value);
 						}
 
@@ -475,7 +478,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	 */
 	private Object preProcessMetadataValue(final String compositeKey, final Object value) {
         if ("metadata.content".equals(compositeKey)) {
-            if (null == value) {
+            if (null == value || (value instanceof String && isNotSet((String)value))) {
                 //This "NO_METADATA" constant is getting relocated from tika utils
                 return NO_METADATA;
             }
@@ -888,7 +891,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 		if(relatedContentlets.size()>0) {
 
-			final List<Relationship> relationships = FactoryLocator.getRelationshipFactory()
+			final List<Relationship> relationships =APILocator.getRelationshipAPI()
 					.byContentType(contentlet.getContentType());
 
 			for(final Relationship relationship : relationships) {

@@ -297,6 +297,7 @@ public class TaskLocatorUtil {
         .add(Task210319CreateStorageTable.class)
 		.add(Task210321RemoveOldMetadataFiles.class)
         .add(Task210506UpdateStorageTable.class)
+		.add(Task210510UpdateStorageTableDropMetadataColumn.class)
         .build();
         
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());

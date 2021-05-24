@@ -1083,7 +1083,7 @@ public class DependencyManager {
 
 			// Related structures
 			if(publisherFilter.isRelationships()) {
-				final List<Relationship> relations = FactoryLocator.getRelationshipFactory()
+				final List<Relationship> relations = APILocator.getRelationshipAPI()
 						.byContentType(structure);
 
 				for (final Relationship relationship : relations) {

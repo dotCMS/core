@@ -739,6 +739,13 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         }
 
         @Override
+        public void waitForAll() throws ExecutionException {
+            while(executorService.isTerminated()) {
+                waitForAll(10, TimeUnit.MINUTES);
+            }
+        }
+
+        @Override
         public long getTaskCount() {
             throw new UnsupportedOperationException("Submit Delay not supported on single submitter, name: " + this.name);
         }
@@ -983,6 +990,13 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
                 threadPoolExecutor.awaitTermination(timeout, unit);
             } catch (InterruptedException e) {
                 throw new DotRuntimeException(e);
+            }
+        }
+
+        @Override
+        public void waitForAll(){
+            while(!threadPoolExecutor.isTerminated()) {
+                waitForAll(10, TimeUnit.MINUTES);
             }
         }
 
