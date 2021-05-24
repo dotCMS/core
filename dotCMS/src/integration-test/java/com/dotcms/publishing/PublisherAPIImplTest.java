@@ -77,8 +77,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.*;
-import static org.jgroups.util.Util.assertEquals;
-import static org.jgroups.util.Util.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(DataProviderRunner.class)
 public class PublisherAPIImplTest {
@@ -449,7 +449,7 @@ public class PublisherAPIImplTest {
             assertTrue(tempFile.length() > 0);
 
             final File extractHere = new File(bundleRoot.getParent() + File.separator + config.getName());
-            extractTarArchive(bundleRoot, extractHere);
+            extractTarArchive(tempFile, extractHere);
             assertBundle(testAsset, dependencies, extractHere);
         } finally {
             httpServer.stop(0);
