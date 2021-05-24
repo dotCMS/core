@@ -322,11 +322,14 @@ public class BrowserAjax {
 
         activeFolderInode = null != siteBrowserActiveFolderInode?siteBrowserActiveFolderInode:parentInode;
 
-    	//We used these params since the method does not receive order (asc or desc), so what we do here
-		//is that is the same sort we invert the order
-		this.lastSortBy = null != sortBy && UtilMethods.isSet(sortBy) ? sortBy : "name";
-		this.lastSortDirectionDesc = null != sortBy && UtilMethods.isSet(sortBy) && sortBy.equalsIgnoreCase(lastSortBy)
-				? !this.lastSortDirectionDesc : false;
+		this.lastSortBy = sortBy;
+
+		if (sortBy != null && UtilMethods.isSet(sortBy)) {
+			if (sortBy.equals(lastSortBy)) {
+				this.lastSortDirectionDesc = !this.lastSortDirectionDesc;
+			}
+			this.lastSortBy = sortBy;
+		}
 
 		List<Map<String, Object>> listToReturn;
         try {
