@@ -1,8 +1,14 @@
 package com.dotmarketing.util;
 
 import com.dotcms.UnitTestBase;
+import com.dotcms.company.CompanyAPI;
+import com.dotcms.company.CompanyAPIFactory;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.unittest.TestUtil;
+import com.dotmarketing.business.APILocator;
+import com.liferay.portal.ejb.CompanyPersistence;
+import com.liferay.portal.model.Company;
+import com.liferay.util.InstancePool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -21,6 +27,7 @@ import java.util.*;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -457,6 +464,8 @@ public class DateUtilTest extends UnitTestBase {
                     defaultTimeZone.getRawOffset(), calendar.getTimeZone().getRawOffset());
         }
     }
+
+    private static final String PERSISTENCE = "value.object.persistence.com.liferay.portal.model.Company";
 
     /**
      * Method to test: convert Date

@@ -889,7 +889,7 @@ public class ContentResourceTest {
         Thread.sleep(2000);
 
         Relationship rel=new Relationship(st1,st2,"st1"+salt,"st2"+salt,0,false,false);
-        FactoryLocator.getRelationshipFactory().save(rel);
+        APILocator.getRelationshipAPI().save(rel);
 
         Response response = webTarget.path("/publish/1")
                 .request()

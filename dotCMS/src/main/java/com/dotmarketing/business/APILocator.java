@@ -192,6 +192,25 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
 	/**
+	 * Destroy the current instance and Creates a single instance of this class.
+	 * this is only for testing
+	 */
+	@VisibleForTesting
+	public synchronized static void destroyAndForceInit(){
+
+		destroy();
+		instance = null;
+
+		String apiLocatorClass = Config.getStringProperty("API_LOCATOR_IMPLEMENTATION", null);
+		if (apiLocatorClass != null) {
+			instance = (APILocator) ReflectionUtils.newInstance(apiLocatorClass);
+		}
+		if (instance == null) {
+			instance = new APILocator();
+		}
+	}
+
+	/**
 	 * This method is just allowed by the own package to register {@link Closeable} resources
 	 * @param closeable
 	 */
@@ -238,6 +257,11 @@ public class APILocator extends Locator<APIIndex>{
 	 * @return The {@link CompanyAPI} class.
 	 */
 	public static CompanyAPI getCompanyAPI() {
+		return getAPILocatorInstance().getCompanyAPIImpl();
+	}
+
+	@VisibleForTesting
+	protected CompanyAPI getCompanyAPIImpl() {
 		return (CompanyAPI) getInstance(APIIndex.COMPANY_API);
 	}
 

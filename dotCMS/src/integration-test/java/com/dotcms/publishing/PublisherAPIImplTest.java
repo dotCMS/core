@@ -1,5 +1,7 @@
 package com.dotcms.publishing;
 
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.*;
@@ -65,6 +67,9 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
+
+import org.elasticsearch.index.fielddata.FieldData;
+
 import org.jetbrains.annotations.Nullable;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -141,8 +146,39 @@ public class PublisherAPIImplTest {
                 getLinkWithDependencies(),
                 getWorkflowWithDependencies(),
                 getLanguageWithDependencies(),
-                getRuleWithDependencies()
+                getRuleWithDependencies(),
+                getContentWithSeveralVersions()
         };
+    }
+
+    private static TestAsset getContentWithSeveralVersions() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final Field textField = new FieldDataGen().type(TextField.class).next();
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(textField)
+                .host(host)
+                .nextPersisted();
+
+        final Contentlet liveVersion = new ContentletDataGen(contentType)
+                .setProperty(textField.variable(), "Live versions")
+                .host(host)
+                .nextPersisted();
+
+        ContentletDataGen.publish(liveVersion);
+
+        final Contentlet workingVersion = ContentletDataGen.checkout(liveVersion);
+        workingVersion.setStringProperty(textField.variable(), "Working versions");
+        ContentletDataGen.checkin(workingVersion);
+
+        final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI()
+                .findSystemWorkflowScheme();
+
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+
+        return new TestAsset(workingVersion,
+                set(host, systemWorkflowScheme, contentType, liveVersion, defaultLanguage),
+                "/bundlers-test/contentlet/contentlet/contentlet.content.xml");
     }
 
     private static TestAsset getRuleWithDependencies() {

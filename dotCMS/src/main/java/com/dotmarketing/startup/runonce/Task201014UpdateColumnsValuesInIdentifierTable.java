@@ -18,6 +18,8 @@ public class Task201014UpdateColumnsValuesInIdentifierTable extends AbstractJDBC
 
         final StringBuilder query = new StringBuilder();
 
+        query.append("ALTER TABLE identifier DISABLE TRIGGER ALL;\n");
+
         //update templates
         query.append(getQueryToUpdateNonContentletsPostgres("template"));
 
@@ -42,12 +44,16 @@ public class Task201014UpdateColumnsValuesInIdentifierTable extends AbstractJDBC
                 .append(" WHERE  id=myID;\n");
 
 
+        query.append("ALTER TABLE identifier ENABLE TRIGGER ALL;\n");
         return query.toString();
     }
 
     @Override
     public String getMySQLScript() {
         final StringBuilder query = new StringBuilder();
+        query.append("DROP TRIGGER IF EXISTS check_parent_path_when_insert;\n");
+        query.append("DROP TRIGGER IF EXISTS check_parent_path_when_update;\n");
+        query.append("DROP TRIGGER IF EXISTS check_child_assets;\n");
 
         //update templates
         query.append(getQueryToUpdateNonContentletsMySQL("template"));
@@ -74,13 +80,70 @@ public class Task201014UpdateColumnsValuesInIdentifierTable extends AbstractJDBC
                 .append("ident.asset_subtype=my_query.velocity_var_name\n")
                 .append("WHERE ident.id=my_query.myID;");
 
+        addTriggersBack(query);
+
         return query.toString();
+    }
+
+    private void addTriggersBack(final StringBuilder query) {
+        query.append("CREATE TRIGGER check_parent_path_when_insert  BEFORE INSERT\n")
+                .append("on identifier\n")
+                .append("FOR EACH ROW\n")
+                .append("BEGIN\n")
+                .append("DECLARE idCount INT;\n")
+                .append("DECLARE canInsert boolean default false;\n")
+                .append(" select count(id)into idCount from identifier where asset_type='folder' and CONCAT(parent_path,asset_name,'/')= NEW.parent_path and host_inode = NEW.host_inode and id <> NEW.id;\n")
+                .append(" IF(idCount > 0 OR NEW.parent_path = '/' OR NEW.parent_path = '/System folder') THEN\n")
+                .append("   SET canInsert := TRUE;\n")
+                .append(" END IF;\n")
+                .append(" IF(canInsert = FALSE) THEN\n")
+                .append("  delete from Cannot_insert_for_this_path_does_not_exist_for_the_given_host;\n")
+                .append(" END IF;\n")
+                .append("END\n")
+                .append("#\n");
+
+        query.append("CREATE TRIGGER check_parent_path_when_update  BEFORE UPDATE\n")
+                .append("on identifier\n")
+                .append("FOR EACH ROW\n")
+                .append("BEGIN\n")
+                .append("DECLARE idCount INT;\n")
+                .append("DECLARE canUpdate boolean default false;\n")
+                .append(" IF @disable_trigger IS NULL THEN\n")
+                .append("   select count(id)into idCount from identifier where asset_type='folder' and CONCAT(parent_path,asset_name,'/')= NEW.parent_path and host_inode = NEW.host_inode and id <> NEW.id;\n")
+                .append("   IF(idCount > 0 OR NEW.parent_path = '/' OR NEW.parent_path = '/System folder') THEN\n")
+                .append("     SET canUpdate := TRUE;\n")
+                .append("   END IF;\n")
+                .append("   IF(canUpdate = FALSE) THEN\n")
+                .append("     delete from Cannot_update_for_this_path_does_not_exist_for_the_given_host;\n")
+                .append("   END IF;\n")
+                .append(" END IF;\n")
+                .append("END\n")
+                .append("#\n");
+
+        query.append("CREATE TRIGGER check_child_assets BEFORE DELETE\n")
+                .append("ON identifier\n")
+                .append("FOR EACH ROW\n")
+                .append("BEGIN\n")
+                .append("  DECLARE pathCount INT;\n")
+                .append("    IF(OLD.asset_type ='folder') THEN\n")
+                .append("      select count(*) into pathCount from identifier where parent_path = CONCAT(OLD.parent_path,OLD.asset_name,'/') and host_inode = OLD.host_inode;\n")
+                .append("    END IF;\n")
+                .append("    IF(OLD.asset_type ='contentlet') THEN\n")
+                .append("\t select count(*) into pathCount from identifier where host_inode = OLD.id;\n")
+                .append("    END IF;\n")
+                .append(" IF(pathCount > 0) THEN\n")
+                .append("   delete from Cannot_delete_as_this_path_has_children;\n")
+                .append(" END IF;\n")
+                .append("END\n")
+                .append("#");
     }
 
     @Override
     public String getOracleScript() {
 
         final StringBuilder query = new StringBuilder();
+
+        query.append("ALTER TABLE identifier DISABLE ALL TRIGGERS;\n");
 
         //update templates
         query.append(getQueryToUpdateNonContentletsOracle("template"));
@@ -116,7 +179,9 @@ public class Task201014UpdateColumnsValuesInIdentifierTable extends AbstractJDBC
                 .append("WHERE temp.identifier=custom_select.identifier\n")
                 .append("AND inode.inode=temp.inode and inode.idate=custom_select.idate \n")
                 .append("AND temp.structure_inode = struc.inode) WHERE r = 1)\n")
-                .append("               WHERE  myID = tt.id)");
+                .append("               WHERE  myID = tt.id);\n");
+
+        query.append("ALTER TABLE identifier ENABLE ALL TRIGGERS\n");
 
         return query.toString();
     }

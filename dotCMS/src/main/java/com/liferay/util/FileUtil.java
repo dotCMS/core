@@ -150,7 +150,7 @@ public class FileUtil {
 		copyFile(source, destination, Config.getBooleanProperty("CONTENT_VERSION_HARD_LINK", true));
 	}
 	
-	private static void validateEmptyFile(File source) throws IOException{
+	public static void validateEmptyFile(File source) throws IOException{
 		final String metaDataPath = "metaData" + File.separator + "content";
         final String languagePropertyPath = "messages" + File.separator + "cms_language";
         
