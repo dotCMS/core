@@ -102,6 +102,7 @@ import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.TestConfig;
 import com.liferay.portal.language.LanguageUtilTest;
+import org.apache.velocity.tools.view.tools.CookieToolTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
 
@@ -418,7 +419,8 @@ import org.junit.runners.Suite.SuiteClasses;
         StaticPushPublishBundleGeneratorTest.class,
         Task210520UpdateAnonymousEmailTest.class,
         Task210510UpdateStorageTableDropMetadataColumnTest.class,
-        StaticPushPublishBundleGeneratorTest.class
+        StaticPushPublishBundleGeneratorTest.class,
+        CookieToolTest.class
 })
 public class MainSuite {
 
