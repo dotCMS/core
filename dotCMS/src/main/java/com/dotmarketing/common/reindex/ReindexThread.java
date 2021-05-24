@@ -3,7 +3,7 @@ package com.dotmarketing.common.reindex;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.SystemCache;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
-import com.dotcms.content.elasticsearch.business.ESReadOnlyMonitor;
+import com.dotcms.content.elasticsearch.business.ElasticReadOnlyCommand;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
@@ -221,7 +221,7 @@ public class ReindexThread {
               indexAPI.appendToBulkProcessor(bulkProcessor, workingRecords.values());
               contentletsIndexed += bulkProcessorListener.getContentletsIndexed();
               // otherwise, reindex normally
-          } else if (!ESReadOnlyMonitor.getInstance().isIndexOrClusterReadOnly()){
+          } else if (!ElasticReadOnlyCommand.getInstance().isIndexOrClusterReadOnly()){
               reindexWithBulkRequest(workingRecords);
           }
         } 

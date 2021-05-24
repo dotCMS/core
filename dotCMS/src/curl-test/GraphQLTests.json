@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "0d698dd7-5810-4b6e-bdb0-3057489f6005",
+		"_postman_id": "2c0cd354-98c5-4b05-8430-d56a8faf896c",
 		"name": "GraphQL",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -14,7 +14,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f3049e48-4629-4e62-9bbb-5639323ebf07",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -67,10 +66,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/assets.tar.gz"
 								}
-							],
-							"options": {
-								"formdata": {}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/bundle?sync=true",
@@ -103,7 +99,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "91fd578b-2ecf-40f2-95f7-8972e32193b5",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -156,10 +151,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/personas.tar.gz"
 								}
-							],
-							"options": {
-								"formdata": {}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/bundle?sync=true",
@@ -192,7 +184,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f14c9bb3-ce91-419a-9bb5-c31d161b7597",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -245,10 +236,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/demo.dotcms.com.tar.gz"
 								}
-							],
-							"options": {
-								"formdata": {}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/bundle?sync=true",
@@ -281,7 +269,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "63a08958-807f-4be1-8cf2-9cfc34f42c97",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -357,7 +344,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "fa570426-6079-4d88-b3f0-90c104338f8d",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 200\", function () {",
@@ -497,7 +483,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f0a5e9c3-6715-48b8-bfff-7d85a0b44e45",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 200\", function () {",
@@ -625,7 +610,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "57e4466f-94da-473b-8997-f07936f70c0a",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 200\", function () {",
@@ -732,7 +716,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "564047ac-1a71-4e81-8702-7ee8fef2b749",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 200\", function () {",
@@ -840,7 +823,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "877cae57-b491-41a4-b0b4-b2cffc93fcda",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -902,19 +884,15 @@
 									"    pm.expect(JSON.stringify(visitor[\"tags\"])==JSON.stringify([",
 									"                        {",
 									"                            \"tag\": \"snowmobile\",",
-									"                            \"count\": 26",
+									"                            \"count\": 2",
 									"                        },",
 									"                        {",
 									"                            \"tag\": \"skiing\",",
-									"                            \"count\": 26",
+									"                            \"count\": 2",
 									"                        },",
 									"                        {",
 									"                            \"tag\": \"snowboarding\",",
-									"                            \"count\": 26",
-									"                        },",
-									"                        {",
-									"                            \"tag\": \"diving\",",
-									"                            \"count\": 1",
+									"                            \"count\": 2",
 									"                        }",
 									"                    ]), 'FAILED:[visitorPersona.tags]').equal(true);",
 									"",
@@ -982,7 +960,7 @@
 						"body": {
 							"mode": "graphql",
 							"graphql": {
-								"query": "{\n  page(url:\"/destinations/costa-rica\", pageMode: \"live\", languageId: \"1\") {\n     viewAs {\n      persona {\n        name\n        description\n        photo {\n          idPath\n        }\n        keyTag\n        tags\n      }\n      visitor {\n        persona {\n          name\n          description\n          photo {\n            idPath\n          }\n          keyTag\n          tags\n        }\n        device\n        isNew\n        tags {\n          tag\n          count\n        }\n        userAgent {\n          operatingSystem\n          browser\n          id\n          browserVersion {\n            version\n            majorVersion\n            minorVersion\n          }\n        }\n        personas {\n          persona \n          count\n        }\n      }\n      mode\n      language {\n        id\n        country\n        countryCode\n        language\n        languageCode\n      }\n    }\n  }\n}",
+								"query": "{\n  page(url:\"/destinations/costa-rica\", pageMode: \"live\", languageId: \"1\", persona:\"WinterEnthusiast\") {\n     viewAs {\n      persona {\n        name\n        description\n        photo {\n          idPath\n        }\n        keyTag\n        tags\n      }\n      visitor {\n        persona {\n          name\n          description\n          photo {\n            idPath\n          }\n          keyTag\n          tags\n        }\n        device\n        isNew\n        tags {\n          tag\n          count\n        }\n        userAgent {\n          operatingSystem\n          browser\n          id\n          browserVersion {\n            version\n            majorVersion\n            minorVersion\n          }\n        }\n        personas {\n          persona \n          count\n        }\n      }\n      mode\n      language {\n        id\n        country\n        countryCode\n        language\n        languageCode\n      }\n    }\n  }\n}",
 								"variables": ""
 							}
 						},
@@ -1006,7 +984,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "efffdef7-9f31-46d0-ab95-c2a9ed247c1c",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -1091,7 +1068,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ee6d650a-d7cc-4368-bf3c-7c6da9f66211",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1173,7 +1149,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "70f7e410-b60f-41f5-87ad-e4ae04db7495",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1226,10 +1201,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/urlmap-bundle.tar.gz"
 								}
-							],
-							"options": {
-								"formdata": {}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/bundle?sync=true",
@@ -1261,7 +1233,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "a1b96e98-a19a-48e7-9602-31e0ecb72b23",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -1351,7 +1322,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "470f5a85-698c-4b12-a652-873222cd9c93",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1404,10 +1374,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/costa-rica-sidebar.tar.gz"
 								}
-							],
-							"options": {
-								"formdata": {}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/bundle?sync=true",
@@ -1440,7 +1407,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "07ad265c-463b-4b93-aeaf-b99511b42113",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -1566,7 +1532,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "94fd90a3-1d7c-48ea-afb2-0ff3229925e7",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -1683,12 +1648,132 @@
 					"response": []
 				},
 				{
+					"name": "GivenRequestByURI_ContainersFieldContainsFirstLevelFields_NoLanguage",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"'Page' includes all properties\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var containers = jsonData.data.page.containers;",
+									"",
+									"    var container1 = containers[0];",
+									"",
+									"    // containers fields",
+									"    pm.expect(container1.archived, 'FAILED:[container1.archived]').equal(false);",
+									"    pm.expect(container1.categoryId, 'FAILED:[container1.categoryId]').equal(\"ad50ff07-6f7e-4b3c-a1ca-08667fecb28d\");",
+									"    pm.expect(container1.deleted, 'FAILED:[container1.deleted]').equal(false);",
+									"    pm.expect(container1.friendlyName, 'FAILED:[container1.friendlyName]').equal(\"container\");",
+									"    pm.expect(container1.host.hostName, 'FAILED:[container1.host.hostName]').equal(\"demo.dotcms.com\");",
+									"    pm.expect(container1.iDate, 'FAILED:[container1.iDate]').not.null;",
+									"    pm.expect(container1.idate, 'FAILED:[container1.idate]').not.null;",
+									"    pm.expect(container1.identifier, 'FAILED:[container1.identifier]').equal(\"69b3d24d-7e80-4be6-b04a-d352d16493ee\");",
+									"    pm.expect(container1.inode, 'FAILED:[container1.inode]').equal(\"ad50ff07-6f7e-4b3c-a1ca-08667fecb28d\");",
+									"    pm.expect(container1.languageId, 'FAILED:[container1.languageId]').equal(1);",
+									"    pm.expect(container1.live, 'FAILED:[container1.live]').equal(true);",
+									"    pm.expect(container1.locked, 'FAILED:[container1.locked]').equal(false);",
+									"    pm.expect(container1.maxContentlets, 'FAILED:[container1.maxContentlets]').equal(25);",
+									"    pm.expect(container1.modDate, 'FAILED:[container1.modDate]').not.null;",
+									"    pm.expect(container1.modUser.userId, 'FAILED:[container1.modUser.userId]').equal(\"system\");",
+									"    pm.expect(container1.name, 'FAILED:[container1.name]').equal(\"Default\");",
+									"    pm.expect(container1.new, 'FAILED:[container1.new]').equal(false);",
+									"    pm.expect(container1.notes, 'FAILED:[container1.notes]').equal(\"New File Container\");",
+									"    pm.expect(container1.owner.userId, 'FAILED:[container1.owner.userId]').equal(\"dotcms.org.1\");",
+									"    pm.expect(container1.parentPermissionable.hostName, 'FAILED:[container1.parentPermissionable.hostName]').equal(\"demo.dotcms.com\");",
+									"    pm.expect(container1.path, 'FAILED:[container1.path]').equal(\"//demo.dotcms.com/application/containers/default/\");",
+									"    pm.expect(container1.permissionId, 'FAILED:[container1.permissionId]').equal(\"69b3d24d-7e80-4be6-b04a-d352d16493ee\");",
+									"    pm.expect(container1.permissionType, 'FAILED:[container1.permissionType]').equal(\"com.dotmarketing.portlets.containers.model.FileAssetContainer\");",
+									"    pm.expect(container1.postLoop, 'FAILED:[container1.postLoop]').equal(\"#dotParse(\\\"//demo.dotcms.com/application/containers/default/postloop.vtl\\\")\");",
+									"    pm.expect(container1.preLoop, 'FAILED:[container1.preLoop]').equal(\"#dotParse(\\\"//demo.dotcms.com/application/containers/default/preloop.vtl\\\")\");",
+									"    pm.expect(container1.showOnMenu, 'FAILED:[container1.showOnMenu]').equal(false);",
+									"    pm.expect(container1.sortOrder, 'FAILED:[container1.sortOrder]').equal(0);",
+									"    pm.expect(container1.source, 'FAILED:[container1.source]').equal(\"FILE\");",
+									"    pm.expect(container1.staticify, 'FAILED:[container1.staticify]').equal(false);",
+									"    pm.expect(container1.title, 'FAILED:[container1.source]').equal(\"Default\");",
+									"    pm.expect(container1.type, 'FAILED:[container1.type]').equal(\"containers\");",
+									"    pm.expect(container1.useDiv, 'FAILED:[container1.useDiv]').equal(false);",
+									"    pm.expect(container1.versionId, 'FAILED:[container1.versionId]').equal(\"69b3d24d-7e80-4be6-b04a-d352d16493ee\");",
+									"    pm.expect(container1.versionType, 'FAILED:[container1.versionType]').equal(\"containers\");",
+									"    pm.expect(container1.working, 'FAILED:[container1.working]').equal(true);",
+									"    ",
+									"    ",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"type": "text",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"type": "text",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/destinations/costa-rica\", pageMode: \"live\") {\n    containers {\n      archived\n      categoryId\n      deleted\n      friendlyName\n      host {\n        hostName\n      }\n      iDate\n      idate\n      identifier\n      inode\n      languageId\n      live\n      locked\n      maxContentlets\n      modDate\n      modUser {\n        userId\n      }\n      name\n      new\n      notes\n      owner {\n        userId\n      }\n      parentPermissionable {\n        hostName\n      }\n      path\n      permissionId\n      permissionType\n      postLoop\n      preLoop\n      showOnMenu\n      sortOrder\n      source\n      staticify\n      title\n      type\n      useDiv\n      versionId\n      versionType\n      working\n    }\n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "GivenRequestByURI_ContainersFieldContainsRendered",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "12311c3e-71d2-4e39-9991-d1726d6191cc",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -1803,16 +1888,15 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "818aa592-aa77-49a6-8e8e-184af85339df",
 								"exec": [
 									"",
-									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"let contains = (arr, target) => target.every(v => arr.includes(v));",
 									"",
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"pm.test(\"'Page' includes all properties\", function () {",
+									"pm.test(\"'Containers Field' includes all Container Structures\", function () {",
 									"    var jsonData = pm.response.json();",
 									"",
 									"    pm.expect(jsonData.data.page.containers.length, 'FAILED:[jsonData.data.page.containers.length]').equal(2);",
@@ -1821,16 +1905,38 @@
 									"",
 									"    pm.expect(containerStructuresFirstContainer.length, 'FAILED:[containerStructuresFirstContainer.length]').equal(9);",
 									"",
-									"    var containerStructure = containerStructuresFirstContainer[0];",
+									"    let expectedTypes = [",
+									"                        \"#dotParse(\\\"//demo.dotcms.com/application/containers/default/banner.vtl\\\")\", ",
+									"                        \"#dotParse(\\\"//demo.dotcms.com/application/containers/default/blog.vtl\\\")\", ",
+									"                        \"#dotParse(\\\"//demo.dotcms.com/application/containers/default/product.vtl\\\")\", ",
+									"                        \"#dotParse(\\\"//demo.dotcms.com/application/containers/default/activity.vtl\\\")\", ",
+									"                        \"#dotParse(\\\"//demo.dotcms.com/application/containers/default/calendarevent.vtl\\\")\", ",
+									"                        \"#dotParse(\\\"//demo.dotcms.com/application/containers/default/image.vtl\\\")\", ",
+									"                        \"#dotParse(\\\"//demo.dotcms.com/application/containers/default/video.vtl\\\")\", ",
+									"                        \"#dotParse(\\\"//demo.dotcms.com/application/containers/default/calltoaction.vtl\\\")\", ",
+									"                        \"#dotParse(\\\"//demo.dotcms.com/application/containers/default/webpagecontent.vtl\\\")\"                ",
+									"    ];",
 									"",
-									"    // containerStructure fields",
-									"    pm.expect(containerStructure.id, 'FAILED:[containerStructure.id]').equal(\"86a06a2e-ba40-43d4-a3ad-3a870d43bfc1\");",
-									"    pm.expect(containerStructure.structureId, 'FAILED:[containerStructure.structureId]').equal(\"799f176a-d32e-4844-a07c-1b5fcd107578\");",
-									"    pm.expect(containerStructure.containerInode, 'FAILED:[containerStructure.containerInode]').equal(\"61f070f0-8def-4858-ab76-f22bcb6feaaa\");",
-									"    pm.expect(containerStructure.containerId, 'FAILED:[containerStructure.containerId]').equal(\"69b3d24d-7e80-4be6-b04a-d352d16493ee\");",
-									"    pm.expect(containerStructure.code, 'FAILED:[containerStructure.code]').equal(\"#dotParse(\\\"//demo.dotcms.com/application/containers/default/blog.vtl\\\")\");",
+									"    // assert all expected content types are included ",
+									"    const respondedTypes = containerStructuresFirstContainer.map(structure => structure.code);                 ",
+									"    pm.expect(contains(respondedTypes, expectedTypes ), 'FAILED:[expectedTypes]').equal(true);",
 									"",
-									"    ",
+									"    // assert all properties are present ",
+									"",
+									"    pm.expect(containerStructuresFirstContainer[0].id, 'FAILED:[ontainerStructuresFirstContainer[0].id]').not.undefined;",
+									"    pm.expect(containerStructuresFirstContainer[0].id, 'FAILED:[ontainerStructuresFirstContainer[0].id]').not.null;",
+									"",
+									"    pm.expect(containerStructuresFirstContainer[0].structureId, 'FAILED:[ontainerStructuresFirstContainer[0].structureId]').not.undefined;",
+									"    pm.expect(containerStructuresFirstContainer[0].structureId, 'FAILED:[ontainerStructuresFirstContainer[0].structureId]').not.null;",
+									"",
+									"    pm.expect(containerStructuresFirstContainer[0].containerInode, 'FAILED:[ontainerStructuresFirstContainer[0].containerInode]').not.undefined;",
+									"    pm.expect(containerStructuresFirstContainer[0].containerInode, 'FAILED:[ontainerStructuresFirstContainer[0].containerInode]').not.null;",
+									"",
+									"    pm.expect(containerStructuresFirstContainer[0].containerId, 'FAILED:[ontainerStructuresFirstContainer[0].containerId]').not.undefined;",
+									"    pm.expect(containerStructuresFirstContainer[0].containerId, 'FAILED:[ontainerStructuresFirstContainer[0].containerId]').not.null;",
+									"",
+									"    pm.expect(containerStructuresFirstContainer[0].code, 'FAILED:[ontainerStructuresFirstContainer[0].code]').not.undefined;",
+									"    pm.expect(containerStructuresFirstContainer[0].code, 'FAILED:[ontainerStructuresFirstContainer[0].code]').not.null;",
 									"    ",
 									"});",
 									""
@@ -1901,7 +2007,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "98b7c9bd-8f9b-44a2-95ca-66aa116e710e",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1954,10 +2059,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/costa-rica-family-cats-tags.tar.gz"
 								}
-							],
-							"options": {
-								"formdata": {}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/bundle?sync=true",
@@ -1990,7 +2092,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "dc95e454-8a94-4556-9a0c-3d11d5303693",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -2135,7 +2236,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "e4be4de5-fd8c-4342-9ac9-14bf8ba517cd",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2188,10 +2288,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/mexico-pageasset.tar.gz"
 								}
-							],
-							"options": {
-								"formdata": {}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/bundle?sync=true",
@@ -2223,7 +2320,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "2140e026-f588-4a27-ab23-1a1d1ae0890f",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -2305,7 +2401,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "dd044a8e-ff95-45a7-83ab-26e7014c8873",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -2387,7 +2482,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "cdc972e0-ad4e-4805-b368-b0ef49e83362",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -2471,7 +2565,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "b90dbf9c-bf27-4e26-939d-95ad0e9879e7",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2524,10 +2617,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/page-in-another-site.tar.gz"
 								}
-							],
-							"options": {
-								"formdata": {}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/bundle?sync=true",
@@ -2559,7 +2649,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "c4895d63-9a74-4a75-99b0-f114449827a1",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -2638,8 +2727,7 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "Test BaseType fields ",
@@ -2650,7 +2738,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "fe28366f-df27-4d96-bdb9-45e65b599fa4",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2703,10 +2790,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/personas.tar.gz"
 								}
-							],
-							"options": {
-								"formdata": {}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/bundle?sync=true",
@@ -2739,7 +2823,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "5d32dec8-364e-47d8-bcfc-514b31daebe7",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2792,10 +2875,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/keyvalue.tar.gz"
 								}
-							],
-							"options": {
-								"formdata": {}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/bundle?sync=true",
@@ -2828,7 +2908,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "1e9e2b9d-ca3c-4b0f-ba3f-a6be3989468f",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2881,10 +2960,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/vanity.tar.gz"
 								}
-							],
-							"options": {
-								"formdata": {}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/bundle?sync=true",
@@ -2917,7 +2993,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "80ea3967-f211-47f4-99fc-313165188cff",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2970,10 +3045,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/dotasset.tar.gz"
 								}
-							],
-							"options": {
-								"formdata": {}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/bundle?sync=true",
@@ -3006,7 +3078,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "c4058e0a-d076-4320-b005-6ca89e1bf468",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -3059,10 +3130,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/page.tar.gz"
 								}
-							],
-							"options": {
-								"formdata": {}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/bundle?sync=true",
@@ -3095,7 +3163,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "7504aec3-bc09-4c79-a744-58bfaeb42a18",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -3148,10 +3215,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/fileasset.tar.gz"
 								}
-							],
-							"options": {
-								"formdata": {}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/bundle?sync=true",
@@ -3184,7 +3248,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "2240143d-4b94-4715-bc0d-ef9e8dbe97e6",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -3237,10 +3300,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/widget.tar.gz"
 								}
-							],
-							"options": {
-								"formdata": {}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/bundle?sync=true",
@@ -3273,7 +3333,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "06605530-2566-4cb5-8764-156f27b19cc4",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -3335,7 +3394,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "66dc491c-a562-458c-9bc3-2af4cfd4d8da",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -3389,7 +3447,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "de0bf637-1812-4dd0-836d-d4af2efb4997",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -3459,7 +3516,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "855db62d-ddb0-468b-81a5-4fb282aa5174",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -3508,7 +3564,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "a43b5a88-8859-4bc2-8b27-4ef313be3030",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -3557,7 +3612,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "cf7d1123-4fd0-450b-aa58-b050a486e884",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -3610,7 +3664,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "07ee703c-8e03-4c17-ac15-e13a3e7052d4",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -3652,8 +3705,7 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "Get content in new Language",
@@ -3664,7 +3716,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ab4d1bc7-87f0-4c05-97f3-3eddb71480c4",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"languageId\", jsonData.entity.id);"
@@ -3727,7 +3778,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "814ec828-4faa-4725-90f2-d6ad88f20f91",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);"
@@ -3785,7 +3835,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ece223eb-a1c3-4235-b016-84eb3d31b7f9",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);"
@@ -3844,7 +3893,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "65af5a3d-e614-40c1-a4c9-306f47d8c81d",
 								"exec": [
 									"pm.test(\"Content in new Language should be retrieved\", function () {",
 									"    var jsonData = pm.response.json();",
@@ -3882,22 +3930,20 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
-			"name": "Test GraphQL Image Field fields ",
+			"name": "Test GraphQL File/Image Field fields",
 			"item": [
 				{
-					"name": "Create Image ContentType",
+					"name": "Create File/Image ContentType",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "54e0c2c4-bf7a-4fae-92fc-6372d36fe974",
 								"exec": [
 									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"imageContentTypeVariable\", jsonData.entity[0].variable);"
+									"pm.collectionVariables.set(\"fileImageContentTypeVariable\", jsonData.entity[0].variable);"
 								],
 								"type": "text/javascript"
 							}
@@ -3930,7 +3976,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"defaultType\": false,\n  \"fixed\": false,\n  \"system\": false,\n  \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableFileAssetContentType\",\n  \"description\": \"\",\n  \"host\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n  \"folder\": \"SYSTEM_FOLDER\",\n  \"name\": \"myImageType{{$randomBankAccount}}\",\n  \"systemActionMappings\": {\n    \"NEW\": \"\"\n  },\n  \"workflow\": [\n    \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n  ]\n}"
+							"raw": "{\n  \"defaultType\": false,\n  \"fixed\": false,\n  \"system\": false,\n  \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableFileAssetContentType\",\n  \"description\": \"\",\n  \"host\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n  \"folder\": \"SYSTEM_FOLDER\",\n  \"name\": \"myFileImageType{{$randomBankAccount}}\",\n  \"systemActionMappings\": {\n    \"NEW\": \"\"\n  },\n  \"workflow\": [\n    \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n  ]\n}"
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/contenttype",
@@ -3952,7 +3998,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d7becc6b-11f4-4137-9709-426098af301d",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -3993,7 +4038,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"My Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"My Custom Type {{$randomBankAccount}}\",\n\t\"host\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n\t\"fixed\": false,\n\t\"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"],\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 1,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"fixed\": true\n\t\t}, \n\t\t{\n              \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableImageField\",\n              \"dataType\": \"TEXT\",\n              \"fieldType\": \"Image\",\n              \"fieldTypeLabel\": \"Image\",\n              \"fieldVariables\": [],\n              \"fixed\": false,\n              \"iDate\": 1585605564000,\n              \"indexed\": false,\n              \"listed\": false,\n              \"modDate\": 1585605564000,\n              \"name\": \"myImage\",\n              \"readOnly\": false,\n              \"required\": false,\n              \"searchable\": false,\n              \"sortOrder\": 2,\n              \"unique\": false\n       },\n\t   {\n\t\t      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableFileField\",\n\t\t      \"name\": \"myFile\",\n\t\t      \"required\": false,\n\t\t      \"hint\": \"\"\n\t   }\n\t]\n}"
+							"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"My Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"My Custom Type {{$randomBankAccount}}\",\n\t\"host\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n\t\"fixed\": false,\n\t\"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"],\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 1,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"fixed\": true\n\t\t}, \n        {\n\t\t      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableFileField\",\n\t\t      \"name\": \"myFile\",\n\t\t      \"required\": false,\n\t\t      \"hint\": \"\", \n              \"sortOrder\": 2, \n              \"indexed\": true\n\t    }, \n\t\t{\n              \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableImageField\",\n              \"dataType\": \"TEXT\",\n              \"fieldType\": \"Image\",\n              \"fieldTypeLabel\": \"Image\",\n              \"fieldVariables\": [],\n              \"fixed\": false,\n              \"iDate\": 1585605564000,\n              \"indexed\": true,\n              \"listed\": false,\n              \"modDate\": 1585605564000,\n              \"name\": \"myImage\",\n              \"readOnly\": false,\n              \"required\": false,\n              \"searchable\": false,\n              \"sortOrder\": 3,\n              \"unique\": false\n       }\n\t]\n}"
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/contenttype",
@@ -4010,86 +4055,11 @@
 					"response": []
 				},
 				{
-					"name": "Create Image Content",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "91056632-8f2a-4db8-98b5-73db60a27a58",
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"imageContentIdentifier\", jsonData.entity.identifier);"
-								],
-								"type": "text/javascript"
-							}
-						},
-						{
-							"listen": "prerequest",
-							"script": {
-								"id": "15152ce2-3e95-40be-b2f4-8acd189be75f",
-								"exec": [
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "formdata",
-							"formdata": [
-								{
-									"key": "json",
-									"value": "{\n    \"contentlet\": {\n       \"contentType\":\"{{imageContentTypeVariable}}\",\n       \"title\":\"My Image\", \n       \"hostFolder\":\"default\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"showOnMenu\":\"true\",\n       \"sortOrder\":2\n    }\n}",
-									"type": "text"
-								},
-								{
-									"key": "file",
-									"type": "file",
-									"src": "resources/GraphQL/Test_GraphQL_Image_Field_fields/tommylee18005.jpeg"
-								}
-							],
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"actions",
-								"default",
-								"fire",
-								"PUBLISH"
-							]
-						},
-						"description": "This is to fire the added default action\n\nhttp://localhost:8080/api/v1/workflow/actions/default/fire/PUBLISH\n\nIn this case I'm using the \"test\" content type that just have a name filed (text)"
-					},
-					"response": []
-				},
-				{
 					"name": "Create File Content",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "fa9825c1-7e94-4e9f-8c4a-ef1cfefeb582",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"fileContentIdentifier\", jsonData.entity.identifier);"
@@ -4113,7 +4083,7 @@
 							"formdata": [
 								{
 									"key": "json",
-									"value": "{\n    \"contentlet\": {\n       \"contentType\":\"{{imageContentTypeVariable}}\",\n       \"title\":\"My Image\", \n       \"hostFolder\":\"default\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"showOnMenu\":\"true\",\n       \"sortOrder\":\"2\"\n    }\n}",
+									"value": "{\n    \"contentlet\": {\n       \"contentType\":\"{{fileImageContentTypeVariable}}\",\n       \"title\":\"My Image\", \n       \"hostFolder\":\"default\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"showOnMenu\":\"true\",\n       \"sortOrder\":\"2\"\n    }\n}",
 									"type": "text"
 								},
 								{
@@ -4148,15 +4118,23 @@
 					"response": []
 				},
 				{
-					"name": "Create Content",
+					"name": "Create Image Content",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "4ff6d567-21c7-4d15-a35e-1b9c46d8ec1e",
 								"exec": [
 									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);"
+									"pm.collectionVariables.set(\"imageContentIdentifier\", jsonData.entity.identifier);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -4173,8 +4151,19 @@
 							}
 						],
 						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"contentlet\": {\n       \"contentType\":\"{{contentTypeVariable}}\",\n       \"name\":\"Content With Image\", \n       \"contentHost\":\"default\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"{{imageFieldVariable}}\":\"{{imageContentIdentifier}}\",\n       \"{{fileFieldVariable}}\":\"{{fileContentIdentifier}}\"\n    }\n}",
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "json",
+									"value": "{\n    \"contentlet\": {\n       \"contentType\":\"{{fileImageContentTypeVariable}}\",\n       \"title\":\"My Image\", \n       \"hostFolder\":\"default\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"showOnMenu\":\"true\",\n       \"sortOrder\":2\n    }\n}",
+									"type": "text"
+								},
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/Test_GraphQL_Image_Field_fields/tommylee18005.jpeg"
+								}
+							],
 							"options": {
 								"raw": {
 									"language": "json"
@@ -4201,12 +4190,63 @@
 					"response": []
 				},
 				{
-					"name": "Request content with Image field",
+					"name": "Create Content",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "a52f1190-6aa4-4a29-a9a0-553d89bb6a16",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n       \"contentType\":\"{{contentTypeVariable}}\",\n       \"name\":\"Content With Image\", \n       \"contentHost\":\"default\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"{{fileFieldVariable}}\":\"{{fileContentIdentifier}}\", \n       \"{{imageFieldVariable}}\":\"{{imageContentIdentifier}}\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						},
+						"description": "This is to fire the added default action\n\nhttp://localhost:8080/api/v1/workflow/actions/default/fire/PUBLISH\n\nIn this case I'm using the \"test\" content type that just have a name filed (text)"
+					},
+					"response": []
+				},
+				{
+					"name": "Request content with Image and File fields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"var imageFieldVariable = pm.collectionVariables.get(\"imageFieldVariable\");",
@@ -4221,7 +4261,6 @@
 									"    ",
 									"    // general attributes",
 									"    pm.expect(imageFieldJson.fileName).to.eql(\"tommylee18005.jpeg\");",
-									"    pm.expect(imageFieldJson.description).to.eql(\"tommylee18005\");",
 									"    pm.expect(imageFieldJson.sortOrder).to.eql(2);",
 									"    pm.expect(imageFieldJson.showOnMenu[0]).to.eql(\"true\");",
 									"    ",
@@ -4231,14 +4270,17 @@
 									"    pm.expect(imageFieldJson.fileAsset.mime).to.eql(\"image/jpeg\");",
 									"    ",
 									"    // metaData",
-									"    pm.expect(imageFieldJson.metaData.length).to.eql(6);",
-									"    pm.expect(hasProperty(imageFieldJson.metaData, \"fileSize\", \"5494\")).to.be.true;",
-									"    pm.expect(hasProperty(imageFieldJson.metaData, \"length\", \"5494\")).to.be.true;",
-									"    pm.expect(hasProperty(imageFieldJson.metaData, \"width\", \"139\")).to.be.true;",
-									"    pm.expect(hasProperty(imageFieldJson.metaData, \"contentType\", \"image/jpeg\")).to.be.true;",
-									"    pm.expect(hasProperty(imageFieldJson.metaData, \"content\", \"\")).to.be.true;",
-									"    pm.expect(hasProperty(imageFieldJson.metaData, \"height\", \"186\")).to.be.true;",
-									"",
+									"    pm.expect(imageFieldJson.metaData.length).to.eql(11);",
+									"    pm.expect(hasProperty(imageFieldJson.metaData, \"fileSize\", \"5494\"), 'FAILED:[fileSize]').to.be.true;",
+									"    pm.expect(hasProperty(imageFieldJson.metaData, \"length\", \"5494\"), 'FAILED:[length]').to.be.true;",
+									"    pm.expect(hasProperty(imageFieldJson.metaData, \"width\", \"139\"), 'FAILED:[width]').to.be.true;",
+									"    pm.expect(hasProperty(imageFieldJson.metaData, \"contentType\", \"image/jpeg\"), 'FAILED:[contentType]').to.be.true;",
+									"    pm.expect(hasProperty(imageFieldJson.metaData, \"height\", \"186\"), 'FAILED:[height]').to.be.true;",
+									"    pm.expect(metaDataIncludes(imageFieldJson.metaData, \"path\", \"/fileAsset/tommylee18005.jpeg\"), 'FAILED:[path]').to.be.true;",
+									"    pm.expect(hasProperty(imageFieldJson.metaData, \"sha256\", \"d6b09b7a7d42e6a84e455e7257faf32c4351aa9bb491ceb939f7f3443c2150ae\"), 'FAILED:[sha256]').to.be.true;",
+									"    pm.expect(hasProperty(imageFieldJson.metaData, \"title\", \"tommylee18005.jpeg\"), 'FAILED:[title]').to.be.true;",
+									"    pm.expect(hasProperty(imageFieldJson.metaData, \"isImage\", \"true\"), 'FAILED:[isImage]').to.be.true;",
+									"    pm.expect(imageFieldJson.metaData.modDate).to.be.not.null;",
 									"    ",
 									"    ",
 									"});",
@@ -4248,37 +4290,47 @@
 									"    var fileFieldJson = jsonData.data[collectionName][0][fileFieldVariable];",
 									"    ",
 									"    // general attributes",
-									"    pm.expect(fileFieldJson.fileName).to.eql(\"Readme18005.md\");",
-									"    pm.expect(fileFieldJson.description).to.eql(\"Readme18005\");",
-									"    pm.expect(fileFieldJson.sortOrder).to.eql(2);",
-									"    pm.expect(fileFieldJson.showOnMenu[0]).to.eql(\"true\");",
+									"    pm.expect(fileFieldJson.fileName, 'FAILED:[fileName]').to.eql(\"Readme18005.md\");",
+									"    pm.expect(fileFieldJson.sortOrder, 'FAILED:[sortOrder]').to.eql(2);",
+									"    pm.expect(fileFieldJson.showOnMenu[0], 'FAILED:[showOnMenu]').to.eql(\"true\");",
 									"    ",
 									"    // fileAsset",
-									"    pm.expect(fileFieldJson.fileAsset.name).to.eql(\"Readme18005.md\");",
-									"    pm.expect(fileFieldJson.fileAsset.size).to.eql(14);",
-									"    pm.expect(fileFieldJson.fileAsset.mime).to.be.null;",
+									"    pm.expect(fileFieldJson.fileAsset.name, 'FAILED:[name]').to.eql(\"Readme18005.md\");",
+									"    pm.expect(fileFieldJson.fileAsset.size, 'FAILED:[size]').to.eql(14);",
+									"    pm.expect(fileFieldJson.fileAsset.mime, 'FAILED:[mime]').to.eql(\"text/plain; charset=ISO-8859-1\");",
 									"    ",
-									"    pm.expect(fileFieldJson.metaData.length).to.eql(4);",
+									"    pm.expect(fileFieldJson.metaData.length).to.eql(9);",
 									"",
 									"    // console.log(fileFieldJson.metaData)",
 									"    ",
-									"    pm.expect(hasProperty(fileFieldJson.metaData, \"fileSize\", \"14\")).to.be.true;",
-									"    pm.expect(hasProperty(fileFieldJson.metaData, \"length\", \"14\")).to.be.true;",
-									"    pm.expect(hasProperty(fileFieldJson.metaData, \"contentType\", \"text/plain; charset=ISO-8859-1\")).to.be.true;",
-									"    pm.expect(hasProperty(fileFieldJson.metaData, \"content\", \"This is a test\")).to.be.true;",
+									"    pm.expect(hasProperty(fileFieldJson.metaData, \"fileSize\", \"14\"), 'FAILED:[fileSize]').to.be.true;",
+									"    pm.expect(hasProperty(fileFieldJson.metaData, \"length\", \"14\"), 'FAILED:[length]').to.be.true;",
+									"    pm.expect(hasProperty(fileFieldJson.metaData, \"contentType\", \"text/plain; charset=ISO-8859-1\"), 'FAILED:[contentType]').to.be.true;",
+									"    ",
 									"    ",
 									"});",
 									"",
 									"function hasProperty(metaData, name, value) {",
-									"        var hasProperty = false;",
-									"        metaData.forEach(function (item) {",
-									"            if(item.key==name && item.value.trim()==value) {",
-									"                hasProperty = true;",
-									"            }",
-									"        });",
+									"    var hasProperty = false;",
+									"    metaData.forEach(function (item) {",
+									"        if(item.key==name && item.value.trim()==value) {",
+									"            hasProperty = true;",
+									"        }",
+									"    });",
 									"",
-									"        return hasProperty;",
-									"    }",
+									"    return hasProperty;",
+									"}",
+									"",
+									"function metaDataIncludes(metaData, name, value) {",
+									"    var metaDataIncludes = false;",
+									"    metaData.forEach(function (item) {",
+									"        if(item.key==name && item.value.trim().includes(value)) {",
+									"            metaDataIncludes = true;",
+									"        }",
+									"    });",
+									"",
+									"    return metaDataIncludes;",
+									"}",
 									""
 								],
 								"type": "text/javascript"
@@ -4310,8 +4362,7 @@
 					"response": []
 				}
 			],
-			"description": "This test that the custom type Image contains the expecte fields.\nExpected fields:\n\n* fileName\n* description\n* fileAsset (Composed/Custom Type. see Binary type on our GraphQL doc)\n* metaData (Custom Type. See Key Value type on our GraphQL doc)\n* showOnMenu\n* sortOrder",
-			"protocolProfileBehavior": {}
+			"description": "This test that the custom type Image contains the expecte fields.\nExpected fields:\n\n* fileName\n* description\n* fileAsset (Composed/Custom Type. see Binary type on our GraphQL doc)\n* metaData (Custom Type. See Key Value type on our GraphQL doc)\n* showOnMenu\n* sortOrder"
 		},
 		{
 			"name": "Related content respects language in query for parent",
@@ -4322,7 +4373,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "01444b11-d5fa-4ad2-949c-bbf9f50de674",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"languageId\", jsonData.entity.id);"
@@ -4385,7 +4435,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "37b5ae06-218b-4d79-8d80-b8c701a55582",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"childContentTypeVariable\", jsonData.entity[0].variable);"
@@ -4443,7 +4492,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "78aff940-d884-48d8-8a8e-c917ac263872",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"parentContentTypeVariable\", jsonData.entity[0].variable);",
@@ -4502,7 +4550,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "8238f7d0-4808-46bf-b1db-0c219f1baa23",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"childContentIdentifier\", jsonData.entity.identifier);"
@@ -4561,7 +4608,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "1a6216d5-9cbb-41af-b270-787b901f09b2",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"parentContentIdentifier\", jsonData.entity.identifier);"
@@ -4620,7 +4666,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "13bed146-c650-409a-b997-dea970da4e3c",
 								"exec": [
 									"pm.test(\"Content parent and child content returned in requested language\", function () {",
 									"    var jsonData = pm.response.json();",
@@ -4664,8 +4709,7 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "Empty Collection",
@@ -4676,7 +4720,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "c4f47cdb-1241-4f2c-b9c4-aa9d3c14cd53",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -4739,7 +4782,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f0712d98-3a0f-41e5-b508-e00e6028e41d",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -4773,8 +4815,7 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "Metadata ",
@@ -4785,7 +4826,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "fb4503b0-b418-433f-92a2-904b0576a515",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -4838,10 +4878,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/personas.tar.gz"
 								}
-							],
-							"options": {
-								"formdata": {}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/bundle?sync=true",
@@ -4874,7 +4911,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "4041b521-e9dc-4c67-958e-58154786a8b0",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -4927,10 +4963,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/vanity.tar.gz"
 								}
-							],
-							"options": {
-								"formdata": {}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/bundle?sync=true",
@@ -4963,7 +4996,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "e0bb0e43-ca1c-4f85-9821-87f12cf554d3",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -5012,8 +5044,7 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "Related content with condition / query",
@@ -5024,7 +5055,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "c3178cc7-b516-4564-821e-251e5ed96dcf",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -5077,10 +5107,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/movies-studios-ratings-bundle.tar.gz"
 								}
-							],
-							"options": {
-								"formdata": {}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/bundle?sync=true",
@@ -5113,7 +5140,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "c9628bc0-b7d2-4121-86aa-a7fc165e0265",
 								"exec": [
 									"pm.test(\"Filtered relationship fetched\", function () {",
 									"    var jsonData = pm.response.json();",
@@ -5150,96 +5176,382 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
+		},
+		{
+			"name": "File Metadata",
+			"item": [
+				{
+					"name": "Create FileAsset Content",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"fileContentIdentifier\", jsonData.entity.identifier);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotCMS.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "json",
+									"value": "{\n    \"contentlet\": {\n       \"contentType\":\"FileAsset\",\n       \"title\":\"Legioss\", \n       \"hostFolder\":\"default\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"showOnMenu\":\"true\",\n       \"sortOrder\":\"2\"\n    }\n}",
+									"type": "text"
+								},
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/Test_GraphQL_Image_Field_fields/actn-legioss.jpg"
+								}
+							],
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						},
+						"description": "This is to fire the added default action\n\nhttp://localhost:8080/api/v1/workflow/actions/default/fire/PUBLISH\n\nIn this case I'm using the \"test\" content type that just have a name filed (text)"
+					},
+					"response": []
+				},
+				{
+					"name": "Request File Asset metada fields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"var imageFieldVariable = pm.collectionVariables.get(\"imageFieldVariable\");",
+									"var fileFieldVariable = pm.collectionVariables.get(\"fileFieldVariable\");",
+									"",
+									"var contentIdentifier = pm.collectionVariables.get(\"contentIdentifier\")",
+									"",
+									"pm.test(\"FileAsset metadata attributes\", function () {",
+									"     ",
+									"    var metadataFields = jsonData.data[\"FileAssetCollection\"][0][\"fileAsset\"];",
+									"    ",
+									"    // metadata attributes",
+									"    pm.expect(metadataFields.name).to.eql(\"actn-legioss.jpg\");",
+									"    pm.expect(metadataFields.title).to.eql(\"actn-legioss.jpg\");",
+									"    pm.expect(metadataFields.isImage).to.eql(true);",
+									"    pm.expect(metadataFields.modDate).to.eql(1621257337000);",
+									"    pm.expect(metadataFields.size).to.eql(215384);",
+									"    pm.expect(metadataFields.mime).to.eql(\"image/jpeg\");",
+									"    pm.expect(metadataFields.width).to.eql(1200);",
+									"    pm.expect(metadataFields.height).to.eql(900);",
+									"    pm.expect(metadataFields.sha256).to.eql(\"ffe7157a4b7c8dd772f57dc2de8694ea974b87653b5605f854924a43bbfbb0ce\");",
+									"    pm.expect(metadataFields.path).not.eql(null);",
+									"    pm.expect(metadataFields.versionPath).not.eql(null);",
+									"    pm.expect(metadataFields.focalPoint).to.eql(\"0.0\");",
+									"",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  \nFileAssetCollection(limit:20){\n    fileAsset{\n      modDate\n      sha256\n      mime\n      title\n      versionPath\n      mime\n      focalPoint\n      path\n      name\n      versionPath\n      width\n      height\n      size\n      isImage\n    }   \n  }\n\n}\n\n\n\n\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Test Render Content Fields",
+			"item": [
+				{
+					"name": "pre_ImportBundleWithContent",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"contentWithRendereableFields.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/contentWithRendereableFields.tar.gz"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* Imports personas"
+					},
+					"response": []
+				},
+				{
+					"name": "Render content fields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Filtered relationship fetched\", function () {",
+									"    var jsonData = pm.response.json();",
+									"",
+									"    var contentlet = jsonData.data.TypeWithRedereableFieldsCollection[0];",
+									"    ",
+									"    pm.expect(contentlet.textField).to.eql(\"401ca578-74ef-463b-9ad0-c863da1724e5\");",
+									"    pm.expect(contentlet.textareaField).to.eql(\"401ca578-74ef-463b-9ad0-c863da1724e5\");",
+									"    pm.expect(contentlet.wysiwygField).to.eql(\"401ca578-74ef-463b-9ad0-c863da1724e5\");",
+									"    pm.expect(contentlet.customField).to.eql(\"401ca578-74ef-463b-9ad0-c863da1724e5\");",
+									"    pm.expect(contentlet.constantField).to.eql(\"401ca578-74ef-463b-9ad0-c863da1724e5\");",
+									"    pm.expect(contentlet.rawText).to.eql(\"$content.identifier\");",
+									"    pm.expect(contentlet.rawTextarea).to.eql(\"$content.identifier\");",
+									"    pm.expect(contentlet.rawWysiwyg).to.eql(\"$content.identifier\");",
+									"    pm.expect(contentlet.rawCustom).to.eql(\"$content.identifier\");",
+									"    pm.expect(contentlet.rawConstant).to.eql(\"$content.identifier\");",
+									"    pm.expect(contentlet.rawText_default).to.eql(\"$content.identifier\");",
+									"    pm.expect(contentlet.rawTextarea_default).to.eql(\"$content.identifier\");",
+									"    pm.expect(contentlet.rawWysiwyg_default).to.eql(\"$content.identifier\");",
+									"    pm.expect(contentlet.rawCustom_default).to.eql(\"$content.identifier\");",
+									"    pm.expect(contentlet.rawConstant_default).to.eql(\"$content.identifier\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n \n    TypeWithRedereableFieldsCollection {\n      textField(render: true)\n      textareaField(render: true)\n      wysiwygField(render: true)\n      customField(render: true)\n      constantField(render: true)\n      rawText:textField(render: false)\n      rawTextarea:textareaField(render: false)\n      rawWysiwyg:wysiwygField(render: false)\n      rawCustom:customField(render: false)\n      rawConstant:constantField(render: false)\n      rawText_default:textField\n      rawTextarea_default:textareaField\n      rawWysiwyg_default:wysiwygField\n      rawCustom_default:customField\n      rawConstant_default:constantField\n    }\n  \n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "This tests that: \n* It's possible to request rendered content fields.\n* It's possible to request unrendered content fields. \n* It's possible to request the same field in both rendered and unrendered forms.   \n* If \"render\" argument is not specified, then it defaults to render:false"
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"variable": [
 		{
-			"id": "c3337617-530f-4938-b6b5-0497761d9c99",
 			"key": "languageId",
 			"value": 1609799506077
 		},
 		{
-			"id": "7b17edd4-55a8-45bd-b931-dc33c9272ca3",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "1faac49d-7a77-492c-91e1-b9536dbf9302",
 			"key": "contentTypeVariable",
-			"value": "MyCustomType30413852"
+			"value": "MyCustomType94382829"
 		},
 		{
-			"id": "74bc16b1-bc81-4953-8c9d-c5e04dc371f0",
 			"key": "contentIdentifier",
-			"value": "a5bf0d80-4273-41e1-8f1f-22a3d4ac986f"
+			"value": "671144d9-739d-4dd2-b8a0-5ea9c32f9daa"
 		},
 		{
-			"id": "b0bb2018-ff58-481c-b462-636d8c75cafe",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "14579271-c0ec-4685-817a-731b40a509d3",
 			"key": "imageContentTypeVariable",
-			"value": "MyImageType49851579"
+			"value": "MyImageType20538490"
 		},
 		{
-			"id": "6abfd9a4-df6c-49a5-a4ce-4c2908e358e8",
 			"key": "imageContentIdentifier",
-			"value": "4cb59737-913d-4c5f-b021-dbe213a15739"
+			"value": "d3915dc0-ba86-48e7-a1f1-856478b06cfe"
 		},
 		{
-			"id": "7ed69565-1576-4317-94d0-fff6eb2bec69",
 			"key": "imageFieldVariable",
-			"value": "myImage"
+			"value": "myFile"
 		},
 		{
-			"id": "07820789-4ddf-4321-b365-12b7774c2811",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "286b339b-9b7c-4d15-9739-64bca1204a9f",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "a6933e0a-ec2d-4e21-b022-8cf78cf9eb79",
 			"key": "fileFieldVariable",
-			"value": "myFile"
+			"value": "myImage"
 		},
 		{
-			"id": "5734459a-7633-4b30-b568-2e99c6654e53",
 			"key": "fileContentIdentifier",
-			"value": "434f474a-4d89-4b96-ad38-aa46483be3e5"
+			"value": "35bd8a93-0d74-44e6-8a89-cb57735114f1"
 		},
 		{
-			"id": "53fa432a-8556-48bc-9b29-b23582c22b22",
 			"key": "childContentTypeVariable",
 			"value": "childType40723544"
 		},
 		{
-			"id": "34c7b668-0cbd-4832-8927-5332693a359d",
 			"key": "parentContentTypeVariable",
 			"value": "parentType84267241"
 		},
 		{
-			"id": "e9da1a63-9ee8-40dc-bba6-060d5f4d5161",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "76af6f09-2c74-48e3-a4df-d44383674a8e",
 			"key": "childContentIdentifier",
 			"value": "69953bca-0384-487c-8288-5118f455c127"
 		},
 		{
-			"id": "7a8967e6-7e8d-45eb-9c16-0e5bfdad901e",
 			"key": "parentContentIdentifier",
 			"value": "5f487236-01fb-4ff1-a25e-8eecc99b2312"
+		},
+		{
+			"key": "fileImageContentTypeVariable",
+			"value": "MyFileImageType68267192"
 		}
-	],
-	"protocolProfileBehavior": {}
+	]
 }

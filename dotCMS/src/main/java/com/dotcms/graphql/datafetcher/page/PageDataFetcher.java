@@ -43,7 +43,9 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
                     .getHttpServletResponse();
 
             final String url = environment.getArgument("url");
-            final String languageId = environment.getArgument("languageId");
+            final String languageId = UtilMethods.isSet((String) environment.getArgument("languageId"))
+                    ? environment.getArgument("languageId") :
+                    String.valueOf(APILocator.getLanguageAPI().getDefaultLanguage().getId());
             final String pageModeAsString = environment.getArgument("pageMode")
                     != null ? environment.getArgument("pageMode") : PageMode.LIVE.name();
             final boolean fireRules = environment.getArgument("fireRules");

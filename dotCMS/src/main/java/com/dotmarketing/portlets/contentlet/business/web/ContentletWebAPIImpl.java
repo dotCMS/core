@@ -488,7 +488,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 					for(final ContentletRelationshipRecords records : recordsList) {
 
 						if ((!records.getRelationship().getRelationTypeValue().equals(relationType)) ||
-							(FactoryLocator.getRelationshipFactory().sameParentAndChild(records.getRelationship()) &&
+							(APILocator.getRelationshipAPI().sameParentAndChild(records.getRelationship()) &&
 								((!records.isHasParent() && relationHasParent.equals("no")) ||
 								 (records.isHasParent() && relationHasParent.equals("yes"))))) {
 							continue;
@@ -562,6 +562,10 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 					if (!currentContentlet.isNew() &&
 							!currentContentlet.getTitle().equals(oldContentletMap.get(Host.HOST_NAME_KEY))) {
 						UpdateContainersPathsJob.triggerUpdateContainersPathsJob(
+								oldContentletMap.get(Host.HOST_NAME_KEY).toString(),
+								(String) currentContentlet.get("hostName")
+						);
+						UpdatePageTemplatePathJob.triggerUpdatePageTemplatePathJob(
 								oldContentletMap.get(Host.HOST_NAME_KEY).toString(),
 								(String) currentContentlet.get("hostName")
 						);
@@ -1129,7 +1133,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				final ArrayList<Contentlet> cons = new ArrayList<>();
 				for (String inode : inodes) {
 					if(relationship.getInode().equalsIgnoreCase(inode) ||
-                            (FactoryLocator.getRelationshipFactory().sameParentAndChild(records.getRelationship()) &&
+                            (APILocator.getRelationshipAPI().sameParentAndChild(records.getRelationship()) &&
                                     ((!records.isHasParent() && relationHasParent.equals("no")) ||
                                             (records.isHasParent() && relationHasParent.equals("yes"))))){
 						continue;

@@ -8,7 +8,6 @@ import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.content.elasticsearch.business.ESReadOnlyMonitor;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
@@ -34,10 +33,12 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 
+import io.vavr.API;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -357,7 +358,7 @@ public class PublishFactory {
 				}
             } else if ( asset instanceof Template ) {
                 Logger.debug( PublishFactory.class, "*****I'm an HTML Page -- Publishing Template =" + ((Template) asset).getInode() );
-                publishAsset( (Template) asset, user, respectFrontendRoles, false );
+                APILocator.getTemplateAPI().publishTemplate(Template.class.cast(asset),user,respectFrontendRoles);
             }
         }
 
@@ -587,7 +588,7 @@ public class PublishFactory {
 
 			Logger.warn(PublishFactory.class, message);
 		} catch (final  LanguageException  e) {
-			Logger.warn(ESReadOnlyMonitor.class, () -> e.getMessage());
+			Logger.warn(PublishFactory.class, () -> "messageKey:" + messageKey + ", msg:" + e.getMessage());
 		}
 	}
 }

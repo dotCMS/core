@@ -182,7 +182,7 @@ public class CommentsWebAPI implements ViewTool {
 
 
 		// Get the relationships of the comments structure
-		List<Relationship> relationships = FactoryLocator.getRelationshipFactory().byContentType(commentsStructure);
+		List<Relationship> relationships = APILocator.getRelationshipAPI().byContentType(commentsStructure);
 		for (Relationship relationship : relationships) {
 			Structure childStructure = relationship.getChildStructure();
 			Structure parentStructure = relationship.getParentStructure();
@@ -215,7 +215,7 @@ public class CommentsWebAPI implements ViewTool {
 			relationship.setParentRequired(false);
 			relationship.setChildRequired(false);
 			relationship.setFixed(true);
-			FactoryLocator.getRelationshipFactory().save(relationship);
+			APILocator.getRelationshipAPI().save(relationship);
 
 		}
 	}
@@ -226,7 +226,7 @@ public class CommentsWebAPI implements ViewTool {
 		Structure commentsStructure =  CacheLocator.getContentTypeCache().getStructureByVelocityVarName(commentsVelocityStructureName);
 
 		// Get the relationships of the comments structure
-		List<Relationship> relationships = FactoryLocator.getRelationshipFactory().byContentType(commentsStructure);
+		List<Relationship> relationships = APILocator.getRelationshipAPI().byContentType(commentsStructure);
 		for (Relationship relationship : relationships) {
 			Structure childStructure = relationship.getChildStructure();
 			Structure parentStructure = relationship.getParentStructure();
@@ -256,7 +256,7 @@ public class CommentsWebAPI implements ViewTool {
 			relationship.setRelationTypeValue(commentStructureName + "-" + commentStructureName);
 			relationship.setParentRequired(false);
 			relationship.setChildRequired(false);
-			FactoryLocator.getRelationshipFactory().save(relationship);
+			APILocator.getRelationshipAPI().save(relationship);
 		}
 	}
 

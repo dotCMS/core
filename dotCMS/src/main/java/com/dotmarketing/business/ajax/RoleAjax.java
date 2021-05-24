@@ -10,6 +10,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -57,6 +58,8 @@ import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
@@ -79,6 +82,9 @@ import javax.servlet.http.HttpServletRequest;
 public class RoleAjax {
 
 	private final SystemEventsAPI systemEventsAPI;
+
+    private static final ObjectMapper mapper = DotObjectMapperProvider.getInstance()
+            .getDefaultObjectMapper();
     	
 	public RoleAjax(){
 		this(APILocator.getSystemEventsAPI());
@@ -184,26 +190,55 @@ public class RoleAjax {
 	//Retrieves a list of roles mapped to the given list of roles
 	public Map<String, List<Map<String, Object>>> getUsersByRole(String[] roleIds) throws NoSuchUserException, DotDataException, DotSecurityException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
 
-		RoleAPI roleAPI = APILocator.getRoleAPI();
+		final RoleAPI roleAPI = APILocator.getRoleAPI();
 
-		Map<String, List<Map<String, Object>>> mapOfUserRoles = new HashMap<String, List<Map<String,Object>>>();
-		Set<User> userSet = new HashSet<User>();
-		for(String roleId : roleIds) {
-			List<User> userList = roleAPI.findUsersForRole(roleId);
-			List<Map<String, Object>> userMaps = new ArrayList<Map<String, Object>>();
+		final Map<String, List<Map<String, Object>>> mapOfUserRoles = new HashMap<>();
+		final Set<User> userSet = new HashSet<>();
+		for(final String roleId : roleIds) {
+			final List<User> userList = roleAPI.findUsersForRole(roleId);
+			final List<Map<String, Object>> userMaps = new ArrayList<>();
 			if(userList != null)
-				for(User u : userList) {
-					if(!userSet.contains(u)) {
-						userMaps.add(u.toMap());
-						userSet.add(u);
-					}
+				for(final User user : userList) {
+					if (!userSet.contains(user)) {
+                        final Map<String, Object> userMap = getUserMap(user);
+                        userMaps.add(userMap);
+                        userSet.add(user);
+                    }
 				}
 			mapOfUserRoles.put(roleId, userMaps);
 		}
 		return mapOfUserRoles;
 	}
 
-	/**
+    /**
+     * Returns a map with the user fields, compatible with dojo data store
+     * @param user
+     * @return
+     * @throws IllegalAccessException
+     * @throws InvocationTargetException
+     * @throws NoSuchMethodException
+     */
+    private Map<String, Object> getUserMap(final User user)
+            throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+        final Map<String, Object> userMap = user.toMap();
+        //Additional info is sent as a json object to avoid parsing errors with dojo data store
+        final Map<String, String> additionalInfo = (Map<String, String>) userMap
+                .get("additionalInfo");
+        try {
+            userMap.put("additionalInfo",
+                    additionalInfo != null ? mapper
+                            .writeValueAsString(additionalInfo)
+                            : "{}");
+        } catch (JsonProcessingException e) {
+            Logger.warn(this,
+                    "Error generating JSON object for additional user's info. UserId: "
+                            + user.getUserId());
+            userMap.put("additionalInfo", "{}");
+        }
+        return userMap;
+    }
+
+    /**
 	 * Removes a user or set of users from a specific role. This method is
 	 * called from the <i>Roles & Tabs</i> page.
 	 * 
@@ -285,7 +320,7 @@ public class RoleAjax {
 
 		Map<String, Object> result = new HashMap<String, Object>();
 		result.put("error", error);
-		result.put("user", user.toMap());
+		result.put("user", getUserMap(user));
 		return result;
 	}
 

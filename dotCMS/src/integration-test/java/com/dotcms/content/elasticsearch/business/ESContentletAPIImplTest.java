@@ -196,7 +196,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             throws DotDataException, DotSecurityException {
         final long time = System.currentTimeMillis();
         ContentType contentType = null;
-        final ESReadOnlyMonitor esReadOnlyMonitor = mock(ESReadOnlyMonitor.class);
+        final ElasticReadOnlyCommand esReadOnlyMonitor = mock(ElasticReadOnlyCommand.class);
         final ESContentletAPIImpl contentletAPIImpl = new ESContentletAPIImpl(esReadOnlyMonitor);
 
         try {
@@ -221,11 +221,12 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
 
             setClusterAsReadOnly(true);
 
+            contentlet.setProperty(Contentlet.IS_TEST_MODE, true);
             contentletAPIImpl.checkin(contentlet, contentletRelationship, null, null, user, false);
 
             throw new  AssertionError("DotContentletStateException Expected");
         } catch(DotContentletStateException e) {
-            verify(esReadOnlyMonitor).start();
+            verify(esReadOnlyMonitor).executeCheck();
         }finally{
             if (contentType != null && contentType.id() != null){
                 contentTypeAPI.delete(contentType);

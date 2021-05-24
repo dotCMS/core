@@ -42,6 +42,7 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
@@ -149,7 +150,7 @@ public class FileUtil {
 		copyFile(source, destination, Config.getBooleanProperty("CONTENT_VERSION_HARD_LINK", true));
 	}
 	
-	private static void validateEmptyFile(File source) throws IOException{
+	public static void validateEmptyFile(File source) throws IOException{
 		final String metaDataPath = "metaData" + File.separator + "content";
         final String languagePropertyPath = "messages" + File.separator + "cms_language";
         
@@ -230,13 +231,20 @@ public class FileUtil {
         }
 
         if (!hardLinks) {
-            try (final ReadableByteChannel inputChannel = Channels.newChannel(Files.newInputStream(source.toPath()));
-                    final WritableByteChannel outputChannel = Channels.newChannel(Files.newOutputStream(destination.toPath()))){
-                FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
-            }
-        }
+			copyFile(source, Files.newOutputStream(destination.toPath()));
+		}
 
     }
+
+	public static void copyFile(final File source, final OutputStream destination) throws IOException {
+		try (final ReadableByteChannel inputChannel = Channels.newChannel(Files.newInputStream(source.toPath()));
+			 final WritableByteChannel outputChannel = Channels.newChannel(destination)){
+			FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
+		} catch(IOException e) {
+			Logger.error(FileUtil.class, e);
+			throw e;
+		}
+	}
 
 	public static void copyFileLazy(String source, String destination)
 		throws IOException {
@@ -782,12 +790,12 @@ public class FileUtil {
         final ByteBuffer buffer = ByteBuffer.allocateDirect(5 * 1024);
 
         while (src.read(buffer) != -1) {
-            buffer.flip();
+			((Buffer)buffer).flip();
             dest.write(buffer);
             buffer.compact();
         }
 
-        buffer.flip();
+		((Buffer)buffer).flip();
 
         while (buffer.hasRemaining()) {
             dest.write(buffer);

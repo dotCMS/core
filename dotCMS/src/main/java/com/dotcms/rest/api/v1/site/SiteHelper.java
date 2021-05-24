@@ -1,8 +1,5 @@
 package com.dotcms.rest.api.v1.site;
 
-import static com.dotmarketing.util.Logger.debug;
-import static com.dotmarketing.util.Logger.error;
-
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -10,15 +7,22 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-import java.io.Serializable;
-import java.util.List;
+import org.apache.commons.lang.StringUtils;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import org.apache.commons.lang.StringUtils;
+import java.io.Serializable;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.Future;
+
+import static com.dotmarketing.util.Logger.debug;
+import static com.dotmarketing.util.Logger.error;
 
 /**
  * Provides all the utility methods used by the {@link SiteResource}
@@ -52,6 +56,102 @@ public class SiteHelper implements Serializable {
 		this.hostAPI = APILocator.getHostAPI();
 	}
 
+	/**
+	 * Retrieve all sites
+	 * @param user
+	 * @param respectFrontend
+	 * @return
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	public List<Host> findAll(final User user, final boolean respectFrontend) throws DotSecurityException, DotDataException {
+
+		return hostAPI.findAll(user, respectFrontend);
+	}
+
+	/**
+	 * Unlock a site
+	 * @param site
+	 * @param user
+	 * @param respectAnonPerms
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	public void unlock(final Host site, final User user, final boolean respectAnonPerms) throws DotSecurityException, DotDataException {
+
+		APILocator.getContentletAPI().unlock(site, user, respectAnonPerms);
+	}
+
+	/**
+	 * Archive a site
+	 * @param site
+	 * @param user
+	 * @param respectAnonPerms
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	public void archive(final Host site, final User user, final boolean respectAnonPerms) throws DotSecurityException, DotDataException {
+
+		hostAPI.archive(site, user, respectAnonPerms);
+	}
+
+	/**
+	 * UnArchive a site
+	 * @param site
+	 * @param user
+	 * @param respectAnonPerms
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	public void unarchive(final Host site, final User user, final boolean respectAnonPerms) throws DotSecurityException, DotDataException {
+
+		hostAPI.unarchive(site, user, respectAnonPerms);
+	}
+
+	/**
+	 * Save a new or existing site
+	 * @param site
+	 * @param user
+	 * @param respectAnonPerms
+	 * @return
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	public Host save(final Host site, final User user, final boolean respectAnonPerms) throws DotSecurityException, DotDataException {
+
+		return APILocator.getHostAPI().save(site, user, respectAnonPerms);
+	}
+
+	/**
+	 * Deletes a site
+	 * @param site
+	 * @param user
+	 * @param respectAnonPerms
+	 * @return
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	public Future<Boolean> delete(final Host site, final User user, final boolean respectAnonPerms) throws DotSecurityException, DotDataException {
+
+		final Optional<Future<Boolean>> hostDeleteResultOpt = hostAPI.delete(site, user, respectAnonPerms, true);
+		return hostDeleteResultOpt.isPresent()?hostDeleteResultOpt.get():null;
+	}
+
+	/**
+	 * Make default a site
+	 * @param site
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	public boolean makeDefault(Host site, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+
+		this.hostAPI.makeDefault(site, user, respectFrontendRoles);
+		return true;
+	}
+
 	private static class SingletonHolder {
 		private static final SiteHelper INSTANCE = new SiteHelper();
 	}
@@ -68,14 +168,14 @@ public class SiteHelper implements Serializable {
 	/**
 	 * Check if a Site is archived or not, keeping the exception quietly
 	 * @param showArchived {@link Boolean}
-	 * @param host {@link Host}
+	 * @param site {@link Host}
 	 * @return Boolean
 	 */
-	public boolean checkArchived (final boolean showArchived, final Host host) {
+	public boolean checkArchived (final boolean showArchived, final Host site) {
 		boolean checkArchived = false;
 		try {
 
-			checkArchived = (showArchived || !host.isArchived());
+			checkArchived = (showArchived || !site.isArchived());
 		} catch (Exception e) {
 			error(SiteHelper.class, e.getMessage(), e);
 		}
@@ -93,7 +193,83 @@ public class SiteHelper implements Serializable {
 	 * @throws DotDataException if one is thrown when the sites are search
 	 */
 	public Host getSite(User user, String siteId) throws DotSecurityException, DotDataException {
-		Host site = this.hostAPI.find(siteId, user, Boolean.TRUE);
+		final Host site = this.hostAPI.find(siteId, user, Boolean.TRUE);
+		return site;
+	}
+
+	/**
+	 * Return a site by user and site id, respect front roles = false
+	 *
+	 * @param user User to filter the host to return
+	 * @param siteId Id to filter the host to return
+	 * @return host that the given user has permissions and with id equal to hostId, if any exists then return null
+	 * @throws DotSecurityException if one is thrown when the sites are search
+	 * @throws DotDataException if one is thrown when the sites are search
+	 */
+	public Host getSiteNoFrontEndRoles(final User user, final String siteId) throws DotSecurityException, DotDataException {
+
+		final Host site = this.hostAPI.find(siteId, user, Boolean.FALSE);
+		return site;
+	}
+
+	/**
+	 * Return a site by user and site name
+	 *
+	 * @param user User to filter the host to return
+	 * @param siteName name to filter the host to return
+	 * @return host that the given user has permissions and with id equal to hostId, if any exists then return null
+	 * @throws DotSecurityException if one is thrown when the sites are search
+	 * @throws DotDataException if one is thrown when the sites are search
+	 */
+	public Host getSiteByName(User user, String siteName) throws DotSecurityException, DotDataException {
+		final Host site = this.hostAPI.findByName(siteName, user, Boolean.TRUE);
+		return site;
+	}
+
+	/**
+	 * Return a site by user and site name, respect front roles = false
+	 *
+	 * @param user User to filter the host to return
+	 * @param siteName name to filter the host to return
+	 * @return host that the given user has permissions and with id equal to hostId, if any exists then return null
+	 * @throws DotSecurityException if one is thrown when the sites are search
+	 * @throws DotDataException if one is thrown when the sites are search
+	 */
+	public Host getSiteByNameNoFrontEndRoles(final User user, final String siteName) throws DotSecurityException, DotDataException {
+
+		final Host site = this.hostAPI.findByName(siteName, user, Boolean.FALSE);
+		return site;
+	}
+
+	/**
+	 * Publish a site
+	 * @param site {@link Host}
+	 * @param user {@link User}
+	 * @param respectAnonPerms {@link Boolean}
+	 * @return Host
+	 * @throws DotContentletStateException
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public Host publish(final Host site, final User user, final boolean respectAnonPerms) throws DotContentletStateException, DotDataException, DotSecurityException {
+
+		this.hostAPI.publish(site, user, respectAnonPerms);
+		return site;
+	}
+
+	/**
+	 * Unpublish a site
+	 * @param site {@link Host}
+	 * @param user {@link User}
+	 * @param respectAnonPerms {@link Boolean}
+	 * @return Host
+	 * @throws DotContentletStateException
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public Host unpublish(final Host site, final User user, final boolean respectAnonPerms) throws DotContentletStateException, DotDataException, DotSecurityException {
+
+		this.hostAPI.unpublish(site, user, respectAnonPerms);
 		return site;
 	}
 
@@ -165,12 +341,12 @@ public class SiteHelper implements Serializable {
 	public Host getCurrentSite(final HttpServletRequest req, final User user) {
 		try {
 			final HttpSession session = req.getSession();
-			String hostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+			String siteId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
 
-			if(null==hostId){
+			if(null==siteId){
 				return WebAPILocator.getHostWebAPI().getHost(req);
 			}else{
-				return hostAPI.find(hostId, user, false);
+				return hostAPI.find(siteId, user, false);
 			}
 
 		} catch (DotDataException|DotSecurityException e) {
@@ -178,19 +354,30 @@ public class SiteHelper implements Serializable {
 		}
 	}
 
-	public void switchSite(final HttpServletRequest req, final String hostId) {
-		final HttpSession session = req.getSession();
+	/**
+	 * Switch a site
+	 * @param req
+	 * @param siteId
+	 */
+	public void switchSite(final HttpServletRequest req, final String siteId) {
 
-		session.removeAttribute(WebKeys.CMS_SELECTED_HOST_ID); // we do this in order to get a properly behaviour of the SwichSiteListener
-		session.setAttribute(WebKeys.CMS_SELECTED_HOST_ID, hostId);
-		session.removeAttribute(WebKeys.CONTENTLET_LAST_SEARCH);
+		// we do this in order to get a properly behaviour of the SwichSiteListener
+		HostUtil.switchSite(req, siteId);
 	}
 
+	/**
+	 * Switch to the default host
+	 * @param req
+	 * @param user
+	 * @return
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
 	public Host switchToDefaultHost(final HttpServletRequest req, final User user)
 			throws DotSecurityException, DotDataException {
 
-		final Host defaultHost = this.hostAPI.findDefaultHost(user, false);
-		this.switchSite(req, defaultHost.getIdentifier());
-		return defaultHost;
+		final Host defaultSite = this.hostAPI.findDefaultHost(user, false);
+		this.switchSite(req, defaultSite.getIdentifier());
+		return defaultSite;
 	}
 }

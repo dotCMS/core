@@ -94,6 +94,8 @@ import com.dotmarketing.common.reindex.ReindexQueueAPIImpl;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.factories.MultiTreeAPIImpl;
+import com.dotmarketing.image.focalpoint.FocalPointAPI;
+import com.dotmarketing.image.focalpoint.FocalPointAPIImpl;
 import com.dotmarketing.plugin.business.PluginAPI;
 import com.dotmarketing.plugin.business.PluginAPIImpl;
 import com.dotmarketing.portlets.calendar.business.CalendarReminderAPI;
@@ -190,6 +192,25 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
 	/**
+	 * Destroy the current instance and Creates a single instance of this class.
+	 * this is only for testing
+	 */
+	@VisibleForTesting
+	public synchronized static void destroyAndForceInit(){
+
+		destroy();
+		instance = null;
+
+		String apiLocatorClass = Config.getStringProperty("API_LOCATOR_IMPLEMENTATION", null);
+		if (apiLocatorClass != null) {
+			instance = (APILocator) ReflectionUtils.newInstance(apiLocatorClass);
+		}
+		if (instance == null) {
+			instance = new APILocator();
+		}
+	}
+
+	/**
 	 * This method is just allowed by the own package to register {@link Closeable} resources
 	 * @param closeable
 	 */
@@ -236,6 +257,11 @@ public class APILocator extends Locator<APIIndex>{
 	 * @return The {@link CompanyAPI} class.
 	 */
 	public static CompanyAPI getCompanyAPI() {
+		return getAPILocatorInstance().getCompanyAPIImpl();
+	}
+
+	@VisibleForTesting
+	protected CompanyAPI getCompanyAPIImpl() {
 		return (CompanyAPI) getInstance(APIIndex.COMPANY_API);
 	}
 
@@ -360,6 +386,16 @@ public class APILocator extends Locator<APIIndex>{
 	public static ContentletAPI getContentletAPI() {
 		return (ContentletAPI)getInstance(APIIndex.CONTENTLET_API_INTERCEPTER);
 	}
+
+    /**
+     * This is the contentletAPI which an application should use to do ALL
+     * normal {@link ContentletAPI} logic.
+     *
+     * @return The {@link ContentletAPI} class.
+     */
+    public static FocalPointAPI getFocalPointAPI() {
+        return (FocalPointAPI)getInstance(APIIndex.FOCAL_POINT_API);
+    }
 
 	/**
 	 * Creates a single instance of the {@link IdentifierAPI} class.
@@ -556,7 +592,7 @@ public class APILocator extends Locator<APIIndex>{
 	 * Creates the {@link FileStorageAPI}
 	 * @return FileStorageAPI
 	 */
-	public static FileMetadataAPI getContentletMetadataAPI(){
+	public static FileMetadataAPI getFileMetadataAPI(){
 		return (FileMetadataAPI) getInstance(APIIndex.CONTENTLET_METADATA_API);
 	}
 
@@ -1163,6 +1199,7 @@ enum APIIndex
 	URLMAP_API,
 	CONTENT_TYPE_FIELD_LAYOUT_API,
 	PUBLISH_AUDIT_API,
+	FOCAL_POINT_API,
 	APPS_API,
 	DOT_ASSET_API,
 	BROWSER_API,
@@ -1247,6 +1284,7 @@ enum APIIndex
 			case URLMAP_API: return new URLMapAPIImpl();
 			case CONTENT_TYPE_FIELD_LAYOUT_API: return new ContentTypeFieldLayoutAPIImpl();
 			case PUBLISH_AUDIT_API: return PublishAuditAPIImpl.getInstance();
+			case FOCAL_POINT_API: return new FocalPointAPIImpl();
 			case APPS_API: return AppsAPI.INSTANCE.get();
 			case DOT_ASSET_API: return new DotAssetAPIImpl();
 			case BROWSER_API: return new BrowserAPIImpl();

@@ -1,14 +1,14 @@
 package com.dotcms.datagen;
 
-import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publishing.FilterDescriptor;
+import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.google.common.collect.ImmutableMap;
 
 import java.util.Map;
 
-public class FileDescriptorDataGen extends AbstractDataGen<FilterDescriptor> {
+public class FilterDescriptorDataGen extends AbstractDataGen<FilterDescriptor> {
 
     private boolean dependencies = true;
     private boolean relationships = true;
@@ -17,27 +17,27 @@ public class FileDescriptorDataGen extends AbstractDataGen<FilterDescriptor> {
     private String title;
     private String key;
 
-    public FileDescriptorDataGen dependencies(boolean dependencies) {
+    public FilterDescriptorDataGen dependencies(boolean dependencies) {
         this.dependencies = dependencies;
         return this;
     }
 
-    public FileDescriptorDataGen relationships(boolean relationships) {
+    public FilterDescriptorDataGen relationships(boolean relationships) {
         this.relationships = relationships;
         return this;
     }
 
-    public FileDescriptorDataGen forcePush(boolean forcePush) {
+    public FilterDescriptorDataGen forcePush(boolean forcePush) {
         this.forcePush = forcePush;
         return this;
     }
 
-    public FileDescriptorDataGen title(String title) {
+    public FilterDescriptorDataGen title(String title) {
         this.title = title;
         return this;
     }
 
-    public FileDescriptorDataGen key(String key) {
+    public FilterDescriptorDataGen key(String key) {
         this.key = key;
         return this;
     }
@@ -66,6 +66,7 @@ public class FileDescriptorDataGen extends AbstractDataGen<FilterDescriptor> {
 
     @Override
     public FilterDescriptor persist(FilterDescriptor filterDescriptor) {
+        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
         APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor);
         return APILocator.getPublisherAPI().getFilterDescriptorByKey(filterDescriptor.getKey());
     }

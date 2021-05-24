@@ -19,6 +19,8 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import java.net.ConnectException;
+import javax.ws.rs.core.Response.ResponseBuilder;
 import org.glassfish.jersey.internal.util.Base64;
 import org.glassfish.jersey.server.JSONP;
 
@@ -53,7 +55,6 @@ public class ApiTokenResource implements Serializable {
 
     private final ApiTokenAPI tokenApi;
     private final WebResource webResource;
-    private Client restClient;
 
     /**
      * Default constructor.
@@ -264,18 +265,19 @@ public class ApiTokenResource implements Serializable {
         }
 
         final String protocol = formData.protocol();
+        final String remoteURL = String.format("%s://%s:%d/api/v1/apitoken", protocol, formData.host(), formData.port());
         final Client client = getRestClient();
 
-        final String remoteURL = String.format("%s://%s:%d/api/v1/apitoken", protocol, formData.host(), formData.port());
-        final WebTarget webTarget = client.target(remoteURL);
-
-        String password = "";
-
-        if (UtilMethods.isSet(formData.password())) {
-            password = Base64.decodeAsString(formData.password());
-        }
-
         try {
+
+            final WebTarget webTarget = client.target(remoteURL);
+
+            String password = "";
+
+            if (UtilMethods.isSet(formData.password())) {
+                password = Base64.decodeAsString(formData.password());
+            }
+
             final Response response = webTarget.request(MediaType.APPLICATION_JSON)
                     .header("Authorization", "Basic " + Base64.encodeAsString(formData.login() + ":" + password))
                     .post(Entity.entity(formData.getTokenInfo(), MediaType.APPLICATION_JSON));
@@ -290,22 +292,26 @@ public class ApiTokenResource implements Serializable {
                 }
             }
 
-            return response;
+            return Response
+                    .status(response.getStatus())
+                    .entity(response.readEntity(String.class))
+                    .build();
         } catch (ProcessingException e){
-            if (e.getCause().getClass() == UnknownHostException.class || e.getCause().getClass() == NoRouteToHostException.class) {
+            if (e.getCause().getClass() == UnknownHostException.class ||
+                    e.getCause().getClass() == NoRouteToHostException.class ||
+                    e.getCause().getClass() == ConnectException.class) {
                 Logger.error(ApiTokenResource.class, String.format("Invalid server URL: %s", remoteURL));
                 return Response.status(Response.Status.NOT_FOUND).build();
             } else {
                 throw e;
             }
+        } finally {
+            client.close();
         }
     }
 
     private Client getRestClient() {
-        if (null == this.restClient) {
-            this.restClient = RestClientBuilder.newClient();
-        }
-        return this.restClient;
+        return RestClientBuilder.newClient();
     }
 
     /**

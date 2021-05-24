@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.content.business.DotMappingException;
+import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
@@ -434,4 +435,9 @@ public abstract class ContentletFactory {
 
     public abstract Optional<Contentlet> findInDb(String inode) ;
 
+	public static void rebuildRestHighLevelClientIfNeeded(final Exception e) {
+		if(e != null && e.getMessage().contains("reactor status: STOPPED")) {
+			RestHighLevelClientProvider.getInstance().rebuildClient();
+		}
+	}
 }

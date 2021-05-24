@@ -23,6 +23,7 @@
 package com.liferay.portal.util;
 
 import java.util.Properties;
+import com.dotmarketing.util.Config;
 
 /**
  * <a href="PropsUtil.java.html"><b><i>View Source</i></b></a>
@@ -417,24 +418,20 @@ public class PropsUtil {
 		PropsLoader.init();
 	}
 
-	public static boolean containsKey(String key) {
-		return PropsLoader.getInstance().containsKey(key);
+	public static boolean containsKey(final String key) {
+		return get(key)!=null;
 	}
 
-	public static String get(String key) {
-		return PropsLoader.getInstance().get(key);
+	public static String get(final String key) {
+		return Config.getStringProperty(key, PropsLoader.getInstance().get(key));
 	}
 
-	public static void set(String key, String value) {
-		PropsLoader.getInstance().set(key, value);
+
+
+	public static String[] getArray(final String key) {
+		return Config.getStringArrayProperty(key,PropsLoader.getInstance().getArray(key));
 	}
 
-	public static String[] getArray(String key) {
-		return PropsLoader.getInstance().getArray(key);
-	}
 
-	public static Properties getProperties() {
-		return PropsLoader.getInstance().getProperties();
-	}
 
 }

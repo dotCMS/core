@@ -29,19 +29,20 @@ import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
-import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.rendering.velocity.services.PageLoader;
-import com.dotcms.repackage.com.google.common.base.Preconditions;
-import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
-import com.dotcms.repackage.com.google.common.collect.Lists;
-import com.dotcms.repackage.com.google.common.collect.Maps;
-import com.dotcms.repackage.com.google.common.collect.Sets;
-import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.storage.FileMetadataAPI;
+import com.dotcms.storage.model.Metadata;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import org.apache.commons.io.FileUtils;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
@@ -149,8 +150,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
@@ -235,6 +234,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private final TagAPI                tagAPI;
     private final IdentifierStripedLock lockManager;
     private final TempFileAPI           tempApi ;
+    private final FileMetadataAPI       fileMetadataAPI;
     public static final int MAX_LIMIT = 10000;
     private static final boolean INCLUDE_DEPENDENCIES = true;
 
@@ -257,13 +257,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
     };
 
     private static final Supplier<String> ND_SUPPLIER = ()->"N/D";
-    private ESReadOnlyMonitor esReadOnlyMonitor;
+    private ElasticReadOnlyCommand elasticReadOnlyCommand;
 
     /**
      * Default class constructor.
      */
     @VisibleForTesting
-    public ESContentletAPIImpl (final ESReadOnlyMonitor esReadOnlyMonitor) {
+    public ESContentletAPIImpl (final ElasticReadOnlyCommand readOnlyCommand) {
         indexAPI = new ContentletIndexAPIImpl();
         fieldAPI = APILocator.getFieldAPI();
         contentFactory = new ESContentFactoryImpl();
@@ -277,11 +277,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         localSystemEventsAPI      = APILocator.getLocalSystemEventsAPI();
         lockManager = DotConcurrentFactory.getInstance().getIdentifierStripedLock();
         tempApi=  APILocator.getTempFileAPI();
-        this.esReadOnlyMonitor = esReadOnlyMonitor;
+        this.elasticReadOnlyCommand = readOnlyCommand;
+        fileMetadataAPI = APILocator.getFileMetadataAPI();
     }
 
     public ESContentletAPIImpl () {
-        this(ESReadOnlyMonitor.getInstance());
+        this(ElasticReadOnlyCommand.getInstance());
     }
 
 
@@ -1357,7 +1358,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         final ContentType contentType = contentlet.getContentType();
-        final List<Relationship> relationships = FactoryLocator.getRelationshipFactory()
+        final List<Relationship> relationships = APILocator.getRelationshipAPI()
                 .byContentType(contentType);
 
         for (Relationship relationship : relationships) {
@@ -1368,7 +1369,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             Collectors.toList());
 
             if (relatedByRelationship.size() == 0) {
-                if (FactoryLocator.getRelationshipFactory().sameParentAndChild(relationship)) {
+                if (APILocator.getRelationshipAPI().sameParentAndChild(relationship)) {
 
                     //If it's a same structure kind of relationship we need to pull all related content
                     //on both roles as parent and a child of the relationship
@@ -1381,7 +1382,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 } else {
                     pullRelated(contentlet, cRelationships, relationship,
-                            FactoryLocator.getRelationshipFactory()
+                            APILocator.getRelationshipAPI()
                                     .isParent(relationship, contentType));
                 }
             }
@@ -1393,7 +1394,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private void pullRelated(Contentlet contentlet, ContentletRelationships cRelationships, Relationship relationship, boolean hasParent)
             throws DotDataException {
 
-        final boolean selfRelated = FactoryLocator.getRelationshipFactory().sameParentAndChild(relationship);
+        final boolean selfRelated = APILocator.getRelationshipAPI().sameParentAndChild(relationship);
 
         final List<Contentlet> contentletList = new ArrayList<>();
         final ContentletRelationshipRecords records = cRelationships.new ContentletRelationshipRecords(
@@ -1510,7 +1511,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return Collections.emptyList();
         }
 
-        final boolean isSameStructureRelationship = FactoryLocator.getRelationshipFactory()
+        final boolean isSameStructureRelationship = APILocator.getRelationshipAPI()
                 .sameParentAndChild(rel);
 
         if (isSameStructureRelationship) {
@@ -1585,7 +1586,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final boolean HAS_PARENT = Boolean.TRUE;
         final boolean WORKING_VERSION = Boolean.FALSE;
         if (rel.isRelationshipField() && GET_RELATED_CONTENT_FROM_DB) {
-            return FactoryLocator.getRelationshipFactory()
+            return APILocator.getRelationshipAPI()
                     .dbRelatedContent(rel, contentlet, HAS_PARENT, WORKING_VERSION, "tree_order", limit, offset);
         } else {
 
@@ -1665,7 +1666,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final boolean HAS_NO_PARENT = Boolean.FALSE;
         final boolean WORKING_VERSION = Boolean.FALSE;
         if (rel.isRelationshipField() && GET_RELATED_CONTENT_FROM_DB) {
-            return FactoryLocator.getRelationshipFactory()
+            return APILocator.getRelationshipAPI()
                     .dbRelatedContent(rel, contentlet, HAS_NO_PARENT, WORKING_VERSION, "tree_order", limit, offset);
         } else {
             final Map<String, Contentlet> relatedMap = new HashMap<>();
@@ -2147,7 +2148,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throws DotSecurityException, DotDataException {
 
         final List<Relationship> relationships =
-                FactoryLocator.getRelationshipFactory().byContentType(contentlet.getStructure());
+                APILocator.getRelationshipAPI().byContentType(contentlet.getStructure());
         // Remove related contents
         for (final Relationship relationship : relationships) {
             deleteRelatedContent(contentlet, relationship, user, respectFrontendRoles);
@@ -2252,8 +2253,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         this.deleteBinaryFiles(contentletsVersion, null);
         this.deleteElementFromPublishQueueTable(contentlets);
+        this.destroyMetadata(contentlets);
 
         return noErrors;
+    }
+
+    /**
+     * at destroying/deleting time this will take care of removing all metadata entries
+     * @param contentlets
+     */
+    private void destroyMetadata(final List<Contentlet> contentlets){
+        for (final Contentlet contentlet:contentlets){
+            fileMetadataAPI.removeMetadata(contentlet);
+            Logger.debug(ESContentletAPIImpl.class,String.format("metadata removed for %s",contentlet.getIdentifier()));
+        }
+        Logger.debug(ESContentletAPIImpl.class,String.format("Done removing metadata for %d elements.",contentlets.size()));
     }
 
     private void forceUnpublishArchiveOnDestroy(final User user, final Contentlet contentlet)
@@ -2590,7 +2604,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         for (Contentlet con : contentlets) {
             categoryAPI.removeChildren(con, APILocator.getUserAPI().getSystemUser(), true);
             categoryAPI.removeParents(con, APILocator.getUserAPI().getSystemUser(), true);
-            List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(con.getStructure());
+            List<Relationship> rels = APILocator.getRelationshipAPI().byContentType(con.getStructure());
             for(Relationship relationship :  rels){
                 deleteRelatedContent(con,relationship,user,respectFrontendRoles);
             }
@@ -2664,7 +2678,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         for (Contentlet con : contentlets) {
             categoryAPI.removeChildren(con, APILocator.getUserAPI().getSystemUser(), true);
             categoryAPI.removeParents(con, APILocator.getUserAPI().getSystemUser(), true);
-            List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(con.getStructure());
+            List<Relationship> rels = APILocator.getRelationshipAPI().byContentType(con.getStructure());
             for(Relationship relationship :  rels){
                 deleteRelatedContent(con,relationship,user,respectFrontendRoles);
             }
@@ -2719,6 +2733,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
         CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
 
         deleteBinaryFiles(contentlets,null);
+
+        fileMetadataAPI.removeVersionMetadata(contentlet);
+
     }
 
     @WrapInTransaction
@@ -3545,7 +3562,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException, DotContentletStateException {
 
-        this.deleteRelatedContent(contentlet, relationship, FactoryLocator.getRelationshipFactory()
+        this.deleteRelatedContent(contentlet, relationship, APILocator.getRelationshipAPI()
                 .isParent(relationship, contentlet.getStructure()), user, respectFrontendRoles);
     }
 
@@ -3567,7 +3584,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     + " cannot edit Contentlet with identifier " + contentlet.getIdentifier());
         }
 
-        List<Relationship> rels = FactoryLocator.getRelationshipFactory()
+        List<Relationship> rels = APILocator.getRelationshipAPI()
                 .byContentType(contentlet.getContentType());
         if (!rels.contains(relationship)) {
             throw new DotContentletStateException(
@@ -3579,7 +3596,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 .dbRelatedContent(relationship, contentlet, hasParent);
         cons = permissionAPI
                 .filterCollection(cons, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
-        FactoryLocator.getRelationshipFactory().deleteByContent(contentlet, relationship, cons);
+        APILocator.getRelationshipAPI().deleteByContent(contentlet, relationship, cons);
 
         final List<String> identifiersToBeRelated = contentletsToBeRelated.stream().map(
                 Contentlet::getIdentifier).collect(Collectors.toList());
@@ -3852,7 +3869,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public void relateContent(Contentlet contentlet, Relationship rel, List<Contentlet> records, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException, DotContentletStateException {
         Structure st = CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
-        boolean hasParent = FactoryLocator.getRelationshipFactory().isParent(rel, st);
+        boolean hasParent = APILocator.getRelationshipAPI().isParent(rel, st);
         ContentletRelationshipRecords related = new ContentletRelationships(contentlet).new ContentletRelationshipRecords(rel, hasParent);
         related.setRecords(records);
         relateContent(contentlet, related, user, respectFrontendRoles);
@@ -3861,7 +3878,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @CloseDBIfOpened
     private List<Relationship> getRelationships (final ContentTypeIf type) throws DotDataException {
 
-        return FactoryLocator.getRelationshipFactory().byContentType(type);
+        return APILocator.getRelationshipAPI().byContentType(type);
     }
 
     @CloseDBIfOpened
@@ -4440,9 +4457,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         if (!isCheckInSafe(contentRelationships)){
-            this.esReadOnlyMonitor.start();
+
+            if (contentlet.getBoolProperty(Contentlet.IS_TEST_MODE)) {
+                this.elasticReadOnlyCommand.executeCheck();
+            } else {
+                DotConcurrentFactory.getInstance().getSingleSubmitter().submit(() -> this.elasticReadOnlyCommand.executeCheck());
+            }
+
+            final String contentletIdentifier =
+                    null != contentlet && null != contentlet.getIdentifier()? contentlet.getIdentifier(): StringPool.NULL;
+
             throw new DotContentletStateException(
-                    "Content cannot be saved at this moment. Reason: Elastic Search cluster is in read only mode.");
+                    "Content cannot be saved at this moment. Reason: Elastic Search cluster is in read only mode. Contentlet Id: " +
+                            contentletIdentifier);
         }
 
         if(cats == null) {
@@ -4789,8 +4816,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 
             // Binary Files
-            String newInode = contentlet.getInode();
-            String oldInode = workingContentlet.getInode();
+            final String newInode = contentlet.getInode();
+            final String oldInode = workingContentlet.getInode();
 
 
             File newDir = new File(APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator
@@ -4815,8 +4842,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         + File.separator + oldInode);
             }
 
-            // List of files that we need to delete after iterate over all the fields.
-            Set<File> fileListToDelete = Sets.newHashSet();
 
             // loop over the new field values
             // if we have a new temp file or a deleted file
@@ -4832,95 +4857,89 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                     final File binaryFieldFolder = new File(newDir.getAbsolutePath() + File.separator + velocityVarNm);
 
-                    final File metadata=(contentType instanceof FileAssetContentType) ? 
-                        APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode()) : null;
-                    
 
-                    // if the user has removed this  file via the ui
+                    // if the user has removed this file via ui
                     if (incomingFile == null  || incomingFile.getAbsolutePath().contains("-removed-")){
                         FileUtil.deltree(binaryFieldFolder);
                         contentlet.setBinary(velocityVarNm, null);
-                        if(metadata!=null && metadata.exists())
-                            metadata.delete();
-                        continue;
-                    }
 
-                    // if we have an incoming file
-                    else if (incomingFile.exists() ){
-                        //The physical file name is preserved across versions.
-                        //No need to update the name. We will only reference the file through the logical asset-name
-                        final String oldFileName  = incomingFile.getName();
-
-                        File oldFile = null;
-                        if(UtilMethods.isSet(oldInode)) {
-                            //get old file
-                            oldFile = new File(oldDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator +  oldFileName);
-
-                            // do we have an inline edited file, if so use that
-                            File editedFile = new File(tmpDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator + WebKeys.TEMP_FILE_PREFIX + oldFileName);
-                            if(editedFile.exists()){
-                                incomingFile = editedFile;
-                            }
+                        //For removed files we should cleanup any existing metadata.
+                        if(contentlet.isFileAsset()){
+                           fileMetadataAPI.removeMetadata(contentlet);
                         }
 
-                        //The file name must be preserved so it remains the same across versions.
-                        File newFile = new File(newDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator +  oldFileName);
-                        binaryFieldFolder.mkdirs();
+                    } else { // if we have an incoming file
+                        if (incomingFile.exists() ){
 
-                        // we move files that have been newly uploaded or edited
-                        if(oldFile==null || !oldFile.equals(incomingFile)){
-                            if(!createNewVersion){
-                                // If we're calling a checkinWithoutVersioning method,
-                                // then folder needs to be cleaned up in order to add the new file in it.
-                                // Otherwise we will have the old file and incoming file at the same time
-                                FileUtil.deltree(binaryFieldFolder);
-                                binaryFieldFolder.mkdirs();
-                            }
-                            // We want to copy (not move) cause the same file could be in
-                            // another field and we don't want to delete it in the first time.
-                            final boolean contentVersionHardLink = Config
-                                    .getBooleanProperty("CONTENT_VERSION_HARD_LINK", true);
-                            FileUtil.copyFile(incomingFile, newFile, contentVersionHardLink, validateEmptyFile);
+                            //If the incoming file is temp resource we need to find out if there is any metadata associated
+                            final Optional<String> tempResourceId = tempApi.getTempResourceId(incomingFile);
 
+                            //The physical file name is preserved across versions.
+                            //No need to update the name. We will only reference the file through the logical asset-name
+                            final String oldFileName  = incomingFile.getName();
 
-                            // delete old content metadata if exists
-                            if(metadata!=null && metadata.exists()){
-                                metadata.delete();
+                            File oldFile = null;
+                            if(UtilMethods.isSet(oldInode)) {
+                                //get old file
+                                oldFile = new File(oldDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator +  oldFileName);
+
+                                // do we have an inline edited file, if so use that
+                                File editedFile = new File(tmpDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator + WebKeys.TEMP_FILE_PREFIX + oldFileName);
+                                if(editedFile.exists()){
+                                    incomingFile = editedFile;
+                                }
                             }
 
-                        } else if (oldFile.exists()) {
-                            // otherwise, we copy the files as hardlinks
-                            final boolean contentVersionHardLink = Config
-                                    .getBooleanProperty("CONTENT_VERSION_HARD_LINK", true);
-                            FileUtil.copyFile(incomingFile, newFile, contentVersionHardLink, validateEmptyFile);
+                            //The file name must be preserved so it remains the same across versions.
+                            final File newFile = new File(newDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator +  oldFileName);
+                            binaryFieldFolder.mkdirs();
 
-                            // try to get the content metadata from the old version
-                            if (metadata != null) {
-                                File oldMeta = APILocator.getFileAssetAPI()
-                                        .getContentMetadataFile(oldInode);
-                                if (oldMeta.exists() && !oldMeta.equals(metadata)) {
-                                    if (metadata
-                                            .exists()) {// unlikely to happend. deleting just in case
-                                        metadata.delete();
-                                    }
-                                    metadata.getParentFile().mkdirs();
-                                    FileUtil.copyFile(oldMeta, metadata);
+                            // we move files that have been newly uploaded or edited
+                            if(oldFile==null || !oldFile.equals(incomingFile)){
+                                if(!createNewVersion){
+                                    // If we're calling a checkinWithoutVersioning method,
+                                    // then folder needs to be cleaned up in order to add the new file in it.
+                                    // Otherwise we will have the old file and incoming file at the same time
+                                    FileUtil.deltree(binaryFieldFolder);
+                                    binaryFieldFolder.mkdirs();
+                                }
+                                // We want to copy (not move) cause the same file could be in
+                                // another field and we don't want to delete it in the first time.
+                                final boolean contentVersionHardLink = Config
+                                        .getBooleanProperty("CONTENT_VERSION_HARD_LINK", true);
+                                FileUtil.copyFile(incomingFile, newFile, contentVersionHardLink, validateEmptyFile);
+
+                            } else if (oldFile.exists()) {
+                                // otherwise, we copy the files as hardlinks
+                                final boolean contentVersionHardLink = Config
+                                        .getBooleanProperty("CONTENT_VERSION_HARD_LINK", true);
+                                FileUtil.copyFile(incomingFile, newFile, contentVersionHardLink, validateEmptyFile);
+                            }
+
+                            if(workingContentlet != contentlet){
+                                //This copies the metadata from version to version so we don't lose any any custom attribute previously added
+                                fileMetadataAPI.copyCustomMetadata(workingContentlet, contentlet);
+                                Logger.debug(ESContentletAPIImpl.class,String.format("Metadata copied from inode: `%s` to  inode `%s` ", workingContentlet.getInode(), contentlet.getInode()));
+                            }
+
+                            contentlet.setBinary(velocityVarNm, newFile);
+
+                            //This copies the metadata associated with the temp resource passed if any.
+                            if(tempResourceId.isPresent()){
+                                final Optional<Metadata> optionalMetadata = fileMetadataAPI.getMetadata(tempResourceId.get());
+                                if(optionalMetadata.isPresent()){
+                                   final Metadata tempMeta = optionalMetadata.get();
+                                   fileMetadataAPI.putCustomMetadataAttributes(contentlet, ImmutableMap.of(velocityVarNm, tempMeta.getCustomMeta()));
+                                   Logger.debug(ESContentletAPIImpl.class,String.format("Metadata copied from temp resource: `%s` ", tempResourceId.get()));
                                 }
                             }
                         }
-                        contentlet.setBinary(velocityVarNm, newFile);
                     }
                 } catch (FileNotFoundException e) {
                     throw new DotContentletValidationException("Error occurred while processing the file:" + e.getMessage(),e);
                 } catch (IOException e) {
                     throw new DotContentletValidationException("Error occurred while processing the file:" + e.getMessage(),e);
                 }
-            }
-
-            // These are the incomingFiles that were copied to a new location
-            // (cause new content inode) and now we need to delete to avoid duplicates.
-            for (File fileToDelete : fileListToDelete) {
-                fileToDelete.delete();
             }
 
             // lets update identifier's syspubdate & sysexpiredate
@@ -5012,30 +5031,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             final Identifier contIdent = APILocator.getIdentifierAPI().find(contentlet);
-            if(contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET){
-                //Parse file META-DATA
-                final File binFile =  getBinaryFile(contentlet.getInode(), FileAssetAPI.BINARY_FIELD, user);
-                if(binFile != null){
-                    contentlet.setProperty(FileAssetAPI.FILE_NAME_FIELD, binFile.getName());
-                    if(!UtilMethods.isSet(contentlet.getStringProperty(FileAssetAPI.DESCRIPTION))){
-                        String desc = UtilMethods.getFileName(binFile.getName());
-                        contentlet.setProperty(FileAssetAPI.DESCRIPTION, desc);
-                    }
-                    final Map<String, String> metaMap = APILocator.getFileAssetAPI().getMetaDataMap(contentlet, binFile);
 
-                    if(metaMap != null) {
-                        final Gson gson = new GsonBuilder().disableHtmlEscaping().create();
-                        contentlet.setProperty(FileAssetAPI.META_DATA_FIELD, gson.toJson(metaMap));
-                        contentlet = contentFactory.save(contentlet);
-                        contentlet.setIndexPolicy(indexPolicy);
-                        contentlet.setIndexPolicyDependencies(indexPolicyDependencies);
-                    }
-                }
-
-                // clear possible CSS cache
-                CacheLocator.getCSSCache().remove(contIdent.getHostId(), contIdent.getURI(), true);
-                CacheLocator.getCSSCache().remove(contIdent.getHostId(), contIdent.getURI(), false);
-            }
 
             // both file & page as content might trigger a menu cache flush
             if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET
@@ -5547,12 +5543,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @param contentRelationships
      * @param contentType
      * @param relationshipAPI
+     * @throws DotDataException 
      */
     private void getWipeOutRelationships(final ContentletRelationships contentRelationships,
-            final ContentType contentType, final RelationshipAPI relationshipAPI) {
+            final ContentType contentType, final RelationshipAPI relationshipAPI) throws DotDataException {
         //wipe out all relationships
-        final List<Relationship> relationships = FactoryLocator.getRelationshipFactory()
-                .byContentType(contentType);
+        final List<Relationship> relationships = APILocator.getRelationshipAPI().byContentType(contentType);
         relationships.forEach(relationship -> {
             //add empty list to each relationship
             if (relationshipAPI.sameParentAndChild(relationship)) {
@@ -5917,17 +5913,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
-    private static final String[] DEFAULT_DATE_FORMATS = new String[] {
-            // time zone
-            "yyyy-MM-dd HH:mm:ss z Z", "d-MMM-yy z Z", "dd-MMM-yyyy z Z", "MM/dd/yy HH:mm:ss z Z",
-            "MM/dd/yy hh:mm:ss z Z", "MMMM dd, yyyy z Z", "M/d/y z Z", "MM/dd/yyyy z Z", "yyyy-MM-dd z Z",
 
-            "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm", "d-MMM-yy", "MMM-yy", "MMMM-yy", "d-MMM", "dd-MMM-yyyy",
-            "MM/dd/yyyy hh:mm:ss aa", "MM/dd/yyyy hh:mm aa", "MM/dd/yy HH:mm:ss", "MM/dd/yy HH:mm:ss", "MM/dd/yy HH:mm",
-            "MM/dd/yy hh:mm:ss aa", "MM/dd/yy hh:mm:ss", "MM/dd/yyyy HH:mm:ss", "MM/dd/yyyy HH:mm", "MMMM dd, yyyy",
-            "M/d/y", "M/d", "EEEE, MMMM dd, yyyy", "MM/dd/yyyy",
-            "hh:mm:ss aa", "hh:mm aa", "HH:mm:ss", "HH:mm", "yyyy-MM-dd"
-    };
 
     @Override
     public void setContentletProperty(Contentlet contentlet,Field field, Object value)throws DotContentletStateException {
@@ -6626,7 +6612,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         relationshipsData.setRelationshipsRecords(relationshipsRecords);
         for(Entry<Relationship, List<Contentlet>> relEntry : contentRelationships.entrySet()) {
             Relationship relationship = relEntry.getKey();
-            boolean hasParent = FactoryLocator.getRelationshipFactory().isParent(relationship, st);
+            boolean hasParent = APILocator.getRelationshipAPI().isParent(relationship, st);
             ContentletRelationshipRecords records = relationshipsData.new ContentletRelationshipRecords(relationship, hasParent);
             records.setRecords(relEntry.getValue());
         }
@@ -6701,7 +6687,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 //There is a case when the Relationship is between same structures
                 //We need to validate that case
                 boolean isRelationshipParent = true;
-                if(FactoryLocator.getRelationshipFactory().sameParentAndChild(relationship)){
+                if(APILocator.getRelationshipAPI().sameParentAndChild(relationship)){
                     if (contentsInRelationship.stream().anyMatch(con -> contentlet.getIdentifier().equals(con.getIdentifier()))) {
                         Logger.error(this, "Cannot relate content [" + contentletId + "] to itself");
                         hasError = true;
@@ -6713,7 +6699,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
 
                 // if i am the parent
-                if (FactoryLocator.getRelationshipFactory().isParent(relationship,contentType) && isRelationshipParent) {
+                if (APILocator.getRelationshipAPI().isParent(relationship,contentType) && isRelationshipParent) {
                     if (relationship.isChildRequired() && contentsInRelationship.isEmpty()) {
                         hasError = true;
                         Logger.error(this, "Error in Contentlet [" + contentletId + "]: Child relationship [" + relationship
@@ -6757,7 +6743,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                     " [" + contentInRelationship.getIdentifier() + "]", e);
                         }
                     }
-                } else if (FactoryLocator.getRelationshipFactory().isChild(relationship, contentType)) {
+                } else if (APILocator.getRelationshipAPI().isChild(relationship, contentType)) {
                     if (relationship.isParentRequired() && contentsInRelationship.isEmpty()) {
                         hasError = true;
                         Logger.error(this, "Error in Contentlet [" + contentletId + "]: Parent relationship [" + relationship
@@ -6983,7 +6969,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<>();
         if(contentlet == null)
             return contentRelationships;
-        List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(contentlet.getStructure());
+        List<Relationship> rels = APILocator.getRelationshipAPI().byContentType(contentlet.getStructure());
         for (Relationship r : rels) {
             if(!contentRelationships.containsKey(r)){
                 contentRelationships.put(r, new ArrayList<>());

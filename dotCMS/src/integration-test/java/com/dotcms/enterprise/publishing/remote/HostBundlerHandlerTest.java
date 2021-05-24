@@ -7,6 +7,7 @@ import com.dotcms.enterprise.publishing.remote.handler.HostHandler;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.PublisherConfig.Operation;
+import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -84,13 +85,15 @@ public class HostBundlerHandlerTest extends IntegrationTestBase {
             Mockito.when(config.getId()).thenReturn(UUIDGenerator.generateUuid());
             hostBundler.setConfig(config);
 
+            final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config, tempDir);
+
             //Creating temp bundle dir
 
             if (!tempDir.exists()) {
                 tempDir.mkdirs();
             }
 
-            hostBundler.generate(tempDir, status);
+            hostBundler.generate(directoryBundleOutput, status);
             Assert.assertEquals(1, status.getCount()); //Only 1 content in the bundler
 
             Thread.sleep(5000); //Let's wait a couple of seconds before running the Hanlder
@@ -142,13 +145,15 @@ public class HostBundlerHandlerTest extends IntegrationTestBase {
             Mockito.when(config.getOperation()).thenReturn(Operation.PUBLISH);
             hostBundler.setConfig(config);
 
+            final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config, tempDir);
+
             //Creating temp bundle dir
 
             if (!tempDir.exists()) {
                 tempDir.mkdirs();
             }
 
-            hostBundler.generate(tempDir, status);
+            hostBundler.generate(directoryBundleOutput, status);
             Assert.assertEquals(1, status.getCount()); //Only 1 content in the bundler
         } finally {
             tempDir.delete();

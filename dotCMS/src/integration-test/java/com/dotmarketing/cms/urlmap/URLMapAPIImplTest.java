@@ -214,7 +214,7 @@ public class URLMapAPIImplTest {
     /**
      * methodToTest {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
      * Given Scenario: Process a URL Map url when both the Content Type and Content exists
-     * ExpectedResult: Should return a {@link URLMapInfo} wit the right content ans detail page
+     * ExpectedResult: Should return a {@link URLMapInfo} with the right content ans detail page
      */
     @Test
     public void shouldReturnContentletWhenTheContentExists()
@@ -233,6 +233,34 @@ public class URLMapAPIImplTest {
         assertEquals(newsPatternPrefix + newsTestContent.getStringProperty("urlTitle"),
                 urlMapInfo.getContentlet().getStringProperty("urlMap"));
         assertEquals("/news-events/news/news-detail", urlMapInfo.getIdentifier().getURI());
+    }
+
+    /**
+     * MethodToTest {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
+     * Given Scenario: Process a URL Map url with a field that doesn't exist
+     * ExpectedResult: Should return an empty {@link URLMapInfo}
+     */
+    @Test
+    public void processURLMapMethodShouldNotFailWithInvalidFields()
+            throws DotDataException, DotSecurityException {
+        final String patternPrefix = TEST_PATTERN + System.currentTimeMillis() + "/";
+
+
+        final Field field = new FieldDataGen().next();
+        final String urlMapper = patternPrefix  + "{nonValidField}";
+        new ContentTypeDataGen()
+                .field(field)
+                .detailPage(detailPage1.getIdentifier())
+                .urlMapPattern(urlMapper)
+                .nextPersisted();
+
+        final UrlMapContext context = getUrlMapContext(systemUser, host,
+                patternPrefix + "anyFieldValue");
+
+        final Optional<URLMapInfo> urlMapInfoOptional = urlMapAPI.processURLMap(context);
+        
+        assertNotNull(urlMapInfoOptional);
+        assertFalse(urlMapInfoOptional.isPresent());
     }
 
     /**

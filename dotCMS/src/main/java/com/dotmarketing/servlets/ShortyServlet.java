@@ -5,6 +5,7 @@ import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FileField;
 import com.dotcms.contenttype.model.field.ImageField;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
@@ -22,6 +23,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.PortalException;
@@ -29,13 +31,14 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-
+import io.vavr.control.Try;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
@@ -253,13 +256,13 @@ public class ShortyServlet extends HttpServlet {
     final int      width   = this.getWidth(lowerUri, 0);
     final int      height  = this.getHeight(lowerUri, 0);
     final int      quality  = this.getQuality(lowerUri, 0);
-    final Optional<FocalPoint> focalPoint = this.getFocalPoint(lowerUri);
+    Optional<FocalPoint> focalPoint = Optional.empty();
     final int      cropWidth  = this.cropWidth(lowerUri);
     final int      cropHeight  = this.cropHeight(lowerUri);
     final boolean  jpeg    = lowerUri.contains(JPEG);
     final boolean  jpegp   = jpeg && lowerUri.contains(JPEGP);
     final boolean  webp    = lowerUri.contains(WEBP);
-    final boolean  isImage = webp || jpeg || width+height > 0 || quality>0 || focalPoint.isPresent() || cropHeight>0 || cropWidth>0;
+    final boolean  isImage = webp || jpeg || width+height > 0 || quality>0 || cropHeight>0 || cropWidth>0;
     final ShortyId shorty  = shortOpt.get();
     final String   path    = isImage? "/contentAsset/image" : "/contentAsset/raw-data";
     final User systemUser  = APILocator.systemUser();
@@ -277,6 +280,16 @@ public class ShortyServlet extends HttpServlet {
               response.sendError(HttpServletResponse.SC_NOT_FOUND);
               return;
           }
+
+          if(cropWidth+cropHeight>0 ) {
+              focalPoint = this.getFocalPoint(lowerUri);
+              Optional<Tag> focalPointTag = APILocator.getTagAPI().getTagsByInode(conOpt.get().getInode()).stream().filter(t->t.getTagName().startsWith("fp:"+fieldName+":")).findAny();
+              if(focalPointTag.isPresent()) {
+                  focalPoint = Try.of(()->new FocalPoint(focalPointTag.get().getTagName().replace("fp:", ""))).toJavaOptional();
+              }
+          }
+
+
           id=this.inodePath(conOpt.get(), fieldName, live);
         }else {
           id="/" + shorty.longId + "/temp";
@@ -370,7 +383,7 @@ public class ShortyServlet extends HttpServlet {
   protected final String inodePath(final Contentlet contentlet,
                                    final String tryField,
                                    final boolean live)
-            throws DotStateException, DotDataException {
+          throws DotStateException, DotDataException, DotSecurityException {
 
         final Optional<Field> fieldOpt = resolveField(contentlet, tryField);
 
@@ -388,8 +401,15 @@ public class ShortyServlet extends HttpServlet {
             if (contentletVersionInfo.isPresent()) {
                 final String inode = live ? contentletVersionInfo.get().getLiveInode()
                         : contentletVersionInfo.get().getWorkingInode();
+
+                final Contentlet  imageContentlet = APILocator.getContentletAPI()
+                        .find(inode, APILocator.systemUser(), false);
+
+                final String fieldVar = imageContentlet.isDotAsset() ?
+                        DotAssetContentType.ASSET_FIELD_VAR : FILE_ASSET_DEFAULT;
+
                 return new StringBuilder(StringPool.FORWARD_SLASH).append(inode)
-                        .append(StringPool.FORWARD_SLASH).append(FILE_ASSET_DEFAULT).toString();
+                    .append(StringPool.FORWARD_SLASH).append(fieldVar).toString();
             }
         }
 

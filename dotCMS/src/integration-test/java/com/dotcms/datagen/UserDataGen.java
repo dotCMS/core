@@ -11,7 +11,9 @@ import com.dotmarketing.util.UUIDUtil;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class UserDataGen extends AbstractDataGen<User> {
 
@@ -25,6 +27,8 @@ public class UserDataGen extends AbstractDataGen<User> {
     private String password = String.valueOf(currentTime);
     private String skinIdentifier = UUIDGenerator.generateUuid();
     private String companyId = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany().getCompanyId();
+    private Map<String, String> additionalInfo = new HashMap<>();
+
     private List<Role> roles = new ArrayList<>();
 
     @SuppressWarnings("unused")
@@ -80,6 +84,12 @@ public class UserDataGen extends AbstractDataGen<User> {
         return this;
     }
 
+    @SuppressWarnings("unused")
+    public UserDataGen additionalInfo(final String additionalInfoKey, final String additionalInfoValue) {
+        this.additionalInfo.put(additionalInfoKey, additionalInfoValue);
+        return this;
+    }
+
     @Override
     public User next() {
         final User user = new User();
@@ -91,7 +101,7 @@ public class UserDataGen extends AbstractDataGen<User> {
         user.setPassword(password);
         user.setSkinId(this.skinIdentifier);
         user.setCompanyId(companyId);
-
+        user.setAdditionalInfo(additionalInfo);
         return user;
     }
 
@@ -108,6 +118,7 @@ public class UserDataGen extends AbstractDataGen<User> {
             newUser.setActive(user.getActive());
             newUser.setSkinId(user.getSkinId());
             newUser.setCompanyId(user.getCompanyId());
+            newUser.setAdditionalInfo(user.getAdditionalInfo());
             APILocator.getUserAPI().save(newUser, APILocator.systemUser(), false);
 
             for(final Role role:roles){
