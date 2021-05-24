@@ -141,7 +141,6 @@ public class VanityUrlFilterTest {
      * this tests that the vanityURL proxies requests that are made to different hosts.
      * In this case, we will request a url from dotcms and check to see that we get the results from dotcms.com
      */
-
     @Test
     public void test_that_vanity_url_filter_handles_proxy_requests() throws Exception {
 
@@ -176,7 +175,6 @@ public class VanityUrlFilterTest {
             assert (content.contains("All rights reserved"));
             assert (content.contains("<meta property=\"og:url\" content=\"https://dotcms.com/\">"));
         }
-
     }
 
     /**
