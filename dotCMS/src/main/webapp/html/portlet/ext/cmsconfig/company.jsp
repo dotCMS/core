@@ -106,8 +106,7 @@
 		// Once we received a response add the image URL to the src attribute
 
 		logo.src = details.asset;
-		logo.style.maxWidth = "200px";
-		logo.style.width = "100%";
+		logo.classList.add('logo__image')
 
 		// Grab the previous sibling and append the loo
 		dropZone.previousElementSibling
@@ -116,22 +115,11 @@
 
 		// Reset our values
 		dropZone.style.display = "none";
-		dropZone.parentElement.querySelector('.logo').style.display = "block";
+		dropZone.parentElement.querySelector('.logo').style.display = "flex";
       topNavDropZone.querySelector(".logo__container").style.display = 'block'
 	}
 </script>
 <style type="text/css">
-
-	dot-asset-drop-zone {
-
-      width: 200px;
-      display: block;
-	}
-
-	dot-asset-drop-zone .dot-asset-drop-zone__indicators {
-		position: static;
-	}
-
 	.listingTable__form-control {
 		display: flex;
 		justify-content: space-between;
@@ -198,7 +186,7 @@
       justify-content: center;
       font-size: 16px;
       box-shadow: 0px 0px 0px 3px rgba(0, 0, 0, 0.1);
-      top: 20%;
+      top: 0;
 	}
 
    .logo__image {
@@ -208,10 +196,22 @@
 
    dot-asset-drop-zone {
       box-sizing: border-box;
+      width: 200px;
+      display: block;
    }
+
+   dot-asset-drop-zone .dot-asset-drop-zone__indicators.drop .dot-asset-drop-zone__icon {
+      display: none !important;
+   }
+
+   dot-asset-drop-zone .dot-asset-drop-zone__indicators.drop dot-progress-bar {
+      margin: 1rem;
+   }
+
 
    dot-asset-drop-zone .dot-asset-drop-zone__indicators {
       padding: 11px 0;
+      position: static;
    }
 
    dot-asset-drop-zone .dot-asset-drop-zone__indicators .dot-asset-drop-zone__icon {
@@ -399,7 +399,7 @@
             </div>
             <dot-asset-drop-zone id="dot-asset-drop-zone-main" style="display: none;" drop-files-text="Drop Image" upload-file-text="Uploading Image..." display-indicator="true"></dot-asset-drop-zone>
             <input type="hidden" name="loginScreenLogoInput" id="loginScreenLogoInput" value="">	
-            <p style="margin-top: 1rem; color: grey;">This is the logo used for the login screen and communications (e.g. emails, etc)</p>
+            <p style="margin-top: 1rem; color: grey;">Hint: This is the logo used for the login screen and communications (e.g. emails, etc)</p>
             <br />
             <div style="margin-top: 2rem;">
                <label for="topNav_logo">
@@ -410,7 +410,7 @@
                <p style="margin-top: 1rem; color: grey;">You can white-label your instance of DotCMS uploading a new logo.</p>
                <div id="topNav__drop-zone" style="display: none;">
                   <h3 style="font-weight: normal; margin-bottom: 1rem;">Navbar Logo</h3>
-                  <div class="logo">
+                  <div class="logo" style="display: none;">
                      <button class="logo__delete">&times;</button>
                      <div class="logo__container" style="display: none;">
                      </div>
