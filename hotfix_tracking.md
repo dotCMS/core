@@ -107,36 +107,34 @@ This release includes the following code fixes:
 
 51. https://github.com/dotCMS/core/issues/20156 : User is logged out when accessing content if the Role does not have the 'Content' portlet tool group
 
-52. https://github.com/dotCMS/core/issues/20068 : Allow portal.properties to be overridden by environmental variables
+52. https://github.com/dotCMS/core/issues/20063 : Send Cookies Secure and HttpOnly
 
-53. https://github.com/dotCMS/core/issues/20063 : Send Cookies Secure and HttpOnly
+53. https://github.com/dotCMS/core/issues/20013 : Potential timezone bug
 
-54. https://github.com/dotCMS/core/issues/20013 : Potential timezone bug
+54. https://github.com/dotCMS/core/issues/20136 : [Push Publish] : Selecting the REMOVE option in Push Publishing modal is not working
 
-55. https://github.com/dotCMS/core/issues/20136 : [Push Publish] : Selecting the REMOVE option in Push Publishing modal is not working
+55. https://github.com/dotCMS/core/issues/19993 : [workflow] : The "Send an Email" sub-action fails if executed before "Save content" sub-action 
 
-56. https://github.com/dotCMS/core/issues/19993 : [workflow] : The "Send an Email" sub-action fails if executed before "Save content" sub-action 
+56. https://github.com/dotCMS/core/issues/19951 : Date time field, should respect the time zone from format or company
 
-57. https://github.com/dotCMS/core/issues/19951 : Date time field, should respect the time zone from format or company
+57. https://github.com/dotCMS/core/issues/19926 : NPE on every page request after setting: ENABLE_NAV_PERMISSION_CHECK=true
 
-58. https://github.com/dotCMS/core/issues/19926 : NPE on every page request after setting: ENABLE_NAV_PERMISSION_CHECK=true
+58. https://github.com/dotCMS/core/issues/19877 : [core] : Remove unnecessary Web Token
 
-59. https://github.com/dotCMS/core/issues/19877 : [core] : Remove unnecessary Web Token
+59. https://github.com/dotCMS/core/issues/20041 : Time machine is causing an error with the index
 
-60. https://github.com/dotCMS/core/issues/20041 : Time machine is causing an error with the index
+60. https://github.com/dotCMS/core/issues/19813 : Allow mail session to be configured via environmental variables
 
-61. https://github.com/dotCMS/core/issues/19813 : Allow mail session to be configured via environmental variables
+61. https://github.com/dotCMS/core/issues/20197 : Cannot relate content to a macrolanguage if there is the same language with a country code
 
-62. https://github.com/dotCMS/core/issues/20197 : Cannot relate content to a macrolanguage if there is the same language with a country code
+62. https://github.com/dotCMS/core/issues/20164 : JsonTool parsing
 
-63. https://github.com/dotCMS/core/issues/20164 : JsonTool parsing
+63. https://github.com/dotCMS/core/issues/20232 : [Integrity Checker] : Improving error message when fixing File Asset conflict
 
-64. https://github.com/dotCMS/core/issues/20232 : [Integrity Checker] : Improving error message when fixing File Asset conflict
+64. https://github.com/dotCMS/core/issues/19723 : Only 10 parent related contents retrieved when editing a child content
 
-65. https://github.com/dotCMS/core/issues/19723 : Only 10 parent related contents retrieved when editing a child content
+65. https://github.com/dotCMS/core/issues/19412 : "Permission Individually" on a folder defaults to all permissions of its parent, not just the inheritable ones
 
-66. https://github.com/dotCMS/core/issues/19412 : "Permission Individually" on a folder defaults to all permissions of its parent, not just the inheritable ones
+66. https://github.com/dotCMS/core/issues/20364 : XStream throws exception when posting bad XML
 
-67. https://github.com/dotCMS/core/issues/20364 : XStream throws exception when posting bad XML
-
-68. https://github.com/dotCMS/core/issues/19500 : SQL Injection Vulnerability in api /api/v1/containers
+67. https://github.com/dotCMS/core/issues/19500 : SQL Injection Vulnerability in api /api/v1/containers
