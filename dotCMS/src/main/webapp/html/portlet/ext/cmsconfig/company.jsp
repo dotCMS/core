@@ -8,7 +8,6 @@
    final String navLogo = company.getState();
    final boolean screenLogoEmpty = screenLogo.trim().isEmpty() || screenLogo == null;
    final boolean navLogoEmpty = navLogo.trim().isEmpty() || navLogo == null;
-
 %>
 <script type="text/javascript">
 	dojo.require("dojox.widget.ColorPicker");
@@ -16,7 +15,7 @@
    
 	const topNavCheckbox = document.getElementById("topNav_logo");
 	const topNavDropZone = document.getElementById("topNav__drop-zone");
-	const logoDeleteButtons = document.querySelectorAll(".logo__delete");
+
 	const dotAssetDropZones = document.getElementsByTagName("dot-asset-drop-zone");
 
 	function setNewColor(val) {
@@ -91,7 +90,11 @@
 		const logoContainer = event.target.parentElement;
 		logoContainer.style.display = "none";
 
-		const logo = logoContainer.querySelector("img").remove();
+		const logo = logoContainer.querySelector("img");
+      logo.remove();
+
+      event.target.closest('.form__group').querySelector('input[type="hidden"]').value = ""
+
 		logoContainer.nextElementSibling.style.display = "block";
 	}
 
@@ -392,29 +395,31 @@
             </div>
          </div>
          <div style="margin-left: 10rem;">
-            <h3 style="font-weight: normal; margin-bottom: 1rem;">Login Screen Logo</h3>
-            <div class="logo">
-               <button class="logo__delete">&times;</button>
-               <div class="logo__container">
-                     <%
-                        if(screenLogoEmpty)  {
-                     %>            
-                        <img class="logo__image" border="1" hspace="0" src="<%= IMAGE_PATH %>/company_logo?img_id=<%= company.getCompanyId() %>&key=<%= ImageKey.get(company.getCompanyId()) %>" vspace="0" />
-                     <%
-                        } else {
-                     %>
-                        <img class="logo__image" border="1" hspace="0" src="<%= screenLogo %>" vspace="0" />
-                     <%
-                        }
-                     %>
-                  
-               </div>
+            <div class="form__group">
+               <h3 style="font-weight: normal; margin-bottom: 1rem;">Login Screen Logo</h3>
+               <div class="logo">
+                  <button class="logo__delete">&times;</button>
+                  <div class="logo__container">
+                        <%
+                           if(screenLogoEmpty)  {
+                        %>            
+                           <img class="logo__image" border="1" hspace="0" src="<%= IMAGE_PATH %>/company_logo?img_id=<%= company.getCompanyId() %>&key=<%= ImageKey.get(company.getCompanyId()) %>" vspace="0" />
+                        <%
+                           } else {
+                        %>
+                           <img class="logo__image" border="1" hspace="0" src="<%= screenLogo %>" vspace="0" />
+                        <%
+                           }
+                        %>
+                     
+                  </div>
             </div>
-            <dot-asset-drop-zone id="dot-asset-drop-zone-main" style="display: none;" drop-files-text="Drop Image" upload-file-text="Uploading Image..." display-indicator="true"></dot-asset-drop-zone>
-            <input type="hidden" name="loginScreenLogoInput" id="loginScreenLogoInput" data-hidden="logo-input" value="">	
-            <p style="margin-top: 1rem; color: grey;">Hint: This is the logo used for the login screen and communications (e.g. emails, etc)</p>
+               <dot-asset-drop-zone id="dot-asset-drop-zone-main" style="display: none;" drop-files-text="Drop Image" upload-file-text="Uploading Image..." display-indicator="true"></dot-asset-drop-zone>
+               <input type="hidden" name="loginScreenLogoInput" id="loginScreenLogoInput" data-hidden="logo-input" value="<%= ( !screenLogoEmpty ? screenLogo : "" ) %>">	
+               <p style="margin-top: 1rem; color: grey;">Hint: This is the logo used for the login screen and communications (e.g. emails, etc)</p>
+            </div><!-- /.form__group -->
             <br />
-            <div style="margin-top: 2rem;">
+            <div class="form__group" style="margin-top: 2rem;">
                <label for="topNav_logo">
                <input dojoType="dijit.form.CheckBox" type="checkbox" name="topNav" id="topNav_logo" />
                Override Navbar Logo
@@ -440,7 +445,7 @@
                      %>
                   </div>
                   <dot-asset-drop-zone id="dot-asset-drop-zone-navbar" drop-files-text="Drop Image" upload-file-text="Uploading Image..." display-indicator="true" <%= ( !navLogoEmpty ? "style='display: none;'" : "style='display: block;'" ) %>></dot-asset-drop-zone>
-                  <input type="hidden" name="topNavLogoInput" id="topNavLogoInput" data-hidden="logo-input" value="">	
+                  <input type="hidden" name="topNavLogoInput" id="topNavLogoInput" data-hidden="logo-input" value="<%= ( !navLogoEmpty ? navLogo : "" ) %>">	
                   <p style="margin-top: 1rem; color: grey;">Your logo needs to be horizontal with at least 32:9 ratio</p>
                </div>
             </div>
