@@ -247,7 +247,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.personas.business.PersonaAPITest.class,
         com.dotmarketing.portlets.personas.business.DeleteMultiTreeUsedPersonaTagJobTest.class,
         com.dotmarketing.portlets.links.business.MenuLinkAPITest.class,
-        com.dotmarketing.portlets.links.factories.LinkFactoryTest.class,/*
+        com.dotmarketing.portlets.links.factories.LinkFactoryTest.class,
         com.dotmarketing.portlets.rules.conditionlet.ConditionletOSGIFTest.class,
         com.dotmarketing.portlets.rules.conditionlet.CurrentSessionLanguageConditionletTest.class,
         com.dotmarketing.portlets.rules.conditionlet.NumberOfTimesPreviouslyVisitedConditionletTest.class,
@@ -297,7 +297,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.db.HibernateUtilTest.class,
         com.dotmarketing.quartz.job.BinaryCleanupJobTest.class,
         FocalPointAPITest.class,
-        com.dotmarketing.tag.business.TagAPITest.class,
+        com.dotmarketing.tag.business.TagAPITest.class,/*
         com.dotcms.osgi.OSGIUtilTest.class,
         com.dotmarketing.fixTasks.FixTask00085FixEmptyParentPathOnIdentifierTest.class,
         com.dotmarketing.startup.runonce.Task05170DefineFrontEndAndBackEndRolesTest.class,
