@@ -5,26 +5,32 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.Map;
 import javax.imageio.ImageIO;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.liferay.util.FileUtil;
+import io.vavr.control.Try;
 
-public class ResizeImageFilter extends ImageFilter {
+public class MaxSizeImageFilter extends ImageFilter {
 	public String[] getAcceptedParameters(){
 		return  new String[] {
 				"w (int) specifies width",
 				"h (int) specifies height",
 		};
 	}
+	
+	int maxImageSize() {
+	    return Config.getIntProperty("IMAGE_MAX_IMAGE_SIZE", 5000);
+	}
+	
+	
 	public File runFilter(final File file,    Map<String, String[]> parameters) {
-		double w = parameters.get(getPrefix() +"w") != null?Integer.parseInt(parameters.get(getPrefix() +"w")[0]):0;
-		double h = parameters.get(getPrefix() +"h") != null?Integer.parseInt(parameters.get(getPrefix() +"h")[0]):0;
+		int maxW = parameters.get(getPrefix() +"mw") != null?Integer.parseInt(parameters.get(getPrefix() +"mw")[0]):maxImageSize() ;
+		int maxH = parameters.get(getPrefix() +"mh") != null?Integer.parseInt(parameters.get(getPrefix() +"mh")[0]):maxImageSize() ;
 		
 		
-		if(file.getName().endsWith(".gif")) {
-		  return new ResizeGifImageFilter().runFilter(file, parameters);
-		}
+
 		
-		
-        if(w ==0 && h ==0){
+        if(maxW ==0 && maxH ==0){
             return file;
         }
 		
@@ -38,23 +44,19 @@ public class ResizeImageFilter extends ImageFilter {
 		
 		Dimension widthHeight = ImageFilterAPI.apiInstance.get().getWidthHeight(file);
 		
-        
-        if(w ==0 && h >0){
-            w = Math.round(h * widthHeight.getWidth()) / widthHeight.getHeight();
-        }
-        if(w >0 && h ==0){
-            h = Math.round(w * widthHeight.getHeight() / widthHeight.getWidth());
+        if(widthHeight.height<=maxH && widthHeight.width<=maxW) {
+            Try.run(()->FileUtil.copyFile(file, resultFile)); 
+            return resultFile;
         }
         
-        int width    =      (int) w;    
-        int height     =     (int) h;
-		
+		maxW = Math.min(widthHeight.width, maxW);
+		maxH = Math.min(widthHeight.height, maxH);
 		
 		
 
         try {
-			//resample from stream
-			BufferedImage srcImage = ImageFilterAPI.apiInstance.get().subsampleImage(file,width,height);
+			//subsample from stream
+			BufferedImage srcImage = ImageFilterAPI.apiInstance.get().subsampleImage(file,maxW,maxH);
 
 
             ImageIO.write(srcImage, "png", resultFile);

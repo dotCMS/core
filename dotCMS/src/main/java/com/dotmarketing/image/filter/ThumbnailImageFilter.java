@@ -1,14 +1,9 @@
 package com.dotmarketing.image.filter;
 
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ImageResizeUtils;
-import com.dotmarketing.util.Logger;
-import com.twelvemonkeys.image.ResampleOp;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Graphics2D;
-import java.awt.Image;
 import java.awt.image.BufferedImage;
-import java.awt.image.BufferedImageOp;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -16,6 +11,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Map;
 import javax.imageio.ImageIO;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ImageResizeUtils;
+import com.dotmarketing.util.Logger;
 
 public class ThumbnailImageFilter extends ImageFilter {
 	public String[] getAcceptedParameters() {
@@ -43,9 +41,10 @@ public class ThumbnailImageFilter extends ImageFilter {
 		if (!overwrite(resultFile, parameters)) {
 			return resultFile;
 		}
-
+		
+		resultFile.delete();
 		try {
-			resultFile.delete();
+			
 	        if (height <= 0 && width <= 0) {
 	            height = DEFAULT_HEIGHT;
 	            width = DEFAULT_WIDTH;
@@ -55,14 +54,14 @@ public class ThumbnailImageFilter extends ImageFilter {
 	            color = DEFAULT_BG_COLOR;
 	        }
 	        
-
-	        Image image = ImageIO.read(file);
+	        Dimension widthHeight = ImageFilterAPI.apiInstance.get().getWidthHeight(file);
+	    
 
 
 
 	        // determine thumbnail size from WIDTH and HEIGHT
-	        int imageWidth = image.getWidth(null);
-	        int imageHeight = image.getHeight(null);
+	        int imageWidth = widthHeight.width;
+	        int imageHeight = widthHeight.height;
 	        double imageRatio = (double) imageWidth / (double) imageHeight;
 
 	        int thumbWidth = width;
@@ -98,8 +97,8 @@ public class ThumbnailImageFilter extends ImageFilter {
 
 	        
 	        
-	        BufferedImageOp resampler = new ResampleOp(thumbWidth, thumbHeight, ResampleOp.FILTER_LANCZOS); // A good default filter, see class documentation for more info
-	        BufferedImage thumbImage = resampler.filter(ImageIO.read(file), null);
+
+	        BufferedImage thumbImage = ImageFilterAPI.apiInstance.get().subsampleImage(file, thumbWidth, thumbHeight);
 
 
 	        // compute offsets to center image in its space
@@ -110,10 +109,11 @@ public class ThumbnailImageFilter extends ImageFilter {
 	        resultGraphics.dispose();
 
 	        // save thumbnail image to OUTFILE
-	        final BufferedOutputStream out = new BufferedOutputStream(Files.newOutputStream(resultFile.toPath()));
-	        ImageIO.write(bgImage, "png", out);
-	        bgImage.flush();
-	        out.close();
+	        try(final BufferedOutputStream out = new BufferedOutputStream(Files.newOutputStream(resultFile.toPath()))){
+    	        ImageIO.write(bgImage, "png", out);
+    	        bgImage.flush();
+	        }
+
 
 	        Logger.debug(ImageResizeUtils.class, "Done.");
 		} catch (FileNotFoundException e) {

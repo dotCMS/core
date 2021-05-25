@@ -1,6 +1,12 @@
 package com.dotmarketing.image.filter;
 
+import java.awt.Dimension;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.Map;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
 import io.vavr.Function0;
 
 public interface ImageFilterAPI {
@@ -38,6 +44,36 @@ public interface ImageFilterAPI {
      * @return
      */
     Map<String, Class> resolveFilters(Map<String, String[]> parameters);
+
+    
+    /**
+
+     * @param inputStream
+     * @param reader
+     * @param width
+     * @param height
+     * @return
+     * @throws IOException
+     */
+    BufferedImage subsampleImage(ImageInputStream inputStream, ImageReader reader, int width, int height)
+                    throws IOException;
+
+    /**
+     * returns an images dimensions
+     * @param image
+     * @return
+     */
+    Dimension getWidthHeight(File image);
+
+    /**
+     * This method reads a larger image in as a smaller image.  It only subsamples the image, so the resulting thumbnail is
+     * a little rough
+     * @param image
+     * @param width
+     * @param height
+     * @return
+     */
+    BufferedImage subsampleImage(File image, int width, int height);
 
 
 }

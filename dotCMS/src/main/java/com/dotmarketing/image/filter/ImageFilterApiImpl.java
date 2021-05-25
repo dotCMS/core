@@ -1,17 +1,26 @@
 package com.dotmarketing.image.filter;
 
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Logger;
 import com.liferay.util.StringPool;
-
+import java.awt.Dimension;
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReadParam;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
 
 public class ImageFilterApiImpl implements ImageFilterAPI {
 
@@ -81,10 +90,84 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
         return classes;
     }
     
+    @Override
+    public Dimension getWidthHeight(final File image) {
+        
+        try (ImageInputStream iis = ImageIO.createImageInputStream(image)){
+            // Find all image readers that recognize the image format
+            Iterator<ImageReader> iter = ImageIO.getImageReaders(iis);
+            if (!iter.hasNext()) {
+                Logger.info(getClass(), "no reader found for :" + image);
+                return new Dimension(0,0);
+            }
+            // Use the first reader
+            ImageReader reader = (ImageReader)iter.next();
+
+            reader.setInput(iis);
+            int w = reader.getWidth(0);
+            int h = reader.getHeight(0);
+            
+            Dimension dim = new Dimension(w,h);
+            reader.dispose();
+            return dim;
+        }
+        catch(Exception e) {
+            Logger.warnAndDebug(getClass(), e.getMessage() + " : " + image,e);
+            return new Dimension(0,0);
+            
+        }
+        
+    }
+    
+    @Override
+    public BufferedImage subsampleImage(final File image, final int width, final int height)  {
+        try (ImageInputStream subsampleImage = ImageIO.createImageInputStream(image)){
+
+            // Find all image readers that recognize the image format
+            Iterator<ImageReader> iter = ImageIO.getImageReaders(subsampleImage);
+            // Use the first reader
+            ImageReader reader = (ImageReader)iter.next();
+            
+            
+            return this.subsampleImage(subsampleImage,reader,width,height );
+        }catch(Exception e) {
+            throw new DotRuntimeException(e);
+        }
+        
+
+    }
     
     
-    
-    
+    @Override
+    public BufferedImage subsampleImage(final ImageInputStream inputStream, final ImageReader reader, final int width, final int height) throws IOException {
+
+        final ImageReadParam imageReaderParams = reader.getDefaultReadParam();
+
+        reader.setInput(inputStream, true, true);
+        final Dimension sourceSize = new Dimension(reader.getWidth(0), reader.getHeight(0));
+        final Dimension targetSize = new Dimension(width, height);
+        final int subsampling = (int) scaleSubsamplingMaintainAspectRatio(sourceSize, targetSize);
+        
+
+        
+        imageReaderParams.setSourceSubsampling(subsampling, subsampling, 0, 0);
+
+
+        return  reader.read(0, imageReaderParams);
+
+    }
+
+    private long scaleSubsamplingMaintainAspectRatio(final Dimension sourceSize, final Dimension targetSize) {
+
+        if (sourceSize.getWidth() > targetSize.getWidth()) {
+            return Math.round(sourceSize.getWidth() / targetSize.getWidth());
+        }
+        else if (sourceSize.getHeight() > targetSize.getHeight()) {
+            return Math.round(sourceSize.getHeight() / targetSize.getHeight());
+        }
+
+        return 1;
+    }
     
     
     
