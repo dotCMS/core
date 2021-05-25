@@ -1998,8 +1998,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
         for (int i = 1; i <= 25; i++) {
             if (fieldsMap.containsKey(prefix + i)) {
 
-                if (prefix.equals("date")){
-                    upsertValues.add((Date) fieldsMap.get(prefix + i));
+                if (prefix.equals("date") && UtilMethods.isSet(fieldsMap.get(prefix + i))){
+                    upsertValues.add(new Timestamp(((Date) fieldsMap.get(prefix + i)).getTime()));
                 } else{
                     if (prefix.startsWith("text") && fieldsMap.get(prefix + i) instanceof Map){
                         upsertValues.add(mapper.writeValueAsString(fieldsMap.get(prefix + i)));
