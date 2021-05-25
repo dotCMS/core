@@ -97,10 +97,13 @@ import com.dotmarketing.startup.runonce.Task210319CreateStorageTableTest;
 import com.dotmarketing.startup.runonce.Task210321RemoveOldMetadataFilesTest;
 import com.dotmarketing.startup.runonce.Task210506UpdateStorageTableTest;
 import com.dotmarketing.startup.runonce.Task210527DropReviewFieldsFromContentletTableTest;
+import com.dotmarketing.startup.runonce.Task210520UpdateAnonymousEmailTest;
+import com.dotmarketing.startup.runonce.Task210510UpdateStorageTableDropMetadataColumnTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.TestConfig;
 import com.liferay.portal.language.LanguageUtilTest;
+import org.apache.velocity.tools.view.tools.CookieToolTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
 
@@ -415,6 +418,10 @@ import org.junit.runners.Suite.SuiteClasses;
         SiteSearchJobImplTest.class,
         Task210506UpdateStorageTableTest.class,
         StaticPushPublishBundleGeneratorTest.class,
+        Task210520UpdateAnonymousEmailTest.class,
+        Task210510UpdateStorageTableDropMetadataColumnTest.class,
+        StaticPushPublishBundleGeneratorTest.class,
+        CookieToolTest.class,
         Task210527DropReviewFieldsFromContentletTableTest.class
 })
 public class MainSuite {
