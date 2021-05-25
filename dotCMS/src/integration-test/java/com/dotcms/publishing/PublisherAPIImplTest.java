@@ -16,10 +16,6 @@ import com.dotcms.publisher.endpoint.bean.impl.PushPublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
-import com.dotcms.publisher.receiver.BundlePublisher;
-import com.dotcms.publishing.output.BundleOutput;
-import com.dotcms.publishing.output.DirectoryBundleOutput;
-import com.dotcms.publishing.output.TarGzipBundleOutput;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -66,9 +62,6 @@ import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.io.FileUtils;
-import org.jetbrains.annotations.NotNull;
-
-import org.elasticsearch.index.fielddata.FieldData;
 
 import org.jetbrains.annotations.Nullable;
 import org.junit.AfterClass;
@@ -492,7 +485,6 @@ public class PublisherAPIImplTest {
         }
     }
 
-    @NotNull
     private HttpServer createHttpServer(File tempFile) throws IOException {
         final HttpServer httpServer = HttpServer.create(new InetSocketAddress("127.0.0.1", 8080), 0);
 
