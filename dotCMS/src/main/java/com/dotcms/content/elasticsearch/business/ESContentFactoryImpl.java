@@ -1930,14 +1930,14 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 
         upsertValues.add(name);
-        upsertValues.add(contentlet.getModDate());
+        upsertValues.add(new Timestamp(contentlet.getModDate().getTime()));
         upsertValues.add(contentlet.getModUser());
         upsertValues.add(new Long(contentlet.getSortOrder()).intValue());
 
         if (allowTitle) { // if the title was not intentionally set to null.
             upsertValues.add(name); //friendly name
         } else {
-            upsertValues.add((String) null);
+            upsertValues.add(null);
         }
 
         upsertValues.add(contentlet.getContentTypeId());
@@ -1975,7 +1975,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             }
             upsertValues.add(wysiwyg.toString());
         } else{
-            upsertValues.add((String) null);
+            upsertValues.add(null);
         }
     }
 
