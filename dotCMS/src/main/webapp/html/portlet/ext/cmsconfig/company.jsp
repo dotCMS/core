@@ -1,12 +1,15 @@
-
-
 <%@ include file="/html/portlet/ext/cmsconfig/init.jsp" %>
 <% request.setAttribute("requiredPortletAccess", PortletID.CONFIGURATION.toString()); %>
 <%@ include file="/html/common/uservalidation.jsp"%>
 <%@page import="com.dotcms.rest.api.v1.system.ConfigurationHelper"%>
 <%
    final boolean hasAdminRole = user.isAdmin();
-   %>
+   final String screenLogo = company.getCity();
+   final String navLogo = company.getState();
+   final boolean screenLogoEmpty = screenLogo.trim().isEmpty() || screenLogo == null;
+   final boolean navLogoEmpty = navLogo.trim().isEmpty() || navLogo == null;
+
+%>
 <script type="text/javascript">
 	dojo.require("dojox.widget.ColorPicker");
 	dojo.require("dojo.parser"); // scan page for widgets and instantiate them
@@ -104,7 +107,6 @@
 		const [details] = event.detail;
 
 		// Once we received a response add the image URL to the src attribute
-
 		logo.src = details.asset;
 		logo.classList.add('logo__image')
 
@@ -116,6 +118,7 @@
 		// Reset our values
 		dropZone.style.display = "none";
 		dropZone.parentElement.querySelector('.logo').style.display = "flex";
+		dropZone.parentElement.querySelector('input[data-hidden]').value = details.asset;
       topNavDropZone.querySelector(".logo__container").style.display = 'block'
 	}
 </script>
@@ -205,9 +208,8 @@
    }
 
    dot-asset-drop-zone .dot-asset-drop-zone__indicators.drop dot-progress-bar {
-      margin: 1rem;
+      padding: 1rem;
    }
-
 
    dot-asset-drop-zone .dot-asset-drop-zone__indicators {
       padding: 11px 0;
@@ -394,11 +396,22 @@
             <div class="logo">
                <button class="logo__delete">&times;</button>
                <div class="logo__container">
-                  <img class="logo__image" border="1" hspace="0" src="<%= IMAGE_PATH %>/company_logo?img_id=<%= company.getCompanyId() %>&key=<%= ImageKey.get(company.getCompanyId()) %>" vspace="0" />
+                     <%
+                        if(screenLogoEmpty)  {
+                     %>            
+                        <img class="logo__image" border="1" hspace="0" src="<%= IMAGE_PATH %>/company_logo?img_id=<%= company.getCompanyId() %>&key=<%= ImageKey.get(company.getCompanyId()) %>" vspace="0" />
+                     <%
+                        } else {
+                     %>
+                        <img class="logo__image" border="1" hspace="0" src="<%= screenLogo %>" vspace="0" />
+                     <%
+                        }
+                     %>
+                  
                </div>
             </div>
             <dot-asset-drop-zone id="dot-asset-drop-zone-main" style="display: none;" drop-files-text="Drop Image" upload-file-text="Uploading Image..." display-indicator="true"></dot-asset-drop-zone>
-            <input type="hidden" name="loginScreenLogoInput" id="loginScreenLogoInput" value="">	
+            <input type="hidden" name="loginScreenLogoInput" id="loginScreenLogoInput" data-hidden="logo-input" value="">	
             <p style="margin-top: 1rem; color: grey;">Hint: This is the logo used for the login screen and communications (e.g. emails, etc)</p>
             <br />
             <div style="margin-top: 2rem;">
@@ -410,13 +423,24 @@
                <p style="margin-top: 1rem; color: grey;">You can white-label your instance of DotCMS uploading a new logo.</p>
                <div id="topNav__drop-zone" style="display: none;">
                   <h3 style="font-weight: normal; margin-bottom: 1rem;">Navbar Logo</h3>
-                  <div class="logo" style="display: none;">
+                  <div class="logo" <%= ( !navLogoEmpty ? "style='display: flex;'" : "style='display: none;'" ) %>>
                      <button class="logo__delete">&times;</button>
-                     <div class="logo__container" style="display: none;">
-                     </div>
+                      <%
+                        if(!navLogoEmpty)  {
+                     %>            
+                       <div class="logo__container">
+                           <img class="logo__image" src="<%= navLogo %>"/>
+                        </div>
+                     <%
+                        } else {
+                     %>
+                        <div class="logo__container" style="display: none;"></div>
+                     <%
+                        }
+                     %>
                   </div>
-                  <dot-asset-drop-zone id="dot-asset-drop-zone-navbar" drop-files-text="Drop Image" upload-file-text="Uploading Image..." display-indicator="true"></dot-asset-drop-zone>
-                  <input type="hidden" name="topNavLogoInput" id="topNavLogoInput" value="">	
+                  <dot-asset-drop-zone id="dot-asset-drop-zone-navbar" drop-files-text="Drop Image" upload-file-text="Uploading Image..." display-indicator="true" <%= ( !navLogoEmpty ? "style='display: none;'" : "style='display: block;'" ) %>></dot-asset-drop-zone>
+                  <input type="hidden" name="topNavLogoInput" id="topNavLogoInput" data-hidden="logo-input" value="">	
                   <p style="margin-top: 1rem; color: grey;">Your logo needs to be horizontal with at least 32:9 ratio</p>
                </div>
             </div>
