@@ -327,7 +327,7 @@ import org.junit.runners.Suite.SuiteClasses;
         BundleFactoryTest.class,
         com.dotcms.security.apps.SecretsStoreKeyStoreImplTest.class,
         AppsAPIImplTest.class,
-        AppsResourceTest.class,/*
+        AppsResourceTest.class,
         AppsCacheImplTest.class,
         VelocityServletIntegrationTest.class,
         DotAssetAPITest.class,
@@ -357,7 +357,7 @@ import org.junit.runners.Suite.SuiteClasses;
         SamlConfigurationServiceTest.class,
         ClusterFactoryTest.class,
         ESMappingUtilHelperTest.class,
-        BundleResourceTest.class,
+        BundleResourceTest.class,/*
         IdentityProviderConfigurationFactoryTest.class,
         EMAWebInterceptorTest.class,
         GoogleTranslationServiceIntegrationTest.class,
