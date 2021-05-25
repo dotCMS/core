@@ -7,6 +7,7 @@ import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.PusheableAsset;
+import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.publishing.PublisherConfiguration;
 import com.dotcms.util.AnnotationUtils;
@@ -48,10 +49,16 @@ public class DependencyModDateUtil extends HashSet<String> {
 	private Map<String,String> environmentsEndpointsAndPublisher = new HashMap<>();
 
 	public DependencyModDateUtil(final PushPublisherConfig config) {
+		this(config, config.isDownloading());
+	}
+
+	public DependencyModDateUtil(final PublisherConfig config) {
+		this(config, false);
+	}
+	public DependencyModDateUtil(final PublisherConfig config, final boolean isDownload) {
 		super();
 
 		final String bundleId = config.getId();
-		final boolean isDownload = config.isDownloading();
 		final boolean isStatic = config.isStatic();
 		boolean isPublish = config.getOperation().equals(Operation.PUBLISH);
 
