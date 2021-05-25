@@ -108,7 +108,7 @@ import org.junit.runners.Suite.SuiteClasses;
 /* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
-        /*com.dotcms.content.elasticsearch.business.ESMappingAPITest.class,
+        com.dotcms.content.elasticsearch.business.ESMappingAPITest.class,
         org.apache.velocity.runtime.parser.node.SimpleNodeTest.class,
         com.liferay.portal.ejb.UserLocalManagerTest.class,
         com.liferay.portal.ejb.UserUtilTest.class,
@@ -247,7 +247,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.personas.business.PersonaAPITest.class,
         com.dotmarketing.portlets.personas.business.DeleteMultiTreeUsedPersonaTagJobTest.class,
         com.dotmarketing.portlets.links.business.MenuLinkAPITest.class,
-        com.dotmarketing.portlets.links.factories.LinkFactoryTest.class,
+        com.dotmarketing.portlets.links.factories.LinkFactoryTest.class,/*
         com.dotmarketing.portlets.rules.conditionlet.ConditionletOSGIFTest.class,
         com.dotmarketing.portlets.rules.conditionlet.CurrentSessionLanguageConditionletTest.class,
         com.dotmarketing.portlets.rules.conditionlet.NumberOfTimesPreviouslyVisitedConditionletTest.class,
