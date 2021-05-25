@@ -14,6 +14,7 @@ function emmitCompanyInfoUpdated(content) {
         secondary: content.street,
         background: content.size,
       },
+      navBarLogo: content.state,
     },
   });
   document.dispatchEvent(customEvent);

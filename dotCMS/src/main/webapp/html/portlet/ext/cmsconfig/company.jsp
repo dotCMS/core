@@ -13,13 +13,12 @@
 	dojo.require("dojox.widget.ColorPicker");
 	dojo.require("dojo.parser"); // scan page for widgets and instantiate them
    
-	const topNavCheckbox = document.getElementById("topNav_logo");
 	const topNavDropZone = document.getElementById("topNav__drop-zone");
 
 	const dotAssetDropZones = document.getElementsByTagName("dot-asset-drop-zone");
 
 	function setNewColor(val) {
-		topNavDropZone.querySelector(".logo__container").style.backgroundColor = val;
+		topNavDropZone.querySelector(".logo").style.backgroundColor = val;
 	}
 
 	function bgColorStyler(val) {
@@ -72,8 +71,14 @@
 	(function prepareEventListeners() {
 
       setTimeout(() => {
-         const navBarLogoCheckbox = dijit.byId('topNav_logo')
-         navBarLogoCheckbox.on('change', handleTopNavLogoDisplay)
+         const navBarLogoCheckboxWidget = dijit.byId('topNav_logo');
+         const navBarLogoCheckbox = dojo.byId('topNav_logo');
+
+         if(navBarLogoCheckbox.checked) {
+            topNavDropZone.style.display = "block"
+         }
+
+         navBarLogoCheckboxWidget.on('change', handleTopNavLogoDisplay)
       }, 0)
 
       document.addEventListener('click', logoDelete)
@@ -94,7 +99,6 @@
       logo.remove();
 
       event.target.closest('.form__group').querySelector('input[type="hidden"]').value = ""
-
 		logoContainer.nextElementSibling.style.display = "block";
 	}
 
@@ -159,6 +163,7 @@
 
    .logo__container {
       width: 200px; 
+      /* height: 100px;  */
       padding: 1rem; 
       border-radius: 2px;
    }
@@ -182,7 +187,7 @@
 	.logo__delete {
       cursor: pointer;
       position: absolute;
-      right: 0;
+      right: -10px;
       display: none;
       background: white;
       border: 0;
@@ -190,13 +195,13 @@
       width: 22px;
       height: 22px;
       justify-content: center;
-      font-size: 16px;
       box-shadow: 0px 0px 0px 3px rgba(0, 0, 0, 0.1);
-      top: 0;
+      top: -10px;
+      align-items: center;
 	}
 
    .logo__image {
-      max-width: 200px; 
+      object-fit: scale-down;
       width: 100%;
    }
 
@@ -421,11 +426,11 @@
             <br />
             <div class="form__group" style="margin-top: 2rem;">
                <label for="topNav_logo">
-               <input dojoType="dijit.form.CheckBox" type="checkbox" name="topNav" id="topNav_logo" />
-               Override Navbar Logo
+               <input dojoType="dijit.form.CheckBox" type="checkbox" name="topNav" id="topNav_logo" <%= ( !navLogoEmpty ? "checked" : "" ) %> />
+                  Override Navbar Logo
                </label>
                <br />
-               <p style="margin-top: 1rem; color: grey;">You can white-label your instance of DotCMS uploading a new logo.</p>
+               <p style="margin-top: .5rem; color: grey;">You can white-label your instance of DotCMS uploading a new logo.</p>
                <div id="topNav__drop-zone" style="display: none;">
                   <h3 style="font-weight: normal; margin-bottom: 1rem;">Navbar Logo</h3>
                   <div class="logo" <%= ( !navLogoEmpty ? "style='display: flex;'" : "style='display: none;'" ) %>>
