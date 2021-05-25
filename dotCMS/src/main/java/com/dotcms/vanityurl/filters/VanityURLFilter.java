@@ -85,10 +85,11 @@ public class VanityURLFilter implements Filter {
           final Language language = this.languageWebAPI.getLanguage(request);
           final Optional<CachedVanityUrl> cachedVanity = vanityApi.resolveVanityUrl(uri, host, language);
           
-          if (cachedVanity.isPresent()&&
+          if (cachedVanity.isPresent() &&
                   // checks if the current destiny is not exactly the forward of the vanity
                   // we do this to avoid infinite loop
                   this.forwardToIsnotTheSameOfUri(cachedVanity.get(), uri)) {
+
               request.setAttribute(VANITY_URL_OBJECT, cachedVanity.get());
               if(addVanityHeader) {
                   response.setHeader("X-DOT-VanityUrl",cachedVanity.get().vanityUrlId );

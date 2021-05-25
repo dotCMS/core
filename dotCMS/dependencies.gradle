@@ -501,7 +501,7 @@ dependencies {
         transitive = false
     }
     //https://mvnrepository.com/artifact/mysql/mysql-connector-java
-    providedCompile (group: 'mysql', name: 'mysql-connector-java', version: '8.0.18') {
+    providedCompile (group: 'mysql', name: 'mysql-connector-java', version: '8.0.19') {
         transitive = false
     }
     //https://mvnrepository.com/artifact/com.microsoft.sqlserver/mssql-jdbc
