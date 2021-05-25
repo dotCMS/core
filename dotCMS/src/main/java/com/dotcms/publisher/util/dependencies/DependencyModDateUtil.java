@@ -6,6 +6,7 @@ import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.publishing.PublisherConfiguration;
 import com.dotcms.util.AnnotationUtils;
@@ -132,34 +133,40 @@ public class DependencyModDateUtil extends HashSet<String> {
 	public <T> boolean excludeByModDate ( final T asset) {
 		if (Contentlet.class.isInstance(asset)) {
 			final Contentlet contentlet = Contentlet.class.cast(asset);
-			return excludeByModDate(contentlet.getIdentifier(), contentlet.getModDate());
+			return excludeByModDate(contentlet.getIdentifier(), PusheableAsset.CONTENTLET,
+					contentlet.getModDate());
 		} else if (Folder.class.isInstance(asset)) {
 			final Folder folder = Folder.class.cast(asset);
-			return excludeByModDate(folder.getInode(), folder.getModDate());
+			return excludeByModDate(folder.getInode(), PusheableAsset.FOLDER, folder.getModDate());
 		} else if (Template.class.isInstance(asset)) {
 			final Template template = Template.class.cast(asset);
-			return excludeByModDate(template.getIdentifier(), template.getModDate());
+			return excludeByModDate(template.getIdentifier(), PusheableAsset.TEMPLATE,
+					template.getModDate());
 		} else if (Container.class.isInstance(asset)) {
 			final Container container = Container.class.cast(asset);
-			return excludeByModDate(container.getIdentifier(), container.getModDate());
+			return excludeByModDate(container.getIdentifier(), PusheableAsset.CONTAINER,
+					container.getModDate());
 		} else if (Structure.class.isInstance(asset)) {
 			final Structure structure = Structure.class.cast(asset);
-			return excludeByModDate(structure.getInode(), structure.getModDate());
+			return excludeByModDate(structure.getInode(), PusheableAsset.CONTENT_TYPE,
+					structure.getModDate());
 		}  else if (Link.class.isInstance(asset)) {
 			final Link link = Link.class.cast(asset);
-			return excludeByModDate(link.getIdentifier(), link.getModDate());
+			return excludeByModDate(link.getIdentifier(), PusheableAsset.LINK, link.getModDate());
 		}  else if (Rule.class.isInstance(asset)) {
 			final Rule rule = Rule.class.cast(asset);
-			return excludeByModDate(rule.getId(), rule.getModDate());
+			return excludeByModDate(rule.getId(), PusheableAsset.RULE, rule.getModDate());
 		}   else if (Relationship.class.isInstance(asset)) {
 			final Relationship relationship = Relationship.class.cast(asset);
-			return excludeByModDate(relationship.getInode(), relationship.getModDate());
+			return excludeByModDate(relationship.getInode(), PusheableAsset.RELATIONSHIP,
+					relationship.getModDate());
 		} else {
 			throw new IllegalArgumentException();
 		}
 	}
 
-	private synchronized boolean excludeByModDate ( final String assetId, final Date assetModDate) {
+	private synchronized boolean excludeByModDate ( final String assetId, final PusheableAsset pusheableAsset,
+			final Date assetModDate) {
 
 		if ( !isPublish ) {
 
@@ -173,14 +180,6 @@ public class DependencyModDateUtil extends HashSet<String> {
 				}
 			}
 
-			//Return if we are here just to clean up dependencies from cache
-			if ( cleanForUnpublish ) {
-				return true;
-			}
-		}
-
-		// check if it was already added to the set
-		if(super.contains(assetId)) {
 			return true;
 		}
 
@@ -200,61 +199,58 @@ public class DependencyModDateUtil extends HashSet<String> {
 
 		if ( !isForcePush && !isDownload && isPublish ) {
 			for (Environment env : envs) {
-				//If content was explicitly added to the bundle, there is no need to check last push_date
-				if(!isContentExplicitlyAdded) {
-					final PushedAsset asset;
-					try {
-						//Search the last pushed entry register of the pushed asset by asset Id, environment Id and endpoints Ids
-						asset = APILocator.getPushedAssetsAPI()
-								.getLastPushForAsset(assetId, env.getId(),
-										environmentsEndpointsAndPublisher
-												.get(env.getId() + ENDPOINTS_SUFFIX));
+				final PushedAsset asset;
+				try {
+					//Search the last pushed entry register of the pushed asset by asset Id, environment Id and endpoints Ids
+					asset = APILocator.getPushedAssetsAPI()
+							.getLastPushForAsset(assetId, env.getId(),
+									environmentsEndpointsAndPublisher
+											.get(env.getId() + ENDPOINTS_SUFFIX));
 
-					} catch (DotDataException e1) {
-						// Asset does not exist in db or cache, return true;
-						return true;
-					}
+				} catch (DotDataException e1) {
+					// Asset does not exist in db or cache, return true;
+					return true;
+				}
 
-					modifiedOnCurrentEnv = (asset == null || (assetModDate != null && asset
-							.getPushDate().before(assetModDate)));
+				modifiedOnCurrentEnv = (asset == null || (assetModDate != null && asset
+						.getPushDate().before(assetModDate)));
 
-					try {
-						if (!modifiedOnCurrentEnv && assetType.equals("content")) {
-							// check for versionInfo TS on content
-							for (Language lang : APILocator.getLanguageAPI().getLanguages()) {
-								Optional<ContentletVersionInfo> info = APILocator
-										.getVersionableAPI()
-										.getContentletVersionInfo(assetId, lang.getId());
+				try {
+					if (!modifiedOnCurrentEnv && PusheableAsset.CONTENTLET == pusheableAsset) {
+						// check for versionInfo TS on content
+						for (Language lang : APILocator.getLanguageAPI().getLanguages()) {
+							Optional<ContentletVersionInfo> info = APILocator
+									.getVersionableAPI()
+									.getContentletVersionInfo(assetId, lang.getId());
 
-								if (info.isPresent()) {
-									modifiedOnCurrentEnv = modifiedOnCurrentEnv
-											|| null == info.get().getVersionTs()
-											|| asset.getPushDate()
-											.before(info.get().getVersionTs());
-								}
+							if (info.isPresent()) {
+								modifiedOnCurrentEnv = modifiedOnCurrentEnv
+										|| null == info.get().getVersionTs()
+										|| asset.getPushDate()
+										.before(info.get().getVersionTs());
 							}
 						}
-						if (!modifiedOnCurrentEnv && (assetType.equals("template") || assetType
-								.equals("links") || assetType.equals("container") || assetType
-								.equals("htmlpage"))) {
-							// check for versionInfo TS
-							VersionInfo info = APILocator.getVersionableAPI()
-									.getVersionInfo(assetId);
-							if (info != null && InodeUtils.isSet(info.getIdentifier())) {
-								modifiedOnCurrentEnv = asset.getPushDate()
-										.before(info.getVersionTs());
-							}
-						}
-					} catch (Exception e) {
-						Logger.warn(getClass(),
-								"Error checking versionInfo for assetType:" + assetType
-										+ " assetId:" + assetId +
-										" process continues without checking versionInfo.ts", e);
 					}
-				}//end if isContentExplicitlyAdded
+					if (!modifiedOnCurrentEnv && (PusheableAsset.TEMPLATE == pusheableAsset ||
+							PusheableAsset.LINK == pusheableAsset ||
+							PusheableAsset.CONTAINER == pusheableAsset)) {
+						// check for versionInfo TS
+						VersionInfo info = APILocator.getVersionableAPI()
+								.getVersionInfo(assetId);
+						if (info != null && InodeUtils.isSet(info.getIdentifier())) {
+							modifiedOnCurrentEnv = asset.getPushDate()
+									.before(info.getVersionTs());
+						}
+					}
+				} catch (Exception e) {
+					Logger.warn(getClass(),
+							"Error checking versionInfo for assetType:" + pusheableAsset
+									+ " assetId:" + assetId +
+									" process continues without checking versionInfo.ts", e);
+				}
 
-                if (modifiedOnCurrentEnv || isContentExplicitlyAdded) {
-                    savePushedAsset(assetId, env);
+                if (modifiedOnCurrentEnv) {
+                    savePushedAsset(assetId, pusheableAsset, env);
                     //If the asset was modified at least in one environment, set this to true
                     modifiedOnAtLeastOneEnv = true;
                 }
@@ -265,7 +261,7 @@ public class DependencyModDateUtil extends HashSet<String> {
 			super.add( assetId );
 
 			if(isForcePush) {
-				envs.forEach((environment)->savePushedAsset(assetId, environment));
+				envs.forEach((environment)->savePushedAsset(assetId, pusheableAsset, environment));
 			}
 
 			return true;
@@ -274,19 +270,19 @@ public class DependencyModDateUtil extends HashSet<String> {
 		return false;
 	}
 
-    private void savePushedAsset(final String assetId, final Environment env) {
+    private void savePushedAsset(final String assetId, final PusheableAsset pusheableAsset, final Environment env) {
         try {
             //Insert the new pushed asset indicating to which endpoints will be sent and with what publisher class
             final PushedAsset
                 assetToPush =
-                new PushedAsset(bundleId, assetId, assetType, new Date(), env.getId(),
+                new PushedAsset(bundleId, assetId, pusheableAsset.toString(), new Date(), env.getId(),
                     environmentsEndpointsAndPublisher.get(env.getId() + ENDPOINTS_SUFFIX),
                     environmentsEndpointsAndPublisher.get(env.getId() + PUBLISHER_SUFFIX));
 
             APILocator.getPushedAssetsAPI().savePushedAsset(assetToPush);
         } catch (DotDataException e) {
             Logger.error(getClass(), "Could not save PushedAsset. "
-                + "AssetId: " + assetId + ". AssetType: " + assetType + ". Env Id: " + env.getId(), e);
+                + "AssetId: " + assetId + ". AssetType: " + pusheableAsset + ". Env Id: " + env.getId(), e);
         }
     }
 
