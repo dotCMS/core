@@ -297,7 +297,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.db.HibernateUtilTest.class,
         com.dotmarketing.quartz.job.BinaryCleanupJobTest.class,
         FocalPointAPITest.class,
-        com.dotmarketing.tag.business.TagAPITest.class,/*
+        com.dotmarketing.tag.business.TagAPITest.class,
         com.dotcms.osgi.OSGIUtilTest.class,
         com.dotmarketing.fixTasks.FixTask00085FixEmptyParentPathOnIdentifierTest.class,
         com.dotmarketing.startup.runonce.Task05170DefineFrontEndAndBackEndRolesTest.class,
@@ -327,7 +327,7 @@ import org.junit.runners.Suite.SuiteClasses;
         BundleFactoryTest.class,
         com.dotcms.security.apps.SecretsStoreKeyStoreImplTest.class,
         AppsAPIImplTest.class,
-        AppsResourceTest.class,
+        AppsResourceTest.class,/*
         AppsCacheImplTest.class,
         VelocityServletIntegrationTest.class,
         DotAssetAPITest.class,
