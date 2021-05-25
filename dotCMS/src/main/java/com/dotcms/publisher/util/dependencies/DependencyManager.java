@@ -1261,27 +1261,27 @@ public class DependencyManager {
 	}
 
 	@VisibleForTesting
-	Set getContents() {
+	public Set getContents() {
 		return config.getContentlets();
 	}
 
 	@VisibleForTesting
-	Set getRelationships() {
+	public Set getRelationships() {
 		return config.getRelationships();
 	}
 
 	@VisibleForTesting
-	Set getTemplates() {
+	public Set getTemplates() {
 		return config.getTemplates();
 	}
 
 	@VisibleForTesting
-	Set getContainers() {
+	public Set getContainers() {
 		return config.getContainers();
 	}
 
 	@VisibleForTesting
-	Set getFolders() {
+	public Set getFolders() {
 		return config.getFolders();
 	}
 }
