@@ -381,7 +381,7 @@ import org.junit.runners.Suite.SuiteClasses;
         FileMetadataAPITest.class,
         StartupTasksExecutorTest.class,
         Task201013AddNewColumnsToIdentifierTableTest.class,
-        Task201014UpdateColumnsValuesInIdentifierTableTest.class,/*
+        Task201014UpdateColumnsValuesInIdentifierTableTest.class,
         AppsInterpolationTest.class,
         com.dotcms.rest.api.v1.template.TemplateResourceTest.class,
         Task201102UpdateColumnSitelicTableTest.class,
@@ -389,7 +389,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v1.versionable.VersionableResourceTest.class,
         GenericBundleActivatorTest.class,
         SAMLHelperTest.class,
-        PermissionHelperTest.class,
+        /*PermissionHelperTest.class,
         ResetPasswordTokenUtilTest.class,
         ContainerBundlerTest.class,
         ContentTypeBundlerTest.class,*/
