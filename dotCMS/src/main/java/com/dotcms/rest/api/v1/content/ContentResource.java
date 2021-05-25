@@ -125,7 +125,7 @@ public class ContentResource {
     }
 
     @GET
-    @Path("/_canLock/{inodeOrIdentifier}")
+    @Path("/_canlock/{inodeOrIdentifier}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response canLockContent(@Context HttpServletRequest request, @Context final HttpServletResponse response,
                                    @PathParam("inodeOrIdentifier") final String inodeOrIdentifier,
@@ -166,8 +166,8 @@ public class ContentResource {
             resultMap.put("lockedByName", APILocator.getUserAPI().loadUserById(cvi.get().getLockedBy()));
         }
 
-        resultMap.put("inode", inode);
-        resultMap.put("id", id);
+        resultMap.put("inode", contentlet.getInode());
+        resultMap.put("id",    contentlet.getIdentifier());
 
         return Response.ok(new ResponseEntityView(resultMap)).build();
     }
