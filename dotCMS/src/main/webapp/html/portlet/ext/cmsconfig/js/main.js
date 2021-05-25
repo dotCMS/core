@@ -55,11 +55,6 @@ var saveCompanyBasicInfo = function () {
   ).value;
   var topNavLogoPath = document.getElementById("topNavLogoInput").value;
 
-  console.log(
-    loginScreenLogoPath,
-    topNavLogoPath
-  )
-
   var content = {
     portalURL: companyPortalUrl,
     mx: companyMX,
