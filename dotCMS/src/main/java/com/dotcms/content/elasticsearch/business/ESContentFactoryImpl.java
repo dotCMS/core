@@ -16,6 +16,8 @@ import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.system.SimpleMapAppContext;
 import com.dotcms.util.I18NMessage;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Host;
@@ -38,6 +40,9 @@ import com.dotmarketing.common.db.Params;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.db.commands.DatabaseCommand.QueryReplacements;
+import com.dotmarketing.db.commands.UpsertCommand;
+import com.dotmarketing.db.commands.UpsertCommandFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -61,6 +66,8 @@ import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Ints;
@@ -128,9 +135,37 @@ public class ESContentFactoryImpl extends ContentletFactory {
     private static final String[] ES_FIELDS = {"inode", "identifier"};
     public static final int ES_TRACK_TOTAL_HITS_DEFAULT = 10000000;
     public static final String ES_TRACK_TOTAL_HITS = "ES_TRACK_TOTAL_HITS";
+    private static final String INSERT_INTO_INODE_SQL = "INSERT INTO inode(inode, owner, idate, type) VALUES (?, ?, ?, ?)";
+    private static final String[] UPSERT_EXTRA_COLUMNS = {"show_on_menu", "title", "mod_date", "mod_user",
+            "sort_order", "friendly_name", "structure_inode", "disabled_wysiwyg", "identifier",
+            "language_id", "date1", "date2", "date3", "date4", "date5", "date6", "date7", "date8",
+            "date9", "date10", "date11", "date12", "date13", "date14", "date15", "date16", "date17",
+            "date18", "date19", "date20", "date21", "date22", "date23", "date24", "date25", "text1",
+            "text2", "text3", "text4", "text5", "text6", "text7", "text8", "text9", "text10",
+            "text11", "text12", "text13", "text14", "text15", "text16", "text17", "text18",
+            "text19", "text20", "text21", "text22", "text23", "text24", "text25", "text_area1",
+            "text_area2", "text_area3", "text_area4", "text_area5", "text_area6", "text_area7",
+            "text_area8", "text_area9", "text_area10", "text_area11", "text_area12", "text_area13",
+            "text_area14", "text_area15", "text_area16", "text_area17", "text_area18",
+            "text_area19", "text_area20", "text_area21", "text_area22", "text_area23",
+            "text_area24", "text_area25", "integer1", "integer2", "integer3", "integer4",
+            "integer5", "integer6", "integer7", "integer8", "integer9", "integer10", "integer11",
+            "integer12", "integer13", "integer14", "integer15", "integer16", "integer17",
+            "integer18", "integer19", "integer20", "integer21", "integer22", "integer23",
+            "integer24", "integer25", "float1", "float2", "float3", "float4", "float5", "float6",
+            "float7", "float8", "float9", "float10", "float11", "float12", "float13", "float14",
+            "float15", "float16", "float17", "float18", "float19", "float20", "float21", "float22",
+            "float23", "float24", "float25", "bool1", "bool2", "bool3", "bool4", "bool5", "bool6",
+            "bool7", "bool8", "bool9", "bool10", "bool11", "bool12", "bool13", "bool14", "bool15",
+            "bool16", "bool17", "bool18", "bool19", "bool20", "bool21", "bool22", "bool23",
+            "bool24", "bool25"};
+
     private final ContentletCache contentletCache;
 	private final LanguageAPI languageAPI;
 	private final ESQueryCache queryCache;
+    private static final ObjectMapper mapper = DotObjectMapperProvider.getInstance()
+            .getDefaultObjectMapper();
+
     @VisibleForTesting
     public static final String CACHE_404_CONTENTLET = "CACHE_404_CONTENTLET";
 
@@ -1829,95 +1864,35 @@ public class ESContentFactoryImpl extends ContentletFactory {
             inode = UUIDGenerator.generateUuid();
         }
 
-        final boolean found = find(inode) != null;
-
-        final DotConnect dotConnect = new DotConnect();
-
-        final StringBuilder script = new StringBuilder();
-        if(found) { //update a piece of content
-            script.append("UPDATE contentlet SET show_on_menu=?, title=?, mod_date=?, ")
-                    .append("mod_user=?, sort_order=?, friendly_name=?, structure_inode=?, ")
-                    .append("disabled_wysiwyg=?, identifier=?, ")
-                    .append("language_id=?, date1=?, date2=?, date3=?, date4=?, date5=?, date6=?, ")
-                    .append("date7=?, date8=?, date9=?, date10=?, date11=?, date12=?, date13=?, ")
-                    .append("date14=?, date15=?, date16=?, date17=?, date18=?, date19=?, date20=?, ")
-                    .append("date21=?, date22=?, date23=?, date24=?, date25=?, text1=?, text2=?, ")
-                    .append("text3=?, text4=?, text5=?, text6=?, text7=?, text8=?, text9=?, text10=?,")
-                    .append("text11=?, text12=?, text13=?, text14=?, text15=?, text16=?, text17=?, ")
-                    .append("text18=?, text19=?, text20=?, text21=?, text22=?, text23=?, text24=?, ")
-                    .append("text25=?, text_area1=?, text_area2=?, text_area3=?, text_area4=?, ")
-                    .append("text_area5=?, text_area6=?, text_area7=?, text_area8=?, text_area9=?, ")
-                    .append("text_area10=?, text_area11=?, text_area12=?, text_area13=?, ")
-                    .append("text_area14=?, text_area15=?, text_area16=?, text_area17=?, text_area18=?, ")
-                    .append("text_area19=?, text_area20=?, text_area21=?, text_area22=?, text_area23=?, ")
-                    .append("text_area24=?, text_area25=?, integer1=?, integer2=?, integer3=?, ")
-                    .append("integer4=?, integer5=?, integer6=?, integer7=?, integer8=?, integer9=?, ")
-                    .append("integer10=?, integer11=?, integer12=?, integer13=?, integer14=?, ")
-                    .append("integer15=?, integer16=?, integer17=?, integer18=?, integer19=?, ")
-                    .append("integer20=?, integer21=?, integer22=?, integer23=?, integer24=?, ")
-                    .append("integer25=?, float1=?, float2=?, float3=?, float4=?, float5=?, ")
-                    .append("float6=?, float7=?, float8=?, float9=?, float10=?, float11=?, float12=?, ")
-                    .append("float13=?, float14=?, float15=?, float16=?, float17=?, float18=?, ")
-                    .append("float19=?, float20=?, float21=?, float22=?, float23=?, float24=?, ")
-                    .append("float25=?, bool1=?, bool2=?, bool3=?, bool4=?, bool5=?, bool6=?, ")
-                    .append("bool7=?, bool8=?, bool9=?, bool10=?, bool11=?, bool12=?, bool13=?, ")
-                    .append("bool14=?, bool15=?, bool16=?, bool17=?, bool18=?, bool19=?, bool20=?, ")
-                    .append("bool21=?, bool22=?, bool23=?, bool24=?, bool25=? WHERE inode = ? ");
-        } else { //save a new piece of content
+        if(find(inode) == null) {
             createNewInode(inode, contentlet.getOwner());
-            script.append("INSERT INTO contentlet(inode, show_on_menu, title, mod_date, mod_user,")
-                    .append("sort_order, friendly_name, structure_inode, ")
-                    .append("disabled_wysiwyg, identifier, language_id, date1, ")
-                    .append("date2, date3, date4, date5, date6, date7, date8, date9, date10, date11, ")
-                    .append("date12, date13, date14, date15, date16, date17, date18, date19, date20, ")
-                    .append("date21, date22, date23, date24, date25, text1, text2, text3, text4, ")
-                    .append("text5, text6, text7, text8, text9, text10, text11, text12, text13, ")
-                    .append("text14, text15, text16, text17, text18, text19, text20, text21, text22, ")
-                    .append("text23, text24, text25, text_area1, text_area2, text_area3, text_area4, ")
-                    .append("text_area5, text_area6, text_area7, text_area8, text_area9, text_area10, ")
-                    .append("text_area11, text_area12, text_area13, text_area14, text_area15, ")
-                    .append("text_area16, text_area17, text_area18, text_area19, text_area20, ")
-                    .append("text_area21, text_area22, text_area23, text_area24, text_area25, ")
-                    .append("integer1, integer2, integer3, integer4, integer5, integer6, integer7, ")
-                    .append("integer8, integer9, integer10, integer11, integer12, integer13, ")
-                    .append("integer14, integer15, integer16, integer17, integer18, integer19, ")
-                    .append("integer20, integer21, integer22, integer23, integer24, integer25, ")
-                    .append("float1, float2, float3, float4, float5, float6, float7, float8, float9, ")
-                    .append("float10, float11, float12, float13, float14, float15, float16, float17, ")
-                    .append("float18, float19, float20, float21, float22, float23, float24, float25, ")
-                    .append("bool1, bool2, bool3, bool4, bool5, bool6, bool7, bool8, bool9, bool10, ")
-                    .append("bool11, bool12, bool13, bool14, bool15, bool16, bool17, bool18, bool19, ")
-                    .append("bool20, bool21, bool22, bool23, bool24, bool25) VALUES (?, ?, ?, ?, ?, ")
-                    .append("?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ")
-                    .append("?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ")
-                    .append("?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ")
-                    .append("?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ")
-                    .append("?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ")
-                    .append("?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ")
-                    .append("?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         }
 
-        dotConnect.setSQL(script.toString());
+        upsertContentlet(contentlet, inode);
 
-
-        //Add WHERE condition if needed
-        if (found){
-            addParamsToSaveUpdateContent(contentlet, dotConnect);
-            dotConnect.addParam(inode);
-        } else{
-            dotConnect.addParam(inode);
-            addParamsToSaveUpdateContent(contentlet, dotConnect);
-        }
         contentlet.setInode(inode);
-        dotConnect.loadResult();
         contentletCache.remove(inode);
-
         return contentlet;
 	}
 
-	private void createNewInode(final String inode, final String owner) throws DotDataException {
+    private void upsertContentlet(final Contentlet contentlet, final String inode) throws DotDataException {
+        final UpsertCommand upsertContentletCommand = UpsertCommandFactory.getUpsertCommand();
+        final SimpleMapAppContext replacements = new SimpleMapAppContext();
+
+        replacements.setAttribute(QueryReplacements.TABLE, "contentlet");
+        replacements.setAttribute(QueryReplacements.CONDITIONAL_COLUMN, "inode");
+        replacements.setAttribute(QueryReplacements.CONDITIONAL_VALUE, inode);
+        replacements.setAttribute(QueryReplacements.EXTRA_COLUMNS, UPSERT_EXTRA_COLUMNS);
+
+        List<Object> parameters = new ArrayList<>();
+        parameters.add(inode);
+        parameters.addAll(getParamsToSaveUpdateContent(contentlet));
+        upsertContentletCommand.execute(new DotConnect(), replacements, parameters.toArray());
+    }
+
+    private void createNewInode(final String inode, final String owner) throws DotDataException {
         final DotConnect dotConnect = new DotConnect();
-        dotConnect.setSQL("INSERT INTO inode(inode, owner, idate, type) VALUES (?, ?, ?, ?)");
+        dotConnect.setSQL(INSERT_INTO_INODE_SQL);
         dotConnect.addParam(inode);
         dotConnect.addParam(owner);
         dotConnect.addParam(new Date());
@@ -1925,10 +1900,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
         dotConnect.loadResult();
     }
 
-	private void addParamsToSaveUpdateContent(final Contentlet contentlet, final DotConnect dotConnect)
+	private List<Object> getParamsToSaveUpdateContent(final Contentlet contentlet)
             throws DotDataException {
 
-        dotConnect.addParam(contentlet.getStringProperty("showOnMenu") != null && contentlet
+        final List<Object> upsertValues = new ArrayList<>();
+
+        upsertValues.add(contentlet.getStringProperty("showOnMenu") != null && contentlet
                 .getStringProperty("showOnMenu").contains("true") ? Boolean.TRUE
                 : Boolean.FALSE);
 
@@ -1952,35 +1929,41 @@ public class ESContentFactoryImpl extends ContentletFactory {
             }
         }
 
-        dotConnect.addParam(name);
-        dotConnect.addParam(contentlet.getModDate());
-        dotConnect.addParam(contentlet.getModUser());
-        dotConnect.addParam(new Long(contentlet.getSortOrder()).intValue());
+        upsertValues.add(name);
+        upsertValues.add(contentlet.getModDate());
+        upsertValues.add(contentlet.getModUser());
+        upsertValues.add(new Long(contentlet.getSortOrder()).intValue());
 
         if (allowTitle) { // if the title was not intentionally set to null.
-            dotConnect.addParam(name); //friendly name
+            upsertValues.add(name); //friendly name
         } else {
-            dotConnect.addParam((String) null);
+            upsertValues.add((String) null);
         }
 
-        dotConnect.addParam(contentlet.getContentTypeId());
+        upsertValues.add(contentlet.getContentTypeId());
 
-        addWysiwygParam(contentlet, dotConnect);
+        addWysiwygParam(contentlet, upsertValues);
 
-        dotConnect.addParam(UtilMethods.isSet(contentlet.getIdentifier())?contentlet.getIdentifier():null);
-        dotConnect.addParam(contentlet.getLanguageId());
+        upsertValues.add(UtilMethods.isSet(contentlet.getIdentifier())?contentlet.getIdentifier():null);
+        upsertValues.add(contentlet.getLanguageId());
 
         final Map<String, Object> fieldsMap = getFieldsMap(contentlet);
 
-        addDynamicFields(dotConnect, fieldsMap,"date");
-        addDynamicFields(dotConnect, fieldsMap,"text");
-        addDynamicFields(dotConnect, fieldsMap,"text_area");
-        addDynamicFields(dotConnect, fieldsMap,"integer");
-        addDynamicFields(dotConnect, fieldsMap,"float");
-        addDynamicFields(dotConnect, fieldsMap,"bool");
+        try {
+            addDynamicFields(upsertValues, fieldsMap,"date");
+            addDynamicFields(upsertValues, fieldsMap,"text");
+            addDynamicFields(upsertValues, fieldsMap,"text_area");
+            addDynamicFields(upsertValues, fieldsMap,"integer");
+            addDynamicFields(upsertValues, fieldsMap,"float");
+            addDynamicFields(upsertValues, fieldsMap,"bool");
+        } catch (JsonProcessingException e) {
+            throw new DotDataException(e);
+        }
+
+        return upsertValues;
     }
 
-    private void addWysiwygParam(Contentlet contentlet, DotConnect dotConnect) {
+    private void addWysiwygParam(final Contentlet contentlet, final List<Object> upsertValues) {
         final List<String> wysiwygFields = contentlet.getDisabledWysiwyg();
         if( wysiwygFields != null && wysiwygFields.size() > 0 ) {
             final StringBuilder wysiwyg = new StringBuilder();
@@ -1990,19 +1973,20 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 j++;
                 if( j < wysiwygFields.size() ) wysiwyg.append(",");
             }
-            dotConnect.addParam(wysiwyg.toString());
+            upsertValues.add(wysiwyg.toString());
         } else{
-            dotConnect.addParam((String) null);
+            upsertValues.add((String) null);
         }
     }
 
     /**
      * Add dates, text, text_area and integer fields from the contentlet's fields map to the {@link DotConnect} object
-     * @param dotConnect
+     * @param upsertValues
      * @param fieldsMap
      * @param prefix
      */
-    private void addDynamicFields(final DotConnect dotConnect, final Map<String, Object> fieldsMap, final String prefix){
+    private void addDynamicFields(final List<Object> upsertValues, final Map<String, Object> fieldsMap, final String prefix)
+            throws JsonProcessingException {
         Object defaultValue = null;
 
         if (prefix.equals("integer") || prefix.equals("float")){
@@ -2015,13 +1999,17 @@ public class ESContentFactoryImpl extends ContentletFactory {
             if (fieldsMap.containsKey(prefix + i)) {
 
                 if (prefix.equals("date")){
-                    dotConnect.addParam((Date) fieldsMap.get(prefix + i));
+                    upsertValues.add((Date) fieldsMap.get(prefix + i));
                 } else{
-                    dotConnect.addParam(fieldsMap.get(prefix + i));
+                    if (prefix.startsWith("text") && fieldsMap.get(prefix + i) instanceof Map){
+                        upsertValues.add(mapper.writeValueAsString(fieldsMap.get(prefix + i)));
+                    }else{
+                        upsertValues.add(fieldsMap.get(prefix + i));
+                    }
                 }
 
             } else {
-                dotConnect.addParam(defaultValue);
+                upsertValues.add(defaultValue);
             }
         }
     }
