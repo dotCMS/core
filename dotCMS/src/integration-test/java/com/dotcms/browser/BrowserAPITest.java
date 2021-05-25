@@ -520,20 +520,16 @@ public class BrowserAPITest extends IntegrationTestBase {
         final Host site = new SiteDataGen().nextPersisted();
 
         final Folder parentFolder = new FolderDataGen().site(site).nextPersisted();
-        //crear folder title y name `barn`
         final Folder childFolder1 = new FolderDataGen().name("barn").title("barn")
                 .parent(parentFolder).nextPersisted();
-        //crear folder title y name `baby`
         final Folder childFolder2 = new FolderDataGen().name("xray").title("baby")
                 .parent(parentFolder).nextPersisted();
-        //llamar getFolderContent
         final Map<String, Object> parentFolderContent = browserAPI.getFolderContent(BrowserQuery.builder()
                 .withHostOrFolderId(parentFolder.getIdentifier())
                 .showFolders(true)
                 .build());
         assertNotNull(parentFolderContent);
         assertEquals(2L, parentFolderContent.get("total"));
-        //verificar que el orden sea barn-xray
         List<Map<String, Object>> results = (List<Map<String, Object>>)parentFolderContent.get("list");
         assertEquals(childFolder1.getIdentifier(),results.get(0).get("identifier"));
         assertEquals(childFolder2.getIdentifier(),results.get(1).get("identifier"));
