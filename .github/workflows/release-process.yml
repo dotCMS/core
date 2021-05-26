@@ -2,6 +2,10 @@ name: release-process-automation
 on:
   release:
     types: [published]
+# TODO: remove this section
+  push:
+    branches:
+      - release-21.05
 jobs:
   release-process:
     name: Release Process Automation
@@ -48,21 +52,23 @@ jobs:
         run: |
           dotcicd/library/pipeline.sh buildRelease
         if: env.IS_RELEASE != 'true'
-      - name: Run DotCMS Release Docker Image
-        run: |
-          dotcicd/library/pipeline.sh runRelease
+# TODO: Uncomment this section
+#      - name: Run DotCMS Release Docker Image
+#        run: |
+#          dotcicd/library/pipeline.sh runRelease
       - name: Publish Docker Multiarch Image
         run: |
           dotcicd/library/pipeline.sh publishDockerImage ${{ env.GITHUB_USER }} ${{ secrets.USER_TOKEN }} ${{ env.BRANCH }} ${{ env.IS_RELEASE }} ${{ secrets.DOCKER_USERNAME }} ${{ secrets.DOCKER_TOKEN }}
-      - name: Slack Notification
-        if: success()
-        uses: rtCamp/action-slack-notify@master
-        env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-          SLACK_USERNAME: dotcms-bot
-          SLACK_TITLE: "Important news!"
-          SLACK_MSG_AUTHOR: " "
-          MSG_MINIMAL: true
-          SLACK_FOOTER: ""
-          SLACK_ICON: https://avatars.slack-edge.com/2021-02-18/1760490973606_047c511fc4610eab31e5_88.png
-          SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of dotCMS - dotCMS ${{ env.BRANCH }} :tada:"
+# TODO: uncomment this section
+#      - name: Slack Notification
+#        if: success()
+#        uses: rtCamp/action-slack-notify@master
+#        env:
+#          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+#          SLACK_USERNAME: dotcms-bot
+#          SLACK_TITLE: "Important news!"
+#          SLACK_MSG_AUTHOR: " "
+#          MSG_MINIMAL: true
+#          SLACK_FOOTER: ""
+#          SLACK_ICON: https://avatars.slack-edge.com/2021-02-18/1760490973606_047c511fc4610eab31e5_88.png
+#          SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of dotCMS - dotCMS ${{ env.BRANCH }} :tada:"
