@@ -30,6 +30,7 @@ import com.dotcms.publisher.bundle.business.BundleAPITest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
 import com.dotcms.publisher.util.DependencyManagerTest;
+import com.dotcms.publisher.util.DependencyModDateUtilTest;
 import com.dotcms.publishing.PublisherAPIImplTest;
 import com.dotcms.publishing.PublisherFilterImplTest;
 import com.dotcms.publishing.PushPublishFiltersInitializerTest;
@@ -129,7 +130,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.auth.providers.jwt.JsonWebTokenUtilsIntegrationTest.class,
         com.dotcms.auth.providers.jwt.factories.ApiTokenAPITest.class,
         com.dotcms.auth.providers.jwt.services.JsonWebTokenServiceIntegrationTest.class,
-        com.dotcms.publisher.util.DependencySetTest.class,
+        DependencyModDateUtilTest.class,
         com.dotcms.publisher.business.PublisherTest.class,
         com.dotcms.publisher.endpoint.bean.PublishingEndPointTest.class,
         com.dotcms.publisher.endpoint.business.PublishingEndPointAPITest.class,

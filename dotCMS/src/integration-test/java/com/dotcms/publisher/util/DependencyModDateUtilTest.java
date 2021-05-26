@@ -30,7 +30,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(DataProviderRunner.class)
-public class DependencySetTest extends IntegrationTestBase {
+public class DependencyModDateUtilTest extends IntegrationTestBase {
 
     private final User systemUser = APILocator.systemUser();
 
