@@ -83,7 +83,11 @@ public class VanityURLFilter implements Filter {
           final Language language = this.languageWebAPI.getLanguage(request);
           final Optional<CachedVanityUrl> cachedVanity = vanityApi.resolveVanityUrl(uri, host, language);
           
-          if (cachedVanity.isPresent()) {
+          if (cachedVanity.isPresent() &&
+                  // checks if the current destiny is not exactly the forward of the vanity
+                  // we do this to avoid infinite loop
+                  this.forwardToIsnotTheSameOfUri(cachedVanity.get(), uri)) {
+
               request.setAttribute(VANITY_URL_OBJECT, cachedVanity.get());
               final VanityUrlResult vanityUrlResult = cachedVanity.get().handle( uri, response);
               final VanityUrlRequestWrapper vanityUrlRequestWrapper = new VanityUrlRequestWrapper(request, vanityUrlResult);
@@ -99,6 +103,13 @@ public class VanityURLFilter implements Filter {
 
       filterChain.doFilter(request, response);
   } // doFilter.
+
+    private boolean forwardToIsnotTheSameOfUri(final CachedVanityUrl cachedVanityUrl, final String uri) {
+
+        // if the forward to is not actually the same of uri, is ok
+        return null != cachedVanityUrl && null != cachedVanityUrl.forwardTo && null != uri?
+                !cachedVanityUrl.forwardTo.equals(uri): false;
+    }
 
   @Override
   public void destroy() {

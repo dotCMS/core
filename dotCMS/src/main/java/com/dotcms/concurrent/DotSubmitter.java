@@ -106,6 +106,8 @@ public interface DotSubmitter extends Executor, Serializable {
      */
     void waitForAll(final long timeout, final TimeUnit unit) throws ExecutionException;
 
+    void waitForAll() throws ExecutionException;
+
     default void waitForAll(final Collection<Future<Void>> futures) throws ExecutionException {
         for(final Future future : futures) {
             try {

@@ -20,6 +20,8 @@ import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
+import com.dotmarketing.util.DateUtil;
+import java.util.TimeZone;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileItemFactory;
 import org.apache.commons.fileupload.FileUploadException;
@@ -187,16 +189,17 @@ public class RemotePublishAjaxAction extends AjaxAction {
         	PublisherAPI publisherAPI = PublisherAPI.getInstance();
 
             //Read the form values
-            String _assetId = request.getParameter( "assetIdentifier" );
-            String _contentPushPublishDate = request.getParameter( "remotePublishDate" );
-            String _contentPushPublishTime = request.getParameter( "remotePublishTime" );
-            String _contentPushExpireDate = request.getParameter( "remotePublishExpireDate" );
-            String _contentPushExpireTime = request.getParameter( "remotePublishExpireTime" );
-            String _contentFilterDate = request.getParameter( "remoteFilterDate" );
-            String _iWantTo = request.getParameter( "iWantTo" );
-            String whoToSendTmp = request.getParameter( "whoToSend" );
-            List<String> whereToSend = Arrays.asList(whoToSendTmp.split(","));
-            List<Environment> envsToSendTo = new ArrayList<Environment>();
+            final String _assetId = request.getParameter( "assetIdentifier" );
+            final String _contentPushPublishDate = request.getParameter( "remotePublishDate" );
+            final String _contentPushPublishTime = request.getParameter( "remotePublishTime" );
+            final String _contentPushExpireDate = request.getParameter( "remotePublishExpireDate" );
+            final String _contentPushExpireTime = request.getParameter( "remotePublishExpireTime" );
+            final String timezoneId = request.getParameter( "timezoneId" );
+            final String _contentFilterDate = request.getParameter( "remoteFilterDate" );
+            final String _iWantTo = request.getParameter( "iWantTo" );
+            final String whoToSendTmp = request.getParameter( "whoToSend" );
+            final List<String> whereToSend = Arrays.asList(whoToSendTmp.split(","));
+            final List<Environment> envsToSendTo = new ArrayList<Environment>();
             final String filterKey = request.getParameter("filterKey");
             final boolean forcePush = (boolean) APILocator.getPublisherAPI().getFilterDescriptorByKey(filterKey).getFilters().getOrDefault(
                     FilterDescriptor.FORCE_PUSH_KEY,false);
@@ -215,8 +218,13 @@ public class RemotePublishAjaxAction extends AjaxAction {
             //Put the selected environments in session in order to have the list of the last selected environments
             request.getSession().setAttribute( WebKeys.SELECTED_ENVIRONMENTS + getUser().getUserId(), envsToSendTo );
 
-            SimpleDateFormat dateFormat = new SimpleDateFormat( "yyyy-MM-dd-H-m" );
-            Date publishDate = dateFormat.parse( _contentPushPublishDate + "-" + _contentPushPublishTime );
+            final TimeZone currentTimeZone =
+                    UtilMethods.isSet(timezoneId) ? TimeZone.getTimeZone(timezoneId)
+                            : TimeZone.getDefault();
+
+            final Date publishDate = DateUtil
+                    .convertDate(_contentPushPublishDate + "-" + _contentPushPublishTime,
+                            currentTimeZone, "yyyy-MM-dd-H-m");
 
             List<String> ids;
             if ( _assetId.startsWith( "query_" ) ) { //Support for lucene queries
@@ -231,7 +239,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 String[] _assetsIds = _assetId.split( "," );//Support for multiple ids in the assetIdentifier parameter
                 List<String> assetsIds = Arrays.asList( _assetsIds );
 
-                ids = getIdsToPush( assetsIds, null, _contentFilterDate, dateFormat );
+                ids = getIdsToPush( assetsIds, null, _contentFilterDate, new SimpleDateFormat( "yyyy-MM-dd-H-m" ) );
             }
 
             //Response map with the status of the addContents operation (error messages and counts )
@@ -244,8 +252,10 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 responseMap = publisherAPI.addContentsToPublish( ids, bundle.getId(), publishDate, getUser() );
             }
             if ( _iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_EXPIRE ) || _iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE ) ) {
-                if ( (!"".equals( _contentPushExpireDate.trim() ) && !"".equals( _contentPushExpireTime.trim() )) ) {
-                    Date expireDate = dateFormat.parse( _contentPushExpireDate + "-" + _contentPushExpireTime );
+                if ((UtilMethods.isSet( _contentPushExpireDate) && UtilMethods.isSet( _contentPushExpireTime.trim()))) {
+                    final Date expireDate = DateUtil
+                            .convertDate(_contentPushExpireDate + "-" + _contentPushExpireTime,
+                                    currentTimeZone, "yyyy-MM-dd-H-m");
 
                     Bundle bundle = new Bundle(null, publishDate, expireDate, getUser().getUserId(), forcePush,filterKey);
                 	APILocator.getBundleAPI().saveBundle(bundle, envsToSendTo);
