@@ -164,6 +164,13 @@ public class SecurityUtils {
     if(refererHost == null && uri.endsWith(".css")) {
       return true;
     }
+
+    // good: we allow FONTS
+    if(refererHost == null && (uri.startsWith("/html/fonts") &&
+            (uri.endsWith(".eot") || uri.endsWith(".woff2") || uri.endsWith(".otf")
+                    || uri.endsWith(".woff") || uri.endsWith(".ttf") ))) {
+      return true;
+    }
     
     // good: the url host == the refererHost
     if (urlHost.equalsIgnoreCase(refererHost)) {

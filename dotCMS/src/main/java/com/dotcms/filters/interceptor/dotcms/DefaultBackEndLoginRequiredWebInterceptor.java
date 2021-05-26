@@ -27,6 +27,7 @@ public class DefaultBackEndLoginRequiredWebInterceptor implements WebInterceptor
     private static final String AUTHENTICATION_REQUIRED_PATHS = "AUTHENTICATION_REQUIRED_PATHS";
 
     private static final String DEFAULT_ALLOWED_SUB_PATHS = "/html/js/dojo,"
+            + "/html/fonts,"
             + "/html/images/backgrounds,/html/images/persona,"
             + "/html/portal/login.jsp,"
             + "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/,"
