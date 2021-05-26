@@ -83,6 +83,9 @@ var saveCompanyBasicInfo = function () {
       emmitCompanyInfoUpdated(content);
     },
     error: function (error) {
+
+      console.log({ error });
+
       showDotCMSSystemMessage(error.responseText, true);
     },
   };

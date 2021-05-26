@@ -102,32 +102,67 @@
 		logoContainer.nextElementSibling.style.display = "block";
 	}
 
-	function uploadComplete(event) {
-      if(!event.target.matches('dot-asset-drop-zone')) return;
-		// Grab the dropzone element
-		const dropZone = event.target;
+   function assetIsMaxLength(asset) {
+      return asset.match(/[^\\\/]+(?=\.[\w]+$)|[^\\\/]+$/)[0].length > 50;
+   }
 
-		// create a new logo element to append it later
-		const logo = document.createElement("img");
-
-		// details from the dotAssets upload event
-		const [details] = event.detail;
-
-		// Once we received a response add the image URL to the src attribute
+   function setLogoAndContainerNodes({ dropZone,  logoNode, details, dropZoneLabel }) {
+      const logo = document.createElement("img");
+      // Once we received a response add the image URL to the src attribute
 		logo.src = details.asset;
-		logo.classList.add('logo__image')
+		logo.classList.add('logo__image');
 
 		// Grab the previous sibling and append the loo
 		dropZone.previousElementSibling
 			.querySelector(".logo__container")
 			.append(logo);
 
+      // Do we have an error? Remove it as it was a successful upload   
+      if(dropZoneLabel.parentElement.querySelector('.error')) {
+         dropZoneLabel.parentElement.querySelector('.error').remove()  
+      }
+
 		// Reset our values
+		logoNode.style.display = "flex";
 		dropZone.style.display = "none";
-		dropZone.parentElement.querySelector('.logo').style.display = "flex";
 		dropZone.parentElement.querySelector('input[data-hidden]').value = details.asset;
-      topNavDropZone.querySelector(".logo__container").style.display = 'block'
+      topNavDropZone.querySelector(".logo__container").style.display = 'flex'
+   }
+
+	function uploadComplete(event) {
+      if(!event.target.matches('dot-asset-drop-zone')) return
+
+		// Grab the dropzone element
+		const dropZone = event.target;
+
+		// create a new logo element to append it later
+
+      const logoNode = dropZone.parentElement.querySelector('.logo');
+      const dropZoneLabel = logoNode.closest('.form__group').querySelector('.drop-zone__label');
+
+		// details from the dotAssets upload event
+		const [details] = event.detail;
+
+      const logoAndContainerData = {
+          dropZone, 
+          logoNode, 
+          details,
+          dropZoneLabel
+      }
+
+      if(assetIsMaxLength(details.asset)) {
+         createMaxLengthError(dropZoneLabel);
+         return;
+      }
+      setLogoAndContainerNodes(logoAndContainerData)
 	}
+
+   function createMaxLengthError(elem) {
+      const span = document.createElement('span');
+      span.classList.add('error');
+      span.textContent = "Make sure the filename of the image has less than 50 characters."
+      elem.insertAdjacentElement('afterend', span)
+   }
 </script>
 <style type="text/css">
 	.listingTable__form-control {
@@ -163,9 +198,10 @@
 
    .logo__container {
       width: 200px; 
-      /* height: 100px;  */
+      height: 100px; 
       padding: 1rem; 
       border-radius: 2px;
+      display: flex;
    }
 
 	.logo {
@@ -236,6 +272,17 @@
 
     dot-asset-drop-zone .dot-asset-drop-zone__indicators .dot-asset-drop-zone__icon span {
        margin-top: 0;
+    }
+
+    .drop-zone__label {
+       font-weight: normal;
+       margin-bottom: 1rem;
+    }
+    .error {
+       margin-bottom: 1rem;
+       display: block;
+       font-size: .9rem;
+       color: red;
     }
 </style>
 <table class="listingTable">
@@ -401,7 +448,7 @@
          </div>
          <div style="margin-left: 10rem;">
             <div class="form__group">
-               <h3 style="font-weight: normal; margin-bottom: 1rem;">Login Screen Logo</h3>
+               <h3 class="drop-zone__label">Login Screen Logo</h3>
                <div class="logo">
                   <button class="logo__delete">&times;</button>
                   <div class="logo__container">
@@ -420,7 +467,7 @@
                   </div>
             </div>
                <dot-asset-drop-zone id="dot-asset-drop-zone-main" style="display: none;" drop-files-text="Drop Image" upload-file-text="Uploading Image..." display-indicator="true"></dot-asset-drop-zone>
-               <input type="hidden" name="loginScreenLogoInput" id="loginScreenLogoInput" data-hidden="logo-input" value="<%= ( !screenLogoEmpty ? screenLogo : "" ) %>">	
+               <input type="hidden" name="loginScreenLogoInput" id="loginScreenLogoInput" data-hidden="logo-input" value="<%= ( !screenLogoEmpty ? screenLogo : "" ) %>">
                <p style="margin-top: 1rem; color: grey;">Hint: This is the logo used for the login screen and communications (e.g. emails, etc)</p>
             </div><!-- /.form__group -->
             <br />
@@ -432,7 +479,7 @@
                <br />
                <p style="margin-top: .5rem; color: grey;">You can white-label your instance of DotCMS uploading a new logo.</p>
                <div id="topNav__drop-zone" style="display: none;">
-                  <h3 style="font-weight: normal; margin-bottom: 1rem;">Navbar Logo</h3>
+                  <h3 class="drop-zone__label">Navbar Logo</h3>
                   <div class="logo" <%= ( !navLogoEmpty ? "style='display: flex;'" : "style='display: none;'" ) %>>
                      <button class="logo__delete">&times;</button>
                       <%
