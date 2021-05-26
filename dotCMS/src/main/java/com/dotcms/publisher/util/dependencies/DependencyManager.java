@@ -21,6 +21,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Versionable;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -87,6 +88,7 @@ public class DependencyManager {
 	private PublisherFilter publisherFilter;
 
 	private DependencyModDateUtil dependencyModDateUtil;
+	private PushedAssetUtil pushedAssetUtil;
 	private User user;
 
 	private PushPublisherConfig config;
@@ -107,6 +109,7 @@ public class DependencyManager {
 	public DependencyManager(User user, PushPublisherConfig config) {
 		this.config = config;
 		dependencyModDateUtil = new DependencyModDateUtil(this.config);
+		pushedAssetUtil = new PushedAssetUtil(config);
 
 		// these ones store the assets that will be sent in the bundle
 		dependencyModDateUtil = new DependencyModDateUtil(config);
@@ -672,6 +675,7 @@ public class DependencyManager {
 
 		if (!dependencyModDateUtil.excludeByModDate(asset)) {
 			config.add(asset, pusheableAsset);
+			pushedAssetUtil.savePushedAssetForAllEnv(asset, pusheableAsset);
 			return true;
 		} else {
 			return false;

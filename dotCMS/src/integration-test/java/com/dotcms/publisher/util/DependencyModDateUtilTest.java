@@ -1,6 +1,8 @@
 package com.dotcms.publisher.util;
 
 import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.ContentletDataGen;
@@ -11,7 +13,9 @@ import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.bean.impl.PushPublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
+import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.dependencies.DependencyModDateUtil;
+import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -54,10 +58,14 @@ public class DependencyModDateUtilTest extends IntegrationTestBase {
         final Bundle testBundle = createTestBundle(forcePush, Collections.singletonList(environment));
 
         final boolean IS_DOWNLOADING = false;
-        final boolean IS_PUBLISHING = true;
         final boolean IS_STATIC = false;
-        final DependencyModDateUtil dependencySet = new DependencyModDateUtil(testBundle.getId(), "content", IS_DOWNLOADING,
-            IS_PUBLISHING, IS_STATIC);
+        PushPublisherConfig config = mock(PushPublisherConfig.class);
+        when(config.getId()).thenReturn(testBundle.getId());
+        when(config.isStatic()).thenReturn(IS_STATIC);
+        when(config.isDownloading()).thenReturn(IS_DOWNLOADING);
+        when(config.getOperation()).thenReturn(Operation.PUBLISH);
+
+        final DependencyModDateUtil dependencySet = new DependencyModDateUtil();
 
         final Host site = new SiteDataGen().nextPersisted();
         final Contentlet testGenericContent = TestDataUtils.getGenericContentContent(true,
