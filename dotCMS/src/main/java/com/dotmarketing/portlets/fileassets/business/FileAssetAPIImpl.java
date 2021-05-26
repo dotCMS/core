@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.fileassets.business;
 
+import com.dotmarketing.portlets.structure.model.Field.DataType;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -216,7 +217,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		FieldFactory.saveField(field);
 
 
-		field = new Field(META_DATA_FIELD_NAME, Field.FieldType.KEY_VALUE, Field.DataType.LONG_TEXT, structure, false, false, false, 6, "", "", "", true,
+		field = new Field(META_DATA_FIELD_NAME, Field.FieldType.KEY_VALUE, DataType.SYSTEM, structure, false, false, false, 6, "", "", "", true,
 				true, true);
 		field.setVelocityVarName(META_DATA_FIELD);
 		FieldFactory.saveField(field);

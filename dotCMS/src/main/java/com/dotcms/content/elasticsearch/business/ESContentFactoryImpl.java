@@ -135,7 +135,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
     private static final String[] ES_FIELDS = {"inode", "identifier"};
     public static final int ES_TRACK_TOTAL_HITS_DEFAULT = 10000000;
     public static final String ES_TRACK_TOTAL_HITS = "ES_TRACK_TOTAL_HITS";
-    private static final String INSERT_INTO_INODE_SQL = "INSERT INTO inode(inode, owner, idate, type) VALUES (?, ?, ?, ?)";
+    private static final String[] UPSERT_INODE_EXTRA_COLUMNS = {"owner", "idate", "type"};
     private static final String[] UPSERT_EXTRA_COLUMNS = {"show_on_menu", "title", "mod_date", "mod_user",
             "sort_order", "friendly_name", "structure_inode", "disabled_wysiwyg", "identifier",
             "language_id", "date1", "date2", "date3", "date4", "date5", "date6", "date7", "date8",
@@ -1853,27 +1853,16 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
 	@Override
-	protected Contentlet save(Contentlet contentlet, String existingInode) throws DotDataException, DotStateException, DotSecurityException {
+    protected Contentlet save(Contentlet contentlet, String existingInode)
+            throws DotDataException, DotStateException, DotSecurityException {
 
-        final String inode;
-        if(UtilMethods.isSet(existingInode)){
-            inode = existingInode;
-        } else if (UtilMethods.isSet(contentlet.getInode())){
-            inode = contentlet.getInode();
-        } else {
-            inode = UUIDGenerator.generateUuid();
-        }
-
-        if(find(inode) == null) {
-            createNewInode(inode, contentlet.getOwner());
-        }
-
+        final String inode = getInode(existingInode, contentlet);
         upsertContentlet(contentlet, inode);
 
         contentlet.setInode(inode);
         contentletCache.remove(inode);
         return contentlet;
-	}
+    }
 
     private void upsertContentlet(final Contentlet contentlet, final String inode) throws DotDataException {
         final UpsertCommand upsertContentletCommand = UpsertCommandFactory.getUpsertCommand();
@@ -1890,14 +1879,35 @@ public class ESContentFactoryImpl extends ContentletFactory {
         upsertContentletCommand.execute(new DotConnect(), replacements, parameters.toArray());
     }
 
-    private void createNewInode(final String inode, final String owner) throws DotDataException {
-        final DotConnect dotConnect = new DotConnect();
-        dotConnect.setSQL(INSERT_INTO_INODE_SQL);
-        dotConnect.addParam(inode);
-        dotConnect.addParam(owner);
-        dotConnect.addParam(new Date());
-        dotConnect.addParam("contentlet");
-        dotConnect.loadResult();
+    private String getInode(final String existingInode, final Contentlet contentlet)
+            throws DotDataException, DotSecurityException {
+
+        final String inode;
+        if(UtilMethods.isSet(existingInode)){
+            inode = existingInode;
+        } else if (UtilMethods.isSet(contentlet.getInode())){
+            inode = contentlet.getInode();
+        } else {
+            inode = UUIDGenerator.generateUuid();
+        }
+
+        if (!UtilMethods.isSet(find(inode))) {
+            final UpsertCommand upsertInodeCommand = UpsertCommandFactory.getUpsertCommand();
+            final SimpleMapAppContext replacements = new SimpleMapAppContext();
+
+            replacements.setAttribute(QueryReplacements.TABLE, "inode");
+            replacements.setAttribute(QueryReplacements.CONDITIONAL_COLUMN, "inode");
+            replacements.setAttribute(QueryReplacements.CONDITIONAL_VALUE, inode);
+            replacements.setAttribute(QueryReplacements.EXTRA_COLUMNS, UPSERT_INODE_EXTRA_COLUMNS);
+            replacements.setAttribute(QueryReplacements.DO_NOTHING, true);
+
+            upsertInodeCommand
+                    .execute(new DotConnect(), replacements, inode, contentlet.getOwner(),
+                            new Timestamp(new Date().getTime()),
+                            "contentlet");
+        }
+
+        return inode;
     }
 
 	private List<Object> getParamsToSaveUpdateContent(final Contentlet contentlet)

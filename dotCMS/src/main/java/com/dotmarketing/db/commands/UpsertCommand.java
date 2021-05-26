@@ -5,6 +5,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringUtil;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,8 +30,10 @@ public abstract class UpsertCommand implements DatabaseCommand {
         String query = generateSQLQuery(queryReplacements);
         DotConnect dc = (dotConnect != null) ? dotConnect : new DotConnect();
         ArrayList<Object> params =  new ArrayList<>();
-        Collections.addAll(params, parameters); //Update parameters
         Collections.addAll(params, parameters); //Insert parameters
+        if (!queryReplacements.doNothingOnConflict()) {
+            Collections.addAll(params, parameters); //Update parameters
+        }
         dc.executeUpdate(query, params.toArray());
     }
 
@@ -153,21 +156,29 @@ final class PostgreUpsertCommand extends UpsertCommand {
         + "VALUES (%s) ON CONFLICT (%s) "
         + "DO UPDATE SET %s";
 
+    private static final String POSTGRES_UPSERT_QUERY_DO_NOTHING =
+            "INSERT INTO %s (%s) "
+                    + "VALUES (%s) ON CONFLICT (%s) "
+                    + "DO NOTHING %s";
+
     private static final String POSTGRES_INSERT_QUERY =
             "INSERT INTO %s (%s) VALUES (%s)";
+
 
     private static final String POSTGRES_UPDATE_QUERY =
             "UPDATE %s SET %s WHERE %s='%s'";
 
     @Override
     public String generateSQLQuery(SimpleMapAppContext replacements) {
+
         return
-            String.format(POSTGRES_UPSERT_QUERY,
+            String.format(replacements.doNothingOnConflict()?
+                            POSTGRES_UPSERT_QUERY_DO_NOTHING: POSTGRES_UPSERT_QUERY,
                 replacements.getAttribute(QueryReplacements.TABLE),
                 getInsertColumnsString(replacements),
                 getInsertValuesString(replacements),
                 replacements.getAttribute(QueryReplacements.CONDITIONAL_COLUMN),
-                getUpdateColumnValuePairs(replacements)
+                replacements.doNothingOnConflict()? "": getUpdateColumnValuePairs(replacements)
             );
     }
 
@@ -204,7 +215,7 @@ final class PostgreUpsertCommand extends UpsertCommand {
             dotConnect.executeUpdate(insertQuery, false, parameters);
 
         } catch (DotDataException ex) {
-            if (SQLUtil.isUniqueConstraintException(ex)) {
+            if (SQLUtil.isUniqueConstraintException(ex) && !queryReplacements.doNothingOnConflict()) {
                 //On Unique Constraint exception, attempt to update:
                 DbConnectionFactory.closeAndCommit();
                 String updateQuery =
