@@ -382,11 +382,12 @@ import org.junit.runners.Suite.SuiteClasses;
         StartupTasksExecutorTest.class,
         Task201013AddNewColumnsToIdentifierTableTest.class,
 
-        /*Task201014UpdateColumnsValuesInIdentifierTableTest.class,
+        Task201014UpdateColumnsValuesInIdentifierTableTest.class,
         AppsInterpolationTest.class,
         com.dotcms.rest.api.v1.template.TemplateResourceTest.class,
         Task201102UpdateColumnSitelicTableTest.class,
-        DependencyManagerTest.class,
+
+        /*DependencyManagerTest.class,
         com.dotcms.rest.api.v1.versionable.VersionableResourceTest.class,
         GenericBundleActivatorTest.class,
         SAMLHelperTest.class,*/
@@ -395,7 +396,6 @@ import org.junit.runners.Suite.SuiteClasses;
         ResetPasswordTokenUtilTest.class,
         ContainerBundlerTest.class,
         ContentTypeBundlerTest.class,
-
         DependencyBundlerTest.class,
         FolderBundlerTest.class,
         HostBundlerTest.class,
