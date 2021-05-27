@@ -386,8 +386,9 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v1.template.TemplateResourceTest.class,
         Task201102UpdateColumnSitelicTableTest.class,
 
-        /*DependencyManagerTest.class,
-        com.dotcms.rest.api.v1.versionable.VersionableResourceTest.class,*/
+        //DependencyManagerTest.class,
+
+        com.dotcms.rest.api.v1.versionable.VersionableResourceTest.class,
 
         GenericBundleActivatorTest.class,
         SAMLHelperTest.class,
