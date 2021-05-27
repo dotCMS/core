@@ -1053,7 +1053,7 @@ public class DependencyManager {
 
 			// Related structures
 			tryToAddAndProcessDependencies(PusheableAsset.RELATIONSHIP, () ->
-					FactoryLocator.getRelationshipFactory().byContentType(structure));
+					APILocator.getRelationshipAPI().byContentType(structure));
 
 		} catch (DotDataException | DotSecurityException e) {
 			Logger.error(this, e.getMessage(),e);

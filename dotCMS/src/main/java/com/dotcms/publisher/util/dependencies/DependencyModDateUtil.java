@@ -140,7 +140,7 @@ public class DependencyModDateUtil extends HashSet<String> {
 	private synchronized boolean excludeByModDate ( final String assetId, final PusheableAsset pusheableAsset,
 			final Date assetModDate) {
 
-		if ( !isPublish ) {
+		/*if ( !isPublish ) {
 
 			//For un-publish we always remove the asset from cache
 			for ( Environment env : envs ) {
@@ -153,7 +153,7 @@ public class DependencyModDateUtil extends HashSet<String> {
 			}
 
 			return true;
-		}
+		}*/
 
 		// we need to check if all environments have the last version of the asset in
 		// order to skip adding it to the Set
@@ -162,12 +162,14 @@ public class DependencyModDateUtil extends HashSet<String> {
 		// we need to add it to the cache
 
 		if ( !bundle.isForcePush() && !isDownload && isPublish ) {
+
+
 			for (Environment environment : envs) {
 				final Optional<PushedAsset> pushedAssetOptional =
 						getPushedAsset(assetId, environment);
 
 				if (!pushedAssetOptional.isPresent()) {
-					continue;
+					return false;
 				}
 
 				final PushedAsset pushedAsset = pushedAssetOptional.get();
@@ -175,12 +177,14 @@ public class DependencyModDateUtil extends HashSet<String> {
 						pusheableAsset);
 
 				if (modifiedOnCurrentEnv) {
-					return true;
+					return false;
 				}
 			}
+
+			return true;
 		}
 
-		return true;
+		return false;
 	}
 
 	private boolean isModifiedAfterPushAsset(
