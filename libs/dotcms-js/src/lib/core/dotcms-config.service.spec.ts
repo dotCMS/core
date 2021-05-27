@@ -1,12 +1,31 @@
-import { ReflectiveInjector } from '@angular/core';
-import { NoHttpCoreWebServiceMock } from './no-http-core-web.service.mock';
 import {
-    DotcmsConfigService,
+    ConfigParams,
     CoreWebService,
+    DotcmsConfigService,
+    DotTimeZone,
     LoggerService,
-    StringUtils,
-    ConfigParams
+    StringUtils
 } from '../../public_api';
+import { NoHttpCoreWebServiceMock } from './no-http-core-web.service.mock';
+import { ReflectiveInjector } from '@angular/core';
+
+export const mockDotTimeZones: DotTimeZone[] = [
+    {
+        id: 'America/Venezuela',
+        label: 'Venezuela',
+        offset: '240'
+    },
+    {
+        id: 'America/Costa Rica',
+        label: 'Costa Rica',
+        offset: '360'
+    },
+    {
+        id: 'America/Panama',
+        label: 'Panama',
+        offset: '300'
+    }
+];
 
 describe('DotcmsConfigService', () => {
     let service: DotcmsConfigService;
@@ -33,6 +52,23 @@ describe('DotcmsConfigService', () => {
                 levelName: 'COMMUNITY EDITION',
                 isCommunity: true
             },
+            timezones: [
+                {
+                    id: 'America/Venezuela',
+                    label: 'Venezuela',
+                    offset: '240'
+                },
+                {
+                    id: 'America/Costa Rica',
+                    label: 'Costa Rica',
+                    offset: '360'
+                },
+                {
+                    id: 'America/Panama',
+                    label: 'Panama',
+                    offset: '300'
+                }
+            ],
             releaseInfo: {
                 buildDate: 'June 24, 2019',
                 version: '5.0.0'
@@ -75,6 +111,23 @@ describe('DotcmsConfigService', () => {
                 }
             };
             expect(configResponse).toEqual(mock);
+            done();
+        });
+    });
+
+    it('should get timezone list', (done) => {
+        service.getTimeZone().subscribe((result) => {
+            const expectedResult = [...mockDotTimeZones];
+            expectedResult.sort((a: DotTimeZone, b: DotTimeZone) => {
+                if (a.label < b.label) {
+                    return -1;
+                }
+                if (a.label > b.label) {
+                    return 1;
+                }
+                return 0;
+            });
+            expect(result).toEqual(expectedResult);
             done();
         });
     });

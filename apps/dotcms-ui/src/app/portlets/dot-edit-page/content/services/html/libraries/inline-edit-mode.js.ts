@@ -99,7 +99,7 @@ export const INLINE_TINYMCE_SCRIPTS = `
 
             tinymce
             .init({
-                ...tinyMCEConfig[dataset.mode],
+                ...tinyMCEConfig[dataset.mode || 'minimal'],
                 selector: dataSelector,
             })
             .then(([ed]) => {

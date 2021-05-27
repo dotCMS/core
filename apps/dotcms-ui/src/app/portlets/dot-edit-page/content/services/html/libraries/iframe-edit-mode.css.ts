@@ -364,11 +364,11 @@ export const getEditPageCss = (timestampId: string): string => {
         left: 0;
     }
 
-    ${timestampId} [data-mode] > * {
+    ${timestampId} [data-inode][data-field-name] > * {
         pointer-events: none;
     }
 
-    ${timestampId} [data-mode].active > * {
+    ${timestampId} [data-inode][data-field-name].active > * {
         pointer-events: auto;
     }
 
@@ -383,7 +383,7 @@ export const getEditPageCss = (timestampId: string): string => {
         color: black !important;
     }
 
-    ${timestampId} [data-mode].dotcms__inline-edit-field {
+    ${timestampId} [data-inode][data-field-name].dotcms__inline-edit-field {
         cursor: text;
         border: 1px solid #53c2f9 !important;
         display: block;

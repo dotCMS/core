@@ -78,7 +78,7 @@ export class PushPublishService {
 
     private getPublishEnvironmentData(
         assetIdentifier: string,
-        { publishDate, expireDate, pushActionSelected, environment, filterKey }: DotPushPublishData
+        { publishDate, expireDate, pushActionSelected, environment, filterKey, timezoneId }: DotPushPublishData
     ): string {
         // TODO: find a way to deal with moment(undefined), since will be deprecated eventually
         let result = '';
@@ -87,6 +87,7 @@ export class PushPublishService {
         result += `&remotePublishTime=${moment(publishDate).format('HH-mm')}`;
         result += `&remotePublishExpireDate=${moment(expireDate).format('YYYY-MM-DD')}`;
         result += `&remotePublishExpireTime=${moment(expireDate).format('HH-mm')}`;
+        result += `&timezoneId=${timezoneId}`;
         result += `&iWantTo=${pushActionSelected}`;
         result += `&whoToSend=${environment}`;
         result += '&bundleName=';

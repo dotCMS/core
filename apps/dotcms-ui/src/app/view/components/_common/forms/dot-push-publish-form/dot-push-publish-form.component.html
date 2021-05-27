@@ -28,7 +28,7 @@
         ></p-dropdown>
     </div>
 
-    <div class="p-field form-group__two-cols">
+    <div class="p-field form-group__two-cols push-publish-dialog__publish-dates-container">
         <div class="p-field push-publish-dialog__publish-date">
             <label class="form__label"
                 >{{ 'contenttypes.content.push_publish.publish_date' | dm }}:
@@ -71,6 +71,20 @@
                 [field]="form.get('expireDate')"
             ></dot-field-validation-message>
         </div>
+    </div>
+    <div class="p-field push-publish-dialog__timezone-label">
+        <span>{{ localTimezone }}</span> -
+        <a href="#" (click)="toggleTimezonePicker($event)"> {{ changeTimezoneActionLabel }}</a>
+    </div>
+    <div class="p-field" data-testid="timeZoneSelectContainer" [hidden]="!showTimezonePicker">
+        <label class="form__label">{{ 'time-zone' | dm }}: </label>
+        <p-dropdown
+            data-testid="timeZoneSelect"
+            [options]="timeZoneOptions"
+            formControlName="timezoneId"
+            (onChange)="updateTimezoneLabel($event.value)"
+            appendTo="body"
+        ></p-dropdown>
     </div>
     <div class="p-field">
         <label class="form__label">{{ 'contenttypes.content.push_publish.push_to' | dm }}: </label>

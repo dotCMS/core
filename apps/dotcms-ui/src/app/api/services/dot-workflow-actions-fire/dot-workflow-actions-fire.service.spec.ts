@@ -87,7 +87,6 @@ describe('DotWorkflowActionsFireService', () => {
 
         const req = httpMock.expectOne('v1/workflow/actions/default/fire/EDIT?inode=123');
         expect(req.request.method).toBe('PUT');
-        console.log(req.request.body)
         // expect(req.request.body).toEqual({
         //     contentlet: {
         //         inode: '123',

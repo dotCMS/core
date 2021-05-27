@@ -60,6 +60,16 @@ export class CoreWebService {
         private http: HttpClient
     ) {}
 
+    /**
+     *
+     * Request data from dotCMS endpoints
+     *
+     * @template T
+     * @param {DotRequestOptionsArgs} options
+     * @return {*}  {Observable<HttpResponse<any>>}
+     * @memberof CoreWebService
+     * @deprecated
+     */
     request<T>(options: DotRequestOptionsArgs): Observable<HttpResponse<any>> {
         if (!options.method) {
             options.method = 'GET';

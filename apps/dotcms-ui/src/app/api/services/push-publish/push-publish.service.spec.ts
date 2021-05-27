@@ -19,7 +19,8 @@ const mockFormValue: DotPushPublishData = {
     publishDate: 'Wed Jul 08 2020 10:10:50',
     expireDate: 'Wed Jul 15 2020 22:10:50',
     environment: ['env1'],
-    filterKey: 'hol'
+    filterKey: 'hol',
+    timezoneId: 'Costa Rica'
 };
 
 describe('PushPublishService', () => {
@@ -94,7 +95,7 @@ describe('PushPublishService', () => {
         ).toBeGreaterThan(-1);
         expect(req.request.method).toBe('POST');
         expect(req.request.body).toBe(
-            `assetIdentifier=${assetIdentifierEncoded}&remotePublishDate=2020-07-08&remotePublishTime=10-10&remotePublishExpireDate=2020-07-15&remotePublishExpireTime=22-10&iWantTo=publish&whoToSend=env1&bundleName=&bundleSelect=&filterKey=hol`
+            `assetIdentifier=${assetIdentifierEncoded}&remotePublishDate=2020-07-08&remotePublishTime=10-10&remotePublishExpireDate=2020-07-15&remotePublishExpireTime=22-10&timezoneId=Costa Rica&iWantTo=publish&whoToSend=env1&bundleName=&bundleSelect=&filterKey=hol`
         );
         req.flush(mockResponse);
     });
@@ -109,7 +110,7 @@ describe('PushPublishService', () => {
 
         const req = httpMock.expectOne(() => true);
         expect(req.request.body).toBe(
-            'assetIdentifier=1234567890&remotePublishDate=2020-07-08&remotePublishTime=10-10&remotePublishExpireDate=2020-07-15&remotePublishExpireTime=22-10&iWantTo=publish&whoToSend=env1&bundleName=&bundleSelect='
+            'assetIdentifier=1234567890&remotePublishDate=2020-07-08&remotePublishTime=10-10&remotePublishExpireDate=2020-07-15&remotePublishExpireTime=22-10&timezoneId=Costa Rica&iWantTo=publish&whoToSend=env1&bundleName=&bundleSelect='
         );
         req.flush(mockResponse);
     });
@@ -123,7 +124,7 @@ describe('PushPublishService', () => {
 
         const req = httpMock.expectOne(() => true);
         expect(req.request.body).toBe(
-            'assetIdentifier=1234567890&remotePublishDate=2020-07-08&remotePublishTime=10-10&remotePublishExpireDate=2020-07-15&remotePublishExpireTime=22-10&iWantTo=publish&whoToSend=env1&bundleName=&bundleSelect=&filterKey=hol'
+            'assetIdentifier=1234567890&remotePublishDate=2020-07-08&remotePublishTime=10-10&remotePublishExpireDate=2020-07-15&remotePublishExpireTime=22-10&timezoneId=Costa Rica&iWantTo=publish&whoToSend=env1&bundleName=&bundleSelect=&filterKey=hol'
         );
         req.flush(mockResponse);
     });

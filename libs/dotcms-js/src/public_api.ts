@@ -27,3 +27,5 @@ export * from './lib/core/util/websockets-protocol';
 export * from './lib/core/models';
 export * from './lib/core/util/models/dot-event-socket-url';
 export * from './lib/core/shared/user.model';
+export * from './lib/core/site.service.mock';
+export * from './lib/core/core-web.service.mock';

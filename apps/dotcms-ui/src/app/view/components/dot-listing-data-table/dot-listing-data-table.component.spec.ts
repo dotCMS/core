@@ -447,7 +447,6 @@ describe('DotListingDataTableComponent', () => {
         tick(1);
         hostFixture.detectChanges();
         const rows = document.querySelectorAll('[data-testclass="testTableRow"]');
-        debugger;
         expect(rows[0].getAttribute('ng-reflect-p-context-menu-row-disabled')).toEqual('false');
         expect(rows[1].getAttribute('ng-reflect-p-context-menu-row-disabled')).toEqual('true');
     }));

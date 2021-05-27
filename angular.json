@@ -484,28 +484,28 @@
                 }
             }
         },
-        "dot-cdn": {
+        "dotcdn": {
             "projectType": "application",
-            "root": "apps/dot-cdn",
-            "sourceRoot": "apps/dot-cdn/src",
+            "root": "apps/dotcdn",
+            "sourceRoot": "apps/dotcdn/src",
             "prefix": "dotcms",
             "architect": {
                 "build": {
                     "builder": "@angular-devkit/build-angular:browser",
                     "options": {
-                        "outputPath": "dist/apps/dot-cdn",
-                        "index": "apps/dot-cdn/src/index.html",
-                        "main": "apps/dot-cdn/src/main.ts",
-                        "polyfills": "apps/dot-cdn/src/polyfills.ts",
-                        "tsConfig": "apps/dot-cdn/tsconfig.app.json",
+                        "outputPath": "dist/apps/dotcdn",
+                        "index": "apps/dotcdn/src/index.html",
+                        "main": "apps/dotcdn/src/main.ts",
+                        "polyfills": "apps/dotcdn/src/polyfills.ts",
+                        "tsConfig": "apps/dotcdn/tsconfig.app.json",
                         "aot": true,
-                        "assets": ["apps/dot-cdn/src/favicon.ico", "apps/dot-cdn/src/assets"],
+                        "assets": ["apps/dotcdn/src/favicon.ico", "apps/dotcdn/src/assets"],
                         "styles": [
                             "libs/dot-primeng-theme-styles/src/scss/styles.scss",
                             "node_modules/primeicons/primeicons.css",
                             "node_modules/primeflex/primeflex.css",
                             "node_modules/primeng/resources/primeng.min.css",
-                            "apps/dot-cdn/src/styles.scss"
+                            "apps/dotcdn/src/styles.scss"
                         ],
                         "stylePreprocessorOptions": {
                             "includePaths": ["libs/dot-primeng-theme-styles/src/scss"]
@@ -516,8 +516,8 @@
                         "production": {
                             "fileReplacements": [
                                 {
-                                    "replace": "apps/dot-cdn/src/environments/environment.ts",
-                                    "with": "apps/dot-cdn/src/environments/environment.prod.ts"
+                                    "replace": "apps/dotcdn/src/environments/environment.ts",
+                                    "with": "apps/dotcdn/src/environments/environment.prod.ts"
                                 }
                             ],
                             "optimization": true,
@@ -545,62 +545,71 @@
                 "serve": {
                     "builder": "@angular-devkit/build-angular:dev-server",
                     "options": {
-                        "browserTarget": "dot-cdn:build",
+                        "browserTarget": "dotcdn:build",
                         "proxyConfig": "apps/dotcms-ui/proxy.conf.json"
                     },
                     "configurations": {
                         "production": {
-                            "browserTarget": "dot-cdn:build:production"
+                            "browserTarget": "dotcdn:build:production"
                         }
                     }
                 },
                 "extract-i18n": {
                     "builder": "@angular-devkit/build-angular:extract-i18n",
                     "options": {
-                        "browserTarget": "dot-cdn:build"
+                        "browserTarget": "dotcdn:build"
                     }
                 },
                 "lint": {
                     "builder": "@nrwl/linter:eslint",
                     "options": {
-                        "lintFilePatterns": [
-                            "apps/dot-cdn/src/**/*.ts",
-                            "apps/dot-cdn/src/**/*.html"
-                        ]
+                        "lintFilePatterns": ["apps/dotcdn/src/**/*.ts", "apps/dotcdn/src/**/*.html"]
                     }
                 },
                 "test": {
                     "builder": "@nrwl/jest:jest",
-                    "outputs": ["coverage/apps/dot-cdn"],
+                    "outputs": ["coverage/apps/dotcdn"],
                     "options": {
-                        "jestConfig": "apps/dot-cdn/jest.config.js",
-                        "passWithNoTests": true
+                        "jestConfig": "apps/dotcdn/jest.config.js",
+                        "passWithNoTests": true,
+                        "styles": [
+                            "libs/dot-primeng-theme-styles/src/scss/styles.scss",
+                            "node_modules/primeicons/primeicons.css",
+                            "node_modules/primeflex/primeflex.css",
+                            "node_modules/primeng/resources/primeng.min.css",
+                            "apps/dotcdn/src/styles.scss"
+                        ],
+                        "assets": ["apps/dotcdn/src/favicon.ico", "apps/dotcdn/src/assets"],
+                        "stylePreprocessorOptions": {
+                            "includePaths": ["libs/dot-primeng-theme-styles/src/scss"]
+                        },
+                        "scripts": ["node_modules/chart.js/dist/Chart.js"]
                     }
                 }
             }
         },
-        "dot-cdn-e2e": {
-            "root": "apps/dot-cdn-e2e",
-            "sourceRoot": "apps/dot-cdn-e2e/src",
+        "dotcdn-e2e": {
+            "root": "apps/dotcdn-e2e",
+            "sourceRoot": "apps/dotcdn-e2e/src",
             "projectType": "application",
             "architect": {
                 "e2e": {
                     "builder": "@nrwl/cypress:cypress",
                     "options": {
-                        "cypressConfig": "apps/dot-cdn-e2e/cypress.json",
-                        "tsConfig": "apps/dot-cdn-e2e/tsconfig.e2e.json",
-                        "devServerTarget": "dot-cdn:serve"
+                        "cypressConfig": "apps/dotcdn-e2e/cypress.json",
+                        "tsConfig": "apps/dotcdn-e2e/tsconfig.e2e.json",
+                        "devServerTarget": "dotcdn:serve"
                     },
                     "configurations": {
                         "production": {
-                            "devServerTarget": "dot-cdn:serve:production"
+                            "devServerTarget": "dotcdn:serve:production"
                         }
                     }
                 },
                 "lint": {
                     "builder": "@nrwl/linter:eslint",
                     "options": {
-                        "lintFilePatterns": ["apps/dot-cdn-e2e/**/*.{js,ts}"]
+                        "lintFilePatterns": ["apps/dotcdn-e2e/**/*.{js,ts}"]
                     }
                 }
             }

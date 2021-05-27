@@ -5,13 +5,14 @@ GITHUB="github.com"
 GITHACK="raw.githack.com"
 GITHUB_TEST_RESULTS_PATH="DotCMS/${TEST_RESULTS}"
 DOT_CICD_TARGET="core-web"
-GITHUB_USER="dotcmsbuild"
+GITHUB_USER="victoralfaro-dotcms"
+GITHUB_USER_EMAIL="victor.alfaro@dotcms.com"
 
 if [[ $IS_PULL_REQUEST == true ]]; then
-  CURRENT_BRANCH=${HEAD_REF}   
+  CURRENT_BRANCH=${HEAD_REF}
 else
   CURRENT_BRANCH=${GITHUB_REF##*/}
-fi 
+fi
 
 DOT_CICD_PATH="./dotcicd"
 OUTPUT_FOLDER="karma_html"
@@ -20,8 +21,8 @@ export GITHUB_TEST_RESULTS_URL="https://${GITHUB_TEST_RESULTS_HOST_PATH}"
 export GITHACK_TEST_RESULTS_URL="https://${GITHACK}/${GITHUB_TEST_RESULTS_PATH}"
 export GITHUB_TEST_RESULTS_REPO="${GITHUB_TEST_RESULTS_URL}.git"
 export GITHUB_TEST_RESULTS_BROWSE_URL="${GITHACK_TEST_RESULTS_URL}/${CURRENT_BRANCH}/projects/${DOT_CICD_TARGET}/${GITHUB_SHA::8}"
-export GITHUB_TEST_RESULTS_REMOTE="https://${GH_TOKEN}@${GITHUB_TEST_RESULTS_HOST_PATH}"
-export GITHUB_TEST_RESULTS_REMOTE_REPO="https://${GH_TOKEN}@${GITHUB_TEST_RESULTS_HOST_PATH}.git"
+export GITHUB_TEST_RESULTS_REMOTE="https://${GITHUB_USER}:${GH_TOKEN}@${GITHUB_TEST_RESULTS_HOST_PATH}"
+export GITHUB_TEST_RESULTS_REMOTE_REPO="https://${GITHUB_USER}:${GH_TOKEN}@${GITHUB_TEST_RESULTS_HOST_PATH}.git"
 
 
 function existsOrCreateAndSwitch {
@@ -34,7 +35,7 @@ function existsOrCreateAndSwitch {
 }
 
 function gitConfig {
-  git config --global user.email "${GITHUB_USER}@dotcms.com"
+  git config --global user.email "${GITHUB_USER_EMAIL}"
   git config --global user.name "${GITHUB_USER}"
   git config pull.rebase false
   git config -l | grep user
@@ -58,14 +59,14 @@ function addResults {
 function persistResults {
   TEST_RESULTS_PATH=${DOT_CICD_PATH}/${TEST_RESULTS}
   gitConfig
-  
+
   if [[ ! -d dotcicd/test-results ]]; then
     echo "Cloning ${GITHUB_TEST_RESULTS_REPO} to ${TEST_RESULTS_PATH}"
     git clone ${GITHUB_TEST_RESULTS_REPO} ${TEST_RESULTS_PATH}
   fi
-  
+
   existsOrCreateAndSwitch ${TEST_RESULTS_PATH}/projects/${DOT_CICD_TARGET}
-  
+
   git fetch --all
 
   remoteBranch=$(git ls-remote --heads ${GITHUB_TEST_RESULTS_REMOTE_REPO} ${CURRENT_BRANCH} | wc -l | tr -d '[:space:]')
@@ -81,7 +82,7 @@ function persistResults {
   else
     git checkout -b ${CURRENT_BRANCH}
   fi
-  
+
   if [[ $? != 0 ]]; then
     echo "Error checking out branch '${CURRENT_BRANCH}', continuing with master"
     git pull origin master
@@ -95,7 +96,7 @@ function persistResults {
   addResults ./${GITHUB_SHA::8}
   git add .
   git commit -m "Adding tests results for ${GITHUB_SHA::8} from ${CURRENT_BRANCH}"
-  git push ${GITHUB_TEST_RESULTS_REMOTE} 
+  git push ${GITHUB_TEST_RESULTS_REMOTE}
   git status
 }
 
