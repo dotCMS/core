@@ -15,8 +15,8 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
-
-import com.dotmarketing.business.APILocator;
+import javax.naming.Context;
+import javax.naming.InitialContext;
 /**
  * 
  * Description of the Class
@@ -322,7 +322,27 @@ public class Mailer {
 			 * 
 			 * the container Context
 			 */
-			Session session = APILocator.getMailApi().getMailSession();
+			Session session = null;
+			Context ctx = null;
+			try {
+				ctx = (Context) new InitialContext().lookup("java:comp/env");
+				session = (javax.mail.Session) ctx.lookup("mail/MailSession");
+			} catch (Exception e1) {
+				try {
+					Logger.debug(this, "Using the jndi intitialContext().");
+					ctx = new InitialContext();
+					session = (javax.mail.Session) ctx.lookup("mail/MailSession");
+				} catch (Exception e) {
+					Logger.error(this, "Exception occured finding a mailSession in JNDI context.");
+					Logger.error(this, e1.getMessage(), e1);
+					return false;
+				}
+
+			}
+			if (session == null) {
+				Logger.debug(this, "No Mail Session Available.");
+				return false;
+			}
 			Logger.debug(this, "Delivering mail using: " + session.getProperty("mail.smtp.host") + " as server.");
 			MimeMessage message = new MimeMessage(session);
 			message.addHeader("X-RecipientId", String.valueOf(getRecipientId()));

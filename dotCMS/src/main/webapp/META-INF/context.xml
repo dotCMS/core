@@ -1,5 +1,5 @@
 <Context path="${catalina.home}/webapps/ROOT" docBase="${catalina.home}/webapps/ROOT" reloadable="false" crossContext="true">
-    <Resources allowLinking="true" />
+<Resources allowLinking="true" />
     <!--
     The class loader behaviour changed on recent tomcat versions, with the new default behaviour
      we are unable to set a -javaagent and with that we won't be able to use instrumentation, setting the
@@ -13,7 +13,7 @@
     -->
     <Loader delegate="true"/><!--https://issues.apache.org/bugzilla/show_bug.cgi?id=55943#c13-->
 
-<!--    <Resource name="mail/MailSession" auth="Container" type="javax.mail.Session" mail.smtp.host="localhost" />-->
+    <Resource name="mail/MailSession" auth="Container" type="javax.mail.Session" mail.smtp.host="localhost" />
 
     <!--
         IMPORTANT
@@ -24,7 +24,7 @@
 
         abandonWhenPercentageFull = Connections that have been abandoned (timed out) wont get closed unless the
         number of connections in use are above the percentage defined.
-
+        
         Documentation for Resource settings:  https://tomcat.apache.org/tomcat-8.5-doc/jdbc-pool.html
      -->
 
@@ -36,7 +36,7 @@
               url="jdbc:h2:WEB-INF/H2_DATABASE/h2_dotcms_data;MVCC=TRUE;LOCK_TIMEOUT=15000"
               username="sa" password="sa" maxActive="60" maxIdle="10" maxWait="60000"
               removeAbandoned="true" removeAbandonedTimeout="60" logAbandoned="false"
-              jdbcInterceptors="org.apache.tomcat.jdbc.pool.interceptor.ResetAbandonedTimer"
+              jdbcInterceptors="org.apache.tomcat.jdbc.pool.interceptor.ResetAbandonedTimer" 
               timeBetweenEvictionRunsMillis="30000" validationQuery="SELECT 1" testOnBorrow="true" testWhileIdle="true"
               abandonWhenPercentageFull="50"/>
 
@@ -47,8 +47,8 @@
           driverClassName="org.postgresql.Driver"
           url="jdbc:postgresql://localhost/dotcms"
           username="{your db user}" password="{your db password}" maxActive="60" maxIdle="10" maxWait="60000"
-          removeAbandoned="true" removeAbandonedTimeout="60" logAbandoned="true"
-          jdbcInterceptors="org.apache.tomcat.jdbc.pool.interceptor.ResetAbandonedTimer"
+          removeAbandoned="true" removeAbandonedTimeout="60" logAbandoned="true" 
+          jdbcInterceptors="org.apache.tomcat.jdbc.pool.interceptor.ResetAbandonedTimer" 
           timeBetweenEvictionRunsMillis="30000" validationQuery="SELECT 1" testOnBorrow="true" testWhileIdle="true"
           abandonWhenPercentageFull="50"/>
 -->
@@ -58,8 +58,8 @@
           type="javax.sql.DataSource" driverClassName="com.mysql.jdbc.Driver"
           url="jdbc:mysql://localhost/dotcms?characterEncoding=UTF-8&amp;useLegacyDatetimeCode=false&amp;serverTimezone=UTC"
           username="{your db user}" password="{your db password}" maxActive="60" maxIdle="10" maxWait="60000"
-          removeAbandoned="true" removeAbandonedTimeout="60" logAbandoned="true"
-          jdbcInterceptors="org.apache.tomcat.jdbc.pool.interceptor.ResetAbandonedTimer"
+          removeAbandoned="true" removeAbandonedTimeout="60" logAbandoned="true" 
+          jdbcInterceptors="org.apache.tomcat.jdbc.pool.interceptor.ResetAbandonedTimer" 
           timeBetweenEvictionRunsMillis="30000" validationQuery="SELECT 1" testOnBorrow="true" testWhileIdle="true"
           abandonWhenPercentageFull="50"/>
     -->
@@ -69,8 +69,8 @@
           type="javax.sql.DataSource" driverClassName="oracle.jdbc.OracleDriver"
           url="jdbc:oracle:thin:@localhost:1521:XE"
           username="{your db user}" password="{your db password}" maxActive="60" maxIdle="10" maxWait="60000"
-          removeAbandoned="true" removeAbandonedTimeout="60" logAbandoned="true"
-          jdbcInterceptors="org.apache.tomcat.jdbc.pool.interceptor.ResetAbandonedTimer"
+          removeAbandoned="true" removeAbandonedTimeout="60" logAbandoned="true" 
+          jdbcInterceptors="org.apache.tomcat.jdbc.pool.interceptor.ResetAbandonedTimer" 
           timeBetweenEvictionRunsMillis="30000" testOnBorrow="true" validationQuery="SELECT 1 from DUAL" testWhileIdle="true"
           abandonWhenPercentageFull="50"/>
 -->
@@ -80,8 +80,8 @@
           type="javax.sql.DataSource" driverClassName="com.microsoft.sqlserver.jdbc.SQLServerDriver"
           url="jdbc:sqlserver://{your server}.database.windows.net:1433;databaseName={your DB name}"
           username="{your user}@{your server}" password="{your password}" maxActive="60" maxIdle="10" maxWait="60000"
-          removeAbandoned="true" removeAbandonedTimeout="60" logAbandoned="true"
-          jdbcInterceptors="org.apache.tomcat.jdbc.pool.interceptor.ResetAbandonedTimer"
+          removeAbandoned="true" removeAbandonedTimeout="60" logAbandoned="true" 
+          jdbcInterceptors="org.apache.tomcat.jdbc.pool.interceptor.ResetAbandonedTimer" 
           timeBetweenEvictionRunsMillis="30000" testOnBorrow="true" testWhileIdle="true" validationQuery="SELECT 1" defaultTransactionIsolation="READ_COMMITTED"
           abandonWhenPercentageFull="50"/>
 -->

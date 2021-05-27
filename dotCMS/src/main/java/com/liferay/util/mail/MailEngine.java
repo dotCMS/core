@@ -23,6 +23,7 @@
 package com.liferay.util.mail;
 
 import java.io.ByteArrayInputStream;
+
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.SendFailedException;
@@ -31,12 +32,15 @@ import javax.mail.Transport;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
+import javax.naming.InitialContext;
 import javax.naming.NamingException;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import com.dotmarketing.business.APILocator;
+
 import com.dotmarketing.util.Logger;
 import com.liferay.util.GetterUtil;
+import com.liferay.util.JNDIUtil;
 import com.liferay.util.Validator;
 
 /**
@@ -48,9 +52,10 @@ import com.liferay.util.Validator;
  */
 public class MailEngine {
 
+	public static final String MAIL_SESSION = "java:comp/env/mail/MailSession";
 
 	public static Session getSession() throws NamingException {
-		return APILocator.getMailApi().getMailSession();
+		return (Session)JNDIUtil.lookup(new InitialContext(), MAIL_SESSION);
 	}
 
 	public static void send(MailMessage mailMessage)
