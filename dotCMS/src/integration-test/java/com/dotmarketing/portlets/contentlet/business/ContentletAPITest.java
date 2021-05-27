@@ -5369,9 +5369,9 @@ public class ContentletAPITest extends ContentletBaseTest {
      * Test checkin with a non-existing contentlet identifier, that should fail
      *
      */
-    @Test(expected = DotHibernateException.class)
+    @Test(expected = DotDataException.class)
     public void testCheckin_Non_Existing_Identifier_With_Validate_Should_FAIL()
-            throws DotDataException, DotSecurityException {
+            throws DotDataException {
         Contentlet newsContent = null;
 
         try {
@@ -5388,9 +5388,9 @@ public class ContentletAPITest extends ContentletBaseTest {
             fail("Should throw a constrain exception for an unexisting id");
         } catch (Exception e) {
 
-            if (e instanceof DotHibernateException || ExceptionUtil.causedBy(e, DotHibernateException.class)) {
+            if (e instanceof DotDataException || ExceptionUtil.causedBy(e, DotDataException.class)) {
 
-                throw new DotHibernateException(e.getMessage());
+                throw new DotDataException(e.getMessage());
             }
 
             fail("The exception catch should: DotHibernateException and is: " + e.getClass() );
