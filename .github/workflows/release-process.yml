@@ -9,6 +9,7 @@ jobs:
     env:
       DOT_CICD_BRANCH: master
       DOT_CICD_CLOUD_PROVIDER: github
+      DOCKER_BRANCH: master
       DOT_CICD_TARGET: core
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_USER: dotcmsbuild
