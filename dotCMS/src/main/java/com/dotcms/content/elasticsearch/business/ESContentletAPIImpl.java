@@ -4606,10 +4606,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
             HashMap<String, String> tagsValues = new HashMap<>();
             String tagsHost = Host.SYSTEM_HOST;
 
-
-            
-            
-
             for ( com.dotcms.contenttype.model.field.Field field : contentType.fields(TagField.class) ) {
                 String value = null;
                 if ( contentlet.getStringProperty(field.variable()) != null ) {
@@ -4749,7 +4745,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     tagAPI.addContentletTagInode(tag, contentlet.getInode(), tagEntry.getKey());
                 }
                 //Adding tags back as field to be returned
-                contentlet.setProperty(tagEntry.getKey(), tagEntry.getValue());
+                if (tagEntry.getValue()!=null && !tagEntry.getValue().equals("")) {
+                    contentlet.setProperty(tagEntry.getKey(), tagEntry.getValue());
+                } else{
+                    contentlet.setProperty(tagEntry.getKey(), null);
+                }
             }
 
             APILocator.getVersionableAPI().setWorking(contentlet);
