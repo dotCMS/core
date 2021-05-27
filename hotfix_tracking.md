@@ -123,16 +123,16 @@ This release includes the following code fixes:
 
 59. https://github.com/dotCMS/core/issues/20041 : Time machine is causing an error with the index
 
-61. https://github.com/dotCMS/core/issues/20197 : Cannot relate content to a macrolanguage if there is the same language with a country code
+60. https://github.com/dotCMS/core/issues/20197 : Cannot relate content to a macrolanguage if there is the same language with a country code
 
-62. https://github.com/dotCMS/core/issues/20164 : JsonTool parsing
+61. https://github.com/dotCMS/core/issues/20164 : JsonTool parsing
 
-63. https://github.com/dotCMS/core/issues/20232 : [Integrity Checker] : Improving error message when fixing File Asset conflict
+62. https://github.com/dotCMS/core/issues/20232 : [Integrity Checker] : Improving error message when fixing File Asset conflict
 
-64. https://github.com/dotCMS/core/issues/19723 : Only 10 parent related contents retrieved when editing a child content
+63. https://github.com/dotCMS/core/issues/19723 : Only 10 parent related contents retrieved when editing a child content
 
-65. https://github.com/dotCMS/core/issues/19412 : "Permission Individually" on a folder defaults to all permissions of its parent, not just the inheritable ones
+64. https://github.com/dotCMS/core/issues/19412 : "Permission Individually" on a folder defaults to all permissions of its parent, not just the inheritable ones
 
-66. https://github.com/dotCMS/core/issues/20364 : XStream throws exception when posting bad XML
+65. https://github.com/dotCMS/core/issues/20364 : XStream throws exception when posting bad XML
 
-67. https://github.com/dotCMS/core/issues/19500 : SQL Injection Vulnerability in api /api/v1/containers
+66. https://github.com/dotCMS/core/issues/19500 : SQL Injection Vulnerability in api /api/v1/containers
