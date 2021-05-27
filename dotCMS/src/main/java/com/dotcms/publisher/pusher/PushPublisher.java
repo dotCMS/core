@@ -34,6 +34,9 @@ import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
+import com.dotcms.publishing.output.BundleOutput;
+import com.dotcms.publishing.output.DirectoryBundleOutput;
+import com.dotcms.publishing.output.TarGzipBundleOutput;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.rest.ResourceResponse;
@@ -148,16 +151,7 @@ public class PushPublisher extends Publisher {
 			File bundleRoot = BundlerUtil.getBundleRoot(this.config.getName(), false);
 			ArrayList<File> list = new ArrayList<File>(1);
 			list.add(bundleRoot);
-			File bundleFile = new File(bundleRoot+File.separator+".."+File.separator+this.config.getId()+".tar.gz");
-
-			// If the tar.gz doesn't exist or if it the first try to push bundle
-			// we need to compress the bundle folder into the tar.gz file.
-			if (!bundleFile.exists() || !pubAuditAPI.isPublishRetry(config.getId())) {
-				PushUtils.compressFiles(list, bundleFile, bundleRoot.getAbsolutePath());
-			} else {
-				Logger.info(this, "Retrying bundle: " + config.getId()
-						+ ", we don't need to compress bundle again");
-			}
+			File bundleFile = new File(bundleRoot + ".tar.gz");
 
 			List<Environment> environments = APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(this.config.getId());
 
@@ -559,4 +553,8 @@ public class PushPublisher extends Publisher {
 		}
 	}
 
+	@Override
+	public BundleOutput createBundleOutput() throws IOException {
+		return new TarGzipBundleOutput(config);
+	}
 }

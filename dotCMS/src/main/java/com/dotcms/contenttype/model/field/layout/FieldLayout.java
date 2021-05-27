@@ -186,7 +186,8 @@ public class FieldLayout {
         try {
             strictFieldLayoutRowSyntaxValidator.validate();
             return true;
-        } catch (FieldLayoutValidationException e) {
+        } catch (final FieldLayoutValidationException e) {
+            Logger.error(FieldLayout.class, e.getMessage());
             return false;
         }
     }

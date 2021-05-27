@@ -57,10 +57,17 @@ public enum CustomFieldType {
         final Map<String, GraphQLOutputType> binaryTypeFields = new HashMap<>();
         binaryTypeFields.put("versionPath", GraphQLString);
         binaryTypeFields.put("idPath", GraphQLString);
+        binaryTypeFields.put("path", GraphQLString);
+        binaryTypeFields.put("sha256", GraphQLString);
         binaryTypeFields.put("name", GraphQLString);
+        binaryTypeFields.put("title", GraphQLString);
         binaryTypeFields.put("size", GraphQLLong);
         binaryTypeFields.put("mime", GraphQLString);
         binaryTypeFields.put("isImage", GraphQLBoolean);
+        binaryTypeFields.put("width", GraphQLLong);
+        binaryTypeFields.put("height", GraphQLLong);
+        binaryTypeFields.put("modDate", GraphQLLong);
+        binaryTypeFields.put("focalPoint", GraphQLString);
         customFieldTypes.put("BINARY", TypeUtil.createObjectType(BINARY.getTypeName(), binaryTypeFields,
             new MapFieldPropertiesDataFetcher()));
 

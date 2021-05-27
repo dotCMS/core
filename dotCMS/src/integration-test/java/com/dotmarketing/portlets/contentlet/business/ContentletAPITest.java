@@ -3358,7 +3358,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                         false);
             }
 
-            Boolean hasParent = FactoryLocator.getRelationshipFactory()
+            Boolean hasParent = APILocator.getRelationshipAPI()
                     .isParent(testRelationship, parentContentlet.getStructure());
 
             //Now test this delete
@@ -3536,7 +3536,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                     .relateContent(parentContentlet, testRelationship, contentRelationships, user,
                             false);
 
-            final List<Relationship> relationships = FactoryLocator.getRelationshipFactory()
+            final List<Relationship> relationships = APILocator.getRelationshipAPI()
                     .byContentType(testStructure);
             //Validations
             assertTrue(relationships != null && !relationships.isEmpty());
@@ -3662,10 +3662,10 @@ public class ContentletAPITest extends ContentletBaseTest {
                     .relateContent(parentContentlet, testRelationship, contentRelationships, user,
                             false);
 
-            final boolean hasParent = FactoryLocator.getRelationshipFactory()
+            final boolean hasParent = APILocator.getRelationshipAPI()
                     .isParent(testRelationship, parentContentlet.getStructure());
 
-            final List<Relationship> relationships = FactoryLocator.getRelationshipFactory()
+            final List<Relationship> relationships = APILocator.getRelationshipAPI()
                     .byContentType(testStructure);
             //Validations
             assertTrue(relationships != null && !relationships.isEmpty());

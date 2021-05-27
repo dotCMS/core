@@ -3,6 +3,7 @@ package com.dotcms.datagen;
 import com.dotcms.publisher.endpoint.bean.impl.PushPublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 
@@ -11,7 +12,7 @@ public class PushPublishingEndPointDataGen extends AbstractDataGen<PushPublishin
 
     private String address = "127.0.0.1";
     private boolean sending = false;
-    private String authKey = "123";
+    private String authKey = "123567";
     private String port = "8080";
     private boolean enabled = true;
     private String serverName = null;
@@ -57,7 +58,7 @@ public class PushPublishingEndPointDataGen extends AbstractDataGen<PushPublishin
         final PushPublishingEndPoint publishingEndPoint = new PushPublishingEndPoint();
         publishingEndPoint.setAddress(address);
         publishingEndPoint.setSending(sending);
-        publishingEndPoint.setAuthKey(authKey);
+        publishingEndPoint.setAuthKey(PublicEncryptionFactory.encryptString(authKey));
         publishingEndPoint.setPort(port);
         publishingEndPoint.setEnabled(enabled);
         publishingEndPoint.setServerName(
@@ -65,6 +66,7 @@ public class PushPublishingEndPointDataGen extends AbstractDataGen<PushPublishin
                         : serverName)
         );
         publishingEndPoint.setGroupId(environment.getId());
+        publishingEndPoint.setProtocol("http");
 
         return publishingEndPoint;
     }
