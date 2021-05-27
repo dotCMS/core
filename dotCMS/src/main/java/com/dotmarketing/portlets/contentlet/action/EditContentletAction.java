@@ -1565,7 +1565,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 					for(ContentletRelationshipRecords records : recordsList) {
 						if(!records.getRelationship().getRelationTypeValue().equals(relationType))
 							continue;
-						if(FactoryLocator.getRelationshipFactory().sameParentAndChild(records.getRelationship()) &&
+						if(APILocator.getRelationshipAPI().sameParentAndChild(records.getRelationship()) &&
 								((!records.isHasParent() && relationHasParent.equals("no")) ||
 										(records.isHasParent() && relationHasParent.equals("yes"))))
 							continue;

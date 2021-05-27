@@ -77,8 +77,8 @@ import org.junit.Assert;
  */
 public class PushPublishBundleGeneratorTest extends IntegrationTestBase {
 
-    private static User systemUser;
-    private static String defaultFilterKey = "Intelligent.yml";
+    private static User systemUser = APILocator.systemUser();
+    static String defaultFilterKey = "Intelligent.yml";
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -89,7 +89,6 @@ public class PushPublishBundleGeneratorTest extends IntegrationTestBase {
 
         createFilter();
 
-        systemUser = APILocator.getUserAPI().getSystemUser();
         createFilterDescriptor(defaultFilterKey,true,true,false,null,null,null,null,true);
     }
 
@@ -99,7 +98,7 @@ public class PushPublishBundleGeneratorTest extends IntegrationTestBase {
      * @return a bundle
      * @throws DotDataException
      */
-    private static Bundle createBundle (final String bundleName, final boolean forcePush,final String filterKey)
+    static Bundle createBundle (final String bundleName, final boolean forcePush, final String filterKey)
             throws DotDataException {
 
         final BundleAPI bundleAPI         = APILocator.getBundleAPI();
