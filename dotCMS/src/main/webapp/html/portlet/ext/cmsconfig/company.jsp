@@ -460,7 +460,7 @@
          </div>
          <div class="logo-upload__container">
             <div class="form__group">
-            <h3 class="drop-zone__label">Login Screen Logo</h3>
+            <h3 class="drop-zone__label"><%= LanguageUtil.get(pageContext, "loginlogo.label") %></h3>
             <div class="logo">
                <button class="logo__delete">&times;</button>
                <div class="logo__container">
@@ -479,12 +479,12 @@
             <div class="form__group">
                <label for="topNav_logo">
                <input dojoType="dijit.form.CheckBox" type="checkbox" name="topNav" id="topNav_logo" <%= ( !navLogoEmpty ? "checked" : "" ) %> />
-                  Override Navbar Logo
+                  <%= LanguageUtil.get(pageContext, "navlogo-checkbox.label") %>
                </label>
                <br />
-               <p class="hint">You can white-label your instance of DotCMS uploading a new logo.</p>
+               <p class="hint"><%= LanguageUtil.get(pageContext, "navlogo-checkbox.hint") %></p>
                <div id="topNav__drop-zone" style="display: none;">
-                  <h3 class="drop-zone__label">Navbar Logo</h3>
+                  <h3 class="drop-zone__label"><%= LanguageUtil.get(pageContext, "navlogo.label") %></h3>
                   <div class="logo" <%= ( !navLogoEmpty ? "style='display: flex;'" : "style='display: none;'" ) %>>
                      <button class="logo__delete">&times;</button>
                       <%
