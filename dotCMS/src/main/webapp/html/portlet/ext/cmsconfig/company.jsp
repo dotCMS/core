@@ -284,6 +284,18 @@
        font-size: .9rem;
        color: red;
     }
+
+    .hint {
+       margin-top: .5rem; 
+       color: grey;
+    }
+
+    .form__group:last-child {
+       margin-top: 2rem;
+    }
+    .logo-upload__container {
+       margin-left: 10rem;
+    }
 </style>
 <table class="listingTable">
    <tr>
@@ -446,38 +458,31 @@
                </table>
             </div>
          </div>
-         <div style="margin-left: 10rem;">
+         <div class="logo-upload__container">
             <div class="form__group">
-               <h3 class="drop-zone__label">Login Screen Logo</h3>
-               <div class="logo">
-                  <button class="logo__delete">&times;</button>
-                  <div class="logo__container">
-                        <%
-                           if(screenLogoEmpty)  {
-                        %>            
-                           <img class="logo__image" border="1" hspace="0" src="<%= IMAGE_PATH %>/company_logo?img_id=<%= company.getCompanyId() %>&key=<%= ImageKey.get(company.getCompanyId()) %>" vspace="0" />
-                        <%
-                           } else {
-                        %>
-                           <img class="logo__image" border="1" hspace="0" src="<%= screenLogo %>" vspace="0" />
-                        <%
-                           }
-                        %>
-                     
-                  </div>
+            <h3 class="drop-zone__label">Login Screen Logo</h3>
+            <div class="logo">
+               <button class="logo__delete">&times;</button>
+               <div class="logo__container">
+                  <% if(screenLogoEmpty) { %>
+                  <img class="logo__image" border="1" hspace="0" src="<%= IMAGE_PATH %>/company_logo?img_id=<%= company.getCompanyId() %>&key=<%= ImageKey.get(company.getCompanyId()) %>" vspace="0" />
+                  <% } else { %>
+                  <img class="logo__image" border="1" hspace="0" src="<%= screenLogo %>" vspace="0" />
+                  <% } %>
+               </div>
             </div>
-               <dot-asset-drop-zone id="dot-asset-drop-zone-main" style="display: none;" drop-files-text="Drop Image" upload-file-text="Uploading Image..." display-indicator="true"></dot-asset-drop-zone>
-               <input type="hidden" name="loginScreenLogoInput" id="loginScreenLogoInput" data-hidden="logo-input" value="<%= ( !screenLogoEmpty ? screenLogo : "" ) %>">
-               <p style="margin-top: 1rem; color: grey;">Hint: This is the logo used for the login screen and communications (e.g. emails, etc)</p>
-            </div><!-- /.form__group -->
+            <dot-asset-drop-zone id="dot-asset-drop-zone-main" style="display: none;" drop-files-text="Drop Image" upload-file-text="Uploading Image..." display-indicator="true"></dot-asset-drop-zone>
+            <input type="hidden" name="loginScreenLogoInput" id="loginScreenLogoInput" data-hidden="logo-input" value="<%= ( !screenLogoEmpty ? screenLogo : "" ) %>">
+            <p class="hint"><%= LanguageUtil.get(pageContext, "loginlogo.hint") %></p>
+            </div>
             <br />
-            <div class="form__group" style="margin-top: 2rem;">
+            <div class="form__group">
                <label for="topNav_logo">
                <input dojoType="dijit.form.CheckBox" type="checkbox" name="topNav" id="topNav_logo" <%= ( !navLogoEmpty ? "checked" : "" ) %> />
                   Override Navbar Logo
                </label>
                <br />
-               <p style="margin-top: .5rem; color: grey;">You can white-label your instance of DotCMS uploading a new logo.</p>
+               <p class="hint">You can white-label your instance of DotCMS uploading a new logo.</p>
                <div id="topNav__drop-zone" style="display: none;">
                   <h3 class="drop-zone__label">Navbar Logo</h3>
                   <div class="logo" <%= ( !navLogoEmpty ? "style='display: flex;'" : "style='display: none;'" ) %>>
@@ -498,7 +503,7 @@
                   </div>
                   <dot-asset-drop-zone id="dot-asset-drop-zone-navbar" drop-files-text="Drop Image" upload-file-text="Uploading Image..." display-indicator="true" <%= ( !navLogoEmpty ? "style='display: none;'" : "style='display: block;'" ) %>></dot-asset-drop-zone>
                   <input type="hidden" name="topNavLogoInput" id="topNavLogoInput" data-hidden="logo-input" value="<%= ( !navLogoEmpty ? navLogo : "" ) %>">	
-                  <p style="margin-top: 1rem; color: grey;">Your logo needs to be horizontal with at least 32:9 ratio</p>
+                  <p class="hint"><%= LanguageUtil.get(pageContext, "navlogo.hint") %></p>
                </div>
             </div>
          </div>
