@@ -4657,23 +4657,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
             contentlet.setIndexPolicyDependencies(indexPolicyDependencies);
 
 
-            //Relate the tags with the saved contentlet
-            for ( Entry<String, String> tagEntry : tagsValues.entrySet() ) {
-                //From the given CSV tags names list search for the tag objects and if does not exist create them
-                List<Tag> list = tagAPI.getTagsInText(tagEntry.getValue(), tagsHost);
-
-                // empty string for tag field value wipes out existing tags
-                if(UtilMethods.isSet(list) || tagEntry.getValue().equals("")) {
-                    tagAPI.deleteTagInodesByInodeAndFieldVarName(contentlet.getInode(),
-                            tagEntry.getKey());
-                }
-
-                for ( Tag tag : list ) {
-                    //Relate the found/created tag with this contentlet
-                    tagAPI.addContentletTagInode(tag, contentlet.getInode(), tagEntry.getKey());
-                }
-            }
-
             if (!InodeUtils.isSet(contentlet.getIdentifier())) {
 
                 //Adding back temporarily the page URL to the contentlet, is needed in order to create a proper Identifier
@@ -4748,6 +4731,25 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 identifier = APILocator.getIdentifierAPI().save(identifier);
 
                 changedURI = ! oldURI.equals(identifier.getURI());
+            }
+
+            //Relate the tags with the saved contentlet
+            for ( Entry<String, String> tagEntry : tagsValues.entrySet() ) {
+                //From the given CSV tags names list search for the tag objects and if does not exist create them
+                List<Tag> list = tagAPI.getTagsInText(tagEntry.getValue(), tagsHost);
+
+                // empty string for tag field value wipes out existing tags
+                if(UtilMethods.isSet(list) || tagEntry.getValue().equals("")) {
+                    tagAPI.deleteTagInodesByInodeAndFieldVarName(contentlet.getInode(),
+                            tagEntry.getKey());
+                }
+
+                for ( Tag tag : list ) {
+                    //Relate the found/created tag with this contentlet
+                    tagAPI.addContentletTagInode(tag, contentlet.getInode(), tagEntry.getKey());
+                }
+                //Adding tags back as field to be returned
+                contentlet.setProperty(tagEntry.getKey(), tagEntry.getValue());
             }
 
             APILocator.getVersionableAPI().setWorking(contentlet);
