@@ -5,6 +5,10 @@ cli_log() {
   echo "== $script_name $timestamp $1"
 }
 
+timestamp() {
+  date -u +"%Y-%m-%dT%H:%M:%SZ"
+}
+
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 BLACK='\033[0;30m'

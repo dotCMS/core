@@ -371,6 +371,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
         if (existingId !=  null) {
 			identifier.setId(existingId);
 		}else {
+		     //TODO: Replace me too
 			identifier.setId(UUIDGenerator.generateUuid());
 		}
 
@@ -470,6 +471,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		return check404(id);
 	}
 
+    //TODO: revise usages if this method
     @Override
     protected Identifier saveIdentifier(final Identifier id) throws DotDataException {
         if (id == null) {

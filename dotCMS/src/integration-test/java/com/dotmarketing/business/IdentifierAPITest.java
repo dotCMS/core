@@ -1,16 +1,5 @@
 package com.dotmarketing.business;
 
-import static com.dotcms.datagen.TestDataUtils.getMultipleImageBinariesContent;
-
-import com.dotcms.datagen.FileAssetDataGen;
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.HTMLPageDataGen;
-import com.dotcms.datagen.TemplateDataGen;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.templates.model.Template;
-import com.liferay.util.FileUtil;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -62,43 +51,6 @@ public class IdentifierAPITest {
         Assert.assertEquals(fakeId, cache.getIdentifier(fakeId).getId());
         Assert.assertEquals(fakeId, cache.getIdentifier(syshost.getIdentifier(), "/content."+fakeCont.getInode()).getId());
         
-        
-    }
-
-    @Test
-    public void test_Resolve_Name_Method() throws Exception {
-        final IdentifierAPIImpl imp = new IdentifierAPIImpl();
-
-        final int english = 1;
-
-        final Folder folder = APILocator.getFolderAPI().findSystemFolder();
-        java.io.File file = java.io.File.createTempFile("file", ".txt");
-        FileUtil.write(file, "helloworld");
-
-        FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(folder,file);
-        Contentlet fileAsset = fileAssetDataGen.languageId(english).nextPersisted();
-        final String resolvedAssetName = imp.resolveAssetName(fileAsset);
-        System.out.println(resolvedAssetName);
-
-        final String resolvedFolder = imp.resolveAssetName(folder);
-        System.out.println(resolvedFolder);
-        final Contentlet multipleBinariesContent = getMultipleImageBinariesContent(true, english, null);
-        final String multipleBinAssetName = imp.resolveAssetName(multipleBinariesContent);
-        System.out.println(multipleBinAssetName);
-
-// new template
-        Template template = new TemplateDataGen().nextPersisted();
-        final String templateAssetName = imp.resolveAssetName(template);
-        // new test folder
-        Folder testFolder = new FolderDataGen().nextPersisted();
-        final String folderAssetName = imp.resolveAssetName(template);
-
-        //new html page
-        final HTMLPageAsset pageAsset = new HTMLPageDataGen(testFolder, template)
-                .languageId(english).nextPersisted();
-
-        final String folderAssetResolvedName = imp.resolveAssetName(template);
-        System.out.println(pageAsset);
 
     }
 }

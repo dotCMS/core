@@ -50,6 +50,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import org.apache.commons.beanutils.BeanUtils;
 import org.glassfish.jersey.server.JSONP;
 
@@ -133,6 +134,61 @@ public class LanguagesResource {
         DotPreconditions.notNull(languageForm,"Expected Request body was empty.");
         final Language language = saveOrUpdateLanguage(null, languageForm);
         return Response.ok(new ResponseEntityView(language)).build(); // 200
+    }
+
+    @POST
+    @JSONP
+    @NoCache
+    @Path("/{languageTag}")
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response saveFromLanguageTag(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("languageTag") final String languageTag
+    ) {
+        this.webResource.init(null, request, response,
+                true, PortletID.LANGUAGES.toString());
+
+        final Locale locale = Locale.forLanguageTag(languageTag);
+        final LanguageForm languageForm = new LanguageForm.Builder()
+                .language(locale.getDisplayLanguage()).languageCode(locale.getLanguage())
+                .country(locale.getDisplayCountry()).countryCode(locale.getCountry()).build();
+
+        DotPreconditions.notNull(languageTag, "Expected languageTag Param path was empty.");
+        final Language language = saveOrUpdateLanguage(null, languageForm);
+        return Response.ok(new ResponseEntityView(language)).build(); // 200
+    }
+
+
+    @GET
+    @Path("/{languageTag}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response getFromLanguageTag (
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("languageTag") final String languageTag) {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredAnonAccess(AnonymousAccess.READ)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(false).init();
+
+        this.webResource.init(null, request, response,
+                true, PortletID.LANGUAGES.toString());
+
+        final Locale locale = Locale.forLanguageTag(languageTag);
+        final LanguageForm languageForm = new LanguageForm.Builder()
+                .language(locale.getDisplayLanguage()).languageCode(locale.getLanguage())
+                .country(locale.getDisplayCountry()).countryCode(locale.getCountry()).build();
+
+        DotPreconditions.notNull(languageTag, "Expected languageTag Param path was empty.");
+        final Language language = getLanguage(languageForm);
+        if(null == language){
+           return Response.status(Status.NOT_FOUND).build();
+        }
+        return Response.ok(new ResponseEntityView(language)).build(); // 200
+
     }
 
     /**
@@ -298,5 +354,9 @@ public class LanguagesResource {
     private boolean doesLanguageExist(final String languageId) {
         return languageAPI.getLanguage(languageId)!=null &&
                 languageAPI.getLanguage(languageId).getId()>0;
+    }
+
+    private Language getLanguage(final LanguageForm form) {
+        return this.languageAPI.getLanguage(form.getLanguageCode(), form.getCountryCode());
     }
 }

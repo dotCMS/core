@@ -6,6 +6,8 @@ help_push_site() {
   echo "
 Command: site
 
+This command takes a json file describing the Site that will be pushed/updated
+
 Usage:
   ./dot-cli --site ~/code/etc/site.json
   or
@@ -44,6 +46,18 @@ then
    response=$(curl -s -X POST "${DOTCMS_BASE_URL}/api/v1/site" --header "Authorization: Bearer ${JSON_WEB_TOKEN}" --header 'Content-Type: application/json' --data-raw  "$jsonSite"  --compressed)
 
    echo "$response"
+
+   identifier=$(jq -r 'try .entity.identifier' <<< "$response")
+
+   if [[ -z ${identifier} ]];
+   then
+    echo "Unable to get identifier from response. Please check if there were any error messages."
+    exit 1
+   fi
+
+   echo " Updated content-type identifier :: $identifier"
+
+   printf ${identifier} >> $publishMeFile
 
   else
    echo "A site named $siteName already exists."

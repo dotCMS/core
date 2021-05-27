@@ -7,6 +7,8 @@ help_push_bundle() {
   echo "
 Command: bundle
 
+This command takes a directory that serves as the entry point for all the assets,content-types,files.site etc.
+
 Usage:
   ./dot-cli --bundle ~/code/etc/bundle
   or
@@ -26,7 +28,7 @@ if [[ ! -d "$dir" ]]; then
     exit 1
 fi
 
-# for the given working directory we need to explore and determine what folder was meant to hold content-types, what folder was meant to hold sites files etc..
+# for the given working directory we need to explore and determine what folder was meant to hold content-types, what folder was meant to hold sites, files and so on.
 for entry in "$dir"/*
 do
      #echo "$entry"
@@ -43,7 +45,7 @@ do
      esac
 done
 
-
+# Now we process sites first
 if [[ -z ${sitesDir+x} ]];
    then cli_log "I wasn't able to find the sites directory";
 
@@ -53,9 +55,11 @@ else
     for entry in "$sitesDir"/*
     do
         echo "$entry"
-        if [[ -f "$entry" ]]
+        if [[ -f "$entry" && "$entry" == *.site.json ]]
          then
              bash "$DOTCLI_WORKDIR/commands/site" "$entry"
+         else
+         echo "$entry entry has been skipped - file must end like '.site.json' ."
         fi
     done
 
@@ -63,6 +67,7 @@ else
 
 fi
 
+# Second we process content types
 if [[ -z ${contentTypesDir+x} ]];
    then cli_log "I wasn't able to find the content types directory";
 
@@ -72,9 +77,11 @@ else
     for entry in "$contentTypesDir"/*
     do
         echo "$entry"
-        if [[ -f "$entry" ]]
+        if [[ -f "$entry" && "$entry" == *.contenttype.json ]]
          then
              bash "$DOTCLI_WORKDIR/commands/content-type" "$entry"
+         else
+         echo "$entry entry has been skipped - file must end like '.contenttype.json' ."
         fi
     done
 
@@ -82,9 +89,13 @@ else
 
 fi
 
-
-
-
+# Now we're gonna look into the files directory
+if [[ -z ${filesDir+x} ]];
+   then cli_log "I wasn't able to find the files directory";
+else
+  echo "Processing files directory."
+  bash "$DOTCLI_WORKDIR/commands/files" "$filesDir"
+fi
 
 
 cli_log "Done Pushing Bundle "

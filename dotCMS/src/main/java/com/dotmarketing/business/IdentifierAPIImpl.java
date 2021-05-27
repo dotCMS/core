@@ -1,56 +1,32 @@
 package com.dotmarketing.business;
 
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
-import com.liferay.util.StringPool;
-import java.io.StringWriter;
-import java.util.List;
-import java.util.UUID;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.bouncycastle.crypto.digests.SHA256Digest;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
-import com.dotmarketing.beans.WebAsset;
-import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.personas.business.PersonaAPI;
-import com.dotmarketing.portlets.personas.model.Persona;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.annotations.VisibleForTesting;
-import io.vavr.control.Try;
+import java.util.List;
 
 public class IdentifierAPIImpl implements IdentifierAPI {
 
 	private final ContentletAPI contentletAPI;
 	private final IdentifierFactory identifierFactory;
-	private final LanguageAPI languageAPI;
-	private final FolderAPI folderAPI;
-	private final HostAPI hostAPI;
 
 	public IdentifierAPIImpl() {
 		contentletAPI = APILocator.getContentletAPI();
 		identifierFactory = FactoryLocator.getIdentifierFactory();
-		languageAPI = APILocator.getLanguageAPI();
-		folderAPI = APILocator.getFolderAPI();
-		hostAPI = APILocator.getHostAPI();
 	}
 
 	@CloseDBIfOpened
@@ -64,42 +40,41 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 	@CloseDBIfOpened
 	public Identifier findFromInode(final String inodeOrIdentifier) throws DotDataException {
 
-		Identifier ident = identifierFactory.loadFromCache(inodeOrIdentifier);
+		Identifier identifier = identifierFactory.loadFromCache(inodeOrIdentifier);
 
-		if(ident == null || !InodeUtils.isSet(ident.getInode())){
-			ident = identifierFactory.loadFromCacheFromInode(inodeOrIdentifier);
+		if(identifier == null || !InodeUtils.isSet(identifier.getInode())){
+			identifier = identifierFactory.loadFromCacheFromInode(inodeOrIdentifier);
 		}
 		
-		if (ident == null || !InodeUtils.isSet(ident.getInode())) {
+		if (identifier == null || !InodeUtils.isSet(identifier.getInode())) {
 			try {
 				Contentlet con = contentletAPI.find(inodeOrIdentifier, APILocator.getUserAPI().getSystemUser(), false);
 				if (con != null && InodeUtils.isSet(con.getInode())) {
-					ident = identifierFactory.find(con.getIdentifier());
-					return ident;
+					identifier = identifierFactory.find(con.getIdentifier());
+					return identifier;
 				}
 			} catch (Exception e) {
 				Logger.debug(this, "Unable to find inodeOrIdentifier as content : ", e);
 			}
 		} else {
-			return ident;
+			return identifier;
 		}
 
 		try {
-			ident = identifierFactory.find(inodeOrIdentifier);
+			identifier = identifierFactory.find(inodeOrIdentifier);
 		} catch (DotHibernateException e) {
 			Logger.debug(this, "Unable to find inodeOrIdentifier as identifier : ", e);
 		}
 
-		
-		if (ident == null || !InodeUtils.isSet(ident.getInode())) {
-			 ident = identifierFactory.find(InodeFactory.getInode(inodeOrIdentifier, Inode.class));
+		if (identifier == null || !InodeUtils.isSet(identifier.getInode())) {
+			 identifier = identifierFactory.find(InodeFactory.getInode(inodeOrIdentifier, Inode.class));
 		}
 		
-		if (ident != null && InodeUtils.isSet(ident.getId()) ) {
-			CacheLocator.getIdentifierCache().addIdentifierToCache(ident.getId(), inodeOrIdentifier);
+		if (identifier != null && InodeUtils.isSet(identifier.getId()) ) {
+			CacheLocator.getIdentifierCache().addIdentifierToCache(identifier.getId(), inodeOrIdentifier);
 		}
 		
-		return ident;
+		return identifier;
 		
 	}
 
@@ -149,8 +124,7 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 
 	@WrapInTransaction
 	public Identifier save(final Identifier id) throws DotDataException, DotStateException {
-		final Identifier ident = identifierFactory.saveIdentifier(id);
-		return ident;
+		return identifierFactory.saveIdentifier(id);
 	}
 
 	@WrapInTransaction
@@ -166,105 +140,41 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 	    return createNew(asset,parent,null);
 	}
 
-	@VisibleForTesting
-    String resolveAssetName(Versionable asset) {
-	    
-	    if(asset instanceof Contentlet){
-	        final Contentlet contentlet = (Contentlet)asset;
-            return Try.of(()-> 
-                contentlet.isHost()
-                    ? contentlet.getStringProperty(Host.HOST_NAME_KEY)
-                    : contentlet.isFileAsset() 
-                        ? contentlet.getBinary("fileAsset").getName()
-                        : contentlet.isHTMLPage()            
-                            ? contentlet.getStringProperty(HTMLPageAssetAPI.URL_FIELD)
-                            : contentlet.isPersona()
-                                ? contentlet.getStringProperty(PersonaAPI.KEY_TAG_FIELD)
-                                : UUIDGenerator.generateUuid()
-                    
-            )
-            .getOrElseThrow(DotRuntimeException::new);
-	    }
-	    if(asset instanceof WebAsset) {
-	        return ((WebAsset)asset).getTitle();
-	    }
-	    if(asset instanceof Folder) {
-	        return ((Folder)asset).getName();
-	    }
-	    
-	    return UUIDGenerator.generateUuid();
 
-    }
-	
-    @VisibleForTesting
-    String resolveAssetType(Versionable asset) {
-        
-        if(asset instanceof Contentlet){
-            final Contentlet contentlet = (Contentlet)asset;
-            return contentlet.getContentType().variable();
-        }
-
-        return asset.getClass().getSimpleName();
-
-    }
-
-	@VisibleForTesting
-	@CloseDBIfOpened
-	String generateKnownId(final Versionable asset, final Treeable parent) {
-
-		final Host parentHost = (parent instanceof Host) ? (Host) parent : Try.of(
-				() -> hostAPI
-						.find(((Folder) parent).getHostId(), APILocator.systemUser(), false))
-				.getOrElseThrow(DotRuntimeException::new);
-		final Folder parentFolder = (parent instanceof Folder) ? (Folder) parent
-				: Try.of(folderAPI::findSystemFolder)
-						.getOrElseThrow(DotRuntimeException::new);
-		final Language lang = (asset instanceof Contentlet) ? languageAPI
-				.getLanguage(((Contentlet) asset).getLanguageId())
-				: languageAPI.getDefaultLanguage();
-
-		return (resolveAssetType(asset) + StringPool.COLON + parentHost.getHostname()
-				+ StringPool.FORWARD_SLASH + lang + parentFolder
-				.getPath() + resolveAssetName(asset)).toLowerCase();
-	}
-	
-	@VisibleForTesting
-    @CloseDBIfOpened
-    String bestEffortsKnowableIdHash(final String stringToHash) {
-        
-        final String hashed = DigestUtils.sha256Hex(stringToHash.toLowerCase()).substring(0,32);
-        Logger.info(this.getClass(), "");
-        Logger.info(this.getClass(), "hashing id: " + stringToHash + " to " + hashed);
-        Logger.info(this.getClass(), "");
-        if(new DotConnect()
-                        .setSQL("select count(id) as test from identifier where id=?")
-                        .addParam(hashed)
-                        .getInt("test")>0) {
-            return bestEffortsKnowableIdHash(UUIDGenerator.generateUuid());
-        }
-        return hashed;
-    }
-    
-    
-    
 	@WrapInTransaction
 	public Identifier createNew(final Versionable asset, final Treeable parent,
-								final String existingId) throws DotDataException {
+			final String existingId) throws DotDataException {
 
-	    final String validId = UtilMethods.isSet(existingId)
-	                    ? existingId 
-                        : bestEffortsKnowableIdHash(generateKnownId(asset, parent));
+		Logger.info(IdentifierAPIImpl.class, String.format(
+				"Creating new identifier for versionable asset of type `%s` and title `%s` ",
+				asset.getVersionType(), asset.getTitle()));
 
-		if(parent instanceof Folder){
-		    return identifierFactory.createNewIdentifier(asset, (Folder) parent, validId);
+		if (UtilMethods.isNotSet(existingId)) {
+
+			final String validId =
+					DeterministicIdentifierGenerator.newInstance().generateDeterministicIdBestEffort(asset, parent);
+
+			if (parent instanceof Folder) {
+				return identifierFactory.createNewIdentifier(asset, (Folder) parent, validId);
+			}
+
+			if (parent instanceof Host) {
+				return identifierFactory.createNewIdentifier(asset, (Host) parent, validId);
+			}
+
+		} else {
+
+			if (parent instanceof Folder) {
+				return identifierFactory.createNewIdentifier(asset, (Folder) parent, existingId);
+			}
+
+			if (parent instanceof Host) {
+				return identifierFactory.createNewIdentifier(asset, (Host) parent, existingId);
+			}
 		}
-		
-		if(parent instanceof Host){
-		    return identifierFactory.createNewIdentifier(asset, (Host) parent, validId);
-		}
+		throw new DotStateException(
+				"You can only create an identifier on a host of folder.  Trying: " + parent);
 
-		throw new DotStateException("You can only create an identifier on a host of folder.  Trying: " + parent);
-		
 	}
 
 	@WrapInTransaction

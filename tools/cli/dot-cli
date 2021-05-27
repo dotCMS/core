@@ -26,19 +26,34 @@ cli_log "Exporting config ..."
   && echo "ERROR: No $DOTCLI_WORKDIR/config file found. " \
   && exit 1
 
+# export so these values become available on the
 export $(cat "$DOTCLI_WORKDIR/config" | xargs)
+
+export publishMeFile="publish-me-$timestamp"
+
+cli_log "publish me file is $publishMeFile"
 
 case "$1" in
   --bundle|-b|-B)
-    "$DOTCLI_WORKDIR/commands/bundle" "$2"  | tee -ia "$DOTCLI_WORKDIR/logs/bundle_${1}.log"
+    "$DOTCLI_WORKDIR/commands/bundle" "$2"  | tee -ia "$DOTCLI_WORKDIR/logs/bundle${1}.log"
     ;;
   --content-type|-ct|-CT)
-    "$DOTCLI_WORKDIR/commands/content-type" "$2" | tee -ia "$DOTCLI_WORKDIR/logs/content-type_${1}.log"
+    "$DOTCLI_WORKDIR/commands/content-type" "$2" | tee -ia "$DOTCLI_WORKDIR/logs/content-type${1}.log"
     ;;
   --site|-S)
-    "$DOTCLI_WORKDIR/commands/site" "$2" | tee -ia "$DOTCLI_WORKDIR/logs/site_${1}.log"
+    "$DOTCLI_WORKDIR/commands/site" "$2" | tee -ia "$DOTCLI_WORKDIR/logs/site${1}.log"
+    ;;
+  --files|-F)
+    "$DOTCLI_WORKDIR/commands/files" "$2" | tee -ia "$DOTCLI_WORKDIR/logs/files${1}.log"
     ;;
   *)
     cli_help
     ;;
 esac
+
+
+if [[  -f ${publishMeFile} ]]; then
+  rm ${publishMeFile}
+fi
+
+unset publishMeFile

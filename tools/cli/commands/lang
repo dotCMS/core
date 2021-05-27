@@ -1,0 +1,41 @@
+#!/bin/bash
+set -e
+. "$DOTCLI_WORKDIR/common"
+
+help_push_files() {
+  echo "
+Command: lang
+
+This command takes a directory that serves as the entry point for all the assets and files.
+
+Usage:
+  ./dot-cli --file  ~/code/etc/bundle/files/
+  or
+  ./dot-cli -f ~/code/etc/bundle/files/
+   "
+  exit 1
+}
+
+[[ ! -n "$1" ]] && help_push_files
+
+langDir="$1"
+
+cli_log "Pushing language folder $langDir "
+
+if [[ ! -d "$langDir" ]]; then
+    echo " The directory $langDir does not exist."
+    exit 1
+fi
+
+     lang=$(basename "${langDir}")
+
+     echo " Checking Language ${lang} against remote server."
+     code=$(curl -s -o /dev/null --head -w "%{http_code}" --header "Authorization: Bearer ${JSON_WEB_TOKEN}" "${DOTCMS_BASE_URL}/api/v2/languages/${lang}" )
+     if [[ ${code} = 404 ]]
+     then
+        echo "Language ${lang} does not exist on the remote server. Attempting an Add.";
+        response=$(curl -s -X POST "${DOTCMS_BASE_URL}/api/v2/languages/${lang}" --header "Authorization: Bearer ${JSON_WEB_TOKEN}" )
+        echo ${response};
+     else
+        echo " The language ${lang} already  exists on the server.";
+     fi
