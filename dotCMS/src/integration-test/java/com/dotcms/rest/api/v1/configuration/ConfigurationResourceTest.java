@@ -8,6 +8,8 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.liferay.util.LocaleUtil;
+import java.util.Locale;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -45,6 +47,7 @@ public class ConfigurationResourceTest {
 		final ConfigurationResource resource = new ConfigurationResource();
 		final HttpServletRequest request = mock(HttpServletRequest.class);
 		when(request.getRequestURL()).thenReturn(new StringBuffer("http://" + HOST_NAME + "/dotAdmin/"));
+		when(LocaleUtil.getLocale(request)).thenReturn(new Locale("en","US"));
 		final Response response = resource.list(request);
 		assertNotNull(response);
 		assertEquals(response.getStatus(), 200);
