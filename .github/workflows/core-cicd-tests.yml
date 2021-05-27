@@ -127,14 +127,7 @@ jobs:
         run: |
           sh -c "$(curl -fsSL https://raw.githubusercontent.com/dotCMS/dot-cicd/${DOT_CICD_BRANCH}/seed/install-dot-cicd.sh)"
         if: env.jobRun == 'true'
-      - name: Check Provider
-        run: |
-          dotcicd/library/checkProvider.sh github
-        if: env.jobRun == 'true'
-      - name: Fail provider
-        run: |
-          echo "jobRun=false" >> $GITHUB_ENV
-        if: env.jobRun == 'true' && failure()
+      
       - name: Build DotCMS Image
         run: |
           dotcicd/library/pipeline.sh buildBase
