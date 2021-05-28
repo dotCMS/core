@@ -76,6 +76,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.common.unit.TimeValue;
@@ -1624,34 +1625,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 	}
 
-	/**
-	 * This method let you convert a list of non bit permission to the new  bit kind of permission, so you should
-	 * end up with a compressed list
-	 * @param p permission
-	 * @return boolean
-	 * @version 1.7
-	 * @since 1.7
-	 */
-	@SuppressWarnings("unused")
-	private List<Permission> convertToBitPermissions (List<Permission> nonbitPermissionsList) {
 
-		Map<String, Permission> tempList = new HashMap<String, Permission>();
-
-		for(Permission p : nonbitPermissionsList) {
-			if(!p.isBitPermission()) {
-				Permission pt = tempList.get(p.getInode() + "-" + p.getRoleId());
-				if(pt == null)
-					pt = new Permission(p.getInode(), p.getRoleId(), p.getPermission());
-				else
-					pt = new Permission(p.getInode(), p.getRoleId(), pt.getPermission() | p.getPermission());
-				tempList.put(pt.getInode() + "-" + pt.getRoleId(), pt);
-			} else {
-				tempList.put(p.getInode() + "-" + p.getRoleId(), p);
-			}
-		}
-		return new ArrayList<Permission> (tempList.values());
-
-	}
 
 
   private void dbDeletePermission(Permission p) {
@@ -1751,25 +1725,55 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
   }
 
-  private List<Permission> _loadPermissionsFromDb(final Permissionable permissionable, final String permissionKey) throws DotDataException {
-      return Try.of(() -> lockManager.tryLock(LOCK_PREFIX + permissionKey, () -> {
+  
+  private class ReadPermissionSupplier implements Supplier<List<Permission>> {
+
+      final String permissionKey, permissionId;
+
+      ReadPermissionSupplier(final String permissionKey, final String permissionId) {
+          this.permissionId = permissionId;
+          this.permissionKey = permissionKey;
+      }
+
+      @Override
+      public List<Permission> get() {
+
           List<Permission> bitPermissionsList = permissionCache.getPermissionsFromCache(permissionKey);
           if (bitPermissionsList != null) {
-            return bitPermissionsList;
+              return bitPermissionsList;
           }
           HibernateUtil persistenceService = new HibernateUtil(Permission.class);
-          persistenceService.setSQLQuery(LOAD_PERMISSION_SQL);
-          persistenceService.setParam(permissionable.getPermissionId());
-          persistenceService.setParam(permissionable.getPermissionId());
-          bitPermissionsList = (List<Permission>) persistenceService.list();
-    
+          Try.run(() -> persistenceService.setSQLQuery(LOAD_PERMISSION_SQL));
+          persistenceService.setParam(permissionId);
+          persistenceService.setParam(permissionId);
+          bitPermissionsList = (List<Permission>) Try.of(() -> persistenceService.list())
+                          .getOrElseThrow(e -> new DotRuntimeException(e));
+          bitPermissionsList.forEach(p -> p.setBitPermission(true));
+          
           // adding to cache if found
           if (!bitPermissionsList.isEmpty()) {
-              bitPermissionsList.forEach(p -> p.setBitPermission(true));
               permissionCache.addToPermissionCache(permissionKey, bitPermissionsList);
           }
           return bitPermissionsList;
-      })).getOrElseThrow(e -> new DotDataException(e));
+
+      }
+
+  }
+  
+
+  private List<Permission> _loadPermissionsFromDb(final Permissionable permissionable, final String permissionKey) throws DotDataException {
+      
+      final Supplier<List<Permission>> readPermissions = new ReadPermissionSupplier(permissionKey,permissionable.getPermissionId());
+      
+      if(Config.getBooleanProperty("PERMISSION_LOCK_ON_READ", false)) {
+          return Try.of(() -> lockManager.tryLock(LOCK_PREFIX + permissionKey, () -> {
+              return readPermissions.get();
+          })).get();
+      }
+      
+      return readPermissions.get();
+      
+
   }
   
   private Tuple2<Permissionable,List<Permission>> _loadParentPermissions(final Permissionable permissionable, final String permissionKey) throws DotDataException {
