@@ -36,25 +36,19 @@ public class ResizeImageFilter extends ImageFilter {
 		resultFile.delete();
 		
 		
-		Dimension widthHeight = ImageFilterAPI.apiInstance.get().getWidthHeight(file);
+		final Dimension originalSize = ImageFilterAPI.apiInstance.get().getWidthHeight(file);
 		
-        
-        if(w ==0 && h >0){
-            w = Math.round(h * widthHeight.getWidth()) / widthHeight.getHeight();
-        }
-        if(w >0 && h ==0){
-            h = Math.round(w * widthHeight.getHeight() / widthHeight.getWidth());
-        }
-        
-        int width    =      (int) w;    
-        int height     =     (int) h;
+        final int width = (int) (w == 0 && h > 0 ? Math.round(h * originalSize.getWidth()) / originalSize.getHeight()
+                        : w);
+
+        final int height = (int) (w > 0 && h == 0 ? Math.round(w * originalSize.getHeight() / originalSize.getWidth())
+                        : h);
 		
-		
-		
+
 
         try {
 			//resample from stream
-			BufferedImage srcImage = ImageFilterAPI.apiInstance.get().subsampleImage(file,width,height);
+			BufferedImage srcImage = ImageFilterAPI.apiInstance.get().intelligentResize(file,width,height);
 
 
             ImageIO.write(srcImage, "png", resultFile);

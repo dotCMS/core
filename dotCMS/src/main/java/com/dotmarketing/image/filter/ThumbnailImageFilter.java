@@ -12,7 +12,7 @@ import java.nio.file.Files;
 import java.util.Map;
 import javax.imageio.ImageIO;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ImageResizeUtils;
+
 import com.dotmarketing.util.Logger;
 
 public class ThumbnailImageFilter extends ImageFilter {
@@ -98,7 +98,7 @@ public class ThumbnailImageFilter extends ImageFilter {
 	        
 	        
 
-	        BufferedImage thumbImage = ImageFilterAPI.apiInstance.get().subsampleImage(file, thumbWidth, thumbHeight);
+	        BufferedImage thumbImage = ImageFilterAPI.apiInstance.get().intelligentResize(file, thumbWidth, thumbHeight);
 
 
 	        // compute offsets to center image in its space
@@ -114,8 +114,6 @@ public class ThumbnailImageFilter extends ImageFilter {
     	        bgImage.flush();
 	        }
 
-
-	        Logger.debug(ImageResizeUtils.class, "Done.");
 		} catch (FileNotFoundException e) {
 			Logger.error(this.getClass(), e.getMessage());
 		} catch (IOException e) {

@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import com.dotmarketing.image.filter.ImageFilter;
 import com.dotmarketing.image.filter.ImageFilterApiImpl;
-import com.dotmarketing.image.filter.MaxSizeImageFilter;
 import com.dotmarketing.image.filter.PDFImageFilter;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporter;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporterException;
@@ -42,22 +41,11 @@ public class ImageFilterExporter implements BinaryContentExporter {
             final Map<String,Class> filters = new ImageFilterApiImpl().resolveFilters(parameters);
             parameters.put("filter", filters.keySet().toArray(new String[filters.size()]));
             parameters.put("filters", filters.keySet().toArray(new String[filters.size()]));
-
-
-            
-            if(!filters.isEmpty() ) {
-                file = new MaxSizeImageFilter().runFilter(file, parameters);
-                
-            }
-            
             
             // run pdf filter first (if a pdf)
             if(!filters.isEmpty() && "pdf".equals(UtilMethods.getFileExtension(file.getName())) && !filters.containsKey("pdf")) {
                 file = new PDFImageFilter().runFilter(file, parameters);
             }
-            
-            
-            
             
             for (final Entry<String, Class> filter : filters.entrySet()) {
                 try {
