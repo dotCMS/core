@@ -26,6 +26,7 @@ import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import java.util.stream.Collectors;
@@ -91,49 +92,38 @@ public class DependencyModDateUtil extends HashSet<String> {
 		}
 	}
 
-	public static <T> String getKey ( final T asset) {
-		if (Contentlet.class.isInstance(asset)) {
-			final Contentlet contentlet = Contentlet.class.cast(asset);
-			return contentlet.getIdentifier();
-		} else if (Folder.class.isInstance(asset)) {
-			final Folder folder = Folder.class.cast(asset);
-			return folder.getInode();
-		} else if (Template.class.isInstance(asset)) {
-			final Template template = Template.class.cast(asset);
-			return template.getIdentifier();
-		} else if (Container.class.isInstance(asset)) {
-			final Container container = Container.class.cast(asset);
-			return container.getIdentifier();
-		} else if (Structure.class.isInstance(asset)) {
-			final Structure structure = Structure.class.cast(asset);
-			return structure.getInode();
-		}  else if (Link.class.isInstance(asset)) {
-			final Link link = Link.class.cast(asset);
-			return link.getIdentifier();
-		}  else if (Rule.class.isInstance(asset)) {
-			final Rule rule = Rule.class.cast(asset);
-			return rule.getId();
-		}   else if (Relationship.class.isInstance(asset)) {
-			final Relationship relationship = Relationship.class.cast(asset);
-			return relationship.getInode();
+	public <T> boolean excludeByModDate ( final T asset, final PusheableAsset pusheableAsset) {
+		if (Rule.class.isInstance(asset)) {
+			return excludeByModDate(Rule.class.cast(asset));
+		} else 	if (WorkflowScheme.class.isInstance(asset)) {
+			return excludeByModDate(WorkflowScheme.class.cast(asset));
+		} else 	if (Relationship.class.isInstance(asset)) {
+			return excludeByModDate(Relationship.class.cast(asset));
+		} else if (Versionable.class.isInstance(asset)) {
+			return excludeByModDate((Versionable) asset, pusheableAsset);
 		} else {
-			throw new IllegalArgumentException();
+			throw new IllegalArgumentException(String.format("Type not expected: %s'",
+					asset.getClass()));
 		}
 	}
 
-	public <T> boolean excludeByModDate ( final T asset) {
-		return Rule.class.isInstance(asset) ?
-				excludeByModDate(Rule.class.cast(asset)) :
-				excludeByModDate((Versionable) asset);
+	public boolean excludeByModDate ( final Relationship relationship) {
+		return excludeByModDate(DependencyManager.getKey(relationship), PusheableAsset.RELATIONSHIP,
+				relationship.getModDate());
 	}
 
 	public boolean excludeByModDate ( final Rule rule) {
-		return excludeByModDate(DependencyModDateUtil.getKey(rule), PusheableAsset.CONTENTLET,
+		return excludeByModDate(DependencyManager.getKey(rule), PusheableAsset.RULE,
 				rule.getModDate());
 	}
 
-	public boolean excludeByModDate ( final Versionable asset) {
-		return excludeByModDate(DependencyModDateUtil.getKey(asset), PusheableAsset.CONTENTLET,
+	public boolean excludeByModDate ( final WorkflowScheme workflowScheme) {
+		return excludeByModDate(DependencyManager.getKey(workflowScheme), PusheableAsset.WORKFLOW,
+				workflowScheme.getModDate());
+	}
+
+	public boolean excludeByModDate ( final Versionable asset, final PusheableAsset pusheableAsset) {
+		return excludeByModDate(DependencyManager.getKey(asset), pusheableAsset,
 				asset.getModDate());
 	}
 

@@ -2,10 +2,12 @@ package com.dotcms.publisher.util.dependencies;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
+import com.dotcms.publisher.pusher.PushPublisherConfig.AssetTypes;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
@@ -14,6 +16,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import org.eclipse.jetty.util.ConcurrentHashSet;
 
 /**
  * Process the Assets to calculate dependency in a multi-threading environment
@@ -39,7 +42,7 @@ public class ConcurrentDependencyProcessor implements DependencyProcessor {
     private AtomicInteger finishReceived;
     private DotSubmitter submitter;
 
-    private Map<PusheableAsset, Consumer<Object>> consumerDependencies;
+    private Map<PusheableAsset, Consumer<Object>> consumerDependencies = new HashMap<>();
 
     ConcurrentDependencyProcessor() {
         queue = new LinkedBlockingDeque();
@@ -60,6 +63,20 @@ public class ConcurrentDependencyProcessor implements DependencyProcessor {
                 Thread.currentThread().getName(), asset, pusheableAsset));
 
         queue.add(new DependencyProcessorItem(asset, pusheableAsset));
+
+        addRequestToProcess(asset, pusheableAsset);
+    }
+
+    private <T> void addRequestToProcess(final T asset, final PusheableAsset pusheableAsset) {
+        final String assetKey = DependencyManager.getKey(asset);
+        Set<String> set = assetsRequestToProcess.get(pusheableAsset);
+
+        if (set == null) {
+            set = new ConcurrentHashSet<>();
+            assetsRequestToProcess.put(pusheableAsset, set);
+        }
+
+        set.add(assetKey);
     }
 
     /**
@@ -80,7 +97,7 @@ public class ConcurrentDependencyProcessor implements DependencyProcessor {
         try {
             while (!isFinish()) {
                 try {
-                    Logger.debug(DependencyManager.class, () -> "Waiting for more assets");
+                    Logger.debug(ConcurrentDependencyProcessor.class, () -> "Waiting for more assets");
                     final DependencyProcessorItem dependencyProcessorItem = queue.take();
                     Logger.debug(ConcurrentDependencyProcessor.class,
                             () -> "Taking one " + dependencyProcessorItem.asset);
@@ -114,7 +131,6 @@ public class ConcurrentDependencyProcessor implements DependencyProcessor {
         final Integer nRequest = assetsRequestToProcess.values().stream()
                 .map(set -> set.size())
                 .reduce(0, Integer::sum);
-
         return taskCount == nRequest && taskCount == nFinishReceived;
     }
 

@@ -119,7 +119,7 @@ public class DependencyModDateUtilTest extends IntegrationTestBase {
                 .host(host)
                 .nextPersisted();
 
-        final boolean excludeByModDate = dependencyModDateUtil.excludeByModDate(contentlet);
+        final boolean excludeByModDate = dependencyModDateUtil.excludeByModDate(contentlet, PusheableAsset.CONTENTLET);
         assertFalse(excludeByModDate);
     }
 
@@ -174,7 +174,7 @@ public class DependencyModDateUtilTest extends IntegrationTestBase {
                 .pushDate(yesterday.getTime())
                 .nextPersisted();
 
-        final boolean excludeByModDate = dependencyModDateUtil.excludeByModDate(contentlet);
+        final boolean excludeByModDate = dependencyModDateUtil.excludeByModDate(contentlet, PusheableAsset.CONTENTLET);
         assertFalse(excludeByModDate);
     }
 
@@ -235,7 +235,7 @@ public class DependencyModDateUtilTest extends IntegrationTestBase {
                 .pushDate(new Date())
                 .nextPersisted();
 
-        final boolean excludeByModDate = dependencyModDateUtil.excludeByModDate(contentlet);
+        final boolean excludeByModDate = dependencyModDateUtil.excludeByModDate(contentlet, PusheableAsset.CONTENTLET);
 
         if ( testCase.isForcePush || testCase.isDownloading ||
                 testCase.operation != Operation.PUBLISH ) {
@@ -324,7 +324,7 @@ public class DependencyModDateUtilTest extends IntegrationTestBase {
                 .pushDate(beforeYesterday.getTime())
                 .nextPersisted();
 
-        final boolean excludeByModDate = dependencyModDateUtil.excludeByModDate(contentlet);
+        final boolean excludeByModDate = dependencyModDateUtil.excludeByModDate(contentlet, PusheableAsset.CONTENTLET);
 
         assertFalse(excludeByModDate);
     }

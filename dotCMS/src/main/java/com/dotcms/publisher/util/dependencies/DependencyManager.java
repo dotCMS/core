@@ -27,6 +27,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.PersonalizedContentlet;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -386,9 +387,9 @@ public class DependencyManager {
 				throw new DotBundleException(rootCause.getMessage(), (Exception) rootCause);
 			}
 		}
+
+		System.out.println("assets = " + assets);
 	}
-
-
 
 	private Folder getFolderByParentIdentifier(final Identifier identifier)
 			throws DotDataException, DotSecurityException {
@@ -667,13 +668,13 @@ public class DependencyManager {
 	}
 
 	private <T> boolean add(final PusheableAsset pusheableAsset, final T asset) {
-		if (Contentlet.class.isInstance(asset) &&
+		if (Contentlet.class.isInstance(asset) && !Contentlet.class.cast(asset).isHost() &&
 				!publisherFilter.doesExcludeDependencyQueryContainsContentletId(
 						((Contentlet) asset).getIdentifier())) {
 			return false;
 		}
 
-		if (!dependencyModDateUtil.excludeByModDate(asset)) {
+		if (!dependencyModDateUtil.excludeByModDate(asset, pusheableAsset)) {
 			config.add(asset, pusheableAsset);
 			pushedAssetUtil.savePushedAssetForAllEnv(asset, pusheableAsset);
 			return true;
@@ -1052,7 +1053,7 @@ public class DependencyManager {
 							.findCategories(new StructureTransformer(structure).from(), user));
 
 			// Related structures
-			tryToAddAndProcessDependencies(PusheableAsset.RELATIONSHIP, () ->
+			tryToAddAllAndProcessDependencies(PusheableAsset.RELATIONSHIP, () ->
 					APILocator.getRelationshipAPI().byContentType(structure));
 
 		} catch (DotDataException | DotSecurityException e) {
@@ -1287,5 +1288,41 @@ public class DependencyManager {
 	@VisibleForTesting
 	public Set getFolders() {
 		return config.getFolders();
+	}
+
+	public static <T> String getKey ( final T asset) {
+		if (Contentlet.class.isInstance(asset)) {
+			final Contentlet contentlet = Contentlet.class.cast(asset);
+			return contentlet.getIdentifier();
+		} else if (Folder.class.isInstance(asset)) {
+			final Folder folder = Folder.class.cast(asset);
+			return folder.getInode();
+		} else if (Template.class.isInstance(asset)) {
+			final Template template = Template.class.cast(asset);
+			return template.getIdentifier();
+		} else if (Container.class.isInstance(asset)) {
+			final Container container = Container.class.cast(asset);
+			return container.getIdentifier();
+		} else if (Structure.class.isInstance(asset)) {
+			final Structure structure = Structure.class.cast(asset);
+			return structure.getInode();
+		}  else if (Link.class.isInstance(asset)) {
+			final Link link = Link.class.cast(asset);
+			return link.getIdentifier();
+		}  else if (Rule.class.isInstance(asset)) {
+			final Rule rule = Rule.class.cast(asset);
+			return rule.getId();
+		} else if (Relationship.class.isInstance(asset)) {
+			final Relationship relationship = Relationship.class.cast(asset);
+			return relationship.getInode();
+		} else if (WorkflowScheme.class.isInstance(asset)) {
+			final WorkflowScheme workflowScheme = WorkflowScheme.class.cast(asset);
+			return workflowScheme.getId();
+		} else if (Category.class.isInstance(asset)) {
+			final Category category = Category.class.cast(asset);
+			return category.getCategoryId();
+		} else {
+			throw new IllegalArgumentException();
+		}
 	}
 }

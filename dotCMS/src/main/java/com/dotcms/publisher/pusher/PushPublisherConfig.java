@@ -1,6 +1,7 @@
 package com.dotcms.publisher.pusher;
 
 import com.dotcms.publisher.util.PusheableAsset;
+import com.dotcms.publisher.util.dependencies.DependencyManager;
 import com.dotcms.publisher.util.dependencies.DependencyProcessor;
 import com.dotcms.publisher.util.dependencies.DependencySet;
 import com.dotmarketing.beans.Host;
@@ -59,7 +60,7 @@ public class PushPublisherConfig extends PublisherConfig {
 	private List<PublishingEndPoint> endpoints;
 	private boolean downloading = false;
 	private DependencyProcessor dependencyProcessor;
-	private DependencySet dependencySet;
+	private DependencySet dependencySet = new DependencySet();
 
 	public PushPublisherConfig() {
 		super();
@@ -184,6 +185,26 @@ public class PushPublisherConfig extends PublisherConfig {
 		return dependencySet.getCategories();
     }
 
+    @Override
+	public Set<String> getFolders() {
+		return dependencySet.getFolders();
+	}
+
+	@Override
+	public Set<String> getStructures() {
+		return dependencySet.getStructures();
+	}
+
+	@Override
+	public Set<String> getHostSet() {
+		return dependencySet.getHosts();
+	}
+
+	@Override
+	public Set<String> getLanguages() {
+		return dependencySet.getLanguages();
+	}
+
     public boolean isDownloading () {
         return downloading;
     }
@@ -196,8 +217,12 @@ public class PushPublisherConfig extends PublisherConfig {
 		this.dependencyProcessor = dependencyProcessor;
 	}
 
+	public DependencySet dependencySet(){
+		return dependencySet;
+	}
+
 	public <T> void addWithDependencies(final T asset, final PusheableAsset pusheableAsset) {
-		final String key = getAssestKey(asset);
+		final String key = DependencyManager.getKey(asset);
 
 		if(!dependencySet.isDependenciesAdded(key, pusheableAsset)) {
 			dependencySet.addWithDependencies(key, pusheableAsset);
@@ -205,26 +230,8 @@ public class PushPublisherConfig extends PublisherConfig {
 		}
 	}
 
-	private <T> String getAssestKey(final T asset) {
-		if (Structure.class.isInstance(asset)){
-			return ((Structure) asset).getInode();
-		} if (Folder.class.isInstance(asset)){
-			return ((Folder) asset).getInode();
-		} if (Host.class.isInstance(asset)){
-			return ((Host) asset).getIdentifier();
-		} if (Contentlet.class.isInstance(asset)){
-			return ((Contentlet) asset).getIdentifier();
-		} if (Template.class.isInstance(asset)){
-			return ((Template) asset).getIdentifier();
-		} if (Link.class.isInstance(asset)){
-			return ((Link) asset).getIdentifier();
-		} else {
-			throw new IllegalArgumentException("Class no expected");
-		}
-	}
-
 	public <T> void add(final T asset, final PusheableAsset pusheableAsset) {
-		final String key = getAssestKey(asset);
+		final String key = DependencyManager.getKey(asset);
 
 		if(!dependencySet.isAdded(key, pusheableAsset)) {
 			dependencySet.add(key, pusheableAsset);

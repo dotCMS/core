@@ -89,7 +89,7 @@ public class PushedAssetUtil {
 
     public <T> void savePushedAssetForAllEnv(final T asset, final PusheableAsset pusheableAsset) {
         this.environments.forEach(environment ->
-                savePushedAsset(DependencyModDateUtil.getKey(asset), pusheableAsset, environment));
+                savePushedAsset(DependencyManager.getKey(asset), pusheableAsset, environment));
     }
 
     private void savePushedAsset(

@@ -6,6 +6,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.*;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
+import com.dotcms.publisher.assets.bean.PushedAsset;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.bundle.business.BundleFactoryImpl;
 import com.dotcms.publisher.business.DotPublisherException;
@@ -16,6 +17,7 @@ import com.dotcms.publisher.endpoint.bean.impl.PushPublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.util.dependencies.DependencyManager;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -75,6 +77,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.*;
+import static org.jgroups.util.Util.assertFalse;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -131,7 +134,7 @@ public class PublisherAPIImplTest {
         prepare();
 
         return  new TestAsset[]{
-                getContentTypeWithHost(),
+                getContentTypeWithHost()/*,
                 getTemplateWithDependencies(),
                 getContainerWithDependencies(),
                 getFolderWithDependencies(),
@@ -140,7 +143,7 @@ public class PublisherAPIImplTest {
                 getWorkflowWithDependencies(),
                 getLanguageWithDependencies(),
                 getRuleWithDependencies(),
-                getContentWithSeveralVersions()
+                getContentWithSeveralVersions()*/
         };
     }
 
@@ -400,7 +403,6 @@ public class PublisherAPIImplTest {
         config.setLuceneQueries(list());
         config.setId("PublisherAPIImplTest_" + System.currentTimeMillis());
 
-
         new BundleDataGen()
                 .pushPublisherConfig(config)
                 .addAssets(list(testAsset.asset))
@@ -483,6 +485,30 @@ public class PublisherAPIImplTest {
         } finally {
             httpServer.stop(0);
         }
+
+        assertPushAsset(bundle, environment, publishingEndPoint, dependencies);
+    }
+
+    private void assertPushAsset(final Bundle bundle,
+            final Environment environment,
+            PushPublishingEndPoint publishingEndPoint,
+            final Collection<Object> dependencies) throws DotDataException {
+
+        for (Object asset : dependencies) {
+            final String assetId = DependencyManager.getKey(asset);
+            final List<PushedAsset> pushedAssets = APILocator.getPushedAssetsAPI()
+                    .getPushedAssets(assetId);
+
+            assertEquals(pushedAssets.size(), 1);
+
+            for (PushedAsset pushedAsset : pushedAssets) {
+                assertEquals(assetId, pushedAsset.getAssetId());
+                assertEquals(bundle.getId(), pushedAsset.getBundleId());
+                assertEquals(environment.getId(), pushedAsset.getEnvironmentId());
+                assertEquals(publishingEndPoint.getId(), pushedAsset.getEndpointIds());
+            }
+        }
+
     }
 
     private HttpServer createHttpServer(File tempFile) throws IOException {

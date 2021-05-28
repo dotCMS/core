@@ -1,8 +1,11 @@
 package com.dotcms.publisher.util.dependencies;
 
 import com.dotcms.publisher.util.PusheableAsset;
+import com.dotcms.publishing.PublisherConfig.Config;
+import com.dotmarketing.beans.Host;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -97,5 +100,21 @@ public class DependencySet {
 
     public Set<String> getCategories() {
         return getAll(PusheableAsset.CATEGORY);
+    }
+
+    public Set<String> getFolders() {
+        return getAll(PusheableAsset.FOLDER);
+    }
+
+    public Set<String> getStructures() {
+        return getAll(PusheableAsset.CONTENT_TYPE);
+    }
+
+    public Set<String> getLanguages() {
+        return getAll(PusheableAsset.LANGUAGE);
+    }
+
+    public Set<String> getHosts() {
+        return getAll(PusheableAsset.SITE);
     }
 }
