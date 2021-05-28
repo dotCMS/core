@@ -5,6 +5,7 @@ import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformO
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_INFO;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_NAME;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.FILEASSET_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.IDENTIFIER_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.COMMON_PROPS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CONSTANTS;
@@ -80,7 +81,7 @@ public class DotTransformerBuilder {
      * Use to replace the BinaryToMapTransformer
      * @return
      */
-    DotTransformerBuilder binaryToMapTransformer(){
+    public DotTransformerBuilder binaryToMapTransformer(){
        optionsHolder.clear();
        optionsHolder.add(BINARIES_VIEW);
        return this;
@@ -90,7 +91,7 @@ public class DotTransformerBuilder {
      * Use to replace the LanguageToMapTransformer
      * @return
      */
-    DotTransformerBuilder languageToMapTransformer(){
+    public DotTransformerBuilder languageToMapTransformer(){
         optionsHolder.clear();
         optionsHolder.add(LANGUAGE_VIEW);
         return this;
@@ -148,6 +149,18 @@ public class DotTransformerBuilder {
         return this;
     }
 
+    public DotTransformerBuilder hydratedContentMapTransformer(){
+        optionsHolder.clear();
+        optionsHolder.addAll(DotContentletTransformerImpl.defaultOptions);
+        optionsHolder.add(KEY_VALUE_VIEW);
+        optionsHolder.add(IDENTIFIER_VIEW);
+        optionsHolder.add(LANGUAGE_VIEW);
+        optionsHolder.add(CATEGORIES_VIEW);
+        optionsHolder.add(BINARIES_VIEW);
+        optionsHolder.add(FILEASSET_VIEW);
+        return this;
+    }
+
     /**
      * Fine tuned to be used for DotAssets on BrowserAPI
      * @return
@@ -168,6 +181,20 @@ public class DotTransformerBuilder {
         if(allCategoriesInfo){
           optionsHolder.remove(CATEGORIES_NAME);
           optionsHolder.add(CATEGORIES_INFO);
+        }
+        return this;
+    }
+
+    /**
+     * Fine Tuned to be consumed from ContentResource
+     * @return
+     */
+    public DotTransformerBuilder allOptions(final boolean allCategoriesInfo){
+        optionsHolder.clear();
+        optionsHolder.addAll(EnumSet.of(COMMON_PROPS, CONSTANTS, VERSION_INFO, LOAD_META, BINARIES, CATEGORIES_NAME, LANGUAGE_PROPS));
+        if(allCategoriesInfo){
+            optionsHolder.remove(CATEGORIES_NAME);
+            optionsHolder.add(CATEGORIES_INFO);
         }
         return this;
     }

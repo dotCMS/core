@@ -24,6 +24,7 @@ import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLID;
 import static graphql.Scalars.GraphQLString;
+import static graphql.scalars.ExtendedScalars.Json;
 
 import com.dotcms.graphql.datafetcher.ContentMapDataFetcher;
 import com.dotcms.graphql.datafetcher.FolderFieldDataFetcher;
@@ -34,6 +35,7 @@ import com.dotcms.graphql.datafetcher.UserDataFetcher;
 import com.dotcms.graphql.util.TypeUtil.TypeFetcher;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.UtilMethods;
+import graphql.scalars.ExtendedScalars;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLTypeReference;
 import graphql.schema.PropertyDataFetcher;
@@ -77,7 +79,7 @@ public final class ContentFields {
                 new UserDataFetcher()));
         contentFields.put(MOD_USER_KEY, new TypeFetcher(GraphQLTypeReference.typeRef(USER.getTypeName()),
                 new UserDataFetcher()));
-        contentFields.put("map", new TypeFetcher(GraphQLString, new ContentMapDataFetcher(),
+        contentFields.put("map", new TypeFetcher(ExtendedScalars.Object, new ContentMapDataFetcher(),
                 GraphQLArgument.newArgument().name("key").type(GraphQLString).build()));
         return contentFields;
     }
