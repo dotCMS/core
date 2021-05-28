@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "766b73d8-a8cb-4c5b-ac3f-d971f6712b6d",
+		"_postman_id": "cfc6120a-7dde-4168-aac1-847bc49850aa",
 		"name": "Content Resource",
 		"description": "Content Resource test",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -589,6 +589,15 @@
 						"1"
 					]
 				}
+			},
+			"response": []
+		},
+		{
+			"name": "Request a Host",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": null
 			},
 			"response": []
 		}
