@@ -1,10 +1,35 @@
 package com.dotcms.publishing;
 
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.set;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.datagen.*;
+import com.dotcms.datagen.BundleDataGen;
+import com.dotcms.datagen.CategoryDataGen;
+import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.EnvironmentDataGen;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.FieldRelationshipDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.FilterDescriptorDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.LanguageDataGen;
+import com.dotcms.datagen.LinkDataGen;
+import com.dotcms.datagen.PushPublishingEndPointDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TemplateLayoutDataGen;
+import com.dotcms.datagen.WorkflowActionDataGen;
+import com.dotcms.datagen.WorkflowDataGen;
+import com.dotcms.datagen.WorkflowStepDataGen;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.bundle.business.BundleFactoryImpl;
@@ -44,39 +69,34 @@ import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
-import org.elasticsearch.index.fielddata.FieldData;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.Nullable;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static com.dotcms.util.CollectionsUtils.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(DataProviderRunner.class)
 public class PublisherAPIImplTest {
@@ -142,36 +162,6 @@ public class PublisherAPIImplTest {
                 getRuleWithDependencies(),
                 getContentWithSeveralVersions()
         };
-    }
-
-    private static TestAsset getContentWithSeveralVersions() throws DotDataException, DotSecurityException {
-        final Host host = new SiteDataGen().nextPersisted();
-
-        final Field textField = new FieldDataGen().type(TextField.class).next();
-        final ContentType contentType = new ContentTypeDataGen()
-                .field(textField)
-                .host(host)
-                .nextPersisted();
-
-        final Contentlet liveVersion = new ContentletDataGen(contentType)
-                .setProperty(textField.variable(), "Live versions")
-                .host(host)
-                .nextPersisted();
-
-        ContentletDataGen.publish(liveVersion);
-
-        final Contentlet workingVersion = ContentletDataGen.checkout(liveVersion);
-        workingVersion.setStringProperty(textField.variable(), "Working versions");
-        ContentletDataGen.checkin(workingVersion);
-
-        final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI()
-                .findSystemWorkflowScheme();
-
-        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
-
-        return new TestAsset(workingVersion,
-                set(host, systemWorkflowScheme, contentType, liveVersion, defaultLanguage),
-                "/bundlers-test/contentlet/contentlet/contentlet.content.xml");
     }
 
     private static TestAsset getContentWithSeveralVersions() throws DotDataException, DotSecurityException {
