@@ -268,6 +268,7 @@ jobs:
           dotcicd/library/pipeline.sh runIntegration
         env:
           databaseType: ${{ matrix.databaseType }}
+          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
         if: success() && env.jobRun == 'true'
   slack-notification:
     name: Notification
