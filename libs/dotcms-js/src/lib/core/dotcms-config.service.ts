@@ -27,7 +27,16 @@ export interface DotUiColors {
 export interface ConfigParams {
     colors: DotUiColors;
     emailRegex: string;
-    license: object;
+    license: {
+        displayServerId: string;
+        isCommunity: boolean;
+        level: number;
+        levelName: string;
+    };
+    logos: {
+        loginScreen: string;
+        navBar: string;
+    };
     menu: Menu[];
     paginatorLinks: number;
     paginatorRows: number;
@@ -81,6 +90,7 @@ export class DotcmsConfigService {
                     colors: res.config.colors,
                     emailRegex: res.config[EMAIL_REGEX],
                     license: res.config.license,
+                    logos: res.config.logos,
                     menu: res.menu,
                     paginatorLinks: res.config[DOTCMS_PAGINATOR_LINKS],
                     paginatorRows: res.config[DOTCMS_PAGINATOR_ROWS],

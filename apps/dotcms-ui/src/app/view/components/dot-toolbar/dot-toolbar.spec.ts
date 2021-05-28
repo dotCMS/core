@@ -1,5 +1,5 @@
 import { By } from '@angular/platform-browser';
-import { ComponentFixture, waitForAsync } from '@angular/core/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { DebugElement, Injectable, Component, Input } from '@angular/core';
 import { DotToolbarComponent } from './dot-toolbar.component';
 import { DOTTestBed } from '../../../test/dot-test-bed';
@@ -13,6 +13,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { ActivatedRoute } from '@angular/router';
 import { UiDotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
 import { DotIconModule } from '@dotcms/ui';
+import { DotNavLogoService } from '@services/dot-nav-logo/dot-nav-logo.service';
 
 @Injectable()
 class MockDotNavigationService {
@@ -85,6 +86,7 @@ class MockDotCrumbtrailComponent {}
 describe('DotToolbarComponent', () => {
     let dotRouterService: DotRouterService;
     let dotNavigationService: DotNavigationService;
+    let dotNavLogoService: DotNavLogoService;
     let comp: DotToolbarComponent;
     let fixture: ComponentFixture<DotToolbarComponent>;
     let de: DebugElement;
@@ -113,7 +115,8 @@ describe('DotToolbarComponent', () => {
                     { provide: DotNavigationService, useClass: MockDotNavigationService },
                     { provide: SiteService, useValue: siteServiceMock },
                     { provide: ActivatedRoute, useClass: MockRouterService },
-                    IframeOverlayService
+                    IframeOverlayService,
+                    DotNavLogoService
                 ]
             });
 
@@ -122,6 +125,7 @@ describe('DotToolbarComponent', () => {
             de = fixture.debugElement;
             dotRouterService = de.injector.get(DotRouterService);
             dotNavigationService = de.injector.get(DotNavigationService);
+            dotNavLogoService = TestBed.inject(DotNavLogoService);
             spyOn(comp, 'siteChange').and.callThrough();
         })
     );
@@ -173,5 +177,21 @@ describe('DotToolbarComponent', () => {
 
         expect(dotNavigationService.toggle).toHaveBeenCalledTimes(1);
         expect(button.componentInstance.icon).toEqual('arrow_back');
+    });
+
+    it('should have default logo', () => {
+        dotNavLogoService.navBarLogo$.next(null);
+        fixture.detectChanges();
+        const defaultLogo = de.nativeElement.querySelector('.toolbar__logo');
+        expect(defaultLogo).not.toBeNull();
+    });
+
+    it('should have the logo passed to the subject', () => {
+        const imageUrlProp = 'url("image.png")';
+        dotNavLogoService.navBarLogo$.next(imageUrlProp);
+        fixture.detectChanges();
+        const newLogo = de.nativeElement.querySelector('.toolbar__logo--whitelabel');
+        expect(newLogo.style['background-image']).toBe(imageUrlProp);
+        expect(newLogo).not.toBeNull();
     });
 });

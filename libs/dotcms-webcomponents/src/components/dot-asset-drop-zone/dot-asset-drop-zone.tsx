@@ -48,6 +48,8 @@ export class DotAssetDropZone {
         errorHeader: 'Error'
     };
 
+    @Prop() displayIndicator = false;
+
     /** Legend to be shown when creating dotAssets */
     @Prop() createAssetsText = 'Creating DotAssets';
 
@@ -79,7 +81,11 @@ export class DotAssetDropZone {
                 ondragleave={(event: DragEvent) => this.dragOutHandler(event)}
                 ondragover={(event: DragEvent) => this.dragOverHandler(event)}
             >
-                <div class={`${this.dropState} dot-asset-drop-zone__indicators`}>
+                <div
+                    class={`${this.dropState} dot-asset-drop-zone__indicators ${
+                        this.displayIndicator ? 'active' : ''
+                    }`}
+                >
                     <div class="dot-asset-drop-zone__icon">
                         <mwc-icon>get_app</mwc-icon>
                         <span>{this.dropFilesText}</span>
@@ -99,7 +105,6 @@ export class DotAssetDropZone {
                         </mwc-button>
                     </mwc-dialog>
                 </div>
-
                 <slot />
             </Host>
         );

@@ -9,7 +9,7 @@ export default {
     }
 };
 
-export const DopZone = () => {
+export const DropZone = () => {
     const props = [
         {
             name: 'Text',
@@ -22,6 +22,10 @@ export const DopZone = () => {
     props.forEach(({ name, content }) => {
         dropZone[name] = content;
     });
+
+    dropZone.style.display = 'block';
+    dropZone.style.width = '100%';
+    dropZone.style.height = '100%';
 
     body.appendChild(dropZone);
 

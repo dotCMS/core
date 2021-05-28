@@ -1,8 +1,10 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { SiteService, Site, DotcmsEventsService } from '@dotcms/dotcms-js';
+import { SiteService, Site, DotcmsEventsService, DotcmsConfigService } from '@dotcms/dotcms-js';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
+import { DotNavLogoService } from '@services/dot-nav-logo/dot-nav-logo.service';
+import { BehaviorSubject } from 'rxjs';
 
 @Component({
     selector: 'dot-toolbar',
@@ -12,10 +14,13 @@ import { DotNavigationService } from '../dot-navigation/services/dot-navigation.
 export class DotToolbarComponent implements OnInit {
     @Input()
     collapsed: boolean;
+    logo$: BehaviorSubject<string> = this.dotNavLogoService.navBarLogo$;
 
     constructor(
         private dotRouterService: DotRouterService,
         private dotcmsEventsService: DotcmsEventsService,
+        private dotCmsConfigService: DotcmsConfigService,
+        private dotNavLogoService: DotNavLogoService,
         private siteService: SiteService,
         public dotNavigationService: DotNavigationService,
         public iframeOverlayService: IframeOverlayService

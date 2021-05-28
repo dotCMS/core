@@ -19,8 +19,9 @@ dot-asset-drop-zone {
         transition: opacity 250ms ease-in;
         z-index: 1002;
 
-        &.drag-enter {
-            pointer-events: all ;
+        &.drag-enter,
+        &.active {
+            pointer-events: all;
             border: 3px dashed var(--color-sec);
             opacity: 1;
 
@@ -29,7 +30,7 @@ dot-asset-drop-zone {
             }
         }
         &.drop {
-            pointer-events: all ;
+            pointer-events: all;
             border: 3px dashed #7e7a86;
             opacity: 1;
 

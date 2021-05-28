@@ -8,6 +8,7 @@ import { DotPushPublishDialogService, DotUiColors } from '@dotcms/dotcms-js';
 import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotNavLogoService } from '@services/dot-nav-logo/dot-nav-logo.service';
 /**
  * Handle Custom events
  *
@@ -22,6 +23,7 @@ export class DotCustomEventHandlerService {
         private dotLoadingIndicatorService: DotLoadingIndicatorService,
         private dotRouterService: DotRouterService,
         private dotUiColorsService: DotUiColorsService,
+        private dotNavLogoService: DotNavLogoService,
         private dotContentletEditorService: DotContentletEditorService,
         private dotIframeService: DotIframeService,
         private dotPushPublishDialogService: DotPushPublishDialogService,
@@ -34,7 +36,7 @@ export class DotCustomEventHandlerService {
                 'edit-contentlet': this.editContentlet.bind(this),
                 'edit-task': this.editTask.bind(this),
                 'create-contentlet': this.createContentlet.bind(this),
-                'company-info-updated': this.setDotcmsUiColors.bind(this),
+                'company-info-updated': this.setPersonalization.bind(this),
                 'push-publish': this.pushPublishDialog.bind(this),
                 'download-bundle': this.downloadBundleDialog.bind(this),
                 'workflow-wizard': this.executeWorkflowWizard.bind(this)
@@ -79,7 +81,9 @@ export class DotCustomEventHandlerService {
         this.dotRouterService.goToEditTask($event.detail.data.inode);
     }
 
-    private setDotcmsUiColors($event: CustomEvent): void {
+    private setPersonalization($event: CustomEvent): void {
+        this.dotNavLogoService.setLogo($event.detail.payload.navBarLogo);
+
         this.dotUiColorsService.setColors(
             document.querySelector('html'),
             <DotUiColors>$event.detail.payload.colors

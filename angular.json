@@ -333,7 +333,7 @@
                     "builder": "@nrwl/storybook:storybook",
                     "options": {
                         "uiFramework": "@storybook/html",
-                        "port": 4400,
+                        "port": 6006,
                         "config": {
                             "configFolder": "libs/dotcms-webcomponents/.storybook"
                         }
