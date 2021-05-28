@@ -1768,7 +1768,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
       if(Config.getBooleanProperty("PERMISSION_LOCK_ON_READ", false)) {
           return Try.of(() -> lockManager.tryLock(LOCK_PREFIX + permissionKey, () -> {
               return readPermissions.get();
-          })).get();
+          })).getOrElseThrow(e -> new DotRuntimeException(e));
       }
       
       return readPermissions.get();
