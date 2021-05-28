@@ -1091,7 +1091,6 @@ public class DependencyBundlerTest {
                 publishingEndPoint,
                 bundle);
 
-
         bundler.setConfig(config);
         bundler.generate(bundleOutput, status);
 
