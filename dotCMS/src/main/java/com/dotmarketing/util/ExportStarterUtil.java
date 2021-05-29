@@ -184,7 +184,8 @@ public class ExportStarterUtil {
                                 .setStartRow(i).setMaxRows(step);
                     } else if (Contentlet.class.equals(clazz)) {
                         dc = new DotConnect();
-                        dc.setSQL("SELECT * FROM contentlet ORDER BY inode")
+                        dc.setSQL("select contentlet.*, contentlet_1_.owner from contentlet join inode contentlet_1_ "
+                                + " on contentlet_1_.inode = contentlet.inode ORDER BY contentlet.inode")
                                 .setStartRow(i).setMaxRows(step);
                     } else {
                         _dh.setQuery("from " + clazz.getName() + " order by 1");
