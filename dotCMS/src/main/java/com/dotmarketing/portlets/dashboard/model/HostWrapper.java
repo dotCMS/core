@@ -36,7 +36,9 @@ public class HostWrapper extends Host{
 		this.pageViewsDiff = pageViewsDiff;
 	}
 	
-	public HostWrapper(final Contentlet contentlet, final long pageViews, final long pageViewsDiff) {
+	public HostWrapper(final Contentlet contentlet, final long pageViews, final long pageViewsDiff)
+            throws InvocationTargetException, IllegalAccessException {
+        BeanUtils.copyProperties(this, contentlet);
 		this.contentletMap = contentlet.getMap();
 		this.pageViews = pageViews;
 		this.pageViewsDiff = pageViewsDiff;
