@@ -170,7 +170,11 @@ public class ESQueryCacheTest {
 
         }
 
+        @Override
+        public void setTransport(CacheTransport transport) {
 
+
+        }
 
         @Override
         public void removeLocalOnly(String key, String group, boolean ignoreDistributed) {

@@ -1,25 +1,8 @@
 package com.dotmarketing.business.jgroups;
 
-import java.io.Serializable;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import org.jgroups.Address;
-import org.jgroups.Event;
-import org.jgroups.JChannel;
-import org.jgroups.Message;
-import org.jgroups.PhysicalAddress;
-import org.jgroups.ReceiverAdapter;
-import org.jgroups.View;
-import com.dotcms.cache.transport.CacheTransportTopic;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.business.ServerAPI;
-import com.dotcms.dotpubsub.DotPubSubEvent;
-import com.dotcms.enterprise.ClusterUtilProxy;
 import com.dotcms.repackage.org.apache.struts.Globals;
-import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.ChainableCacheAdministratorImpl;
@@ -31,8 +14,18 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.struts.MultiMessageResources;
-import io.vavr.control.Try;
-import jersey.repackaged.com.google.common.collect.ImmutableMap;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.commons.collections.map.LRUMap;
+import org.jgroups.Address;
+import org.jgroups.Event;
+import org.jgroups.JChannel;
+import org.jgroups.Message;
+import org.jgroups.PhysicalAddress;
+import org.jgroups.ReceiverAdapter;
+import org.jgroups.View;
 
 /**
  * @author Jonathan Gamba
@@ -42,7 +35,7 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
 
     private final AtomicBoolean isInitialized = new AtomicBoolean(false);
 
-    final private Map<String, Serializable> cacheStatus = new ConcurrentHashMap<>();
+    private Map<String, Map<String, Boolean>> cacheStatus;
     private JChannel channel;
 
     @Override
@@ -56,6 +49,7 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
             ServerAPI serverAPI = APILocator.getServerAPI();
             ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
+            cacheStatus = new LRUMap(100);
 
             String cacheProtocol = Config.getStringProperty("CACHE_PROTOCOL", "tcp");
 
@@ -217,46 +211,51 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
             }
 
             //Handle when other server is responding to ping.
-            //Handle when other server is responding to ping.
         } else if ( v.toString().startsWith(ChainableCacheAdministratorImpl.VALIDATE_CACHE_RESPONSE) ) {
 
+            String message = v.toString();
             //Deletes the first part of the message, no longer needed.
-            String message = v.toString().replace(ChainableCacheAdministratorImpl.VALIDATE_CACHE_RESPONSE, "");
+            message = message.replace(ChainableCacheAdministratorImpl.VALIDATE_CACHE_RESPONSE, "");
 
-            Logger.info(this.getClass(), "got a response to my question: VALIDATE_CACHE? ");
+            //Gets the part of the message that has the Data in Milli.
+            String dateInMillis = message.substring(0, message.indexOf(ChainableCacheAdministratorImpl.VALIDATE_SEPARATOR));
+            //Gets the last part of the message that has the Server ID.
+            String serverID = message.substring(message.lastIndexOf(ChainableCacheAdministratorImpl.VALIDATE_SEPARATOR) + 1);
+
             synchronized (this) {
-                final String incomingMessage = message;
+                //Creates or updates the Map inside the Map.
+                Map<String, Boolean> localMap = cacheStatus.get(dateInMillis);
 
-                HashMap<String, Serializable> incomingMap =
-                                Try.of(() -> DotObjectMapperProvider.getInstance().getDefaultObjectMapper()
-                                                .readValue(incomingMessage, HashMap.class)).getOrElse(new HashMap<>());
-                final String origin = (String) incomingMap.get("serverId");
-                cacheStatus.put(origin, incomingMap);
-                Logger.debug(this, ChainableCacheAdministratorImpl.VALIDATE_CACHE_RESPONSE + " SERVER_ID: " + origin
-                                + " Message: " + msg);
+                if ( localMap == null ) {
+                    localMap = new HashMap<String, Boolean>();
+                }
+
+                localMap.put(serverID, Boolean.TRUE);
+
+                //Add the Info with the Date in Millis and the Map with Server Info.
+                cacheStatus.put(dateInMillis, localMap);
             }
 
-
+            Logger.debug(this, ChainableCacheAdministratorImpl.VALIDATE_CACHE_RESPONSE + " SERVER_ID: " + serverID + " DATE_MILLIS: " + dateInMillis);
 
             //Handle when other server is trying to ping local server.
         } else if ( v.toString().startsWith(ChainableCacheAdministratorImpl.VALIDATE_CACHE) ) {
 
-            final DotPubSubEvent event = new DotPubSubEvent.Builder()
-                            .withOrigin(APILocator.getServerAPI().readServerId())
-                            .withType(CacheTransportTopic.CacheEventType.CLUSTER_REQ.name())
-                            .withTopic("cacheInvalidation")
-                            .withPayload(ClusterUtilProxy.getNodeInfo())
-                            .build();
+            String message = v.toString();
+            //Deletes the first part of the message, no longer needed.
+            message = message.replace(ChainableCacheAdministratorImpl.VALIDATE_CACHE, "");
 
-            Logger.info(this.getClass(), "got asked to VALIDATE_CACHE?, sending response");
+            //Gets the part of the message that has the Data in Milli.
+            String dateInMillis = message;
+            //Sends the message back in order to alert the server we are alive.
             try {
-                send(ChainableCacheAdministratorImpl.VALIDATE_CACHE_RESPONSE + event.toString());
+                send(ChainableCacheAdministratorImpl.VALIDATE_CACHE_RESPONSE + dateInMillis + ChainableCacheAdministratorImpl.VALIDATE_SEPARATOR + APILocator.getServerAPI().readServerId());
             } catch ( CacheTransportException e ) {
                 Logger.error(this.getClass(), "Error sending message", e);
                 throw new DotRuntimeException("Error sending message", e);
             }
 
-            Logger.debug(this, ChainableCacheAdministratorImpl.VALIDATE_CACHE +event.getMessage());
+            Logger.debug(this, ChainableCacheAdministratorImpl.VALIDATE_CACHE + " DATE_MILLIS: " + dateInMillis);
 
         } else if ( v.toString().equals("ACK") ) {
             Logger.info(this, "ACK Received " + new Date());
@@ -271,44 +270,49 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
         }
     }
 
-    @Override
-    public Map<String, Serializable> validateCacheInCluster(int maxWaitMillis) throws CacheTransportException {
 
-        
-        cacheStatus.clear();
 
-        final int numberServers = Try.of(()-> APILocator.getServerAPI().getAliveServers().size()).getOrElse(0);
-        
-        final Map<String,Serializable> map = ClusterUtilProxy.getNodeInfo();
-        cacheStatus.put(APILocator.getServerAPI().readServerId(),(Serializable) map);
-        
+    public Map<String, Boolean> validateCacheInCluster ( String dateInMillis, int numberServers, int maxWaitSeconds ) throws CacheTransportException {
+
+        cacheStatus = new HashMap<>();
+
         //If we are already in Cluster.
-        if ( numberServers > 1 ) {
+        if ( numberServers > 0 ) {
             //Sends the message to the other servers.
-            send(ChainableCacheAdministratorImpl.VALIDATE_CACHE );
+            send(ChainableCacheAdministratorImpl.VALIDATE_CACHE + dateInMillis);
 
             //Waits for 2 seconds in order all the servers respond.
-
-            final long endTime = System.currentTimeMillis() + maxWaitMillis;
+            int maxWaitTime = maxWaitSeconds * 1000;
+            int passedWaitTime = 0;
 
             //Trying to NOT wait whole 2 seconds for returning the info.
-            while ( System.currentTimeMillis() <= endTime ) {
+            while ( passedWaitTime <= maxWaitTime ) {
                 try {
                     Thread.sleep(10);
+                    passedWaitTime += 10;
 
-                    if(cacheStatus.size()>=numberServers) {
-                        return ImmutableMap.copyOf(cacheStatus);
+                    Map<String, Boolean> ourMap = cacheStatus.get(dateInMillis);
+
+                    //No need to wait if we have all server results.
+                    if ( ourMap != null && ourMap.size() == numberServers ) {
+                        passedWaitTime = maxWaitTime + 1;
                     }
+
                 } catch ( InterruptedException ex ) {
                     Thread.currentThread().interrupt();
-    
+                    passedWaitTime = maxWaitTime + 1;
                 }
             }
         }
 
-        return ImmutableMap.copyOf(cacheStatus);
+        //Returns the Map with all the info stored by receive() method.
+        Map<String, Boolean> mapToReturn = new HashMap<String, Boolean>();
 
+        if ( cacheStatus.get(dateInMillis) != null ) {
+            mapToReturn = cacheStatus.get(dateInMillis);
+        }
 
+        return mapToReturn;
     }
 
     public View getView () {
