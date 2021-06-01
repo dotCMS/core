@@ -6561,14 +6561,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         //Enforce validation only if the file name isn't the same we've already got
         if(hasNewIncomingFile(contentlet)){
-            boolean fileNameExists = false;
+            boolean fileNameExists = false; String fileName = "unknown";
             try {
                 final Host site = APILocator.getHostAPI ().find(contentlet.getHost(), APILocator.getUserAPI().getSystemUser(), false);
                 final Folder folder = UtilMethods.isSet(contentlet.getFolder())?
                         APILocator.getFolderAPI().find(contentlet.getFolder(), APILocator.getUserAPI().getSystemUser(), false):
                         APILocator.getFolderAPI().findSystemFolder();
 
-                String fileName = contentlet.getBinary(FileAssetAPI.BINARY_FIELD) != null ? contentlet.getBinary(FileAssetAPI.BINARY_FIELD).getName() : StringPool.BLANK;
+                fileName = contentlet.getBinary(FileAssetAPI.BINARY_FIELD) != null ? contentlet.getBinary(FileAssetAPI.BINARY_FIELD).getName() : StringPool.BLANK;
                 if(UtilMethods.isSet(contentlet.getStringProperty("fileName"))){
                     fileName = contentlet.getStringProperty("fileName");
                 }
@@ -6576,8 +6576,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     fileNameExists = APILocator.getFileAssetAPI().fileNameExists(site, folder, fileName, contentlet.getIdentifier());
                     if(!APILocator.getFolderAPI().matchFilter(folder, fileName)) {
                         final DotContentletValidationException cve = new FileAssetValidationException(Sneaky.sneak(()->LanguageUtil.get("message.file_asset.error.filename.filters")));
-                        Logger.warn(this, "File Asset [" + contentIdentifier + "] does not match specified folder" +
-                                " file filters");
+                        Logger.warn(this, String.format("File Asset [%s] , fileNAme [%s]  does not match specified folder file filters", contentIdentifier, fileName));
                         cve.addBadTypeField(new LegacyFieldTransformer(contentType.fieldMap().get(FileAssetAPI
                                 .HOST_FOLDER_FIELD)).asOldField());
                         throw cve;
@@ -6588,14 +6587,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 if(e instanceof FileAssetValidationException) {
                     throw (FileAssetValidationException) e;
                 }
-                final String errorMsg = "Unable to validate field: " + FileAssetAPI.BINARY_FIELD + " in " +
-                        "contentlet [" + contentIdentifier + "]";
+                final String errorMsg = String.format("Unable to validate field:[%s] in contentlet [%s], fileName [%s]", FileAssetAPI.BINARY_FIELD, contentIdentifier, fileName );
                 Logger.warn(this, errorMsg);
                 throw new FileAssetValidationException(errorMsg, e);
             }
             if(fileNameExists){
                 final DotContentletValidationException cve = new FileAssetValidationException(Sneaky.sneak(()->LanguageUtil.get("message.contentlet.fileasset.filename.already.exists")));
-                Logger.warn(this, "Name of File Asset [" + contentIdentifier + "] already exists");
+                Logger.warn(this, String.format("Name of File Asset Id:[%s], name:[%s] already exists", contentIdentifier, fileName));
                 cve.addBadTypeField(new LegacyFieldTransformer(contentType.fieldMap().get(FileAssetAPI
                         .HOST_FOLDER_FIELD)).asOldField());
                 throw cve;
