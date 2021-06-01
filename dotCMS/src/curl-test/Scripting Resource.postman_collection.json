@@ -165,7 +165,7 @@
 								"dynamic"
 							]
 						},
-						"description": "This will call the endpoint that brings back the whole list of available Apps. So it can be verified the new one was imported. "
+						"description": "fires a vtl that renders metadata attributes and verifies them.  "
 					},
 					"response": []
 				}
