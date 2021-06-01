@@ -16,7 +16,7 @@ public class DependencySet {
     private Map<PusheableAsset, Set<String>> addedWithoutDependencies = new HashMap();
     private Map<PusheableAsset, Set<String>> addedWithDependencies  = new HashMap();
 
-    public void add(final String assetId, final PusheableAsset pusheableAsset){
+    public synchronized void add(final String assetId, final PusheableAsset pusheableAsset){
         final Set<String> assets = getSet(pusheableAsset, addedWithoutDependencies);
         assets.add(assetId);
     }
@@ -49,7 +49,11 @@ public class DependencySet {
         final Set<String> assetsWithoutDependencies =
                 getSet(pusheableAsset, addedWithoutDependencies);
 
-        return assetsWithoutDependencies.contains(assetId);
+        final Set<String> assetsWithDependencies =
+                getSet(pusheableAsset, addedWithDependencies);
+
+        return assetsWithoutDependencies.contains(assetId) ||
+                assetsWithDependencies.contains(assetId);
     }
 
     public boolean isDependenciesAdded(final String assetId, final PusheableAsset pusheableAsset){
@@ -64,7 +68,7 @@ public class DependencySet {
                 getSet(pusheableAsset, addedWithDependencies);
 
         final Set<String> assetsWitDependencies =
-                getSet(pusheableAsset, addedWithDependencies);
+                getSet(pusheableAsset, addedWithoutDependencies);
 
         return Stream.concat(assetsWithoutDependencies.stream(), assetsWitDependencies.stream())
                 .collect(Collectors.toSet());

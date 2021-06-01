@@ -2,6 +2,7 @@ package com.dotcms.publisher.util.dependencies;
 
 import static com.dotcms.util.CollectionsUtils.set;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.exception.ExceptionUtil;
@@ -257,7 +258,7 @@ public class DependencyManager {
 										: "N/A")
 										+ " does NOT have working or live version, not Pushed");
 					} else {
-						config.addWithDependencies(container, PusheableAsset.FOLDER);
+						config.addWithDependencies(container, PusheableAsset.CONTAINER);
 					}
 				} catch (DotSecurityException e) {
 					Logger.error(getClass(),
@@ -537,14 +538,13 @@ public class DependencyManager {
 				.getContainersInTemplate(template, user, false);
 	}
 
-	private Optional<Folder> getThemeByTemplate(final Template template)
+	private Folder getThemeByTemplate(final Template template)
 			throws DotDataException, DotSecurityException {
 
 			final Folder themeFolder = APILocator.getFolderAPI()
 					.find(template.getTheme(), user, false);
 
-			return themeFolder != null && InodeUtils.isSet(themeFolder.getInode()) ?
-					Optional.of(themeFolder) : Optional.empty();
+			return themeFolder;
 	}
 
 	private Host getHostByContainer(final Container container)
@@ -588,17 +588,15 @@ public class DependencyManager {
 	/**
 	 * Given that a FileAssetTemplate is defined by a bunch of files we need to collect the folder that enclose'em
 	 */
-	private Optional<Folder> getFileAssetTemplateRootFolder(final FileAssetTemplate fileAssetTemplate)
+	private Folder getFileAssetTemplateRootFolder(final FileAssetTemplate fileAssetTemplate)
 			throws DotDataException, DotSecurityException {
 		try {
 			final String path = fileAssetTemplate.getPath();
-			return Optional.of(
-					APILocator.getFolderAPI()
-						.findFolderByPath(path, fileAssetTemplate.getHost(), user, false)
-			);
+			return APILocator.getFolderAPI()
+						.findFolderByPath(path, fileAssetTemplate.getHost(), user, false);
 		}catch (DotSecurityException | DotDataException e) {
 			Logger.error(DependencyManager.class, "Error Collecting the Folder of the File Asset Template: " + fileAssetTemplate.getIdentifier(), e);
-			return Optional.empty();
+			return null;
 		}
 	}
 
@@ -636,7 +634,7 @@ public class DependencyManager {
 			final Collection<T> assets = getter.get();
 
 			if (assets != null) {
-				assets.stream()
+				return assets.stream()
 					.filter(asset -> add(pusheableAsset, asset))
 					.collect(Collectors.toSet());
 			}
@@ -667,20 +665,29 @@ public class DependencyManager {
 		return Optional.empty();
 	}
 
-	private <T> boolean add(final PusheableAsset pusheableAsset, final T asset) {
+	private synchronized <T> boolean add(final PusheableAsset pusheableAsset, final T asset) {
 		if (Contentlet.class.isInstance(asset) && !Contentlet.class.cast(asset).isHost() &&
-				!publisherFilter.doesExcludeDependencyQueryContainsContentletId(
+				publisherFilter.doesExcludeDependencyQueryContainsContentletId(
 						((Contentlet) asset).getIdentifier())) {
 			return false;
 		}
 
-		if (!dependencyModDateUtil.excludeByModDate(asset, pusheableAsset)) {
-			config.add(asset, pusheableAsset);
-			pushedAssetUtil.savePushedAssetForAllEnv(asset, pusheableAsset);
+		if (!shouldCheckModDate(asset) ||
+				!dependencyModDateUtil.excludeByModDate(asset, pusheableAsset)) {
+
+			final boolean isAdded = config.add(asset, pusheableAsset);
+
+			if (isAdded) {
+				pushedAssetUtil.savePushedAssetForAllEnv(asset, pusheableAsset);
+			}
 			return true;
 		} else {
 			return false;
 		}
+	}
+
+	private <T> boolean shouldCheckModDate(T asset) {
+		return !Language.class.isInstance(asset);
 	}
 
 	/**
@@ -697,10 +704,10 @@ public class DependencyManager {
 			Identifier ident = APILocator.getIdentifierAPI().find(linkId);
 
 			// Folder Dependencies
-			tryToAdd(PusheableAsset.FOLDER, () -> Optional.of(getFolderByParentIdentifier(ident)));
+			tryToAdd(PusheableAsset.FOLDER, () -> getFolderByParentIdentifier(ident));
 
 			// Host Dependencies
-			tryToAdd(PusheableAsset.SITE, () -> Optional.of(getHostById(ident.getHostId())));
+			tryToAdd(PusheableAsset.SITE, () -> getHostById(ident.getHostId()));
 
 			// Content Dependencies
 			tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET, () -> getContentletsByLink(linkId));
@@ -767,7 +774,7 @@ public class DependencyManager {
 	 */
 	private void processFolderDependency(final Folder folder) {
 		try {
-			tryToAdd(PusheableAsset.FOLDER, () -> Optional.of(getParentFolder(folder)));
+			tryToAdd(PusheableAsset.FOLDER, () -> getParentFolder(folder));
 			setFolderListDependencies(folder);
 		} catch (DotSecurityException | DotDataException e) {
 			Logger.error(this, e.getMessage(),e);
@@ -784,7 +791,7 @@ public class DependencyManager {
 	private void setFolderListDependencies(final Folder folder)
 			throws DotIdentifierStateException, DotDataException, DotSecurityException {
 
-		tryToAdd(PusheableAsset.SITE, () -> Optional.of(getHostById(folder.getHostId())));
+		tryToAdd(PusheableAsset.SITE, () -> getHostById(folder.getHostId()));
 
 		// Content dependencies
 		tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET,
@@ -803,8 +810,8 @@ public class DependencyManager {
 				() -> getContentTypeByFolder(folder));
 
 		// SubFolders
-		APILocator.getFolderAPI().findSubFolders(folder, user, false).stream()
-				.forEach(subFolder -> dependencyProcessor.addAsset(subFolder, PusheableAsset.FOLDER));
+		tryToAddAllAndProcessDependencies(PusheableAsset.FOLDER,
+				() -> APILocator.getFolderAPI().findSubFolders(folder, user, false));
 	}
 
 	/**
@@ -835,10 +842,10 @@ public class DependencyManager {
 			}
 
 			// Host dependency
-			tryToAdd(PusheableAsset.SITE, () -> Optional.of(getHostById(identifier.getHostId())));
+			tryToAdd(PusheableAsset.SITE, () -> getHostById(identifier.getHostId()));
 
 			// Folder dependencies
-			tryToAdd(PusheableAsset.FOLDER, () -> Optional.of(getFolderByParentIdentifier(identifier)));
+			tryToAdd(PusheableAsset.FOLDER, () -> getFolderByParentIdentifier(identifier));
 
 			// looking for working version (must exists)
 			final IHTMLPage workingPage = Try.of(
@@ -869,7 +876,7 @@ public class DependencyManager {
 
 				// Templates dependencies
 				if(!(workingTemplateWP instanceof FileAssetTemplate)) {
-					tryToAdd(PusheableAsset.TEMPLATE, () -> Optional.of(workingTemplateWP));
+					tryToAdd(PusheableAsset.TEMPLATE, () -> workingTemplateWP);
 				}
 				dependencyProcessor.addAsset(workingPage.getTemplateId(), PusheableAsset.TEMPLATE);
 			}
@@ -881,17 +888,17 @@ public class DependencyManager {
 			// Templates dependencies
 			if (liveTemplateLP != null ) {
 				if(!(liveTemplateLP instanceof FileAssetTemplate)) {
-					tryToAdd(PusheableAsset.TEMPLATE, () -> Optional.of(liveTemplateLP));
+					tryToAdd(PusheableAsset.TEMPLATE, () -> liveTemplateLP);
 				}
 				dependencyProcessor.addAsset(livePage.getTemplateId(), PusheableAsset.TEMPLATE);
 			}
 
 			// Contents dependencies
-			tryToAddAndProcessDependencies(PusheableAsset.CONTENTLET, () -> Optional.of(getContentletsByPage(workingPage)));
+			tryToAddAndProcessDependencies(PusheableAsset.CONTENTLET, () -> getContentletsByPage(workingPage));
 
 
 			// Rule dependencies
-			tryToAddAndProcessDependencies(PusheableAsset.RULE, () -> Optional.of(getRuleByPage(workingPage)));
+			tryToAddAndProcessDependencies(PusheableAsset.RULE, () -> getRuleByPage(workingPage));
 		} catch (DotSecurityException | DotDataException e) {
 			Logger.error(this, e.getMessage(),e);
 		}
@@ -907,7 +914,7 @@ public class DependencyManager {
 					APILocator.getTemplateAPI().findLiveTemplate(template.getIdentifier(), user, false);
 
 			// Host dependency
-			tryToAdd(PusheableAsset.SITE, () -> Optional.of(getHostByTemplate(workingTemplate)));
+			tryToAdd(PusheableAsset.SITE, () -> getHostByTemplate(workingTemplate));
 
 			addContainerByTemplate(workingTemplate);
 			addContainerByTemplate(liveTemplate);
@@ -930,13 +937,13 @@ public class DependencyManager {
 
 		tryToAddAllAndProcessDependencies(PusheableAsset.CONTAINER, () ->
 					containerByTemplate.stream()
-						.filter(FileAssetContainer.class::isInstance)
+						.filter(container -> !FileAssetContainer.class.isInstance(container))
 						.collect(Collectors.toList())
 		);
 
 		containerByTemplate.stream()
-			.filter(container -> !FileAssetContainer.class.isInstance(container))
-			.forEach(container -> dependencyProcessor.addAsset(container.getIdentifier(),
+			.filter(FileAssetContainer.class::isInstance)
+			.forEach(container -> dependencyProcessor.addAsset(container,
 					PusheableAsset.CONTAINER));
 	}
 
@@ -952,12 +959,12 @@ public class DependencyManager {
 	private void processContainerDependency(final Container container)  {
 
 		try {
-			final String containerId = container.getInode();
+			final String containerId = container.getIdentifier();
 			final Container containerById = APILocator.getContainerAPI()
 					.getWorkingContainerById(containerId, user, false);
 
 			// Host Dependency
-			tryToAdd(PusheableAsset.SITE, () -> Optional.of(getHostByContainer(containerById)));
+			tryToAdd(PusheableAsset.SITE, () -> getHostByContainer(containerById));
 
 			// Content Type Dependencies
 			tryToAddAllAndProcessDependencies(PusheableAsset.CONTENT_TYPE,
@@ -1003,16 +1010,14 @@ public class DependencyManager {
 	 * @param fileAssetContainer
 	 * @return
 	 */
-	private Optional<Folder> getFileAssetContainerRootFolder(final FileAssetContainer fileAssetContainer) {
+	private Folder getFileAssetContainerRootFolder(final FileAssetContainer fileAssetContainer) {
 		try {
 			final String path = fileAssetContainer.getPath();
-			return Optional.of(
-					APILocator.getFolderAPI()
-						.findFolderByPath(path, fileAssetContainer.getHost(), user, false)
-			);
+			return APILocator.getFolderAPI()
+						.findFolderByPath(path, fileAssetContainer.getHost(), user, false);
 		}catch (DotSecurityException | DotDataException e) {
 			Logger.error(DependencyManager.class, e);
-			return Optional.empty();
+			return null;
 		}
 	}
 
@@ -1021,12 +1026,12 @@ public class DependencyManager {
 
 		try {
 			tryToAddAndProcessDependencies(PusheableAsset.CONTENT_TYPE,
-					() -> Optional.of(CacheLocator.getContentTypeCache()
-							.getStructureByInode(relationship.getChildStructureInode())));
+					() -> CacheLocator.getContentTypeCache()
+							.getStructureByInode(relationship.getChildStructureInode()));
 
 			tryToAddAndProcessDependencies(PusheableAsset.CONTENT_TYPE,
-					() -> Optional.of(CacheLocator.getContentTypeCache()
-							.getStructureByInode(relationship.getParentStructureInode())));
+					() -> CacheLocator.getContentTypeCache()
+							.getStructureByInode(relationship.getParentStructureInode()));
 		} catch (DotDataException | DotSecurityException e) {
 			Logger.error(this, e.getMessage(),e);
 		}
@@ -1085,7 +1090,7 @@ public class DependencyManager {
 				}
 
 				// Host Dependency
-				tryToAdd(PusheableAsset.SITE, () -> Optional.of(getHostById(contentletVersion.getHost())));
+				tryToAdd(PusheableAsset.SITE, () -> getHostById(contentletVersion.getHost()));
 
 				contentsToProcess.add(contentletVersion);
 
@@ -1093,8 +1098,8 @@ public class DependencyManager {
 				final Map<Relationship, List<Contentlet>> contentRelationships = APILocator
 						.getContentletAPI().findContentRelationships(contentletVersion, user);
 
-				tryToAddAndProcessDependencies(PusheableAsset.RELATIONSHIP, () ->
-						Optional.of(contentRelationships.keySet()));
+				tryToAddAllAndProcessDependencies(PusheableAsset.RELATIONSHIP, () ->
+						contentRelationships.keySet());
 
 				contentRelationships.values().stream()
 						.forEach(contentlets -> contentsToProcess.addAll(contentlets));
@@ -1103,7 +1108,7 @@ public class DependencyManager {
 
 			for (final Contentlet contentletToProcess : contentsToProcess) {
 				// Host Dependency
-				tryToAdd(PusheableAsset.SITE, () -> Optional.of(getHostById(contentletToProcess.getHost())));
+				tryToAdd(PusheableAsset.SITE, () -> getHostById(contentletToProcess.getHost()));
 
 				contentsWithDependenciesToProcess.add(contentletToProcess);
 				//Copy asset files to bundle folder keeping original folders structure
@@ -1134,18 +1139,18 @@ public class DependencyManager {
 			// Adding the Contents (including related) and adding filesAsContent
 			for (final Contentlet contentletWithDependenciesToProcess : contentsWithDependenciesToProcess) {
 				// Host Dependency
-				tryToAdd(PusheableAsset.SITE, () -> Optional.of(getHostById(contentletWithDependenciesToProcess.getHost())));
+				tryToAdd(PusheableAsset.SITE, () -> getHostById(contentletWithDependenciesToProcess.getHost()));
 
 				// Content Dependency
-				tryToAdd(PusheableAsset.CONTENTLET, () -> Optional.of(contentletWithDependenciesToProcess));
+				tryToAdd(PusheableAsset.CONTENTLET, () -> contentletWithDependenciesToProcess);
 
 				// Folder Dependency
-				tryToAdd(PusheableAsset.FOLDER, () -> Optional.of(getFolderById(contentletWithDependenciesToProcess.getFolder())));
+				tryToAdd(PusheableAsset.FOLDER, () -> getFolderById(contentletWithDependenciesToProcess.getFolder()));
 
 				// Language Dependency
-				tryToAddAndProcessDependencies(PusheableAsset.LANGUAGE, () -> Optional.of(
+				tryToAddAndProcessDependencies(PusheableAsset.LANGUAGE, () ->
 						APILocator.getLanguageAPI().getLanguage(contentletWithDependenciesToProcess.getLanguageId())
-				));
+				);
 
 				try {
 					if (Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_ALL_FOLDER_PAGES", false)
@@ -1171,14 +1176,13 @@ public class DependencyManager {
 
 				if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES", true)) {
 					tryToAddAndProcessDependencies(PusheableAsset.CONTENT_TYPE, () ->
-							Optional.of(
 								CacheLocator.getContentTypeCache()
 										.getStructureByInode(contentletWithDependenciesToProcess.getStructureInode())
-							));
+							);
 
 				}
 
-				// Evaluate all the categories from this contentlet to include as dependency.
+				// Evaluate all the categories from this  to include as dependency.
 				tryToAddAll(PusheableAsset.CATEGORY, () ->
 						APILocator.getCategoryAPI()
 								.getParents(contentletWithDependenciesToProcess, APILocator.systemUser(), false)
@@ -1201,7 +1205,7 @@ public class DependencyManager {
 
 			final String contentTypeId = listKeyValueLang.get(0).getContentTypeId();
 			tryToAdd(PusheableAsset.CONTENT_TYPE, () ->
-					Optional.of(CacheLocator.getContentTypeCache().getStructureByInode(contentTypeId)));
+					CacheLocator.getContentTypeCache().getStructureByInode(contentTypeId));
 
 		} catch (Exception e) {
 			throw new DotBundleException(this.getClass().getName() + " : " + "generate()"
@@ -1234,9 +1238,9 @@ public class DependencyManager {
 				final Contentlet parent = contentlets.get(0);
 
 				if (parent.isHost()) {
-					tryToAdd(PusheableAsset.SITE, () -> Optional.of(hostAPI.find(rule.getParent(), this.user, false)));
+					tryToAdd(PusheableAsset.SITE, () -> hostAPI.find(rule.getParent(), this.user, false));
 				} else if (parent.isHTMLPage()) {
-					tryToAdd(PusheableAsset.CONTENTLET, () -> Optional.of(parent));
+					tryToAdd(PusheableAsset.CONTENTLET, () -> parent);
 				} else {
 					throw new DotDataException("The parent ID [" + parent.getIdentifier() + "] is a non-valid parent.");
 				}
@@ -1306,6 +1310,9 @@ public class DependencyManager {
 		} else if (Structure.class.isInstance(asset)) {
 			final Structure structure = Structure.class.cast(asset);
 			return structure.getInode();
+		} else if (ContentType.class.isInstance(asset)) {
+			final ContentType contentType = ContentType.class.cast(asset);
+			return contentType.inode();
 		}  else if (Link.class.isInstance(asset)) {
 			final Link link = Link.class.cast(asset);
 			return link.getIdentifier();
@@ -1321,8 +1328,11 @@ public class DependencyManager {
 		} else if (Category.class.isInstance(asset)) {
 			final Category category = Category.class.cast(asset);
 			return category.getCategoryId();
+		} else if (Language.class.isInstance(asset)) {
+			final Language languege = Language.class.cast(asset);
+			return String.valueOf(languege.getId());
 		} else {
-			throw new IllegalArgumentException();
+			throw new IllegalArgumentException("Not allowed: " + asset.getClass().getName());
 		}
 	}
 }

@@ -62,21 +62,33 @@ public class ConcurrentDependencyProcessor implements DependencyProcessor {
         Logger.debug(ConcurrentDependencyProcessor.class, () -> String.format("%s: Putting %s in %s",
                 Thread.currentThread().getName(), asset, pusheableAsset));
 
-        queue.add(new DependencyProcessorItem(asset, pusheableAsset));
+        Logger.info(ConcurrentDependencyProcessor.class, () -> "addAsset " + asset);
 
-        addRequestToProcess(asset, pusheableAsset);
+        final boolean added = addRequestToProcess(asset, pusheableAsset);
+
+        if (added) {
+            queue.add(new DependencyProcessorItem(asset, pusheableAsset));
+        }
+        Logger.info(ConcurrentDependencyProcessor.class, () -> "After Add " + asset);
+
     }
 
-    private <T> void addRequestToProcess(final T asset, final PusheableAsset pusheableAsset) {
+    private <T> boolean addRequestToProcess(final T asset, final PusheableAsset pusheableAsset) {
+        Logger.info(ConcurrentDependencyProcessor.class, () -> "addRequestToProcess - 1 " + asset.getClass());
         final String assetKey = DependencyManager.getKey(asset);
+        Logger.info(ConcurrentDependencyProcessor.class, () -> "addRequestToProcess - 2 " + assetKey);
         Set<String> set = assetsRequestToProcess.get(pusheableAsset);
 
         if (set == null) {
+            Logger.info(ConcurrentDependencyProcessor.class, () -> "addRequestToProcess - 4 " );
             set = new ConcurrentHashSet<>();
             assetsRequestToProcess.put(pusheableAsset, set);
+            Logger.info(ConcurrentDependencyProcessor.class, () -> "addRequestToProcess - 5" );
         }
 
-        set.add(assetKey);
+        Logger.info(ConcurrentDependencyProcessor.class, () -> "addRequestToProcess 6 " + asset);
+        return set.add(assetKey);
+
     }
 
     /**
@@ -97,9 +109,9 @@ public class ConcurrentDependencyProcessor implements DependencyProcessor {
         try {
             while (!isFinish()) {
                 try {
-                    Logger.debug(ConcurrentDependencyProcessor.class, () -> "Waiting for more assets");
+                    Logger.info(ConcurrentDependencyProcessor.class, () -> "Waiting for more assets");
                     final DependencyProcessorItem dependencyProcessorItem = queue.take();
-                    Logger.debug(ConcurrentDependencyProcessor.class,
+                    Logger.info(ConcurrentDependencyProcessor.class,
                             () -> "Taking one " + dependencyProcessorItem.asset);
                     if (!dependencyProcessorItem
                             .equals(DependencyProcessorItem.FINISHED_DEPENDENCY_PROCESSOR_ITEM)) {
@@ -111,7 +123,7 @@ public class ConcurrentDependencyProcessor implements DependencyProcessor {
                     throw new RuntimeException(e);
                 }
             }
-            Logger.debug(ConcurrentDependencyProcessor.class, "DependencyProcessor Finished");
+            Logger.info(ConcurrentDependencyProcessor.class, "DependencyProcessor Finished");
         } finally {
             submitter.shutdownNow();
         }
@@ -122,6 +134,8 @@ public class ConcurrentDependencyProcessor implements DependencyProcessor {
     }
 
     private boolean isFinish() {
+        Logger.info(ConcurrentDependencyProcessor.class, () -> "queue.isEmpty() " + queue.isEmpty());
+        Logger.info(ConcurrentDependencyProcessor.class, () -> "isAllTaskFinished() " + isAllTaskFinished());
         return queue.isEmpty() && isAllTaskFinished();
     }
 
@@ -131,6 +145,11 @@ public class ConcurrentDependencyProcessor implements DependencyProcessor {
         final Integer nRequest = assetsRequestToProcess.values().stream()
                 .map(set -> set.size())
                 .reduce(0, Integer::sum);
+
+        Logger.info(ConcurrentDependencyProcessor.class, () -> "taskCount " + taskCount);
+        Logger.info(ConcurrentDependencyProcessor.class, () -> "nRequest " + nRequest);
+        Logger.info(ConcurrentDependencyProcessor.class, () -> "nFinishReceived " + nFinishReceived);
+
         return taskCount == nRequest && taskCount == nFinishReceived;
     }
 
@@ -149,7 +168,7 @@ public class ConcurrentDependencyProcessor implements DependencyProcessor {
         public void run() {
             try {
                 final PusheableAsset pusheableAsset = dependencyProcessorItem.pusheableAsset;
-                Logger.debug(ConcurrentDependencyProcessor.class,
+                Logger.info(ConcurrentDependencyProcessor.class,
                         () -> String.format("%s : We have something to process - %s %s",
                                 Thread.currentThread().getName(), dependencyProcessorItem.asset, pusheableAsset));
 

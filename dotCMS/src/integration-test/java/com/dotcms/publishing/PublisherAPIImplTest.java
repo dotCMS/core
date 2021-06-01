@@ -134,10 +134,10 @@ public class PublisherAPIImplTest {
         prepare();
 
         return  new TestAsset[]{
-                getContentTypeWithHost()/*,
-                getTemplateWithDependencies(),
-                getContainerWithDependencies(),
-                getFolderWithDependencies(),
+                //getContentTypeWithHost(),
+                //getTemplateWithDependencies(),
+                //getContainerWithDependencies(),
+                getFolderWithDependencies()/*,
                 getHostWithDependencies(),
                 getLinkWithDependencies(),
                 getWorkflowWithDependencies(),
@@ -356,9 +356,9 @@ public class PublisherAPIImplTest {
 
         final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
 
-            return new TestAsset(contentType,
-                set(host, workflowScheme, systemWorkflowScheme, contentTypeChild, relationship, category),
-                "/bundlers-test/content_types/content_types_with_category_and_relationship.contentType.json");
+        return new TestAsset(contentType,
+            set(host, workflowScheme, systemWorkflowScheme, contentTypeChild, relationship, category),
+            "/bundlers-test/content_types/content_types_with_category_and_relationship.contentType.json");
     }
 
     private static TestAsset getContainerWithDependencies() throws DotDataException, DotSecurityException {
@@ -494,18 +494,24 @@ public class PublisherAPIImplTest {
             PushPublishingEndPoint publishingEndPoint,
             final Collection<Object> dependencies) throws DotDataException {
 
+        final List<PushedAsset> pushedAssets = APILocator.getPushedAssetsAPI()
+                .getPushedAssetsByBundleIdAndEnvironmentId(bundle.getId(), environment.getId());
+
         for (Object asset : dependencies) {
             final String assetId = DependencyManager.getKey(asset);
-            final List<PushedAsset> pushedAssets = APILocator.getPushedAssetsAPI()
-                    .getPushedAssets(assetId);
 
-            assertEquals(pushedAssets.size(), 1);
+            final List<PushedAsset> pushedAssetsByAsset = pushedAssets.stream()
+                    .filter(pushedAsset -> pushedAsset.getAssetId().equals(assetId))
+                    .collect(Collectors.toList());
 
-            for (PushedAsset pushedAsset : pushedAssets) {
+            assertEquals(1, pushedAssetsByAsset.size());
+
+            for (PushedAsset pushedAsset : pushedAssetsByAsset) {
                 assertEquals(assetId, pushedAsset.getAssetId());
                 assertEquals(bundle.getId(), pushedAsset.getBundleId());
                 assertEquals(environment.getId(), pushedAsset.getEnvironmentId());
                 assertEquals(publishingEndPoint.getId(), pushedAsset.getEndpointIds());
+                assertEquals(PushPublisher.class, publishingEndPoint.getPublisher());
             }
         }
 

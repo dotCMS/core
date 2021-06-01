@@ -230,11 +230,14 @@ public class PushPublisherConfig extends PublisherConfig {
 		}
 	}
 
-	public <T> void add(final T asset, final PusheableAsset pusheableAsset) {
+	public <T> boolean add(final T asset, final PusheableAsset pusheableAsset) {
 		final String key = DependencyManager.getKey(asset);
 
 		if(!dependencySet.isAdded(key, pusheableAsset)) {
 			dependencySet.add(key, pusheableAsset);
+			return true;
+		} else {
+			return false;
 		}
 	}
 
