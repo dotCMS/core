@@ -15,7 +15,37 @@ https://github.com/dotCMS/core
 Usage: `basename "$0"` [command]
 
 ${GREEN} Commands: ${NC}
-  content-type  Imports content type into dotCMS
+  --bundle Imports a bundle like directory into dotCMS
+  The bundle directory structure should looks like:
+  / sites
+    |- SYSTEM_HOST.site.json
+    |- demo.dotcms.com.site.json
+  / content-types
+    |- blog.contentype.json
+    |- story.contentype.json
+  / files
+         |- en-US (language)
+            |- demo.dotcms.com (site)
+               |- images (Folder)
+               |   - file1
+               |   - file2
+               |- application
+                   - file3
+                   - file4
+
+  --content-type Imports content type described in json format into dotCMS
+  --site Imports a site described in json format into dotCMS
+  --files Imports files following the directory structure defined like:
+       / files
+         |- language
+            |- site
+               |- folder-1
+               |   - file1
+               |   - file2
+               |- folder-2
+                   - file3
+                   - file4
+
   *             Help
 "
   exit 1

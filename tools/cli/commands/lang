@@ -39,3 +39,8 @@ fi
      else
         echo " The language ${lang} already  exists on the server.";
      fi
+
+for site in "${lang}"
+do
+  echo "Site ${site}"
+done
