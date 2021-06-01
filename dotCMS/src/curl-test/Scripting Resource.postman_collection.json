@@ -69,12 +69,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/Test_GraphQL_Image_Field_fields/actn-legioss.jpg"
 								}
-							],
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
@@ -108,7 +103,7 @@
 									"    var jsonData = pm.response.json();",
 									"    console.log(jsonData);",
 									"",
-									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"assets.tar.gz\");",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"metadata-test.tar.gz\");",
 									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
 									"});"
 								],
@@ -151,7 +146,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "resources/GraphQL/assets.tar.gz"
+									"src": "/build/src/core/dotCMS/src/curl-test/resources/Scripting/metadata/metadata-test.tar.gz"
 								}
 							]
 						},
@@ -190,15 +185,16 @@
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);    ",
 									"    const $ = cheerio.load(pm.response.text());    ",
-									"    pm.expect($(\"#ct\").text()).to.eql(\"image/jpeg\");",
-									"    pm.expect($(\"#modDate\").text()).to.be.above(0);",
-									"    pm.expect($(\"#fileSize\").text()).to.be.above(349837);",
-									"    pm.expect($(\"#isImage\").text()).to.be.eql(true);",
-									"    pm.expect($(\"#width\").text()).to.be.eql(1500);",
-									"    pm.expect($(\"#height\").text()).to.be.eql(1500);",
+									"    pm.expect($(\"#ct\").text()).to.be.eql(\"image/jpeg\");",
+									"    pm.expect(parseInt($(\"#modDate\").text())).to.be.above(0);",
+									"    pm.expect(parseInt($(\"#fileSize\").text())).to.be.above(0);",
+									"    pm.expect($(\"#isImage\").text()).to.be.eql(\"true\");",
+									"    pm.expect(parseInt($(\"#width\").text())).to.be.eql(1500);",
+									"    pm.expect(parseInt($(\"#height\").text())).to.be.eql(1500);",
 									"    pm.expect($(\"#sha256\").text()).to.be.eql(\"6f0973971520c46b0e4d2cad8e8ef6d856a49b9e91833c1867ff68ca024daacc\");",
 									"    pm.expect($(\"#title\").text()).to.be.eql(\"fear.jpg\");",
 									"    pm.expect($(\"#path\").text()).not.equal(null);",
+									"",
 									"});"
 								],
 								"type": "text/javascript"
