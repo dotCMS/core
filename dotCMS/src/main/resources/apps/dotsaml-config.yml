@@ -41,9 +41,12 @@ params:
     required: true
     value:
       -
+        label: "None"
+        value: "none"
+        selected: true
+      -
         label: "Only Response"
         value: "response"
-        selected: true
       -
         label: "Only Assertion"
         value: "assertion"

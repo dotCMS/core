@@ -62,7 +62,9 @@ public class JSONTagsServlet extends HttpServlet implements Servlet {
 					globalTagsFilter = true;
 			}
 
-			String hostFilter = request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID).toString();
+			final String hostFilter = request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)!=null ?
+					request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID).toString() :
+					Host.class.cast(request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST)).getIdentifier();
 
 			String sort = request.getParameter("sort");
 

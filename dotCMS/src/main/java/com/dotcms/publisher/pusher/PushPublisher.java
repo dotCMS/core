@@ -34,6 +34,9 @@ import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
+import com.dotcms.publishing.output.BundleOutput;
+import com.dotcms.publishing.output.DirectoryBundleOutput;
+import com.dotcms.publishing.output.TarGzipBundleOutput;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.rest.ResourceResponse;
@@ -100,7 +103,6 @@ public class PushPublisher extends Publisher {
 	private PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
 	private PublishingEndPointAPI publishingEndPointAPI = APILocator.getPublisherEndPointAPI();
 	private LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
-	private Client restClient;
 
 	public static final String PROTOCOL_HTTP  = "http";
 	public static final String PROTOCOL_HTTPS = "https";
@@ -141,25 +143,18 @@ public class PushPublisher extends Publisher {
 			throw new RuntimeException("An Enterprise Pro License is required to run this publisher.");
 		}
 		PublishAuditHistory currentStatusHistory = null;
+
+		Client client = getRestClient();
+
 		try {
 			//Compressing bundle
 			File bundleRoot = BundlerUtil.getBundleRoot(this.config.getName(), false);
 			ArrayList<File> list = new ArrayList<File>(1);
 			list.add(bundleRoot);
-			File bundleFile = new File(bundleRoot+File.separator+".."+File.separator+this.config.getId()+".tar.gz");
-
-			// If the tar.gz doesn't exist or if it the first try to push bundle
-			// we need to compress the bundle folder into the tar.gz file.
-			if (!bundleFile.exists() || !pubAuditAPI.isPublishRetry(config.getId())) {
-				PushUtils.compressFiles(list, bundleFile, bundleRoot.getAbsolutePath());
-			} else {
-				Logger.info(this, "Retrying bundle: " + config.getId()
-						+ ", we don't need to compress bundle again");
-			}
+			File bundleFile = new File(bundleRoot + ".tar.gz");
 
 			List<Environment> environments = APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(this.config.getId());
 
-			Client client = getRestClient();
 			client.property(ClientProperties.REQUEST_ENTITY_PROCESSING, "CHUNKED");
 			client.property(ClientProperties.CHUNKED_ENCODING_SIZE, 1024);
 
@@ -339,6 +334,8 @@ public class PushPublisher extends Publisher {
 			}
 			Logger.error(this.getClass(), e.getMessage(), e);
 			throw new DotPublishingException(e.getMessage(),e);
+		} finally {
+			client.close();
 		}
 	}
 
@@ -532,10 +529,7 @@ public class PushPublisher extends Publisher {
 	 * @return The REST {@link Client}.
 	 */
 	private Client getRestClient() {
-		if (null == this.restClient) {
-			this.restClient = RestClientBuilder.newClient();
-		}
-		return this.restClient;
+		return RestClientBuilder.newClient();
 	}
 
 	/**
@@ -559,4 +553,8 @@ public class PushPublisher extends Publisher {
 		}
 	}
 
+	@Override
+	public BundleOutput createBundleOutput() throws IOException {
+		return new TarGzipBundleOutput(config);
+	}
 }

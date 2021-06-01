@@ -318,8 +318,8 @@ public class SaveContentDraftActionletTest extends BaseWorkflowIntegrationTest {
         relationshipsData.setRelationshipsRecords(relationshipsRecords);
         for(Map.Entry<Relationship, List<Contentlet>> relEntry : contentRelationships.entrySet()) {
             Relationship relationship = relEntry.getKey();
-            boolean hasParent = FactoryLocator.getRelationshipFactory().isParent(relationship, st);
-            boolean hasChildren = FactoryLocator.getRelationshipFactory().isChild(relationship, st);
+            boolean hasParent = APILocator.getRelationshipAPI().isParent(relationship, st);
+            boolean hasChildren = APILocator.getRelationshipAPI().isChild(relationship, st);
 
             // self-join (same CT for parent and child) relationships return true to both, so since we can't
             // determine if it's parent or child we always assume child (e.g. Coming from the Content REST API)

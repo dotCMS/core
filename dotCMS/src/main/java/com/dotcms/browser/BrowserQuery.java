@@ -42,7 +42,7 @@ public class BrowserQuery {
         this.showArchived  = builder.showArchived;
         this.showFolders   = builder.showFolders;
         this.showFiles     = builder.showFiles;
-        this.sortByDesc    = builder.sortByDesc;
+        this.sortByDesc    = UtilMethods.isEmpty(builder.sortBy) ? true : builder.sortByDesc;
         this.showLinks     = builder.showLinks;
         this.showPages     = builder.showPages;
         this.showDotAssets = builder.showDotAssets;

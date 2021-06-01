@@ -34,8 +34,8 @@ class TikaMetadataGenerator implements MetadataGenerator {
                     .filter(entry -> entry.getValue() instanceof Serializable).
                             collect(Collectors.toMap(Entry::getKey,
                                     e -> (Serializable) e.getValue()));
-        } catch (DotDataException e) {
-            Logger.error(TikaMetadataGenerator.class, e.getMessage(), e);
+        } catch (Exception e) {
+            Logger.warnAndDebug(TikaMetadataGenerator.class, e.getMessage(), e);
         }
         return ImmutableMap.of();
     }

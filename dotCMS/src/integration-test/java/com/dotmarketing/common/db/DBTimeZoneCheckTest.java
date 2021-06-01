@@ -1,5 +1,6 @@
 package com.dotmarketing.common.db;
 
+import com.dotmarketing.db.DbConnectionFactory;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotcms.util.IntegrationTestInitService;
@@ -17,10 +18,13 @@ public class DBTimeZoneCheckTest {
     
     @Test
     public void test_timezones_work() throws Exception {
-        assertTrue(DBTimeZoneCheck.isTimeZoneValid("CST6CDT"));
-        assertFalse(DBTimeZoneCheck.isTimeZoneValid("CST"));
-        assertTrue(DBTimeZoneCheck.isTimeZoneValid("EST"));
-        assertFalse(DBTimeZoneCheck.isTimeZoneValid("asdf435ergre"));
+        if (DbConnectionFactory.isPostgres()) {
+            assertTrue(DBTimeZoneCheck.isTimeZoneValid("CST6CDT"));
+            assertFalse(DBTimeZoneCheck.isTimeZoneValid("CST"));
+        } else {
+            assertTrue(DBTimeZoneCheck.isTimeZoneValid("CST6CDT"));
+            assertTrue(DBTimeZoneCheck.isTimeZoneValid("CST"));
+        }
     }
 
 }

@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.structure.transform;
 
 import com.dotcms.util.transform.DBTransformer;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -62,7 +63,7 @@ public class ContentletRelationshipsTransformer implements DBTransformer<Content
         for(final Map.Entry<Relationship, List<Contentlet>> relEntry : contentRelationships.entrySet()) {
 
             final Relationship relationship = relEntry.getKey();
-            boolean hasParent               = FactoryLocator.getRelationshipFactory().isParent(relationship, structure);
+            boolean hasParent               = APILocator.getRelationshipAPI().isParent(relationship, structure);
 
             final ContentletRelationships.ContentletRelationshipRecords
                     records = relationshipsData.new ContentletRelationshipRecords(relationship, hasParent);

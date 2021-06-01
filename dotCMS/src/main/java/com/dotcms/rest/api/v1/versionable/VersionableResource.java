@@ -4,6 +4,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DoesNotExistException;
@@ -15,6 +16,7 @@ import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
@@ -100,6 +102,66 @@ public class VersionableResource {
                 .deleteVersionByInode(versionableInode, user, mode.respectAnonPerms);
 
         return Response.ok(new ResponseEntityView("Version " + versionableInode + " deleted successfully")).build();
+    }
+
+    /**
+     * Finds the versionable for the passed UUID.
+     *
+     * If the UUID is an inode it will return the versionable for that specific element.
+     * If the UUID is an identifier it will return all the versionables for that element.
+     *
+     * User executing the action needs to have View Permissions over the element.
+     *
+     * If the UUID does not exists, 404 is returned.
+     *
+     * @param versionableInodeOrIdentifier {@link String} UUID of the element
+     * @return {@link VersionableView} versionable view object
+     */
+    @GET
+    @Path("/{versionableInodeOrIdentifier}")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response findVersionable(@Context final HttpServletRequest httpRequest,
+            @Context final HttpServletResponse httpResponse,
+            @PathParam("versionableInodeOrIdentifier") final String versionableInodeOrIdentifier)
+            throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
+        final User user = initData.getUser();
+        final PageMode mode = PageMode.get(httpRequest);
+        Logger.debug(this, () -> "Finding the version: " + versionableInodeOrIdentifier);
+
+        //Check if is an inode
+        final String type = Try
+                .of(() -> InodeUtils.getAssetTypeFromDB(versionableInodeOrIdentifier)).getOrNull();
+
+        //Could mean 2 things: it's an identifier or uuid does not exists
+        if (null == type) {
+            final Identifier identifier = APILocator.getIdentifierAPI()
+                    .find(versionableInodeOrIdentifier);
+
+            if (null == identifier || UtilMethods.isNotSet(identifier.getId())) {
+                throw new DoesNotExistException(
+                        "The versionable with uuid: " + versionableInodeOrIdentifier
+                                + " does not exists");
+            }
+
+            return Response.ok(new ResponseEntityView(
+                    this.versionableHelper.getAssetTypeByVersionableFindAllMap()
+                            .getOrDefault(identifier.getAssetType(),
+                                    this.versionableHelper.getDefaultVersionableFindAllStrategy())
+                            .findAllVersions(identifier, user, mode.respectAnonPerms))).build();
+        }
+
+        final VersionableView versionable = this.versionableHelper
+                .getAssetTypeByVersionableFindVersionMap().getOrDefault(type,
+                        this.versionableHelper.getDefaultVersionableFindVersionStrategy())
+                .findVersion(versionableInodeOrIdentifier, user, mode.respectAnonPerms);
+
+        return Response.ok(new ResponseEntityView(versionable)).build();
     }
 
 }

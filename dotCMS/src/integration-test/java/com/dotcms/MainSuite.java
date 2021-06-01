@@ -12,6 +12,7 @@ import com.dotcms.ema.EMAWebInterceptorTest;
 import com.dotcms.enterprise.HTMLDiffUtilTest;
 import com.dotcms.enterprise.cluster.ClusterFactoryTest;
 import com.dotcms.enterprise.publishing.remote.PushPublishBundleGeneratorTest;
+import com.dotcms.enterprise.publishing.remote.StaticPushPublishBundleGeneratorTest;
 import com.dotcms.enterprise.publishing.remote.bundler.ContainerBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentTypeBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.DependencyBundlerTest;
@@ -94,10 +95,14 @@ import com.dotmarketing.startup.runonce.Task201102UpdateColumnSitelicTableTest;
 import com.dotmarketing.startup.runonce.Task210218MigrateUserProxyTableTest;
 import com.dotmarketing.startup.runonce.Task210319CreateStorageTableTest;
 import com.dotmarketing.startup.runonce.Task210321RemoveOldMetadataFilesTest;
+import com.dotmarketing.startup.runonce.Task210506UpdateStorageTableTest;
+import com.dotmarketing.startup.runonce.Task210520UpdateAnonymousEmailTest;
+import com.dotmarketing.startup.runonce.Task210510UpdateStorageTableDropMetadataColumnTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.TestConfig;
 import com.liferay.portal.language.LanguageUtilTest;
+import org.apache.velocity.tools.view.tools.CookieToolTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
 
@@ -409,7 +414,13 @@ import org.junit.runners.Suite.SuiteClasses;
         ContentHandlerTest.class,
         ESIndexAPITest.class,
         FileAssetTemplateUtilTest.class,
-        SiteSearchJobImplTest.class
+        SiteSearchJobImplTest.class,
+        Task210506UpdateStorageTableTest.class,
+        StaticPushPublishBundleGeneratorTest.class,
+        Task210520UpdateAnonymousEmailTest.class,
+        Task210510UpdateStorageTableDropMetadataColumnTest.class,
+        StaticPushPublishBundleGeneratorTest.class,
+        CookieToolTest.class
 })
 public class MainSuite {
 

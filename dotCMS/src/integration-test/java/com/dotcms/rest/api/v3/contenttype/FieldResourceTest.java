@@ -11,6 +11,8 @@ import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
+import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import javax.ws.rs.core.Response;
 
 import com.dotcms.rest.exception.NotFoundException;
@@ -500,6 +502,52 @@ public class FieldResourceTest {
         checkAllFieldsIds(fields, contentTypeFromDB.fields());
 
         assertNotNull(responseFields.get(2).id());
+    }
+
+    /**
+     * When try to create a field in a Content Type with a right layout
+     * Should create the field and the relationship.
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws JSONException
+     */
+    @Test
+    public void shouldCreateFieldAndRelationshipWithMoveEndPoint () throws DotSecurityException, DotDataException, JSONException {
+        final  ContentType type = createContentType();
+
+        final List<Field> fields = createFields(type);
+        final Field relationshipField = FieldBuilder.builder(RelationshipField.class)
+                .name("relationshipField")
+                .contentTypeId(type.id())
+                .values(String.valueOf(RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()))
+                .relationType(type.variable()).build();
+        fields.add(2, relationshipField);
+
+        final List<Map<String, Object>> layout = getToLayoutMap(fields);
+
+        final MoveFieldsForm form =
+                new MoveFieldsForm.Builder().layout(layout)
+                        .build();
+
+        final FieldResource fieldResource = new FieldResource();
+        final Response response = fieldResource.moveFields(type.id(), form, getHttpRequest());
+
+        final List<FieldLayoutRow> responseRows =
+                (List<FieldLayoutRow>) ((ResponseEntityView) response.getEntity()).getEntity();
+
+        final List<Field> responseFields = this.getFields(responseRows);
+        checkAllFieldsIds(fields, responseFields);
+
+        final ContentType contentTypeFromDB = APILocator.getContentTypeAPI(APILocator.systemUser()).find(type.id());
+        checkAllFieldsIds(fields, contentTypeFromDB.fields());
+
+        assertNotNull(responseFields.get(2).id());
+
+        final List<Relationship> relationshipList =  APILocator.getRelationshipAPI().byContentType(type);
+        assertNotNull(relationshipList);
+        assertFalse(relationshipList.isEmpty());
+
     }
 
     /**
