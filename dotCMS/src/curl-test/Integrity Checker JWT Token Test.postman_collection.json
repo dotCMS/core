@@ -195,7 +195,7 @@
 								"body": {
 									"mode": "file",
 									"file": {
-										"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
+										"src": "resources/Push_publish/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
 									}
 								},
 								"url": {
@@ -268,7 +268,7 @@
 								"body": {
 									"mode": "file",
 									"file": {
-										"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
+										"src": "resources/Push_publish/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
 									},
 									"options": {
 										"file": {}
@@ -337,7 +337,7 @@
 								"body": {
 									"mode": "file",
 									"file": {
-										"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
+										"src": "resources/Push_publish/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
 									}
 								},
 								"url": {
@@ -498,7 +498,7 @@
 											"key": "file",
 											"contentType": "application/tar+gzip ",
 											"type": "file",
-											"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/folder_integrity_test_demo.tar.gz"
+											"src": "resources/Push_publish/folder_integrity_test_demo.tar.gz"
 										}
 									],
 									"options": {
@@ -703,7 +703,7 @@
 										{
 											"key": "DATA_TO_FIX",
 											"type": "file",
-											"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/DataToFix_demo.zip"
+											"src": "resources/Push_publish/DataToFix_demo.zip"
 										},
 										{
 											"key": "TYPE",
@@ -917,7 +917,7 @@
 											"key": "file",
 											"contentType": "application/tar+gzip ",
 											"type": "file",
-											"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/folder_integrity_test_demo.tar.gz"
+											"src": "resources/Push_publish/folder_integrity_test_demo.tar.gz"
 										}
 									],
 									"options": {
@@ -981,7 +981,7 @@
 										{
 											"key": "DATA_TO_FIX",
 											"type": "file",
-											"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/DataToFix_demo.zip"
+											"src": "resources/Push_publish/DataToFix_demo.zip"
 										},
 										{
 											"key": "TYPE",
