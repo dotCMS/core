@@ -184,7 +184,7 @@ THIS FILE AND ITS INCLUDES
 	font-style: normal;
 	font-weight: 400;
 	font-display: swap;
-	src: url('/dotAdmin/assets/MaterialIconsOutlined-Regular.otf') format('opentype');
+	src: url('/dotAdmin/assets/MaterialIcons-Regular.ttf') format('truetype');
 	}
 	.material-icons {
 	font-family: 'Material Icons';
