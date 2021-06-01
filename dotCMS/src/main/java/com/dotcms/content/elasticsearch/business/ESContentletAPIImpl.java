@@ -1572,7 +1572,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @param respectFrontendRoles If the User executing this action has the front-end role, or if front-end roles must
      *                             be validated against this user, set to {@code true}. Otherwise, set to {@code
      *                             false}.
-     * @param limit                The limit to the amount of results that will be returned.
+     * @param limitParam                The limit to the amount of results that will be returned.
      * @param offset               The offset applied to the result, mostly for pagination purposes.
      *
      * @return The list of {@link Contentlet} objects that are the children of the specified Contentlet.
@@ -1581,24 +1581,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotDataException     An error occurred when interacting with the data source.
      */
     private List<Contentlet> getRelatedChildren(final Contentlet contentlet, final Relationship rel,
-            final User user, final boolean respectFrontendRoles, int limit, final int offset)
+            final User user, final boolean respectFrontendRoles, final int limitParam, final int offset)
             throws DotSecurityException, DotDataException {
         final boolean HAS_PARENT = Boolean.TRUE;
         final boolean WORKING_VERSION = Boolean.FALSE;
         if (rel.isRelationshipField() && GET_RELATED_CONTENT_FROM_DB) {
             return FactoryLocator.getRelationshipFactory()
-                    .dbRelatedContent(rel, contentlet, HAS_PARENT, WORKING_VERSION, "tree_order", limit, offset);
+                    .dbRelatedContent(rel, contentlet, HAS_PARENT, WORKING_VERSION, "tree_order", limitParam, offset);
         } else {
 
             final List<Contentlet> result = new ArrayList<>();
             final String relationshipName = rel.getRelationTypeValue().toLowerCase();
+            final int limit = limitParam <= 0 ? MAX_LIMIT : limitParam;
 
             SearchResponse response;
             final boolean DONT_PULL_PARENTS = Boolean.FALSE;
-
-            if (limit <= 0) {
-                limit = MAX_LIMIT;
-            }
 
             //Search for related content in existing contentlet
             if (UtilMethods.isSet(contentlet.getInode())) {
@@ -1657,7 +1654,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @param respectFrontendRoles If the User executing this action has the front-end role, or if front-end roles must
      *                             be validated against this user, set to {@code true}. Otherwise, set to {@code
      *                             false}.
-     * @param limit                The limit to the amount of results that will be returned.
+     * @param limitParam                The limit to the amount of results that will be returned.
      * @param offset               The offset applied to the result, mostly for pagination purposes.
      *
      * @return The list of {@link Contentlet} objects that are the parents of the specified Contentlet.
@@ -1666,23 +1663,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotDataException     An error occurred when interacting with the data source.
      */
     private List<Contentlet> getRelatedParents(final Contentlet contentlet, final Relationship rel,
-            final User user, final boolean respectFrontendRoles, int limit, final int offset)
+            final User user, final boolean respectFrontendRoles, int limitParam, final int offset)
             throws DotSecurityException, DotDataException {
         final boolean HAS_NO_PARENT = Boolean.FALSE;
         final boolean WORKING_VERSION = Boolean.FALSE;
         if (rel.isRelationshipField() && GET_RELATED_CONTENT_FROM_DB) {
             return FactoryLocator.getRelationshipFactory()
-                    .dbRelatedContent(rel, contentlet, HAS_NO_PARENT, WORKING_VERSION, "tree_order", limit, offset);
+                    .dbRelatedContent(rel, contentlet, HAS_NO_PARENT, WORKING_VERSION, "tree_order", limitParam, offset);
         } else {
             final Map<String, Contentlet> relatedMap = new HashMap<>();
             final String relationshipName = rel.getRelationTypeValue().toLowerCase();
+            final int limit = limitParam <= 0 ? MAX_LIMIT : limitParam;
 
             SearchResponse response;
             final boolean PULL_PARENTS = Boolean.TRUE;
-
-            if (limit <= 0) {
-                limit = MAX_LIMIT;
-            }
 
             //Search for related content in existing contentlet
             if (UtilMethods.isSet(contentlet.getInode())) {
