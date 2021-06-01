@@ -19,11 +19,6 @@
 		</tr>
 		<tr>
 			<td></td>
-			<td>Cache Transport</td>
-			<td align="right">{cache.cacheTransportClass}</td>
-		</tr>
-		<tr>
-			<td></td>
 			<td><%= LanguageUtil.get(pageContext, "configuration_cluster_number_of_nodes") %></td>
 			<td align="right">{cache.numberOfNodes}</td>
 		</tr>

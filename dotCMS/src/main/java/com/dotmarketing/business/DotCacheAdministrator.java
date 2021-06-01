@@ -119,5 +119,12 @@ public interface DotCacheAdministrator  {
 	 */
 	CacheTransport getTransport ();
 
+	/**
+	 * Sets a new CacheTransport implementation to be use, if there was already
+	 * one in use the shutdown method will be executed in that implementation.
+	 *
+	 * @param transport
+	 */
+	void setTransport ( CacheTransport transport );
 
 }

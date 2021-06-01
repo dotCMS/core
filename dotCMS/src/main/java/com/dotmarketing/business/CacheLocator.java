@@ -95,35 +95,37 @@ public class CacheLocator extends Locator<CacheIndex>{
 		super();
 	}
 
-    public synchronized static void init() {
-        if (instance != null) {
-            return;
-        }
-        long start = System.currentTimeMillis();
+	public synchronized static void init(){
+		long start = System.currentTimeMillis();
+		if(instance != null)
+			return;
 
+		String clazz = Config.getStringProperty("cache.locator.class", ChainableCacheAdministratorImpl.class.getCanonicalName());
+		Logger.info(CacheLocator.class, "loading cache administrator: "+clazz);
+		try{
+			adminCache = new CommitListenerCacheWrapper((DotCacheAdministrator) Class.forName(clazz).newInstance());
 
+			String cTransClass = Config.getStringProperty("CACHE_INVALIDATION_TRANSPORT_CLASS","com.dotmarketing.business.jgroups.JGroupsCacheTransport");
+			CacheTransport cTrans = (CacheTransport)Class.forName(cTransClass).newInstance();
+			adminCache.setTransport(cTrans);
 
-        Logger.info(CacheLocator.class, "loading cache administrator: ChainableCacheAdministratorImpl");
-        try {
+		}
+		catch(Exception e){
+			Logger.fatal(CacheLocator.class, "Unable to load Cache Admin:" + clazz, e);
+		}
 
-            adminCache = new CommitListenerCacheWrapper(new ChainableCacheAdministratorImpl(new CacheTransportStrategy()));
-            adminCache.initProviders();
-            
-        } catch (Exception e) {
-            Logger.fatal(CacheLocator.class, "Unable to load Cache Admin:" + e.getMessage(), e);
-        }
+		instance = new CacheLocator();
 
-        instance = new CacheLocator();
+		/*
+		Initializing the Cache Providers:
 
-        /*
-         * Initializing the Cache Providers:
-         * 
-         * It needs to be initialized in a different call as the providers depend on the license level, and
-         * the license level needs an already created instance of the CacheLocator to work.
-         */
-
-        System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_CACHE, String.valueOf(System.currentTimeMillis() - start));
-    }
+		 It needs to be initialized in a different call as the providers depend on the
+		 license level, and the license level needs an already created instance of the CacheLocator
+		 to work.
+		 */
+		adminCache.initProviders();
+		System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_CACHE, String.valueOf(System.currentTimeMillis() - start));
+	}
 
 	public static SystemCache getSystemCache() {
 		return (SystemCache)getInstance(CacheIndex.System);
@@ -332,15 +334,11 @@ public class CacheLocator extends Locator<CacheIndex>{
 
 	private static Object getInstance(CacheIndex index) {
 		if(instance == null){
-		    synchronized (CacheLocator.class) {
-		        if(instance == null){
-        			init();
-        			if(instance == null){
-        				Logger.fatal(CacheLocator.class, "CACHE IS NOT INITIALIZED : THIS SHOULD NEVER HAPPEN");
-        				throw new DotRuntimeException("CACHE IS NOT INITIALIZED : THIS SHOULD NEVER HAPPEN");
-        			}
-		        }
-            }
+			init();
+			if(instance == null){
+				Logger.fatal(CacheLocator.class, "CACHE IS NOT INITIALIZED : THIS SHOULD NEVER HAPPEN");
+				throw new DotRuntimeException("CACHE IS NOT INITIALIZED : THIS SHOULD NEVER HAPPEN");
+			}
 		}
 
 		Object serviceRef = instance.getServiceInstance(index);

@@ -500,13 +500,6 @@ dependencies {
     providedCompile (group: 'org.postgresql', name: 'postgresql', version: '42.2.8') {
         transitive = false
     }
-    
-	// allows for async notifications
-    
-	// https://mvnrepository.com/artifact/com.impossibl.pgjdbc-ng/pgjdbc-ng
-	compile group: 'com.impossibl.pgjdbc-ng', name: 'pgjdbc-ng', version: '0.8.7'
-
-    
     //https://mvnrepository.com/artifact/mysql/mysql-connector-java
     providedCompile (group: 'mysql', name: 'mysql-connector-java', version: '8.0.19') {
         transitive = false
