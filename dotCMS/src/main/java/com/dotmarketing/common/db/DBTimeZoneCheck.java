@@ -55,8 +55,12 @@ public class DBTimeZoneCheck {
             }
             TimeZone.setDefault(testingTimeZone);
 
-            connection = DriverManager.getConnection(hikari.getJdbcUrl(), hikari.getUsername(), hikari.getPassword());
+            if (!DbConnectionFactory.isPostgres()) {
+                Logger.info(DBTimeZoneCheck.class, "Database is not postgres, so ignoring timezone check");
+                return true;
+            }
 
+            connection = DriverManager.getConnection(hikari.getJdbcUrl(), hikari.getUsername(), hikari.getPassword());
             statement = connection.prepareStatement("SELECT * FROM inode WHERE idate > ?");
             statement.setTimestamp(1, new Timestamp(System.currentTimeMillis()));
 
