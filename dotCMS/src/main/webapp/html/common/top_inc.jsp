@@ -37,7 +37,7 @@ THIS FILE AND ITS INCLUDES
 
 	<link rel="shortcut icon" href="//dotcms.com/favicon.ico" type="image/x-icon">
 	<title>dotCMS : <%= LanguageUtil.get(pageContext, "Enterprise-Web-Content-Management") %></title>
-    
+
     <link rel="stylesheet" type="text/css" href="<%=dojoPath%>/dijit/themes/dijit.css">
     <link rel="stylesheet" type="text/css" href="/html/css/dijit-dotcms/dotcms.css?b=<%= ReleaseInfo.getVersion() %>">
 
@@ -121,7 +121,7 @@ THIS FILE AND ITS INCLUDES
 <%
 	if(UtilMethods.isSet(request.getParameter(WebKeys.IN_FRAME)) && UtilMethods.isSet(request.getParameter(WebKeys.FRAME))){
 		boolean inFrame = Boolean.valueOf(request.getParameter(WebKeys.IN_FRAME));
-		
+
 		if(inFrame){
 			  request.getSession().setAttribute(WebKeys.IN_FRAME,inFrame);
 	    	  request.getSession().setAttribute(WebKeys.FRAME,request.getParameter(WebKeys.FRAME));
@@ -132,7 +132,7 @@ THIS FILE AND ITS INCLUDES
 	}
 %>
   </script>
-  
+
 
   <script type="module" src="/dotcms-webcomponents/dotcms-webcomponents.esm.js"></script>
   <script nomodule="" src="/dotcms-webcomponents/dotcms-webcomponents.js"></script>
@@ -177,9 +177,32 @@ THIS FILE AND ITS INCLUDES
       /* ANIMATION */
       --basic-speed: 150ms;
     }
-  </style>
 
-  <link href="https://fonts.googleapis.com/css?family=Material+Icons&display=block" rel="stylesheet" />
+	/* fallback */
+	@font-face {
+	font-family: 'Material Icons';
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src: url('/dotAdmin/assets/MaterialIconsOutlined-Regular.otf') format('opentype');
+	}
+	.material-icons {
+	font-family: 'Material Icons';
+	font-weight: normal;
+	font-style: normal;
+	font-size: 24px;
+	line-height: 1;
+	letter-spacing: normal;
+	text-transform: none;
+	display: inline-block;
+	white-space: nowrap;
+	word-wrap: normal;
+	direction: ltr;
+	-webkit-font-feature-settings: 'liga';
+	-webkit-font-smoothing: antialiased;
+	}
+
+  </style>
 
 	<% String dotBackImage = (!UtilMethods.isSet(company.getHomeURL()) || "localhost".equals(company.getHomeURL())) ? "/html/images/backgrounds/bg-3.jpg" : company.getHomeURL();%>
 	<style>
