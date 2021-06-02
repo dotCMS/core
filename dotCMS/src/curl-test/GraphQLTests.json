@@ -5289,7 +5289,7 @@
 									"    pm.expect(metadataFields.name).to.eql(\"actn-legioss.jpg\");",
 									"    pm.expect(metadataFields.title).to.eql(\"actn-legioss.jpg\");",
 									"    pm.expect(metadataFields.isImage).to.eql(true);",
-									"    pm.expect(metadataFields.modDate).to.eql(1621257337000);",
+									"    pm.expect(metadataFields.modDate).to.be.above(0);",
 									"    pm.expect(metadataFields.size).to.eql(215384);",
 									"    pm.expect(metadataFields.mime).to.eql(\"image/jpeg\");",
 									"    pm.expect(metadataFields.width).to.eql(1200);",
