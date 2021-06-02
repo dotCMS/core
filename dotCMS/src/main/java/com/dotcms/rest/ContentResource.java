@@ -1116,6 +1116,19 @@ public class ContentResource {
         return json;
     }
 
+    public static JSONObject addRelationshipsToJSON(final HttpServletRequest request,
+            final HttpServletResponse response,
+            final String render, final User user, final int depth,
+            final boolean respectFrontendRoles,
+            final Contentlet contentlet,
+            final JSONObject jsonObject, Set<Relationship> addedRelationships, final long language,
+            final boolean live, final boolean allCategoriesInfo)
+            throws DotDataException, JSONException, IOException ,  DotSecurityException {
+
+        return addRelationshipsToJSON(request, response, render, user, depth, respectFrontendRoles,
+                contentlet, jsonObject, addedRelationships, language, live, allCategoriesInfo, false);
+    }
+
     /**
      * Add relationships fields records to the json contentlet
      * @param request
@@ -1143,7 +1156,7 @@ public class ContentResource {
             final boolean respectFrontendRoles,
             final Contentlet contentlet,
             final JSONObject jsonObject, Set<Relationship> addedRelationships, final long language,
-            final boolean live, final boolean allCategoriesInfo)
+            final boolean live, final boolean allCategoriesInfo, final boolean hydrateRelated)
             throws DotDataException, JSONException, IOException, DotSecurityException {
 
         Relationship relationship;
@@ -1185,7 +1198,7 @@ public class ContentResource {
             JSONArray jsonArray = addRelatedContentToJsonArray(request, response,
                     render, user, depth, respectFrontendRoles,
                     contentlet, addedRelationships, language, live, field, isChildField,
-                    allCategoriesInfo);
+                    allCategoriesInfo, hydrateRelated);
 
             jsonObject.put(field.variable(), getJSONArrayValue(jsonArray, records.doesAllowOnlyOne()));
 
@@ -1213,7 +1226,7 @@ public class ContentResource {
                     jsonArray = addRelatedContentToJsonArray(request, response,
                             render, user, depth, respectFrontendRoles,
                             contentlet, addedRelationships, language, live,
-                            otherSideField, !isChildField, allCategoriesInfo);
+                            otherSideField, !isChildField, allCategoriesInfo, hydrateRelated);
 
                     jsonObject.put(otherSideField.variable(),
                             getJSONArrayValue(jsonArray, records.doesAllowOnlyOne()));
@@ -1251,7 +1264,7 @@ public class ContentResource {
             boolean respectFrontendRoles, Contentlet contentlet,
             Set<Relationship> addedRelationships, long language, boolean live,
             com.dotcms.contenttype.model.field.Field field, final boolean isParent,
-            final boolean allCategoriesInfo)
+            final boolean allCategoriesInfo, final boolean hydrateRelated)
             throws JSONException, IOException, DotDataException, DotSecurityException {
 
 
@@ -1268,7 +1281,7 @@ public class ContentResource {
                 case 1:
                     jsonArray
                             .put(contentletToJSON(relatedContent, request, response,
-                                    render, user, allCategoriesInfo));
+                                    render, user, allCategoriesInfo, hydrateRelated));
                     break;
 
                 //returns a list of related content identifiers for each of the related content
@@ -1276,8 +1289,8 @@ public class ContentResource {
                     jsonArray.put(addRelationshipsToJSON(request, response, render, user, 0,
                             respectFrontendRoles, relatedContent,
                             contentletToJSON(relatedContent, request, response,
-                                    render, user, allCategoriesInfo),
-                            new HashSet<>(addedRelationships), language, live, allCategoriesInfo));
+                                    render, user, allCategoriesInfo, hydrateRelated),
+                            new HashSet<>(addedRelationships), language, live, allCategoriesInfo, hydrateRelated));
                     break;
 
                 //returns a list of hydrated related content for each of the related content
@@ -1285,8 +1298,8 @@ public class ContentResource {
                     jsonArray.put(addRelationshipsToJSON(request, response, render, user, 1,
                             respectFrontendRoles, relatedContent,
                             contentletToJSON(relatedContent, request, response,
-                                    render, user, allCategoriesInfo),
-                            new HashSet<>(addedRelationships), language, live, allCategoriesInfo));
+                                    render, user, allCategoriesInfo, hydrateRelated),
+                            new HashSet<>(addedRelationships), language, live, allCategoriesInfo, hydrateRelated));
                     break;
             }
 
@@ -1330,15 +1343,22 @@ public class ContentResource {
     public static JSONObject contentletToJSON(Contentlet con, HttpServletRequest request,
             HttpServletResponse response, String render, User user, final boolean allCategoriesInfo)
             throws JSONException, IOException, DotDataException, DotSecurityException {
+        return contentletToJSON(con, request, response, render, user, allCategoriesInfo, false);
+    }
+
+    public static JSONObject contentletToJSON(Contentlet con, HttpServletRequest request,
+            HttpServletResponse response, String render, User user, final boolean allCategoriesInfo,
+            final boolean hydrateRelated)
+            throws JSONException, IOException, DotDataException, DotSecurityException {
         JSONObject jo = new JSONObject();
         ContentType type = con.getContentType();
 
-        // TODO add flag to transform and telescope with false
 
-        final DotContentletTransformer myTransformer = new DotTransformerBuilder()
-                .hydratedContentMapTransformer().content(con).build();
-
-        con =  myTransformer.hydrate().get(0);
+        if(hydrateRelated) {
+            final DotContentletTransformer myTransformer = new DotTransformerBuilder()
+                    .hydratedContentMapTransformer().content(con).build();
+            con = myTransformer.hydrate().get(0);
+        }
 
         Map<String, Object> map = ContentletUtil.getContentPrintableMap(user, con, allCategoriesInfo);
 
@@ -1356,7 +1376,7 @@ public class ContentResource {
                             .map(value -> new JSONObject((Map<?,?>) value))
                             .collect(Collectors.toList())));
                   // this might be coming from transformers views, so let's try to make then JSONObjects
-                } else if(key.endsWith("Map")) {
+                } else if(hydrateRelated && key.endsWith("Map")) {
                     final Contentlet contentlet = con;
                     jo.put(key, Try.of(()->(Object) new JSONObject(contentlet.getKeyValueProperty(key)))
                             .getOrElse(()->map.get(key)));

@@ -23,6 +23,7 @@ import static com.dotmarketing.portlets.contentlet.model.Contentlet.OWNER_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_KEY;
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLID;
+import static graphql.Scalars.GraphQLInt;
 import static graphql.Scalars.GraphQLString;
 
 import com.dotcms.graphql.datafetcher.ContentMapDataFetcher;
@@ -79,7 +80,10 @@ public final class ContentFields {
         contentFields.put(MOD_USER_KEY, new TypeFetcher(GraphQLTypeReference.typeRef(USER.getTypeName()),
                 new UserDataFetcher()));
         contentFields.put("map", new TypeFetcher(ExtendedScalars.Object, new ContentMapDataFetcher(),
-                GraphQLArgument.newArgument().name("key").type(GraphQLString).build()));
+                GraphQLArgument.newArgument().name("key").type(GraphQLString).build(),
+                GraphQLArgument.newArgument().name("depth").defaultValue(0).type(GraphQLInt).build(),
+                GraphQLArgument.newArgument().name("render").defaultValue(false)
+                        .type(GraphQLBoolean).build()));
         return contentFields;
     }
 

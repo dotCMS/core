@@ -34,6 +34,8 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
         try {
             final Contentlet contentlet = environment.getSource();
             final String key = environment.getArgument("key");
+            final int depth = environment.getArgument("depth");
+            final Boolean render = environment.getArgument("render");
 
             if(UtilMethods.isSet(key)) {
                 return contentlet.get(key);
@@ -56,8 +58,9 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
             // this only adds relationships to any json. We would need to return them with the transformations already
 
             final JSONObject jsonWithRels = ContentResource.addRelationshipsToJSON(request, response,
-                    "false", user, 1, false, contentlet,
-                    contentMapInJSON, null, 1, true, false);
+                    render.toString(), user, depth, false, contentlet,
+                    contentMapInJSON, null, 1, true, false,
+                    true);
 
             HashMap<String,Object> result = new ObjectMapper().readValue(jsonWithRels.toString(), HashMap.class);
             hydratedMap.putAll(result);
@@ -69,26 +72,4 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
             throw e;
         }
     }
-
-//    private Contentlet hydrateContentlet(final Contentlet contentlet) {
-//
-//        final List<Field> binaries = contentlet.getContentType().fields(BinaryField.class);
-//        if (!binaries.isEmpty()) {
-//            for (final Field field : binaries) {
-//                contentlet.getMap().put(field.variable(), BinaryViewStrategy.transform(field, contentlet));
-//            }
-//        }
-//
-//        final List<Field> fields = contentlet.getContentType().fields(FileField.class);
-//        if (!fields.isEmpty()) {
-//            for (final Field field : fields) {
-//                new FileAssetViewStrategy(new APIProvider.Builder().build())
-//                contentlet.getMap().put(field.variable(), BinaryViewStrategy.transform(field, contentlet));
-//            }
-//        }
-//
-//
-//        return contentlet;
-//
-//    }
 }
