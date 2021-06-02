@@ -73,7 +73,7 @@ import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.common.unit.TimeValue;
 import java.util.stream.Collectors;
-
+import com.dotmarketing.util.UUIDGenerator
 
 /**
  * This class upgrades the old permissionsfactoryimpl to handle the storage and retrieval of bit permissions from the database
@@ -1695,7 +1695,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
      * waiting, and if so, use it, otherwise we query the permission_reference table
      */
 
-    permissionList = Try.of(() -> lockManager.tryLock(LOCK_PREFIX + permissionKey, () -> {
+	  
+	final String lockKey = Config.getBooleanProperty("PERMISSION_LOCK_ON_READ", false) ? permissionKey : UUIDGenerator.uuid();
+	  
+    permissionList = Try.of(() -> lockManager.tryLock(LOCK_PREFIX + lockKey, () -> {
       List<Permission> bitPermissionsList = permissionCache.getPermissionsFromCache(permissionKey);
       if (bitPermissionsList != null) {
         return bitPermissionsList;
