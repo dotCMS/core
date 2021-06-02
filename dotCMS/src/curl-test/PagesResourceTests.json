@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "467aef97-8193-4d1e-a3c1-08e9b01bc5f3",
+		"_postman_id": "e3335521-0cf9-490a-bfef-43b14d99a15c",
 		"name": "Page API - [api/v1/page]",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -14,7 +14,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "6ceb004f-c477-409f-9a1d-8c7bee1f5350",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -67,10 +66,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/assets.tar.gz"
 								}
-							],
-							"options": {
-								"formdata": {}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/bundle?sync=true",
@@ -103,7 +99,6 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "50f00108-83ec-4a2b-8304-ed81942b73c0",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -113,15 +108,13 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "4afcb734-0af1-495f-a366-7717d14f6777",
 						"type": "text/javascript",
 						"exec": [
 							""
 						]
 					}
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "JSON [api/v1/page/json]",
@@ -132,7 +125,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "8cf66b1c-0003-4610-8e96-c1b38e2aaf27",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -165,7 +157,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "118b41c4-c724-48cf-89af-d20c89d2f3cf",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 401, Need credentials\", function () {",
@@ -213,7 +204,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "a5a07df6-57f7-4ec5-80a3-c8e452773b73",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 200\", function () {",
@@ -343,7 +333,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "0050f56c-6806-48f1-8140-522ebfe3476b",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -376,7 +365,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "91f5ac16-ef60-48bd-bbe6-9fb751962c4b",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 404\", function () {",
@@ -438,7 +426,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "10f6e94d-6a0e-4cc2-84ed-21c458f26126",
 								"exec": [
 									"pm.test(\"No errors\", function () {",
 									"    ",
@@ -556,7 +543,6 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "19700d59-0a68-4594-a323-45ba94108915",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -566,15 +552,13 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "51981d37-7ad1-47b3-a322-63f72aea3e62",
 						"type": "text/javascript",
 						"exec": [
 							""
 						]
 					}
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "Render [api/v1/page/render]",
@@ -585,7 +569,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ce4a7239-5543-4571-9a78-66f75c502601",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -618,7 +601,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "aac23bda-c2f5-400f-9700-72ffd0398b95",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 401, Need credentials\", function () {",
@@ -665,7 +647,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "132942c5-35ae-4a57-a4f2-045c5c483058",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 200\", function () {",
@@ -788,7 +769,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f376d622-1c54-4b00-8713-4cfb68f69692",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 404\", function () {",
@@ -847,7 +827,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "5caf7a93-f793-4f75-a1f0-d2178bd4b350",
 								"exec": [
 									"pm.test(\"No errors\", function () {",
 									"    ",
@@ -970,8 +949,7 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "Layout [/api/v1/page/{page-id}/layout]",
@@ -982,7 +960,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "9be95091-e3a8-4497-970d-726befd7191d",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1015,7 +992,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "7027be93-a9c5-4b06-a258-d17b0f6d1bc8",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 401, Need credentials\", function () {",
@@ -1071,7 +1047,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "561037e7-8cb8-459c-b602-05aa9357dc61",
 								"exec": [
 									"pm.test(\"Response code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1188,7 +1163,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "8f51f28c-97cd-4242-9441-028d65110363",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 404\", function () {",
@@ -1257,7 +1231,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "1214f122-f772-4fa2-9d32-323761993dc7",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 400\", function () {",
@@ -1326,7 +1299,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ff40a3fa-4c77-4169-b30f-f0d6daeeadee",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 400\", function () {",
@@ -1394,7 +1366,6 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "0ede8298-d750-4861-a630-94ab13f4aa01",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -1404,15 +1375,13 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "0b775efe-c719-44a3-8ee2-1899eb16bbd5",
 						"type": "text/javascript",
 						"exec": [
 							""
 						]
 					}
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "Add Content [/api/v1/page/{page-id}/content]",
@@ -1423,7 +1392,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "def1169a-c6b8-43fd-9c73-c5b03f9aefaf",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1456,7 +1424,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "9a46bac9-2486-419e-b665-57554d5084a1",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 401, Need credentials\", function () {",
@@ -1512,7 +1479,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "6fb9f84a-1ea2-4c83-87d3-0457a56cff6e",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1580,7 +1546,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "751c8de8-764c-4a9d-be86-ec00f79800c0",
 								"exec": [
 									"pm.test(\"Status code is 404\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -1649,7 +1614,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "59a98246-f925-418b-a44e-5a815f83803e",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 400\", function () {",
@@ -1718,7 +1682,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "541d2bb1-8f85-4d12-95fb-c9f6cce6ce70",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 400\", function () {",
@@ -1787,7 +1750,6 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "3e52e9e7-4c7a-49c7-b6dc-98c0d723166f",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -1797,15 +1759,13 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "2af39cb2-ef94-499b-adff-b3e530a1a2e2",
 						"type": "text/javascript",
 						"exec": [
 							""
 						]
 					}
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "Render HTML [/api/v1/page/renderHTML]",
@@ -1816,7 +1776,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ae617066-c1b0-4d10-8711-61aa9de44acb",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1849,7 +1808,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "cf356d37-b7eb-4ee5-a42c-c8238d07191d",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 401, Need credentials\", function () {",
@@ -1897,7 +1855,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "1a4e07ba-e1eb-487d-a3f6-e24a62315f50",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1950,10 +1907,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/demo.dotcms.com.tar.gz"
 								}
-							],
-							"options": {
-								"formdata": {}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/bundle?sync=true",
@@ -1986,7 +1940,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "9e987f4f-2900-43d1-a10c-851802c0138b",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2062,7 +2015,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "b330ae54-53bb-4714-9e94-72df072c10aa",
 								"exec": [
 									"",
 									"",
@@ -2126,7 +2078,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f5f1f95a-0009-4f18-995f-e8231305579b",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 404\", function () {",
@@ -2190,7 +2141,6 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "2cad31a6-5e3b-4d96-890a-c065fe37e5ed",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -2200,22 +2150,124 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "95ee9761-ac29-4f0a-9dcb-9e30ae15cee2",
 						"type": "text/javascript",
 						"exec": [
 							""
 						]
 					}
 				}
+			]
+		},
+		{
+			"name": "Put Create Page With CacheTTL 55",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"Identifier must contains path\", function () {",
+							"    pm.expect(jsonData.entity.template).contains(\"//default/application/templates/system/\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
 			],
-			"protocolProfileBehavior": {}
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"contentlet\":{\n\t\t\"stName\": \"htmlpageasset\",\n\t\t\"title\": \"PageAsset SystemTemplate\",\n        \"url\": \"pageassetsystemtemplate\",\n        \"friendlyName\":\"pageassetsystemtemplate\",\n        \"template\": \"//demo.dotcms.com/application/templates/system/\",\n        \"sortOrder\": \"0\",\n        \"cachettl\": \"100\",\n        \"hostFolder\":\"48190c8c-42c4-46af-8d1a-0cd5db894797\"\n\t}\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/NEW",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"actions",
+						"default",
+						"fire",
+						"NEW"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Check Cache-Control",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Cache-Control is correct\", function () {",
+							"    pm.response.to.be.header('Cache-Control','max-age=55');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/pageassetsystemtemplate",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"pageassetsystemtemplate"
+					]
+				}
+			},
+			"response": []
 		}
 	],
 	"event": [
 		{
 			"listen": "prerequest",
 			"script": {
-				"id": "f75c5da0-665f-420f-9870-35c5b163ac5c",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -2225,7 +2277,6 @@
 		{
 			"listen": "test",
 			"script": {
-				"id": "3ec395f1-18cf-4f65-828a-d9df7d9426e1",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -2235,10 +2286,8 @@
 	],
 	"variable": [
 		{
-			"id": "02e8ed2f-e41f-4449-b666-f76ed9d8936f",
 			"key": "serverURL",
 			"value": "http://localhost:8080"
 		}
-	],
-	"protocolProfileBehavior": {}
+	]
 }
