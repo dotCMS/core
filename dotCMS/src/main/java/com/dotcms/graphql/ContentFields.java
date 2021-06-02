@@ -24,7 +24,6 @@ import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLID;
 import static graphql.Scalars.GraphQLString;
-import static graphql.scalars.ExtendedScalars.Json;
 
 import com.dotcms.graphql.datafetcher.ContentMapDataFetcher;
 import com.dotcms.graphql.datafetcher.FolderFieldDataFetcher;

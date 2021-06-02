@@ -31,6 +31,8 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
+import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
+import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
@@ -52,6 +54,7 @@ import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.DomDriver;
+import io.vavr.control.Try;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
@@ -1329,6 +1332,14 @@ public class ContentResource {
             throws JSONException, IOException, DotDataException, DotSecurityException {
         JSONObject jo = new JSONObject();
         ContentType type = con.getContentType();
+
+        // TODO add flag to transform and telescope with false
+
+        final DotContentletTransformer myTransformer = new DotTransformerBuilder()
+                .hydratedContentMapTransformer().content(con).build();
+
+        con =  myTransformer.hydrate().get(0);
+
         Map<String, Object> map = ContentletUtil.getContentPrintableMap(user, con, allCategoriesInfo);
 
         Set<String> jsonFields = getJSONFields(type);
@@ -1344,6 +1355,11 @@ public class ContentResource {
                     jo.put(key, new JSONArray(categoryList.stream()
                             .map(value -> new JSONObject((Map<?,?>) value))
                             .collect(Collectors.toList())));
+                  // this might be coming from transformers views, so let's try to make then JSONObjects
+                } else if(key.endsWith("Map")) {
+                    final Contentlet contentlet = con;
+                    jo.put(key, Try.of(()->(Object) new JSONObject(contentlet.getKeyValueProperty(key)))
+                            .getOrElse(()->map.get(key)));
                 } else {
                     jo.put(key, map.get(key));
                 }

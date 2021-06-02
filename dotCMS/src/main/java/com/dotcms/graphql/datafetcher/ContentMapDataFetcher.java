@@ -50,24 +50,14 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
             final DotContentletTransformer myTransformer = new DotTransformerBuilder()
                     .hydratedContentMapTransformer().content(contentlet).build();
 
-            // TODO - crear mapa de FieldTypes and ViewStrategies
-            // iterar por los fields del contentlet y dado su type obtener la vista y agregarla al mapa del contentlet
-            //
-//
-//            return hydrateContentlet(reTransformedContentlet);
             final Map<String, Object> hydratedMap =  myTransformer.toMaps().get(0);
-
-
             final JSONObject contentMapInJSON = new JSONObject();
-//
 
             // this only adds relationships to any json. We would need to return them with the transformations already
 
             final JSONObject jsonWithRels = ContentResource.addRelationshipsToJSON(request, response,
                     "false", user, 1, false, contentlet,
                     contentMapInJSON, null, 1, true, false);
-
-
 
             HashMap<String,Object> result = new ObjectMapper().readValue(jsonWithRels.toString(), HashMap.class);
             hydratedMap.putAll(result);
