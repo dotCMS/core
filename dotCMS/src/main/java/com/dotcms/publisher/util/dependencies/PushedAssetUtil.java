@@ -92,6 +92,20 @@ public class PushedAssetUtil {
                 savePushedAsset(DependencyManager.getKey(asset), pusheableAsset, environment));
     }
 
+    public <T> void removePushedAssetForAllEnv(final T asset, final PusheableAsset pusheableAsset) {
+        final String assetId = DependencyManager.getKey(asset);
+
+        //For un-publish we always remove the asset from cache
+        for ( Environment environment : environments ) {
+            try {
+                APILocator.getPushedAssetsAPI()
+                        .deletePushedAssetsByEnvironment(assetId, environment.getId());
+            } catch (DotDataException e) {
+                Logger.error(this, e.getMessage(), e);
+            }
+        }
+    }
+
     private void savePushedAsset(
             final String assetId,
             final PusheableAsset pusheableAsset,

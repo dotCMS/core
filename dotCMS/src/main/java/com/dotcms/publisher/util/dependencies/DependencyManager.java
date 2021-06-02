@@ -7,10 +7,12 @@ import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.publisher.business.PublishQueueElement;
+import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.PublisherUtil;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.DotBundleException;
+import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.publishing.PublisherFilter;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -385,8 +387,6 @@ public class DependencyManager {
 				throw new DotBundleException(rootCause.getMessage(), (Exception) rootCause);
 			}
 		}
-
-		System.out.println("assets = " + assets);
 	}
 
 	private Folder getFolderByParentIdentifier(final Identifier identifier)
@@ -663,6 +663,12 @@ public class DependencyManager {
 	}
 
 	private synchronized <T> boolean tryToAdd(final PusheableAsset pusheableAsset, final T asset) {
+
+		if ( config.getOperation() != Operation.PUBLISH ) {
+			this.pushedAssetUtil.removePushedAssetForAllEnv(asset, pusheableAsset);
+			return false;
+		}
+
 		if (Contentlet.class.isInstance(asset) && !Contentlet.class.cast(asset).isHost() &&
 				publisherFilter.doesExcludeDependencyQueryContainsContentletId(
 						((Contentlet) asset).getIdentifier())) {
@@ -890,7 +896,7 @@ public class DependencyManager {
 				if(!(workingTemplateWP instanceof FileAssetTemplate)) {
 					tryToAdd(PusheableAsset.TEMPLATE, () -> workingTemplateWP);
 				}
-				dependencyProcessor.addAsset(workingPage.getTemplateId(), PusheableAsset.TEMPLATE);
+				dependencyProcessor.addAsset(workingTemplateWP, PusheableAsset.TEMPLATE);
 			}
 
 			final Template liveTemplateLP = livePage != null ?
@@ -902,15 +908,15 @@ public class DependencyManager {
 				if(!(liveTemplateLP instanceof FileAssetTemplate)) {
 					tryToAdd(PusheableAsset.TEMPLATE, () -> liveTemplateLP);
 				}
-				dependencyProcessor.addAsset(livePage.getTemplateId(), PusheableAsset.TEMPLATE);
+				dependencyProcessor.addAsset(liveTemplateLP, PusheableAsset.TEMPLATE);
 			}
 
 			// Contents dependencies
-			tryToAddAndProcessDependencies(PusheableAsset.CONTENTLET, () -> getContentletsByPage(workingPage));
+			tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET, () -> getContentletsByPage(workingPage));
 
 
 			// Rule dependencies
-			tryToAddAndProcessDependencies(PusheableAsset.RULE, () -> getRuleByPage(workingPage));
+			tryToAddAllAndProcessDependencies(PusheableAsset.RULE, () -> getRuleByPage(workingPage));
 		} catch (DotSecurityException | DotDataException e) {
 			Logger.error(this, e.getMessage(),e);
 		}

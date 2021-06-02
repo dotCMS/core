@@ -130,21 +130,6 @@ public class DependencyModDateUtil extends HashSet<String> {
 	private synchronized boolean excludeByModDate ( final String assetId, final PusheableAsset pusheableAsset,
 			final Date assetModDate) {
 
-		/*if ( !isPublish ) {
-
-			//For un-publish we always remove the asset from cache
-			for ( Environment env : envs ) {
-				cache.removePushedAssetById( assetId, env.getId() );
-				try {
-					APILocator.getPushedAssetsAPI().deletePushedAssetsByEnvironment(assetId, env.getId());
-				} catch (DotDataException e) {
-					Logger.error(this, e.getMessage(), e);
-				}
-			}
-
-			return true;
-		}*/
-
 		// we need to check if all environments have the last version of the asset in
 		// order to skip adding it to the Set
 
