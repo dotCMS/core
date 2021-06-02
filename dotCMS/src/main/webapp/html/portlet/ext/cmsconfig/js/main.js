@@ -56,6 +56,11 @@ var saveCompanyBasicInfo = function () {
   ).value;
   var topNavLogoPath = document.getElementById("topNavLogoInput").value;
 
+  if (!loginScreenLogoPath) {
+    showDotCMSSystemMessage("Login Screen Logo cannot be empty", true);
+    return;
+  }
+
   var content = {
     portalURL: companyPortalUrl,
     mx: companyMX,
@@ -67,6 +72,7 @@ var saveCompanyBasicInfo = function () {
     city: loginScreenLogoPath,
     state: topNavLogoPath,
   };
+
 
   var xhrArgs = {
     url: "/api/config/saveCompanyBasicInfo",
@@ -83,10 +89,7 @@ var saveCompanyBasicInfo = function () {
       emmitCompanyInfoUpdated(content);
     },
     error: function (error) {
-
-      console.log({ error });
-
-      showDotCMSSystemMessage(error.responseText, true);
+     showDotCMSSystemMessage(error.responseText, true);
     },
   };
   dojo.xhrPost(xhrArgs);
