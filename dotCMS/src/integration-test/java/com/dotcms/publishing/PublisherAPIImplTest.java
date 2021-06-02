@@ -134,16 +134,16 @@ public class PublisherAPIImplTest {
         prepare();
 
         return  new TestAsset[]{
-                //getContentTypeWithHost(),
-                //getTemplateWithDependencies(),
-                //getContainerWithDependencies(),
-                getFolderWithDependencies()/*,
+                getContentTypeWithHost(),
+                getTemplateWithDependencies(),
+                getContainerWithDependencies(),
+                getFolderWithDependencies(),
                 getHostWithDependencies(),
                 getLinkWithDependencies(),
                 getWorkflowWithDependencies(),
                 getLanguageWithDependencies(),
                 getRuleWithDependencies(),
-                getContentWithSeveralVersions()*/
+                getContentWithSeveralVersions()
         };
     }
 
@@ -453,6 +453,7 @@ public class PublisherAPIImplTest {
 
         final Collection<Object> dependencies = new HashSet<>();
         dependencies.addAll(testAsset.expectedInBundle);
+        dependencies.add(testAsset.asset);
 
         createLanguageVariableIfNeeded();
         addLanguageVariableDependencies(dependencies, testAsset.addLanguageVariableDependencies);

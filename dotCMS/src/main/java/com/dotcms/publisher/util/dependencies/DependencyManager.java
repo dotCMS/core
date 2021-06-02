@@ -4,7 +4,6 @@ import static com.dotcms.util.CollectionsUtils.set;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.publisher.business.PublishQueueElement;
@@ -19,10 +18,8 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotIdentifierStateException;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Versionable;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -195,16 +192,16 @@ public class DependencyManager {
 
 			if (asset.getType().equals(PusheableAsset.CONTENT_TYPE.getType())) {
 				try {
-					Structure st = CacheLocator.getContentTypeCache()
+					final Structure structure = CacheLocator.getContentTypeCache()
 							.getStructureByInode(asset.getAsset());
 
-					if (st == null) {
+					if (structure == null) {
 						Logger.warn(getClass(),
 								"Structure id: " + (asset.getAsset() != null ? asset.getAsset()
 										: "N/A")
 										+ " does NOT have working or live version, not Pushed");
 					} else {
-						config.addWithDependencies(st, PusheableAsset.CONTENT_TYPE);
+						addWithDependencies(PusheableAsset.CONTENT_TYPE, structure);
 					}
 
 				} catch (Exception e) {
@@ -233,7 +230,7 @@ public class DependencyManager {
 									"FileAssetTemplate id: " + (asset.getAsset() != null ? asset
 											.getAsset() : "N/A") + " will be ignored");
 						} else {
-							config.addWithDependencies(template, PusheableAsset.TEMPLATE);
+							addWithDependencies(PusheableAsset.TEMPLATE, template);
 						}
 					}
 
@@ -258,7 +255,7 @@ public class DependencyManager {
 										: "N/A")
 										+ " does NOT have working or live version, not Pushed");
 					} else {
-						config.addWithDependencies(container, PusheableAsset.CONTAINER);
+						addWithDependencies(PusheableAsset.CONTAINER, container);
 					}
 				} catch (DotSecurityException e) {
 					Logger.error(getClass(),
@@ -275,7 +272,7 @@ public class DependencyManager {
 										: "N/A")
 										+ " does NOT have working or live version, not Pushed");
 					} else {
-						config.addWithDependencies(folder, PusheableAsset.FOLDER);
+						addWithDependencies(PusheableAsset.FOLDER, folder);
 					}
 
 				} catch (DotSecurityException e) {
@@ -292,7 +289,7 @@ public class DependencyManager {
 								"Host id: " + (asset.getAsset() != null ? asset.getAsset() : "N/A")
 										+ " does NOT have working or live version, not Pushed");
 					} else {
-						config.addWithDependencies(host, PusheableAsset.SITE);
+						addWithDependencies(PusheableAsset.SITE, host);
 					}
 
 				} catch (DotSecurityException e) {
@@ -315,7 +312,7 @@ public class DependencyManager {
 								"Link id: " + (asset.getAsset() != null ? asset.getAsset() : "N/A")
 										+ " does NOT have working or live version, not Pushed");
 					} else {
-						config.addWithDependencies(link, PusheableAsset.LINK);
+						addWithDependencies(PusheableAsset.LINK, link);
 					}
 
 				} catch (DotSecurityException e) {
@@ -332,7 +329,7 @@ public class DependencyManager {
 									: "N/A")
 									+ " does NOT have working or live version, not Pushed");
 				} else {
-					config.addWithDependencies(scheme, PusheableAsset.WORKFLOW);
+					addWithDependencies(PusheableAsset.WORKFLOW, scheme);
 				}
 			} else if (asset.getType().equals(PusheableAsset.LANGUAGE.getType())) {
 				Language language = APILocator.getLanguageAPI()
@@ -343,13 +340,13 @@ public class DependencyManager {
 							: "N/A")
 							+ " is not present in the database, not Pushed");
 				} else {
-					config.addWithDependencies(language, PusheableAsset.LANGUAGE);
+					addWithDependencies(PusheableAsset.LANGUAGE, language);
 				}
 			} else if (asset.getType().equals(PusheableAsset.RULE.getType())) {
 				Rule rule = APILocator.getRulesAPI()
 						.getRuleById(asset.getAsset(), user, false);
 				if (rule != null && StringUtils.isNotBlank(rule.getId())) {
-					config.addWithDependencies(rule, PusheableAsset.RULE);
+					addWithDependencies(PusheableAsset.RULE, rule);
 				} else {
 					Logger.warn(getClass(), "Rule id: "
 							+ (asset.getAsset() != null ? asset.getAsset()
@@ -368,7 +365,7 @@ public class DependencyManager {
 				final List<Contentlet> contentlets = APILocator.getContentletAPI()
 						.findAllVersions(ident, false, user, false);
 				for (Contentlet con : contentlets) {
-					config.addWithDependencies(con, PusheableAsset.CONTENTLET);
+					addWithDependencies(PusheableAsset.CONTENTLET, con);
 				}
 			}
 		}
@@ -635,7 +632,7 @@ public class DependencyManager {
 
 			if (assets != null) {
 				return assets.stream()
-					.filter(asset -> add(pusheableAsset, asset))
+					.filter(asset -> tryToAdd(pusheableAsset, asset))
 					.collect(Collectors.toSet());
 			}
 		}
@@ -658,14 +655,14 @@ public class DependencyManager {
 			final T asset = getter.get();
 
 			if (asset != null) {
-				return add(pusheableAsset, asset) ? Optional.of(asset) : Optional.empty();
+				return tryToAdd(pusheableAsset, asset) ? Optional.of(asset) : Optional.empty();
 			}
 		}
 
 		return Optional.empty();
 	}
 
-	private synchronized <T> boolean add(final PusheableAsset pusheableAsset, final T asset) {
+	private synchronized <T> boolean tryToAdd(final PusheableAsset pusheableAsset, final T asset) {
 		if (Contentlet.class.isInstance(asset) && !Contentlet.class.cast(asset).isHost() &&
 				publisherFilter.doesExcludeDependencyQueryContainsContentletId(
 						((Contentlet) asset).getIdentifier())) {
@@ -675,15 +672,29 @@ public class DependencyManager {
 		if (!shouldCheckModDate(asset) ||
 				!dependencyModDateUtil.excludeByModDate(asset, pusheableAsset)) {
 
-			final boolean isAdded = config.add(asset, pusheableAsset);
-
-			if (isAdded) {
-				pushedAssetUtil.savePushedAssetForAllEnv(asset, pusheableAsset);
-			}
+			add(pusheableAsset, asset);
 			return true;
 		} else {
 			return false;
 		}
+	}
+
+	private <T> void addWithDependencies(final PusheableAsset pusheableAsset, final T asset) {
+		final boolean add = add(pusheableAsset, asset);
+
+		if (add) {
+			dependencyProcessor.addAsset(asset, pusheableAsset);
+		}
+	}
+
+	private <T> boolean add(final PusheableAsset pusheableAsset, final T asset) {
+		final boolean isAdded = config.add(asset, pusheableAsset);
+
+		if (isAdded) {
+			pushedAssetUtil.savePushedAssetForAllEnv(asset, pusheableAsset);
+		}
+
+		return isAdded;
 	}
 
 	private <T> boolean shouldCheckModDate(T asset) {
@@ -750,7 +761,7 @@ public class DependencyManager {
 					() -> getContentTypeByHost(host));
 
 			// Folder dependencies
-			tryToAddAllAndProcessDependencies(PusheableAsset.CONTENT_TYPE,
+			tryToAddAllAndProcessDependencies(PusheableAsset.FOLDER,
 					() -> getFoldersByHost(host));
 
 			// Rule dependencies
@@ -798,7 +809,7 @@ public class DependencyManager {
 				() -> getContentletByLuceneQuery("+conFolder:" + folder.getInode()));
 
 		// Menu Link dependencies
-		tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET,
+		tryToAddAllAndProcessDependencies(PusheableAsset.LINK,
 				() -> getLinksByFolder(folder));
 
 		// Structure dependencies
@@ -807,7 +818,8 @@ public class DependencyManager {
 
 		//Add the default structure of this folder
 		tryToAddAndProcessDependencies(PusheableAsset.CONTENT_TYPE,
-				() -> getContentTypeByFolder(folder));
+				() -> CacheLocator.getContentTypeCache()
+						.getStructureByInode(folder.getDefaultFileType()));
 
 		// SubFolders
 		tryToAddAllAndProcessDependencies(PusheableAsset.FOLDER,
@@ -1231,8 +1243,6 @@ public class DependencyManager {
 			final List<Contentlet> contentlets = contentletAPI.searchByIdentifier(
 					"+identifier:" + rule.getParent(), 1, 0, null, this.user, false,
 					PermissionAPI.PERMISSION_READ, true);
-
-			tryToAddAll(PusheableAsset.CONTENTLET, () -> contentlets);
 
 			if (contentlets != null && contentlets.size() > 0) {
 				final Contentlet parent = contentlets.get(0);
