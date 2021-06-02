@@ -103,7 +103,7 @@
 	}
 
    function assetIsMaxLength(asset) {
-      return asset.match(/[^\\\/]+(?=\.[\w]+$)|[^\\\/]+$/)[0].length > 50;
+      return asset.match(/[^\\\/]+(?=\.[\w]+$)|[^\\\/]+$/)[0].length > 40;
    }
 
    function setLogoAndContainerNodes({ dropZone,  logoNode, details, dropZoneLabel }) {
@@ -149,6 +149,8 @@
           details,
           dropZoneLabel
       }
+
+      console.log(assetIsMaxLength(details.asset), details.asset)
 
       if(assetIsMaxLength(details.asset)) {
          createMaxLengthError(dropZoneLabel);
