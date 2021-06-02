@@ -15,6 +15,7 @@ import java.util.Optional;
 import net.bytebuddy.agent.ByteBuddyAgent;
 import org.apache.felix.framework.OSGIUtil;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.osgi.framework.Bundle;
