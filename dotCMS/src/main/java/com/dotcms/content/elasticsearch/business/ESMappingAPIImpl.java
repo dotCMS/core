@@ -865,10 +865,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	    if(valueObj instanceof Map){
 	       return new HashMap<>((Map<String,Object>)valueObj);
 	    }
-		if(valueObj instanceof Metadata){
-			final Metadata metadata = (Metadata)valueObj;
-			return new HashMap<>(metadata.getFieldsMeta());
-		}
+
 		return KeyValueFieldUtil.JSONValueToHashMap((String) valueObj);
 	}
 
