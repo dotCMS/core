@@ -6,6 +6,7 @@ import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLList.list;
 import static graphql.schema.GraphQLNonNull.nonNull;
 import static graphql.schema.GraphQLObjectType.newObject;
+
 import com.dotcms.concurrent.Debouncer;
 import com.dotcms.graphql.InterfaceType;
 import com.dotcms.graphql.datafetcher.ContentletDataFetcher;
@@ -27,8 +28,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -144,6 +147,22 @@ public class GraphqlAPIImpl implements GraphqlAPI {
             }
         }
 
+        // let's log if we are including dupe types
+        final Map<String, GraphQLType> localTypesMap = new HashMap<>();
+        graphQLTypes.forEach((type)-> {
+            if(localTypesMap.containsKey(type.getName())) {
+                Logger.warn(this, "Dupe GraphQLType detected!: " + type.getName());
+                // removing dupes based on Config property
+                if(Config.getBooleanProperty("GRAPHQL_REMOVE_DUPLICATED_TYPES", false)) {
+                    return;
+                }
+            }
+            localTypesMap.put(type.getName(), type);
+        });
+
+        final Set<GraphQLType> finalTypesSet = new HashSet<>(localTypesMap.values());
+
+
         List<GraphQLFieldDefinition> fieldDefinitions = new ArrayList<>();
 
         for (GraphQLFieldsProvider fieldsProvider : fieldsProviders) {
@@ -157,7 +176,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         // Root Type
         GraphQLObjectType.Builder rootTypeBuilder = createRootTypeBuilder().fields(fieldDefinitions);
 
-        return new GraphQLSchema.Builder().query(rootTypeBuilder.build()).additionalTypes(graphQLTypes).build();
+        return new GraphQLSchema.Builder().query(rootTypeBuilder.build()).additionalTypes(finalTypesSet).build();
     }
 
     private Builder createRootTypeBuilder() {
