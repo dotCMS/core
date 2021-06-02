@@ -16,9 +16,11 @@ public class DotPubSubEventTest {
         String message = "message";
         String type = "type";
         String origin = UUIDGenerator.generateUuid();
+        String topic = "TOPIC";
 
         
-        DotPubSubEvent event = new DotPubSubEvent.Builder().withMessage(message).build();
+        DotPubSubEvent event = new DotPubSubEvent.Builder().withMessage(message).withTopic(topic)
+                .build();
 
         String eventToJson = event.toString();
 
