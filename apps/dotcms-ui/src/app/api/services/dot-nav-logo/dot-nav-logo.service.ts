@@ -9,18 +9,18 @@ export class DotNavLogoService {
     constructor() {}
 
     /**
-     *
+     * Sets a logo for the nav bar
      *
      * @param {string} navLogo
      * @return {*}  {void}
      * @memberof DotNavLogoService
      */
     setLogo(navLogo: string): void {
-        if (!navLogo) {
+        if (navLogo?.startsWith('/dA')) {
+            this.navBarLogo$.next(this.setUrlProperty(navLogo));
+        } else {
             this.navBarLogo$.next(null);
-            return;
         }
-        this.navBarLogo$.next(this.setUrlProperty(navLogo));
     }
 
     private setUrlProperty(navLogo: string): string {

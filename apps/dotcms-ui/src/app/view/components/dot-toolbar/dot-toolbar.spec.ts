@@ -187,7 +187,7 @@ describe('DotToolbarComponent', () => {
     });
 
     it('should have the logo passed to the subject', () => {
-        const imageUrlProp = 'url("image.png")';
+        const imageUrlProp = 'url("/dA/image.png")';
         dotNavLogoService.navBarLogo$.next(imageUrlProp);
         fixture.detectChanges();
         const newLogo = de.nativeElement.querySelector('.toolbar__logo--whitelabel');

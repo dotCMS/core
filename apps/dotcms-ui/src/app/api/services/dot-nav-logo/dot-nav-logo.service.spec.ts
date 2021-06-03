@@ -28,4 +28,12 @@ describe('DotNavLogoService', () => {
             done();
         });
     });
+
+    it("should not set a logo if the logo string doesn't starts with /dA", (done) => {
+        service.setLogo('FL');
+        service.navBarLogo$.subscribe((logo) => {
+            expect(logo).toBeNull();
+            done();
+        });
+    });
 });
