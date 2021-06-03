@@ -8,6 +8,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.util.CloseUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -23,7 +24,10 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import io.vavr.Tuple2;
+import io.vavr.control.Try;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -149,7 +153,8 @@ public class WorkflowImportExportUtil {
 			for (final WorkflowAction action : importer.getActions()) {
 
 				Logger.debug(this, () -> "Importing action: " + action);
-				workflowAPI.saveAction(action, null, user);
+				final WorkflowAction validatedAction = validateAction (action);
+				workflowAPI.saveAction(validatedAction, null, user);
 			}
 			
 			// Now we can save the step and action
@@ -202,6 +207,23 @@ public class WorkflowImportExportUtil {
 			Logger.error(this.getClass(), "Error: " + e.getMessage(), e);
 			throw new DotDataException(e);
 		}
+	}
+
+	private Role getAnonRole () {
+		return Try.of(()->APILocator.getRoleAPI().loadCMSAnonymousRole()).getOrNull();
+	}
+
+	private WorkflowAction validateAction(final WorkflowAction action) {
+
+		final String nextAssign = action.getNextAssign();
+		final Role role = Try.of(()->APILocator.getRoleAPI().loadRoleById(nextAssign)).getOrNull();
+		if (null == role) {
+
+			final Role anonRole = getAnonRole();
+			action.setNextAssign(anonRole.getId());
+		}
+
+		return action;
 	}
 
 	private void saveSchemeSystemActionMappings(
