@@ -65,7 +65,6 @@ public interface ImageFilterAPI {
      * @param height
      * @return
      */
-    BufferedImage fastResizeImage(File image, int width, int height);
 
     /**
      * resizing an image is a slower, more memory intensive operation than subsampling but produces
@@ -111,5 +110,11 @@ public interface ImageFilterAPI {
 
     
     BufferedImage resizeImage(File imageFile, int width, int height, int resampleOption);
+
+    BufferedImage subsampleImage(File image, int width, int height);
+
+    BufferedImage intelligentResize(File incomingImage, int width, int height, int resampleOption);
+
+    BufferedImage intelligentResize(File incomingImage, int width, int height);
 
 }

@@ -77,23 +77,7 @@ public class ImageFilterApiImplTest {
 
     }
     
-    @Test
-    public void test_fastResizeImage() {
 
-        URL url = getClass().getResource("/images/10by10000.png");
-        File incomingFile = new File(url.getFile());
-        
-        Dimension dim = imageApi.getWidthHeight(incomingFile);
-        assert (dim.getHeight() == 10d);
-        assert (dim.getWidth() == 10000d);
-        
-        BufferedImage newFile = imageApi.fastResizeImage(incomingFile,1000,10);
-        assert(newFile.getWidth() == 1000);
-        assert(newFile.getHeight() == 10);
-        newFile=null;
-
-
-    }
     
     @Test
     public void test_resizeImage() {

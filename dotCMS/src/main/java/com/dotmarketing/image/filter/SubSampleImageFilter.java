@@ -28,8 +28,8 @@ public class SubSampleImageFilter extends ImageFilter {
         }
         resultFile.delete();
 
-        // fast resampliing
-        BufferedImage srcImage = ImageFilterAPI.apiInstance.get().fastResizeImage(file, width, height);
+        // subsample from stream
+        BufferedImage srcImage = ImageFilterAPI.apiInstance.get().subsampleImage(file, width, height);
 
         
         File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() +".tmp");
@@ -46,6 +46,16 @@ public class SubSampleImageFilter extends ImageFilter {
     }
     
     
+    @Override
+    protected File getResultsFile(File file, Map<String, String[]> parameters, String fileExtension) {
+        try {
+            return super.getResultsFile(file, parameters, fileExtension);
+        }
+        catch(Exception e) {
+            return new File(System.getProperty("java.io.tmpdir") + file.separator + System.currentTimeMillis() + "." + fileExtension);
+        }
+
+    }
     
 
 }
