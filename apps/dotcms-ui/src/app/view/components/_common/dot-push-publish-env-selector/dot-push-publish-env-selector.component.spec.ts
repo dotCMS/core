@@ -132,22 +132,6 @@ describe('PushPublishEnvSelectorComponent', () => {
         expect(comp.selectedEnvironmentIds).toEqual(['12345ab', '6789bc']);
     });
 
-    it('should get environments from PushPublishService', () => {
-        fixture.detectChanges();
-        comp.pushEnvironments$.subscribe((environments) => {
-            expect(environments).toEqual([
-                {
-                    id: '22e332',
-                    name: 'my environment'
-                },
-                {
-                    id: 'joa08',
-                    name: 'my environment 2'
-                }
-            ]);
-        });
-    });
-
     it('should populate the environments if there is just one option', () => {
         const environment = [
             {
@@ -159,6 +143,7 @@ describe('PushPublishEnvSelectorComponent', () => {
         spyOn(comp, 'propagateChange');
         comp.ngOnInit();
         expect(comp.selectedEnvironments).toEqual(environment);
+        expect(comp.pushEnvironments).toEqual(environment);
         expect(comp.propagateChange).toHaveBeenCalled();
     });
 

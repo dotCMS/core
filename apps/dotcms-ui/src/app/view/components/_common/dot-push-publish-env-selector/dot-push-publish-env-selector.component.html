@@ -6,7 +6,7 @@
 <p-multiSelect
     (onChange)="valueChange($event, selectedEnvironments)"
     [(ngModel)]="selectedEnvironments"
-    [options]="pushEnvironments$ | async"
+    [options]="pushEnvironments"
     appendTo="body"
     [defaultLabel]="'contenttypes.content.push_publish.select_environment' | dm"
     optionLabel="name"
