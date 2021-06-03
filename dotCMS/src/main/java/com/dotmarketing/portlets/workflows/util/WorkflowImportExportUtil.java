@@ -11,6 +11,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
@@ -210,7 +211,7 @@ public class WorkflowImportExportUtil {
 	}
 
 	private Role getAnonRole () {
-		return Try.of(()->APILocator.getRoleAPI().loadCMSAnonymousRole()).getOrNull();
+		return Try.of(()->APILocator.getRoleAPI().loadCMSAnonymousRole()).getOrElseThrow(e -> new DotRuntimeException(e));
 	}
 
 	private WorkflowAction validateAction(final WorkflowAction action) {
@@ -219,6 +220,8 @@ public class WorkflowImportExportUtil {
 		final Role role = Try.of(()->APILocator.getRoleAPI().loadRoleById(nextAssign)).getOrNull();
 		if (null == role) {
 
+			Logger.warn(this, "The role: " + nextAssign +
+					" on the action: " + action.getName() + " does not exists, replacing by current user");
 			final Role anonRole = getAnonRole();
 			action.setNextAssign(anonRole.getId());
 		}
