@@ -10,6 +10,8 @@ import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformO
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.COMMON_PROPS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CONSTANTS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.KEY_VALUE_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.REPLACE_ORIGINAL_FIELD_VALUE_WITH_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.SITE_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_PROPS;
@@ -108,6 +110,19 @@ public class DotTransformerBuilder {
     }
 
     /**
+     * Use to hydrated Site
+     * @param clear boolean true if want to clear the previous options, otherwise false if just want to aggregate to the current config.
+     * @return
+     */
+    public DotTransformerBuilder siteToMapTransformer(final boolean clear){
+        if (clear) {
+            optionsHolder.clear();
+        }
+        optionsHolder.addAll(EnumSet.of(SITE_VIEW));
+        return this;
+    }
+
+    /**
      * Use to replace CategoryToMapTransformer
      * @return
      */
@@ -153,11 +168,12 @@ public class DotTransformerBuilder {
         optionsHolder.clear();
         optionsHolder.addAll(DotContentletTransformerImpl.defaultOptions);
         optionsHolder.add(KEY_VALUE_VIEW);
-        optionsHolder.add(IDENTIFIER_VIEW);
         optionsHolder.add(LANGUAGE_VIEW);
         optionsHolder.add(CATEGORIES_VIEW);
         optionsHolder.add(BINARIES_VIEW);
         optionsHolder.add(FILEASSET_VIEW);
+        optionsHolder.add(LOAD_META);
+        optionsHolder.add(REPLACE_ORIGINAL_FIELD_VALUE_WITH_VIEW);
         return this;
     }
 

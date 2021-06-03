@@ -100,6 +100,7 @@ public class VanityUrlFilterTest {
 
         Assert.assertEquals(301,  response.getStatus());
         Assert.assertEquals(forwardTo,  response.getHeader("Location"));
+        Assert.assertNotNull(response.getHeader("X-DOT-VanityUrl"));
     }
 
     /**
@@ -209,7 +210,7 @@ public class VanityUrlFilterTest {
         
         
         assert(resolvedVanity.vanityUrlId .equals(contentlet1.getIdentifier() ));
-        
+
 
 
     }
@@ -246,6 +247,7 @@ public class VanityUrlFilterTest {
         Collection<String> list=  response.getHeaderNames();
         assert(response.getHeader("Location").equals(forwardTo));
         assert(response.getStatus()==301);
+        Assert.assertNotNull(response.getHeader("X-DOT-VanityUrl"));
 
     }
 

@@ -1320,7 +1320,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 								fileMetadataAPI.getMetadata(this, FileAssetAPI.BINARY_FIELD)
 						).getOrNull();
 				if (null != fileAssetMetadata) {
-					return fileAssetMetadata;
+					return fileAssetMetadata.getFieldsMeta();
 				}
 			} else {
 			    //Otherwise this will look the first indexed binary

@@ -20,6 +20,8 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Cookie;
+
+import com.dotmarketing.util.CookieUtil;
 import org.apache.velocity.tools.view.context.ViewContext;
 
 /**
@@ -114,7 +116,9 @@ public class CookieTool implements ViewTool
      */
     public void add(String name, String value)
     {
-        response.addCookie(new Cookie(name, value));
+        final Cookie c = new Cookie(name, value);
+        c.setPath(CookieUtil.URI);
+        response.addCookie(c);
     }
 
 
@@ -129,7 +133,8 @@ public class CookieTool implements ViewTool
     public void add(String name, String value, int maxAge)
     {
         /* c is for cookie.  that's good enough for me. */
-        Cookie c = new Cookie(name, value);
+        final Cookie c = new Cookie(name, value);
+        c.setPath(CookieUtil.URI);
         c.setMaxAge(maxAge);
         response.addCookie(c);
     }

@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.transform.strategy;
 
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.REPLACE_ORIGINAL_FIELD_VALUE_WITH_VIEW;
 import static com.liferay.portal.language.LanguageUtil.getLiteralLocale;
 
 import com.dotcms.api.APIProvider;
@@ -10,6 +11,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -39,8 +41,12 @@ public class LanguageViewStrategy extends AbstractTransformStrategy<Contentlet>{
             final Set<TransformOptions> options, final User user) {
 
         final Language language = toolBox.languageAPI.getLanguage(source.getLanguageId());
-        map.putAll(mapLanguage(language, true));
+        map.putAll(mapLanguage(language, true, options));
         return map;
+    }
+
+    public static Map<String, Object> mapLanguage(final Language language, final boolean wrapAsMap) {
+        return mapLanguage(language, wrapAsMap, Collections.emptySet());
     }
 
     /**
@@ -49,7 +55,8 @@ public class LanguageViewStrategy extends AbstractTransformStrategy<Contentlet>{
      * @param wrapAsMap
      * @return
      */
-    public static Map<String, Object> mapLanguage(final Language language, final boolean wrapAsMap) {
+    public static Map<String, Object> mapLanguage(final Language language, final boolean wrapAsMap,
+            final Set<TransformOptions> options) {
 
         final Builder<String, Object> builder = new Builder<>();
 
@@ -68,7 +75,9 @@ public class LanguageViewStrategy extends AbstractTransformStrategy<Contentlet>{
 
         if(wrapAsMap){
             builder.put("id", language.getId());
-            return ImmutableMap.of("languageMap", builder.build(), "language",language.getLanguage());
+            final String sufix = options.contains(REPLACE_ORIGINAL_FIELD_VALUE_WITH_VIEW)
+                    ? "" : "Map";
+            return ImmutableMap.of("language" +  sufix, builder.build());
         }
         return builder.build();
     }

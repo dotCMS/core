@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.transform.strategy;
 
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LOAD_META;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.REPLACE_ORIGINAL_FIELD_VALUE_WITH_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.USE_ALIAS;
 import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.DESCRIPTION;
 import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.FILE_NAME_FIELD;
@@ -72,7 +73,9 @@ public class FileViewStrategy extends AbstractTransformStrategy<Contentlet> {
         if (!fileAndImageFields.isEmpty()) {
             for (final Field field : fileAndImageFields) {
                 try {
-                    map.put(field.variable() + "Map", transform(field, contentlet, options));
+                    final String sufix = options.contains(REPLACE_ORIGINAL_FIELD_VALUE_WITH_VIEW)
+                            ? "" : "Map";
+                    map.put(field.variable() + sufix, transform(field, contentlet, options));
                 } catch (DotDataException e) {
                     Logger.warn(this,
                             "Unable to get Binary from field with var " + field.variable());

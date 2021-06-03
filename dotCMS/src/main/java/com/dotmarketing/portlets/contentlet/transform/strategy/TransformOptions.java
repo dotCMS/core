@@ -23,7 +23,10 @@ public enum TransformOptions {
     BINARIES_VIEW, //This Emulates the old BinaryToMapTransformer.
     KEY_VALUE_VIEW,
     CATEGORIES_VIEW, //This emulates the Category To MapTransformer.
-    FILEASSET_VIEW;
+    FILEASSET_VIEW,
+    SITE_VIEW,
+
+    REPLACE_ORIGINAL_FIELD_VALUE_WITH_VIEW;
 
     private boolean defaultProperty;
 

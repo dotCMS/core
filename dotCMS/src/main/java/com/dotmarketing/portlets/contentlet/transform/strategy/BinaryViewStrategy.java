@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.transform.strategy;
 
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.REPLACE_ORIGINAL_FIELD_VALUE_WITH_VIEW;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 
@@ -56,9 +57,12 @@ public class BinaryViewStrategy extends AbstractTransformStrategy<Contentlet> {
         if (!binaries.isEmpty()) {
             for (final Field field : binaries) {
                 try {
-                    map.put(field.variable() + "Map", transform(field, contentlet));
+                    final String sufix = options.contains(REPLACE_ORIGINAL_FIELD_VALUE_WITH_VIEW)
+                            ? "" : "Map";
+
+                    map.put(field.variable() + sufix, transform(field, contentlet));
                     final Metadata metadata = contentlet.getBinaryMetadata(field.variable());
-                    if (metadata != null) {
+                    if (!options.contains(REPLACE_ORIGINAL_FIELD_VALUE_WITH_VIEW) && metadata != null) {
                         //This clearly replaces the binary by a string which is the expected output on BinaryToMapTransformer.
                         map.put(field.variable(), metadata.getName());
                     }
