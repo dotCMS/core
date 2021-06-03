@@ -16,35 +16,9 @@ Usage: `basename "$0"` [command]
 
 ${GREEN} Commands: ${NC}
   --bundle Imports a bundle like directory into dotCMS
-  The bundle directory structure should looks like:
-  / sites
-    |- SYSTEM_HOST.site.json
-    |- demo.dotcms.com.site.json
-  / content-types
-    |- blog.contentype.json
-    |- story.contentype.json
-  / files
-         |- en-US (language)
-            |- demo.dotcms.com (site)
-               |- images (Folder)
-               |   - file1
-               |   - file2
-               |- application
-                   - file3
-                   - file4
-
   --content-type Imports content type described in json format into dotCMS
   --site Imports a site described in json format into dotCMS
-  --files Imports files following the directory structure defined like:
-       / files
-         |- language
-            |- site
-               |- folder-1
-               |   - file1
-               |   - file2
-               |- folder-2
-                   - file3
-                   - file4
+  --files Imports files following the directory structure
 
   *             Help
 "
@@ -56,7 +30,7 @@ cli_log "Exporting config ..."
   && echo "ERROR: No $DOTCLI_WORKDIR/config file found. " \
   && exit 1
 
-# export so these values become available on the
+# export so these values become available for all commands
 export $(cat "$DOTCLI_WORKDIR/config" | xargs)
 
 export publishMeFile="publish-me-$timestamp"
@@ -65,16 +39,16 @@ cli_log "publish me file is $publishMeFile"
 
 case "$1" in
   --bundle|-b|-B)
-    "$DOTCLI_WORKDIR/commands/bundle" "$2"  | tee -ia "$DOTCLI_WORKDIR/logs/bundle${1}.log"
+    "$DOTCLI_WORKDIR/commands/push-bundle" "$2"  | tee -ia "$DOTCLI_WORKDIR/logs/bundle.log"
     ;;
   --content-type|-ct|-CT)
-    "$DOTCLI_WORKDIR/commands/content-type" "$2" | tee -ia "$DOTCLI_WORKDIR/logs/content-type${1}.log"
+    "$DOTCLI_WORKDIR/commands/content-type" "$2" | tee -ia "$DOTCLI_WORKDIR/logs/content-type.log"
     ;;
   --site|-S)
-    "$DOTCLI_WORKDIR/commands/site" "$2" | tee -ia "$DOTCLI_WORKDIR/logs/site${1}.log"
+    "$DOTCLI_WORKDIR/commands/site" "$2" | tee -ia "$DOTCLI_WORKDIR/logs/site.log"
     ;;
   --files|-F)
-    "$DOTCLI_WORKDIR/commands/files" "$2" | tee -ia "$DOTCLI_WORKDIR/logs/files${1}.log"
+    "$DOTCLI_WORKDIR/commands/push-files" "$2" | tee -ia "$DOTCLI_WORKDIR/logs/files.log"
     ;;
   *)
     cli_help

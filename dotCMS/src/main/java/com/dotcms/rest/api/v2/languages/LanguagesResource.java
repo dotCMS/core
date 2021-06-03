@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v2.languages;
 
 import static com.dotcms.rest.ResponseEntityView.OK;
+import static com.dotmarketing.util.UtilMethods.isNotSet;
 
 import com.dotcms.keyvalue.model.KeyValue;
 import com.dotcms.rendering.velocity.viewtools.util.ConversionUtils;
@@ -37,6 +38,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DELETE;
@@ -145,15 +147,16 @@ public class LanguagesResource {
             @Context final HttpServletResponse response,
             @PathParam("languageTag") final String languageTag
     ) {
+        DotPreconditions.notNull(languageTag, "Expected languageTag Param path was empty.");
         this.webResource.init(null, request, response,
                 true, PortletID.LANGUAGES.toString());
 
-        final Locale locale = Locale.forLanguageTag(languageTag);
+        final Locale locale = validateLanguageTag(languageTag);
+
         final LanguageForm languageForm = new LanguageForm.Builder()
                 .language(locale.getDisplayLanguage()).languageCode(locale.getLanguage())
                 .country(locale.getDisplayCountry()).countryCode(locale.getCountry()).build();
 
-        DotPreconditions.notNull(languageTag, "Expected languageTag Param path was empty.");
         final Language language = saveOrUpdateLanguage(null, languageForm);
         return Response.ok(new ResponseEntityView(language)).build(); // 200
     }
@@ -177,7 +180,7 @@ public class LanguagesResource {
         this.webResource.init(null, request, response,
                 true, PortletID.LANGUAGES.toString());
 
-        final Locale locale = Locale.forLanguageTag(languageTag);
+        final Locale locale = validateLanguageTag(languageTag);
         final LanguageForm languageForm = new LanguageForm.Builder()
                 .language(locale.getDisplayLanguage()).languageCode(locale.getLanguage())
                 .country(locale.getDisplayCountry()).countryCode(locale.getCountry()).build();
@@ -189,6 +192,15 @@ public class LanguagesResource {
         }
         return Response.ok(new ResponseEntityView(language)).build(); // 200
 
+    }
+
+    private Locale validateLanguageTag(final String languageTag)throws DoesNotExistException {
+        final Locale locale = Locale.forLanguageTag(languageTag);
+        final boolean validCountry = (isNotSet(locale.getCountry()) || Stream.of(Locale.getISOCountries()).collect(Collectors.toSet()).contains(locale.getCountry()));
+        final boolean validLang = Stream.of(Locale.getISOLanguages()).collect(Collectors.toSet()).contains(locale.getLanguage());
+        if(validLang && validCountry) {
+            return locale;
+        }else throw new DoesNotExistException(String.format(" `%s` is an invalid language tag ", languageTag));
     }
 
     /**

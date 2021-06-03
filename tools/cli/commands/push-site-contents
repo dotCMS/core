@@ -1,0 +1,50 @@
+#!/bin/bash
+set -e
+. "$DOTCLI_WORKDIR/common"
+
+
+if [[ ! -n "$1" ]]; then
+  cli_log "Missing required param";
+fi
+
+siteDir="$1";
+
+langId="$2";
+
+cli_log "Pushing site contents for $siteDir and $langId "
+
+if [[ ! -d "$siteDir" ]]; then
+    cli_log " The directory $siteDir does not exist."
+    exit 1
+fi
+
+if [[ -z "$langId" ]]; then
+    cli_log " Unable to get lang id."
+    exit 1
+fi
+
+siteName=$(basename "${siteDir}")
+
+
+#response=$(curl "${DOTCMS_BASE_URL}/webdav/live/${langId}/${siteName}/application/templates/system/properties.vtl" -u "admin@dotCMS.com:admin" --compressed)
+#echo " response: $response";
+
+find ${siteDir} -name '*' | while read line; do
+    echo "Processing file '$line'"
+
+    substring=$(echo $line | grep -o "/$siteName.*")
+    echo $substring
+
+    if [[  -d "$line" ]]; then
+      echo is a dir
+
+    fi
+
+    if [[  -f "$line" ]]; then
+      echo is a file
+    fi
+
+    name=$(basename "${line}")
+    #use this name to filer hidden file
+
+done

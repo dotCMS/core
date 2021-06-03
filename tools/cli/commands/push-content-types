@@ -1,0 +1,62 @@
+#!/bin/bash
+set -e
+. "$DOTCLI_WORKDIR/common"
+
+
+help_push_contnet_types() {
+  echo "
+Command: bundle
+
+This command takes a directory that holds site definitions
+
+Usage:
+  ./dot-cli --bundle ~/code/etc/bundle/contentTypes
+  or
+  ./dot-cli --bundle ~/code/etc/bundle/contentTypes
+   "
+  exit 1
+}
+
+[[ ! -n "$1" ]] && help_push_contnet_types
+
+cli_log "Pushing Content-Types "
+
+dir="$1"
+
+if [[ ! -d "$dir" ]]; then
+    echo " The directory $dir does not exist."
+    exit 1
+fi
+
+# for the given working directory we need to explore and determine what folder was meant to hold content-types, what folder was meant to hold sites, files and so on.
+for entry in "$dir"/*
+do
+     #echo "$entry"
+     case ${entry} in
+       *content-types|*contentTypes)
+       contentTypesDir=${entry}
+       ;;
+     esac
+done
+
+# Second we process content types
+if [[ -z ${contentTypesDir+x} ]];
+   then cli_log "I wasn't able to find the content types directory";
+
+else
+    echo "Processing content-types."
+
+    for entry in "$contentTypesDir"/*
+    do
+        echo "$entry"
+        if [[ -f "$entry" && "$entry" == *.contenttype.json ]]
+         then
+             bash "$DOTCLI_WORKDIR/commands/content-type" "$entry"
+         else
+         echo "$entry entry has been skipped - file must end like '.contenttype.json' ."
+        fi
+    done
+
+    echo "done processing content-types."
+
+fi

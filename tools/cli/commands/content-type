@@ -41,29 +41,32 @@ then
 
    response=$(curl -s "${DOTCMS_BASE_URL}/api/v1/contenttype"  --header "Authorization: Bearer ${JSON_WEB_TOKEN}" --header 'Content-Type: application/json' --data-raw  "$jsonContentType"  --compressed)
    echo "$response"
-   identifier=$(jq -r '.entity[].id' <<< "$response")
-   echo "New content-type identifier :: $identifier"
+   identifier=$(jq -r ' try .entity[].id' <<< "$response")
 
-   printf ${identifier} >> $publishMeFile
+       if [[ -z ${identifier} ]];
+       then
+        echo "Unable to get identifier from response adding CT ${contentTypeVar}. Please check if there were any error messages."
+       else
+         echo "New content-type identifier :: $identifier"
+         printf ${identifier} >> $publishMeFile
+       fi
 
-  else
-  echo "A content type named $contentTypeVar already exists. Update will be attempted."
+else
+      echo "A content type named $contentTypeVar already exists. Update will be attempted."
 
-  response=$(curl -s -X PUT "${DOTCMS_BASE_URL}/api/v1/contenttype/id/${contentTypeVar}"  --header "Authorization: Bearer ${JSON_WEB_TOKEN}" --header 'Content-Type: application/json' --data-raw  "$jsonContentType"  --compressed)
-  echo "$response"
+      response=$(curl -s -X PUT "${DOTCMS_BASE_URL}/api/v1/contenttype/id/${contentTypeVar}"  --header "Authorization: Bearer ${JSON_WEB_TOKEN}" --header 'Content-Type: application/json' --data-raw  "$jsonContentType"  --compressed)
+      echo "$response"
 
-  identifier=$(jq -r ' try .entity[].id' <<< "$response")
+      identifier=$(jq -r ' try .entity[].id' <<< "$response")
 
-  if [[ -z ${identifier} ]];
-  then
-    echo "Unable to get identifier from response. Please check if there were any error messages."
-    exit 1
-  fi
+      if [[ -z ${identifier} ]];
+      then
+        echo "Unable to get identifier from response updating CT ${contentTypeVar}. Please check if there were any error messages."
 
-  echo " Updated content-type identifier :: $identifier"
-
-  printf ${identifier} >> $publishMeFile
-
+      else
+       echo " Updated content-type identifier :: $identifier"
+       printf ${identifier} >> $publishMeFile
+      fi
 
 fi
 
