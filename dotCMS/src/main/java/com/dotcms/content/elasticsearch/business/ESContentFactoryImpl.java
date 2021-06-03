@@ -1858,10 +1858,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         final String inode = getInode(existingInode, contentlet);
         upsertContentlet(contentlet, inode);
-
-        contentlet.setInode(inode);
         contentletCache.remove(inode);
-        return contentlet;
+
+        return find(inode);
     }
 
     private void upsertContentlet(final Contentlet contentlet, final String inode) throws DotDataException {
