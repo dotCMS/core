@@ -5,19 +5,22 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.Map;
 import javax.imageio.ImageIO;
-import com.dotmarketing.util.Logger;
+import com.dotmarketing.exception.DotRuntimeException;
+import io.vavr.control.Try;
 
 public class ResizeImageFilter extends ImageFilter {
 	public String[] getAcceptedParameters(){
 		return  new String[] {
 				"w (int) specifies width",
 				"h (int) specifies height",
+				"i (int) interpolation"
 		};
 	}
 	public File runFilter(final File file,    Map<String, String[]> parameters) {
-		double w = parameters.get(getPrefix() +"w") != null?Integer.parseInt(parameters.get(getPrefix() +"w")[0]):0;
-		double h = parameters.get(getPrefix() +"h") != null?Integer.parseInt(parameters.get(getPrefix() +"h")[0]):0;
-		
+	    
+		int w = parameters.get(getPrefix() +"w") != null?Integer.parseInt(parameters.get(getPrefix() +"w")[0]):0;
+		int h = parameters.get(getPrefix() +"h") != null?Integer.parseInt(parameters.get(getPrefix() +"h")[0]):0;
+		final int resampleOpts = Try.of(()-> Integer.parseInt(parameters.get(getPrefix() +"i")[0])).getOrElse(ImageFilterApiImpl.DEFAULT_RESAMPLE_OPT);
 		
 		if(file.getName().endsWith(".gif")) {
 		  return new ResizeGifImageFilter().runFilter(file, parameters);
@@ -47,21 +50,23 @@ public class ResizeImageFilter extends ImageFilter {
 
 
         try {
-			//resample from stream
-			BufferedImage srcImage = ImageFilterAPI.apiInstance.get().intelligentResize(file,width,height);
+            File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() + ".tmp");
 
+            // resample from stream
+            BufferedImage srcImage = ImageFilterAPI.apiInstance.get().resizeImage(file, width, height,resampleOpts);
 
-            ImageIO.write(srcImage, "png", resultFile);
+            ImageIO.write(srcImage, "png", tempResultFile);
             srcImage.flush();
-            srcImage=null;
+            srcImage = null;
+            tempResultFile.renameTo(resultFile);
+
             return resultFile;
 
-		} catch (Exception e) {
-			Logger.error(this.getClass(), e.getMessage());
-		}
-		
-		return resultFile;
-	}
+        } catch (Exception e) {
+            throw new DotRuntimeException("unable to convert file:" +file + " : " +  e.getMessage(),e);
+        }
+
+    }
 
 	
 
