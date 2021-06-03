@@ -51,6 +51,7 @@ import javax.servlet.http.HttpSession;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
@@ -112,6 +113,7 @@ public class HTMLDiffUtilTest extends IntegrationTestBase {
      * Expected Result:  We create a working copy and modify the list of items. The new items must replace the old ones.
      * @throws Exception
      */
+    @Ignore
     @Test
     public void Test_Page_With_Changes_Expect_Difference() throws Exception {
 

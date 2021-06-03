@@ -27,7 +27,7 @@ public class Task210218MigrateUserProxyTable implements StartupTask {
 
     private static final String MYSQL_SCRIPT = "alter table user_ add additional_info text NULL;";
 
-    private static final String ORACLE_SCRIPT = "alter table user_ add additional_info NCLOB NULL;";
+    private static final String ORACLE_SCRIPT = "alter table user_ add additional_info NCLOB NULL";
 
     private static final String MSSQL_SCRIPT = "alter table user_ add additional_info NVARCHAR(MAX) NULL;";
 

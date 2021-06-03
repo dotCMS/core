@@ -1,9 +1,11 @@
 package com.dotcms.graphql.business;
 
+import static graphql.Scalars.GraphQLBoolean;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLNonNull.nonNull;
 
 import com.dotcms.contenttype.model.field.Field;
+import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
 
 /**
@@ -19,6 +21,11 @@ class RegularContentFieldGenerator implements GraphQLFieldGenerator {
     public GraphQLFieldDefinition generateField(final Field field) {
         return newFieldDefinition()
                 .name(field.variable())
+                .argument(GraphQLArgument.newArgument()
+                        .name("render")
+                        .type(GraphQLBoolean)
+                        .defaultValue(false)
+                        .build())
                 .type(field.required()
                         ? nonNull(typesProvider.getGraphqlTypeForFieldClass(field.type(), field))
                         : typesProvider.getGraphqlTypeForFieldClass(field.type(), field))
