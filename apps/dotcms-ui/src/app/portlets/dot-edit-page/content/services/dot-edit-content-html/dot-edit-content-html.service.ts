@@ -15,10 +15,7 @@ import { DotPageContent, DotPageRenderState } from '@portlets/dot-edit-page/shar
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 import { getEditPageCss } from '../html/libraries/iframe-edit-mode.css';
-import {
-    GOOGLE_FONTS,
-    MODEL_VAR_NAME
-} from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/iframe-edit-mode.js';
+import { MODEL_VAR_NAME } from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/iframe-edit-mode.js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { PageModelChangeEvent, PageModelChangeEventType } from './models';
 import {
@@ -579,7 +576,9 @@ export class DotEditContentHtmlService {
                     (e: HttpErrorResponse) => {
                         // on error
                         content.element.innerHTML = this.inlineCurrentContent[content.element.id];
-                        const message = e.error.errors[0].message || this.dotMessageService.get('editpage.inline.error');
+                        const message =
+                            e.error.errors[0].message ||
+                            this.dotMessageService.get('editpage.inline.error');
                         this.dotGlobalMessageService.error(message);
                         content.element.classList.remove('inline-editing--saving');
                         delete this.inlineCurrentContent[content.element.id];
@@ -679,12 +678,10 @@ export class DotEditContentHtmlService {
         const style = this.dotDOMHtmlUtilService.createStyleElement(
             getEditPageCss(`#${timeStampId}`)
         );
-        const robotoFontElement = this.dotDOMHtmlUtilService.createLinkElement(GOOGLE_FONTS);
 
         const doc = this.getEditPageDocument();
         doc.documentElement.id = timeStampId;
         doc.head.appendChild(style);
-        doc.head.appendChild(robotoFontElement);
     }
 
     private setEditMode(): void {
