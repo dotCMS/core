@@ -2,24 +2,22 @@ name: release-process-automation
 on:
   release:
     types: [published]
+  push:
+    branches:
+      - v21.05-jdk8
 jobs:
   release-process:
     name: Release Process Automation
     runs-on: ubuntu-18.04
     env:
-      DOT_CICD_BRANCH: release-21.05
-      DOT_CICD_CLOUD_PROVIDER: github
-      DOT_CICD_TARGET: core
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      GITHUB_USER: dotcmsbuild
-      GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
+      DOT_CICD_BRANCH: release-21.05-jdk8
+      GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
       PULL_REQUEST: ${{ github.event.number }}
       REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
       REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      SSH_RSA_KEY: ${{ secrets.EE_RSA_KEY }}
-      DEBUG: false
+      DEBUG: TRUE
     steps:
       - name: GITHUB CONTEXT
         env:
@@ -30,11 +28,11 @@ jobs:
         run: |
           BRANCH=$(basename "${{ github.ref }}")
 
-          if [[ ${BRANCH} =~ ^release-.*|^v[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$ ]]; then
+          # if [[ ${BRANCH} =~ ^release-.*|^v[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$ ]]; then
             IS_RELEASE='true'
-          else
-            IS_RELEASE='false'
-          fi
+          # else
+          #  IS_RELEASE='false'
+          # fi
 
           echo "BRANCH=${BRANCH}" >> $GITHUB_ENV
           echo "EE_BRANCH=${BRANCH}" >> $GITHUB_ENV
@@ -43,25 +41,25 @@ jobs:
       - name: Prepare dot-cicd
         run: |
           sh -c "$(curl -fsSL https://raw.githubusercontent.com/dotCMS/dot-cicd/${DOT_CICD_BRANCH}/seed/install-dot-cicd.sh)"
-      - name: Build DotCMS Release Docker Image
-        run: |
-          dotcicd/library/pipeline.sh buildRelease
-        if: env.IS_RELEASE != 'true'
-      - name: Run DotCMS Release Docker Image
-        run: |
-          dotcicd/library/pipeline.sh runRelease
+#      - name: Build DotCMS Release Docker Image
+#        run: |
+#          dotcicd/library/pipeline.sh buildRelease
+#        if: env.IS_RELEASE != 'true'
+#      - name: Run DotCMS Release Docker Image
+#        run: |
+#          dotcicd/library/pipeline.sh runRelease
       - name: Publish Docker Multiarch Image
         run: |
-          dotcicd/library/pipeline.sh publishDockerImage ${{ env.GITHUB_USER }} ${{ secrets.USER_TOKEN }} ${{ env.BRANCH }} ${{ env.IS_RELEASE }} ${{ secrets.DOCKER_USERNAME }} ${{ secrets.DOCKER_TOKEN }}
-      - name: Slack Notification
-        if: success()
-        uses: rtCamp/action-slack-notify@master
-        env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-          SLACK_USERNAME: dotcms-bot
-          SLACK_TITLE: "Important news!"
-          SLACK_MSG_AUTHOR: " "
-          MSG_MINIMAL: true
-          SLACK_FOOTER: ""
-          SLACK_ICON: https://avatars.slack-edge.com/2021-02-18/1760490973606_047c511fc4610eab31e5_88.png
-          SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of dotCMS - dotCMS ${{ env.BRANCH }} :tada:"
+          ../dotcicd/library/pipeline.sh publishDockerImage ${{ secrets.DOCKER_USERNAME }} ${{ secrets.DOCKER_TOKEN }}
+#      - name: Slack Notification
+#        if: success()
+#        uses: rtCamp/action-slack-notify@master
+#        env:
+#          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+#          SLACK_USERNAME: dotcms-bot
+#          SLACK_TITLE: "Important news!"
+#          SLACK_MSG_AUTHOR: " "
+#          MSG_MINIMAL: true
+#          SLACK_FOOTER: ""
+#          SLACK_ICON: https://avatars.slack-edge.com/2021-02-18/1760490973606_047c511fc4610eab31e5_88.png
+#          SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of dotCMS - dotCMS ${{ env.BRANCH }} :tada:"
