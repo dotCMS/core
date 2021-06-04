@@ -4651,7 +4651,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 //The host has to be set again as at this point the contentlet doesn't have an identifier.
                 //Otherwise, the current host is lost and SYSTEM_HOST is used instead
-                contentlet.setHost(currentHost);
+                if (currentHost != null) {
+                    contentlet.setHost(currentHost);
+                }
             }
 
             contentlet.setIndexPolicy(indexPolicy);
