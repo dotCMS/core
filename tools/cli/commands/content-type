@@ -18,7 +18,6 @@ Usage:
 
 [[ ! -n "$1" ]] && help_push_content_type
 
-cli_log "Pushing ContentType"
 
 file="$1"
 
@@ -69,6 +68,3 @@ else
       fi
 
 fi
-
-
-cli_log "done."

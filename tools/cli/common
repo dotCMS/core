@@ -22,3 +22,15 @@ GREEN='\033[0;32m'
 # Purple       0;35     Light Purple  1;35
 # Cyan         0;36     Light Cyan    1;36
 # Light Gray   0;37     White         1;37
+
+tokenize() {
+  string=$1;
+  delimiter=$2
+
+  IFS='/' read -ra ADDR <<< "$string"
+    for i in "${ADDR[@]}"; do
+      # process "$i"
+      echo $i
+    done
+
+}

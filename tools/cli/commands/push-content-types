@@ -19,7 +19,7 @@ Usage:
 
 [[ ! -n "$1" ]] && help_push_contnet_types
 
-cli_log "Pushing Content-Types "
+cli_log "::: Pushing Content-Types :::"
 
 dir="$1"
 
@@ -44,7 +44,6 @@ if [[ -z ${contentTypesDir+x} ]];
    then cli_log "I wasn't able to find the content types directory";
 
 else
-    echo "Processing content-types."
 
     for entry in "$contentTypesDir"/*
     do
@@ -57,6 +56,6 @@ else
         fi
     done
 
-    echo "done processing content-types."
-
 fi
+
+cli_log "::: Done pushing Content-Types :::"

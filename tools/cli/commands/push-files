@@ -18,7 +18,7 @@ Usage:
 
 [[ ! -n "$1" ]] && help_push_files
 
-cli_log "Pushing Files/Folder"
+cli_log "::: Pushing Files/Folder :::"
 
 dir="$1"
 
@@ -56,18 +56,20 @@ for langDir in "${langArray[@]}"
 do
      #this will process the language directory
 
+    cli_log "::: Pushing language language with tag $langDir :::"
     currentLangId=$(bash "$DOTCLI_WORKDIR/commands/push-lang" "$langDir")
-    echo "Returned language ID  $currentLangId"
+    cli_log "::: Done pushing language returned id is $currentLangId  :::"
+
     if [[ -z ${currentLangId} ]]; then
       cli_log "Unable to determine last pushed language id"
     else
      for site in "$langDir"/*
      do
        if [[ -d "$site" ]]; then
-
-         #lang=$(basename "${langDir}")
-         bash "$DOTCLI_WORKDIR/commands/push-site-contents" "$site" "$currentLangId"
+           bash "$DOTCLI_WORKDIR/commands/push-site-contents" "$site" "$currentLangId"
        fi
      done
     fi
 done
+
+cli_log "::: Done pushing Files/Folder :::"

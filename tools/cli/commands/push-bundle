@@ -35,7 +35,7 @@ Usage:
 
 [[ ! -n "$1" ]] && help_push_bundle
 
-cli_log "Pushing Bundle "
+cli_log "::: Pushing Bundle :::"
 
 dir="$1"
 
@@ -54,4 +54,4 @@ fi
   bash "$DOTCLI_WORKDIR/commands/push-files" "$dir"
 
 
-cli_log "Done Pushing Bundle "
+cli_log "::: Done Pushing Bundle :::"

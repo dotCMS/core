@@ -2,57 +2,33 @@
 set -e
 . "$DOTCLI_WORKDIR/common"
 
-help_push_files() {
-  echo "
-Command: lang
-
-This command takes a directory that represents a language. The directory must be named in the form of a valid language tag.
-e.g. en-US
-     es-US
-     en-CR
-     es-CR
-
-
-Usage:
-  ./dot-cli --file  ~/code/etc/bundle/files/en-US
-  or
-  ./dot-cli -f ~/code/etc/bundle/files/en-US
-   "
-  exit 1
-}
-
-[[ ! -n "$1" ]] && help_push_files
+#####################################################################################
+# This script is consumed by others expecting it to return a language ID via stdout #
+# Do not fill it with unnecessary calls to echo as it might break the output        #
+#####################################################################################
 
 langDir="$1"
 
-# cli_log "Pushing language folder $langDir "
-
 if [[ ! -d "$langDir" ]]; then
-   # cli_log " The directory $langDir does not exist."
+    cli_log " The directory $langDir does not exist."
     exit 1
 fi
 
      languageTag=$(basename "${langDir}")
-
-    # cli_log " Checking Language ${languageTag} against remote server."
      code=$(curl -s -o /dev/null --head -w "%{http_code}" --header "Authorization: Bearer ${JSON_WEB_TOKEN}" "${DOTCMS_BASE_URL}/api/v2/languages/${languageTag}" )
-     if [[ ${code} = 404 ]]
+     if [[ 404 == ${code} ]];
      then
-     #   cli_log "Language ${languageTag} does not exist on the remote server. Will attempt adding it.";
         response=$(curl -s -X POST "${DOTCMS_BASE_URL}/api/v2/languages/${languageTag}" --header "Authorization: Bearer ${JSON_WEB_TOKEN}" )
         identifier=$(jq -r 'try .entity.id' <<< "$response")
-      #  cli_log "language id is $identifier";
 
      else
-       # cli_log " The language ${languageTag} already  exists on the server.";
         response=$(curl -s --header "Authorization: Bearer ${JSON_WEB_TOKEN}" "${DOTCMS_BASE_URL}/api/v2/languages/${languageTag}" )
         identifier=$(jq -r 'try .entity.id' <<< "$response")
-       # cli_log "language id is $identifier";
      fi
 
-if [[ ! -z ${identifier+x} ]]; then
-   # value returned by the script
-   echo "$identifier"
-  else
-   echo null
-fi
+    if [[ ! -z ${identifier+x} ]]; then
+       # value returned by the script
+       echo "$identifier"
+      else
+       echo null
+    fi

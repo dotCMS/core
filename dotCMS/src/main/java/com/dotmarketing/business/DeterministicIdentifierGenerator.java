@@ -25,6 +25,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import java.io.File;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
@@ -90,9 +91,12 @@ public class DeterministicIdentifierGenerator {
                     final Iterator<Field> iterator = fields.iterator();
                     while (iterator.hasNext()) {
                         final Field field = iterator.next();
-                        builder.append(contentlet.getBinary(field.variable()).getName());
-                        if (iterator.hasNext()) {
-                            builder.append(StringPool.COLON);
+                        final File binary = contentlet.getBinary(field.variable());
+                        if(null != binary){
+                            builder.append(binary.getName());
+                            if (iterator.hasNext()) {
+                                builder.append(StringPool.COLON);
+                            }
                         }
                     }
                     if (builder.length() > 0) {
