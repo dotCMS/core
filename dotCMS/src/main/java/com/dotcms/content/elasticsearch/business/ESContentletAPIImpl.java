@@ -4646,7 +4646,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if(saveWithExistingID) {
                 contentlet = contentFactory.save(contentlet, existingInode);
             } else {
+                final String currentHost = contentlet.getHost();
                 contentlet = contentFactory.save(contentlet);
+
+                //The host has to be set again as at this point the contentlet doesn't have an identifier.
+                //Otherwise, the current host is lost and SYSTEM_HOST is used instead
+                contentlet.setHost(currentHost);
             }
 
             contentlet.setIndexPolicy(indexPolicy);
