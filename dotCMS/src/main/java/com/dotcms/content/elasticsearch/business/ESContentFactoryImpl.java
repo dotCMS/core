@@ -2,6 +2,12 @@ package com.dotcms.content.elasticsearch.business;
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.AUTO_ASSIGN_WORKFLOW;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_ACTION_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_ASSIGN_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_BULK_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_COMMENTS_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_IN_PROGRESS;
 import static com.dotmarketing.util.StringUtils.lowercaseStringExceptMatchingTokens;
 
 import com.dotcms.business.WrapInTransaction;
@@ -1858,9 +1864,18 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         final String inode = getInode(existingInode, contentlet);
         upsertContentlet(contentlet, inode);
-        contentletCache.remove(inode);
+        contentlet.setInode(inode);
 
-        return find(inode);
+
+        contentlet.getMap().remove(WORKFLOW_ACTION_KEY);
+        contentlet.getMap().remove(WORKFLOW_ASSIGN_KEY);
+        contentlet.getMap().remove(WORKFLOW_COMMENTS_KEY);
+        contentlet.getMap().remove(WORKFLOW_BULK_KEY);
+        contentlet.getMap().remove(WORKFLOW_IN_PROGRESS);
+        contentlet.getMap().remove(AUTO_ASSIGN_WORKFLOW);
+
+        contentletCache.remove(inode);
+        return contentlet;
     }
 
     private void upsertContentlet(final Contentlet contentlet, final String inode) throws DotDataException {
