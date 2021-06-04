@@ -15,7 +15,7 @@ public class DotCMSMockRequest extends FakeHttpServletRequest {
     private String remoteAddr;
     private String remoteHost;
     private String queryString;
-    private Map<String, String[]> paramMap;
+    private Map<String, String[]> paramMap = new HashMap<>();
     private Map<String, String> headers = new HashMap<>();
     private String servletPath;
     private Map<String, Object> attributes;
