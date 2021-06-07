@@ -1,13 +1,10 @@
 package com.dotcms.mock.request;
 
-import com.dotcms.repackage.org.directwebremoting.util.FakeHttpServletRequest;
-import java.util.Enumeration;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import java.nio.charset.Charset;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
