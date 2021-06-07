@@ -1,8 +1,11 @@
 package com.dotmarketing.cms.login.factories;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import com.dotcms.cms.login.PreventSessionFixationUtil;
-import com.dotcms.concurrent.DotConcurrentFactory;
-import com.dotcms.concurrent.lock.IdentifierStripedLock;
+import com.dotcms.concurrent.lock.DotKeyLockManager;
+import com.dotcms.concurrent.lock.DotKeyLockManagerBuilder;
 import com.dotcms.enterprise.BaseAuthenticator;
 import com.dotcms.enterprise.LDAPImpl;
 import com.dotcms.enterprise.PasswordFactoryProxy;
@@ -14,7 +17,11 @@ import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portal.struts.DotCustomLoginPostAction;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.auth.Authenticator;
@@ -23,10 +30,6 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.Validator;
-import io.vavr.control.Try;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
 /**
  * @author will
@@ -42,7 +45,7 @@ public class LoginFactory {
 	/*End of Custom Code*/
 
     private static final String LOCK_PREFIX = "UserIdLogin:";
-    private static final IdentifierStripedLock lockManager = DotConcurrentFactory.getInstance().getIdentifierStripedLock();
+    private static final DotKeyLockManager<String> lockManager = DotKeyLockManagerBuilder.newLockManager("LOGIN_LOCK");
     
 
     public static boolean doCookieLogin(String encryptedId, HttpServletRequest request, HttpServletResponse response) {
