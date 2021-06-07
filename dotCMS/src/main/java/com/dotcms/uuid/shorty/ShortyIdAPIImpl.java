@@ -7,6 +7,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
@@ -100,22 +101,9 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
   
   @Override
   public String shortify(final String shortStr) {
-    try {
-
-      if (UtilMethods.isSet(shortStr)) {
-
-        final String trimmedShortStr = shortStr.trim().replaceAll("-", "");
-        final int    min             = Math.min(trimmedShortStr.length(), MINIMUM_SHORTY_ID_LENGTH);
-
-        return (trimmedShortStr.startsWith(TempFileAPI.TEMP_RESOURCE_PREFIX)) ? trimmedShortStr : 
-                trimmedShortStr.substring(0, min);
-      }
-
-      return shortStr;
-    } catch (Exception se) {
-        throw new ShortyException("shorty " + shortStr + " is not a short id.  Short Ids should be "
-                + MINIMUM_SHORTY_ID_LENGTH + " alphanumeric chars in length", se);
-    }
+      
+      return StringUtils.shortify(shortStr, MINIMUM_SHORTY_ID_LENGTH);
+      
   }
 
   public String uuidIfy(String shorty) {

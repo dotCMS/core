@@ -8,19 +8,13 @@ jobs:
     runs-on: ubuntu-18.04
     env:
       DOT_CICD_BRANCH: master
-      DOT_CICD_CLOUD_PROVIDER: github
-      DOCKER_BRANCH: master
-      DOT_CICD_TARGET: core
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      GITHUB_USER: dotcmsbuild
-      GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
+      GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
       PULL_REQUEST: ${{ github.event.number }}
       REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
       REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      SSH_RSA_KEY: ${{ secrets.EE_RSA_KEY }}
-      DEBUG: false
+      DEBUG: true
     steps:
       - name: GITHUB CONTEXT
         env:
@@ -29,7 +23,17 @@ jobs:
         if: env.DEBUG == 'true'
       - name: Set Common Vars
         run: |
-          BRANCH=$(basename "${{ github.ref }}")
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            IS_PR=true
+          else
+            IS_PR=false
+          fi
+
+          if [[ ${IS_PR} == true ]]; then
+            BRANCH="${{ github.head_ref }}"
+          else
+            BRANCH=$(basename "${{ github.ref }}")
+          fi
 
           if [[ ${BRANCH} =~ ^release-.*|^v[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$ ]]; then
             IS_RELEASE='true'
@@ -39,23 +43,18 @@ jobs:
 
           echo "BRANCH=${BRANCH}" >> $GITHUB_ENV
           echo "EE_BRANCH=${BRANCH}" >> $GITHUB_ENV
-          echo "BASE_FOLDER=$(pwd)" >> $GITHUB_ENV
           echo "IS_RELEASE=${IS_RELEASE}" >> $GITHUB_ENV
       - name: Prepare dot-cicd
         run: |
           sh -c "$(curl -fsSL https://raw.githubusercontent.com/dotCMS/dot-cicd/${DOT_CICD_BRANCH}/seed/install-dot-cicd.sh)"
-      - name: Build DotCMS Release Docker Image
-        run: |
-          dotcicd/library/pipeline.sh buildRelease
-        if: env.IS_RELEASE != 'true'
       - name: Run DotCMS Release Docker Image
         run: |
-          dotcicd/library/pipeline.sh runRelease
+          ../dotcicd/library/pipeline.sh runRelease
       - name: Publish Docker Multiarch Image
         run: |
-          dotcicd/library/pipeline.sh publishDockerImage ${{ env.GITHUB_USER }} ${{ secrets.USER_TOKEN }} ${{ env.BRANCH }} ${{ env.IS_RELEASE }} ${{ secrets.DOCKER_USERNAME }} ${{ secrets.DOCKER_TOKEN }}
+          ../dotcicd/library/pipeline.sh publishDockerImage ${{ secrets.DOCKER_USERNAME }} ${{ secrets.DOCKER_TOKEN }}
       - name: Slack Notification
-        if: success()
+        if: success() && env.IS_RELEASE == 'true'
         uses: rtCamp/action-slack-notify@master
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
