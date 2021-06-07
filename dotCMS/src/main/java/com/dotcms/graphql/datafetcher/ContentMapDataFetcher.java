@@ -1,5 +1,7 @@
 package com.dotcms.graphql.datafetcher;
 
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.RENDER_FIELDS;
+
 import com.dotcms.api.APIProvider;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
@@ -50,7 +52,7 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
             final User user = ((DotGraphQLContext) environment.getContext()).getUser();
 
             final DotContentletTransformer myTransformer = new DotTransformerBuilder()
-                    .hydratedContentMapTransformer().content(contentlet).build();
+                    .hydratedContentMapTransformer(RENDER_FIELDS).content(contentlet).build();
 
             final Map<String, Object> hydratedMap =  myTransformer.toMaps().get(0);
             final JSONObject contentMapInJSON = new JSONObject();

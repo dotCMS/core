@@ -26,7 +26,8 @@ public enum TransformOptions {
     FILEASSET_VIEW,
     SITE_VIEW,
 
-    REPLACE_ORIGINAL_FIELD_VALUE_WITH_VIEW;
+    AVOID_MAP_SUFFIX_FOR_VIEWS,
+    RENDER_FIELDS; // will velocity-render the render-able fields
 
     private boolean defaultProperty;
 

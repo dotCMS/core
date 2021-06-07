@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.contentlet.transform.strategy;
 
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LOAD_META;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.REPLACE_ORIGINAL_FIELD_VALUE_WITH_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.AVOID_MAP_SUFFIX_FOR_VIEWS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.USE_ALIAS;
 import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.DESCRIPTION;
 import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.FILE_NAME_FIELD;
@@ -28,7 +28,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -73,7 +72,7 @@ public class FileViewStrategy extends AbstractTransformStrategy<Contentlet> {
         if (!fileAndImageFields.isEmpty()) {
             for (final Field field : fileAndImageFields) {
                 try {
-                    final String sufix = options.contains(REPLACE_ORIGINAL_FIELD_VALUE_WITH_VIEW)
+                    final String sufix = options.contains(AVOID_MAP_SUFFIX_FOR_VIEWS)
                             ? "" : "Map";
                     map.put(field.variable() + sufix, transform(field, contentlet, options));
                 } catch (DotDataException e) {

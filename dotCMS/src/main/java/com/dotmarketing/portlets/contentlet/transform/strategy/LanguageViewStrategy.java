@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.contentlet.transform.strategy;
 
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.REPLACE_ORIGINAL_FIELD_VALUE_WITH_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.AVOID_MAP_SUFFIX_FOR_VIEWS;
 import static com.liferay.portal.language.LanguageUtil.getLiteralLocale;
 
 import com.dotcms.api.APIProvider;
@@ -75,7 +75,7 @@ public class LanguageViewStrategy extends AbstractTransformStrategy<Contentlet>{
 
         if(wrapAsMap){
             builder.put("id", language.getId());
-            final String sufix = options.contains(REPLACE_ORIGINAL_FIELD_VALUE_WITH_VIEW)
+            final String sufix = options.contains(AVOID_MAP_SUFFIX_FOR_VIEWS)
                     ? "" : "Map";
             return ImmutableMap.of("language" +  sufix, builder.build());
         }

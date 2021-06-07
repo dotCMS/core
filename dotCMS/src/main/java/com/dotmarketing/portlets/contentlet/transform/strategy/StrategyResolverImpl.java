@@ -6,6 +6,7 @@ import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformO
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.IDENTIFIER_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.KEY_VALUE_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.RENDER_FIELDS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.SITE_VIEW;
 import static com.google.common.collect.ImmutableMap.of;
 
@@ -70,7 +71,8 @@ public class StrategyResolverImpl implements StrategyResolver {
                  LANGUAGE_VIEW,   ()-> new  LanguageViewStrategy(toolBox),
                  KEY_VALUE_VIEW,  ()-> new  KeyValueViewStrategy(toolBox),
                  FILEASSET_VIEW,  ()-> new  FileViewStrategy(toolBox),
-                 SITE_VIEW,       ()-> new  SiteViewStrategy(toolBox)
+                 SITE_VIEW,       ()-> new  SiteViewStrategy(toolBox),
+                 RENDER_FIELDS,   ()-> new  RenderFieldStrategy(toolBox)
              ),
              ()-> new DefaultTransformStrategy(toolBox)
         );

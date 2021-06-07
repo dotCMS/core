@@ -10,8 +10,9 @@ import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformO
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.COMMON_PROPS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CONSTANTS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.KEY_VALUE_VIEW;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.REPLACE_ORIGINAL_FIELD_VALUE_WITH_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.AVOID_MAP_SUFFIX_FOR_VIEWS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.SITE_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.TAGS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_PROPS;
@@ -164,16 +165,20 @@ public class DotTransformerBuilder {
         return this;
     }
 
-    public DotTransformerBuilder hydratedContentMapTransformer(){
+    public DotTransformerBuilder hydratedContentMapTransformer(final TransformOptions...transformOptions){
         optionsHolder.clear();
-        optionsHolder.addAll(DotContentletTransformerImpl.defaultOptions);
+        optionsHolder.addAll(EnumSet.of(COMMON_PROPS, CONSTANTS, VERSION_INFO, TAGS));
         optionsHolder.add(KEY_VALUE_VIEW);
         optionsHolder.add(LANGUAGE_VIEW);
         optionsHolder.add(CATEGORIES_VIEW);
         optionsHolder.add(BINARIES_VIEW);
         optionsHolder.add(FILEASSET_VIEW);
         optionsHolder.add(LOAD_META);
-        optionsHolder.add(REPLACE_ORIGINAL_FIELD_VALUE_WITH_VIEW);
+        optionsHolder.add(AVOID_MAP_SUFFIX_FOR_VIEWS);
+        if(transformOptions.length>0) {
+            optionsHolder.addAll(Arrays.asList(transformOptions));
+        }
+
         return this;
     }
 
