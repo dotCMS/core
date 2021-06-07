@@ -173,9 +173,7 @@ public class WorkflowHelper {
             final String query = String.format(ES_WFSTEP_AGGREGATES_QUERY, queryWithDatesFormatted);
             //We should only be considering Working content.
             final SearchResponse response = LicenseManager.getInstance().isCommunity()?
-                    this.contentletAPI
-                            .esSearch(StringUtils.lowercaseStringExceptMatchingTokens(query,
-                                    ESContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX),
+                    this.contentletAPI.esSearch(query,
                                     false, user, false).getResponse():
                     this.contentletAPI
                             .esSearchRaw(StringUtils.lowercaseStringExceptMatchingTokens(query,
