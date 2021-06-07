@@ -275,17 +275,22 @@ public class UserResource implements Serializable {
 
 		final Map<String, String> urlParams = initData.getParamsMap();
 		Map<String, Object> userList;
+		final String FILTER_PARAM_QUERY = "query";
+		final String FILTER_PARAM_START = "start";
+		final String FILTER_PARAM_LIMIT = "limit";
+		final String FILTER_PARAM_INCLUDE_ANONYMOUS = "includeAnonymous";
+		final String FILTER_PARAM_INCLUDE_DEFAULT = "includeDefault";
 		try {
 			final Map<String, String> filterParams = map(
-					"query", urlParams.get("query"),
-					"start", getMapValue(urlParams, "start", "0"),
-					"limit", getMapValue(urlParams, "limit", "-1"),
-					"includeAnonymous", getMapValue(urlParams, "includeAnonymous", "false"),
-					"includeDefault", getMapValue(urlParams, "includeDefault", "false"));
+					FILTER_PARAM_QUERY, urlParams.get(FILTER_PARAM_QUERY),
+					FILTER_PARAM_START, getMapValue(urlParams, FILTER_PARAM_START, "0"),
+					FILTER_PARAM_LIMIT, getMapValue(urlParams, FILTER_PARAM_LIMIT, "-1"),
+					FILTER_PARAM_INCLUDE_ANONYMOUS, getMapValue(urlParams, FILTER_PARAM_INCLUDE_ANONYMOUS.toLowerCase(), "false"),
+                    FILTER_PARAM_INCLUDE_DEFAULT, getMapValue(urlParams, FILTER_PARAM_INCLUDE_DEFAULT.toLowerCase(), "false"));
 			userList = this.helper.getUserList(urlParams.get("assetInode"), urlParams.get("permission"), filterParams);
 		} catch (final Exception e) {
 			// In case of unknown error, a Status 500 is returned
-			Logger.error(this, "An error occurred when filtering the list of Login As users: " + e.getMessage(), e);
+			Logger.error(this, "An error occurred when filtering the list of dotCMS users: " + e.getMessage(), e);
 			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
 		return Response.ok(new ResponseEntityView(userList)).build();
