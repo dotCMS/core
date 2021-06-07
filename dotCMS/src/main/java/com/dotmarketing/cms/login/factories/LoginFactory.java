@@ -1,6 +1,8 @@
 package com.dotmarketing.cms.login.factories;
 
 import com.dotcms.cms.login.PreventSessionFixationUtil;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.enterprise.BaseAuthenticator;
 import com.dotcms.enterprise.LDAPImpl;
 import com.dotcms.enterprise.PasswordFactoryProxy;
@@ -18,9 +20,10 @@ import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.Validator;
-
+import io.vavr.control.Try;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -38,68 +41,46 @@ public class LoginFactory {
 	public static boolean useCASLoginFilter = new Boolean (Config.getBooleanProperty("FRONTEND_CAS_FILTER_ON",false));
 	/*End of Custom Code*/
 
-
+    private static final String LOCK_PREFIX = "UserIdLogin:";
+    private static final IdentifierStripedLock lockManager = DotConcurrentFactory.getInstance().getIdentifierStripedLock();
+    
 
     public static boolean doCookieLogin(String encryptedId, HttpServletRequest request, HttpServletResponse response) {
 
         try {
-            String decryptedId = PublicEncryptionFactory.decryptString(encryptedId);
-            /*Custom Code*/
-            User user = null;
-            if(Validator.isEmailAddress(decryptedId))
-                user = APILocator.getUserAPI().loadByUserByEmail(decryptedId,APILocator.getUserAPI().getSystemUser(),false);
-             else
-                user = APILocator.getUserAPI().loadUserById(decryptedId,APILocator.getUserAPI().getSystemUser(),false);
-            /* End of Custom Code */
-            try {
-                String userName = user.getEmailAddress();
-                Company comp = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany();
-                if (comp.getAuthType().equals(Company.AUTH_TYPE_ID)) {
-                	userName = user.getUserId();
+            return lockManager.tryLock(LOCK_PREFIX + encryptedId, () -> {
+            
+                String decryptedId = PublicEncryptionFactory.decryptString(encryptedId);
+                if(decryptedId.equals(PortalUtil.getUserId(request))) {
+                    return true;
                 }
-                return doLogin(userName, null, true, request, response, true);
-            } catch (Exception e) { // $codepro.audit.disable logExceptions
-        		SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login (No user found) from IP: " + request.getRemoteAddr() + " :  " + e );
-
-            	return false;
-            }
-        } catch (Exception e) {
-    		SecurityLogger.logInfo(LoginFactory.class,"Auto login failed (No user found) from IP: " + request.getRemoteAddr() + " :  " + e );
-
-            if(useCASLoginFilter){
-            	String decryptedId = PublicEncryptionFactory.decryptString(encryptedId);
-            	Logger.info(LoginFactory.class, "Try to retrieve user from LDAP/CAS with id: " + decryptedId);
-            	User newUser = CASAuthUtils.loadUserFromLDAP(decryptedId);
-            	
-            	if(UtilMethods.isSet(newUser)){
-            		User user = null;
-            		Company comp = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany();
-            		try {
-						if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
-							user = APILocator.getUserAPI().loadByUserByEmail(decryptedId, APILocator.getUserAPI().getSystemUser(), false);
-						} else {
-							user = APILocator.getUserAPI().loadUserById(decryptedId, APILocator.getUserAPI().getSystemUser(), false);
-						}
-                        
-	            		String userIdFromCAS = (String)request.getSession(false).getAttribute("edu.yale.its.tp.cas.client.filter.user");
-	            		
-						if(UtilMethods.isSet(userIdFromCAS)){
-							CASAuthUtils.setUserValuesOnSession(user, request, response, true);
-						}
-
-                        return true;
-                         
-                    } catch (Exception ex) {
-                    	return false;
+                
+                /*Custom Code*/
+                User user = null;
+                if(Validator.isEmailAddress(decryptedId))
+                    user = APILocator.getUserAPI().loadByUserByEmail(decryptedId,APILocator.getUserAPI().getSystemUser(),false);
+                 else
+                    user = APILocator.getUserAPI().loadUserById(decryptedId,APILocator.getUserAPI().getSystemUser(),false);
+                /* End of Custom Code */
+                try {
+                    String userName = user.getEmailAddress();
+                    Company comp = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany();
+                    if (comp.getAuthType().equals(Company.AUTH_TYPE_ID)) {
+                    	userName = user.getUserId();
                     }
-            	}
-            	else
-            		Logger.info(LoginFactory.class, "Unable to retrieve user from LDAP/CAS with id: " + decryptedId);
-            }
+                    return doLogin(userName, null, true, request, response, true);
+                } catch (Exception e) { // $codepro.audit.disable logExceptions
+            		SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login (No user found) from IP: " + request.getRemoteAddr() + " :  " + e );
+    
+                	return false;
+                }
+            });
+        } catch (Throwable e) {
+    		SecurityLogger.logInfo(LoginFactory.class,"Auto login failed (No user found) from : " + request.getRemoteAddr() + " :  " + e );
 
-        doLogout(request, response);
+    		doLogout(request, response);
 
-        return false;
+    		return false;
 
         }
     }
