@@ -45,6 +45,7 @@ if [[ 200 == ${code} ]]; then
         #now verify if the original line was directory or a file so we can choose the endpoint to submit the content
         if [[  -d "$line" ]]; then
 
+           # We could accomplish the same using webdav here but I find it a bit troublesome not capable of dealing with hierarchies in paths
            #$(curl -X MKCOL "${DOTCMS_BASE_URL}/webdav/live/${langId}/${siteName}{$substring}" -u "admin@dotCMS.com:admin" --compressed)
            if [[ ! -z "$path" ]]; then
               echo "pushing dir $path"
@@ -58,8 +59,18 @@ if [[ 200 == ${code} ]]; then
         if [[  -f "$line" ]]; then
           if [[ ! -z "$path" ]]; then
              echo "pushing file $path"
-             response=$(curl -s -T ${line} "${DOTCMS_BASE_URL}/webdav/live/${langId}${siteInclusivePath}" -u "admin@dotCMS.com:admin" --compressed)
-             echo $response
+
+                if [[ "$PUSH_CONTENT_VIA_WEBDAV" == true ]] ;
+                then
+                  response=$(curl -s -T ${line} "${DOTCMS_BASE_URL}/webdav/live/${langId}${siteInclusivePath}" -u "${USER}:${PASS}" --compressed)
+                  echo $response
+                else
+                  fileName=$(basename "${path}")
+                  jsonContentlet="{ \"contentType\":\"FileAsset\", \"fileName\":\"${fileName}\", \"title\":\"${fileName}\", \"hostFolder\":\"${siteName}:${path}\" }"
+                  #echo " con :: $jsonContentlet ";
+                  response=$(curl -s -X PUT "${DOTCMS_BASE_URL}/api/v1/workflow/actions/default/fire/PUBLISH?language=${langId}" --header "Authorization: Bearer ${JSON_WEB_TOKEN}" --form "json={ \"contentlet\": $jsonContentlet };type=application/json " --form "file=@${line}"  --compressed)
+                  echo $response
+                fi
           fi
         fi
 

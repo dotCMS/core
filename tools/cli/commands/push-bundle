@@ -35,7 +35,6 @@ Usage:
 
 [[ ! -n "$1" ]] && help_push_bundle
 
-cli_log "::: Pushing Bundle :::"
 
 dir="$1"
 
@@ -43,6 +42,8 @@ if [[ ! -d "$dir" ]]; then
     echo " The directory $dir does not exist."
     exit 1
 fi
+
+cli_log "::: Pushing Bundle :::"
 
   cli_log "Processing sites directory."
   bash "$DOTCLI_WORKDIR/commands/push-sites" "$dir"
@@ -52,6 +53,5 @@ fi
 
   cli_log "Processing file directory."
   bash "$DOTCLI_WORKDIR/commands/push-files" "$dir"
-
 
 cli_log "::: Done Pushing Bundle :::"
