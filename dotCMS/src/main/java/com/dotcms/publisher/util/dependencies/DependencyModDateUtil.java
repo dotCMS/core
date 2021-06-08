@@ -198,7 +198,7 @@ public class DependencyModDateUtil extends HashSet<String> {
 		VersionInfo info = APILocator.getVersionableAPI()
 				.getVersionInfo(assetId);
 		if (info != null && InodeUtils.isSet(info.getIdentifier())) {
-			return true;
+			return pushedAsset.getPushDate().before(info.getVersionTs());
 		}
 		return false;
 	}

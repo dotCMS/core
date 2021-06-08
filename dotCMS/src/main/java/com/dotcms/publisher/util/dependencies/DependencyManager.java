@@ -608,8 +608,7 @@ public class DependencyManager {
 		}
 	}
 
-	public <T> boolean isExcludeByFilter(
-			final PusheableAsset pusheableAsset) {
+	public <T> boolean isExcludeByFilter(final PusheableAsset pusheableAsset) {
 
 		return (PusheableAsset.RELATIONSHIP == pusheableAsset && !publisherFilter.isRelationships()) ||
 				publisherFilter.doesExcludeDependencyClassesContainsType(pusheableAsset.getType());
@@ -1119,8 +1118,10 @@ public class DependencyManager {
 				tryToAddAllAndProcessDependencies(PusheableAsset.RELATIONSHIP, () ->
 						contentRelationships.keySet());
 
-				contentRelationships.values().stream()
-						.forEach(contentlets -> contentsToProcess.addAll(contentlets));
+				if(publisherFilter.isRelationships()) {
+					contentRelationships.values().stream()
+							.forEach(contentlets -> contentsToProcess.addAll(contentlets));
+				}
 
 			}
 

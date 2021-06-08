@@ -3,6 +3,7 @@ package com.dotcms.enterprise.publishing.remote.bundler;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.*;
+import com.dotcms.publisher.assets.bean.PushedAsset;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.bundle.business.BundleFactoryImpl;
 import com.dotcms.publisher.endpoint.bean.impl.PushPublishingEndPoint;
@@ -1081,7 +1082,8 @@ public class DependencyBundlerTest {
                 "content",
                 environment,
                 publishingEndPoint,
-                bundle);
+                bundle,
+                Publisher.class);
 
         bundler.setConfig(config);
         bundler.generate(bundleOutput, status);
@@ -1151,7 +1153,7 @@ public class DependencyBundlerTest {
                 "content",
                 environment,
                 publishingEndPoint,
-                bundle);
+                bundle, Publisher.class);
 
         final BundleOutput bundleOutput = new DirectoryBundleOutput(config);
 
@@ -1256,8 +1258,13 @@ public class DependencyBundlerTest {
         );
     }
 
-    private void createPushAsset(Date pushDate, String assetId, String assetType, Environment environment,
-            PushPublishingEndPoint publishingEndPoint, Bundle bundle) {
+    private void createPushAsset(final Date pushDate,
+            final String assetId,
+            final String assetType,
+            final Environment environment,
+            final PushPublishingEndPoint publishingEndPoint,
+            final Bundle bundle, Class<Publisher> publisherClass) {
+
         new PushedAssetDataGen()
             .assetId(assetId)
             .assetType(assetType)
@@ -1265,6 +1272,7 @@ public class DependencyBundlerTest {
             .publishingEndPoint(publishingEndPoint)
             .environment(environment)
             .pushDate(pushDate)
+            .publisher(publisherClass)
             .nextPersisted();
     }
 
@@ -1306,28 +1314,28 @@ public class DependencyBundlerTest {
 
         yesterday.add(Calendar.HOUR, 2);
         createPushAsset(
-                yesterday.getTime(),
-                host.getIdentifier(),
-                "host",
-                environment,
-                publishingEndPoint,
-                bundle);
+            yesterday.getTime(),
+            host.getIdentifier(),
+            "host",
+            environment,
+            publishingEndPoint,
+            bundle, Publisher.class);
 
         createPushAsset(
-                yesterday.getTime(),
-                template.getIdentifier(),
-                "template",
-                environment,
-                publishingEndPoint,
-                bundle);
+            yesterday.getTime(),
+            template.getIdentifier(),
+            "template",
+            environment,
+            publishingEndPoint,
+            bundle, Publisher.class);
 
         createPushAsset(
-                yesterday.getTime(),
-                container.getIdentifier(),
-                "container",
-                environment,
-                publishingEndPoint,
-                bundle);
+            yesterday.getTime(),
+            container.getIdentifier(),
+            "container",
+            environment,
+            publishingEndPoint,
+            bundle, Publisher.class);
 
         bundler.setConfig(config);
         bundler.generate(bundleOutput, status);
@@ -1429,7 +1437,7 @@ public class DependencyBundlerTest {
                 "host",
                 environment,
                 publishingEndPoint,
-                bundle);
+                bundle, Publisher.class);
 
         createPushAsset(
                 yesterday.getTime(),
@@ -1437,7 +1445,7 @@ public class DependencyBundlerTest {
                 "template",
                 environment,
                 publishingEndPoint,
-                bundle);
+                bundle, Publisher.class);
 
         createPushAsset(
                 yesterday.getTime(),
@@ -1445,7 +1453,7 @@ public class DependencyBundlerTest {
                 "container",
                 environment,
                 publishingEndPoint,
-                bundle);
+                bundle, Publisher.class);
 
         final BundleFactoryImpl bundleFactory = new BundleFactoryImpl();
         bundleFactory.saveBundleEnvironment(bundle, environment);
@@ -1534,7 +1542,7 @@ public class DependencyBundlerTest {
                 "template",
                 environment_1,
                 publishingEndPoint_1,
-                bundle);
+                bundle, Publisher.class);
 
         final BundleFactoryImpl bundleFactory = new BundleFactoryImpl();
         bundleFactory.saveBundleEnvironment(bundle, environment_1);
@@ -1558,18 +1566,26 @@ public class DependencyBundlerTest {
         dependencies.addAll(getLanguagesVariableDependencies(
                 true, false, false));
 
-
         assertAll(config, dependencies);
 
-        final List<String> environmentsId = APILocator.getPushedAssetsAPI()
-                .getPushedAssets(template.getIdentifier())
-                .stream()
+        final List<PushedAsset> allPushedAssets = APILocator.getPushedAssetsAPI()
+                .getPushedAssets(template.getIdentifier());
+        final List<String> newBundlePushedAssets = allPushedAssets.stream()
                 .filter(pushedAsset -> pushedAsset.getPushDate().getTime() != yesterday.getTimeInMillis())
                 .map(pushedAsset -> pushedAsset.getEnvironmentId())
                 .collect(toList());
 
-        assertEquals(1, environmentsId.size());
-        assertTrue(environmentsId.contains(environment_2.getId()));
+        assertEquals(2, newBundlePushedAssets.size());
+        assertTrue(newBundlePushedAssets.contains(environment_2.getId()));
+        assertTrue(newBundlePushedAssets.contains(environment_1.getId()));
+
+        final List<String> oldBundlePushedAssets = allPushedAssets.stream()
+                .filter(pushedAsset -> pushedAsset.getPushDate().getTime() == yesterday.getTimeInMillis())
+                .map(pushedAsset -> pushedAsset.getEnvironmentId())
+                .collect(toList());
+
+        assertEquals(1, oldBundlePushedAssets.size());
+        assertTrue(oldBundlePushedAssets.contains(environment_1.getId()));
     }
 
     private void assertAll(final PushPublisherConfig config, final Collection<Object> dependenciesToAssert) {
