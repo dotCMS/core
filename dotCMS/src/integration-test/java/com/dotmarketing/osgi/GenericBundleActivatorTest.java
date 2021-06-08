@@ -15,6 +15,7 @@ import java.util.Optional;
 import net.bytebuddy.agent.ByteBuddyAgent;
 import org.apache.felix.framework.OSGIUtil;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.osgi.framework.Bundle;
@@ -74,6 +75,7 @@ public class GenericBundleActivatorTest {
      * Expected Result: SAML bundle is running successfully
      */
     @Test
+    @Ignore
     public void test_dotsaml_inits_properly() {
         BundleContext context = HostActivator.instance().getBundleContext();
 

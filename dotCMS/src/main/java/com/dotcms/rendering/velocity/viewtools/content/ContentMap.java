@@ -277,17 +277,30 @@ public class ContentMap {
 			}else if(f != null && f.getFieldType().equals(Field.FieldType.CHECKBOX.toString())){
 				return new CheckboxMap(f, content);
 			}else if(f != null && f.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())){
-			    final String jsonData=(String)conAPI.getFieldValue(content, f);
-				Map<String,Object> keyValueMap = KeyValueFieldUtil.JSONValueToHashMap(jsonData);
-				//needs to be ordered
-				Map<String,Object> retMap = new java.util.LinkedHashMap<String,Object>() {
-				    @Override
-				    public String toString() {
-				        return jsonData;
-				    }
-				};
-				for(String key :keyValueMap.keySet()){
-					retMap.put(key.replaceAll("\\W",""), keyValueMap.get(key));
+
+				Map<String, Object> keyValueMap = new HashMap<>();
+				Map<String, Object> retMap = new LinkedHashMap<>();
+
+				final Object object = conAPI.getFieldValue(content, f);
+
+				if(object instanceof Map){
+					keyValueMap=(Map)object;
+				}
+
+				if (object instanceof String) {
+					final String jsonData = (String) object;
+					keyValueMap = KeyValueFieldUtil.JSONValueToHashMap(jsonData);
+					//needs to be ordered
+					retMap = new java.util.LinkedHashMap<String, Object>() {
+						@Override
+						public String toString() {
+							return jsonData;
+						}
+					};
+				}
+
+				for (String key : keyValueMap.keySet()) {
+					retMap.put(key.replaceAll("\\W", ""), keyValueMap.get(key));
 				}
 				retMap.put("keys", retMap.keySet());
 				retMap.put("map", keyValueMap);

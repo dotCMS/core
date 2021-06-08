@@ -62,25 +62,29 @@ public class CMSConfigResource {
      * @param primaryColor this one is the Primary Color
      * @param secondaryColor this one is the Secondary Color
      * @param homeURL
+     * @param loginLogo dotAsset Path of the logo showed at the login screen
+     * @param navLogo dotAsset Path of the logo showed at the nav bar
      * @return
      * @throws IOException
      * @throws JSONException
      */
     @POST
-    @Path ("/saveCompanyBasicInfo")
-    @Produces (MediaType.APPLICATION_JSON)
-    @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
-    public Response saveCompanyBasicInfo ( @Context HttpServletRequest request,
-                                           @Context final HttpServletResponse response,
-                                           @FormParam ("user") final String user,
-                                           @FormParam ("password") final String password,
-                                           @FormParam ("portalURL") final String portalURL,
-                                           @FormParam ("mx") final String mx,
-                                           @FormParam ("emailAddress") final String emailAddress,
-                                           @FormParam ("size") final String backgroundColor,
-                                           @FormParam("type") final String primaryColor,
-                                           @FormParam("street") final String secondaryColor,
-                                           @FormParam ("homeURL") final String homeURL ) throws IOException, JSONException {
+    @Path("/saveCompanyBasicInfo")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response saveCompanyBasicInfo(@Context HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @FormParam("user") final String user,
+            @FormParam("password") final String password,
+            @FormParam("portalURL") final String portalURL,
+            @FormParam("mx") final String mx,
+            @FormParam("emailAddress") final String emailAddress,
+            @FormParam("size") final String backgroundColor,
+            @FormParam("type") final String primaryColor,
+            @FormParam("street") final String secondaryColor,
+            @FormParam("homeURL") final String homeURL,
+            @FormParam("city") final String loginLogo,
+            @FormParam("state") final String navLogo) throws IOException, JSONException {
 
         InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, request, response, true, PortletID.CONFIGURATION.toString() );
 
@@ -92,6 +96,8 @@ public class CMSConfigResource {
         paramsMap.put("type", primaryColor);
         paramsMap.put("street", secondaryColor);
         paramsMap.put( "homeURL", homeURL );
+        paramsMap.put("city",loginLogo);
+        paramsMap.put("state",navLogo);
 
         ResourceResponse responseResource = new ResourceResponse( paramsMap );
         StringBuilder responseMessage = new StringBuilder();
@@ -115,6 +121,8 @@ public class CMSConfigResource {
             currentCompany.setType(primaryColor);
             currentCompany.setStreet(secondaryColor);
             currentCompany.setHomeURL( homeURL );
+            currentCompany.setCity(loginLogo);
+            currentCompany.setState(navLogo);
 
             //Update the company
             CompanyManagerUtil.updateCompany( currentCompany );
@@ -277,7 +285,7 @@ public class CMSConfigResource {
     }
 
     /**
-     * Updates the company logo.
+     * Updates the company logo. Now to update the logo use the {@link CMSConfigResource#saveCompanyBasicInfo}
      *
      * @param request
      * @param user
@@ -288,6 +296,7 @@ public class CMSConfigResource {
      * @throws IOException
      * @throws JSONException
      */
+    @Deprecated
     @POST
     @Path ("/saveCompanyLogo")
     @Produces (MediaType.TEXT_HTML)

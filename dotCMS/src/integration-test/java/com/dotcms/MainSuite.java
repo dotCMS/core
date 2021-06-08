@@ -8,6 +8,7 @@ import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
+import com.dotcms.dotpubsub.PostgresPubSubImplTest;
 import com.dotcms.ema.EMAWebInterceptorTest;
 import com.dotcms.enterprise.HTMLDiffUtilTest;
 import com.dotcms.enterprise.cluster.ClusterFactoryTest;
@@ -355,6 +356,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task05305AddPushPublishFilterColumnTest.class,
         CMSMaintenanceFactoryTest.class,
         Task05350AddDotSaltClusterColumnTest.class,
+        PostgresPubSubImplTest.class,
         DotParseTest.class,
         TestWorkflowAction.class,
         SamlConfigurationServiceTest.class,
