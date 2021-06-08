@@ -19,15 +19,20 @@
 
 package com.liferay.portal.servlet;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.liferay.portal.ejb.CompanyManagerUtil;
 import com.liferay.portal.model.Company;
 import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
+import java.util.Optional;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -53,20 +58,29 @@ public class ImageServlet extends HttpServlet {
 		synchronized (ImageServlet.class) {
 			super.init(sc);
 		}
+		final Company company = APILocator.getCompanyAPI().getDefaultCompany();
+		//If the City column does not startsWith /dA means that we need to migrate the old logo
+		//to a new dotAsset
+		if (company.getCity() == null || !company.getCity().startsWith("/dA")) {
+			migrateCurrentLogoToDotAsset(company);
+		}
 	}
 
 	public void service(HttpServletRequest req, HttpServletResponse res)
 			throws IOException, ServletException {
+		final Company company = APILocator.getCompanyAPI().getDefaultCompany();
+		//Forward to the Servlet
+		if (company.getCity() != null && company.getCity().startsWith("/dA")) {
+			req.getRequestDispatcher(company.getCity()).forward(req, res);
+		}
+	}
 
-		Company company = APILocator.getCompanyAPI().getDefaultCompany();
+	@WrapInTransaction
+	private void migrateCurrentLogoToDotAsset(final Company company) {
+		try {
+			final Image image = ImageLocalUtil.get("dotcms.org");
 
-		//If the City column does not startsWith /dA means that we need to migrate the old logo
-		//to a new dotAsset
-		if (company.getCity() == null || !company.getCity().startsWith("/dA")) {
-			final String imageId = ParamUtil.getString(req,"img_id");
-			final Image image = ImageLocalUtil.get(imageId);
-
-			final File outputFile = new File("company_logo.png");
+			final File outputFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()+ File.separator + "company_logo.png");
 			FileUtils.writeByteArrayToFile(outputFile, image.getTextObj());
 
 			Contentlet contentlet = new Contentlet();
@@ -76,24 +90,24 @@ public class ImageServlet extends HttpServlet {
 			contentlet.setHost(APILocator.systemHost().getHost());
 			contentlet.setFolder(FolderAPI.SYSTEM_FOLDER);
 			contentlet.setBinary(DotAssetContentType.ASSET_FIELD_VAR, outputFile);
-			try {
-				contentlet = APILocator.getContentletAPI()
-						.checkin(contentlet, APILocator.systemUser(), false);
+			final Optional<WorkflowAction> workflowActionOpt =
+					APILocator.getWorkflowAPI().findActionMappedBySystemActionContentlet
+							(contentlet, WorkflowAPI.SystemAction.PUBLISH, APILocator.systemUser());
+			if (workflowActionOpt.isPresent()) {
+				contentlet = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet, new ContentletDependencies.Builder()
+						.workflowActionId(workflowActionOpt.get().getId()).modUser(APILocator.systemUser())
+						.build());
+			} else {
+				contentlet = APILocator.getContentletAPI().checkin(contentlet, APILocator.systemUser(), false);
 				APILocator.getContentletAPI().publish(contentlet, APILocator.systemUser(), false);
-				final String assetUrl = String
-						.format("/dA/%s/asset/company_logo.png", contentlet.getIdentifier());
-				company.setCity(assetUrl);
-				//Update the company
-				CompanyManagerUtil.updateCompany(company);
-			} catch (Exception e) {
-				Logger.error(this, e.getMessage());
 			}
-			company = APILocator.getCompanyAPI().getDefaultCompany();
-		}
-
-		//Forward to the Servlet
-		if (company.getCity() != null && company.getCity().startsWith("/dA")) {
-			req.getRequestDispatcher(company.getCity()).forward(req, res);
+			final String assetUrl = String
+					.format("/dA/%s/asset/company_logo.png", contentlet.getIdentifier());
+			company.setCity(assetUrl);
+			//Update the company
+			CompanyManagerUtil.updateCompany(company);
+		} catch (Exception e) {
+			Logger.error(this, e.getMessage());
 		}
 	}
 

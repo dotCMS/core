@@ -420,7 +420,7 @@ public class TempFileAPI {
         return Optional.of(tempResourceId);
       }
     }catch (Exception e){
-      Logger.debug(TempFileAPI.class, e.getMessage());
+      Logger.warnAndDebug(TempFileAPI.class, e.getMessage(), e);
     }
     return Optional.empty();
   }
