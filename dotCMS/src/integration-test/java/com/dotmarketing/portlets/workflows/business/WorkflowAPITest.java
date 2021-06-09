@@ -1127,6 +1127,8 @@ public class WorkflowAPITest extends IntegrationTestBase {
                 assertEquals(copiedAction.get().getSchemeId(), schemeCopied.getId());
 
                 assertEquals(copiedAction.get().getName(), action.getName());
+
+                assertEquals(copiedAction.get().getNextAssign(), action.getNextAssign());
             } else {
                 fail("The step: " + action.getName()
                         + " does not exists and must exists as part of the copy");
