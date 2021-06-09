@@ -1376,10 +1376,12 @@ public class ContentResource {
                             .map(value -> new JSONObject((Map<?,?>) value))
                             .collect(Collectors.toList())));
                   // this might be coming from transformers views, so let's try to make then JSONObjects
-                } else if(hydrateRelated && key.endsWith("Map")) {
-                    final Contentlet contentlet = con;
-                    jo.put(key, Try.of(()->(Object) new JSONObject(contentlet.getKeyValueProperty(key)))
-                            .getOrElse(()->map.get(key)));
+                } else if(hydrateRelated) {
+                    if(map.get(key) instanceof Map) {
+                        jo.put(key, new JSONObject((Map) map.get(key)));
+                    } else {
+                        jo.put(key, map.get(key));
+                    }
                 } else {
                     jo.put(key, map.get(key));
                 }
