@@ -137,9 +137,9 @@ public class PublisherAPIImpl implements PublisherAPI {
                         Logger.info(this, "Retrying bundle: " + config.getId()
                                 + ", we don't need to run bundlers again");
                     }
-
-                    publisher.process(status);
                 }
+
+                publisher.process(status);
 
                 config.setBundlers(confBundlers);
 
