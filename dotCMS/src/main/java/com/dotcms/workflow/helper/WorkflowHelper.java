@@ -597,7 +597,13 @@ public class WorkflowHelper {
             action = this.workflowAPI.findAction(permission.getInode(), user);
             if (null != action) {
 
-                this.permissionAPI.save(permission, action, APILocator.getUserAPI().getSystemUser(), false);
+                final Role role = roleAPI.loadRoleById(permission.getRoleId());
+                if (null != role) {
+                    this.permissionAPI.save(permission, action, APILocator.getUserAPI().getSystemUser(), false);
+                } else {
+                    Logger.warn(this, "On importing workflow, does not exists the permission role: "
+                            + permission.getRoleId() + " on Workflow Scheme: " + action.getSchemeId());
+                }
             } else {
 
                 throw new DoesNotExistException("The action: " + action + " on the permission: "
