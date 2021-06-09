@@ -594,7 +594,7 @@ public class WorkflowHelper {
                     this.permissionAPI.save(permission, action, APILocator.getUserAPI().getSystemUser(), false);
                 } else {
                     Logger.warn(this, "On importing workflow, does not exists the permission role: "
-                            + permission.getRoleId());
+                            + permission.getRoleId() + " on Workflow Scheme: " + action.getSchemeId());
                 }
             } else {
 
