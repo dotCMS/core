@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "5392a710-6266-4b30-af08-fad535d02170",
+		"_postman_id": "0b8b027e-679d-41f6-805c-4116abd1c1f3",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -6007,7 +6007,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n        \"workflowObject\": {\n            \"version\": \"1.0\",\n            \"schemes\": [\n                {\n                    \"id\": \"42771904-b7d9-42b7-b038-8e077fabcf3f\",\n                    \"creationDate\": 1527632337579,\n                    \"name\": \"WF_Import_AsAdmin\",\n                    \"description\": \"REST_1\",\n                    \"archived\": false,\n                    \"mandatory\": false,\n                    \"defaultScheme\": false,\n                    \"modDate\": 1527632329252,\n                    \"entryActionId\": null,\n                    \"system\": false\n                }\n            ],\n            \"steps\": [\n                {\n                    \"id\": \"4ec41c51-4006-4713-a28d-d42a719934ac\",\n                    \"creationDate\": 1527632495697,\n                    \"name\": \"Step1\",\n                    \"schemeId\": \"42771904-b7d9-42b7-b038-8e077fabcf3f\",\n                    \"myOrder\": 0,\n                    \"resolved\": false,\n                    \"enableEscalation\": false,\n                    \"escalationAction\": null,\n                    \"escalationTime\": 0\n                },\n                {\n                    \"id\": \"5fa5a384-53c0-4c47-8ba1-5751e003b7b4\",\n                    \"creationDate\": 1527632495698,\n                    \"name\": \"Step2\",\n                    \"schemeId\": \"42771904-b7d9-42b7-b038-8e077fabcf3f\",\n                    \"myOrder\": 1,\n                    \"resolved\": false,\n                    \"enableEscalation\": false,\n                    \"escalationAction\": null,\n                    \"escalationTime\": 0\n                },\n                {\n                    \"id\": \"a0f9a62c-182a-4571-b136-6a807550e597\",\n                    \"creationDate\": 1527632495699,\n                    \"name\": \"Step3\",\n                    \"schemeId\": \"42771904-b7d9-42b7-b038-8e077fabcf3f\",\n                    \"myOrder\": 2,\n                    \"resolved\": false,\n                    \"enableEscalation\": false,\n                    \"escalationAction\": null,\n                    \"escalationTime\": 0\n                },\n                {\n                    \"id\": \"09d794cb-c13a-4379-9553-cdef3842d98c\",\n                    \"creationDate\": 1527632495700,\n                    \"name\": \"Step4\",\n                    \"schemeId\": \"42771904-b7d9-42b7-b038-8e077fabcf3f\",\n                    \"myOrder\": 3,\n                    \"resolved\": false,\n                    \"enableEscalation\": false,\n                    \"escalationAction\": null,\n                    \"escalationTime\": 0\n                }\n            ],\n            \"actions\": [\n                {\n                    \"id\": \"1e916358-b9bf-4331-b28b-7af41eefc970\",\n                    \"name\": \"Archive\",\n                    \"schemeId\": \"42771904-b7d9-42b7-b038-8e077fabcf3f\",\n                    \"condition\": \"\",\n                    \"nextStep\": \"09d794cb-c13a-4379-9553-cdef3842d98c\",\n                    \"nextAssign\": \"e7d4e34e-5127-45fc-8123-d48b62d510e3\",\n                    \"icon\": \"workflowIcon\",\n                    \"roleHierarchyForAssign\": false,\n                    \"assignable\": false,\n                    \"commentable\": false,\n                    \"order\": 0,\n                    \"owner\": null,\n                    \"nextStepCurrentStep\": false,\n                    \"showOn\": [\n                        \"UNPUBLISHED\",\n                        \"UNLOCKED\",\n                        \"LOCKED\"\n                    ]\n                },\n                {\n                    \"id\": \"e93c8802-2033-4c3b-88f9-8125301d9816\",\n                    \"name\": \"Publish\",\n                    \"schemeId\": \"42771904-b7d9-42b7-b038-8e077fabcf3f\",\n                    \"condition\": \"\",\n                    \"nextStep\": \"a0f9a62c-182a-4571-b136-6a807550e597\",\n                    \"nextAssign\": \"e7d4e34e-5127-45fc-8123-d48b62d510e3\",\n                    \"icon\": \"workflowIcon\",\n                    \"roleHierarchyForAssign\": false,\n                    \"assignable\": false,\n                    \"commentable\": false,\n                    \"order\": 0,\n                    \"owner\": null,\n                    \"nextStepCurrentStep\": false,\n                    \"showOn\": [\n                        \"UNPUBLISHED\",\n                        \"UNLOCKED\",\n                        \"LOCKED\"\n                    ]\n                },\n                {\n                    \"id\": \"b588eae6-fa32-4eeb-b30e-fa9f7a80da7f\",\n                    \"name\": \"Save\",\n                    \"schemeId\": \"42771904-b7d9-42b7-b038-8e077fabcf3f\",\n                    \"condition\": \"\",\n                    \"nextStep\": \"5fa5a384-53c0-4c47-8ba1-5751e003b7b4\",\n                    \"nextAssign\": \"e7d4e34e-5127-45fc-8123-d48b62d510e3\",\n                    \"icon\": \"workflowIcon\",\n                    \"roleHierarchyForAssign\": false,\n                    \"assignable\": false,\n                    \"commentable\": false,\n                    \"order\": 0,\n                    \"owner\": null,\n                    \"nextStepCurrentStep\": false,\n                    \"showOn\": [\n                        \"NEW\",\n                        \"UNLOCKED\",\n                        \"LOCKED\"\n                    ]\n                },\n                {\n                    \"id\": \"334a0f26-76b9-4be7-803b-ab6dc5461023\",\n                    \"name\": \"Un-Archive\",\n                    \"schemeId\": \"42771904-b7d9-42b7-b038-8e077fabcf3f\",\n                    \"condition\": \"\",\n                    \"nextStep\": \"currentstep\",\n                    \"nextAssign\": \"e7d4e34e-5127-45fc-8123-d48b62d510e3\",\n                    \"icon\": \"workflowIcon\",\n                    \"roleHierarchyForAssign\": false,\n                    \"assignable\": false,\n                    \"commentable\": false,\n                    \"order\": 0,\n                    \"owner\": null,\n                    \"nextStepCurrentStep\": true,\n                    \"showOn\": [\n                        \"UNLOCKED\",\n                        \"LOCKED\",\n                        \"ARCHIVED\"\n                    ]\n                },\n                {\n                    \"id\": \"0e807408-701d-4e02-b7a0-8279f3668fdd\",\n                    \"name\": \"Unpublish\",\n                    \"schemeId\": \"42771904-b7d9-42b7-b038-8e077fabcf3f\",\n                    \"condition\": \"\",\n                    \"nextStep\": \"5fa5a384-53c0-4c47-8ba1-5751e003b7b4\",\n                    \"nextAssign\": \"e7d4e34e-5127-45fc-8123-d48b62d510e3\",\n                    \"icon\": \"workflowIcon\",\n                    \"roleHierarchyForAssign\": false,\n                    \"assignable\": false,\n                    \"commentable\": false,\n                    \"order\": 0,\n                    \"owner\": null,\n                    \"nextStepCurrentStep\": false,\n                    \"showOn\": [\n                        \"UNLOCKED\",\n                        \"LOCKED\",\n                        \"PUBLISHED\"\n                    ]\n                }\n            ],\n            \"actionSteps\": [\n                {\n                    \"stepId\": \"4ec41c51-4006-4713-a28d-d42a719934ac\",\n                    \"actionId\": \"b588eae6-fa32-4eeb-b30e-fa9f7a80da7f\",\n                    \"actionOrder\": \"0\"\n                },\n                {\n                    \"stepId\": \"5fa5a384-53c0-4c47-8ba1-5751e003b7b4\",\n                    \"actionId\": \"1e916358-b9bf-4331-b28b-7af41eefc970\",\n                    \"actionOrder\": \"0\"\n                },\n                {\n                    \"stepId\": \"5fa5a384-53c0-4c47-8ba1-5751e003b7b4\",\n                    \"actionId\": \"e93c8802-2033-4c3b-88f9-8125301d9816\",\n                    \"actionOrder\": \"1\"\n                },\n                {\n                    \"stepId\": \"a0f9a62c-182a-4571-b136-6a807550e597\",\n                    \"actionId\": \"0e807408-701d-4e02-b7a0-8279f3668fdd\",\n                    \"actionOrder\": \"0\"\n                },\n                {\n                    \"stepId\": \"09d794cb-c13a-4379-9553-cdef3842d98c\",\n                    \"actionId\": \"334a0f26-76b9-4be7-803b-ab6dc5461023\",\n                    \"actionOrder\": \"0\"\n                }\n            ],\n            \"actionClasses\": [\n                {\n                    \"id\": \"889a58e3-2c22-4164-b3c1-62fbf93b5949\",\n                    \"actionId\": \"1e916358-b9bf-4331-b28b-7af41eefc970\",\n                    \"name\": \"Archive content\",\n                    \"order\": 0,\n                    \"clazz\": \"com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet\",\n                    \"actionlet\": {\n                        \"name\": \"Archive content\",\n                        \"parameters\": null,\n                        \"howTo\": \"This actionlet will archive the content.\",\n                        \"localizedName\": \"Archive Content\",\n                        \"localizedHowto\": \"com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet.howTo\"\n                    }\n                },\n                {\n                    \"id\": \"51610a9a-9be6-489b-ba75-336bf632fc13\",\n                    \"actionId\": \"e93c8802-2033-4c3b-88f9-8125301d9816\",\n                    \"name\": \"Publish content\",\n                    \"order\": 0,\n                    \"clazz\": \"com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet\",\n                    \"actionlet\": {\n                        \"name\": \"Publish content\",\n                        \"parameters\": null,\n                        \"howTo\": \"This actionlet will publish the content.\",\n                        \"nextStep\": null,\n                        \"localizedName\": \"Publish Content\",\n                        \"localizedHowto\": \"com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet.howTo\"\n                    }\n                },\n                {\n                    \"id\": \"f52163e8-c4a1-4862-be40-0c530cd8f154\",\n                    \"actionId\": \"b588eae6-fa32-4eeb-b30e-fa9f7a80da7f\",\n                    \"name\": \"Save content\",\n                    \"order\": 0,\n                    \"clazz\": \"com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet\",\n                    \"actionlet\": {\n                        \"name\": \"Save content\",\n                        \"parameters\": null,\n                        \"howTo\": \"This actionlet will checkin the content.\",\n                        \"nextStep\": null,\n                        \"localizedName\": \"Save content\",\n                        \"localizedHowto\": \"com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet.howTo\"\n                    }\n                },\n                {\n                    \"id\": \"789b3b43-0b19-40df-b5e0-e7e161dd1f39\",\n                    \"actionId\": \"334a0f26-76b9-4be7-803b-ab6dc5461023\",\n                    \"name\": \"Unarchive content\",\n                    \"order\": 0,\n                    \"clazz\": \"com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet\",\n                    \"actionlet\": {\n                        \"name\": \"Unarchive content\",\n                        \"parameters\": null,\n                        \"howTo\": \"This actionlet will un archive the content and return it to a working state\",\n                        \"nextStep\": null,\n                        \"localizedName\": \"Unarchive Content\",\n                        \"localizedHowto\": \"com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet.howTo\"\n                    }\n                },\n                {\n                    \"id\": \"700330ab-8974-40d5-9131-67aa05731b48\",\n                    \"actionId\": \"0e807408-701d-4e02-b7a0-8279f3668fdd\",\n                    \"name\": \"Publish content\",\n                    \"order\": 0,\n                    \"clazz\": \"com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet\",\n                    \"actionlet\": {\n                        \"name\": \"Publish content\",\n                        \"parameters\": null,\n                        \"howTo\": \"This actionlet will publish the content.\",\n                        \"nextStep\": null,\n                        \"localizedName\": \"Publish Content\",\n                        \"localizedHowto\": \"com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet.howTo\"\n                    }\n                }\n            ],\n            \"actionClassParams\": []\n        },\n        \"permissions\": []\n}"
+							"raw": "{\n    \"workflowObject\": {\n        \"actionClassParams\": [\n            {\n                \"actionClassId\": \"deb0865a-8367-499a-9c80-f70f6cb4a201\",\n                \"id\": \"2163cb23-8b9a-406a-b2fa-7beecd5c63b0\",\n                \"key\": \"emailSubject\",\n                \"value\": \"subject\"\n            },\n            {\n                \"actionClassId\": \"deb0865a-8367-499a-9c80-f70f6cb4a201\",\n                \"id\": \"f98771e9-ca5c-438a-a23b-85594b92af45\",\n                \"key\": \"emailBody\",\n                \"value\": \"msg\"\n            },\n            {\n                \"actionClassId\": \"deb0865a-8367-499a-9c80-f70f6cb4a201\",\n                \"id\": \"d831815e-f9c4-4338-956f-2e8b9e0e371b\",\n                \"key\": \"isHtml\",\n                \"value\": \"true\"\n            }\n        ],\n        \"actionClasses\": [\n            {\n                \"actionId\": \"9148bd02-9d49-4765-8570-17f9a28d64bc\",\n                \"actionlet\": {\n                    \"actionClass\": \"com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet\",\n                    \"howTo\": \"This actionlet will send an email to the assignee (or assignees if the next assign is a role).  It uses a default email subject and message, but can be overridden.  Both the subject and message are parsed Velocity, and have access to a $workflow object that gives them $workflow.task, $workflow.nextAssign, $workflow.action, $workflow.step, etc.. \",\n                    \"localizedHowto\": \"com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet.howTo\",\n                    \"localizedName\": \"Notify Assignee\",\n                    \"name\": \"Notify Assignee\",\n                    \"nextStep\": null,\n                    \"parameters\": [\n                        {\n                            \"defaultValue\": \"\",\n                            \"displayName\": \"Email Subject\",\n                            \"key\": \"emailSubject\",\n                            \"required\": false\n                        },\n                        {\n                            \"defaultValue\": null,\n                            \"displayName\": \"Email Message\",\n                            \"key\": \"emailBody\",\n                            \"required\": false\n                        },\n                        {\n                            \"defaultValue\": \"true\",\n                            \"displayName\": \"Is Html?\",\n                            \"key\": \"isHtml\",\n                            \"required\": false\n                        }\n                    ]\n                },\n                \"clazz\": \"com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet\",\n                \"id\": \"deb0865a-8367-499a-9c80-f70f6cb4a201\",\n                \"name\": \"Notify Assignee\",\n                \"order\": 0\n            }\n        ],\n        \"actionSteps\": [\n            {\n                \"actionId\": \"9148bd02-9d49-4765-8570-17f9a28d64bc\",\n                \"actionOrder\": \"0\",\n                \"stepId\": \"2ad8291f-eee4-4ce7-ab99-1b2186ef4dec\"\n            }\n        ],\n        \"actions\": [\n            {\n                \"assignable\": false,\n                \"commentable\": false,\n                \"condition\": \"\",\n                \"icon\": \"workflowIcon\",\n                \"id\": \"9148bd02-9d49-4765-8570-17f9a28d64bc\",\n                \"name\": \"test\",\n                \"nextAssign\": \"654b0931-1027-41f7-ad4d-173115ed8ec1\",\n                \"nextStep\": \"currentstep\",\n                \"nextStepCurrentStep\": true,\n                \"order\": 0,\n                \"owner\": null,\n                \"roleHierarchyForAssign\": false,\n                \"schemeId\": \"8760ea91-9912-456c-b719-7c63e81fa981\",\n                \"showOn\": []\n            }\n        ],\n        \"schemeSystemActionWorkflowActionMappings\": [],\n        \"schemes\": [\n            {\n                \"archived\": false,\n                \"creationDate\": 1623256714100,\n                \"defaultScheme\": false,\n                \"description\": \"\",\n                \"entryActionId\": null,\n                \"id\": \"8760ea91-9912-456c-b719-7c63e81fa981\",\n                \"mandatory\": false,\n                \"modDate\": 1623203259556,\n                \"name\": \"Test\",\n                \"system\": false\n            }\n        ],\n        \"steps\": [\n            {\n                \"creationDate\": 1623256717104,\n                \"enableEscalation\": false,\n                \"escalationAction\": null,\n                \"escalationTime\": 0,\n                \"id\": \"2ad8291f-eee4-4ce7-ab99-1b2186ef4dec\",\n                \"myOrder\": 0,\n                \"name\": \"step1\",\n                \"resolved\": false,\n                \"schemeId\": \"8760ea91-9912-456c-b719-7c63e81fa981\"\n            }\n        ],\n        \"version\": \"1.0\"\n    },\n    \"permissions\": []\n}"
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/schemes/import",
@@ -6038,10 +6038,7 @@
 									"});",
 									"",
 									"",
-									"",
-									"pm.test(\"Body matches string\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"OK\");",
-									"});"
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -12639,6 +12636,101 @@
 									"key": "inode",
 									"value": "xxxx"
 								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"auth": {
+				"type": "basic",
+				"basic": [
+					{
+						"key": "password",
+						"value": "admin",
+						"type": "string"
+					},
+					{
+						"key": "username",
+						"value": "admin@dotcms.com",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "saveMultiple",
+			"item": [
+				{
+					"name": "Save Multiple Generic Contentlets",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"console.log(\"Running test\")",
+									"",
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.summary.affected).to.eql(20);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\n    \"contentlets\":[\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content1\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content1\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content2\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content2\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content3\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content3\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content4\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content4\"\n        },\n         {\n             \"contentType\":\"webPageContent\",\n            \"title\":\"Content5\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content5\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content6\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content6\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content7\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content7\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content8\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content8\"\n        },\n         {\n             \"contentType\":\"webPageContent\",\n            \"title\":\"Content9\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content9\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content10\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content10\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content11\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content11\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content12\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content12\"\n        },\n         {\n             \"contentType\":\"webPageContent\",\n            \"title\":\"Content13\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content13\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content14\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content14\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content15\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content15\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content16\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content16\"\n        },\n         {\n             \"contentType\":\"webPageContent\",\n            \"title\":\"Content17\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content17\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content18\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content18\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content19\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content19\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content20\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content20\"\n        }\n        \n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
 							]
 						}
 					},
