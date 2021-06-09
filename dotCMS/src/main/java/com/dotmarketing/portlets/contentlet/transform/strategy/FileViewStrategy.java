@@ -39,9 +39,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-public class FileViewStrategy extends AbstractTransformStrategy<Contentlet> {
+/**
+ * TransformStrategy that includes a number of additional properties for each {@link FileField}
+ * and {@link ImageField}.
+ */
 
-    private final ContentletCache contentletCache;
+public class FileViewStrategy extends AbstractTransformStrategy<Contentlet> {
 
     /**
      * Main Constructor
@@ -49,7 +52,6 @@ public class FileViewStrategy extends AbstractTransformStrategy<Contentlet> {
      */
     public FileViewStrategy(final APIProvider toolBox) {
         super(toolBox);
-        contentletCache = CacheLocator.getContentletCache();
     }
 
     /**
@@ -101,9 +103,6 @@ public class FileViewStrategy extends AbstractTransformStrategy<Contentlet> {
         FileAsset fileAsset = null;
 
         if(fileAsContentOptional.isPresent()) {
-//            final Contentlet fileAsContent =
-//                    new DotTransformerBuilder().defaultOptions().content(fileAsContentOptional.get()).build().hydrate().get(0);
-
             fileAsset = APILocator.getFileAssetAPI().fromContentlet(fileAsContentOptional.get());
         }
 

@@ -6,19 +6,16 @@ import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.CustomField;
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.graphql.DotGraphQLContext;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import graphql.schema.DataFetchingEnvironment;
 import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
@@ -28,8 +25,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * Class intended to collect {@link KeyValueField} and present them as Map with entries like `fieldVariable`
- * @author jsanca
+ * Class intended to collect the {@link Field}s that are velocity renderable and present them in their
+ * rendered form in the content map
  */
 public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
 
