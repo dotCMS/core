@@ -7,6 +7,10 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Form to fire a multiple contentlets
+ * @author jsanca 
+ */
 @JsonDeserialize(builder = FireMultipleActionForm.Builder.class)
 public class FireMultipleActionForm extends Validated {
 

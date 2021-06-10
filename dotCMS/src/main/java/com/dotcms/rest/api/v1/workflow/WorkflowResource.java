@@ -172,6 +172,7 @@ public class WorkflowResource {
     private static final String ACTION_NAME   = "actionName";
     private static final String CONTENTLET    = "contentlet";
     private static final int CONTENTLETS_LIMIT = 100000;
+    private static final String WORKFLOW_SUBMITTER = "workflow_submitter";
 
 
     private final WorkflowHelper   workflowHelper;
@@ -1644,6 +1645,17 @@ public class WorkflowResource {
         }
     }
 
+    /**
+     * This method fires the workflow for multiple contentlets
+     * @param contentletsToSaveList
+     * @param systemAction
+     * @param fireActionForm
+     * @param request
+     * @param mode
+     * @param initDataObject
+     * @param outputStream
+     * @param objectMapper
+     */
     private void saveMultipleContentletsByDefaultAction(final List<Map<String, Object>> contentletsToSaveList,
                                                  final WorkflowAPI.SystemAction systemAction,
                                                  final FireMultipleActionForm fireActionForm,
@@ -1653,7 +1665,7 @@ public class WorkflowResource {
                                                  final OutputStream outputStream,
                                                  final ObjectMapper objectMapper) {
 
-        final DotSubmitter dotSubmitter = DotConcurrentFactory.getInstance().getSubmitter("workflow_submitter",
+        final DotSubmitter dotSubmitter = DotConcurrentFactory.getInstance().getSubmitter(WORKFLOW_SUBMITTER,
                 new DotConcurrentFactory.SubmitterConfigBuilder().poolSize(2).maxPoolSize(5).queueCapacity(CONTENTLETS_LIMIT).build());
         final CompletionService<Map<String, Object>> completionService = new ExecutorCompletionService<>(dotSubmitter);
         final List<Future<Map<String, Object>>> futures = new ArrayList<>();
@@ -1689,7 +1701,8 @@ public class WorkflowResource {
                 } catch (Exception e) {
 
                     final String id = UtilMethods.isSet(identifier)?identifier:inode;
-                    Logger.error(this, "Error in contentlet: " + id + ", msg: " + e.getMessage(), e);
+                    Logger.error(this, "Error in contentlet: " + id + ", msg: " + e.getMessage()
+                            + ", running the action: " + systemAction, e);
                     resultMap.put(id, UtilMethods.isSet(identifier)?
                             ActionFail.newInstanceById(user, identifier, e):ActionFail.newInstance(user, inode, e));
                 }
