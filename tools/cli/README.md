@@ -17,8 +17,8 @@ Find a suitable version or the instructions to get it installed via package mana
 
 ## Usage
 
-The tool expects a directory like structure holding all the json descriptor/files to be pushed 
-the expected directory structure looks like this:
+The tool expects a directory like structure holding all the json descriptor/files to be pushed   
+The expected directory structure looks like this:
 
 <pre>
 
