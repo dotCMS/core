@@ -150,5 +150,5 @@ This command imports the file assets piece of the directory structure described 
 
 **_Import Content-Types_**: Takes a file as parameter like this:
 <pre>
-./dot-cli --contnet-type ../cli/bundles/bike-shop/content-types/bike.contenttype.json
+./dot-cli --content-type ../cli/bundles/bike-shop/content-types/bike.contenttype.json
 </pre>
