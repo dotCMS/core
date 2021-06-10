@@ -100,16 +100,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static com.dotcms.util.CollectionsUtils.*;
-import static org.jgroups.util.Util.assertFalse;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 
 @RunWith(DataProviderRunner.class)
 public class PublisherAPIImplTest {

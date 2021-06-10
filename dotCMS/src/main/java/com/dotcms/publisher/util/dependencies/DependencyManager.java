@@ -203,7 +203,7 @@ public class DependencyManager {
 										: "N/A")
 										+ " does NOT have working or live version, not Pushed");
 					} else {
-						addWithDependencies(PusheableAsset.CONTENT_TYPE, structure);
+						config.addWithDependencies(structure, PusheableAsset.CONTENT_TYPE);
 					}
 
 				} catch (Exception e) {
@@ -232,7 +232,7 @@ public class DependencyManager {
 									"FileAssetTemplate id: " + (asset.getAsset() != null ? asset
 											.getAsset() : "N/A") + " will be ignored");
 						} else {
-							addWithDependencies(PusheableAsset.TEMPLATE, template);
+							config.addWithDependencies(template, PusheableAsset.TEMPLATE);
 						}
 					}
 
@@ -257,7 +257,7 @@ public class DependencyManager {
 										: "N/A")
 										+ " does NOT have working or live version, not Pushed");
 					} else {
-						addWithDependencies(PusheableAsset.CONTAINER, container);
+						config.addWithDependencies(container, PusheableAsset.CONTAINER);
 					}
 				} catch (DotSecurityException e) {
 					Logger.error(getClass(),
@@ -274,7 +274,7 @@ public class DependencyManager {
 										: "N/A")
 										+ " does NOT have working or live version, not Pushed");
 					} else {
-						addWithDependencies(PusheableAsset.FOLDER, folder);
+						config.addWithDependencies(folder, PusheableAsset.FOLDER);
 					}
 
 				} catch (DotSecurityException e) {
@@ -291,7 +291,7 @@ public class DependencyManager {
 								"Host id: " + (asset.getAsset() != null ? asset.getAsset() : "N/A")
 										+ " does NOT have working or live version, not Pushed");
 					} else {
-						addWithDependencies(PusheableAsset.SITE, host);
+						config.addWithDependencies(host, PusheableAsset.SITE);
 					}
 
 				} catch (DotSecurityException e) {
@@ -314,7 +314,7 @@ public class DependencyManager {
 								"Link id: " + (asset.getAsset() != null ? asset.getAsset() : "N/A")
 										+ " does NOT have working or live version, not Pushed");
 					} else {
-						addWithDependencies(PusheableAsset.LINK, link);
+						config.addWithDependencies(link, PusheableAsset.LINK);
 					}
 
 				} catch (DotSecurityException e) {
@@ -331,7 +331,7 @@ public class DependencyManager {
 									: "N/A")
 									+ " does NOT have working or live version, not Pushed");
 				} else {
-					addWithDependencies(PusheableAsset.WORKFLOW, scheme);
+					config.addWithDependencies(scheme, PusheableAsset.WORKFLOW);
 				}
 			} else if (asset.getType().equals(PusheableAsset.LANGUAGE.getType())) {
 				Language language = APILocator.getLanguageAPI()
@@ -342,13 +342,13 @@ public class DependencyManager {
 							: "N/A")
 							+ " is not present in the database, not Pushed");
 				} else {
-					addWithDependencies(PusheableAsset.LANGUAGE, language);
+					config.addWithDependencies(language, PusheableAsset.LANGUAGE);
 				}
 			} else if (asset.getType().equals(PusheableAsset.RULE.getType())) {
 				Rule rule = APILocator.getRulesAPI()
 						.getRuleById(asset.getAsset(), user, false);
 				if (rule != null && StringUtils.isNotBlank(rule.getId())) {
-					addWithDependencies(PusheableAsset.RULE, rule);
+					config.addWithDependencies(rule, PusheableAsset.RULE);
 				} else {
 					Logger.warn(getClass(), "Rule id: "
 							+ (asset.getAsset() != null ? asset.getAsset()
@@ -367,7 +367,7 @@ public class DependencyManager {
 				final List<Contentlet> contentlets = APILocator.getContentletAPI()
 						.findAllVersions(ident, false, user, false);
 				for (Contentlet con : contentlets) {
-					addWithDependencies(PusheableAsset.CONTENTLET, con);
+					config.addWithDependencies(con, PusheableAsset.CONTENTLET);
 				}
 			}
 		}
@@ -618,8 +618,18 @@ public class DependencyManager {
 			final PusheableAsset pusheableAsset, final SupplierWithException<Collection<T>> getter)
 			throws DotDataException, DotSecurityException {
 
-		tryToAddAll(pusheableAsset, getter).stream()
-				.forEach(asset -> config.addWithDependencies(asset, pusheableAsset));
+		if (!isExcludeByFilter(pusheableAsset)) {
+			getter.get().stream().forEach(asset -> {
+					try {
+						tryToAdd(pusheableAsset, asset);
+						config.addWithDependencies(asset, pusheableAsset);
+					} catch (AssetExcludeByFilterException e) {
+						//ignore
+					} catch (AssetExcludeException e) {
+						dependencyProcessor.addAsset(asset, pusheableAsset);
+					}
+				});
+		}
 	}
 
 	public <T> Collection<T> tryToAddAll(
@@ -631,7 +641,13 @@ public class DependencyManager {
 
 			if (assets != null) {
 				return assets.stream()
-					.filter(asset -> tryToAdd(pusheableAsset, asset))
+					.filter(asset -> {
+						try {
+							return tryToAdd(pusheableAsset, asset);
+						} catch (AssetExcludeException e) {
+							return false;
+						}
+					})
 					.collect(Collectors.toSet());
 			}
 		}
@@ -642,53 +658,68 @@ public class DependencyManager {
 	public <T> void tryToAddAndProcessDependencies(
 			final PusheableAsset pusheableAsset, final SupplierWithException<T> getter)
 			throws DotDataException, DotSecurityException {
-		tryToAdd(pusheableAsset, getter).ifPresent((asset) ->
-				config.addWithDependencies(asset, pusheableAsset));
+		try {
+			tryToAdd(pusheableAsset, getter).ifPresent(asset ->
+					config.addWithDependencies(asset, pusheableAsset));
+		} catch (AssetExcludeByFilterException e) {
+			//ignore
+		} catch (AssetExcludeException e) {
+			final T asset = getter.get();
+			dependencyProcessor.addAsset(asset, pusheableAsset);
+		}
+	}
+
+	public <T> Optional<T> tryToAddSilently (
+			final PusheableAsset pusheableAsset, final SupplierWithException<T> getter)
+			throws DotDataException, DotSecurityException{
+		try {
+			return tryToAdd(pusheableAsset, getter);
+		} catch (AssetExcludeException e) {
+			return Optional.empty();
+		}
 	}
 
 	public <T> Optional<T> tryToAdd(
 			final PusheableAsset pusheableAsset, final SupplierWithException<T> getter)
-			throws DotDataException, DotSecurityException {
+			throws DotDataException, DotSecurityException, AssetExcludeException{
 
 		if (!isExcludeByFilter(pusheableAsset)) {
 			final T asset = getter.get();
 
-			if (asset != null) {
-				return tryToAdd(pusheableAsset, asset) ? Optional.of(asset) : Optional.empty();
+			if (asset == null) {
+				return Optional.empty();
 			}
-		}
 
-		return Optional.empty();
+			return tryToAdd(pusheableAsset, asset) ? Optional.of(asset) : Optional.empty();
+		} else {
+			throw new AssetExcludeByFilterException(String.format("Exclude by Operation %s",
+					config.getOperation()));
+		}
 	}
 
-	private synchronized <T> boolean tryToAdd(final PusheableAsset pusheableAsset, final T asset) {
+	private synchronized <T> boolean tryToAdd(final PusheableAsset pusheableAsset, final T asset)
+		throws AssetExcludeException {
 
 		if ( config.getOperation() != Operation.PUBLISH ) {
 			this.pushedAssetUtil.removePushedAssetForAllEnv(asset, pusheableAsset);
-			return false;
+			throw new AssetExcludeException(String.format("Exclude by Operation %s",
+					config.getOperation()));
 		}
 
 		if (Contentlet.class.isInstance(asset) && !Contentlet.class.cast(asset).isHost() &&
 				publisherFilter.doesExcludeDependencyQueryContainsContentletId(
 						((Contentlet) asset).getIdentifier())) {
-			return false;
+
+			throw new AssetExcludeByFilterException(String.format("Exclude by Contentlet Id Filter: %s",
+					((Contentlet) asset).getIdentifier()));
 		}
 
 		if (!shouldCheckModDate(asset) ||
 				!dependencyModDateUtil.excludeByModDate(asset, pusheableAsset)) {
 
-			add(pusheableAsset, asset);
-			return true;
+			return add(pusheableAsset, asset);
 		} else {
-			return false;
-		}
-	}
-
-	private <T> void addWithDependencies(final PusheableAsset pusheableAsset, final T asset) {
-		final boolean add = add(pusheableAsset, asset);
-
-		if (add) {
-			dependencyProcessor.addAsset(asset, pusheableAsset);
+			throw new AssetExcludeException(String.format("Exclude by Moddate"));
 		}
 	}
 
@@ -720,10 +751,10 @@ public class DependencyManager {
 			Identifier ident = APILocator.getIdentifierAPI().find(linkId);
 
 			// Folder Dependencies
-			tryToAdd(PusheableAsset.FOLDER, () -> getFolderByParentIdentifier(ident));
+			tryToAddSilently(PusheableAsset.FOLDER, () -> getFolderByParentIdentifier(ident));
 
 			// Host Dependencies
-			tryToAdd(PusheableAsset.SITE, () -> getHostById(ident.getHostId()));
+			tryToAddSilently(PusheableAsset.SITE, () -> getHostById(ident.getHostId()));
 
 			// Content Dependencies
 			tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET, () -> getContentletsByLink(linkId));
@@ -751,8 +782,7 @@ public class DependencyManager {
 					() -> getTemplatesByHost(host));
 
 			// Container dependencies
-			tryToAddAllAndProcessDependencies(PusheableAsset.CONTAINER,
-					() -> getContainersByHost(host));
+			tryToAddAllAndProcessDependencies(PusheableAsset.CONTAINER, () -> getContainersByHost(host));
 			getFileContainersByHost(host).stream()
 					.forEach(fileContainer -> dependencyProcessor.addAsset(fileContainer.getIdentifier(),
 							PusheableAsset.CONTAINER));
@@ -790,7 +820,7 @@ public class DependencyManager {
 	 */
 	private void processFolderDependency(final Folder folder) {
 		try {
-			tryToAdd(PusheableAsset.FOLDER, () -> getParentFolder(folder));
+			tryToAddSilently(PusheableAsset.FOLDER, () -> getParentFolder(folder));
 			setFolderListDependencies(folder);
 		} catch (DotSecurityException | DotDataException e) {
 			Logger.error(this, e.getMessage(),e);
@@ -807,7 +837,7 @@ public class DependencyManager {
 	private void setFolderListDependencies(final Folder folder)
 			throws DotIdentifierStateException, DotDataException, DotSecurityException {
 
-		tryToAdd(PusheableAsset.SITE, () -> getHostById(folder.getHostId()));
+		tryToAddSilently(PusheableAsset.SITE, () -> getHostById(folder.getHostId()));
 
 		// Content dependencies
 		tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET,
@@ -859,10 +889,10 @@ public class DependencyManager {
 			}
 
 			// Host dependency
-			tryToAdd(PusheableAsset.SITE, () -> getHostById(identifier.getHostId()));
+			tryToAddSilently(PusheableAsset.SITE, () -> getHostById(identifier.getHostId()));
 
 			// Folder dependencies
-			tryToAdd(PusheableAsset.FOLDER, () -> getFolderByParentIdentifier(identifier));
+			tryToAddSilently(PusheableAsset.FOLDER, () -> getFolderByParentIdentifier(identifier));
 
 			// looking for working version (must exists)
 			final IHTMLPage workingPage = Try.of(
@@ -893,9 +923,10 @@ public class DependencyManager {
 
 				// Templates dependencies
 				if(!(workingTemplateWP instanceof FileAssetTemplate)) {
-					tryToAdd(PusheableAsset.TEMPLATE, () -> workingTemplateWP);
+					tryToAddAndProcessDependencies(PusheableAsset.TEMPLATE, () -> workingTemplateWP);
+				} else {
+					dependencyProcessor.addAsset(workingTemplateWP, PusheableAsset.TEMPLATE);
 				}
-				dependencyProcessor.addAsset(workingTemplateWP, PusheableAsset.TEMPLATE);
 			}
 
 			final Template liveTemplateLP = livePage != null ?
@@ -905,9 +936,10 @@ public class DependencyManager {
 			// Templates dependencies
 			if (liveTemplateLP != null ) {
 				if(!(liveTemplateLP instanceof FileAssetTemplate)) {
-					tryToAdd(PusheableAsset.TEMPLATE, () -> liveTemplateLP);
+					tryToAddAndProcessDependencies(PusheableAsset.TEMPLATE, () -> liveTemplateLP);
+				} else {
+					dependencyProcessor.addAsset(liveTemplateLP, PusheableAsset.TEMPLATE);
 				}
-				dependencyProcessor.addAsset(liveTemplateLP, PusheableAsset.TEMPLATE);
 			}
 
 			// Contents dependencies
@@ -931,7 +963,7 @@ public class DependencyManager {
 					APILocator.getTemplateAPI().findLiveTemplate(template.getIdentifier(), user, false);
 
 			// Host dependency
-			tryToAdd(PusheableAsset.SITE, () -> getHostByTemplate(workingTemplate));
+			tryToAddSilently(PusheableAsset.SITE, () -> getHostByTemplate(workingTemplate));
 
 			addContainerByTemplate(workingTemplate);
 			addContainerByTemplate(liveTemplate);
@@ -981,7 +1013,7 @@ public class DependencyManager {
 					.getWorkingContainerById(containerId, user, false);
 
 			// Host Dependency
-			tryToAdd(PusheableAsset.SITE, () -> getHostByContainer(containerById));
+			tryToAddSilently(PusheableAsset.SITE, () -> getHostByContainer(containerById));
 
 			// Content Type Dependencies
 			tryToAddAllAndProcessDependencies(PusheableAsset.CONTENT_TYPE,
@@ -1062,10 +1094,10 @@ public class DependencyManager {
 	private void processContentTypeDependency(final Structure structure) {
 		try{
 			// Host Dependency
-			tryToAdd(PusheableAsset.SITE, () -> getHostById(structure.getHost()));
+			tryToAddSilently(PusheableAsset.SITE, () -> getHostById(structure.getHost()));
 
 			// Folder Dependencies
-			tryToAdd(PusheableAsset.FOLDER, () -> getFolderById(structure.getFolder()));
+			tryToAddSilently(PusheableAsset.FOLDER, () -> getFolderById(structure.getFolder()));
 
 			// Workflows Dependencies
 			tryToAddAll(PusheableAsset.WORKFLOW, () -> getWorkflowSchemasByContentType(structure));
@@ -1107,7 +1139,7 @@ public class DependencyManager {
 				}
 
 				// Host Dependency
-				tryToAdd(PusheableAsset.SITE, () -> getHostById(contentletVersion.getHost()));
+				tryToAddSilently(PusheableAsset.SITE, () -> getHostById(contentletVersion.getHost()));
 
 				contentsToProcess.add(contentletVersion);
 
@@ -1127,7 +1159,7 @@ public class DependencyManager {
 
 			for (final Contentlet contentletToProcess : contentsToProcess) {
 				// Host Dependency
-				tryToAdd(PusheableAsset.SITE, () -> getHostById(contentletToProcess.getHost()));
+				tryToAddSilently(PusheableAsset.SITE, () -> getHostById(contentletToProcess.getHost()));
 
 				contentsWithDependenciesToProcess.add(contentletToProcess);
 				//Copy asset files to bundle folder keeping original folders structure
@@ -1158,13 +1190,13 @@ public class DependencyManager {
 			// Adding the Contents (including related) and adding filesAsContent
 			for (final Contentlet contentletWithDependenciesToProcess : contentsWithDependenciesToProcess) {
 				// Host Dependency
-				tryToAdd(PusheableAsset.SITE, () -> getHostById(contentletWithDependenciesToProcess.getHost()));
+				tryToAddSilently(PusheableAsset.SITE, () -> getHostById(contentletWithDependenciesToProcess.getHost()));
 
 				// Content Dependency
-				tryToAdd(PusheableAsset.CONTENTLET, () -> contentletWithDependenciesToProcess);
+				tryToAddSilently(PusheableAsset.CONTENTLET, () -> contentletWithDependenciesToProcess);
 
 				// Folder Dependency
-				tryToAdd(PusheableAsset.FOLDER, () -> getFolderById(contentletWithDependenciesToProcess.getFolder()));
+				tryToAddSilently(PusheableAsset.FOLDER, () -> getFolderById(contentletWithDependenciesToProcess.getFolder()));
 
 				// Language Dependency
 				tryToAddAndProcessDependencies(PusheableAsset.LANGUAGE, () ->
@@ -1223,7 +1255,7 @@ public class DependencyManager {
 			tryToAddAll(PusheableAsset.CONTENTLET, () -> listKeyValueLang);
 
 			final String contentTypeId = listKeyValueLang.get(0).getContentTypeId();
-			tryToAdd(PusheableAsset.CONTENT_TYPE, () ->
+			tryToAddSilently(PusheableAsset.CONTENT_TYPE, () ->
 					CacheLocator.getContentTypeCache().getStructureByInode(contentTypeId));
 
 		} catch (Exception e) {
@@ -1255,9 +1287,10 @@ public class DependencyManager {
 				final Contentlet parent = contentlets.get(0);
 
 				if (parent.isHost()) {
-					tryToAdd(PusheableAsset.SITE, () -> hostAPI.find(rule.getParent(), this.user, false));
+					tryToAddSilently(PusheableAsset.SITE,
+							() -> hostAPI.find(rule.getParent(), this.user, false));
 				} else if (parent.isHTMLPage()) {
-					tryToAdd(PusheableAsset.CONTENTLET, () -> parent);
+					tryToAddSilently(PusheableAsset.CONTENTLET, () -> parent);
 				} else {
 					throw new DotDataException("The parent ID [" + parent.getIdentifier() + "] is a non-valid parent.");
 				}

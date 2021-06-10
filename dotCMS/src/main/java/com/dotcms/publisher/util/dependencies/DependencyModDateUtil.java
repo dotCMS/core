@@ -108,7 +108,7 @@ public class DependencyModDateUtil extends HashSet<String> {
 	}
 
 	public boolean excludeByModDate ( final Relationship relationship) {
-		return excludeByModDate(DependencyManager.getKey(relationship), PusheableAsset.RELATIONSHIP,
+		return excludeByModDate(DependencyManager. getKey(relationship), PusheableAsset.RELATIONSHIP,
 				relationship.getModDate());
 	}
 
