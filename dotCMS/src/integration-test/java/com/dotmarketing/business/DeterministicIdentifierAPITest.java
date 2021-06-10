@@ -1,7 +1,10 @@
 package com.dotmarketing.business;
 
+import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_1;
+import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_2;
 import static com.dotcms.datagen.TestDataUtils.getMultipleImageBinariesContent;
-import static com.dotmarketing.business.DeterministicIdentifierGenerator.GENERATE_DETERMINISTIC_IDENTIFIERS;
+import static com.dotmarketing.business.DeterministicIdentifierAPIImpl.GENERATE_DETERMINISTIC_IDENTIFIERS;
+import static com.dotmarketing.business.DeterministicIdentifierAPIImpl.NON_DETERMINISTIC_IDENTIFIER;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -24,6 +27,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
@@ -35,14 +39,12 @@ import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(DataProviderRunner.class)
-public class DeterministicIdentifierGeneratorTest {
+public class DeterministicIdentifierAPITest {
 
-    private static final String NON_CONSISTENT_IDENTIFIER = "[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}";
     private static AtomicBoolean initialized = new AtomicBoolean(false);
 
     /**
@@ -58,7 +60,7 @@ public class DeterministicIdentifierGeneratorTest {
         }
     }
 
-    final DeterministicIdentifierGenerator defaultGenerator = DeterministicIdentifierGenerator.newInstance();
+    private final DeterministicIdentifierAPIImpl defaultGenerator = new DeterministicIdentifierAPIImpl();
 
     /**
      * Given scenario: We have created contentlets having turned off the deterministic id generation therefore it all comes with random ids
@@ -79,8 +81,9 @@ public class DeterministicIdentifierGeneratorTest {
         //While the identifier isnt in the database we should continue to get the same (That's why we call it consistent)
         final String generatedId1 = defaultGenerator.generateDeterministicIdBestEffort(testCase.versionable, testCase.parent);
         assertFalse(isIdentifier(generatedId1));
+        assertTrue(defaultGenerator.isDeterministicId(generatedId1));
         final String generatedId2 = defaultGenerator.generateDeterministicIdBestEffort(testCase.versionable, testCase.parent);
-        //And they should be compatibe with our definition of UUID
+        //And they should be compatible with our definition of UUID
         assertTrue(UUIDUtil.isUUID(generatedId1));
         //They must be the same until it gets insterted into the identifier table then afterwards a random uuid will be generated. That's why it is called bestEffort
         assertEquals(generatedId1, generatedId2);
@@ -89,10 +92,12 @@ public class DeterministicIdentifierGeneratorTest {
         //The expected this time would be a non-deterministic identifier
         final String generatedId3 = defaultGenerator.generateDeterministicIdBestEffort(testCase.versionable, testCase.parent);
         assertNotEquals(generatedId2, generatedId3);
-        //They alays must pass this function correctly regardless of the nature
+        //They always must pass this function correctly regardless of the nature
         assertTrue(UUIDUtil.isUUID(generatedId3));
         //And finally we test we're looking at the old format
-        assertTrue(generatedId3.matches(NON_CONSISTENT_IDENTIFIER));
+        assertTrue(generatedId3.matches(NON_DETERMINISTIC_IDENTIFIER));
+
+        assertFalse(defaultGenerator.isDeterministicId(generatedId3));
 
     }
 
@@ -160,18 +165,20 @@ public class DeterministicIdentifierGeneratorTest {
 
             return new Object[]{
 
-                new AssetTestCase(site, (Treeable) systemHost, site.getName(), "Host", site),
-                new AssetTestCase(folder, (Treeable) site, folder.getName(), "Folder", site),
-                new AssetTestCase(fileAsset, (Treeable) folder, fileAsset.getName(), "FileAsset", site),
-                new AssetTestCase(template, (Treeable) site, template.getName(), "Template", site),
-                new AssetTestCase(pageAsset, (Treeable) folder, pageAsset.getPageUrl(), "htmlpageasset", site),
+                new AssetTestCase(site, systemHost, site.getName(), "Host", site),
+                new AssetTestCase(folder, site, folder.getName(), "Folder", site),
+                new AssetTestCase(fileAsset, folder, fileAsset.getName(), "FileAsset", site),
+                new AssetTestCase(template, site, template.getName(), "Template", site),
+                new AssetTestCase(pageAsset, folder, pageAsset.getPageUrl(), "htmlpageasset", site),
 
-                new AssetTestCase(multiBinary,
-                        (Treeable) multiBinary.getParentPermissionable(),
-                        multiBinary.getContentType().variable(),
-                        multiBinary.getContentType().variable(), site),
+                    new AssetTestCase(multiBinary,
+                            (Treeable) multiBinary.getParentPermissionable(),
+                            multiBinary.getBinary(FILE_ASSET_1).getName() + ":" + multiBinary
+                                    .getBinary(FILE_ASSET_2).getName(),
+                            multiBinary.getContentType().variable(),
+                            site),
 
-                new AssetTestCase(persona, (Treeable) site, persona.getKeyTag(), "persona", site)
+                new AssetTestCase(persona, site, persona.getKeyTag(), "persona", site)
 
             };
         } finally {
@@ -209,14 +216,17 @@ public class DeterministicIdentifierGeneratorTest {
 
     @Test
     @UseDataProvider("getContentTypeTestCases")
-    public void Test_create_Content_Type(final ContentTypeTestCase testCase) throws Exception {
+    public void Test_create_Content_Type(final ContentTypeTestCase testCase) {
 
         assertEquals(testCase.expectedType, defaultGenerator.resolveAssetType(testCase.contentType));
-        assertEquals(testCase.expectedName, defaultGenerator.resolveName(testCase.contentType, ()->testCase.contentType.variable()));
-        final String generatedId1 = defaultGenerator.generateDeterministicIdBestEffort(testCase.contentType, ()->testCase.contentType.variable());
+        assertEquals(testCase.expectedName, defaultGenerator.resolveName(testCase.contentType,
+                testCase.contentType::variable));
+        final String generatedId1 = defaultGenerator.generateDeterministicIdBestEffort(testCase.contentType,
+                testCase.contentType::variable);
         assertTrue(UUIDUtil.isUUID(generatedId1));
-        final String generatedId2 = defaultGenerator.generateDeterministicIdBestEffort(testCase.contentType, ()->testCase.contentType.variable());
-        //Test idempotency
+        final String generatedId2 = defaultGenerator.generateDeterministicIdBestEffort(testCase.contentType,
+                testCase.contentType::variable);
+        //Test it is idempotent
         assertEquals(generatedId1, generatedId2);
 
     }
@@ -271,6 +281,19 @@ public class DeterministicIdentifierGeneratorTest {
                     ", expectedType='" + expectedType + '\'' +
                     '}';
         }
+    }
+
+    @Test
+    public void Test_Language_Deterministic_Id(){
+         final Language enUS = new Language(0L,"en","US", "","");
+         final long enUSid = defaultGenerator.generateDeterministicIdBestEffort(enUS);
+         assertEquals(1, enUSid);
+
+         final Language esUS = new Language(0L,"es","US", "","");
+         final long esUSid = defaultGenerator.generateDeterministicIdBestEffort(esUS);
+         assertEquals(4448449142310179479L, esUSid);
+
+
     }
 
 }

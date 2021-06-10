@@ -21,7 +21,7 @@ import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DeterministicIdentifierGenerator;
+import com.dotmarketing.business.DeterministicIdentifierAPI;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.DotValidationException;
 import com.dotmarketing.business.FactoryLocator;
@@ -393,7 +393,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
      boolean isNew = false;
      if (saveType.id() == null) {
         isNew = true;
-        final DeterministicIdentifierGenerator generator = DeterministicIdentifierGenerator.newInstance();
+        final DeterministicIdentifierAPI generator = APILocator.getDeterministicIdentifierAPI();
         builder.id(generator.generateDeterministicIdBestEffort(saveType, ()->variable));
      }
 

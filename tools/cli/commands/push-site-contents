@@ -57,20 +57,13 @@ if [[ 200 == ${code} ]]; then
 
         #or the original line was a file
         if [[  -f "$line" ]]; then
+          #and we have a remote path to push to
           if [[ ! -z "$path" ]]; then
-             echo "pushing file $path"
-
-                if [[ "$PUSH_CONTENT_VIA_WEBDAV" == true ]] ;
-                then
-                  response=$(curl -s -T ${line} "${DOTCMS_BASE_URL}/webdav/live/${langId}${siteInclusivePath}" -u "${USER}:${PASS}" --compressed)
-                  echo $response
-                else
-                  fileName=$(basename "${path}")
-                  jsonContentlet="{ \"contentType\":\"FileAsset\", \"fileName\":\"${fileName}\", \"title\":\"${fileName}\", \"hostFolder\":\"${siteName}:${path}\" }"
-                  #echo " con :: $jsonContentlet ";
-                  response=$(curl -s -X PUT "${DOTCMS_BASE_URL}/api/v1/workflow/actions/default/fire/PUBLISH?language=${langId}" --header "Authorization: Bearer ${JSON_WEB_TOKEN}" --form "json={ \"contentlet\": $jsonContentlet };type=application/json " --form "file=@${line}"  --compressed)
-                  echo $response
-                fi
+              echo "pushing file $path"
+              fileName=$(basename "${path}")
+              ##TODO: discard hidden files here
+              response=$(curl -s -T ${line} "${DOTCMS_BASE_URL}/webdav/live/${langId}${siteInclusivePath}" -u "${USER}:${PASS}" --compressed)
+              echo ${response}
           fi
         fi
 

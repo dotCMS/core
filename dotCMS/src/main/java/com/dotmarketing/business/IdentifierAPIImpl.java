@@ -12,10 +12,8 @@ import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import java.util.List;
 
@@ -152,7 +150,7 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 		if (UtilMethods.isNotSet(existingId)) {
 
 			final String validId =
-					DeterministicIdentifierGenerator.newInstance().generateDeterministicIdBestEffort(asset, parent);
+					APILocator.getDeterministicIdentifierAPI().generateDeterministicIdBestEffort(asset, parent);
 
 			if (parent instanceof Folder) {
 				return identifierFactory.createNewIdentifier(asset, (Folder) parent, validId);

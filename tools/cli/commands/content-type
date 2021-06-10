@@ -26,45 +26,92 @@ if [[ ! -f "$file" ]]; then
     exit 1
 fi
 
-jsonContentType=$(<$file)
+#try
+{
 
-contentTypeVar=$(jq -r  '.variable' <<< "$jsonContentType")
+jsonContentType=$(<${file})
 
-echo "Content-type Variable name loaded is $contentTypeVar verifying against remote host."
+# verify if there's a place holder that needs replacements
+sitePlaceHolder=$(jq -r ' try .host' <<< "$jsonContentType")
 
-code=$(curl -s -o /dev/null --head -w "%{http_code}" --header "Authorization: Bearer ${JSON_WEB_TOKEN}" "${DOTCMS_BASE_URL}/api/v1/contenttype/id/${contentTypeVar}" )
+## if the property site on the incoming content-type json file has a place holder instead of an identifier do string substitution
+if [[ ${sitePlaceHolder} == \$* ]]; then
+    #Make a copy of the json file so we can work on it
+    working="$file.working";
+    cp ${file} ${working}
 
-if [[ $code = 404 ]]
-then
-   echo "Content-type does not exists on remote site. Add will be attempted."
+    siteIndentifiers=$(< $identifiersFile)
+    site=$(echo $sitePlaceHolder | sed "s/\\$//g")
+    var=$(echo "$siteIndentifiers" | grep "$site")
+    identifier=$(echo $var | sed "s/.*=//g")
+    #replace the place holder in the file with the real identifier
+    sed -i ' ' "s/\\$sitePlaceHolder/$identifier/g" "${working}";
+    #Now that we have done the substitution on our working copy
+    #We can refresh the jsonContentType var
+    jsonContentType=$(<${working})
+fi
 
-   response=$(curl -s "${DOTCMS_BASE_URL}/api/v1/contenttype"  --header "Authorization: Bearer ${JSON_WEB_TOKEN}" --header 'Content-Type: application/json' --data-raw  "$jsonContentType"  --compressed)
-   echo "$response"
-   identifier=$(jq -r ' try .entity[].id' <<< "$response")
 
-       if [[ -z ${identifier} ]];
-       then
-        echo "Unable to get identifier from response adding CT ${contentTypeVar}. Please check if there were any error messages."
-       else
-         echo "New content-type identifier :: $identifier"
-         printf ${identifier} >> $publishMeFile
-       fi
+contentTypeVar=$(jq -r ' try .variable' <<< "$jsonContentType")
+
+if [[ ! -z contentTypeVar ]]; then
+
+    echo "Content-type Variable name loaded is $contentTypeVar verifying against remote host."
+
+    code=$(curl -s -o /dev/null --head -w "%{http_code}" --header "Authorization: Bearer ${JSON_WEB_TOKEN}" "${DOTCMS_BASE_URL}/api/v1/contenttype/id/${contentTypeVar}" )
+
+    echo " response code was $code"
+
+    if [[ ${code} = 401 ]]; then
+         echo "Unauthorized Request - Verify your Credentials."
+         exit 1
+    fi
+
+    if [[ ${code} = 404 ]]
+    then
+       echo "Content-type does not exists on remote site. Add will be attempted."
+
+       response=$(curl -s "${DOTCMS_BASE_URL}/api/v1/contenttype"  --header "Authorization: Bearer ${JSON_WEB_TOKEN}" --header 'Content-Type: application/json' --data-raw  "$jsonContentType"  --compressed)
+       echo "$response"
+       identifier=$(jq -r ' try .entity[].id' <<< "$response")
+
+           if [[ -z ${identifier} ]];
+           then
+            echo "Unable to get identifier from response adding CT ${contentTypeVar}. Please check if there were any error messages."
+           else
+             echo "New content-type identifier :: $identifier"
+             printf "${contentTypeVar}=${identifier}\n" >> "$identifiersFile"
+           fi
+
+    else
+          echo "A content type named $contentTypeVar already exists. Update will be attempted."
+
+          response=$(curl -s -X PUT "${DOTCMS_BASE_URL}/api/v1/contenttype/id/${contentTypeVar}"  --header "Authorization: Bearer ${JSON_WEB_TOKEN}" --header 'Content-Type: application/json' --data-raw  "$jsonContentType"  --compressed)
+          echo "$response"
+
+          identifier=$(jq -r ' try .entity[].id' <<< "$response")
+
+          if [[ -z ${identifier} ]];
+          then
+            echo "Unable to get identifier from response updating CT ${contentTypeVar}. Please check if there were any error messages."
+
+          else
+           echo " Updated content-type identifier :: $identifier"
+           printf "${contentTypeVar}=${identifier}\n" >> "$identifiersFile"
+          fi
+
+    fi
 
 else
-      echo "A content type named $contentTypeVar already exists. Update will be attempted."
+  echo "Unable to get content type variable"
+fi
 
-      response=$(curl -s -X PUT "${DOTCMS_BASE_URL}/api/v1/contenttype/id/${contentTypeVar}"  --header "Authorization: Bearer ${JSON_WEB_TOKEN}" --header 'Content-Type: application/json' --data-raw  "$jsonContentType"  --compressed)
-      echo "$response"
+#catch
+} || {
+   echo " Unexpected Exception generating CT"
+}
 
-      identifier=$(jq -r ' try .entity[].id' <<< "$response")
-
-      if [[ -z ${identifier} ]];
-      then
-        echo "Unable to get identifier from response updating CT ${contentTypeVar}. Please check if there were any error messages."
-
-      else
-       echo " Updated content-type identifier :: $identifier"
-       printf ${identifier} >> $publishMeFile
-      fi
-
+#finally
+if [[  -f ${working} ]]; then
+     rm ${working}
 fi

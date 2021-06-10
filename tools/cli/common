@@ -9,28 +9,10 @@ timestamp() {
   date -u +"%Y-%m-%dT%H:%M:%SZ"
 }
 
-RED='\033[0;31m'
+# https://misc.flogisoft.com/bash/tip_colors_and_formatting
 NC='\033[0m' # No Color
-BLACK='\033[0;30m'
 GREEN='\033[0;32m'
-
-# Dark Gray     1;30
-# Red          0;31     Light Red     1;31
-# Green        0;32     Light Green   1;32
-# Brown/Orange 0;33     Yellow        1;33
-# Blue         0;34     Light Blue    1;34
-# Purple       0;35     Light Purple  1;35
-# Cyan         0;36     Light Cyan    1;36
-# Light Gray   0;37     White         1;37
-
-tokenize() {
-  string=$1;
-  delimiter=$2
-
-  IFS='/' read -ra ADDR <<< "$string"
-    for i in "${ADDR[@]}"; do
-      # process "$i"
-      echo $i
-    done
-
-}
+BLUE='\033[0;34m'
+LIGHT_BLUE='\033[0;94m'
+CYAN='\033[0;36m'
+LIGHT_CYAN='\033[0;96m'

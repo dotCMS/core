@@ -14,13 +14,13 @@ https://github.com/dotCMS/core
 
 Usage: `basename "$0"` [command]
 
-${GREEN} Commands: ${NC}
-  --bundle Imports a bundle like directory into dotCMS
-  --content-type Imports content type described in json format into dotCMS
-  --site Imports a site described in json format into dotCMS
-  --files Imports files following the directory structure
+${LIGHT_CYAN} Commands: ${NC}
+  ${GREEN}--bundle${NC} Imports a bundle like directory into dotCMS
+  ${GREEN}--content-type${NC} Imports content type described in json format into dotCMS
+  ${GREEN}--site${NC} Imports a site described in json format into dotCMS
+  ${GREEN}--files${NC} Imports files following the directory structure
 
-  *             Help
+  ${GREEN}*${NC} Help
 "
   exit 1
 }
@@ -33,9 +33,18 @@ cli_log "Exporting config ..."
 # export so these values become available for all commands
 export $(cat "$DOTCLI_WORKDIR/config" | xargs)
 
-export publishMeFile="publish-me-$timestamp"
+#if no password is provided we rely on the json web token
+if [[ -z ${PASS} ]]; then
+ export PASS=${JSON_WEB_TOKEN}
+fi
 
-cli_log "publish me file is $publishMeFile"
+export identifiersFile="identifiers-$timestamp"
+
+# the file must be created in the parent process so it can endure
+touch $identifiersFile
+
+cli_log "identifiers file is $identifiersFile"
+
 
 case "$1" in
   --bundle|-b|-B)
@@ -56,8 +65,9 @@ case "$1" in
 esac
 
 
-if [[  -f ${publishMeFile} ]]; then
-  rm ${publishMeFile}
+if [[  -f ${identifiersFile} ]]; then
+  cat ${identifiersFile}
+  rm ${identifiersFile}
 fi
 
-unset publishMeFile
+unset identifiersFile

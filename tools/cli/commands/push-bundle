@@ -7,7 +7,7 @@ help_push_bundle() {
   echo "
 Command: bundle
 
-This command takes a directory that serves as the entry point for all the assets,content-types,files.site etc.
+This command takes a directory that serves as the entry point for all the assets,content-types,files,site etc.
 the expected directory structure looks like this:
 / sites
     |- SYSTEM_HOST.site.json

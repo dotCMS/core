@@ -39,7 +39,12 @@ code=$(curl -s -X POST "${DOTCMS_BASE_URL}/api/v1/site/_byname" -o /dev/null --h
 
 echo " response code was $code"
 
-if [[ ${code} = 404 ]]
+if [[ ${code} = 401 ]]; then
+  echo "Unauthorized Request - Verify your Credentials."
+  exit 1;
+fi
+
+if [[ ${code} = 404 ]];
 then
    echo "A site named $siteName does not exist on the remote site. An Add will be attempted."
 
@@ -57,10 +62,13 @@ then
 
    echo " Updated content-type identifier :: $identifier"
 
-   printf ${identifier} >> $publishMeFile
+   printf "${siteName}=${identifier}\n" >> "$identifiersFile"
 
   else
-   echo "A site named $siteName already exists."
+       echo "A site named $siteName already exists."
+       response=$(curl -s -X POST "${DOTCMS_BASE_URL}/api/v1/site/_byname"  --header "Authorization: Bearer ${JSON_WEB_TOKEN}" --header 'Content-Type: application/json' --data-raw "{ \"siteName\":\"$siteName\" }")
+       identifier=$(jq -r 'try .entity.identifier' <<< "$response")
+       printf "${siteName}=${identifier}\n" >> "$identifiersFile"
 fi
 
 

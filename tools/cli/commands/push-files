@@ -23,10 +23,9 @@ cli_log "::: Pushing Files/Folder :::"
 dir="$1"
 
 if [[ ! -d "$dir" ]]; then
-    cli_log " The directory $dir does not exist."
+    cli_log "Files directory \"$dir\" does not exist.."
     exit 1
 fi
-
 
 for entry in "$dir"/*
 do
@@ -56,7 +55,7 @@ for langDir in "${langArray[@]}"
 do
      #this will process the language directory
 
-    cli_log "::: Pushing language language with tag $langDir :::"
+    cli_log "::: Pushing language language $langDir :::"
     currentLangId=$(bash "$DOTCLI_WORKDIR/commands/push-lang" "$langDir")
     cli_log "::: Done pushing language returned id is $currentLangId  :::"
 
