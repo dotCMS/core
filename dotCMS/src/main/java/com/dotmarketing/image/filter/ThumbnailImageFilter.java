@@ -96,7 +96,7 @@ public class ThumbnailImageFilter extends ImageFilter {
             resultGraphics.fillRect(0, 0, width, height);
 
             BufferedImage thumbImage =
-                            ImageFilterAPI.apiInstance.get().resizeImage(file, thumbWidth, thumbHeight);
+                            ImageFilterAPI.apiInstance.get().intelligentResize(file, thumbWidth, thumbHeight);
 
             // compute offsets to center image in its space
             int offsetX = (width - thumbImage.getWidth()) / 2;

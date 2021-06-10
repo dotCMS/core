@@ -23,6 +23,7 @@ import javax.imageio.stream.ImageInputStream;
 import org.apache.commons.codec.digest.DigestUtils;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import com.twelvemonkeys.image.ResampleOp;
@@ -63,7 +64,7 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
      */
     private final static int maxSize =
                     Try.of(() -> Config.getIntProperty("IMAGE_MAX_PIXEL_SIZE", 5000)).getOrElse(5000);
-    final static int DEFAULT_RESAMPLE_OPT =
+    public final static int DEFAULT_RESAMPLE_OPT =
                     Try.of(() -> Config.getIntProperty("IMAGE_DEFAULT_RESAMPLE_OPT", ResampleOp.FILTER_TRIANGLE))
                                     .getOrElse(ResampleOp.FILTER_TRIANGLE);
 
@@ -129,8 +130,9 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
         ImageIO.getImageReaders(inputStream).forEachRemaining(readers::add);
         ImageIO.getImageReadersBySuffix(UtilMethods.getFileExtension(imageFile.getName()))
                         .forEachRemaining(readers::add);
-
-        readers.removeIf(r -> r instanceof net.sf.javavp8decoder.imageio.WebPImageReader);
+        if(readers.size()>1) {
+            readers.removeIf(r -> r instanceof net.sf.javavp8decoder.imageio.WebPImageReader);
+        }
         if (readers.isEmpty()) {
             throw new DotRuntimeException("Unable to find reader for image:" + imageFile);
         }
@@ -198,29 +200,48 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
     public BufferedImage intelligentResize(File incomingImage, int width, int height, int resampleOption) {
 
         
+        final String hash = DigestUtils.sha256Hex(incomingImage.getAbsolutePath());
+        Dimension originalSize = getWidthHeight(incomingImage);
+
         
         width = Math.min(maxSize, width);
         height = Math.min(maxSize, height);
         
-        
-        final Dimension originalSize = getWidthHeight(incomingImage);
-
-        // resample huge images
+        // resample huge images to a maxSize (prevents OOM)
         if ((originalSize.width > maxSize || originalSize.height  > maxSize)) {
-
-            final String hash = DigestUtils.sha256Hex(incomingImage.getAbsolutePath());
-            
-            
             final Map<String, String[]> params = ImmutableMap.of(
-                            "subsample_w", new String[] {String.valueOf(width)},
-                            "subsample_h", new String[] {String.valueOf(height)},
+                            "subsample_w", new String[] {String.valueOf(maxSize)},
+                            "subsample_h", new String[] {String.valueOf(maxSize)},
                             "subsample_hash", new String[] {hash},
                             "filter", new String[] {"subsample"}
             );
             incomingImage = new SubSampleImageFilter().runFilter(incomingImage, params);
+            originalSize = getWidthHeight(incomingImage);
         }
+        
+/*
+        int biggestSide=Math.max(originalSize.width, originalSize.height);
+        final int biggestSideDesired = Math.max(width, height);
+        while(biggestSide/2 >  biggestSideDesired) {
+            Logger.info(getClass(), "Writing intermediate image: have " + biggestSide  + "px, want " + biggestSideDesired + "px");
+            final Map<String, String[]> params = ImmutableMap.of(
+                            "subsample_w", new String[] {String.valueOf(biggestSide/2)},
+                            "subsample_h", new String[] {String.valueOf(biggestSide/2)},
+                            "subsample_hash", new String[] {hash},
+                            "filter", new String[] {"subsample"}
+            );
+            incomingImage = new SubSampleImageFilter().runFilter(incomingImage, params);
+            originalSize = getWidthHeight(incomingImage);
+            biggestSide=Math.max(originalSize.width, originalSize.height);
+        }
+        
+*/
+        
+        
 
-        return this.resizeImage(incomingImage, width, height,resampleOption);
+
+
+        return this.resizeImage(incomingImage, width, height, resampleOption);
 
     }
 

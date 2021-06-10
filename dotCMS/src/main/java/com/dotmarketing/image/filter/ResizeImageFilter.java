@@ -20,7 +20,7 @@ public class ResizeImageFilter extends ImageFilter {
 	    
 		int w = parameters.get(getPrefix() +"w") != null?Integer.parseInt(parameters.get(getPrefix() +"w")[0]):0;
 		int h = parameters.get(getPrefix() +"h") != null?Integer.parseInt(parameters.get(getPrefix() +"h")[0]):0;
-		final int resampleOpts = Try.of(()-> Integer.parseInt(parameters.get(getPrefix() +"i")[0])).getOrElse(ImageFilterApiImpl.DEFAULT_RESAMPLE_OPT);
+		final int resampleOpts = Try.of(()-> Integer.parseInt(parameters.get(getPrefix() +"ro")[0])).getOrElse(ImageFilterApiImpl.DEFAULT_RESAMPLE_OPT);
 		
 		if(file.getName().endsWith(".gif")) {
 		  return new ResizeGifImageFilter().runFilter(file, parameters);
@@ -51,10 +51,8 @@ public class ResizeImageFilter extends ImageFilter {
 
         try {
             File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() + ".tmp");
-
             // resample from stream
-            BufferedImage srcImage = ImageFilterAPI.apiInstance.get().resizeImage(file, width, height,resampleOpts);
-
+            BufferedImage srcImage = ImageFilterAPI.apiInstance.get().intelligentResize(file, width, height,resampleOpts);
             ImageIO.write(srcImage, "png", tempResultFile);
             srcImage.flush();
             srcImage = null;
