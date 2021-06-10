@@ -682,7 +682,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
         return isAdded;
     }
 
-    public <T> void tryToAddAllAndProcessDependencies(
+    private <T> void tryToAddAllAndProcessDependencies(
             final PusheableAsset pusheableAsset, final SupplierWithException<Collection<T>> getter)
             throws DotDataException, DotSecurityException {
 
@@ -700,7 +700,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
         }
     }
 
-    public <T> Collection<T> tryToAddAll(
+    private <T> Collection<T> tryToAddAll(
             final PusheableAsset pusheableAsset, final SupplierWithException<Collection<T>> getter)
             throws DotDataException, DotSecurityException {
 
@@ -723,7 +723,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
         return Collections.emptySet();
     }
 
-    public <T> void tryToAddAndProcessDependencies(
+    private <T> void tryToAddAndProcessDependencies(
             final PusheableAsset pusheableAsset, final SupplierWithException<T> getter)
             throws DotDataException, DotSecurityException {
         try {
@@ -737,7 +737,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
         }
     }
 
-    public <T> Optional<T> tryToAddSilently (
+    private <T> Optional<T> tryToAddSilently (
             final PusheableAsset pusheableAsset, final SupplierWithException<T> getter)
             throws DotDataException, DotSecurityException{
         try {
@@ -747,7 +747,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
         }
     }
 
-    public <T> Optional<T> tryToAdd(
+    private <T> Optional<T> tryToAdd(
             final PusheableAsset pusheableAsset, final SupplierWithException<T> getter)
             throws DotDataException, DotSecurityException, AssetExcludeException{
 
@@ -791,7 +791,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
         }
     }
 
-    public <T> boolean isExcludeByFilter(final PusheableAsset pusheableAsset) {
+    private <T> boolean isExcludeByFilter(final PusheableAsset pusheableAsset) {
 
         return (PusheableAsset.RELATIONSHIP == pusheableAsset && !publisherFilter.isRelationships()) ||
                 publisherFilter.doesExcludeDependencyClassesContainsType(pusheableAsset.getType());
