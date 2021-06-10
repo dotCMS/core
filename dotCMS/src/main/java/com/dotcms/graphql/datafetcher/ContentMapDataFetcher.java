@@ -15,6 +15,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
+import graphql.Scalars;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import io.vavr.control.Try;
@@ -23,6 +24,18 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+/**
+ * {@link DataFetcher} that fetches the data when the special <code>_map<code/> GraphQL Field is requested.
+ * <p>
+ * The field takes the follow arguments:
+ * <ul>
+ * <li>key: {@link Scalars#GraphQLString} that represents the variable name of a field of the contentlet. Using this argument makes the field to return the value of only that specific field from the
+ * contentlet's map. If not specified it will return all the properties in the contentlet's map
+ * <li>depth: {@link Scalars#GraphQLInt} value that specifies how to return the related content. Has the same behavior as the `depth` argument in the Content REST API for related content
+ * <li>render: {@link Scalars#GraphQLBoolean} that indicates whether to velocity-render the rederable fields.
+ * </ul>
+ */
 
 public class ContentMapDataFetcher implements DataFetcher<Object> {
 
