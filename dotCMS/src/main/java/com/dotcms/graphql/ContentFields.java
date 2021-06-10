@@ -79,7 +79,7 @@ public final class ContentFields {
                 new UserDataFetcher()));
         contentFields.put(MOD_USER_KEY, new TypeFetcher(GraphQLTypeReference.typeRef(USER.getTypeName()),
                 new UserDataFetcher()));
-        contentFields.put("map", new TypeFetcher(ExtendedScalars.Object, new ContentMapDataFetcher(),
+        contentFields.put("_map", new TypeFetcher(ExtendedScalars.Object, new ContentMapDataFetcher(),
                 GraphQLArgument.newArgument().name("key").type(GraphQLString).build(),
                 GraphQLArgument.newArgument().name("depth").defaultValue(0).type(GraphQLInt).build(),
                 GraphQLArgument.newArgument().name("render").defaultValue(false)

@@ -51,7 +51,7 @@ public class FieldDataFetcher implements DataFetcher<Object> {
                     .getHttpServletResponse();
 
             return renderField && isFieldRenderable(field)
-                    ? renderFieldValue(request, response, fieldValue, contentlet)
+                    ? renderFieldValue(request, response, fieldValue, contentlet, field)
                     : fieldValue;
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);

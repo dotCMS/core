@@ -14,8 +14,10 @@ import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
@@ -62,7 +64,7 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
                     map.put(field.variable(),
                             renderFieldValue(HttpServletRequestThreadLocal.INSTANCE.getRequest(),
                                     HttpServletResponseThreadLocal.INSTANCE.getResponse(),
-                                    RenderFieldStrategy.getFieldValue(contentlet, field), contentlet)));
+                                    RenderFieldStrategy.getFieldValue(contentlet, field), contentlet, field)));
         }
 
         return map;
@@ -92,7 +94,7 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
 
     public static Object renderFieldValue(final HttpServletRequest request,
             final HttpServletResponse response, final Object fieldValue,
-            final Contentlet contentlet) {
+            final Contentlet contentlet, final Field field) {
         if(!UtilMethods.isSet(fieldValue)) return null;
 
         final String fieldValueAsStr = fieldValue.toString();
@@ -106,9 +108,12 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
 
         final StringWriter evalResult = new StringWriter();
 
-        com.dotmarketing.util.VelocityUtil
+        Try.runRunnable(()-> com.dotmarketing.util.VelocityUtil
                 .getEngine()
-                .evaluate(context, evalResult, "", fieldValueAsStr);
+                .evaluate(context, evalResult, "", fieldValueAsStr)).onFailure((error)->
+                Logger.error(RenderFieldStrategy.class, "Unable to render velocity in field: "
+                        + field.variable(), error)
+                );
 
         return evalResult.toString();
     }
