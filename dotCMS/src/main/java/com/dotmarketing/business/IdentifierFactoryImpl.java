@@ -1,6 +1,5 @@
 package com.dotmarketing.business;
 
-import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Host;
@@ -23,7 +22,6 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.Parameter;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -31,7 +29,6 @@ import com.liferay.util.StringPool;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.sql.Connection;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -371,7 +368,6 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
         if (existingId !=  null) {
 			identifier.setId(existingId);
 		}else {
-		     //TODO: Replace me too
 			identifier.setId(UUIDGenerator.generateUuid());
 		}
 
@@ -471,7 +467,6 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		return check404(id);
 	}
 
-    //TODO: revise usages if this method
     @Override
     protected Identifier saveIdentifier(final Identifier id) throws DotDataException {
         if (id == null) {

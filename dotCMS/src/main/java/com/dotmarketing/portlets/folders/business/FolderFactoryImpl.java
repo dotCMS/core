@@ -1074,7 +1074,6 @@ public class FolderFactoryImpl extends FolderFactory {
 	}
 
 	protected Identifier createIdentifierForFolder(Folder folder, String parentPath) throws DotDataException {
-	    //TODO: This method is used from the copy in this case what do we need to do ? just allow random ids
 		Identifier identifier = new Identifier();
 		if (InodeUtils.isSet(folder.getIdentifier())) {
 			try {
