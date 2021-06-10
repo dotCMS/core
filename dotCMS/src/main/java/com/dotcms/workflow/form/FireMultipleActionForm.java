@@ -9,7 +9,7 @@ import java.util.Map;
 
 /**
  * Form to fire a multiple contentlets
- * @author jsanca 
+ * @author jsanca
  */
 @JsonDeserialize(builder = FireMultipleActionForm.Builder.class)
 public class FireMultipleActionForm extends Validated {
