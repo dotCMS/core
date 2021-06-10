@@ -709,7 +709,7 @@ public class ContentletAjax {
 				}
 				if(fieldName.equalsIgnoreCase("conhost")){
 					fieldValue = fieldValue.equalsIgnoreCase("current") ?
-							(String) sess.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)
+							Host.class.cast(sess.getAttribute(WebKeys.CURRENT_HOST)).getIdentifier()
 							: fieldValue;
 
 					if(!filterSystemHost  && !fieldValue.equals(Host.SYSTEM_HOST)){
