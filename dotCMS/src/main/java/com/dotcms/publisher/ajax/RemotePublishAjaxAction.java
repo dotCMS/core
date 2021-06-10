@@ -221,13 +221,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
             request.getSession().setAttribute( WebKeys.SELECTED_ENVIRONMENTS + getUser().getUserId(), envsToSendTo );
 
             SimpleDateFormat dateFormat = new SimpleDateFormat( "yyyy-MM-dd-H-m" );
-            Date publishDate;
-            try {
-                 publishDate = dateFormat.parse(_contentPushPublishDate + "-" + _contentPushPublishTime);
-            } catch (ParseException ex) {
-                 //this is to catch an issue with the format of a date being sent in the front end. This is an LTS fix only and will not impact master.
-                 publishDate = dateFormat.parse(new Date().toString());
-            }
+            Date publishDate = dateFormat.parse( _contentPushPublishDate + "-" + _contentPushPublishTime );
 
             List<String> ids;
             if ( _assetId.startsWith( "query_" ) ) { //Support for lucene queries
