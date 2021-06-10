@@ -34,6 +34,9 @@ import org.apache.commons.lang.StringUtils;
 
 import java.util.*;
 
+/**
+ * Provide util method
+ */
 public class DependencyModDateUtil extends HashSet<String> {
 
 	/**
@@ -92,6 +95,15 @@ public class DependencyModDateUtil extends HashSet<String> {
 		}
 	}
 
+	/**
+	 * Return true if the <code>asset</code> should be exclude from a bundle create today
+	 * because it was not modified after the last Push.
+	 *
+	 * @param asset asset to be add into a bundle
+	 * @param pusheableAsset asset's {@link PusheableAsset}
+	 * @param <T>
+	 * @return
+	 */
 	public <T> boolean excludeByModDate ( final T asset, final PusheableAsset pusheableAsset) {
 		if (Rule.class.isInstance(asset)) {
 			return excludeByModDate(Rule.class.cast(asset));
@@ -107,21 +119,50 @@ public class DependencyModDateUtil extends HashSet<String> {
 		}
 	}
 
+	/**
+	 * Return true if a {@link Relationship} should be exclude from a bundle create today
+	 * because it was not modified after the last Push.
+	 *
+	 * @param relationship
+	 * @return
+	 */
 	public boolean excludeByModDate ( final Relationship relationship) {
 		return excludeByModDate(DependencyManager. getKey(relationship), PusheableAsset.RELATIONSHIP,
 				relationship.getModDate());
 	}
 
+	/**
+	 * Return true if a {@link Rule} should be exclude from a bundle create today
+	 * because it was not modified after the last Push.
+	 *
+	 * @param rule
+	 * @return
+	 */
 	public boolean excludeByModDate ( final Rule rule) {
 		return excludeByModDate(DependencyManager.getKey(rule), PusheableAsset.RULE,
 				rule.getModDate());
 	}
 
+	/**
+	 * Return true if a {@link WorkflowScheme} should be exclude from a bundle create today
+	 * because it was not modified after the last Push.
+	 *
+	 * @param workflowScheme
+	 * @return
+	 */
 	public boolean excludeByModDate ( final WorkflowScheme workflowScheme) {
 		return excludeByModDate(DependencyManager.getKey(workflowScheme), PusheableAsset.WORKFLOW,
 				workflowScheme.getModDate());
 	}
 
+	/**
+	 * Return true if a {@link Versionable} should be exclude from a bundle create today
+	 * because it was not modified after the last Push.
+	 *
+	 * @param asset
+	 * @param pusheableAsset
+	 * @return
+	 */
 	public boolean excludeByModDate ( final Versionable asset, final PusheableAsset pusheableAsset) {
 		return excludeByModDate(DependencyManager.getKey(asset), pusheableAsset,
 				asset.getModDate());

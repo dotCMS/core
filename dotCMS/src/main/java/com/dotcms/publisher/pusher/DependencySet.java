@@ -1,4 +1,4 @@
-package com.dotcms.publisher.util.dependencies;
+package com.dotcms.publisher.pusher;
 
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.PublisherConfig.Config;
@@ -12,15 +12,29 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 
-public class DependencySet {
+/**
+ * Use by {@link com.dotcms.publisher.pusher.PushPublisherConfig} to keep track of all the
+ * assets added into a Bundle.
+ */
+class DependencySet {
     private Map<PusheableAsset, Set<String>> addedWithoutDependencies = new HashMap();
     private Map<PusheableAsset, Set<String>> addedWithDependencies  = new HashMap();
 
+    /**
+     * Add a asset
+     * @param assetId
+     * @param pusheableAsset
+     */
     public synchronized void add(final String assetId, final PusheableAsset pusheableAsset){
         final Set<String> assets = getSet(pusheableAsset, addedWithoutDependencies);
         assets.add(assetId);
     }
 
+    /**
+     * Add a asset and also mark it to process its dependencies
+     * @param assetId
+     * @param pusheableAsset
+     */
     public void addWithDependencies(final String assetId, final PusheableAsset pusheableAsset){
         final Set<String> assetsWithDependencies = getSet(pusheableAsset, addedWithDependencies);
 
@@ -45,6 +59,16 @@ public class DependencySet {
         return assets;
     }
 
+    /**
+     * Return true if the <code>assetId</code> is added with or without dependencies
+     *
+     * @param assetId
+     * @param pusheableAsset
+     * @return
+     *
+     * @see {@link DependencySet#add(String, PusheableAsset)}
+     * @see {@link DependencySet#addWithDependencies(String, PusheableAsset)}
+     */
     public boolean isAdded(final String assetId, final PusheableAsset pusheableAsset){
         final Set<String> assetsWithoutDependencies =
                 getSet(pusheableAsset, addedWithoutDependencies);
@@ -56,6 +80,17 @@ public class DependencySet {
                 assetsWithDependencies.contains(assetId);
     }
 
+    /**
+     * return true if <code>assetId</code> is added with dependencies before.
+     * If it is not added or it is added but without dependencies then the method return false
+     *
+     * @param assetId
+     * @param pusheableAsset
+     * @return
+     *
+     * @see {@link DependencySet#add(String, PusheableAsset)}
+     * @see {@link DependencySet#addWithDependencies(String, PusheableAsset)}
+     */
     public boolean isDependenciesAdded(final String assetId, final PusheableAsset pusheableAsset){
         final Set<String> assetsWithoutDependencies =
                 getSet(pusheableAsset, addedWithDependencies);
@@ -63,7 +98,14 @@ public class DependencySet {
         return assetsWithoutDependencies.contains(assetId);
     }
 
-    public Set<String> getAll(final PusheableAsset pusheableAsset){
+    /**
+     * Return all the asset's id add into the bundle, no matter if tey was added with or without
+     * dependencies
+     *
+     * @param pusheableAsset
+     * @return
+     */
+    private Set<String> getAll(final PusheableAsset pusheableAsset){
         final Set<String> assetsWithoutDependencies =
                 getSet(pusheableAsset, addedWithDependencies);
 

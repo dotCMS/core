@@ -30,6 +30,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Provide a set of util methods to be use by {@link PushPublishigDependencyProcesor}
+ */
 public class PushPublishigDependencyProvider {
 
     private User user;
