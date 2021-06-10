@@ -45,16 +45,8 @@ public class TestPushPublisher extends PushPublisher {
             File bundleRoot = BundlerUtil.getBundleRoot(this.config);
             ArrayList<File> list = new ArrayList<File>(1);
             list.add(bundleRoot);
-            File bundle = new File(bundleRoot+File.separator+".."+File.separator+this.config.getId()+".tar.gz");
+            File bundle = new File(bundleRoot + ".tar.gz");
 
-            // If the tar.gz doesn't exist or if it the first try to push bundle
-            // we need to compress the bundle folder into the tar.gz file.
-            if (!bundle.exists() || !pubAuditAPI.isPublishRetry(config.getId())) {
-                PushUtils.compressFiles(list, bundle, bundleRoot.getAbsolutePath());
-            } else {
-                Logger.info(this, "Retrying bundle: " + config.getId()
-                        + ", we don't need to compress bundle again");
-            }
 
             List<Environment> environments = APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(this.config.getId());
 

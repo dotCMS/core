@@ -23,7 +23,7 @@ public class CookieUtil {
 
     public static final String ALWAYS = "always";
     public static final String HTTPS = "https";
-    private static final String URI = "/";
+    public static final String URI = "/";
     private static final int MAX_AGE_DAY_MILLIS = 60 * 60 * 24;
     public static final int DEFAULT_JWT_MAX_AGE_DAYS = 14;
 

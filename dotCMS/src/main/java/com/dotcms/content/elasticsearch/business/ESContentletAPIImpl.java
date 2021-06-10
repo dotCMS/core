@@ -1358,7 +1358,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         final ContentType contentType = contentlet.getContentType();
-        final List<Relationship> relationships = FactoryLocator.getRelationshipFactory()
+        final List<Relationship> relationships = APILocator.getRelationshipAPI()
                 .byContentType(contentType);
 
         for (Relationship relationship : relationships) {
@@ -1369,7 +1369,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             Collectors.toList());
 
             if (relatedByRelationship.size() == 0) {
-                if (FactoryLocator.getRelationshipFactory().sameParentAndChild(relationship)) {
+                if (APILocator.getRelationshipAPI().sameParentAndChild(relationship)) {
 
                     //If it's a same structure kind of relationship we need to pull all related content
                     //on both roles as parent and a child of the relationship
@@ -1382,7 +1382,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 } else {
                     pullRelated(contentlet, cRelationships, relationship,
-                            FactoryLocator.getRelationshipFactory()
+                            APILocator.getRelationshipAPI()
                                     .isParent(relationship, contentType));
                 }
             }
@@ -1394,7 +1394,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private void pullRelated(Contentlet contentlet, ContentletRelationships cRelationships, Relationship relationship, boolean hasParent)
             throws DotDataException {
 
-        final boolean selfRelated = FactoryLocator.getRelationshipFactory().sameParentAndChild(relationship);
+        final boolean selfRelated = APILocator.getRelationshipAPI().sameParentAndChild(relationship);
 
         final List<Contentlet> contentletList = new ArrayList<>();
         final ContentletRelationshipRecords records = cRelationships.new ContentletRelationshipRecords(
@@ -1511,7 +1511,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return Collections.emptyList();
         }
 
-        final boolean isSameStructureRelationship = FactoryLocator.getRelationshipFactory()
+        final boolean isSameStructureRelationship = APILocator.getRelationshipAPI()
                 .sameParentAndChild(rel);
 
         if (isSameStructureRelationship) {
@@ -1572,7 +1572,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @param respectFrontendRoles If the User executing this action has the front-end role, or if front-end roles must
      *                             be validated against this user, set to {@code true}. Otherwise, set to {@code
      *                             false}.
-     * @param limit                The limit to the amount of results that will be returned.
+     * @param limitParam                The limit to the amount of results that will be returned.
      * @param offset               The offset applied to the result, mostly for pagination purposes.
      *
      * @return The list of {@link Contentlet} objects that are the children of the specified Contentlet.
@@ -1581,20 +1581,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotDataException     An error occurred when interacting with the data source.
      */
     private List<Contentlet> getRelatedChildren(final Contentlet contentlet, final Relationship rel,
-            final User user, final boolean respectFrontendRoles, final int limit, final int offset)
+            final User user, final boolean respectFrontendRoles, final int limitParam, final int offset)
             throws DotSecurityException, DotDataException {
         final boolean HAS_PARENT = Boolean.TRUE;
         final boolean WORKING_VERSION = Boolean.FALSE;
         if (rel.isRelationshipField() && GET_RELATED_CONTENT_FROM_DB) {
             return FactoryLocator.getRelationshipFactory()
-                    .dbRelatedContent(rel, contentlet, HAS_PARENT, WORKING_VERSION, "tree_order", limit, offset);
+                    .dbRelatedContent(rel, contentlet, HAS_PARENT, WORKING_VERSION, "tree_order", limitParam, offset);
         } else {
 
             final List<Contentlet> result = new ArrayList<>();
             final String relationshipName = rel.getRelationTypeValue().toLowerCase();
+            final int limit = limitParam <= 0 ? MAX_LIMIT : limitParam;
 
             SearchResponse response;
             final boolean DONT_PULL_PARENTS = Boolean.FALSE;
+
             //Search for related content in existing contentlet
             if (UtilMethods.isSet(contentlet.getInode())) {
                 response = APILocator.getEsSearchAPI()
@@ -1652,7 +1654,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @param respectFrontendRoles If the User executing this action has the front-end role, or if front-end roles must
      *                             be validated against this user, set to {@code true}. Otherwise, set to {@code
      *                             false}.
-     * @param limit                The limit to the amount of results that will be returned.
+     * @param limitParam                The limit to the amount of results that will be returned.
      * @param offset               The offset applied to the result, mostly for pagination purposes.
      *
      * @return The list of {@link Contentlet} objects that are the parents of the specified Contentlet.
@@ -1661,19 +1663,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotDataException     An error occurred when interacting with the data source.
      */
     private List<Contentlet> getRelatedParents(final Contentlet contentlet, final Relationship rel,
-            final User user, final boolean respectFrontendRoles, final int limit, final int offset)
+            final User user, final boolean respectFrontendRoles, int limitParam, final int offset)
             throws DotSecurityException, DotDataException {
         final boolean HAS_NO_PARENT = Boolean.FALSE;
         final boolean WORKING_VERSION = Boolean.FALSE;
         if (rel.isRelationshipField() && GET_RELATED_CONTENT_FROM_DB) {
             return FactoryLocator.getRelationshipFactory()
-                    .dbRelatedContent(rel, contentlet, HAS_NO_PARENT, WORKING_VERSION, "tree_order", limit, offset);
+                    .dbRelatedContent(rel, contentlet, HAS_NO_PARENT, WORKING_VERSION, "tree_order", limitParam, offset);
         } else {
             final Map<String, Contentlet> relatedMap = new HashMap<>();
             final String relationshipName = rel.getRelationTypeValue().toLowerCase();
+            final int limit = limitParam <= 0 ? MAX_LIMIT : limitParam;
 
             SearchResponse response;
             final boolean PULL_PARENTS = Boolean.TRUE;
+
             //Search for related content in existing contentlet
             if (UtilMethods.isSet(contentlet.getInode())) {
                 response = APILocator.getEsSearchAPI()
@@ -2148,7 +2152,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throws DotSecurityException, DotDataException {
 
         final List<Relationship> relationships =
-                FactoryLocator.getRelationshipFactory().byContentType(contentlet.getStructure());
+                APILocator.getRelationshipAPI().byContentType(contentlet.getStructure());
         // Remove related contents
         for (final Relationship relationship : relationships) {
             deleteRelatedContent(contentlet, relationship, user, respectFrontendRoles);
@@ -2604,7 +2608,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         for (Contentlet con : contentlets) {
             categoryAPI.removeChildren(con, APILocator.getUserAPI().getSystemUser(), true);
             categoryAPI.removeParents(con, APILocator.getUserAPI().getSystemUser(), true);
-            List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(con.getStructure());
+            List<Relationship> rels = APILocator.getRelationshipAPI().byContentType(con.getStructure());
             for(Relationship relationship :  rels){
                 deleteRelatedContent(con,relationship,user,respectFrontendRoles);
             }
@@ -2678,7 +2682,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         for (Contentlet con : contentlets) {
             categoryAPI.removeChildren(con, APILocator.getUserAPI().getSystemUser(), true);
             categoryAPI.removeParents(con, APILocator.getUserAPI().getSystemUser(), true);
-            List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(con.getStructure());
+            List<Relationship> rels = APILocator.getRelationshipAPI().byContentType(con.getStructure());
             for(Relationship relationship :  rels){
                 deleteRelatedContent(con,relationship,user,respectFrontendRoles);
             }
@@ -3562,7 +3566,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException, DotContentletStateException {
 
-        this.deleteRelatedContent(contentlet, relationship, FactoryLocator.getRelationshipFactory()
+        this.deleteRelatedContent(contentlet, relationship, APILocator.getRelationshipAPI()
                 .isParent(relationship, contentlet.getStructure()), user, respectFrontendRoles);
     }
 
@@ -3584,7 +3588,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     + " cannot edit Contentlet with identifier " + contentlet.getIdentifier());
         }
 
-        List<Relationship> rels = FactoryLocator.getRelationshipFactory()
+        List<Relationship> rels = APILocator.getRelationshipAPI()
                 .byContentType(contentlet.getContentType());
         if (!rels.contains(relationship)) {
             throw new DotContentletStateException(
@@ -3596,7 +3600,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 .dbRelatedContent(relationship, contentlet, hasParent);
         cons = permissionAPI
                 .filterCollection(cons, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
-        FactoryLocator.getRelationshipFactory().deleteByContent(contentlet, relationship, cons);
+        APILocator.getRelationshipAPI().deleteByContent(contentlet, relationship, cons);
 
         final List<String> identifiersToBeRelated = contentletsToBeRelated.stream().map(
                 Contentlet::getIdentifier).collect(Collectors.toList());
@@ -3869,7 +3873,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public void relateContent(Contentlet contentlet, Relationship rel, List<Contentlet> records, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException, DotContentletStateException {
         Structure st = CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
-        boolean hasParent = FactoryLocator.getRelationshipFactory().isParent(rel, st);
+        boolean hasParent = APILocator.getRelationshipAPI().isParent(rel, st);
         ContentletRelationshipRecords related = new ContentletRelationships(contentlet).new ContentletRelationshipRecords(rel, hasParent);
         related.setRecords(records);
         relateContent(contentlet, related, user, respectFrontendRoles);
@@ -3878,7 +3882,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @CloseDBIfOpened
     private List<Relationship> getRelationships (final ContentTypeIf type) throws DotDataException {
 
-        return FactoryLocator.getRelationshipFactory().byContentType(type);
+        return APILocator.getRelationshipAPI().byContentType(type);
     }
 
     @CloseDBIfOpened
@@ -5543,12 +5547,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @param contentRelationships
      * @param contentType
      * @param relationshipAPI
+     * @throws DotDataException
      */
     private void getWipeOutRelationships(final ContentletRelationships contentRelationships,
-            final ContentType contentType, final RelationshipAPI relationshipAPI) {
+            final ContentType contentType, final RelationshipAPI relationshipAPI) throws DotDataException {
         //wipe out all relationships
-        final List<Relationship> relationships = FactoryLocator.getRelationshipFactory()
-                .byContentType(contentType);
+        final List<Relationship> relationships = APILocator.getRelationshipAPI().byContentType(contentType);
         relationships.forEach(relationship -> {
             //add empty list to each relationship
             if (relationshipAPI.sameParentAndChild(relationship)) {
@@ -6612,7 +6616,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         relationshipsData.setRelationshipsRecords(relationshipsRecords);
         for(Entry<Relationship, List<Contentlet>> relEntry : contentRelationships.entrySet()) {
             Relationship relationship = relEntry.getKey();
-            boolean hasParent = FactoryLocator.getRelationshipFactory().isParent(relationship, st);
+            boolean hasParent = APILocator.getRelationshipAPI().isParent(relationship, st);
             ContentletRelationshipRecords records = relationshipsData.new ContentletRelationshipRecords(relationship, hasParent);
             records.setRecords(relEntry.getValue());
         }
@@ -6687,7 +6691,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 //There is a case when the Relationship is between same structures
                 //We need to validate that case
                 boolean isRelationshipParent = true;
-                if(FactoryLocator.getRelationshipFactory().sameParentAndChild(relationship)){
+                if(APILocator.getRelationshipAPI().sameParentAndChild(relationship)){
                     if (contentsInRelationship.stream().anyMatch(con -> contentlet.getIdentifier().equals(con.getIdentifier()))) {
                         Logger.error(this, "Cannot relate content [" + contentletId + "] to itself");
                         hasError = true;
@@ -6699,7 +6703,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
 
                 // if i am the parent
-                if (FactoryLocator.getRelationshipFactory().isParent(relationship,contentType) && isRelationshipParent) {
+                if (APILocator.getRelationshipAPI().isParent(relationship,contentType) && isRelationshipParent) {
                     if (relationship.isChildRequired() && contentsInRelationship.isEmpty()) {
                         hasError = true;
                         Logger.error(this, "Error in Contentlet [" + contentletId + "]: Child relationship [" + relationship
@@ -6743,7 +6747,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                     " [" + contentInRelationship.getIdentifier() + "]", e);
                         }
                     }
-                } else if (FactoryLocator.getRelationshipFactory().isChild(relationship, contentType)) {
+                } else if (APILocator.getRelationshipAPI().isChild(relationship, contentType)) {
                     if (relationship.isParentRequired() && contentsInRelationship.isEmpty()) {
                         hasError = true;
                         Logger.error(this, "Error in Contentlet [" + contentletId + "]: Parent relationship [" + relationship
@@ -6969,7 +6973,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<>();
         if(contentlet == null)
             return contentRelationships;
-        List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(contentlet.getStructure());
+        List<Relationship> rels = APILocator.getRelationshipAPI().byContentType(contentlet.getStructure());
         for (Relationship r : rels) {
             if(!contentRelationships.containsKey(r)){
                 contentRelationships.put(r, new ArrayList<>());

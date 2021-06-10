@@ -865,10 +865,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	    if(valueObj instanceof Map){
 	       return new HashMap<>((Map<String,Object>)valueObj);
 	    }
-		if(valueObj instanceof Metadata){
-			final Metadata metadata = (Metadata)valueObj;
-			return new HashMap<>(metadata.getFieldsMeta());
-		}
+
 		return KeyValueFieldUtil.JSONValueToHashMap((String) valueObj);
 	}
 
@@ -891,7 +888,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 		if(relatedContentlets.size()>0) {
 
-			final List<Relationship> relationships = FactoryLocator.getRelationshipFactory()
+			final List<Relationship> relationships =APILocator.getRelationshipAPI()
 					.byContentType(contentlet.getContentType());
 
 			for(final Relationship relationship : relationships) {

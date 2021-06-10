@@ -491,7 +491,7 @@ public class VelocityUtil {
             return null;
         }
         // don't cache posts
-        if (!"GET".equalsIgnoreCase(request.getMethod())) {
+        if (!"GET".equalsIgnoreCase(request.getMethod()) && !"HEAD".equalsIgnoreCase(request.getMethod()) ) {
             return null;
         }
         // nocache passed either as a session var, as a request var or as a
