@@ -221,13 +221,16 @@ public class PushPublisherConfig extends PublisherConfig {
 		return dependencySet;
 	}
 
-	public <T> void addWithDependencies(final T asset, final PusheableAsset pusheableAsset) {
+	public <T> boolean addWithDependencies(final T asset, final PusheableAsset pusheableAsset) {
 		final String key = DependencyManager.getKey(asset);
+		final boolean isAlreadyAdded = dependencySet.isDependenciesAdded(key, pusheableAsset);
 
-		if(!dependencySet.isDependenciesAdded(key, pusheableAsset)) {
+		if(!isAlreadyAdded) {
 			dependencySet.addWithDependencies(key, pusheableAsset);
 			this.dependencyProcessor.addAsset(asset, pusheableAsset);
 		}
+
+		return !isAlreadyAdded;
 	}
 
 	public <T> boolean add(final T asset, final PusheableAsset pusheableAsset) {
