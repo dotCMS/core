@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "2c0cd354-98c5-4b05-8430-d56a8faf896c",
+		"_postman_id": "acd83cec-ce57-4aa4-8df1-b51dee2e610a",
 		"name": "GraphQL",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -89,7 +89,7 @@
 								}
 							]
 						},
-						"description": "Imports a Bundle that includes:\n* HTMLPage /blog/index\n* HTMLPage /blog/destinations/costa-rica\n* Contentlet [Blog] Ecotourism in Costa Rica\n* Blog Detail Page /blog/blog-detail"
+						"description": "Imports a Bundle that includes:\n* HTMLPage /sports\nThe page includes the Blog contentlet \"10 New Snow Sports to Try This Winter\""
 					},
 					"response": []
 				},
@@ -5474,6 +5474,281 @@
 							]
 						},
 						"description": "This tests that: \n* It's possible to request rendered content fields.\n* It's possible to request unrendered content fields. \n* It's possible to request the same field in both rendered and unrendered forms.   \n* If \"render\" argument is not specified, then it defaults to render:false"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "PageAPI_TestMapSpecialField",
+			"item": [
+				{
+					"name": "pre_ImportBundleWithSportsPage",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"sports-page.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/sports-page.tar.gz"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* Sports page with Blog contentlet \"10 New Snow Sports to Try This Winter\""
+					},
+					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_MapWithoutArguments_ShouldReturnDepth0RelatedContentAndUnrenderedFields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"'Page' includes all properties\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var map = jsonData.data.page.containers[0].containerContentlets[0].contentlets[0]._map;",
+									"",
+									"    // scalar values",
+									"    pm.expect(map.identifier, 'FAILED:[map.identifier]').equal(\"0edfee78-2a75-4f3d-bf20-813aae15d4e9\");",
+									"    pm.expect(map.inode, 'FAILED:[map.inode]').equal(\"1f4db79c-7ec6-4efe-9369-1ae2193a2d7f\");",
+									"    pm.expect(map.locked, 'FAILED:[map.locked]').equal(false);",
+									"    pm.expect(map.stInode, 'FAILED:[map.stInode]').equal(\"799f176a-d32e-4844-a07c-1b5fcd107578\");",
+									"    pm.expect(map.contentType, 'FAILED:[map.contentType]').equal(\"Blog\");",
+									"    pm.expect(map.urlTitle, 'FAILED:[map.urlTitle]').equal(\"10-new-snow-sports-to-try-this-winter\");",
+									"    pm.expect(map.tags, 'FAILED:[map.tags]').equal(\"snowboarding,winter,snowmobiling,snow sports,skiing,cross-country skiing\");",
+									"    pm.expect(map.folder, 'FAILED:[map.folder]').equal(\"SYSTEM_FOLDER\");",
+									"    pm.expect(map.hostName, 'FAILED:[map.hostName]').equal(\"demo.dotcms.com\");",
+									"    pm.expect(map.title, 'FAILED:[map.title]').equal(\"10 New Snow Sports to Try This Winter\");",
+									"    pm.expect(map.archived, 'FAILED:[map.archived]').equal(false);",
+									"    pm.expect(map.working, 'FAILED:[map.working]').equal(true);",
+									"    pm.expect(map.live, 'FAILED:[map.live]').equal(true);",
+									"    pm.expect(map.owner, 'FAILED:[map.owner]').equal(\"dotcms.org.1\");",
+									"    pm.expect(map.URL_MAP_FOR_CONTENT, 'FAILED:[map.URL_MAP_FOR_CONTENT]').equal(\"/blog/post/10-new-snow-sports-to-try-this-winter\");",
+									"    pm.expect(map.modUserName, 'FAILED:[map.modUserName]').equal(\"Admin User\");",
+									"    pm.expect(map.urlMap, 'FAILED:[map.urlMap]').equal(\"/blog/post/10-new-snow-sports-to-try-this-winter\");",
+									"    pm.expect(map.modUser, 'FAILED:[map.modUser]').equal(\"dotcms.org.1\");",
+									"    pm.expect(map.teaser, 'FAILED:[map.teaser]').equal(\"$date - From the tame to the exotic, these alternative winter sports will keep you outside and in shape until all the snow\");",
+									"",
+									"    pm.expect(map.body, 'FAILED:[map.body]').contains(\"Curabitur egestas mi eget massa maximus\");",
+									"",
+									"",
+									"    // assertions for File field",
+									"    var file = map.myFile;",
+									"    pm.expect(file.identifier, 'FAILED:[file.identifier]').equal(\"8dd88708-c600-4366-8a50-9eec2af9091b\");",
+									"    pm.expect(file.extension, 'FAILED:[file.extension]').equal(\"jpg\");",
+									"    pm.expect(file.description, 'FAILED:[file.description]').equal(\"isalnds-french-polynesia\");",
+									"    pm.expect(file.__icon__, 'FAILED:[file.__icon__]').equal(\"jpgIcon\");",
+									"    pm.expect(file.mimeType, 'FAILED:[file.mimeType]').equal(\"image/jpeg\");",
+									"    pm.expect(file.statusIcons, 'FAILED:[file.statusIcons]').equal(\"<span class='greyDotIcon' style='opacity:.4'></span><span class='liveIcon'></span>\");",
+									"    pm.expect(file.type, 'FAILED:[file.type]').equal(\"file_asset\");",
+									"    pm.expect(file.path, 'FAILED:[file.path]').equal(\"/images/blogs/\");",
+									"    pm.expect(file.size, 'FAILED:[file.size]').equal(102816);",
+									"    pm.expect(file.name, 'FAILED:[file.name]').equal(\"isalnds-french-polynesia.jpg\");",
+									"    pm.expect(file.width, 'FAILED:[file.width]').equal(780);",
+									"    pm.expect(file.underlyingFileName, 'FAILED:[file.underlyingFileName]').equal(\"isalnds-french-polynesia.jpg\");",
+									"    pm.expect(file.height, 'FAILED:[file.height]').equal(520);",
+									"",
+									"    // assertions for File field metadata",
+									"    var fileMetadata = file.metaData;",
+									"    pm.expect(fileMetadata.path, 'FAILED:[fileMetadata.path]').equal(\"c/5/c5ad88f9-31b3-458b-87ed-64f2c1cf82b5/fileAsset/isalnds-french-polynesia.jpg\");",
+									"    pm.expect(fileMetadata.isImage, 'FAILED:[fileMetadata.isImage]').equal(true);",
+									"    pm.expect(fileMetadata.sha256, 'FAILED:[fileMetadata.sha256]').equal(\"6c6658a841c3ae9a60d20143d4de6e320664411a9458b92c787b6201136164e5\");",
+									"    pm.expect(fileMetadata.fileSize, 'FAILED:[fileMetadata.fileSize]').equal(102816);",
+									"    pm.expect(fileMetadata.length, 'FAILED:[fileMetadata.length]').equal(102816);",
+									"    pm.expect(fileMetadata.name, 'FAILED:[fileMetadata.name]').equal(\"isalnds-french-polynesia.jpg\");",
+									"    pm.expect(fileMetadata.width, 'FAILED:[fileMetadata.width]').equal(780);",
+									"    pm.expect(fileMetadata.title, 'FAILED:[fileMetadata.title]').equal(\"isalnds-french-polynesia.jpg\");",
+									"    pm.expect(fileMetadata.contentType, 'FAILED:[fileMetadata.contentType]').equal(\"image/jpeg\");",
+									"    pm.expect(fileMetadata.height, 'FAILED:[fileMetadata.height]').equal(520);",
+									"",
+									"    // assertions for Language field",
+									"    var language = map.language;",
+									"    pm.expect(language.languageId, 'FAILED:[language.identifier]').equal(1);",
+									"    pm.expect(language.language, 'FAILED:[language.language]').equal(\"English\");",
+									"    pm.expect(language.languageCode, 'FAILED:[language.languageCode]').equal(\"en\");",
+									"    pm.expect(language.country, 'FAILED:[language.country]').equal(\"United States\");",
+									"    pm.expect(language.countryCode, 'FAILED:[language.countryCode]').equal(\"US\");",
+									"    pm.expect(language.languageFlag, 'FAILED:[language.languageFlag]').equal(\"en_US\");",
+									"     pm.expect(language.isoCode, 'FAILED:[language.isoCode]').equal(\"en-us\");",
+									"",
+									"",
+									"",
+									"    // // rows fields",
+									"    // var rows = layout.body.rows;",
+									"    // pm.expect(rows.length, 'FAILED:[rows.length]').equal(6);",
+									"",
+									"    // var row1 = rows[0];",
+									"    // pm.expect(row1.styleClass, 'FAILED:[row1.styleClass]').equal(null);",
+									"",
+									"    // var row1Columns = row1.columns;",
+									"    // pm.expect(row1Columns.length, 'FAILED:[row1Columns.length]').equal(1);",
+									"",
+									"    // var column1 = row1Columns[0];",
+									"    // pm.expect(column1.preview, 'FAILED:[column1.preview]').equal(false);",
+									"    // pm.expect(column1.width, 'FAILED:[column1.width]').equal(12);",
+									"    // pm.expect(column1.widthPercent, 'FAILED:[column1.widthPercent]').equal(100);",
+									"    // pm.expect(column1.left, 'FAILED:[column1.left]').equal(0);",
+									"    // pm.expect(column1.leftOffset, 'FAILED:[column1.leftOffset]').equal(1);",
+									"    // pm.expect(column1.styleClass, 'FAILED:[column1.styleClass]').equal(null);",
+									"",
+									"    // var containers = column1.containers;",
+									"    // pm.expect(containers.length, 'FAILED:[containers.length]').equal(1);",
+									"",
+									"    // var container1 = containers[0];",
+									"    // pm.expect(container1.identifier, 'FAILED:[container1.identifier]').equal(\"5a07f889-4536-4956-aa6e-e7967969ec3f\");",
+									"    // pm.expect(container1.uuid, 'FAILED:[container1.uuid]').equal(\"2\");",
+									"",
+									"    // // sidebar",
+									"    // var sidebar = layout.sidebar;",
+									"    // pm.expect(sidebar.preview, 'FAILED:[sidebar.preview]').equal(false);",
+									"    // pm.expect(sidebar.width, 'FAILED:[sidebar.width]').equal(\"small\");",
+									"    // pm.expect(sidebar.widthPercent, 'FAILED:[sidebar.widthPercent]').equal(20);",
+									"    // pm.expect(sidebar.location, 'FAILED:[sidebar.location]').equal(\"left\");",
+									"",
+									"    // var sidebarContainers = sidebar.containers;",
+									"    // pm.expect(sidebarContainers.length, 'FAILED:[sidebarContainers.length]').equal(2);",
+									"",
+									"    // var sidebarContainer1 = sidebarContainers[0];",
+									"    // pm.expect(sidebarContainer1.identifier, 'FAILED:[sidebarContainer1.identifier]').equal(\"//demo.dotcms.com/application/containers/default/\");",
+									"    // pm.expect(sidebarContainer1.uuid, 'FAILED:[sidebarContainers.uuid]').equal(\"1\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"type": "text",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"type": "text",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/sports\", pageMode: \"live\", languageId: \"1\") {\n    containers {\n      containerContentlets {\n        uuid\n        contentlets {\n          _map\n        }\n      }\n    }\n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "* Given scenario: given a request to a page by URI, and requesting the special \"_map\" field of the contentlet of the page, without passing any arguments to the \"_map\" field\n\n* Expected result: it should return all map fields, with the proper transformations/expansions for certain field types like file, image, binaries. No field should be rendered and only the identifiers of the related content should be returned (depth: 0)"
 					},
 					"response": []
 				}

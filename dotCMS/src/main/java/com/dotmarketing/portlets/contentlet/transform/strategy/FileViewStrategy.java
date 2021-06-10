@@ -108,6 +108,8 @@ public class FileViewStrategy extends AbstractTransformStrategy<Contentlet> {
 
         final Map<String, Object> map = new HashMap<>();
 
+        map.put("identifier", fileAssetIdentifier);
+
         if(isNotSet(fileAsset.getTitle())) {
             final Identifier identifier = toolBox.identifierAPI.find(fileAsset.getIdentifier());
             map.put(TITLE_FIELD, identifier.getAssetName());
