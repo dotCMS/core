@@ -1375,7 +1375,7 @@ public class ContentResource {
                     jo.put(key, new JSONArray(categoryList.stream()
                             .map(value -> new JSONObject((Map<?,?>) value))
                             .collect(Collectors.toList())));
-                  // this might be coming from transformers views, so let's try to make then JSONObjects
+                  // this might be coming from transformers views, so let's try to make them JSONObjects
                 } else if(hydrateRelated) {
                     if(map.get(key) instanceof Map) {
                         jo.put(key, new JSONObject((Map) map.get(key)));
