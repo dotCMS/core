@@ -1911,7 +1911,7 @@ public class DependencyBundlerTest {
 
             return "[assetsToAddInBundle=" + assetsToAddInBundle.getClass().getSimpleName() + "], " +
                     "[dependenciesToAssert=" +  dependencies + "], " +
-                    "filterDescriptor=" + filterDescriptor.getFilters();
+                    "filterDescriptor=" + (filterDescriptor != null ? filterDescriptor.getFilters() : "null");
         }
     }
 }

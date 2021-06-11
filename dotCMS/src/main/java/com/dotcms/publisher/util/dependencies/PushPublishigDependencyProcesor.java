@@ -178,8 +178,12 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
      */
     private void processFolderDependency(final Folder folder) {
         try {
-            tryToAddSilently(PusheableAsset.FOLDER,
-                    pushPublishigDependencyProvider.getParentFolder(folder));
+
+            final Folder parentFolder = pushPublishigDependencyProvider.getParentFolder(folder);
+
+            if(UtilMethods.isSet(parentFolder)) {
+                tryToAddSilently(PusheableAsset.FOLDER, parentFolder);
+            }
 
             tryToAddSilently(PusheableAsset.SITE,
                     pushPublishigDependencyProvider.getHostById(folder.getHostId()));

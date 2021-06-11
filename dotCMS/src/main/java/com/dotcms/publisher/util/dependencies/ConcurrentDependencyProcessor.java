@@ -127,9 +127,9 @@ public class ConcurrentDependencyProcessor implements DependencyProcessor {
         try {
             while (!isFinish()) {
                 try {
-                    Logger.info(ConcurrentDependencyProcessor.class, () -> "Waiting for more assets");
+                    Logger.debug(ConcurrentDependencyProcessor.class, () -> "Waiting for more assets");
                     final DependencyProcessorItem dependencyProcessorItem = queue.take();
-                    Logger.info(ConcurrentDependencyProcessor.class,
+                    Logger.debug(ConcurrentDependencyProcessor.class,
                             () -> "Taking one " + dependencyProcessorItem.asset);
                     if (!dependencyProcessorItem
                             .equals(DependencyProcessorItem.FINISHED_DEPENDENCY_PROCESSOR_ITEM)) {

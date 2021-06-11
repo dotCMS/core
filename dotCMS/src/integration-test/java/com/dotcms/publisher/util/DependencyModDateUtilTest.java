@@ -23,6 +23,7 @@ import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.bean.impl.PushPublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
+import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.dependencies.DependencyModDateUtil;
 import com.dotcms.publishing.BundlerStatus;
@@ -172,6 +173,7 @@ public class DependencyModDateUtilTest extends IntegrationTestBase {
                 .publishingEndPoint(endPoint)
                 .environment(environment_1)
                 .pushDate(yesterday.getTime())
+                .publisher(PushPublisher.class)
                 .nextPersisted();
 
         final boolean excludeByModDate = dependencyModDateUtil.excludeByModDate(contentlet, PusheableAsset.CONTENTLET);
@@ -233,6 +235,7 @@ public class DependencyModDateUtilTest extends IntegrationTestBase {
                 .publishingEndPoint(endPoint)
                 .environment(environment_1)
                 .pushDate(new Date())
+                .publisher(PushPublisher.class)
                 .nextPersisted();
 
         final boolean excludeByModDate = dependencyModDateUtil.excludeByModDate(contentlet, PusheableAsset.CONTENTLET);
@@ -310,6 +313,7 @@ public class DependencyModDateUtilTest extends IntegrationTestBase {
                 .publishingEndPoint(endPoint_1)
                 .environment(environment_1)
                 .pushDate(new Date())
+                .publisher(PushPublisher.class)
                 .nextPersisted();
 
         final Calendar beforeYesterday = Calendar.getInstance();
@@ -322,6 +326,7 @@ public class DependencyModDateUtilTest extends IntegrationTestBase {
                 .publishingEndPoint(endPoint_2)
                 .environment(environment_2)
                 .pushDate(beforeYesterday.getTime())
+                .publisher(PushPublisher.class)
                 .nextPersisted();
 
         final boolean excludeByModDate = dependencyModDateUtil.excludeByModDate(contentlet, PusheableAsset.CONTENTLET);

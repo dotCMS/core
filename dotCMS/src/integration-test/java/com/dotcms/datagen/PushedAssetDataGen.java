@@ -20,7 +20,7 @@ public class PushedAssetDataGen extends AbstractDataGen<PushedAsset> {
     private PublishingEndPoint publishingEndPoint;
     private Environment environment;
     private Date pushDate;
-    private Class<Publisher> publisherClass;
+    private Class<? extends Publisher> publisherClass;
 
     public PushedAssetDataGen assetId(String assetId) {
         this.assetId = assetId;
@@ -79,7 +79,7 @@ public class PushedAssetDataGen extends AbstractDataGen<PushedAsset> {
         }
     }
 
-    public PushedAssetDataGen publisher(final Class<Publisher> publisherClass) {
+    public PushedAssetDataGen publisher(final Class<? extends Publisher> publisherClass) {
         this.publisherClass = publisherClass;
         return this;
     }
