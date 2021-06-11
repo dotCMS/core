@@ -143,8 +143,15 @@ public class EditLanguageAction extends DotPortletAction {
 		Language language = (Language) req.getAttribute(WebKeys.LANGUAGE_MANAGER_LANGUAGE) ;
 		BeanUtils.copyProperties(language,form);
         if (UtilMethods.isSet(language.getLanguageCode()) && UtilMethods.isSet(language.getLanguage())) {
-			try{
-				languageAPI.saveLanguage(language);
+			try {
+
+				if (null == languageAPI.getLanguage(language.getLanguageCode(), language.getCountryCode())) {
+					languageAPI.saveLanguage(language);
+				} else {
+
+					SessionMessages.add(req,"message", "message.languagemanager.languagenotsaved");
+					throw new SQLException();
+				}
 			} catch(Exception e ){
 				SessionMessages.add(req,"message", "message.languagemanager.languagenotsaved");
 				throw new SQLException();
