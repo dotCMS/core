@@ -284,7 +284,7 @@ public class UserResource implements Serializable {
 			final Map<String, String> filterParams = map(
 					FILTER_PARAM_QUERY, urlParams.get(FILTER_PARAM_QUERY),
 					FILTER_PARAM_START, getMapValue(urlParams, FILTER_PARAM_START, "0"),
-					FILTER_PARAM_LIMIT, getMapValue(urlParams, FILTER_PARAM_LIMIT, "-1"),
+					FILTER_PARAM_LIMIT, getMapValue(urlParams, FILTER_PARAM_LIMIT, "40"),
 					FILTER_PARAM_INCLUDE_ANONYMOUS, getMapValue(urlParams, FILTER_PARAM_INCLUDE_ANONYMOUS.toLowerCase(), "false"),
                     FILTER_PARAM_INCLUDE_DEFAULT, getMapValue(urlParams, FILTER_PARAM_INCLUDE_DEFAULT.toLowerCase(), "false"));
 			userList = this.helper.getUserList(urlParams.get("assetInode"), urlParams.get("permission"), filterParams);

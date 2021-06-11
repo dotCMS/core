@@ -261,7 +261,7 @@
 							"var jsonData = pm.response.json().entity;",
 							"",
 							"pm.test(\"Total Check\", function () {",
-							"    pm.expect(jsonData.total).to.eql(1);",
+							"    pm.expect(jsonData.total).to.be.greaterThan(0);",
 							"});"
 						],
 						"type": "text/javascript"
@@ -307,7 +307,8 @@
 						"filter",
 						""
 					]
-				}
+				},
+				"description": "* <b>Given scenario:</b> Get All the Users from the system.\n     * <b>Expected result:</b> The Total field should be greaterThan 0, so at least 1 user must be returned."
 			},
 			"response": []
 		}
