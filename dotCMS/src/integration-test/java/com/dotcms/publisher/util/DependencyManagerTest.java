@@ -411,7 +411,10 @@ public class DependencyManagerTest {
                 .findFileAssetsByFolder(rootFolder, APILocator.systemUser(), false);
 
         for (final FileAsset fileAsset : fileAssetsByFolder) {
-            assertTrue("fileAsset: " + fileAsset.getIdentifier() + "Contents: " +dependencyManager.getContents().toString(),dependencyManager.getContents().contains(fileAsset.getIdentifier()));
+                assertTrue(
+                        "fileAsset: " + fileAsset.getIdentifier() + "Contents: " + dependencyManager.getContents().toString(),
+                        dependencyManager.getContents().contains(fileAsset.getIdentifier())
+                );
         }
 
     }

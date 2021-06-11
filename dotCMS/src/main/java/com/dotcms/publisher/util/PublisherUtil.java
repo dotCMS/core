@@ -113,7 +113,13 @@ public class PublisherUtil {
 		b.setPushDate((Date)row.get("push_date"));
 		b.setEnvironmentId(row.get("environment_id").toString());
 		b.setEndpointId(row.get("endpoint_ids").toString());
-		b.setPublisher(row.get("publisher").toString());
+
+		final Object publisher = row.get("publisher");
+
+		if (UtilMethods.isSet(publisher)) {
+			b.setPublisher(publisher.toString());
+		}
+
 		return b;
 	}
 

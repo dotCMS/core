@@ -227,10 +227,15 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
                     pushPublishigDependencyProvider.getHostByTemplate(workingTemplate));
 
             addContainerByTemplate(workingTemplate);
-            addContainerByTemplate(liveTemplate);
 
-            tryToAddAndProcessDependencies(PusheableAsset.FOLDER,
-                    pushPublishigDependencyProvider.getThemeByTemplate(workingTemplate));
+            if (UtilMethods.isSet(liveTemplate)) {
+                addContainerByTemplate(liveTemplate);
+            }
+
+            if (UtilMethods.isSet(workingTemplate.getTheme())) {
+                tryToAddAndProcessDependencies(PusheableAsset.FOLDER,
+                        pushPublishigDependencyProvider.getThemeByTemplate(workingTemplate));
+            }
 
             if(workingTemplate instanceof FileAssetTemplate){
                 //Process FileAssetTemplate
@@ -706,13 +711,15 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
 
     private <T> void tryToAddAndProcessDependencies(final PusheableAsset pusheableAsset, final T asset)
             throws DotDataException, DotSecurityException {
-        try {
-            tryToAdd(pusheableAsset, asset);
-            config.addWithDependencies(asset, pusheableAsset);
-        } catch (AssetExcludeByFilterException e) {
-            //ignore
-        } catch (AssetExcludeException e) {
-            dependencyProcessor.addAsset(asset, pusheableAsset);
+        if (UtilMethods.isSet(asset)) {
+            try {
+                tryToAdd(pusheableAsset, asset);
+                config.addWithDependencies(asset, pusheableAsset);
+            } catch (AssetExcludeByFilterException e) {
+                //ignore
+            } catch (AssetExcludeException e) {
+                dependencyProcessor.addAsset(asset, pusheableAsset);
+            }
         }
     }
 
@@ -728,6 +735,10 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
 
     private synchronized <T> boolean tryToAdd(final PusheableAsset pusheableAsset, final T asset)
             throws AssetExcludeException {
+
+        if (!UtilMethods.isSet(asset)) {
+            return false;
+        }
 
         if (isExcludeByFilter(pusheableAsset)) {
             throw new AssetExcludeByFilterException(String.format("Exclude by Operation %s",
