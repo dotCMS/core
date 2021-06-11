@@ -153,7 +153,7 @@ public class DependencyManager {
 										: "N/A")
 										+ " does NOT have working or live version, not Pushed");
 					} else {
-						addDirectly(structure, PusheableAsset.CONTENT_TYPE);
+						add(structure, PusheableAsset.CONTENT_TYPE);
 					}
 
 				} catch (Exception e) {
@@ -182,7 +182,7 @@ public class DependencyManager {
 									"FileAssetTemplate id: " + (asset.getAsset() != null ? asset
 											.getAsset() : "N/A") + " will be ignored");
 						} else {
-							addDirectly(template, PusheableAsset.TEMPLATE);
+							add(template, PusheableAsset.TEMPLATE);
 						}
 					}
 
@@ -207,7 +207,7 @@ public class DependencyManager {
 										: "N/A")
 										+ " does NOT have working or live version, not Pushed");
 					} else {
-						addDirectly(container, PusheableAsset.CONTAINER);
+						add(container, PusheableAsset.CONTAINER);
 					}
 				} catch (DotSecurityException e) {
 					Logger.error(getClass(),
@@ -224,7 +224,7 @@ public class DependencyManager {
 										: "N/A")
 										+ " does NOT have working or live version, not Pushed");
 					} else {
-						addDirectly(folder, PusheableAsset.FOLDER);
+						add(folder, PusheableAsset.FOLDER);
 					}
 
 				} catch (DotSecurityException e) {
@@ -241,7 +241,7 @@ public class DependencyManager {
 								"Host id: " + (asset.getAsset() != null ? asset.getAsset() : "N/A")
 										+ " does NOT have working or live version, not Pushed");
 					} else {
-						addDirectly(host, PusheableAsset.SITE);
+						add(host, PusheableAsset.SITE);
 					}
 
 				} catch (DotSecurityException e) {
@@ -264,7 +264,7 @@ public class DependencyManager {
 								"Link id: " + (asset.getAsset() != null ? asset.getAsset() : "N/A")
 										+ " does NOT have working or live version, not Pushed");
 					} else {
-						addDirectly(link, PusheableAsset.LINK);
+						add(link, PusheableAsset.LINK);
 					}
 
 				} catch (DotSecurityException e) {
@@ -281,7 +281,7 @@ public class DependencyManager {
 									: "N/A")
 									+ " does NOT have working or live version, not Pushed");
 				} else {
-					addDirectly(scheme, PusheableAsset.WORKFLOW);
+					add(scheme, PusheableAsset.WORKFLOW);
 				}
 			} else if (asset.getType().equals(PusheableAsset.LANGUAGE.getType())) {
 				Language language = APILocator.getLanguageAPI()
@@ -292,13 +292,13 @@ public class DependencyManager {
 							: "N/A")
 							+ " is not present in the database, not Pushed");
 				} else {
-					addDirectly(language, PusheableAsset.LANGUAGE);
+					add(language, PusheableAsset.LANGUAGE);
 				}
 			} else if (asset.getType().equals(PusheableAsset.RULE.getType())) {
 				Rule rule = APILocator.getRulesAPI()
 						.getRuleById(asset.getAsset(), user, false);
 				if (rule != null && StringUtils.isNotBlank(rule.getId())) {
-					addDirectly(rule, PusheableAsset.RULE);
+					add(rule, PusheableAsset.RULE);
 				} else {
 					Logger.warn(getClass(), "Rule id: "
 							+ (asset.getAsset() != null ? asset.getAsset()
@@ -317,7 +317,7 @@ public class DependencyManager {
 				final List<Contentlet> contentlets = APILocator.getContentletAPI()
 						.findAllVersions(ident, false, user, false);
 				for (Contentlet con : contentlets) {
-					addDirectly(con, PusheableAsset.CONTENTLET);
+					add(con, PusheableAsset.CONTENTLET);
 				}
 			}
 		}
@@ -339,7 +339,7 @@ public class DependencyManager {
 		}
 	}
 
-	private <T> void addDirectly(final T asset, final PusheableAsset pusheableAsset) {
+	private <T> void add(final T asset, final PusheableAsset pusheableAsset) {
 		final boolean added = config.addWithDependencies(asset, pusheableAsset);
 
 		if (added) {
@@ -350,6 +350,7 @@ public class DependencyManager {
 	@VisibleForTesting
 	public Set getContents() {
 		return config.getContentlets();
+
 	}
 
 	@VisibleForTesting

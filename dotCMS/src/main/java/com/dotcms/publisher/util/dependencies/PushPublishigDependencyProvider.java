@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Provide a set of util methods to be use by {@link PushPublishigDependencyProcesor}
@@ -274,5 +275,17 @@ public class PushPublishigDependencyProvider {
             Logger.error(this, e.getMessage(), e);
             return Collections.emptyList();
         }
+    }
+
+    public Set<IHTMLPage> getHTMLPages(Folder contFolder)
+            throws DotDataException, DotSecurityException {
+        final List<IHTMLPage> liveHtmlPages = APILocator.getHTMLPageAssetAPI()
+                .getHTMLPages(contFolder, false, false, user, false);
+
+        final List<IHTMLPage> workingHtmlPages = APILocator.getHTMLPageAssetAPI()
+                .getHTMLPages(contFolder, true, false, user, false);
+
+        return Stream.concat(liveHtmlPages.stream(), workingHtmlPages.stream())
+                .collect(Collectors.toSet());
     }
 }
