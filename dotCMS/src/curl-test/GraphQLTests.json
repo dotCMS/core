@@ -2212,7 +2212,7 @@
 						"body": {
 							"mode": "graphql",
 							"graphql": {
-								"query": "{\n  page(url: \"/destinations/costa-rica\", pageMode: \"live\", languageId: \"1\") {\n    containers {\n      containerContentlets {\n        uuid\n        contentlets {\n          identifier\n          title\n          taggies: map(key:\"taggies\") \n          cats: map(key:\"cats\")\n        }\n      }\n    }\n      \n  }\n}\n",
+								"query": "{\n  page(url: \"/destinations/costa-rica\", pageMode: \"live\", languageId: \"1\") {\n    containers {\n      containerContentlets {\n        uuid\n        contentlets {\n          identifier\n          title\n          taggies: _map(key:\"taggies\") \n          cats: _map(key:\"cats\")\n        }\n      }\n    }\n      \n  }\n}\n",
 								"variables": ""
 							}
 						},
