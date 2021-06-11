@@ -5574,8 +5574,7 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"",
-									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"// let checker = (arr, target) => target.every(v => arr.includes(v));",
 									"",
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -5592,7 +5591,17 @@
 									"    pm.expect(map.stInode, 'FAILED:[map.stInode]').equal(\"799f176a-d32e-4844-a07c-1b5fcd107578\");",
 									"    pm.expect(map.contentType, 'FAILED:[map.contentType]').equal(\"Blog\");",
 									"    pm.expect(map.urlTitle, 'FAILED:[map.urlTitle]').equal(\"10-new-snow-sports-to-try-this-winter\");",
-									"    pm.expect(map.tags, 'FAILED:[map.tags]').equal(\"snowboarding,winter,snowmobiling,snow sports,skiing,cross-country skiing\");",
+									"",
+									"    let expectedTags = [",
+									"                        \"snowmobile\",",
+									"                        \"snowboarding\",",
+									"                        \"skiing\", ",
+									"                        \"winter\", ",
+									"                        \"snow sports\", ",
+									"                        \"cross-country skiing\"",
+									"                    ];",
+									"     ",
+									"    pm.expect(checker(expectedTags, map.tags), 'FAILED:[map.tags]').equal(true);",
 									"    pm.expect(map.folder, 'FAILED:[map.folder]').equal(\"SYSTEM_FOLDER\");",
 									"    pm.expect(map.hostName, 'FAILED:[map.hostName]').equal(\"demo.dotcms.com\");",
 									"    pm.expect(map.title, 'FAILED:[map.title]').equal(\"10 New Snow Sports to Try This Winter\");",
@@ -5689,6 +5698,8 @@
 									"    // pm.expect(sidebarContainer1.identifier, 'FAILED:[sidebarContainer1.identifier]').equal(\"//demo.dotcms.com/application/containers/default/\");",
 									"    // pm.expect(sidebarContainer1.uuid, 'FAILED:[sidebarContainers.uuid]').equal(\"1\");",
 									"});",
+									"",
+									"",
 									""
 								],
 								"type": "text/javascript"
