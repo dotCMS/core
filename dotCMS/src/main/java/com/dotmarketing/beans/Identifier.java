@@ -13,6 +13,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.StringPool;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
@@ -67,7 +68,7 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
 	}
 
 	public String getId() {
-	    return UtilMethods.isSet(id) ? id : null;
+	    return UtilMethods.isSet(id) ? id : StringPool.BLANK;
 
 	}
 	

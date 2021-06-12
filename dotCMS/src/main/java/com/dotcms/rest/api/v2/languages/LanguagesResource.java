@@ -172,11 +172,7 @@ public class LanguagesResource {
             @Context final HttpServletResponse response,
             @PathParam("languageTag") final String languageTag) {
 
-        final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .requiredAnonAccess(AnonymousAccess.READ)
-                .requestAndResponse(request, response)
-                .rejectWhenNoUser(false).init();
-
+        DotPreconditions.notNull(languageTag, "Expected languageTag Param path was empty.");
         this.webResource.init(null, request, response,
                 true, PortletID.LANGUAGES.toString());
 

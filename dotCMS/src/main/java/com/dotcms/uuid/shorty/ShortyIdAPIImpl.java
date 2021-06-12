@@ -138,9 +138,10 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
   @CloseDBIfOpened
   protected ShortyId viaDbLike(final String shorty, final ShortyInputType shortyType) {
     this.dbHits++;
-    final DotConnect db = new DotConnect();
-    final String uuid = uuidIfy(shorty);
-    this.dbLikeStrategyMap.get(shortyType).apply(db, uuid);
+      final DotConnect db = new DotConnect();
+      //Instead of converting the shorty to uuid we're gonna rely onlu on the 8 first chars since we now have deterministic ids on the scene
+      final String cutDownShorty = shorty.substring(0,8);
+      this.dbLikeStrategyMap.get(shortyType).apply(db, cutDownShorty);
     try {
       return transformMap(shorty, db.loadObjectResults());
     } catch (DotDataException e) {
