@@ -11,6 +11,8 @@ import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldDefinition.Builder;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -62,10 +64,10 @@ public class TypeUtil {
             try {
                 Builder fieldDefinitionBuilder = newFieldDefinition();
 
-                if(value.getArgument()!=null) {
+                if(UtilMethods.isSet(value.getArguments())) {
                     fieldDefinitionBuilder
                             .name(key)
-                            .argument(value.getArgument())
+                            .arguments(value.getArguments())
                             .type(value.getType())
                             .dataFetcher(value.getDataFetcher() != null
                                     ? value.getDataFetcher()
@@ -100,10 +102,10 @@ public class TypeUtil {
         fieldsTypesAndFetchers.forEach((key, value) -> {
             Builder fieldDefinitionBuilder = newFieldDefinition();
 
-            if(value.getArgument()!=null) {
+            if(UtilMethods.isSet(value.getArguments())) {
                 fieldDefinitionBuilder
                         .name(key)
-                        .argument(value.getArgument())
+                        .arguments(value.getArguments())
                         .type(value.getType())
                         .dataFetcher(value.getDataFetcher());
             } else {
@@ -144,7 +146,7 @@ public class TypeUtil {
     public static class TypeFetcher {
         private final GraphQLOutputType type;
         private final DataFetcher dataFetcher;
-        private final GraphQLArgument argument;
+        private final List<GraphQLArgument> arguments;
 
         public TypeFetcher(GraphQLOutputType type) {
             this(type, new FieldDataFetcher(), null);
@@ -155,10 +157,10 @@ public class TypeUtil {
         }
 
         public TypeFetcher(final GraphQLOutputType type, final DataFetcher dataFetcher,
-                final GraphQLArgument argument) {
+                final GraphQLArgument...argument) {
             this.type = type;
             this.dataFetcher = dataFetcher;
-            this.argument = argument;
+            this.arguments = argument!=null ? Arrays.asList(argument) : Collections.emptyList();
         }
 
         public GraphQLOutputType getType() {
@@ -169,8 +171,8 @@ public class TypeUtil {
             return dataFetcher;
         }
 
-        public GraphQLArgument getArgument() {
-            return argument;
+        public List<GraphQLArgument> getArguments() {
+            return arguments;
         }
     }
 }
