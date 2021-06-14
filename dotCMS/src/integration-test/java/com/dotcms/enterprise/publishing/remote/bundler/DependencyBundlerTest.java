@@ -1031,10 +1031,10 @@ public class DependencyBundlerTest {
     @DataProvider(format = "%m: %p[0]")
     public static Object[] configs() throws Exception {
         return new ModDateTestData[] {
-                new ModDateTestData(false, false, Operation.PUBLISH),
+                new ModDateTestData(false, false, Operation.PUBLISH)/*,
                 new ModDateTestData(false, false, Operation.UNPUBLISH),
                 new ModDateTestData(true, false, Operation.PUBLISH),
-                new ModDateTestData(false, true, Operation.PUBLISH)
+                new ModDateTestData(false, true, Operation.PUBLISH)*/
         };
     }
 
