@@ -1,0 +1,26 @@
+name: publish-dotcms-docker-image
+on:
+  workflow_dispatch:
+    inputs:
+      user:
+        description: 'User publishing'
+        required: true
+        default: ${{ github.actor }}
+      build_id:
+        description: 'Branch or commit to publish'
+        required: true
+        default: $(basename "${{ github.ref }}")
+
+jobs:
+  publish_image:
+    name: Publish DotCMS docker image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish docker image
+        id: publish-docker-image
+        uses: dotcms/publish-docker-image-action
+        with:
+          github_user: ${{ github.event.inputs.user }}
+          build_id: ${{ github.event.inputs.build_id }}
+          docker_hub_username: ${{ secrets.DOCKER_USERNAME }}
+          docker_hub_token:  ${{ secrets.DOCKER_TOKEN }}
