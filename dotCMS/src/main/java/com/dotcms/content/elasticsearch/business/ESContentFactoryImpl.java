@@ -3,6 +3,7 @@ package com.dotcms.content.elasticsearch.business;
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.AUTO_ASSIGN_WORKFLOW;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_ACTION_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_ASSIGN_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_BULK_KEY;
@@ -1873,6 +1874,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
         contentlet.getMap().remove(WORKFLOW_BULK_KEY);
         contentlet.getMap().remove(WORKFLOW_IN_PROGRESS);
         contentlet.getMap().remove(AUTO_ASSIGN_WORKFLOW);
+        contentlet.getMap().remove(TITLE_IMAGE_KEY);
+        contentlet.getMap().remove("_use_mod_date");
 
         contentletCache.remove(inode);
         return contentlet;
