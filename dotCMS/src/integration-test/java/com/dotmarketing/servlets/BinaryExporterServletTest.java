@@ -50,6 +50,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
 @RunWith(DataProviderRunner.class)
 public class BinaryExporterServletTest {
@@ -222,7 +223,7 @@ public class BinaryExporterServletTest {
     private HttpServletResponse mockServletResponse(final TmpBinaryFile tmpTargetFile) {
         try {
             return new MockHttpStatusResponse(new MockHttpCaptureResponse(
-                    new BaseResponse().response(), new FileOutputStream(tmpTargetFile.getFile())));
+                    Mockito.mock(HttpServletResponse.class), new FileOutputStream(tmpTargetFile.getFile())));
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
