@@ -5,7 +5,6 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringUtil;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -65,7 +64,7 @@ public abstract class UpsertCommand implements DatabaseCommand {
             if (replacements.doNothingOnConflict()) {
                 builder.append("=")
                         .append(replacements.getAttribute(QueryReplacements.CONDITIONAL_COLUMN)
-                                .toString()).append(",");
+                                        .toString()).append(",");
             } else {
                 builder.append("=?,");
             }
@@ -299,19 +298,39 @@ final class MSSQLUpsertCommand extends UpsertCommand {
         + "  INSERT (%s) "
         + "  VALUES (%s);";
 
+    private static final String MSSQL_UPSERT_QUERY_DO_NOTHING_ON_CONFLICT =
+            "MERGE %s WITH (HOLDLOCK) AS [Target] USING "
+                    + "(SELECT '%s' AS %s) AS [Source] ON [Target].%s = [Source].%s "
+                    + "WHEN NOT MATCHED THEN "
+                    + "  INSERT (%s) "
+                    + "  VALUES (%s);";
+
     @Override
     public String generateSQLQuery(SimpleMapAppContext replacements) {
-        return
-            String.format(MSSQL_UPSERT_QUERY,
-                replacements.getAttribute(QueryReplacements.TABLE),
-                replacements.getAttribute(QueryReplacements.CONDITIONAL_VALUE),
-                replacements.getAttribute(QueryReplacements.CONDITIONAL_COLUMN),
-                replacements.getAttribute(QueryReplacements.CONDITIONAL_COLUMN),
-                replacements.getAttribute(QueryReplacements.CONDITIONAL_COLUMN),
-                getUpdateColumnValuePairs(replacements),
-                getInsertColumnsString(replacements),
-                getInsertValuesString(replacements)
-            );
+        if (replacements.doNothingOnConflict()){
+            return
+                    String.format(MSSQL_UPSERT_QUERY_DO_NOTHING_ON_CONFLICT,
+                            replacements.getAttribute(QueryReplacements.TABLE),
+                            replacements.getAttribute(QueryReplacements.CONDITIONAL_VALUE),
+                            replacements.getAttribute(QueryReplacements.CONDITIONAL_COLUMN),
+                            replacements.getAttribute(QueryReplacements.CONDITIONAL_COLUMN),
+                            replacements.getAttribute(QueryReplacements.CONDITIONAL_COLUMN),
+                            getInsertColumnsString(replacements),
+                            getInsertValuesString(replacements)
+                    );
+        } else{
+            return
+                    String.format(MSSQL_UPSERT_QUERY,
+                            replacements.getAttribute(QueryReplacements.TABLE),
+                            replacements.getAttribute(QueryReplacements.CONDITIONAL_VALUE),
+                            replacements.getAttribute(QueryReplacements.CONDITIONAL_COLUMN),
+                            replacements.getAttribute(QueryReplacements.CONDITIONAL_COLUMN),
+                            replacements.getAttribute(QueryReplacements.CONDITIONAL_COLUMN),
+                            getUpdateColumnValuePairs(replacements),
+                            getInsertColumnsString(replacements),
+                            getInsertValuesString(replacements)
+                    );
+        }
     }
 }
 
@@ -333,19 +352,39 @@ final class OracleUpsertCommand extends UpsertCommand {
         + "  INSERT (%s) "
         + "  VALUES (%s)";
 
+    private static final String ORACLE_UPSERT_QUERY_DO_NOTHING_ON_CONFLICT =
+            "MERGE INTO %s Target USING "
+                    + "(SELECT '%s' %s FROM DUAL) Source ON (Target.%s = Source.%s) "
+                    + "WHEN NOT MATCHED THEN "
+                    + "  INSERT (%s) "
+                    + "  VALUES (%s)";
+
     @Override
     public String generateSQLQuery(SimpleMapAppContext replacements) {
-        return
-            String.format(ORACLE_UPSERT_QUERY,
-                replacements.getAttribute(QueryReplacements.TABLE),
-                replacements.getAttribute(QueryReplacements.CONDITIONAL_VALUE),
-                replacements.getAttribute(QueryReplacements.CONDITIONAL_COLUMN),
-                replacements.getAttribute(QueryReplacements.CONDITIONAL_COLUMN),
-                replacements.getAttribute(QueryReplacements.CONDITIONAL_COLUMN),
-                getUpdateColumnValuePairs(replacements),
-                getInsertColumnsString(replacements),
-                getInsertValuesString(replacements)
-            );
+        if (replacements.doNothingOnConflict()){
+            return
+                    String.format(ORACLE_UPSERT_QUERY_DO_NOTHING_ON_CONFLICT,
+                            replacements.getAttribute(QueryReplacements.TABLE),
+                            replacements.getAttribute(QueryReplacements.CONDITIONAL_VALUE),
+                            replacements.getAttribute(QueryReplacements.CONDITIONAL_COLUMN),
+                            replacements.getAttribute(QueryReplacements.CONDITIONAL_COLUMN),
+                            replacements.getAttribute(QueryReplacements.CONDITIONAL_COLUMN),
+                            getInsertColumnsString(replacements),
+                            getInsertValuesString(replacements)
+                    );
+        }else{
+            return
+                    String.format(ORACLE_UPSERT_QUERY,
+                            replacements.getAttribute(QueryReplacements.TABLE),
+                            replacements.getAttribute(QueryReplacements.CONDITIONAL_VALUE),
+                            replacements.getAttribute(QueryReplacements.CONDITIONAL_COLUMN),
+                            replacements.getAttribute(QueryReplacements.CONDITIONAL_COLUMN),
+                            replacements.getAttribute(QueryReplacements.CONDITIONAL_COLUMN),
+                            getUpdateColumnValuePairs(replacements),
+                            getInsertColumnsString(replacements),
+                            getInsertValuesString(replacements)
+                    );
+        }
     }
 
     @Override
@@ -357,8 +396,10 @@ final class OracleUpsertCommand extends UpsertCommand {
         ArrayList<Object> params =  new ArrayList<>();
 
         //Update parameters, skip the Conditional parameter (assumed first) because Oracle cannot Update the conditional column
-        for (int i=1; i< parameters.length; i++) {
-            params.add(parameters[i]);
+        if (!queryReplacements.doNothingOnConflict()) {
+            for (int i = 1; i < parameters.length; i++) {
+                params.add(parameters[i]);
+            }
         }
         //Insert parameters
         Collections.addAll(params, parameters);
