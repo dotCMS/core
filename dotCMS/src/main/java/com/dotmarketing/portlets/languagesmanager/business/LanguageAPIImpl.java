@@ -2,20 +2,18 @@ package com.dotmarketing.portlets.languagesmanager.business;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.contenttype.model.event.ContentTypeDeletedEvent;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
-import com.dotcms.util.DotPreconditions;
-import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotHibernateException;
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
 import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotLanguageException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.DisplayedLanguage;
@@ -24,13 +22,15 @@ import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
+import org.apache.commons.lang.math.NumberUtils;
+import org.apache.velocity.tools.view.context.ViewContext;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
+import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -40,9 +40,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
-import javax.servlet.http.HttpServletRequest;
-import org.apache.commons.lang.math.NumberUtils;
-import org.apache.velocity.tools.view.context.ViewContext;
 
 /**
  * Implementation class for the {@link LanguageAPI}.
@@ -165,6 +162,10 @@ public class LanguageAPIImpl implements LanguageAPI {
 				"Language Code can't be null or empty");
 		DotPreconditions.checkArgument(UtilMethods.isSet(language.getLanguage()),
 				"Language String can't be null or empty");
+
+		if (null != this.getLanguage(language.getLanguageCode(), language.getCountryCode())) {
+			throw new DotLanguageException("Language Not Saved. There is already another Language with the same Language code and Country code.");
+		}
 
         factory.saveLanguage(language);
         Logger.debug(this, "Created language: " + language);

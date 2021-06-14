@@ -145,13 +145,7 @@ public class EditLanguageAction extends DotPortletAction {
         if (UtilMethods.isSet(language.getLanguageCode()) && UtilMethods.isSet(language.getLanguage())) {
 			try {
 
-				if (null == languageAPI.getLanguage(language.getLanguageCode(), language.getCountryCode())) {
-					languageAPI.saveLanguage(language);
-				} else {
-
-					SessionMessages.add(req,"message", "message.languagemanager.languagenotsaved");
-					throw new SQLException();
-				}
+				languageAPI.saveLanguage(language);
 			} catch(Exception e ){
 				SessionMessages.add(req,"message", "message.languagemanager.languagenotsaved");
 				throw new SQLException();

@@ -12,6 +12,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.exception.DotLanguageException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.UUIDGenerator;
@@ -50,6 +51,25 @@ public class LanguageAPITest {
 		
 		language= new LanguageDataGen().nextPersisted();
 		
+	}
+
+	/**
+	 * Method to test: {@link LanguageAPI#saveLanguage(Language)}
+	 * Given Scenario: Create the italy languages twice, second time would be rejected by exception
+	 * ExpectedResult: Reject the second repeated language
+	 *
+	 */
+	@Test(expected = DotLanguageException.class)
+	public void save_existing_language_throw_exception() throws Exception {
+
+		final Language language = new Language();
+		language.setLanguageCode("it");
+		language.setLanguage("IT");
+		language.setCountryCode("IT");
+		language.setCountry("IT");
+		APILocator.getLanguageAPI().saveLanguage(language);
+
+		APILocator.getLanguageAPI().saveLanguage(language);
 	}
 
 	/*
