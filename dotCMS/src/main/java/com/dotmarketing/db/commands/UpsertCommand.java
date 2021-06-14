@@ -21,7 +21,7 @@ public abstract class UpsertCommand implements DatabaseCommand {
      * Method to execute The Upsert Query... This method works for most DBTypes,
      * and its overriden for DBTypes with particularities
      * @param dotConnect Connection
-     * @param query SQL String to be executed
+     * @param queryReplacements key,values to be added to the final upsert query
      * @param parameters or values
      * @throws DotDataException
      */
@@ -47,19 +47,40 @@ public abstract class UpsertCommand implements DatabaseCommand {
         if (replacements.getAttribute(QueryReplacements.ID_COLUMN) != null) {
             builder.append(replacements.getAttribute(QueryReplacements.ID_COLUMN).toString());
             builder.append("=");
-            builder.append(replacements.getAttribute(QueryReplacements.ID_VALUE).toString());
+
+            //keeps the same value in db
+            if (replacements.doNothingOnConflict()){
+                builder.append(replacements.getAttribute(QueryReplacements.ID_COLUMN).toString());
+            } else{
+                builder.append(replacements.getAttribute(QueryReplacements.ID_VALUE).toString());
+            }
+
             builder.append(",");
         }
         if (replacements.getAttribute(QueryReplacements.CONDITIONAL_COLUMN) != null
                 && !(this instanceof OracleUpsertCommand)) { //Oracle does not allow to Update the Conditional Column
             builder.append(replacements.getAttribute(QueryReplacements.CONDITIONAL_COLUMN).toString());
-            builder.append("=?,");
+
+            //keeps the same value in db
+            if (replacements.doNothingOnConflict()) {
+                builder.append("=")
+                        .append(replacements.getAttribute(QueryReplacements.CONDITIONAL_COLUMN)
+                                .toString()).append(",");
+            } else {
+                builder.append("=?,");
+            }
         }
         if (replacements.getAttribute(QueryReplacements.EXTRA_COLUMNS) != null) {
             String[] extraColumns = replacements.getAttribute(QueryReplacements.EXTRA_COLUMNS);
             for (String column : extraColumns) {
                 builder.append(column);
-                builder.append("=?,");
+
+                //keeps the same value in db
+                if (replacements.doNothingOnConflict()) {
+                    builder.append("=").append(column).append(",");
+                } else {
+                    builder.append("=?,");
+                }
             }
         }
         String update = builder.toString();
@@ -246,6 +267,7 @@ final class MySQLUpsertCommand extends UpsertCommand {
         + "VALUES (%s) ON DUPLICATE KEY "
         + "UPDATE %s";
 
+
     @Override
     public String generateSQLQuery(SimpleMapAppContext replacements) {
         return
@@ -346,7 +368,7 @@ final class OracleUpsertCommand extends UpsertCommand {
             dc.executeUpdate(query, false, params.toArray());
 
         } catch (DotDataException ex) {
-            if (SQLUtil.isUniqueConstraintException(ex)) {
+            if (SQLUtil.isUniqueConstraintException(ex) && !queryReplacements.doNothingOnConflict()) {
                 //On Unique constraint exception, attempt again... to update:
                 dc.executeUpdate(query, params.toArray());
             } else {
