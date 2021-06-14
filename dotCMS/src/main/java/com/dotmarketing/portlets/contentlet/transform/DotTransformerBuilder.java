@@ -9,6 +9,7 @@ import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformO
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.COMMON_PROPS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CONSTANTS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.KEY_VALUE_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.SITE_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_PROPS;
@@ -103,6 +104,19 @@ public class DotTransformerBuilder {
     DotTransformerBuilder identifierToMapTransformer(){
         optionsHolder.clear();
         optionsHolder.add(IDENTIFIER_VIEW);
+        return this;
+    }
+
+    /**
+     * Use to hydrated Site
+     * @param clear boolean true if want to clear the previous options, otherwise false if just want to aggregate to the current config.
+     * @return
+     */
+    public DotTransformerBuilder siteToMapTransformer(final boolean clear){
+        if (clear) {
+            optionsHolder.clear();
+        }
+        optionsHolder.addAll(EnumSet.of(SITE_VIEW));
         return this;
     }
 

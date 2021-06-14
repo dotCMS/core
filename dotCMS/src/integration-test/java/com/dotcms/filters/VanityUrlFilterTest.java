@@ -100,6 +100,7 @@ public class VanityUrlFilterTest {
 
         Assert.assertEquals(301,  response.getStatus());
         Assert.assertEquals(forwardTo,  response.getHeader("Location"));
+        Assert.assertNotNull(response.getHeader("X-DOT-VanityUrl"));
     }
 
     /**
@@ -141,7 +142,6 @@ public class VanityUrlFilterTest {
      * this tests that the vanityURL proxies requests that are made to different hosts.
      * In this case, we will request a url from dotcms and check to see that we get the results from dotcms.com
      */
-
     @Test
     public void test_that_vanity_url_filter_handles_proxy_requests() throws Exception {
 
@@ -176,7 +176,6 @@ public class VanityUrlFilterTest {
             assert (content.contains("All rights reserved"));
             assert (content.contains("<meta property=\"og:url\" content=\"https://dotcms.com/\">"));
         }
-
     }
 
     /**
@@ -211,7 +210,7 @@ public class VanityUrlFilterTest {
         
         
         assert(resolvedVanity.vanityUrlId .equals(contentlet1.getIdentifier() ));
-        
+
 
 
     }
@@ -248,6 +247,7 @@ public class VanityUrlFilterTest {
         Collection<String> list=  response.getHeaderNames();
         assert(response.getHeader("Location").equals(forwardTo));
         assert(response.getStatus()==301);
+        Assert.assertNotNull(response.getHeader("X-DOT-VanityUrl"));
 
     }
 

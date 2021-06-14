@@ -717,6 +717,7 @@ public interface WorkflowAPI {
 	public List<WorkflowActionClassParameter> copyWorkflowActionClassParameters(final Collection<WorkflowActionClassParameter> from, WorkflowActionClass to, final User user) throws DotDataException;
 	public WorkflowActionClass copyWorkflowActionClass(WorkflowActionClass from, WorkflowAction to, final User user) throws DotDataException, AlreadyExistException;
 	public WorkflowAction copyWorkflowAction(WorkflowAction from, WorkflowScheme to, final User user) throws DotDataException, AlreadyExistException, DotSecurityException;
+	WorkflowAction copyWorkflowAction(WorkflowAction action, WorkflowScheme scheme, User user, Map<String, WorkflowStep> stepsFromToMapping) throws DotDataException, AlreadyExistException, DotSecurityException;
 	public WorkflowStep copyWorkflowStep(WorkflowStep from, WorkflowScheme to, final User user) throws DotDataException, AlreadyExistException;
 
 	/**
@@ -1076,6 +1077,8 @@ public interface WorkflowAPI {
 	 * @return Map variable -> List of WorkflowScheme
 	 */
 	Map<String, List<WorkflowScheme>> findSchemesMapForContentType(List<ContentType> contentTypes)  throws DotDataException;
+
+
 
 
 	/**
