@@ -8,8 +8,8 @@ import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.request.MockAttributeRequest;
+import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
@@ -742,7 +742,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         HttpServletRequest requestProxy =
             new MockAttributeRequest(
                 new MockSessionRequest(
-                    new FakeHttpRequest(host.getHostname(), uri).request()
+                    new MockHttpRequest(host.getHostname(), uri).request()
                 ).request()
             ).request();
         HttpServletResponse responseProxy = new BaseResponse().response();

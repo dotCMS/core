@@ -147,7 +147,6 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 
 /**
  * Created by Jonathan Gamba.
@@ -3914,7 +3913,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",true);
 
         HttpServletRequest requestProxy = new MockInternalRequest().request();
-        HttpServletResponse responseProxy = Mockito.mock(HttpServletResponse.class);
+        HttpServletResponse responseProxy = new BaseResponse().response();
 
         initMessages();
 

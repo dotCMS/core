@@ -6,8 +6,8 @@ import com.dotcms.api.system.event.message.builder.SystemMessage;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
-import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.request.MockAttributeRequest;
+import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.util.ConversionUtils;
@@ -119,7 +119,7 @@ public class MessageActionlet extends WorkFlowActionlet {
                 .findDefaultHost(currentUser, false)).getOrElse(APILocator.systemHost());
         return new MockAttributeRequest(
                         new MockSessionRequest(
-                                new FakeHttpRequest(host.getHostname(), StringPool.FORWARD_SLASH).request()
+                                new MockHttpRequest(host.getHostname(), StringPool.FORWARD_SLASH).request()
                         ).request()
                 ).request();
     }

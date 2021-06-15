@@ -112,7 +112,6 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -781,7 +780,7 @@ public class ContentResourceTest extends IntegrationTestBase {
 
             // Build request and response
             final HttpServletRequest request = createHttpRequest(null, null);
-            final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+            final HttpServletResponse response = new MockHttpResponse(new BaseResponse().response());
 
             // Send request
             final ContentResource contentResource = new ContentResource();
