@@ -209,13 +209,7 @@ public class ContentletTransformer implements DBTransformer {
                             }
                             value = binaryFile;
                         } else {
-                            if (field.getFieldContentlet().startsWith("float") && originalMap
-                                    .get(field.getFieldContentlet()) instanceof Double) {
-                                value = ((Double) originalMap.get(field.getFieldContentlet()))
-                                        .floatValue();
-                            } else {
-                                value = originalMap.get(field.getFieldContentlet());
-                            }
+                            value = getObjectValue(originalMap, field);
                         }
                     }
                 } catch (final Exception e) {
@@ -234,6 +228,21 @@ public class ContentletTransformer implements DBTransformer {
         }
 
         APILocator.getContentletAPI().copyProperties(contentlet, fieldsMap);
+    }
+
+    private static Object getObjectValue(Map<String, Object> originalMap, Field field) {
+        Object value;
+        if (field.getFieldContentlet().startsWith("float") && originalMap
+                .get(field.getFieldContentlet()) instanceof Double) {
+            value = ((Double) originalMap.get(field.getFieldContentlet()))
+                    .floatValue();
+        } else if (field.getFieldContentlet().startsWith("bool") && originalMap
+                .get(field.getFieldContentlet()) instanceof Number) {
+            value = ((Number)originalMap.get(field.getFieldContentlet())).intValue() == 1;
+        } else {
+            value = originalMap.get(field.getFieldContentlet());
+        }
+        return value;
     }
 }
 
