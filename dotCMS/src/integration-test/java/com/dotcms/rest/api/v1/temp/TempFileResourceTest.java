@@ -15,7 +15,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockHeaderRequest;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockParameterRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
@@ -101,7 +101,7 @@ public class TempFileResourceTest {
 
     private static HttpServletRequest mockRequest(String host) {
         return new MockSessionRequest(
-                new MockHeaderRequest(new MockHttpRequest(host, "/api/v1/tempResource").request(),
+                new MockHeaderRequest(new MockHttpRequestIntegrationTest(host, "/api/v1/tempResource").request(),
                         "Origin", host)
                         .addHeader("Host", host).request());
     }
@@ -109,7 +109,7 @@ public class TempFileResourceTest {
     private static HttpServletRequest mockRequest() {
         return new MockSessionRequest(
                 new MockHeaderRequest(
-                        new MockHttpRequest("localhost", "/api/v1/tempResource").request(),
+                        new MockHttpRequestIntegrationTest("localhost", "/api/v1/tempResource").request(),
                         "Origin", "localhost").request());
     }
 
@@ -500,7 +500,7 @@ public class TempFileResourceTest {
         // CANNOT get the file again because the request header changed
         HttpServletRequest newRequest = new MockSessionRequest(
                 new MockHeaderRequest(
-                        new MockHttpRequest("localhost", "/api/v1/tempResource").request(),
+                        new MockHttpRequestIntegrationTest("localhost", "/api/v1/tempResource").request(),
                         testCase.headerName, "newValue")
                         .request());
         file = new TempFileAPI().getTempFile(newRequest, dotTempFile.id);

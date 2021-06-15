@@ -20,7 +20,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.dotcms.UnitTestBase;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.business.VisitorAPIImpl;
 import com.dotcms.visitor.domain.Visitor;
@@ -96,7 +96,7 @@ public class VisitorAPITest extends UnitTestBase {
      */
     @Test
     public void test_get_visitor_personas() {
-        HttpServletRequest mockRequest = new MockHttpRequest("testing", "/").request();
+        HttpServletRequest mockRequest = new MockHttpRequestIntegrationTest("testing", "/").request();
 
         final Persona persona1 = mock(Persona.class);
         when(persona1.getKeyTag()).thenReturn("persona1");
