@@ -1,7 +1,8 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.response.BaseResponse;
+import com.dotcms.repackage.org.directwebremoting.util.FakeHttpServletRequest;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -69,7 +70,7 @@ public class SetValueActionlet extends WorkFlowActionlet {
                     host = APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), false);
                 }
 
-                HttpServletRequest requestProxy = new MockHttpRequest(host.getHostname(), null).request();
+                HttpServletRequest requestProxy = new FakeHttpRequest(host.getHostname(), null).request();
                 HttpServletResponse responseProxy = new BaseResponse().response();
 
                 final String workflowTaskTitle;

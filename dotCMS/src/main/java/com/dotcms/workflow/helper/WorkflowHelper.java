@@ -5,6 +5,8 @@ import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
+import com.dotcms.content.elasticsearch.business.LuceneQueryDateTimeFormatter;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -164,13 +166,19 @@ public class WorkflowHelper {
             final String sanitizedQuery = LuceneQueryUtils
                     .sanitizeBulkActionsQuery(luceneQuery);
 
-            final String query = String.format(ES_WFSTEP_AGGREGATES_QUERY, sanitizedQuery);
+            final String queryWithDatesFormatted = LuceneQueryDateTimeFormatter
+                    .findAndReplaceQueryDates(ESContentFactoryImpl
+                            .translateQuery(sanitizedQuery, null).getQuery());
+
+            final String query = String.format(ES_WFSTEP_AGGREGATES_QUERY, queryWithDatesFormatted);
             //We should only be considering Working content.
             final SearchResponse response = LicenseManager.getInstance().isCommunity()?
+                    this.contentletAPI.esSearch(query,
+                                    false, user, false).getResponse():
                     this.contentletAPI
-                            .esSearch(query.toLowerCase(), false, user, false).getResponse():
-                    this.contentletAPI
-                            .esSearchRaw(query.toLowerCase(), false, user, false);
+                            .esSearchRaw(StringUtils.lowercaseStringExceptMatchingTokens(query,
+                                    ESContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX),
+                                    false, user, false);
             //Query must be sent lowercase. It's a must.
 
             Logger.debug(getClass(), () -> "luceneQuery: " + sanitizedQuery);
@@ -589,7 +597,13 @@ public class WorkflowHelper {
             action = this.workflowAPI.findAction(permission.getInode(), user);
             if (null != action) {
 
-                this.permissionAPI.save(permission, action, APILocator.getUserAPI().getSystemUser(), false);
+                final Role role = roleAPI.loadRoleById(permission.getRoleId());
+                if (null != role) {
+                    this.permissionAPI.save(permission, action, APILocator.getUserAPI().getSystemUser(), false);
+                } else {
+                    Logger.warn(this, "On importing workflow, does not exists the permission role: "
+                            + permission.getRoleId() + " on Workflow Scheme: " + action.getSchemeId());
+                }
             } else {
 
                 throw new DoesNotExistException("The action: " + action + " on the permission: "

@@ -1,11 +1,11 @@
 package com.dotmarketing.portlets.linkchecker.util;
 
+import com.dotcms.mock.request.FakeHttpRequest;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -82,7 +82,7 @@ public class LinkCheckerUtil {
             String link = "http://" + host.getHostname() + Config.getStringProperty("WORKFLOWS_URL") + "&_workflow_inode="
                     + String.valueOf(processor.getTask().getId());
 
-            HttpServletRequest requestProxy = new MockHttpRequest(host.getHostname(), null).request();
+            HttpServletRequest requestProxy = new FakeHttpRequest(host.getHostname(), null).request();
             HttpServletResponse responseProxy = new BaseResponse().response();
 
 
