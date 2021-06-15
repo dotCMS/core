@@ -163,9 +163,6 @@ public class LanguageAPIImpl implements LanguageAPI {
 		DotPreconditions.checkArgument(UtilMethods.isSet(language.getLanguage()),
 				"Language String can't be null or empty");
 
-		if (null != this.getLanguage(language.getLanguageCode(), language.getCountryCode())) {
-			throw new DotLanguageException("Language Not Saved. There is already another Language with the same Language code and Country code.");
-		}
 
         factory.saveLanguage(language);
         Logger.debug(this, "Created language: " + language);

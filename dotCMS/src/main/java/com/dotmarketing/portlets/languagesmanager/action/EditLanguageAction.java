@@ -6,6 +6,7 @@ import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotLanguageException;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -144,8 +145,7 @@ public class EditLanguageAction extends DotPortletAction {
 		BeanUtils.copyProperties(language,form);
         if (UtilMethods.isSet(language.getLanguageCode()) && UtilMethods.isSet(language.getLanguage())) {
 			try {
-
-				languageAPI.saveLanguage(language);
+                this.saveLanguage(language);
 			} catch(Exception e ){
 				SessionMessages.add(req,"message", "message.languagemanager.languagenotsaved");
 				throw new SQLException();
@@ -157,6 +157,15 @@ public class EditLanguageAction extends DotPortletAction {
 			setForward(req, "portlet.ext.languagesmanager.edit_language");
 		}
 	}
+
+	@VisibleForTesting
+	public void saveLanguage (final Language language) {
+
+        if (null != languageAPI.getLanguage(language.getLanguageCode(), language.getCountryCode())) {
+            throw new DotLanguageException("Language Not Saved. There is already another Language with the same Language code and Country code.");
+        }
+        languageAPI.saveLanguage(language);
+    }
 
    /**
     * Deletes the specified language.
