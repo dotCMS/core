@@ -38,11 +38,12 @@ public class Task210527DropReviewFieldsFromContentletTableTest {
     }
 
     private void addColumnsInDB() throws SQLException {
+
         if (!doColumnsExist()) {
-            new DotConnect()
-                    .executeStatement("ALTER TABLE contentlet ADD last_review varchar(255);\n"
-                            + "ALTER TABLE contentlet ADD next_review varchar(255);\n"
-                            + "ALTER TABLE contentlet ADD review_interval varchar(255);\n");
+            final DotConnect dotConnect = new DotConnect();
+            dotConnect.executeStatement("ALTER TABLE contentlet ADD last_review varchar(255);");
+            dotConnect.executeStatement("ALTER TABLE contentlet ADD next_review varchar(255);");
+            dotConnect.executeStatement("ALTER TABLE contentlet ADD review_interval varchar(255);");
         }
     }
 }
