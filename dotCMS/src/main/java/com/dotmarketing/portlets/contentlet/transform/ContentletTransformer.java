@@ -209,7 +209,13 @@ public class ContentletTransformer implements DBTransformer {
                             }
                             value = binaryFile;
                         } else {
-                            value = originalMap.get(field.getFieldContentlet());
+                            if (field.getFieldContentlet().startsWith("float") && originalMap
+                                    .get(field.getFieldContentlet()) instanceof Double) {
+                                value = ((Double) originalMap.get(field.getFieldContentlet()))
+                                        .floatValue();
+                            } else {
+                                value = originalMap.get(field.getFieldContentlet());
+                            }
                         }
                     }
                 } catch (final Exception e) {
