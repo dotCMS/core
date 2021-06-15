@@ -2,8 +2,8 @@ package com.dotmarketing.portlets.workflows.actionlet;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
+import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.request.MockAttributeRequest;
-import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.rendering.engine.ScriptEngine;
@@ -74,7 +74,7 @@ public class VelocityScriptActionlet extends WorkFlowActionlet {
                 .findDefaultHost(currentUser, false)).getOrElse(APILocator.systemHost());
         return new MockAttributeRequest(
                 new MockSessionRequest(
-                        new MockHttpRequest(host.getHostname(), StringPool.FORWARD_SLASH).request()
+                        new FakeHttpRequest(host.getHostname(), StringPool.FORWARD_SLASH).request()
                 ).request()
         ).request();
     }

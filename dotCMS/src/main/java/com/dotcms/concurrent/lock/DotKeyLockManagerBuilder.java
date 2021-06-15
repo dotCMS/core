@@ -32,7 +32,8 @@ public class DotKeyLockManagerBuilder {
             return dotKeyLockManagerFactory.create(lockManagerName);
         }
 
-        final int stripes = Config.getIntProperty(lockManagerName + DOTCMS_CONCURRENT_LOCK_STRIPES, StripedLockImpl.DEFAULT_STRIPES);
+        final int stripes = Config.getIntProperty(lockManagerName + DOTCMS_CONCURRENT_LOCK_STRIPES, 
+                        Config.getIntProperty(DOTCMS_CONCURRENT_LOCK_STRIPES,StripedLockImpl.DEFAULT_STRIPES));
         final int time = Config.getIntProperty(lockManagerName + DOTCMS_CONCURRENT_LOCK_STRIPES_TIME, StripedLockImpl.DEFAULT_TIME);
         final TimeUnit timeUnit = TimeUnit.valueOf(Config.getStringProperty(lockManagerName + DOTCMS_CONCURRENT_LOCK_STRIPES_TIMEUNIT, StripedLockImpl.DEFAULT_TU.name()));
         return new StripedLockImpl<>(stripes, time, timeUnit);

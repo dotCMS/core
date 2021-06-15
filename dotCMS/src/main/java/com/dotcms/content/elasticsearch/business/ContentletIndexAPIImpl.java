@@ -628,7 +628,12 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                                 .bulkAsync(request, RequestOptions.DEFAULT, bulkListener),
                 bulkProcessorListener);
 
-        builder.setBulkActions(ReindexThread.ELASTICSEARCH_BULK_ACTIONS)
+        // if running in a cluster reduce the number of concurrent requests in order to not overtax ES
+        final int numberToReindexInRequest = Try.of(()-> ReindexThread.ELASTICSEARCH_BULK_ACTIONS / APILocator.getServerAPI().getReindexingServers().size()).getOrElse(10);
+        
+        
+        
+        builder.setBulkActions(numberToReindexInRequest)
                 .setBulkSize(new ByteSizeValue(ReindexThread.ELASTICSEARCH_BULK_SIZE,
                         ByteSizeUnit.MB))
                 .setConcurrentRequests(ELASTICSEARCH_CONCURRENT_REQUESTS);
