@@ -11,7 +11,7 @@ import com.dotcms.UnitTestBase;
 import com.dotcms.mock.request.BaseRequest;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestUnitTest;
 import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 /**
@@ -65,7 +65,7 @@ public class MockRequestTest extends UnitTestBase {
 	
 	@Test
 	public void testMockHttpRequest() {
-		HttpServletRequest request = 	new MockHttpRequest(HOST,URI).request();
+		HttpServletRequest request = 	new MockHttpRequestUnitTest(HOST,URI).request();
 		assertThat("request ip is not null", IP.equals(request.getRemoteAddr()));
 		assertThat("request url works", (PROTOCOL + HOST + URI).equals(request.getRequestURL().toString()));
 		assertThat("request uri works", URI.equals(request.getRequestURI()));
@@ -88,7 +88,7 @@ public class MockRequestTest extends UnitTestBase {
     public void testMockHttpRequestWithNullValues() {
         final String expectedHostname="localhost";
         final String expectedUri="/";
-        HttpServletRequest request =    new MockHttpRequest(null,null).request();
+        HttpServletRequest request =    new MockHttpRequestUnitTest(null,null).request();
         assertThat("request ip is not null", IP.equals(request.getRemoteAddr()));
 
         assertThat("request url works", (PROTOCOL + expectedHostname + expectedUri).equals(request.getRequestURL().toString()));
