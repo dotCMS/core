@@ -25,9 +25,10 @@ public class Task210527DropReviewFieldsFromContentletTable implements StartupTas
     @Override
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
         try {
-            new DotConnect().executeStatement("ALTER TABLE contentlet DROP COLUMN last_review;\n"
-                    + "ALTER TABLE contentlet DROP COLUMN next_review;\n"
-                    + "ALTER TABLE contentlet DROP COLUMN review_interval;\n");
+            final DotConnect dotConnect = new DotConnect();
+            dotConnect.executeStatement("ALTER TABLE contentlet DROP COLUMN last_review;");
+            dotConnect.executeStatement("ALTER TABLE contentlet DROP COLUMN next_review;");
+            dotConnect.executeStatement("ALTER TABLE contentlet DROP COLUMN review_interval;");
         } catch (SQLException exception) {
             throw new DotDataException(exception.getMessage(),exception);
         }
