@@ -43,7 +43,7 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.InitDataObject;
@@ -2569,7 +2569,7 @@ public class FieldResourceTest {
     private static HttpServletRequest getHttpRequest() {
         MockHeaderRequest request = new MockHeaderRequest(
                 (
-                        new MockSessionRequest(new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                        new MockSessionRequest(new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 ).request()
         );
 

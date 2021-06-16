@@ -25,11 +25,11 @@ import javax.servlet.http.HttpServletRequest;
  * </pre>
  *
  */
-public class MockHttpRequest implements MockRequest {
+public class MockHttpRequestIntegrationTest implements MockRequest {
 
     private final HttpServletRequest request;
     private final Map<String,String[]> paramMap;
-    public MockHttpRequest(final String incomingHostname, final String incomingUri) {
+    public MockHttpRequestIntegrationTest(final String incomingHostname, final String incomingUri) {
         
         final String uri = UtilMethods.isSet(incomingUri) ? incomingUri : StringPool.FORWARD_SLASH;
         final String hostname = UtilMethods.isSet(incomingHostname) ? incomingHostname : "localhost";
