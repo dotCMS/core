@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "ac26554a-a121-4415-a7e2-817f4480ab9c",
+		"_postman_id": "90ad55aa-c2e7-4fc8-b56f-68e526c20695",
 		"name": "Site Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -207,8 +207,8 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code should be 400\", function () {",
-							"    pm.response.to.have.status(400);",
+							"pm.test(\"Status code should be 404\", function () {",
+							"    pm.response.to.have.status(404);",
 							"});",
 							"",
 							""
@@ -1402,8 +1402,8 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code should be 400\", function () {",
-							"    pm.response.to.have.status(400);",
+							"pm.test(\"Status code should be 404\", function () {",
+							"    pm.response.to.have.status(404);",
 							"});",
 							""
 						],
@@ -1502,8 +1502,8 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code should be 400\", function () {",
-							"    pm.response.to.have.status(400);",
+							"pm.test(\"Status code should be 404\", function () {",
+							"    pm.response.to.have.status(404);",
 							"});",
 							""
 						],
@@ -1652,7 +1652,7 @@
 					"script": {
 						"exec": [
 							"pm.test(\"Status code should be 400\", function () {",
-							"    pm.response.to.have.status(400);",
+							"    pm.response.to.have.status(404);",
 							"});"
 						],
 						"type": "text/javascript"

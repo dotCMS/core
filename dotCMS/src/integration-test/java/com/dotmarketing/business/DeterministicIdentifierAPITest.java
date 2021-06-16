@@ -40,6 +40,7 @@ import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -70,35 +71,50 @@ public class DeterministicIdentifierAPITest {
      * @param testCase
      * @throws Exception
      */
+
     @Test
     @UseDataProvider("getAssetsTestCases")
-    public void Test_Asset_Generate_Deterministic_Id_Best_Effort(final AssetTestCase testCase) throws Exception {
+    public void Test_Asset_Generate_Deterministic_Id_Best_Effort(final AssetTestCase testCase)
+            throws Exception {
 
-        //First the basic two checks
-        //We check the asset type is what we expect
-        assertEquals(testCase.expectedType, defaultGenerator.resolveAssetType(testCase.versionable));
-        //We also check the asset name is what we expect too
-        assertEquals(testCase.expectedName, defaultGenerator.resolveAssetName(testCase.versionable));
-        //While the identifier isnt in the database we should continue to get the same (That's why we call it consistent)
-        final String generatedId1 = defaultGenerator.generateDeterministicIdBestEffort(testCase.versionable, testCase.parent);
-        assertFalse(isIdentifier(generatedId1));
-        assertTrue(defaultGenerator.isDeterministicId(generatedId1));
-        final String generatedId2 = defaultGenerator.generateDeterministicIdBestEffort(testCase.versionable, testCase.parent);
-        //And they should be compatible with our definition of UUID
-        assertTrue(UUIDUtil.isUUID(generatedId1));
-        //They must be the same until it gets insterted into the identifier table then afterwards a random uuid will be generated. That's why it is called bestEffort
-        assertEquals(generatedId1, generatedId2);
-        //Now simulate a situation on which the identifier already lives in the db
-        insertIdentifier(generatedId1, testCase.expectedName, testCase.expectedType, testCase.site.getIdentifier());
-        //The expected this time would be a non-deterministic identifier
-        final String generatedId3 = defaultGenerator.generateDeterministicIdBestEffort(testCase.versionable, testCase.parent);
-        assertNotEquals(generatedId2, generatedId3);
-        //They always must pass this function correctly regardless of the nature
-        assertTrue(UUIDUtil.isUUID(generatedId3));
-        //And finally we test we're looking at the old format
-        assertTrue(generatedId3.matches(NON_DETERMINISTIC_IDENTIFIER));
+        final boolean generateConsistentIdentifiers = Config
+                .getBooleanProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+        try {
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+            //First the basic two checks
+            //We check the asset type is what we expect
+            assertEquals(testCase.expectedType,
+                    defaultGenerator.resolveAssetType(testCase.versionable));
+            //We also check the asset name is what we expect too
+            assertEquals(testCase.expectedName,
+                    defaultGenerator.resolveAssetName(testCase.versionable));
+            //While the identifier isnt in the database we should continue to get the same (That's why we call it consistent)
+            final String generatedId1 = defaultGenerator
+                    .generateDeterministicIdBestEffort(testCase.versionable, testCase.parent);
+            assertFalse(isIdentifier(generatedId1));
+            assertTrue(defaultGenerator.isDeterministicId(generatedId1));
+            final String generatedId2 = defaultGenerator
+                    .generateDeterministicIdBestEffort(testCase.versionable, testCase.parent);
+            //And they should be compatible with our definition of UUID
+            assertTrue(UUIDUtil.isUUID(generatedId1));
+            //They must be the same until it gets inserted into the identifier table then afterwards a random uuid will be generated. That's why it is called bestEffort
+            assertEquals(generatedId1, generatedId2);
+            //Now simulate a situation on which the identifier already lives in the db
+            insertIdentifier(generatedId1, testCase.expectedName, testCase.expectedType,
+                    testCase.site.getIdentifier());
+            //The expected this time would be a non-deterministic identifier
+            final String generatedId3 = defaultGenerator
+                    .generateDeterministicIdBestEffort(testCase.versionable, testCase.parent);
+            assertNotEquals(generatedId2, generatedId3);
+            //They always must pass this function correctly regardless of the nature
+            assertTrue(UUIDUtil.isUUID(generatedId3));
+            //And finally we test we're looking at the old format
+            assertTrue(generatedId3.matches(NON_DETERMINISTIC_IDENTIFIER));
 
-        assertFalse(defaultGenerator.isDeterministicId(generatedId3));
+            assertFalse(defaultGenerator.isDeterministicId(generatedId3));
+        } finally {
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, generateConsistentIdentifiers);
+        }
 
     }
 
@@ -213,22 +229,29 @@ public class DeterministicIdentifierAPITest {
 
     }
 
-
     @Test
     @UseDataProvider("getContentTypeTestCases")
     public void Test_create_Content_Type(final ContentTypeTestCase testCase) {
-
-        assertEquals(testCase.expectedType, defaultGenerator.resolveAssetType(testCase.contentType));
-        assertEquals(testCase.expectedName, defaultGenerator.resolveName(testCase.contentType,
-                testCase.contentType::variable));
-        final String generatedId1 = defaultGenerator.generateDeterministicIdBestEffort(testCase.contentType,
-                testCase.contentType::variable);
-        assertTrue(UUIDUtil.isUUID(generatedId1));
-        final String generatedId2 = defaultGenerator.generateDeterministicIdBestEffort(testCase.contentType,
-                testCase.contentType::variable);
-        //Test it is idempotent
-        assertEquals(generatedId1, generatedId2);
-
+        final boolean generateConsistentIdentifiers = Config
+                .getBooleanProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+        try {
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+            assertEquals(testCase.expectedType,
+                    defaultGenerator.resolveAssetType(testCase.contentType));
+            assertEquals(testCase.expectedName, defaultGenerator.resolveName(testCase.contentType,
+                    testCase.contentType::variable));
+            final String generatedId1 = defaultGenerator
+                    .generateDeterministicIdBestEffort(testCase.contentType,
+                            testCase.contentType::variable);
+            assertTrue(UUIDUtil.isUUID(generatedId1));
+            final String generatedId2 = defaultGenerator
+                    .generateDeterministicIdBestEffort(testCase.contentType,
+                            testCase.contentType::variable);
+            //Test it is idempotent
+            assertEquals(generatedId1, generatedId2);
+        } finally {
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, generateConsistentIdentifiers);
+        }
     }
 
     @DataProvider
@@ -265,7 +288,7 @@ public class DeterministicIdentifierAPITest {
         final String expectedType;
         final Host site;
 
-        public ContentTypeTestCase(final ContentType contentType, final String expectedName,
+         ContentTypeTestCase(final ContentType contentType, final String expectedName,
                 final String expectedType,final Host site) {
             this.contentType = contentType;
             this.expectedName = expectedName;
@@ -290,12 +313,19 @@ public class DeterministicIdentifierAPITest {
     @UseDataProvider("getLanguageTestCases")
     public void Test_Language_Deterministic_Id(final LanguageTestCase testCase){
 
-         final Language lang = testCase.language;
-         assertEquals(testCase.expectedSeed,defaultGenerator.deterministicIdSeed(lang));
-         final long id = defaultGenerator.generateDeterministicIdBestEffort(lang);
-         assertTrue(id < JS_MAX_SAFE_INTEGER);
-         assertEquals(testCase.expectedHash,id);
-
+        final boolean generateConsistentIdentifiers = Config
+                .getBooleanProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+        try {
+            //Disconnect the consistent identifier generation so we can test the generator and no identifier will be stored in the db
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+            final Language lang = testCase.language;
+            assertEquals(testCase.expectedSeed, defaultGenerator.deterministicIdSeed(lang));
+            final long id = defaultGenerator.generateDeterministicIdBestEffort(lang);
+            assertTrue(id < JS_MAX_SAFE_INTEGER);
+            assertEquals(testCase.expectedHash, id);
+        }finally {
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, generateConsistentIdentifiers);
+        }
     }
 
     @DataProvider
@@ -317,7 +347,7 @@ public class DeterministicIdentifierAPITest {
          final String expectedSeed;
          final long expectedHash;
 
-        public LanguageTestCase(final Language language,final String expectedSeed,final long expectedHash) {
+         LanguageTestCase(final Language language,final String expectedSeed,final long expectedHash) {
             this.language = language;
             this.expectedSeed = expectedSeed;
             this.expectedHash = expectedHash;

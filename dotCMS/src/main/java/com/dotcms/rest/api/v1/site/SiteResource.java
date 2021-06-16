@@ -36,7 +36,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
-
+import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import java.io.File;
 import java.io.Serializable;
 import java.text.ParseException;
@@ -62,9 +63,6 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
-import com.liferay.util.StringPool;
-import io.vavr.control.Try;
 import org.apache.commons.lang.StringUtils;
 import org.glassfish.jersey.server.JSONP;
 import org.quartz.SchedulerException;
@@ -319,7 +317,7 @@ public class SiteResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response findAllSiteThumbnails(@Context final HttpServletRequest httpServletRequest,
-                                @Context final HttpServletResponse httpServletResponse) throws PortalException, SystemException, DotDataException, DotSecurityException {
+                                @Context final HttpServletResponse httpServletResponse) throws DotDataException, DotSecurityException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -373,7 +371,7 @@ public class SiteResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response publishSite(@Context final HttpServletRequest httpServletRequest,
                                 @Context final HttpServletResponse httpServletResponse,
-                                @PathParam("siteId") final String siteId) throws DotDataException, DotSecurityException, PortalException, SystemException {
+                                @PathParam("siteId") final String siteId) throws DotDataException, DotSecurityException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -413,7 +411,7 @@ public class SiteResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response unpublishSite(@Context final HttpServletRequest httpServletRequest,
                                   @Context final HttpServletResponse httpServletResponse,
-                                  @PathParam("siteId") final String siteId) throws DotDataException, DotSecurityException, PortalException, SystemException {
+                                  @PathParam("siteId") final String siteId) throws DotDataException, DotSecurityException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -430,7 +428,7 @@ public class SiteResource implements Serializable {
                 this.siteHelper.getSiteNoFrontEndRoles(user, siteId);
 
         if (null == site) {
-            throw new IllegalArgumentException("Site: " + siteId + " does not exists");
+            throw new NotFoundException("Site: " + siteId + " does not exists");
         }
 
         this.siteHelper.unpublish(site, user, pageMode.respectAnonPerms);
@@ -455,7 +453,7 @@ public class SiteResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response archiveSite(@Context final HttpServletRequest httpServletRequest,
                                 @Context final HttpServletResponse httpServletResponse,
-                                @PathParam("siteId")  final String siteId) throws DotDataException, DotSecurityException, PortalException, SystemException {
+                                @PathParam("siteId")  final String siteId) throws DotDataException, DotSecurityException{
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -472,7 +470,7 @@ public class SiteResource implements Serializable {
                 this.siteHelper.getSiteNoFrontEndRoles(user, siteId);
 
         if (null == site) {
-            throw new IllegalArgumentException("Site: " + siteId + " does not exists");
+            throw new NotFoundException("Site: " + siteId + " does not exists");
         }
 
         if(site.isDefault()) {
@@ -515,7 +513,7 @@ public class SiteResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response unarchiveSite(@Context final HttpServletRequest httpServletRequest,
                                   @Context final HttpServletResponse httpServletResponse,
-                                  @PathParam("siteId")  final String siteId) throws DotDataException, DotSecurityException, PortalException, SystemException {
+                                  @PathParam("siteId")  final String siteId) throws DotDataException, DotSecurityException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -559,7 +557,7 @@ public class SiteResource implements Serializable {
     public void deleteSite(@Context final HttpServletRequest httpServletRequest,
                                 @Context final HttpServletResponse httpServletResponse,
                                 @Suspended final AsyncResponse asyncResponse,
-                                @PathParam("siteId")  final String siteId) throws DotDataException, DotSecurityException, PortalException, SystemException {
+                                @PathParam("siteId")  final String siteId) throws DotDataException, DotSecurityException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -618,7 +616,7 @@ public class SiteResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response makeDefault(@Context final HttpServletRequest httpServletRequest,
                            @Context final HttpServletResponse httpServletResponse,
-                           @PathParam("siteId")  final String siteId) throws DotDataException, DotSecurityException, PortalException, SystemException {
+                           @PathParam("siteId")  final String siteId) throws DotDataException, DotSecurityException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -661,7 +659,7 @@ public class SiteResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response getSiteSetupProgress(@Context final HttpServletRequest httpServletRequest,
                                 @Context final HttpServletResponse httpServletResponse,
-                                @PathParam("siteId")  final String siteId) throws DotDataException, DotSecurityException, PortalException, SystemException {
+                                @PathParam("siteId")  final String siteId){
 
         Logger.debug(this, ()-> "Getting the site : " + siteId + " as a default");
 
@@ -729,7 +727,7 @@ public class SiteResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response findHostByName(@Context final HttpServletRequest httpServletRequest,
                                  @Context final HttpServletResponse httpServletResponse,
-                                 final SearchSiteByNameForm searchSiteByNameForm) throws DotDataException, DotSecurityException, PortalException, SystemException {
+                                 final SearchSiteByNameForm searchSiteByNameForm) throws DotDataException, DotSecurityException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -779,7 +777,7 @@ public class SiteResource implements Serializable {
     public Response createNewSite(@Context final HttpServletRequest httpServletRequest,
                                   @Context final HttpServletResponse httpServletResponse,
                                   final SiteForm newSiteForm)
-            throws DotDataException, DotSecurityException, PortalException, SystemException, ParseException, SchedulerException, ClassNotFoundException {
+            throws DotDataException, DotSecurityException{
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -880,7 +878,7 @@ public class SiteResource implements Serializable {
                                   @Context final HttpServletResponse httpServletResponse,
                                   @QueryParam("id") final String  siteIdentifier,
                                   final SiteForm newSiteForm)
-            throws DotDataException, DotSecurityException, PortalException, SystemException, ParseException, SchedulerException, ClassNotFoundException {
+            throws DotDataException, DotSecurityException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -899,7 +897,7 @@ public class SiteResource implements Serializable {
 
         if (null == site) {
 
-            throw new IllegalArgumentException("Site: " + siteIdentifier + " does not exists");
+            throw new NotFoundException("Site: " + siteIdentifier + " does not exists");
         }
 
         final PageMode      pageMode      = PageMode.get(httpServletRequest);

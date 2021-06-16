@@ -194,10 +194,10 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
     private String deterministicIdSeed(final ContentType contentType, final Supplier<String>contentTypeVarName) {
        final String assetType = resolveAssetType(contentType);
        final String name = resolveName(contentType, contentTypeVarName);
-       final String deterministicId = String.format("%s:%s",assetType, name).toLowerCase();
+       final String seedId = String.format("%s:%s",assetType, name).toLowerCase();
 
-       Logger.debug(DeterministicIdentifierAPIImpl.class, String.format(" contentType: %s, assetName: %s,  deterministicId: %s", assetType, name, deterministicId));
-       return deterministicId;
+       Logger.debug(DeterministicIdentifierAPIImpl.class, String.format(" contentType: %s, assetName: %s,  seedId: %s", assetType, name, seedId));
+       return seedId;
     }
 
     /**

@@ -1010,10 +1010,10 @@
 								"exec": [
 									"pm.test(\"Expected Language info returned\", function () {",
 									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.entity.languageCode).to.eql(\"it\");",
-									"    pm.expect(jsonData.entity.countryCode).to.eql(\"IT\");",
-									"    pm.expect(jsonData.entity.language).to.eql(\"Italian\");",
-									"    pm.expect(jsonData.entity.country).to.eql(\"Italy\");",
+									"    pm.expect(jsonData.entity.languageCode).to.eql(\"de\");",
+									"    pm.expect(jsonData.entity.countryCode).to.eql(\"DE\");",
+									"    pm.expect(jsonData.entity.language).to.eql(\"German\");",
+									"    pm.expect(jsonData.entity.country).to.eql(\"Germany\");",
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
@@ -1050,7 +1050,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"languageCode\":\"it\",\n\t\"language\":\"Italian\", \n\t\"countryCode\":\"IT\", \n\t\"country\":\"Italy\"\n}",
+							"raw": "{\n\t\"languageCode\":\"de\",\n\t\"language\":\"German\", \n\t\"countryCode\":\"DE\", \n\t\"country\":\"Germany\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1121,7 +1121,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"languageCode\":\"it\",\n\t\"language\":\"Italian Updated\", \n\t\"countryCode\":\"IT\", \n\t\"country\":\"Italy\"\n}",
+							"raw": "{\n\t\"languageCode\":\"de\",\n\t\"language\":\"German\", \n\t\"countryCode\":\"DE\", \n\t\"country\":\"Germany\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1200,10 +1200,10 @@
 								"exec": [
 									"pm.test(\"Expected Language info returned\", function () {",
 									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.entity.languageCode).to.eql(\"it\");",
-									"    pm.expect(jsonData.entity.countryCode).to.eql(\"IT\");",
-									"    pm.expect(jsonData.entity.language).to.eql(\"Italian\");",
-									"    pm.expect(jsonData.entity.country).to.eql(\"Italy\");",
+									"    pm.expect(jsonData.entity.languageCode).to.eql(\"en\");",
+									"    pm.expect(jsonData.entity.countryCode).to.eql(\"NZ\");",
+									"    pm.expect(jsonData.entity.language).to.eql(\"English\");",
+									"    pm.expect(jsonData.entity.country).to.eql(\"New Zealand\");",
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
@@ -1240,7 +1240,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"languageCode\":\"it\",\n\t\"language\":\"Italian\", \n\t\"countryCode\":\"IT\", \n\t\"country\":\"Italy\"\n}",
+							"raw": "{\n\t\"languageCode\":\"en\",\n\t\"language\":\"English\", \n\t\"countryCode\":\"NZ\", \n\t\"country\":\"New Zealand\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1344,7 +1344,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"contentlet\": {\n       \"contentType\":\"{{contentTypeVariable}}\",\n       \"title\":\"Content in Italian\", \n       \"contentHost\":\"demo.dotcms.com\",\n       \"body\":\"This is a content in Italian\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"languageId\":\"{{languageId}}\",\n       \"name\":\"whatever\"\n    }\n}",
+							"raw": "{\n    \"contentlet\": {\n       \"contentType\":\"{{contentTypeVariable}}\",\n       \"title\":\"Content in NZ English\", \n       \"contentHost\":\"demo.dotcms.com\",\n       \"body\":\"This is a content in NZ English\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"languageId\":\"{{languageId}}\",\n       \"name\":\"whatever\"\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1424,7 +1424,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"languageCode\":\"it\",\n\t\"language\":\"Italian Updated\", \n\t\"countryCode\":\"IT\", \n\t\"country\":\"Italy\"\n}",
+							"raw": "{\n\t\"languageCode\":\"en\",\n\t\"language\":\"English\", \n\t\"countryCode\":\"NZ\", \n\t\"country\":\"New Zealand\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
