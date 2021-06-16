@@ -112,6 +112,8 @@ import org.junit.runners.Suite.SuiteClasses;
 /* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+        PushPublishBundleGeneratorTest.class,
+        RuleBundlerTest.class,
         com.dotcms.content.elasticsearch.business.ESMappingAPITest.class,
         org.apache.velocity.runtime.parser.node.SimpleNodeTest.class,
         com.liferay.portal.ejb.UserLocalManagerTest.class,
@@ -347,7 +349,6 @@ import org.junit.runners.Suite.SuiteClasses;
         LanguageUtilTest.class,
         FolderResourceTest.class,
         Task05225RemoveLoadRecordsToIndexTest.class,
-        PushPublishBundleGeneratorTest.class,
         BundleFactoryTest.class,
         PublisherFilterImplTest.class,
         PushPublishFiltersInitializerTest.class,
@@ -402,7 +403,6 @@ import org.junit.runners.Suite.SuiteClasses;
         FolderBundlerTest.class,
         HostBundlerTest.class,
         LinkBundlerTest.class,
-        RuleBundlerTest.class,
         TemplateBundlerTest.class,
         WorkflowBundlerTest.class,
         PublisherAPIImplTest.class,

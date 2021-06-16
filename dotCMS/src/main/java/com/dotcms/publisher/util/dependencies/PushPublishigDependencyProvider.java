@@ -246,9 +246,9 @@ public class PushPublishigDependencyProvider {
         return pageMultiTrees.values().stream()
                 .flatMap(personalizedContentlets -> personalizedContentlets.stream())
                 .map(personalizedContentlet -> personalizedContentlet.getContentletId())
-                .filter(Objects::isNull)
+                .filter(Objects::nonNull)
                 .map(contentletId -> findIdentifier(contentletId))
-                .filter(Objects::isNull)
+                .filter(Objects::nonNull)
                 .flatMap(identifier -> findContentletsByIdentifier(identifier).stream())
                 .collect(Collectors.toList());
     }
