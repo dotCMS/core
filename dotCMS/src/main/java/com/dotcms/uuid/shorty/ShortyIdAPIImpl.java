@@ -41,12 +41,15 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
 
   private final Map<ShortyInputType, DBLikeStrategy> dbLikeStrategyMap =
           map(
-                  ShortyInputType.CONTENT,         (final DotConnect db, final String uuidIfy) -> db.setSQL(ShortyIdSql.SELECT_SHORTY_SQL_LIKE).addParam(uuidIfy + "%").addParam(uuidIfy + "%"),
+                  ShortyInputType.CONTENT,         (final DotConnect db, final String uuidIfy) -> {
+                    final String sqlUnion = (ShortyIdSql.SELECT_SHORTY_SQL_LIKE + " UNION " + ShortyIdSql.SELECT_SHORTY_SQL_LIKE);
+                    final String deterministicId = uuidIfy.replaceAll("-","");
+                    db.setSQL(sqlUnion).addParam(uuidIfy + "%").addParam(uuidIfy + "%").addParam(deterministicId + "%").addParam(deterministicId + "%");
+                  },
                   ShortyInputType.WORKFLOW_SCHEME, (final DotConnect db, final String uuidIfy) -> db.setSQL(ShortyIdSql.SELECT_WF_SCHEME_SHORTY_SQL_LIKE).addParam(uuidIfy + "%"),
                   ShortyInputType.WORKFLOW_STEP,   (final DotConnect db, final String uuidIfy) -> db.setSQL(ShortyIdSql.SELECT_WF_STEP_SHORTY_SQL_LIKE).addParam(uuidIfy + "%"),
                   ShortyInputType.WORKFLOW_ACTION, (final DotConnect db, final String uuidIfy) -> db.setSQL(ShortyIdSql.SELECT_WF_ACTION_SHORTY_SQL_LIKE).addParam(uuidIfy + "%")
           );
-
 
   long dbHits = 0;
   public static int MINIMUM_SHORTY_ID_LENGTH =
@@ -138,10 +141,9 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
   @CloseDBIfOpened
   protected ShortyId viaDbLike(final String shorty, final ShortyInputType shortyType) {
     this.dbHits++;
-      final DotConnect db = new DotConnect();
-      //Instead of converting the shorty to uuid we're gonna rely onlu on the 8 first chars since we now have deterministic ids on the scene
-      final String cutDownShorty = shorty.substring(0,8);
-      this.dbLikeStrategyMap.get(shortyType).apply(db, cutDownShorty);
+    final DotConnect db = new DotConnect();
+    final String uuid = uuidIfy(shorty);
+    this.dbLikeStrategyMap.get(shortyType).apply(db, uuid);
     try {
       return transformMap(shorty, db.loadObjectResults());
     } catch (DotDataException e) {

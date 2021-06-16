@@ -39,6 +39,7 @@ import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -100,7 +101,6 @@ public class DeterministicIdentifierAPITest {
         assertFalse(defaultGenerator.isDeterministicId(generatedId3));
 
     }
-
 
     private boolean isIdentifier(final String hash){
         return (new DotConnect()
@@ -283,17 +283,45 @@ public class DeterministicIdentifierAPITest {
         }
     }
 
+    private static final long JS_MAX_SAFE_INTEGER = 9007199254740991L;
+
+
     @Test
-    public void Test_Language_Deterministic_Id(){
-         final Language enUS = new Language(0L,"en","US", "","");
-         final long enUSid = defaultGenerator.generateDeterministicIdBestEffort(enUS);
-         assertEquals(1, enUSid);
+    @UseDataProvider("getLanguageTestCases")
+    public void Test_Language_Deterministic_Id(final LanguageTestCase testCase){
 
-         final Language esUS = new Language(0L,"es","US", "","");
-         final long esUSid = defaultGenerator.generateDeterministicIdBestEffort(esUS);
-         assertEquals(4448449142310179479L, esUSid);
+         final Language lang = testCase.language;
+         assertEquals(testCase.expectedSeed,defaultGenerator.deterministicIdSeed(lang));
+         final long id = defaultGenerator.generateDeterministicIdBestEffort(lang);
+         assertTrue(id < JS_MAX_SAFE_INTEGER);
+         assertEquals(testCase.expectedHash,id);
 
+    }
 
+    @DataProvider
+    public static Object[] getLanguageTestCases() throws Exception {
+        prepareIfNecessary();
+        return new Object[]{
+               new LanguageTestCase(new Language(0,"en","US", "",""),"Language:en:US",5318600),
+               new LanguageTestCase(new Language(0,"es","US", "",""),"Language:es:US",4913155),
+               new LanguageTestCase(new Language(0,"ep" , "", "Esperanto", ""),"Language:ep:",5292269),
+               new LanguageTestCase(new Language(0,"de", "DE", "German", "Germany"),"Language:de:DE",4660718),
+               new LanguageTestCase(new Language(0,"ru" , "RUS", "Russian", "Russia"),"Language:ru:RUS",5066818),
+               new LanguageTestCase(new Language(0,"da" , "DK ", "Danish", "Denmark"),"Language:da:DK",4540984),
+               new LanguageTestCase(new Language(0,"en" , "NZ ", "English", "New Zealand"),"Language:en:NZ",5382528)
+        };
+    }
+
+    static class LanguageTestCase {
+         final Language language;
+         final String expectedSeed;
+         final long expectedHash;
+
+        public LanguageTestCase(final Language language,final String expectedSeed,final long expectedHash) {
+            this.language = language;
+            this.expectedSeed = expectedSeed;
+            this.expectedHash = expectedHash;
+        }
     }
 
 }

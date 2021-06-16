@@ -4,7 +4,6 @@ import static com.dotmarketing.util.UUIDUtil.isUUID;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.field.BinaryField;
-import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
@@ -26,9 +25,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import java.io.File;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
@@ -36,13 +33,17 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.commons.codec.digest.DigestUtils;
 
+
+/**
+ * A Deterministic identifier is One that can be predicted based on certain components of the Type we're saving
+ * So that we minimize conflicts on distributed nodes.
+ * The idea is that the same piece of content will lead to the same database id.
+ */
 public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAPI {
 
     static final String GENERATE_DETERMINISTIC_IDENTIFIERS = "GENERATE_DETERMINISTIC_IDENTIFIERS";
 
     private static final int MAX_ATTEMPTS = 3;
-
-    private static final long PRIME = 1125899906842597L;
 
     static final String NON_DETERMINISTIC_IDENTIFIER = "[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}";
 
@@ -142,7 +143,6 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
 
     }
 
-    @CloseDBIfOpened
     private String deterministicIdSeed(final Versionable asset, final Treeable parent) {
 
         final Host parentHost = (parent instanceof Host) ? (Host) parent : Try.of(
@@ -205,8 +205,9 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
      * @param lang
      * @return
      */
-    private String deterministicIdSeed(final Language lang){
-       return  String.format("%s:%s:%s", Language.class.getClass().getSimpleName(),lang.getLanguageCode(),lang.getCountryCode());
+    @VisibleForTesting
+    String deterministicIdSeed(final Language lang){
+       return  String.format("%s:%s:%s", Language.class.getSimpleName(),lang.getLanguageCode(),lang.getCountryCode()).trim();
     }
 
     /**
@@ -257,8 +258,8 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
      * @param hash
      * @return
      */
+    @CloseDBIfOpened
     private boolean isContentTypeInode(final String hash){
-
             return new DotConnect()
                     .setSQL("select count(*) as test from structure s join inode i on s.inode = i.inode where s.inode =?")
                     .addParam(hash)
@@ -301,12 +302,8 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
      */
     @Override
     public long generateDeterministicIdBestEffort(final Language lang) {
-        //You never know.. better to be safe than sorry
-        if("US".equals(lang.getCountryCode()) &&  "en".equals(lang.getLanguageCode())){
-          return 1;
-        }
         return enabled() ? bestEffortDeterministicLanguageId(
-                longHash(hash(deterministicIdSeed(lang)))) : nextLangId();
+                simpleHash(hash(deterministicIdSeed(lang)))) : nextLangId();
     }
 
     @CloseDBIfOpened
@@ -332,6 +329,7 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
      * @param hash
      * @return
      */
+    @CloseDBIfOpened
     private boolean isLanguageId(final long hash){
         return new DotConnect()
                 .setSQL("select count(*) as test from language where id =?")
@@ -340,18 +338,21 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
     }
 
     /**
-     * basically takes a string and hash it into a long number
+     * Basically takes a string and hash it into a long number (not extremely long)
+     * As this is meant to be used as an id take into account that not every java long can be represented in javascript therefore this number can be excessively large
+     * That is why this has is relatively simple
      * Used to create a deterministic long representation out of a sha256
      * @param string
      * @return
      */
-    private long longHash(final String string) {
+     @VisibleForTesting
+     long simpleHash(final String string) {
         final int len = string.length();
-        long hash = PRIME;
+        long hash = 0;
         for (int i = 0; i < len; i++) {
-            hash = 31 * hash + string.charAt(i);
+            hash += 131 * (i + 1) * string.charAt(i);
         }
-        return Math.abs(hash);
+        return hash;
     }
 
     /**

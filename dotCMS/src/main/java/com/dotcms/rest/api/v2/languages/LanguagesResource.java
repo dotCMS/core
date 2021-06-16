@@ -17,6 +17,7 @@ import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.I18NUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
+import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -31,11 +32,13 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.control.Try;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -111,6 +114,23 @@ public class LanguagesResource {
     }
 
     /**
+     * Kick back any attempt to save a language that already exists
+     * @param languageForm
+     * @throws AlreadyExistException
+     */
+    private void validateLanguageExists(final LanguageForm languageForm)
+            throws AlreadyExistException {
+        DotPreconditions.checkArgument(UtilMethods.isSet(languageForm.getLanguageCode()),
+                "Language Code can't be null or empty");
+        final Language language = getLanguage(languageForm);
+        if (null != language) {
+            throw new AlreadyExistException(
+                    String.format("A language matching `%s-%s` already exists in the system.",
+                            languageForm.getLanguageCode(), languageForm.getCountryCode()));
+        }
+    }
+
+    /**
      * Persists a new {@link Language}
      *
      * @param request HttpServletRequest
@@ -130,10 +150,11 @@ public class LanguagesResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response saveLanguage(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            final LanguageForm languageForm) {
+            final LanguageForm languageForm) throws AlreadyExistException {
         this.webResource.init(null, request, response,
                 true, PortletID.LANGUAGES.toString());
         DotPreconditions.notNull(languageForm,"Expected Request body was empty.");
+        validateLanguageExists(languageForm);
         final Language language = saveOrUpdateLanguage(null, languageForm);
         return Response.ok(new ResponseEntityView(language)).build(); // 200
     }
@@ -146,7 +167,7 @@ public class LanguagesResource {
     public final Response saveFromLanguageTag(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("languageTag") final String languageTag
-    ) {
+    ) throws AlreadyExistException {
         DotPreconditions.notNull(languageTag, "Expected languageTag Param path was empty.");
         this.webResource.init(null, request, response,
                 true, PortletID.LANGUAGES.toString());
@@ -157,8 +178,8 @@ public class LanguagesResource {
                 .language(locale.getDisplayLanguage()).languageCode(locale.getLanguage())
                 .country(locale.getDisplayCountry()).countryCode(locale.getCountry()).build();
 
-        final Language language = saveOrUpdateLanguage(null, languageForm);
-        return Response.ok(new ResponseEntityView(language)).build(); // 200
+        validateLanguageExists(languageForm);
+        return Response.ok(new ResponseEntityView(saveOrUpdateLanguage(null, languageForm))).build(); // 200
     }
 
 
@@ -172,7 +193,6 @@ public class LanguagesResource {
             @Context final HttpServletResponse response,
             @PathParam("languageTag") final String languageTag) {
 
-        DotPreconditions.notNull(languageTag, "Expected languageTag Param path was empty.");
         this.webResource.init(null, request, response,
                 true, PortletID.LANGUAGES.toString());
 
@@ -196,7 +216,9 @@ public class LanguagesResource {
         final boolean validLang = Stream.of(Locale.getISOLanguages()).collect(Collectors.toSet()).contains(locale.getLanguage());
         if(validLang && validCountry) {
             return locale;
-        }else throw new DoesNotExistException(String.format(" `%s` is an invalid language tag ", languageTag));
+        } else {
+           throw new DoesNotExistException(String.format(" `%s` is an invalid language tag ", languageTag));
+        }
     }
 
     /**
@@ -222,7 +244,7 @@ public class LanguagesResource {
     public final Response updateLanguage(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("languageId") final String languageId,
-            final LanguageForm languageForm) {
+            final LanguageForm languageForm) throws AlreadyExistException {
         this.webResource.init(null, request, response,
                 true, PortletID.LANGUAGES.toString());
         DotPreconditions.checkArgument(UtilMethods.isSet(languageId),"Language Id is required.");
@@ -341,7 +363,8 @@ public class LanguagesResource {
         return Response.ok(new ResponseEntityView(result)).build();
     }
 
-    private Language saveOrUpdateLanguage(final String languageId, final LanguageForm form) {
+    private Language saveOrUpdateLanguage(final String languageId, final LanguageForm form)
+            throws AlreadyExistException {
         final Language newLanguage = new Language();
 
         if (StringUtils.isSet(languageId)) {
@@ -354,6 +377,14 @@ public class LanguagesResource {
         newLanguage.setLanguage(form.getLanguage());
         newLanguage.setCountryCode(form.getCountryCode());
         newLanguage.setCountry(form.getCountry());
+
+        DotPreconditions.checkArgument(UtilMethods.isSet(newLanguage.getLanguageCode()),
+                "Language Code can't be null or empty");
+
+        final Language existingLang = languageAPI.getLanguage(newLanguage.getLanguageCode(), newLanguage.getCountryCode());
+        if(null != existingLang && Long.parseLong(languageId) != existingLang.getId()){
+           throw new AlreadyExistException(String.format("Update Attempt clashes with an existing language with id `%s`.",existingLang.getId()));
+        }
 
         this.languageAPI.saveLanguage(newLanguage);
         return newLanguage;
