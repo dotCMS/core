@@ -12,12 +12,13 @@
 <script type="text/javascript">
 	dojo.require("dojox.widget.ColorPicker");
 	dojo.require("dojo.parser"); // scan page for widgets and instantiate them
-   
-	const topNavDropZone = document.getElementById("topNav__drop-zone");
 
-	const dotAssetDropZones = document.getElementsByTagName("dot-asset-drop-zone");
+    function getTopNavDropZone() {
+        return document.getElementById("topNav__drop-zone");
+    }
 
 	function setNewColor(val) {
+        const topNavDropZone = getTopNavDropZone();
 		topNavDropZone.querySelector(".logo").style.backgroundColor = val;
 	}
 
@@ -73,6 +74,7 @@
       setTimeout(() => {
          const navBarLogoCheckboxWidget = dijit.byId('topNav_logo');
          const navBarLogoCheckbox = dojo.byId('topNav_logo');
+         const topNavDropZone = getTopNavDropZone();
 
          if(navBarLogoCheckbox.checked) {
             topNavDropZone.style.display = "block"
@@ -86,6 +88,7 @@
 	})();
 
 	function handleTopNavLogoDisplay(checked) {
+        const topNavDropZone = getTopNavDropZone();
 		topNavDropZone.style.display = checked ? "block" : "none";
 	}
 
@@ -126,7 +129,9 @@
 		logoNode.style.display = "flex";
 		dropZone.style.display = "none";
 		dropZone.parentElement.querySelector('input[data-hidden]').value = details.asset;
-      topNavDropZone.querySelector(".logo__container").style.display = 'flex'
+
+        const topNavDropZone = getTopNavDropZone();
+        topNavDropZone.querySelector(".logo__container").style.display = 'flex'
    }
 
 	function uploadComplete(event) {
