@@ -152,4 +152,86 @@ public class FolderHelper {
         return new FolderView(folder,foldersChildCustoms);
     }
 
+    /**
+     * This method will get the subfolders of the pathToSearch.
+     *
+     * E.g:
+     * SiteBrowser Tree:
+     * default
+     * 	folder1
+     * 		subfolder1
+     * 		subfolder2
+     *      testsubfolder3
+     * 	folder2
+     * 		subfolder1
+     * 	testfolder3
+     *
+     *
+     * Value Sent-->Expected Result
+     * default-->folder1, folder2, testfolder3
+     * default/fol-->folder1, folder2
+     * default/fol/-->Nothing
+     * default/bla-->Nothing
+     * default/folder1/-->subfolder1, subfolder2, testsubfolder3
+     * default/folder1/s-->subfolder1, subfolder2
+     * default/folder1/b-->Nothing
+     *
+     *
+     * @param siteId site where to look for.
+     * @param pathToSearch  path  to look for.
+     * @param user
+     * @return list of subfolders path
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    public List<String> findSubFoldersByPath(final String siteId, final String pathToSearch, final User user)
+            throws DotSecurityException, DotDataException {
+        final List<String> subFolders = new ArrayList<>();
+        final Host host = APILocator.getHostAPI().find(siteId,user,false);
+        if(!UtilMethods.isSet(host)) {
+            throw new IllegalArgumentException(String.format(" Couldn't find any host with id `%s` ",siteId));
+        }
+        if(pathToSearch.equals("root")){
+            final List<Folder> subFoldersOfRootPath = APILocator.getFolderAPI()
+                    .findSubFolders(host, user, false);
+            subFoldersOfRootPath.stream().limit(10).forEach(f -> subFolders.add(f.getPath()));
+        } else {
+            final String uriParam =
+                    !pathToSearch.startsWith(StringPool.FORWARD_SLASH) ? StringPool.FORWARD_SLASH
+                            .concat(pathToSearch) : pathToSearch;
+            final Folder folderByPath = APILocator.getFolderAPI()
+                    .findFolderByPath(uriParam, host, user, false);
+            //If a folder with the exact path is found, let's found the subfolders of it
+            if (UtilMethods.isSet(folderByPath) && UtilMethods.isSet(folderByPath.getInode()) && folderByPath.getPath().equals(uriParam)) {
+                final List<Folder> subFoldersOfExactPath = APILocator.getFolderAPI()
+                        .findSubFolders(folderByPath, user, false);
+                subFoldersOfExactPath.stream().limit(10).forEach(f -> subFolders.add(f.getPath()));
+            } else {//If there is no  folder found with  the exact path, let's show folders that live
+                // under the last path and startswith the path provided.
+                final int last_slash_pos = uriParam.lastIndexOf("/");
+                final String last_valid_path = uriParam.substring(0,last_slash_pos);
+                if(last_valid_path.isEmpty()){//If the last valid path was a site
+                    final List<Folder> subFoldersOfLastValidPath = APILocator.getFolderAPI()
+                            .findSubFolders(host, user, false);
+                    subFoldersOfLastValidPath.stream()
+                            .filter(f -> f.getPath().startsWith(uriParam))
+                            .limit(10).forEach(f -> subFolders.add(f.getPath()));
+                } else{//If last valid path was a folder
+                    final Folder last_valid_folder = APILocator.getFolderAPI()
+                            .findFolderByPath(last_valid_path, host, user, false);
+                    if (UtilMethods.isSet(folderByPath) && UtilMethods.isSet(folderByPath.getInode())) {
+                        final List<Folder> subFoldersOfLastValidPath = APILocator.getFolderAPI()
+                                .findSubFolders(last_valid_folder, user, false);
+                        subFoldersOfLastValidPath.stream()
+                                .filter(f -> f.getPath()
+                                        .startsWith(uriParam))
+                                .limit(10).forEach(f -> subFolders.add(f.getPath()));
+                    }
+                }
+            }
+        }
+
+        return subFolders;
+    }
+
 }

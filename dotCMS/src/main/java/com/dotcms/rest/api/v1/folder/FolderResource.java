@@ -9,12 +9,14 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
@@ -139,6 +141,32 @@ public class FolderResource implements Serializable {
         return Response.ok(new ResponseEntityView(folderHelper.loadFolderAndSubFoldersByPath(siteId,path, user))).build(); // 200
     }
 
+    @GET
+    @Path ("/byPath")//TODO: change path??
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public final Response findSubFoldersByPath(@Context final HttpServletRequest httpServletRequest,
+            @Context final HttpServletResponse httpServletResponse,
+            String path) throws  DotDataException, DotSecurityException   {
 
+        final InitDataObject initData =
+                new WebResource.InitBuilder(webResource)
+                        .rejectWhenNoUser(true)
+                        .requiredBackendUser(true)
+                        .requiredFrontendUser(false)
+                        .requestAndResponse(httpServletRequest, httpServletResponse)
+                        .init();
+        final User user = initData.getUser();
+
+        //Removes // in case it starts with
+        path = path.startsWith(StringPool.DOUBLE_SLASH) ? path.substring(2) : path;
+
+        final String siteId = APILocator.getHostAPI().findByName(path.split("/",2)[0],user,false).getIdentifier();
+
+        final String folderPath = path.split("/").length > 1 ? path.split("/",2)[1] : "root";
+
+        return Response.ok(new ResponseEntityView(folderHelper.findSubFoldersByPath(siteId,folderPath, user))).build(); // 200
+    }
 
 }
