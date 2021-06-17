@@ -41,9 +41,9 @@ public class Task210527DropReviewFieldsFromContentletTableTest {
 
         if (!doColumnsExist()) {
             final DotConnect dotConnect = new DotConnect();
-            dotConnect.executeStatement("ALTER TABLE contentlet ADD last_review varchar(255);");
-            dotConnect.executeStatement("ALTER TABLE contentlet ADD next_review varchar(255);");
-            dotConnect.executeStatement("ALTER TABLE contentlet ADD review_interval varchar(255);");
+            dotConnect.executeStatement("ALTER TABLE contentlet ADD last_review varchar(255)");
+            dotConnect.executeStatement("ALTER TABLE contentlet ADD next_review varchar(255)");
+            dotConnect.executeStatement("ALTER TABLE contentlet ADD review_interval varchar(255)");
         }
     }
 }

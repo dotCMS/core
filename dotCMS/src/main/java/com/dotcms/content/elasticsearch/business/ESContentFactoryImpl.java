@@ -1959,7 +1959,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             inode = UUIDGenerator.generateUuid();
         }
 
-        if (!UtilMethods.isSet(find(inode))) {
+        if (!UtilMethods.isSet(findInDb(inode))) {
             final UpsertCommand upsertInodeCommand = UpsertCommandFactory.getUpsertCommand();
             final SimpleMapAppContext replacements = new SimpleMapAppContext();
 
