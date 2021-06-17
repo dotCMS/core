@@ -51,6 +51,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.Tree;
+import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
@@ -421,7 +422,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         identifier.setParentPath(folder.getPath());
 
         APILocator.getIdentifierAPI().save(identifier);
-
+        final VersionInfo versionInfo = APILocator.getVersionableAPI().getVersionInfo(identifier.getId());
+        if (null != versionInfo) {
+            versionInfo.setVersionTs(new Date());
+            APILocator.getVersionableAPI().saveVersionInfo(versionInfo);
+        }
         // update the content host + folder
         contentlet.setHost(host.getIdentifier());
         contentlet.setFolder(folder.getInode());
