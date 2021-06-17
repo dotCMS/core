@@ -352,6 +352,15 @@ public class DeterministicIdentifierAPITest {
             this.expectedSeed = expectedSeed;
             this.expectedHash = expectedHash;
         }
+
+        @Override
+        public String toString() {
+            return "LanguageTestCase{" +
+                    "language=" + language +
+                    ", expectedSeed='" + expectedSeed + '\'' +
+                    ", expectedHash=" + expectedHash +
+                    '}';
+        }
     }
 
 }
