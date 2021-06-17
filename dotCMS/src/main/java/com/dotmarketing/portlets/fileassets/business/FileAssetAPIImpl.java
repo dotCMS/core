@@ -274,6 +274,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 				final Host host = APILocator.getHostAPI().find(con.getHost(), APILocator.systemUser() , false);
 				final Folder folder = APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), host, APILocator.systemUser(), false);
 				fileAsset.setFolder(folder.getInode());
+                this.contentletCache.add(fileAsset);
 			}catch(Exception e){
 				try{
 					final Folder folder = APILocator.getFolderAPI().find(con.getFolder(), APILocator.systemUser(), false);
@@ -283,7 +284,6 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 				}
 			}
 		}
-		this.contentletCache.add(fileAsset);
 		return fileAsset;
 	}
 	
