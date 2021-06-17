@@ -10,6 +10,7 @@ import { DotNavLogoService } from '@services/dot-nav-logo/dot-nav-logo.service';
     styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit {
+
     constructor(
         private dotCmsConfigService: DotcmsConfigService,
         private dotUiColors: DotUiColorsService,

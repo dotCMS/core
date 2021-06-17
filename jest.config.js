@@ -1,3 +1,3 @@
 module.exports = {
-    projects: ['<rootDir>/libs/dotcms', '<rootDir>/apps/dotcdn']
+    projects: ['<rootDir>/libs/dotcms', '<rootDir>/apps/dotcdn', '<rootDir>/libs/block-editor']
 };

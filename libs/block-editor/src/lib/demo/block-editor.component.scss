@@ -1,0 +1,17 @@
+dot-block-editor {
+    display: block;
+    height: calc(100vh - 2rem); // 1rem sb boddy padding;
+    width: calc(100vw - 2rem); // 1rem sb boddy padding;
+}
+
+tiptap-editor {
+    height: 100%;
+
+    .ProseMirror {
+        border: solid 2px #222;
+        display: block;
+        height: 100%;
+        border-radius: 4px;
+        padding: 1rem;
+    }
+}

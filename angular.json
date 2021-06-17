@@ -172,6 +172,7 @@
                     "options": {
                         "uiFramework": "@storybook/angular",
                         "outputPath": "docs",
+                        "deleteOutputPath": false,
                         "config": {
                             "configFolder": "apps/dotcms-ui/.storybook"
                         }
@@ -333,7 +334,7 @@
                     "builder": "@nrwl/storybook:storybook",
                     "options": {
                         "uiFramework": "@storybook/html",
-                        "port": 6006,
+                        "port": 5500,
                         "config": {
                             "configFolder": "libs/dotcms-webcomponents/.storybook"
                         }
@@ -349,6 +350,7 @@
                     "options": {
                         "uiFramework": "@storybook/html",
                         "outputPath": "docs/dotcms-webcomponents",
+                        "deleteOutputPath": false,
                         "config": {
                             "configFolder": "libs/dotcms-webcomponents/.storybook"
                         }
@@ -632,6 +634,63 @@
                         "main": "libs/ui/src/test.ts",
                         "tsConfig": "libs/ui/tsconfig.spec.json",
                         "karmaConfig": "libs/ui/karma.conf.js"
+                    }
+                }
+            }
+        },
+        "block-editor": {
+            "projectType": "library",
+            "root": "libs/block-editor",
+            "sourceRoot": "libs/block-editor/src",
+            "prefix": "dotcms",
+            "architect": {
+                "lint": {
+                    "builder": "@nrwl/linter:eslint",
+                    "options": {
+                        "lintFilePatterns": [
+                            "libs/block-editor/src/**/*.ts",
+                            "libs/block-editor/src/**/*.html"
+                        ]
+                    }
+                },
+                "test": {
+                    "builder": "@nrwl/jest:jest",
+                    "outputs": ["coverage/libs/block-editor"],
+                    "options": {
+                        "jestConfig": "libs/block-editor/jest.config.js",
+                        "passWithNoTests": true
+                    }
+                },
+                "storybook": {
+                    "builder": "@nrwl/storybook:storybook",
+                    "options": {
+                        "uiFramework": "@storybook/angular",
+                        "port": 6600,
+                        "config": {
+                            "configFolder": "libs/block-editor/.storybook"
+                        }
+                    },
+                    "configurations": {
+                        "ci": {
+                            "quiet": true
+                        }
+                    }
+                },
+                "build-storybook": {
+                    "builder": "@nrwl/storybook:build",
+                    "outputs": ["{options.outputPath}"],
+                    "options": {
+                        "uiFramework": "@storybook/angular",
+                        "outputPath": "docs/block-editor",
+                        "deleteOutputPath": false,
+                        "config": {
+                            "configFolder": "libs/block-editor/.storybook"
+                        }
+                    },
+                    "configurations": {
+                        "ci": {
+                            "quiet": true
+                        }
                     }
                 }
             }

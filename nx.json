@@ -30,6 +30,7 @@
         "dot-primeng-theme-styles": { "tags": [] },
         "ui": { "tags": [] },
         "dotcdn": { "tags": [] },
-        "dotcdn-e2e": { "tags": [], "implicitDependencies": ["dotcdn"] }
+        "dotcdn-e2e": { "tags": [], "implicitDependencies": ["dotcdn"] },
+        "block-editor": { "tags": [] }
     }
 }
