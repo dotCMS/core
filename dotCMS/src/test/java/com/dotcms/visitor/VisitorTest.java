@@ -8,7 +8,7 @@ import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import org.junit.Test;
 import com.dotcms.UnitTestBase;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestUnitTest;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.business.VisitorAPIImpl;
@@ -42,7 +42,7 @@ public class VisitorTest extends UnitTestBase {
         when(persona1.getKeyTag()).thenReturn("persona1");
         when(persona1.getIdentifier()).thenReturn("123");
         when(persona1.getTitleImage()).thenReturn(Optional.empty());
-        HttpServletRequest mockRequest = new MockHttpRequest("testing", "/").request();
+        HttpServletRequest mockRequest = new MockHttpRequestUnitTest("testing", "/").request();
 
 
 

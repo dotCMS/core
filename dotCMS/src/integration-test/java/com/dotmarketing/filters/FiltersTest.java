@@ -47,7 +47,7 @@ import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.mock.response.MockHttpStatusResponse;
 import com.dotcms.rendering.velocity.servlet.VelocityServlet;
@@ -289,7 +289,7 @@ public class FiltersTest {
         VanityURLFilter filter = new VanityURLFilter();
         
         HttpServletResponse response = new MockHttpStatusResponse(new MockHttpResponse().response()).response();
-        HttpServletRequest request = new MockHttpRequest(site.getHostname(), "/" + uniqueUrl + "1?param2=" + URL).request();
+        HttpServletRequest request = new MockHttpRequestIntegrationTest(site.getHostname(), "/" + uniqueUrl + "1?param2=" + URL).request();
         
         MockFilterChain chain = new MockFilterChain();
         
@@ -315,7 +315,7 @@ public class FiltersTest {
         Logger.info(this.getClass(),
                 "/" + uniqueUrl + "2 should forward to /about-us/" + CMSFilter.CMS_INDEX_PAGE);
         
-        request = new MockHttpRequest(site.getHostname(), "/" + uniqueUrl + "2?param1=" + URL + "&param2=" + URL).request();
+        request = new MockHttpRequestIntegrationTest(site.getHostname(), "/" + uniqueUrl + "2?param1=" + URL + "&param2=" + URL).request();
         
         response = new MockHttpStatusResponse(new MockHttpResponse().response()).response();
         filter.doFilter(request, response, chain);
@@ -356,7 +356,7 @@ public class FiltersTest {
 
             final HttpServletResponse response = new MockHttpStatusResponse(
                     new MockHttpResponse().response()).response();
-            final HttpServletRequest request = new MockHttpRequest(site.getHostname(),
+            final HttpServletRequest request = new MockHttpRequestIntegrationTest(site.getHostname(),
                     "/" + uniqueUrl + "fwd?param1=" + URL).request();
 
             final ServletOutputStream servletOutputStream = mock(ServletOutputStream.class);

@@ -10,7 +10,7 @@ import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.ResponseEntityView;
@@ -18,7 +18,6 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DoesNotExistException;
@@ -29,7 +28,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.UUIDGenerator;
-import com.ettrema.cache.Cache;
 import com.liferay.portal.model.User;
 import com.liferay.util.Base64;
 import java.util.Collections;
@@ -62,7 +60,7 @@ public class VersionableResourceTest {
         final String userEmailAndPassword = userEmail + ":" + password;
         final MockHeaderRequest request = new MockHeaderRequest(
                 new MockSessionRequest(
-                        new MockAttributeRequest(new MockHttpRequest("localhost", "/").request())
+                        new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request())
                                 .request())
                         .request());
 

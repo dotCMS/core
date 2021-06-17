@@ -136,7 +136,6 @@ public class SiteResource implements Serializable {
               .requestAndResponse(httpServletRequest, httpServletResponse)
               .requiredBackendUser(true)
               .requiredFrontendUser(true)
-              .requiredPortlet("sites")
               .init().getUser();
           
             Host currentSite = siteHelper.getCurrentSite(httpServletRequest, user);
@@ -183,7 +182,6 @@ public class SiteResource implements Serializable {
             .requestAndResponse(httpServletRequest, httpServletResponse)
             .requiredBackendUser(true)
             .rejectWhenNoUser(true)
-            .requiredPortlet("sites")
             .init().getUser();
 
         String filter = (null != filterParam && filterParam.endsWith(NO_FILTER))?
@@ -228,7 +226,6 @@ public class SiteResource implements Serializable {
             .requestAndResponse(httpServletRequest, httpServletResponse)
             .requiredBackendUser(true)
             .rejectWhenNoUser(true)
-            .requiredPortlet("sites")
             .init().getUser();
         boolean switchDone = false;
         Host hostFound = null;
@@ -282,7 +279,6 @@ public class SiteResource implements Serializable {
           .requestAndResponse(request, response)
           .requiredBackendUser(true)
           .rejectWhenNoUser(true)
-          .requiredPortlet("sites")
           .init().getUser();
 
         Logger.debug(this, "Switching to default host for user: " + user.getUserId());
