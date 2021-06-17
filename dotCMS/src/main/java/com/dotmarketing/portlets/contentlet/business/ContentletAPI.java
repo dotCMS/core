@@ -87,9 +87,10 @@ public interface ContentletAPI {
 	 * @param contentlet {@link Contentlet} existing contentlet
 	 * @param user   {@link User} user that does the action
 	 * @param hostAndFolderPath {@link String} host and path to move the content, throw and exception if do not exists or can not write in there
+	 * @param respectFrontendRoles
 	 * @return Contentlet updated contentlet
 	 */
-	default Contentlet move(Contentlet contentlet, User user, String hostAndFolderPath) {
+	default Contentlet move(Contentlet contentlet, User user, String hostAndFolderPath, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
 		Logger.info(this, "Move not implemented");
 		return contentlet;
@@ -102,9 +103,10 @@ public interface ContentletAPI {
 	 * @param user   {@link User} user that does the action
 	 * @param host   {@link Host} host to move
 	 * @param folderPath {@link String} path of the destiny folder
+	 * @param respectFrontendRoles
 	 * @return Contentlet updated contentlet
 	 */
-	default Contentlet move(Contentlet contentlet, User user, Host host, String folderPath) {
+	default Contentlet move(Contentlet contentlet, User user, Host host, String folderPath, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 		Logger.info(this, "Move not implemented");
 		return contentlet;
 	}
@@ -116,9 +118,11 @@ public interface ContentletAPI {
 	 * @param user   {@link User} user that does the action
 	 * @param host   {@link Host} host to move
 	 * @param folder {@link Folder} destiny folder
+	 * @param respectFrontendRoles
 	 * @return Contentlet updated contentlet
 	 */
-	default Contentlet move(Contentlet contentlet, User user, Host host, Folder folder) {
+	default Contentlet move(final Contentlet contentlet, final User user, final Host host, final Folder folder,
+					final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 		Logger.info(this, "Move not implemented");
 		return contentlet;
 	}

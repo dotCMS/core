@@ -1625,10 +1625,10 @@ public interface ContentletAPIPostHook {
 
     }
 
-    default void move(Contentlet contentlet, User user, String hostAndFolderPath) {}
+    default void move(Contentlet contentlet, User user, String hostAndFolderPath, boolean respectFrontendRoles) {}
 
-	default void move(Contentlet contentlet, User user, Host host, String folderFolderPath) {}
+	default void move(Contentlet contentlet, User user, Host host, String folderFolderPath, boolean respectFrontendRoles) {}
 
-	default void move(final Contentlet contentlet, User user, Host host, Folder folder) {}
+	default void move(final Contentlet contentlet, User user, Host host, Folder folder, boolean respectFrontendRoles) {}
 
 }

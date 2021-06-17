@@ -35,20 +35,11 @@ import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.rendering.velocity.services.PageLoader;
-import com.dotcms.storage.FileMetadataAPI;
-import com.dotcms.storage.model.Metadata;
-import com.dotmarketing.exception.DoesNotExistException;
-import com.dotmarketing.util.HostUtil;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import io.vavr.Tuple2;
-import org.apache.commons.io.FileUtils;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
+import com.dotcms.storage.FileMetadataAPI;
+import com.dotcms.storage.model.Metadata;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.util.CollectionsUtils;
@@ -60,6 +51,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.Tree;
+import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
@@ -82,6 +74,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -141,6 +134,7 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -153,6 +147,11 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
@@ -163,7 +162,9 @@ import com.liferay.util.StringUtil;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
+import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
@@ -208,6 +209,7 @@ import java.util.stream.Stream;
 
 import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
 import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
 
 /**
@@ -351,7 +353,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @Override
-    public Contentlet move(final Contentlet contentlet, final User user, final String hostAndFolderPath) {
+    public Contentlet move(final Contentlet contentlet, final User user, final String hostAndFolderPath,
+                           final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
         Logger.debug(this, "Moving contentlet: " + contentlet.getIdentifier() + " to: " + hostAndFolderPath);
 
@@ -363,11 +366,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final Tuple2<String, Host> hostPathTuple = Try.of(()->HostUtil.splitPathHost(hostAndFolderPath, user,
                 StringPool.FORWARD_SLASH, HostUtil::findCurrentHost)).getOrElseThrow(e -> new DotRuntimeException(e));
 
-        return this.move(contentlet, user, hostPathTuple._2(), hostPathTuple._1());
+        return this.move(contentlet, user, hostPathTuple._2(), hostPathTuple._1(), respectFrontendRoles);
     }
 
     @Override
-    public Contentlet move(final Contentlet contentlet, final User user, final Host host, final String folderPath) {
+    public Contentlet move(final Contentlet contentlet, final User user, final Host host, final String folderPath,
+                           final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
         Logger.debug(this, "Moving contentlet: " + contentlet.getIdentifier() + " to: " + folderPath);
 
@@ -384,31 +388,57 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DoesNotExistException("The folder does not exists: " + folderPath);
         }
 
-        return this.move(contentlet, user, host, folder);
+        return this.move(contentlet, user, host, folder, respectFrontendRoles);
     }
 
     @WrapInTransaction
     @Override
-    public Contentlet move(final Contentlet contentlet, final User user, final Host host, final Folder folder) {
+    public Contentlet move(final Contentlet contentlet, final User incomingUser, final Host host, final Folder folder,
+                           final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
         Logger.debug(this, "Moving contentlet: " + contentlet.getIdentifier()
                 + " to host: " + host.getHostname() + " and path: " + folder.getPath());
 
-        final Identifier identifier = Try.of(()->
-                APILocator.getIdentifierAPI().loadFromDb(contentlet.getIdentifier()))
-                .getOrElseThrow(e -> new DotRuntimeException(e));
+        final User user = incomingUser!=null ? incomingUser: APILocator.getUserAPI().getAnonymousUser();
 
+        if(user.isAnonymousUser() && AnonymousAccess.systemSetting() != AnonymousAccess.WRITE) {
+            throw new DotSecurityException("CONTENT_APIS_ALLOW_ANONYMOUS setting does not allow anonymous content WRITEs");
+        }
+
+        // if the user can write and add a children to the host
+        if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles) ||
+                !permissionAPI.doesUserHavePermission(host, PERMISSION_CAN_ADD_CHILDREN, user)) {
+
+            this.throwSecurityException(contentlet, user);
+        }
+
+        final Identifier identifier = APILocator.getIdentifierAPI().loadFromDb(contentlet.getIdentifier());
+
+        // if id exists
         if (null == identifier || !UtilMethods.isSet(identifier.getId())) {
 
             throw new DoesNotExistException("The identifier does not exists: " + contentlet.getIdentifier());
         }
 
+        // update with the new host and path
         identifier.setHostId(host.getIdentifier());
         identifier.setParentPath(folder.getPath());
+        
+        // changing the host and path will move the contentlet
+        APILocator.getIdentifierAPI().save(identifier);
 
-        Try.of(()->APILocator.getIdentifierAPI().save(identifier))
-                .getOrElseThrow(e -> new DotRuntimeException(e));
+        // update the version ts in order to be repushed
+        final VersionInfo versionInfo = APILocator.getVersionableAPI().getVersionInfo(identifier.getId());
+        if (null != versionInfo) {
+            versionInfo.setVersionTs(new Date());
+            APILocator.getVersionableAPI().saveVersionInfo(versionInfo);
+        }
 
+        // update the content host + folder
+        contentlet.setHost(host.getIdentifier());
+        contentlet.setFolder(folder.getInode());
+
+        // clean cache
         HibernateUtil.addCommitListener(identifier.getId(), new FlushCacheRunnable() {
             @Override
             public void run() {
@@ -416,11 +446,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         });
 
-        if (ThreadContextUtil.isReindex()) {
-            Try.run(()->
-                    indexAPI.addContentToIndex(contentlet, false))
-                    .getOrElseThrow(e -> new DotRuntimeException(e));
-        }
+        // refresh the index based on the index policy
+        this.indexAPI.addContentToIndex(contentlet, false);
 
         return contentlet;
     }
