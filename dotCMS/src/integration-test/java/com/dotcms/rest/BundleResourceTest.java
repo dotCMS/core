@@ -2,7 +2,7 @@ package com.dotcms.rest;
 
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockAsyncResponse;
 import com.dotcms.mock.response.MockHttpResponse;
@@ -141,7 +141,7 @@ public class BundleResourceTest {
     private HttpServletRequest getHttpRequest() {
         final MockHeaderRequest request = new MockHeaderRequest(
                 new MockSessionRequest(
-                        new MockAttributeRequest(new MockHttpRequest("localhost", "/").request())
+                        new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request())
                                 .request())
                         .request());
 

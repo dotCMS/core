@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import javax.sql.DataSource;
 import com.dotcms.cache.transport.HazelcastCacheTransportEmbedded;
 import com.dotcms.cache.transport.PubSubCacheTransport;
 import com.dotcms.enterprise.LicenseUtil;
@@ -8,6 +9,7 @@ import com.dotmarketing.business.jgroups.NullTransport;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
+import com.zaxxer.hikari.HikariDataSource;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 
@@ -59,7 +61,10 @@ public class CacheTransportStrategy {
     }
     
     private boolean isPostgres() {
-        return DbConnectionFactory.isPostgres();
+        
+
+        
+        return DbConnectionFactory.isPostgres() && DbConnectionFactory.getDataSource() instanceof HikariDataSource;
         
     }
     

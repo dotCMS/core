@@ -31,6 +31,8 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
+import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
+import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
@@ -52,6 +54,7 @@ import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.DomDriver;
+import io.vavr.control.Try;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
@@ -1113,6 +1116,19 @@ public class ContentResource {
         return json;
     }
 
+    public static JSONObject addRelationshipsToJSON(final HttpServletRequest request,
+            final HttpServletResponse response,
+            final String render, final User user, final int depth,
+            final boolean respectFrontendRoles,
+            final Contentlet contentlet,
+            final JSONObject jsonObject, Set<Relationship> addedRelationships, final long language,
+            final boolean live, final boolean allCategoriesInfo)
+            throws DotDataException, JSONException, IOException ,  DotSecurityException {
+
+        return addRelationshipsToJSON(request, response, render, user, depth, respectFrontendRoles,
+                contentlet, jsonObject, addedRelationships, language, live, allCategoriesInfo, false);
+    }
+
     /**
      * Add relationships fields records to the json contentlet
      * @param request
@@ -1140,7 +1156,7 @@ public class ContentResource {
             final boolean respectFrontendRoles,
             final Contentlet contentlet,
             final JSONObject jsonObject, Set<Relationship> addedRelationships, final long language,
-            final boolean live, final boolean allCategoriesInfo)
+            final boolean live, final boolean allCategoriesInfo, final boolean hydrateRelated)
             throws DotDataException, JSONException, IOException, DotSecurityException {
 
         Relationship relationship;
@@ -1182,7 +1198,7 @@ public class ContentResource {
             JSONArray jsonArray = addRelatedContentToJsonArray(request, response,
                     render, user, depth, respectFrontendRoles,
                     contentlet, addedRelationships, language, live, field, isChildField,
-                    allCategoriesInfo);
+                    allCategoriesInfo, hydrateRelated);
 
             jsonObject.put(field.variable(), getJSONArrayValue(jsonArray, records.doesAllowOnlyOne()));
 
@@ -1210,7 +1226,7 @@ public class ContentResource {
                     jsonArray = addRelatedContentToJsonArray(request, response,
                             render, user, depth, respectFrontendRoles,
                             contentlet, addedRelationships, language, live,
-                            otherSideField, !isChildField, allCategoriesInfo);
+                            otherSideField, !isChildField, allCategoriesInfo, hydrateRelated);
 
                     jsonObject.put(otherSideField.variable(),
                             getJSONArrayValue(jsonArray, records.doesAllowOnlyOne()));
@@ -1248,7 +1264,7 @@ public class ContentResource {
             boolean respectFrontendRoles, Contentlet contentlet,
             Set<Relationship> addedRelationships, long language, boolean live,
             com.dotcms.contenttype.model.field.Field field, final boolean isParent,
-            final boolean allCategoriesInfo)
+            final boolean allCategoriesInfo, final boolean hydrateRelated)
             throws JSONException, IOException, DotDataException, DotSecurityException {
 
 
@@ -1265,7 +1281,7 @@ public class ContentResource {
                 case 1:
                     jsonArray
                             .put(contentletToJSON(relatedContent, request, response,
-                                    render, user, allCategoriesInfo));
+                                    render, user, allCategoriesInfo, hydrateRelated));
                     break;
 
                 //returns a list of related content identifiers for each of the related content
@@ -1273,8 +1289,8 @@ public class ContentResource {
                     jsonArray.put(addRelationshipsToJSON(request, response, render, user, 0,
                             respectFrontendRoles, relatedContent,
                             contentletToJSON(relatedContent, request, response,
-                                    render, user, allCategoriesInfo),
-                            new HashSet<>(addedRelationships), language, live, allCategoriesInfo));
+                                    render, user, allCategoriesInfo, hydrateRelated),
+                            new HashSet<>(addedRelationships), language, live, allCategoriesInfo, hydrateRelated));
                     break;
 
                 //returns a list of hydrated related content for each of the related content
@@ -1282,8 +1298,8 @@ public class ContentResource {
                     jsonArray.put(addRelationshipsToJSON(request, response, render, user, 1,
                             respectFrontendRoles, relatedContent,
                             contentletToJSON(relatedContent, request, response,
-                                    render, user, allCategoriesInfo),
-                            new HashSet<>(addedRelationships), language, live, allCategoriesInfo));
+                                    render, user, allCategoriesInfo, hydrateRelated),
+                            new HashSet<>(addedRelationships), language, live, allCategoriesInfo, hydrateRelated));
                     break;
             }
 
@@ -1327,8 +1343,23 @@ public class ContentResource {
     public static JSONObject contentletToJSON(Contentlet con, HttpServletRequest request,
             HttpServletResponse response, String render, User user, final boolean allCategoriesInfo)
             throws JSONException, IOException, DotDataException, DotSecurityException {
+        return contentletToJSON(con, request, response, render, user, allCategoriesInfo, false);
+    }
+
+    public static JSONObject contentletToJSON(Contentlet con, HttpServletRequest request,
+            HttpServletResponse response, String render, User user, final boolean allCategoriesInfo,
+            final boolean hydrateRelated)
+            throws JSONException, IOException, DotDataException, DotSecurityException {
         JSONObject jo = new JSONObject();
         ContentType type = con.getContentType();
+
+
+        if(hydrateRelated) {
+            final DotContentletTransformer myTransformer = new DotTransformerBuilder()
+                    .hydratedContentMapTransformer().content(con).build();
+            con = myTransformer.hydrate().get(0);
+        }
+
         Map<String, Object> map = ContentletUtil.getContentPrintableMap(user, con, allCategoriesInfo);
 
         Set<String> jsonFields = getJSONFields(type);
@@ -1344,6 +1375,13 @@ public class ContentResource {
                     jo.put(key, new JSONArray(categoryList.stream()
                             .map(value -> new JSONObject((Map<?,?>) value))
                             .collect(Collectors.toList())));
+                  // this might be coming from transformers views, so let's try to make them JSONObjects
+                } else if(hydrateRelated) {
+                    if(map.get(key) instanceof Map) {
+                        jo.put(key, new JSONObject((Map) map.get(key)));
+                    } else {
+                        jo.put(key, map.get(key));
+                    }
                 } else {
                     jo.put(key, map.get(key));
                 }

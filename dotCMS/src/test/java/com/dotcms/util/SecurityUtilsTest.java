@@ -9,7 +9,7 @@ import org.mockito.Mockito;
 
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestUnitTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.google.common.collect.ImmutableList;
 
@@ -100,7 +100,7 @@ public class SecurityUtilsTest {
   private HttpServletRequest mockRequest(String host, String uri, String referer) {
     
 
-    return new MockHeaderRequest(new MockAttributeRequest(new MockSessionRequest(new MockHttpRequest(host, uri).request()).request()).request(), "referer", referer);
+    return new MockHeaderRequest(new MockAttributeRequest(new MockSessionRequest(new MockHttpRequestUnitTest(host, uri).request()).request()).request(), "referer", referer);
   }
 
 }

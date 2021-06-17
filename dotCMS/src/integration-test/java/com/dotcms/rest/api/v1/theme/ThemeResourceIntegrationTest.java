@@ -8,7 +8,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
@@ -16,21 +15,17 @@ import com.dotcms.datagen.ThemeDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
-import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.exception.BadRequestException;
-import com.dotcms.rest.exception.NotFoundException;
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.PaginationException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.Theme;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -43,20 +38,16 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.glassfish.jersey.internal.util.Base64;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -417,7 +408,7 @@ public class ThemeResourceIntegrationTest {
         final String userEmailAndPassword = userEmail + ":admin";
         final MockHeaderRequest request = new MockHeaderRequest(
                 new MockSessionRequest(
-                        new MockAttributeRequest(new MockHttpRequest("localhost", "/").request())
+                        new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request())
                                 .request())
                         .request());
 

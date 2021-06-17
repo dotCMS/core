@@ -10,7 +10,7 @@ import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.LinkDataGen;
 import com.dotcms.datagen.RelationshipDataGen;
 import com.dotcms.datagen.TemplateDataGen;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -29,7 +29,6 @@ import com.liferay.portal.model.User;
 import static org.junit.Assert.assertEquals;
 
 import com.liferay.portal.util.WebKeys;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -550,7 +549,7 @@ public class ShortyIdApiTest {
         ShortyIdAPI api = APILocator.getShortyAPI();
         User systemUser = APILocator.systemUser();
         String testingFileName = "TESTING.PNG";
-        final HttpServletRequest request = new MockHttpRequest("localhost", "/api/v1/tempResource").request();
+        final HttpServletRequest request = new MockHttpRequestIntegrationTest("localhost", "/api/v1/tempResource").request();
         request.setAttribute(WebKeys.USER,systemUser);
         DotTempFile temp =  APILocator.getTempFileAPI().createEmptyTempFile(testingFileName,request);
 

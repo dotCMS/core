@@ -12,7 +12,7 @@ import org.junit.Test;
 import com.dotcms.business.CloseDB;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
@@ -59,7 +59,7 @@ public class WebResourceIntegrationTest extends IntegrationTestBase {
   }
 
   private HttpServletRequest anonymousRequest() {
-    return new MockAttributeRequest(new MockHttpRequest("localhost", "/api/testing-web-resorce").request()).request();
+    return new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/api/testing-web-resorce").request()).request();
   }
   
   private HttpServletRequest frontEndRequest() {
