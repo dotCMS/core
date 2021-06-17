@@ -405,6 +405,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotSecurityException("CONTENT_APIS_ALLOW_ANONYMOUS setting does not allow anonymous content WRITEs");
         }
 
+        // if the user can write and add a children to the host
         if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles) ||
                 !permissionAPI.doesUserHavePermission(host, PERMISSION_CAN_ADD_CHILDREN, user)) {
 
@@ -413,24 +414,31 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         final Identifier identifier = APILocator.getIdentifierAPI().loadFromDb(contentlet.getIdentifier());
 
+        // if id exists
         if (null == identifier || !UtilMethods.isSet(identifier.getId())) {
 
             throw new DoesNotExistException("The identifier does not exists: " + contentlet.getIdentifier());
         }
 
+        // update with the new host and path
         identifier.setHostId(host.getIdentifier());
         identifier.setParentPath(folder.getPath());
-
+        
+        // changing the host and path will move the contentlet
         APILocator.getIdentifierAPI().save(identifier);
+
+        // update the version ts in order to be repushed
         final VersionInfo versionInfo = APILocator.getVersionableAPI().getVersionInfo(identifier.getId());
         if (null != versionInfo) {
             versionInfo.setVersionTs(new Date());
             APILocator.getVersionableAPI().saveVersionInfo(versionInfo);
         }
+
         // update the content host + folder
         contentlet.setHost(host.getIdentifier());
         contentlet.setFolder(folder.getInode());
 
+        // clean cache
         HibernateUtil.addCommitListener(identifier.getId(), new FlushCacheRunnable() {
             @Override
             public void run() {
@@ -438,6 +446,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         });
 
+        // refresh the index based on the index policy
         this.indexAPI.addContentToIndex(contentlet, false);
 
         return contentlet;
