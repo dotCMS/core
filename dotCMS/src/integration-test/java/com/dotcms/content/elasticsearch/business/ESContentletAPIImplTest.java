@@ -38,6 +38,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
@@ -700,6 +701,60 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         }
 
     }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#move(Contentlet, User, Host, Folder, boolean)}
+     * Given Scenario: sends a null host and folder path
+     * ExpectedResult: The method should not throw a {@link IllegalArgumentException}
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void test_move_invalid_null_host() throws DotDataException, DotSecurityException {
+
+        APILocator.getContentletAPI()
+                .move(new Contentlet(), APILocator.systemUser(), null,false);
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#move(Contentlet, User, Host, Folder, boolean)}
+     * Given Scenario: sends a not null host and folder path, but invalid b/c does not starts with //
+     * ExpectedResult: The method should not throw a {@link IllegalArgumentException}
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void test_move_invalid_start_host() throws DotDataException, DotSecurityException {
+
+        APILocator.getContentletAPI()
+                .move(new Contentlet(), APILocator.systemUser(), "demo.dotcms.com/application",false);
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#move(Contentlet, User, Host, Folder, boolean)}
+     * Given Scenario: sends a not null host and folder path, but invalid b/c does not starts with //
+     * ExpectedResult: The method should not throw a {@link IllegalArgumentException}
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void test_move_invalid_path() throws DotDataException, DotSecurityException {
+
+        final Host host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+
+        APILocator.getContentletAPI() // no path
+                .move(new Contentlet(), APILocator.systemUser(), host.getHostname(),false);
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#move(Contentlet, User, Host, Folder, boolean)}
+     * Given Scenario: sends a not null host and folder path, but invalid b/c does not starts with //
+     * ExpectedResult: The method should not throw a {@link IllegalArgumentException}
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void test_move_not_exists_path() throws DotDataException, DotSecurityException {
+
+        final Host host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+
+        final String unknownFolderPath = host + "/unknownFolder";
+        APILocator.getContentletAPI()
+                .move(new Contentlet(), APILocator.systemUser(), unknownFolderPath,false);
+    }
+
 
     private void addPermission(
             final Role role,

@@ -1,13 +1,17 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,7 +52,10 @@ public class MoveContentActionlet extends WorkFlowActionlet {
         final String pathParam      = params.get("path").getValue();
         final String path           = findFolderIdByPath(pathParam, contentlet);
 
-        APILocator.getContentletAPI().move(contentlet, user, path, respectFrontendRoles);
+        Logger.debug(this, "Moving the contentlet to: " + path);
+
+        processor.setContentlet(Try.of(()->APILocator.getContentletAPI().move(contentlet, user, path, false))
+                .getOrElseThrow(e -> new WorkflowActionFailureException(e.getMessage(), (Exception) e)));
     }
 
 

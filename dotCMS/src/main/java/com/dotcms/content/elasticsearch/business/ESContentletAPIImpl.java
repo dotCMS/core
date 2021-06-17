@@ -423,7 +423,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         // update with the new host and path
         identifier.setHostId(host.getIdentifier());
         identifier.setParentPath(folder.getPath());
-        
+
         // changing the host and path will move the contentlet
         APILocator.getIdentifierAPI().save(identifier);
 
