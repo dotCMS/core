@@ -1624,4 +1624,11 @@ public interface ContentletAPIPostHook {
     default void findContentletByIdentifierAnyLanguage(String identifier, boolean includeDeleted){
 
     }
+
+    default void move(Contentlet contentlet, User user, String hostAndFolderPath) {}
+
+	default void move(Contentlet contentlet, User user, Host host, String folderFolderPath) {}
+
+	default void move(final Contentlet contentlet, User user, Host host, Folder folder) {}
+
 }

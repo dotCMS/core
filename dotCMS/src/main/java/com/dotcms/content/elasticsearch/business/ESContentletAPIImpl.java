@@ -37,11 +37,14 @@ import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
+import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.util.HostUtil;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import io.vavr.Tuple2;
 import org.apache.commons.io.FileUtils;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
@@ -345,6 +348,81 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotSecurityException("User:" + userId + " does not have permissions on Contentlet "+ContentletUtil
                     .toShortString(contentlet));
         }
+    }
+
+    @Override
+    public Contentlet move(final Contentlet contentlet, final User user, final String hostAndFolderPath) {
+
+        Logger.debug(this, "Moving contentlet: " + contentlet.getIdentifier() + " to: " + hostAndFolderPath);
+
+        if (UtilMethods.isNotSet(hostAndFolderPath) || !hostAndFolderPath.startsWith(HostUtil.HOST_INDICATOR)) {
+
+            throw new IllegalArgumentException("The host path is not valid: " + hostAndFolderPath);
+        }
+
+        final Tuple2<String, Host> hostPathTuple = Try.of(()->HostUtil.splitPathHost(hostAndFolderPath, user,
+                StringPool.FORWARD_SLASH, HostUtil::findCurrentHost)).getOrElseThrow(e -> new DotRuntimeException(e));
+
+        return this.move(contentlet, user, hostPathTuple._2(), hostPathTuple._1());
+    }
+
+    @Override
+    public Contentlet move(final Contentlet contentlet, final User user, final Host host, final String folderPath) {
+
+        Logger.debug(this, "Moving contentlet: " + contentlet.getIdentifier() + " to: " + folderPath);
+
+        if (UtilMethods.isNotSet(folderPath) || !folderPath.startsWith(StringPool.SLASH)) {
+
+            throw new IllegalArgumentException("The folder is not valid: " + folderPath);
+        }
+
+        final Folder folder = Try.of(()-> APILocator.getFolderAPI()
+                .findFolderByPath(folderPath, host, user, false)).getOrNull();
+
+        if (null == folder || !UtilMethods.isSet(folder.getInode())) {
+
+            throw new DoesNotExistException("The folder does not exists: " + folderPath);
+        }
+
+        return this.move(contentlet, user, host, folder);
+    }
+
+    @WrapInTransaction
+    @Override
+    public Contentlet move(final Contentlet contentlet, final User user, final Host host, final Folder folder) {
+
+        Logger.debug(this, "Moving contentlet: " + contentlet.getIdentifier()
+                + " to host: " + host.getHostname() + " and path: " + folder.getPath());
+
+        final Identifier identifier = Try.of(()->
+                APILocator.getIdentifierAPI().loadFromDb(contentlet.getIdentifier()))
+                .getOrElseThrow(e -> new DotRuntimeException(e));
+
+        if (null == identifier || !UtilMethods.isSet(identifier.getId())) {
+
+            throw new DoesNotExistException("The identifier does not exists: " + contentlet.getIdentifier());
+        }
+
+        identifier.setHostId(host.getIdentifier());
+        identifier.setParentPath(folder.getPath());
+
+        Try.of(()->APILocator.getIdentifierAPI().save(identifier))
+                .getOrElseThrow(e -> new DotRuntimeException(e));
+
+        HibernateUtil.addCommitListener(identifier.getId(), new FlushCacheRunnable() {
+            @Override
+            public void run() {
+                CacheLocator.getContentletCache().remove(contentlet.getInode());
+            }
+        });
+
+        if (ThreadContextUtil.isReindex()) {
+            Try.run(()->
+                    indexAPI.addContentToIndex(contentlet, false))
+                    .getOrElseThrow(e -> new DotRuntimeException(e));
+        }
+
+        return contentlet;
     }
 
     @CloseDBIfOpened

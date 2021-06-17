@@ -1912,4 +1912,11 @@ public interface ContentletAPIPreHook {
     default boolean findContentletByIdentifierAnyLanguage(String identifier, boolean includeDeleted) {
         return true;
     }
+
+    default boolean move(Contentlet contentlet, User user, String hostAndFolderPath) { return true; }
+
+	default boolean move(Contentlet contentlet, User user, Host host, String folderFolderPath) { return  true; }
+
+	default boolean move(final Contentlet contentlet, User user, Host host, Folder folder) { return true; }
+
 }

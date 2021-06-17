@@ -676,7 +676,58 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         }
     }
 
-    @Override
+	@Override
+	public Contentlet move(final Contentlet contentlet, final User user, final String hostAndFolderPath) {
+		for(ContentletAPIPreHook pre : preHooks){
+			final boolean preResult = pre.move(contentlet, user, hostAndFolderPath);
+			if(!preResult){
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+			}
+		}
+
+		final Contentlet c = conAPI.move(contentlet, user, hostAndFolderPath);
+		for(ContentletAPIPostHook post : postHooks){
+			post.move(contentlet, user, hostAndFolderPath);
+		}
+		return c;
+	}
+
+	@Override
+	public Contentlet move(final Contentlet contentlet, final User user, final Host host, final String folderFolderPath) {
+		for(ContentletAPIPreHook pre : preHooks){
+			final boolean preResult = pre.move(contentlet, user, host, folderFolderPath);
+			if(!preResult){
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+			}
+		}
+
+		final Contentlet c = conAPI.move(contentlet, user, host, folderFolderPath);
+		for(ContentletAPIPostHook post : postHooks){
+			post.move(contentlet, user, host, folderFolderPath);
+		}
+		return c;
+	}
+
+	@Override
+	public Contentlet move(final Contentlet contentlet, User user, Host host, Folder folder) {
+		for(ContentletAPIPreHook pre : preHooks){
+			final boolean preResult = pre.move(contentlet, user, host, folder);
+			if(!preResult){
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+			}
+		}
+
+		final Contentlet c = conAPI.move(contentlet, user, host, folder);
+		for(ContentletAPIPostHook post : postHooks){
+			post.move(contentlet, user, host, folder);
+		}
+		return c;
+	}
+
+	@Override
 	public Contentlet find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.find(inode, user, respectFrontendRoles);
