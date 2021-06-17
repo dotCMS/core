@@ -27,18 +27,25 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.liferay.util.FileUtil;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import io.vavr.control.Try;
 import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -306,8 +313,8 @@ public class DeterministicIdentifierAPITest {
         }
     }
 
+    //There is constant in javascript MAX_SAFE_INTEGER which is the proposed limit
     private static final long JS_MAX_SAFE_INTEGER = 9007199254740991L;
-
 
     @Test
     @UseDataProvider("getLanguageTestCases")
@@ -316,11 +323,11 @@ public class DeterministicIdentifierAPITest {
         final boolean generateConsistentIdentifiers = Config
                 .getBooleanProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
         try {
-            //Disconnect the consistent identifier generation so we can test the generator and no identifier will be stored in the db
             Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
-            final Language lang = testCase.language;
+            final Language lang =  new Language(0, testCase.langCode, testCase.countryCode, "", testCase.country);
             assertEquals(testCase.expectedSeed, defaultGenerator.deterministicIdSeed(lang));
             final long id = defaultGenerator.generateDeterministicIdBestEffort(lang);
+            //Longs above this number are not correctly rendered in javascript
             assertTrue(id < JS_MAX_SAFE_INTEGER);
             assertEquals(testCase.expectedHash, id);
         }finally {
@@ -330,25 +337,55 @@ public class DeterministicIdentifierAPITest {
 
     @DataProvider
     public static Object[] getLanguageTestCases() throws Exception {
+
         prepareIfNecessary();
-        return new Object[]{
-               new LanguageTestCase(new Language(0,"en","US", "",""),"Language:en:US",5318600),
-               new LanguageTestCase(new Language(0,"es","US", "",""),"Language:es:US",4913155),
-               new LanguageTestCase(new Language(0,"ep" , "", "Esperanto", ""),"Language:ep:",5292269),
-               new LanguageTestCase(new Language(0,"de", "DE", "German", "Germany"),"Language:de:DE",4660718),
-               new LanguageTestCase(new Language(0,"ru" , "RUS", "Russian", "Russia"),"Language:ru:RUS",5066818),
-               new LanguageTestCase(new Language(0,"da" , "DK ", "Danish", "Denmark"),"Language:da:DK",4540984),
-               new LanguageTestCase(new Language(0,"en" , "NZ ", "English", "New Zealand"),"Language:en:NZ",5382528)
-        };
+        //Propose a set of test languages
+        final List<LanguageTestCase> testCases = Stream
+                .of(new LanguageTestCase("es", "US", "United States", "Language:es:US", 4913155),
+                    new LanguageTestCase("ep", "", "", "Language:ep:", 5292269),
+                    new LanguageTestCase("ru", "RUS", "", "Language:ru:RUS", 5066818),
+                    new LanguageTestCase("da", "DK", "Denmark", "Language:da:DK", 4540984),
+                    new LanguageTestCase("en", "NZ", "New Zealand", "Language:en:NZ", 5382528))
+                .collect(Collectors.toList());
+
+        final LanguageAPI languageAPI = APILocator.getLanguageAPI();
+        final Language defaultLanguage = languageAPI.getDefaultLanguage();
+        final Iterator<LanguageTestCase> iterator = testCases.iterator();
+        while (iterator.hasNext()) {
+            final LanguageTestCase testCase = iterator.next();
+            final Language language = languageAPI
+                    .getLanguage(testCase.langCode, testCase.countryCode);
+            if (null != language && language.getId() == defaultLanguage.getId()) {
+                //Exclude the default language from our test data set (is not included just in case)
+                iterator.remove();
+            } else {
+                if (null != language) {
+                    try {
+                        //If the language already exists remove it
+                        languageAPI.deleteLanguage(language);
+                    } catch (Exception e) {
+                        Logger.error(DeterministicIdentifierAPIImpl.class,String.format("Failed to remove language `%s-%s` prior to execute test ",language.getLanguageCode(), language.getCountryCode()), e);
+                        //if we fail to remove it from the db. then Exclude it from the test data set.
+                        iterator.remove();
+                    }
+                }
+            }
+        }
+
+        return testCases.toArray();
     }
 
     static class LanguageTestCase {
-         final Language language;
          final String expectedSeed;
          final long expectedHash;
+         final String langCode;
+         final String countryCode;
+         final String country;
 
-         LanguageTestCase(final Language language,final String expectedSeed,final long expectedHash) {
-            this.language = language;
+         LanguageTestCase(final String langCode, final String countryCode, String country,final String expectedSeed, final long expectedHash) {
+            this.langCode = langCode;
+            this.countryCode = countryCode;
+            this.country = country;
             this.expectedSeed = expectedSeed;
             this.expectedHash = expectedHash;
         }
@@ -356,9 +393,11 @@ public class DeterministicIdentifierAPITest {
         @Override
         public String toString() {
             return "LanguageTestCase{" +
-                    "language=" + language +
-                    ", expectedSeed='" + expectedSeed + '\'' +
+                    "expectedSeed='" + expectedSeed + '\'' +
                     ", expectedHash=" + expectedHash +
+                    ", langCode='" + langCode + '\'' +
+                    ", countryCode='" + countryCode + '\'' +
+                    ", country='" + country + '\'' +
                     '}';
         }
     }

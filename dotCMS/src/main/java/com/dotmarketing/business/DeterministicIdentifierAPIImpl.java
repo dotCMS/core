@@ -276,7 +276,7 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
     @Override
     public String generateDeterministicIdBestEffort(final Versionable asset,
             final Treeable parent) {
-        return enabled() ? bestEffortDeterministicId(hash(deterministicIdSeed(asset, parent)))
+        return isEnabled() ? bestEffortDeterministicId(hash(deterministicIdSeed(asset, parent)))
                 : uuidSupplier.get();
     }
 
@@ -290,7 +290,7 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
     @Override
     public String generateDeterministicIdBestEffort(final ContentType contentType,
             final Supplier<String> contentTypeVarName) {
-        return enabled() ? bestEffortDeterministicContentId(
+        return isEnabled() ? bestEffortDeterministicContentId(
                 hash(deterministicIdSeed(contentType, contentTypeVarName)))
                 : uuidSupplier.get();
     }
@@ -302,7 +302,7 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
      */
     @Override
     public long generateDeterministicIdBestEffort(final Language lang) {
-        return enabled() ? bestEffortDeterministicLanguageId(
+        return isEnabled() ? bestEffortDeterministicLanguageId(
                 simpleHash(hash(deterministicIdSeed(lang)))) : nextLangId();
     }
 
@@ -338,7 +338,7 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
     }
 
     /**
-     * Basically takes a string and hash it into a long number (not extremely long)
+     * Basically takes a string and hash it into a long number (not extremely long though).
      * As this is meant to be used as an id take into account that not every java long can be represented in javascript therefore this number can be excessively large
      * That is why this has is relatively simple
      * Used to create a deterministic long representation out of a sha256
@@ -368,7 +368,7 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
      * Tells us if this generator has been disabled
      * @return
      */
-   public boolean enabled(){
+   public boolean isEnabled(){
        return (Config.getBooleanProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true));
    }
 
