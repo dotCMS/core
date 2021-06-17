@@ -107,30 +107,28 @@ This release includes the following code fixes:
 
 51. https://github.com/dotCMS/core/issues/20156 : User is logged out when accessing content if the Role does not have the 'Content' portlet tool group
 
-52. https://github.com/dotCMS/core/issues/20063 : Send Cookies Secure and HttpOnly
+52. https://github.com/dotCMS/core/issues/20013 : Potential timezone bug
 
-53. https://github.com/dotCMS/core/issues/20013 : Potential timezone bug
+53. https://github.com/dotCMS/core/issues/19993 : [workflow] : The "Send an Email" sub-action fails if executed before "Save content" sub-action 
 
-54. https://github.com/dotCMS/core/issues/19993 : [workflow] : The "Send an Email" sub-action fails if executed before "Save content" sub-action 
+54. https://github.com/dotCMS/core/issues/19951 : Date time field, should respect the time zone from format or company
 
-55. https://github.com/dotCMS/core/issues/19951 : Date time field, should respect the time zone from format or company
+55. https://github.com/dotCMS/core/issues/19926 : NPE on every page request after setting: ENABLE_NAV_PERMISSION_CHECK=true
 
-56. https://github.com/dotCMS/core/issues/19926 : NPE on every page request after setting: ENABLE_NAV_PERMISSION_CHECK=true
+56. https://github.com/dotCMS/core/issues/19877 : [core] : Remove unnecessary Web Token
 
-57. https://github.com/dotCMS/core/issues/19877 : [core] : Remove unnecessary Web Token
+57. https://github.com/dotCMS/core/issues/20041 : Time machine is causing an error with the index
 
-58. https://github.com/dotCMS/core/issues/20041 : Time machine is causing an error with the index
+58. https://github.com/dotCMS/core/issues/20197 : Cannot relate content to a macrolanguage if there is the same language with a country code
 
-59. https://github.com/dotCMS/core/issues/20197 : Cannot relate content to a macrolanguage if there is the same language with a country code
+59. https://github.com/dotCMS/core/issues/20164 : JsonTool parsing
 
-60. https://github.com/dotCMS/core/issues/20164 : JsonTool parsing
+60. https://github.com/dotCMS/core/issues/20232 : [Integrity Checker] : Improving error message when fixing File Asset conflict
 
-61. https://github.com/dotCMS/core/issues/20232 : [Integrity Checker] : Improving error message when fixing File Asset conflict
+61. https://github.com/dotCMS/core/issues/19723 : Only 10 parent related contents retrieved when editing a child content
 
-62. https://github.com/dotCMS/core/issues/19723 : Only 10 parent related contents retrieved when editing a child content
+62. https://github.com/dotCMS/core/issues/19412 : "Permission Individually" on a folder defaults to all permissions of its parent, not just the inheritable ones
 
-63. https://github.com/dotCMS/core/issues/19412 : "Permission Individually" on a folder defaults to all permissions of its parent, not just the inheritable ones
+63. https://github.com/dotCMS/core/issues/20364 : XStream throws exception when posting bad XML
 
-64. https://github.com/dotCMS/core/issues/20364 : XStream throws exception when posting bad XML
-
-65. https://github.com/dotCMS/core/issues/19500 : SQL Injection Vulnerability in api /api/v1/containers
+64. https://github.com/dotCMS/core/issues/19500 : SQL Injection Vulnerability in api /api/v1/containers
