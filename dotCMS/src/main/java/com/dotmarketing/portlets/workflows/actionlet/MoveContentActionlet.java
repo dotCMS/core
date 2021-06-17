@@ -47,27 +47,15 @@ public class MoveContentActionlet extends WorkFlowActionlet {
         final Contentlet contentlet = processor.getContentlet();
         final User user             = processor.getUser();
         final String pathParam      = params.get("path").getValue();
-        final String pathId         = Try.of(()->findPathId (pathParam, contentlet, user))
-                .getOrElseThrow(e -> new WorkflowActionFailureException(e.getMessage(), (Exception) e));
+        final String path           = findFolderIdByPath(pathParam, contentlet);
+
+        APILocator.getContentletAPI().move(contentlet, user, path);
     }
 
-    private String findPathId(final String pathParam, final Contentlet contentlet, final User user) throws DotSecurityException, DotDataException {
 
-        if (UtilMethods.isSet(pathParam)) {
+    private String findFolderIdByPath (final String actionletPathParameter, final Contentlet contentlet)  {
 
-            return this.findFolderIdByPath(pathParam, contentlet, user);
-        } else {
-
-            return null;
-        }
-    }
-
-    private String findFolderIdByPath (final String path, final Contentlet contentlet, final User user) throws DotSecurityException, DotDataException {
-
-/*        final Host host         = findHost (path, contentlet, user);
-        final String folderPath = findFolderPath (path);
-        final Folder folder     = APILocator.getFolderAPI().findFolderByPath(folderPath, host, user, false);
-        return folder.getIdentifier();*/
-        return null;
+        return  UtilMethods.isSet(actionletPathParameter)?
+                actionletPathParameter: contentlet.getStringProperty("_path_to_move");
     }
 }
