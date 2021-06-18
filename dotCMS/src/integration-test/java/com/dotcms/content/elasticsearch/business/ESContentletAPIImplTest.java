@@ -22,6 +22,7 @@ import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.*;
@@ -783,13 +784,11 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                 .host(host)
                 .nextPersisted();
 
-        contentletA = releteContent(relationship, contentletA, contentletB, contentletC);
-        contentletB = releteContent(relationship, contentletB, contentletA, contentletC);
-        contentletC = releteContent(relationship, contentletC, contentletA, contentletB);
+        contentletA = relateContent(relationship, contentletA, contentletB, contentletC);
+        contentletB = relateContent(relationship, contentletB, contentletA, contentletC);
+        contentletC = relateContent(relationship, contentletC, contentletA, contentletB);
 
         contentletA.setProperty(relationship.getChildRelationName(), Arrays.asList(contentletB, contentletC));
-        contentletB.setProperty(relationship.getChildRelationName(), Arrays.asList(contentletA, contentletC));
-        contentletC.setProperty(relationship.getChildRelationName(), Arrays.asList(contentletA, contentletB));
 
         ContentletDataGen.checkin(contentletA);
 
@@ -807,15 +806,14 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                 .map(contentlet -> contentlet.getIdentifier())
                 .collect(Collectors.toList());
 
-        assertEquals(2, contentlets.size());
+        assertEquals(contentsRelated.length, contentlets.size());
 
         for (Contentlet contentletRelated : contentsRelated) {
             assertTrue(contentlets.contains(contentletRelated.getIdentifier()));
         }
     }
 
-    @NotNull
-    private Contentlet releteContent(
+    private Contentlet relateContent(
             Relationship relationship,
             Contentlet parentContent,
             Contentlet... contentletChilds) {
