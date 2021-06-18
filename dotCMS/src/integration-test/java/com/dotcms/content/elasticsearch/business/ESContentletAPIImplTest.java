@@ -750,9 +750,38 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
 
         final Host host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
 
-        final String unknownFolderPath = host + "/unknownFolder";
+        final String unknownFolderPath = "//" + host.getHostname() + "/unknownFolder";
         APILocator.getContentletAPI()
                 .move(new Contentlet(), APILocator.systemUser(), unknownFolderPath,false);
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#move(Contentlet, User, Host, Folder, boolean)}
+     * Given Scenario: sends a not null host and folder path, but invalid b/c does not starts with //
+     * ExpectedResult: The method should not throw a {@link IllegalArgumentException}
+     */
+    @Test(expected = DotSecurityException.class)
+    public void test_move_to_exists_path_invalid_user() throws DotDataException, DotSecurityException {
+
+        final Host host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+        Contentlet contentlet = null;
+        final ContentType news = getNewsLikeContentType("News");
+
+        final ContentletDataGen dataGen = new ContentletDataGen(news.id());
+
+        contentlet = dataGen.languageId(languageAPI.getDefaultLanguage().getId())
+                .setProperty("title", "News Test")
+                .setProperty("urlTitle", "news-test").setProperty("byline", "news-test")
+                .setProperty("sysPublishDate", new Date()).setProperty("story", "news-test")
+                .next();
+
+        contentlet.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet = contentletAPI.checkin(contentlet, user, false);
+
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+        APILocator.getContentletAPI()
+                .move(contentlet, null, host, folder,false);
     }
 
 
