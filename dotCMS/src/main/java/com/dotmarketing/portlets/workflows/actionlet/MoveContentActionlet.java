@@ -1,8 +1,6 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
@@ -23,6 +21,8 @@ import java.util.Map;
  */
 public class MoveContentActionlet extends WorkFlowActionlet {
 
+
+    public static final String PATH_KEY = "path";
 
     @Override
     public List<WorkflowActionletParameter> getParameters() {
@@ -49,7 +49,7 @@ public class MoveContentActionlet extends WorkFlowActionlet {
 
         final Contentlet contentlet = processor.getContentlet();
         final User user             = processor.getUser();
-        final String pathParam      = params.get("path").getValue();
+        final String pathParam      = params.get(PATH_KEY).getValue();
         final String path           = findFolderIdByPath(pathParam, contentlet);
 
         Logger.debug(this, "Moving the contentlet to: " + path);
