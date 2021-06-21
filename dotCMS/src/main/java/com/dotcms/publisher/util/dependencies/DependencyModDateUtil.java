@@ -9,35 +9,26 @@ import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.Operation;
-import com.dotcms.publishing.PublisherConfiguration;
-import com.dotcms.util.AnnotationUtils;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import java.util.stream.Collectors;
-import org.apache.commons.lang.StringUtils;
 
 import java.util.*;
 
 /**
- * Provide util method
+ * Provide util method to know if a asset should be exclude by mod_date attribute
  */
-public class DependencyModDateUtil extends HashSet<String> {
+public class DependencyModDateUtil {
 
 	/**
 	 *
@@ -127,7 +118,7 @@ public class DependencyModDateUtil extends HashSet<String> {
 	 * @return
 	 */
 	public boolean excludeByModDate ( final Relationship relationship) {
-		return excludeByModDate(DependencyManager. getKey(relationship), PusheableAsset.RELATIONSHIP,
+		return excludeByModDate(DependencyManager.getBundleKey(relationship), PusheableAsset.RELATIONSHIP,
 				relationship.getModDate());
 	}
 
@@ -139,7 +130,7 @@ public class DependencyModDateUtil extends HashSet<String> {
 	 * @return
 	 */
 	public boolean excludeByModDate ( final Rule rule) {
-		return excludeByModDate(DependencyManager.getKey(rule), PusheableAsset.RULE,
+		return excludeByModDate(DependencyManager.getBundleKey(rule), PusheableAsset.RULE,
 				rule.getModDate());
 	}
 
@@ -151,7 +142,7 @@ public class DependencyModDateUtil extends HashSet<String> {
 	 * @return
 	 */
 	public boolean excludeByModDate ( final WorkflowScheme workflowScheme) {
-		return excludeByModDate(DependencyManager.getKey(workflowScheme), PusheableAsset.WORKFLOW,
+		return excludeByModDate(DependencyManager.getBundleKey(workflowScheme), PusheableAsset.WORKFLOW,
 				workflowScheme.getModDate());
 	}
 
@@ -164,7 +155,7 @@ public class DependencyModDateUtil extends HashSet<String> {
 	 * @return
 	 */
 	public boolean excludeByModDate ( final Versionable asset, final PusheableAsset pusheableAsset) {
-		return excludeByModDate(DependencyManager.getKey(asset), pusheableAsset,
+		return excludeByModDate(DependencyManager.getBundleKey(asset), pusheableAsset,
 				asset.getModDate());
 	}
 

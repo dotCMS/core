@@ -519,7 +519,7 @@ public class PublisherAPIImplTest {
                 .getPushedAssetsByBundleIdAndEnvironmentId(bundle.getId(), environment.getId());
 
         for (Object asset : dependencies) {
-            final String assetId = DependencyManager.getKey(asset);
+            final String assetId = DependencyManager.getBundleKey(asset);
 
             final List<PushedAsset> pushedAssetsByAsset = pushedAssets.stream()
                     .filter(pushedAsset -> pushedAsset.getAssetId().equals(assetId))

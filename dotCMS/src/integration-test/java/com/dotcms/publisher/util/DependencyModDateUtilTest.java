@@ -87,7 +87,7 @@ public class DependencyModDateUtilTest extends IntegrationTestBase {
     /**
      * Method to Test: {@link DependencyModDateUtil#excludeByModDate(Object)}}
      * When: A contentlet with any Push before
-     * Should: always return true
+     * Should: always return false
      *
      * @param testCase
      * @throws DotDataException
@@ -127,7 +127,7 @@ public class DependencyModDateUtilTest extends IntegrationTestBase {
     /**
      * Method to Test: {@link DependencyModDateUtil#excludeByModDate(Object)}}
      * When: A contentlet with a PushAsset with date before that moddate
-     * Should: always return true
+     * Should: always return false
      *
      * @param testCase
      * @throws DotDataException
@@ -183,7 +183,7 @@ public class DependencyModDateUtilTest extends IntegrationTestBase {
     /**
      * Method to Test: {@link DependencyModDateUtil#excludeByModDate(Object)}}
      * When: A contentlet with a PushAsset with date after that moddate
-     * Should: always return false if isForcePush, isDownloading are true and operation is {@link Operation#PUBLISH}
+     * Should: return false if isForcePush or isDownloading are true otherwise return true
      *
      * @param testCase
      * @throws DotDataException
@@ -255,7 +255,7 @@ public class DependencyModDateUtilTest extends IntegrationTestBase {
      * - One environment with a  PushAsset with date after that moddate
      * - One environment with a  PushAsset with date before that moddate
      *
-     * Should: always return true
+     * Should: always return false
      *
      * @param testCase
      * @throws DotDataException

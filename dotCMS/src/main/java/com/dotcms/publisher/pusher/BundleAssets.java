@@ -1,16 +1,12 @@
 package com.dotcms.publisher.pusher;
 
 import com.dotcms.publisher.util.PusheableAsset;
-import com.dotcms.publishing.PublisherConfig.Config;
-import com.dotmarketing.beans.Host;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Use by {@link com.dotcms.publisher.pusher.PushPublisherConfig} to keep track of all the
@@ -92,10 +88,10 @@ class DependencySet {
      * @see {@link DependencySet#addWithDependencies(String, PusheableAsset)}
      */
     public boolean isDependenciesAdded(final String assetId, final PusheableAsset pusheableAsset){
-        final Set<String> assetsWithoutDependencies =
+        final Set<String> assetsWithDependencies =
                 getSet(pusheableAsset, addedWithDependencies);
 
-        return assetsWithoutDependencies.contains(assetId);
+        return assetsWithDependencies.contains(assetId);
     }
 
     /**

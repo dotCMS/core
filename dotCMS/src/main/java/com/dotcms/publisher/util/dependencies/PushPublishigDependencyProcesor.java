@@ -141,7 +141,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
             tryToAddAllAndProcessDependencies(PusheableAsset.CONTAINER,
                     pushPublishigDependencyProvider.getContainersByHost(host));
             pushPublishigDependencyProvider.getFileContainersByHost(host).stream()
-                    .forEach(fileContainer -> dependencyProcessor.addAsset(fileContainer.getIdentifier(),
+                    .forEach(fileContainer -> dependencyProcessor.addAsset(fileContainer,
                             PusheableAsset.CONTAINER));
 
             // Content dependencies
@@ -741,7 +741,8 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
         }
 
         if (isExcludeByFilter(pusheableAsset)) {
-            throw new AssetExcludeByFilterException(String.format("Exclude by Operation %s",
+
+            throw new AssetExcludeByFilterException(String.format("Exclude by Filter %s",
                     config.getOperation()));
         }
 

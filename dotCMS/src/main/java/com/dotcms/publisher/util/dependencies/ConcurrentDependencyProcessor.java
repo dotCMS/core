@@ -2,7 +2,6 @@ package com.dotcms.publisher.util.dependencies;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
-import com.dotcms.publisher.pusher.PushPublisherConfig.AssetTypes;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.Config;
@@ -97,7 +96,7 @@ public class ConcurrentDependencyProcessor implements DependencyProcessor {
     }
 
     private <T> boolean addRequestToProcess(final T asset, final PusheableAsset pusheableAsset) {
-        final String assetKey = DependencyManager.getKey(asset);
+        final String assetKey = DependencyManager.getBundleKey(asset);
         Set<String> set = assetsRequestToProcess.get(pusheableAsset);
 
         if (set == null) {
@@ -186,7 +185,7 @@ public class ConcurrentDependencyProcessor implements DependencyProcessor {
         public void run() {
             try {
                 final PusheableAsset pusheableAsset = dependencyProcessorItem.pusheableAsset;
-                Logger.info(ConcurrentDependencyProcessor.class,
+                Logger.debug(ConcurrentDependencyProcessor.class,
                         () -> String.format("%s : We have something to process - %s %s",
                                 Thread.currentThread().getName(), dependencyProcessorItem.asset, pusheableAsset));
 

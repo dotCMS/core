@@ -53,7 +53,7 @@ public class PushPublisherConfig extends PublisherConfig {
 	private List<PublishingEndPoint> endpoints;
 	private boolean downloading = false;
 	private DependencyProcessor dependencyProcessor;
-	private DependencySet dependencySet = new DependencySet();
+	private BundleAssets bundleAssets = new BundleAssets();
 
 	public PushPublisherConfig() {
 		super();
@@ -125,12 +125,12 @@ public class PushPublisherConfig extends PublisherConfig {
 
 	@SuppressWarnings("unchecked")
 	public Set<String> getContainers() {
-		return dependencySet.getContainers();
+		return bundleAssets.getContainers();
 	}
 
 	@SuppressWarnings("unchecked")
 	public Set<String> getTemplates() {
-		return dependencySet.getTemplates();
+		return bundleAssets.getTemplates();
 	}
 
 	@SuppressWarnings("unchecked")
@@ -144,17 +144,17 @@ public class PushPublisherConfig extends PublisherConfig {
 
 	@SuppressWarnings("unchecked")
 	public Set<String> getContentlets() {
-		return dependencySet.getContentlets();
+		return bundleAssets.getContentlets();
 	}
 
 	@SuppressWarnings("unchecked")
 	public Set<String> getLinks() {
-		return dependencySet.getLinks();
+		return bundleAssets.getLinks();
 	}
 
 	@SuppressWarnings("unchecked")
 	public Set<String> getWorkflows() {
-		return dependencySet.getWorkflows();
+		return bundleAssets.getWorkflows();
 	}
 
 	/**
@@ -165,37 +165,37 @@ public class PushPublisherConfig extends PublisherConfig {
 	 */
 	@SuppressWarnings("unchecked")
 	public Set<String> getRules() {
-		return dependencySet.getRules();
+		return bundleAssets.getRules();
 	}
 
 	@SuppressWarnings("unchecked")
 	public Set<String> getRelationships() {
-		return dependencySet.getRelationships();
+		return bundleAssets.getRelationships();
 	}
 
     @SuppressWarnings("unchecked")
     public Set<String> getCategories() {
-		return dependencySet.getCategories();
+		return bundleAssets.getCategories();
     }
 
     @Override
 	public Set<String> getFolders() {
-		return dependencySet.getFolders();
+		return bundleAssets.getFolders();
 	}
 
 	@Override
 	public Set<String> getStructures() {
-		return dependencySet.getStructures();
+		return bundleAssets.getStructures();
 	}
 
 	@Override
 	public Set<String> getHostSet() {
-		return dependencySet.getHosts();
+		return bundleAssets.getHosts();
 	}
 
 	@Override
 	public Set<String> getLanguages() {
-		return dependencySet.getLanguages();
+		return bundleAssets.getLanguages();
 	}
 
     public boolean isDownloading () {
@@ -210,16 +210,16 @@ public class PushPublisherConfig extends PublisherConfig {
 		this.dependencyProcessor = dependencyProcessor;
 	}
 
-	public DependencySet dependencySet(){
-		return dependencySet;
+	public BundleAssets dependencySet(){
+		return bundleAssets;
 	}
 
 	public <T> boolean addWithDependencies(final T asset, final PusheableAsset pusheableAsset) {
-		final String key = DependencyManager.getKey(asset);
-		final boolean isAlreadyAdded = dependencySet.isDependenciesAdded(key, pusheableAsset);
+		final String key = DependencyManager.getBundleKey(asset);
+		final boolean isAlreadyAdded = bundleAssets.isDependenciesAdded(key, pusheableAsset);
 
 		if(!isAlreadyAdded) {
-			dependencySet.addWithDependencies(key, pusheableAsset);
+			bundleAssets.addWithDependencies(key, pusheableAsset);
 			this.dependencyProcessor.addAsset(asset, pusheableAsset);
 		}
 
@@ -227,10 +227,10 @@ public class PushPublisherConfig extends PublisherConfig {
 	}
 
 	public <T> boolean add(final T asset, final PusheableAsset pusheableAsset) {
-		final String key = DependencyManager.getKey(asset);
+		final String key = DependencyManager.getBundleKey(asset);
 
-		if(!dependencySet.isAdded(key, pusheableAsset)) {
-			dependencySet.add(key, pusheableAsset);
+		if(!bundleAssets.isAdded(key, pusheableAsset)) {
+			bundleAssets.add(key, pusheableAsset);
 			return true;
 		} else {
 			return false;

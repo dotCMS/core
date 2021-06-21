@@ -4,13 +4,10 @@ import com.dotcms.publisher.assets.bean.PushedAsset;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.util.PusheableAsset;
-import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
-import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.publishing.PublisherConfiguration;
 import com.dotcms.util.AnnotationUtils;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import java.util.ArrayList;
@@ -20,7 +17,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.apache.commons.lang.StringUtils;
 
 public class PushedAssetUtil {
 
@@ -89,11 +85,11 @@ public class PushedAssetUtil {
 
     public <T> void savePushedAssetForAllEnv(final T asset, final PusheableAsset pusheableAsset) {
         this.environments.forEach(environment ->
-                savePushedAsset(DependencyManager.getKey(asset), pusheableAsset, environment));
+                savePushedAsset(DependencyManager.getBundleKey(asset), pusheableAsset, environment));
     }
 
     public <T> void removePushedAssetForAllEnv(final T asset, final PusheableAsset pusheableAsset) {
-        final String assetId = DependencyManager.getKey(asset);
+        final String assetId = DependencyManager.getBundleKey(asset);
 
         //For un-publish we always remove the asset from cache
         for ( Environment environment : environments ) {

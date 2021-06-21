@@ -373,7 +373,14 @@ public class DependencyManager {
 		return config.getFolders();
 	}
 
-	public static <T> String getKey ( final T asset) {
+	/**
+	 * Return the key to add a asset into a Bundle
+	 *
+	 * @param asset
+	 * @param <T>
+	 * @return
+	 */
+	public static <T> String getBundleKey( final T asset) {
 		if (Contentlet.class.isInstance(asset)) {
 			final Contentlet contentlet = Contentlet.class.cast(asset);
 			return contentlet.getIdentifier();

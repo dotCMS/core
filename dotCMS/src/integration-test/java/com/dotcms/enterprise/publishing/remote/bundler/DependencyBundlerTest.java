@@ -1119,7 +1119,7 @@ public class DependencyBundlerTest {
      * - Have a Relationship.
      * - Have a parent content related with a child contentlet.
      * - The child contentlet have two versions in different languages, one of them after the last
-     * Push operation and the another one after it.
+     * Push operation and the another one before it.
      * - Add the parent content into a bundle.
      * Should:
      * - The child contentlet should be include all the time that the operation is equals to PUBLISH
