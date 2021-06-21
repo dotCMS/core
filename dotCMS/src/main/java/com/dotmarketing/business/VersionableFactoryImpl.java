@@ -200,7 +200,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		if (identifier.getAssetType().equals("contentlet")){
             try {
                 return Collections.unmodifiableList(FactoryLocator.getContentletFactory()
-                        .findAllVersions(identifier, true, maxResults));
+                        .findAllVersions(identifier, true, maxResults.isPresent()?maxResults.get():null));
             } catch (DotSecurityException e) {
                 throw new DotDataException("Cannot get versions for contentlet with identifier:" + identifier);
             }

@@ -215,6 +215,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             "bool7", "bool8", "bool9", "bool10", "bool11", "bool12", "bool13", "bool14", "bool15",
             "bool16", "bool17", "bool18", "bool19", "bool20", "bool21", "bool22", "bool23",
             "bool24", "bool25"};
+    private static final int MAX_FIELDS_ALLOWED = 25;
 
     private final ContentletCache contentletCache;
 	private final LanguageAPI languageAPI;
@@ -619,13 +620,13 @@ public class ESContentFactoryImpl extends ContentletFactory {
      *            List of contentles inodes
      */
     private void deleteTreesForInodes(List<String> inodes) throws DotDataException {
-        DotConnect db = new DotConnect();
+        final DotConnect dotConnect = new DotConnect();
         try {
             final String sInodeIds = StringUtils.join(inodes, ",");
 
             // workaround for dbs where we can't have more than one constraint
             // or triggers
-            db.executeStatement("delete from tree where child in (" + sInodeIds
+            dotConnect.executeStatement("delete from tree where child in (" + sInodeIds
                     + ") or parent in (" + sInodeIds + ")");
 
             // workaround for dbs where we can't have more than one constraint
@@ -750,11 +751,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	@Override
 	protected void deleteVersion(final Contentlet contentlet) throws DotDataException {
 	    final String conInode = contentlet.getInode();
-        final DotConnect db = new DotConnect();
-        db.setSQL("delete from tree where child = ? or parent = ?");
-        db.addParam( conInode );
-        db.addParam( conInode );
-        db.loadResult();
+        final DotConnect dotConnect = new DotConnect();
+        dotConnect.setSQL("delete from tree where child = ? or parent = ?");
+        dotConnect.addParam( conInode );
+        dotConnect.addParam( conInode );
+        dotConnect.loadResult();
 
         // workaround for dbs where we can't have more than one constraint
         // or triggers
@@ -808,21 +809,21 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	
     @Override
     protected Contentlet find(final String inode) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
-        Contentlet con;
+        Contentlet contentlet;
         if (!DbConnectionFactory.inTransaction()) {
-            con = contentletCache.get(inode);
-            if (con != null && InodeUtils.isSet(con.getInode())) {
-                if (CACHE_404_CONTENTLET.equals(con.getInode())) {
+            contentlet = contentletCache.get(inode);
+            if (contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
+                if (CACHE_404_CONTENTLET.equals(contentlet.getInode())) {
                     return null;
                 }
-                return con;
+                return contentlet;
             }
         }
         final Optional<Contentlet> dbContentlet = this.findInDb(inode);
         if (dbContentlet.isPresent()) {
-            con = dbContentlet.get();
-            contentletCache.add(con.getInode(), con);
-            return con;
+            contentlet = dbContentlet.get();
+            contentletCache.add(contentlet.getInode(), contentlet);
+            return contentlet;
         } else {
             contentletCache.add(inode, cache404Content);
             return null;
@@ -859,24 +860,25 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         SearchHits  hits = cachedIndexSearch(searchRequest);
         
-        List<Contentlet> cons = new ArrayList<>();
+        final List<Contentlet> contentlets = new ArrayList<>();
 
         for ( SearchHit hit : hits ) {
             try {
                 Map<String, Object> sourceMap = hit.getSourceAsMap();
-                cons.add( find( sourceMap.get("inode").toString()) );
+                contentlets.add( find( sourceMap.get("inode").toString()) );
             } catch ( Exception e ) {
                 throw new ElasticsearchException( e.getMessage(), e );
             }
         }
 
-        return cons;
+        return contentlets;
     }
 
 	@Override
 	protected List<Contentlet> findAllUserVersions(final Identifier identifier) throws DotDataException, DotStateException, DotSecurityException {
-        if(!InodeUtils.isSet(identifier.getId()))
+        if(!InodeUtils.isSet(identifier.getId())) {
             return Collections.emptyList();
+        }
 
         final DotConnect dotConnect = new DotConnect();
         final StringBuilder query = new StringBuilder();
@@ -891,11 +893,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         List results = dotConnect.loadObjectResults();
 
-        if(results == null)
-            return Collections.emptyList();
-        else{
-            return TransformerLocator.createContentletTransformer(results).asList();
-        }
+        return results == null ? Collections.emptyList()
+                : TransformerLocator.createContentletTransformer(results).asList();
+
 	}
 
     @Override
@@ -905,15 +905,17 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     @Override
     protected List<Contentlet> findAllVersions(final Identifier identifier, final boolean bringOldVersions) throws DotDataException, DotStateException, DotSecurityException {
-        return findAllVersions(identifier, bringOldVersions, Optional.empty());
+        return findAllVersions(identifier, bringOldVersions, null);
     }
 
 	@Override
     public List<Contentlet> findAllVersions(final Identifier identifier,
-            final boolean bringOldVersions, final Optional<Integer> maxResults)
+            final boolean bringOldVersions, final Integer maxResults)
             throws DotDataException, DotStateException, DotSecurityException {
-	    if(!InodeUtils.isSet(identifier.getId()))
+
+	    if(!InodeUtils.isSet(identifier.getId())) {
             return new ArrayList<>();
+        }
 
         final DotConnect dc = new DotConnect();
         final StringBuffer query = new StringBuffer();
@@ -930,8 +932,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
         dc.setSQL(query.toString());
         dc.addObject(identifier.getId());
 
-        if (maxResults.isPresent()){
-            dc.setMaxRows(maxResults.get());
+        if (maxResults != null){
+            dc.setMaxRows(maxResults);
         }
         List<Map<String,Object>> list=dc.loadObjectResults();
         ArrayList<String> inodes=new ArrayList<String>(list.size());
@@ -1041,9 +1043,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     final HashMap<String, Contentlet> conMap = new HashMap<>();
     for (String i : inodes) {
-      final Contentlet c = contentletCache.get(i);
-      if (c != null && InodeUtils.isSet(c.getInode())) {
-        conMap.put(c.getInode(), c);
+      final Contentlet contentlet = contentletCache.get(i);
+      if (contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
+        conMap.put(contentlet.getInode(), contentlet);
       }
     }
     
@@ -1105,20 +1107,20 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         final SearchHits hits = cachedIndexSearch(searchRequest);
 
-        final List<Contentlet> cons = new ArrayList<>();
+        final List<Contentlet> contentlets = new ArrayList<>();
         for (int i = 0; i < hits.getHits().length; i++) {
             try {
-                cons.add(find(hits.getAt(i).getSourceAsMap().get("inode").toString()));
+                contentlets.add(find(hits.getAt(i).getSourceAsMap().get("inode").toString()));
             } catch (Exception e) {
                 throw new ElasticsearchException(e.getMessage(),e);
             }
         }
-        return cons;
+        return contentlets;
     }
 
     @Override
 	protected List<Contentlet> findContentletsByIdentifier(String identifier, Boolean live, Long languageId) throws DotDataException, DotStateException, DotSecurityException {
-	    final List<Contentlet> cons = new ArrayList<>();
+	    final List<Contentlet> contentlets = new ArrayList<>();
         final StringBuilder queryBuffer = new StringBuilder();
         final DotConnect dotConnect = new DotConnect();
         queryBuffer.append("select contentlet.*, contentlet_1_.owner ")
@@ -1276,21 +1278,21 @@ public class ESContentFactoryImpl extends ContentletFactory {
             condition.replace(marker, marker+3,"live_inode");
         }
 
-        final DotConnect db = new DotConnect();
-        db.setSQL(condition.toString());
-        db.addParam(false);
-        db.addParam(HTMLPageIdentifier);
-        db.addParam(containerIdentifier);
+        final DotConnect dotConnect = new DotConnect();
+        dotConnect.setSQL(condition.toString());
+        dotConnect.addParam(false);
+        dotConnect.addParam(HTMLPageIdentifier);
+        dotConnect.addParam(containerIdentifier);
         
-        List<Map<String,Object>> res = db.loadObjectResults();
-        List<Contentlet> cons = new ArrayList<>();
-        for(final Map<String,Object> map :res ){
-            final Contentlet c = find((String) map.get("mynode"));
-            if(c!=null && c.getInode()!=null){
-                cons.add(c);
+        final List<Map<String,Object>> results = dotConnect.loadObjectResults();
+        final List<Contentlet> contentlets = new ArrayList<>();
+        for(final Map<String,Object> resultMap:results){
+            final Contentlet contentlet = find((String) resultMap.get("mynode"));
+            if(contentlet!=null && contentlet.getInode()!=null){
+                contentlets.add(contentlet);
             }
         }
-        return cons;
+        return contentlets;
     }
 	
 	
@@ -2076,7 +2078,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             defaultValue = Boolean.FALSE;
         }
 
-        for (int i = 1; i <= 25; i++) {
+        for (int i = 1; i <= MAX_FIELDS_ALLOWED; i++) {
             if (fieldsMap.containsKey(prefix + i)) {
 
                 if (prefix.equals("date") && UtilMethods.isSet(fieldsMap.get(prefix + i))){
@@ -2095,7 +2097,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
     }
 
-    private Map<String, Object> getFieldsMap(Contentlet contentlet) throws DotDataException {
+    private Map<String, Object> getFieldsMap(final Contentlet contentlet) throws DotDataException {
         final Map<String, Object> fieldsMap = new HashMap<>();
         final List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getContentTypeId());
         for (Field field : fields) {
@@ -2123,7 +2125,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             }
         }
 
-        return fieldsMap;
+        return Collections.unmodifiableMap(fieldsMap);
     }
 
     /**
@@ -2152,9 +2154,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
 		Host systemHost = APILocator.getHostAPI().findSystemHost();
 		for (int i = 0; i < 10000; i++) {
 			int offset = i * 1000;
-			List<Contentlet> cons = findContentletsByHost(hostIdentifier, 1000, offset);
-			List<String> ids = new ArrayList<String>();
-			for (Contentlet con : cons)
+			List<Contentlet> contentlets = findContentletsByHost(hostIdentifier, 1000, offset);
+			for (Contentlet con : contentlets)
 				con.setHost(systemHost.getIdentifier());
 		}
 	}

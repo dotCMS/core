@@ -4744,7 +4744,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             tagEntry.getKey());
                 }
 
-                for ( Tag tag : list ) {
+                for (final Tag tag : list ) {
                     //Relate the found/created tag with this contentlet
                     tagAPI.addContentletTagInode(tag, contentlet.getInode(), tagEntry.getKey());
                 }

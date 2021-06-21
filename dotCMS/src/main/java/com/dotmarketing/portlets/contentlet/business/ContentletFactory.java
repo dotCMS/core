@@ -302,7 +302,7 @@ public abstract class ContentletFactory {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    public abstract List<Contentlet> findAllVersions(Identifier identifier, boolean bringOldVersions, final Optional<Integer> maxResults) throws DotDataException, DotSecurityException;
+    public abstract List<Contentlet> findAllVersions(Identifier identifier, boolean bringOldVersions, final Integer maxResults) throws DotDataException, DotSecurityException;
 
 	/**
 	 * 
