@@ -12,7 +12,7 @@ import java.util.stream.Stream;
  * Use by {@link com.dotcms.publisher.pusher.PushPublisherConfig} to keep track of all the
  * assets added into a Bundle.
  */
-class DependencySet {
+class BundleAssets {
     private Map<PusheableAsset, Set<String>> addedWithoutDependencies = new HashMap();
     private Map<PusheableAsset, Set<String>> addedWithDependencies  = new HashMap();
 
@@ -62,8 +62,8 @@ class DependencySet {
      * @param pusheableAsset
      * @return
      *
-     * @see {@link DependencySet#add(String, PusheableAsset)}
-     * @see {@link DependencySet#addWithDependencies(String, PusheableAsset)}
+     * @see {@link BundleAssets#add(String, PusheableAsset)}
+     * @see {@link BundleAssets#addWithDependencies(String, PusheableAsset)}
      */
     public boolean isAdded(final String assetId, final PusheableAsset pusheableAsset){
         final Set<String> assetsWithoutDependencies =
@@ -84,8 +84,8 @@ class DependencySet {
      * @param pusheableAsset
      * @return
      *
-     * @see {@link DependencySet#add(String, PusheableAsset)}
-     * @see {@link DependencySet#addWithDependencies(String, PusheableAsset)}
+     * @see {@link BundleAssets#add(String, PusheableAsset)}
+     * @see {@link BundleAssets#addWithDependencies(String, PusheableAsset)}
      */
     public boolean isDependenciesAdded(final String assetId, final PusheableAsset pusheableAsset){
         final Set<String> assetsWithDependencies =
