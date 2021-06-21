@@ -2237,7 +2237,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             //Reorder Relationships
             relationshipListMap.put(relationship,CollectionsUtils.list(contentletChild3,contentletChild1,contentletChild2));
-            contentletParent.setInode("");
+            contentletParent = contentletAPI.checkout(contentletParent.getInode(), user, false);
             contentletParent = contentletAPI.checkin(contentletParent,relationshipListMap,user,false);
 
             //Get All Relationships of the parent contentlet
@@ -2301,7 +2301,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             //Reorder Relationships
             relationshipListMap.put(relationship,CollectionsUtils.list(contentletChild3,contentletChild1,contentletChild2));
-            contentletParent.setInode("");
+            contentletParent = contentletAPI.checkout(contentletParent.getInode(), user, false);
             contentletParent = contentletAPI.checkin(contentletParent,relationshipListMap,user,false);
 
             //Get All Relationships of the parent contentlet
@@ -4096,7 +4096,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     	Contentlet fileAsset = fileAssetDataGen.languageId(english).nextPersisted();
   	  
     	Contentlet contentletSpanish = contentletAPI.findContentletByIdentifier(fileAsset.getIdentifier(), false, english, user, false);
-    	contentletSpanish.setInode("");
+    	contentletSpanish = contentletAPI.checkout(contentletSpanish.getInode(), user, false);
     	contentletSpanish.setLanguageId(spanish);
     	contentletSpanish = contentletAPI.checkin(contentletSpanish, user, false);
   	  
@@ -4247,12 +4247,10 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             contentletEnglish = new ContentletDataGen(contentType.id()).languageId(english).nextPersisted();
             //new Version
-            contentletEnglish = contentletAPI.find(contentletEnglish.getInode(),user,false);
-            contentletEnglish.setInode("");
+            contentletEnglish = contentletAPI.checkout(contentletEnglish.getInode(),user,false);
             contentletEnglish = contentletAPI.checkin(contentletEnglish,user,false);
             //new Version
-            contentletEnglish = contentletAPI.find(contentletEnglish.getInode(),user,false);
-            contentletEnglish.setInode("");
+            contentletEnglish = contentletAPI.checkout(contentletEnglish.getInode(),user,false);
             contentletEnglish = contentletAPI.checkin(contentletEnglish,user,false);
 
             Identifier contentletIdentifier = APILocator.getIdentifierAPI().find(contentletEnglish.getIdentifier());
@@ -4261,18 +4259,15 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             assertEquals(3,quantityVersions);
 
-            contentletSpanish = contentletAPI.find(contentletEnglish.getInode(),user,false);
-            contentletSpanish.setInode("");
+            contentletSpanish = contentletAPI.checkout(contentletEnglish.getInode(),user,false);
             contentletSpanish.setLanguageId(spanish);
             contentletSpanish = contentletAPI.checkin(contentletSpanish, user, false);
             //new Version
-            contentletSpanish = contentletAPI.find(contentletSpanish.getInode(),user,false);
-            contentletSpanish.setInode("");
+            contentletSpanish = contentletAPI.checkout(contentletSpanish.getInode(),user,false);
             contentletSpanish.setLanguageId(spanish);
             contentletSpanish = contentletAPI.checkin(contentletSpanish, user, false);
             //new Version
-            contentletSpanish = contentletAPI.find(contentletSpanish.getInode(),user,false);
-            contentletSpanish.setInode("");
+            contentletSpanish = contentletAPI.checkout(contentletSpanish.getInode(),user,false);
             contentletSpanish.setLanguageId(spanish);
             contentletSpanish = contentletAPI.checkin(contentletSpanish, user, false);
 
@@ -5140,7 +5135,6 @@ public class ContentletAPITest extends ContentletBaseTest {
 
 
             contentlet = contentletAPI.checkout(contentlet.getInode(),user,false);
-            contentlet.setInode("");
             contentlet.setStringProperty(field.variable(),fieldValueWorking);
             contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
             contentletAPI.checkin(contentlet, user, false);
@@ -6455,7 +6449,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                     relationshipRecords.get(relationship).get(0).getIdentifier());
 
             //creates a new version of the child
-            childContent.setInode("");
+            childContent = contentletAPI.checkout(childContent.getInode(), user, false);
             childContent = contentletAPI
                     .checkin(childContent, (ContentletRelationships) null, null, null,
                             user, false);
@@ -6509,7 +6503,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             assertEquals(childContent.getIdentifier(), relatedContent.get(0).getIdentifier());
 
             //creates a new version of the child
-            childContent.setInode("");
+            childContent = contentletAPI.checkout(childContent.getInode(), user, false);
             childContent = contentletAPI
                     .checkin(childContent, (ContentletRelationships) null, null, null,
                             user, false);
@@ -6571,7 +6565,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                     relationshipRecords.get(relationship).get(0).getIdentifier());
 
             //creates a new version of the child
-            parentContent.setInode("");
+            parentContent = contentletAPI.checkout(parentContent.getInode(), user, false);
             parentContent = contentletAPI
                     .checkin(parentContent, (ContentletRelationships) null, null, null,
                             user, false);
@@ -6632,7 +6626,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             assertEquals(parentContent.getIdentifier(), relatedContent.get(0).getIdentifier());
 
             //creates a new version of the parent
-            parentContent.setInode("");
+            parentContent = contentletAPI.checkout(parentContent.getInode(), user, false);
             parentContent = contentletAPI
                     .checkin(parentContent, (ContentletRelationships) null, null, null,
                             user, false);
