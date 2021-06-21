@@ -790,6 +790,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
 
         contentletA.setProperty(relationship.getChildRelationName(), Arrays.asList(contentletB, contentletC));
 
+        contentletA = ContentletDataGen.checkout(contentletA);
         ContentletDataGen.checkin(contentletA);
 
         assertRelatedContents(relationship, contentletA, contentletB, contentletC);
@@ -819,7 +820,6 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             Contentlet... contentletChilds) {
         final Contentlet parentCheckout = ContentletDataGen.checkout(parentContent);
         parentCheckout.setProperty(relationship.getChildRelationName(), Arrays.asList(contentletChilds));
-        final Contentlet checkin =  ContentletDataGen.checkin(parentCheckout);
-        return ContentletDataGen.checkout(checkin);
+        return  ContentletDataGen.checkin(parentCheckout);
     }
 }
