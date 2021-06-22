@@ -578,7 +578,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     }
 
     //Refresh prior to delete
-    final ContentType dbType = Try.of(()->find(type.id())).getOrNull();
+    final ContentType dbType = Try.of(()->dbById(type.id())).getOrNull();
     if(null == dbType){
        Logger.warn(ContentTypeFactoryImpl.class,String.format("The ContentType with id `%s` does not exist ",type.id()));
        return false;
@@ -744,16 +744,15 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     }
 
     //Once the parent - child : child - parent relationship has been cleared
-    //we need to remove the field from the actual CT
-    final List<Field> fields = type.fields().stream()
-              .filter(field -> field instanceof RelationshipField).collect(Collectors.toList());
+    //Now we need to remove the field from the actual CT.
+    final List<Field> fields = type.fields(RelationshipField.class);
     for (final Field field : fields) {
        try {
           //if the field happens to be present in the db get it removed.
           final Field dbField = contentTypeFieldAPI.find(field.id());
           contentTypeFieldAPI.delete(dbField);
        } catch (DotDataException e) {
-          Logger.warnAndDebug(DotDataException.class, "Unable to remove CT field", e);
+          Logger.warnAndDebug(DotDataException.class, "Unable to remove Relationship field.", e);
        }
     }
 

@@ -8,6 +8,7 @@ import com.dotcms.rendering.velocity.viewtools.util.ConversionUtils;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.MessageEntity;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.InitRequestRequired;
@@ -28,6 +29,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
@@ -113,21 +115,10 @@ public class LanguagesResource {
         return LanguageView::new;
     }
 
-    /**
-     * Kick back any attempt to save a language that already exists
-     * @param languageForm
-     * @throws AlreadyExistException
-     */
-    private void validateLanguageExists(final LanguageForm languageForm)
-            throws AlreadyExistException {
+    private Language validateLanguageExists(final LanguageForm languageForm) {
         DotPreconditions.checkArgument(UtilMethods.isSet(languageForm.getLanguageCode()),
                 "Language Code can't be null or empty");
-        final Language language = getLanguage(languageForm);
-        if (null != language) {
-            throw new AlreadyExistException(
-                    String.format("A language matching `%s-%s` already exists in the system.",
-                            languageForm.getLanguageCode(), languageForm.getCountryCode()));
-        }
+        return getLanguage(languageForm);
     }
 
     /**
@@ -154,9 +145,11 @@ public class LanguagesResource {
         this.webResource.init(null, request, response,
                 true, PortletID.LANGUAGES.toString());
         DotPreconditions.notNull(languageForm,"Expected Request body was empty.");
-        validateLanguageExists(languageForm);
-        final Language language = saveOrUpdateLanguage(null, languageForm);
-        return Response.ok(new ResponseEntityView(language)).build(); // 200
+        final Language language = validateLanguageExists(languageForm);
+        if(null != language){
+            return Response.ok(new ResponseEntityView(language, ImmutableList.of(new MessageEntity("Language already exists.")))).build(); // 200
+        }
+        return Response.ok(new ResponseEntityView(saveOrUpdateLanguage(null, languageForm))).build(); // 200
     }
 
     @POST
@@ -178,7 +171,10 @@ public class LanguagesResource {
                 .language(locale.getDisplayLanguage()).languageCode(locale.getLanguage())
                 .country(locale.getDisplayCountry()).countryCode(locale.getCountry()).build();
 
-        validateLanguageExists(languageForm);
+        final Language language = validateLanguageExists(languageForm);
+        if(null != language){
+           return Response.ok(new ResponseEntityView(language, ImmutableList.of(new MessageEntity("Language already exists.")))).build(); // 200
+        }
         return Response.ok(new ResponseEntityView(saveOrUpdateLanguage(null, languageForm))).build(); // 200
     }
 
