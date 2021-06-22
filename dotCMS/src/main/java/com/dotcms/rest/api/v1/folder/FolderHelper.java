@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.folder;
 import com.dotcms.util.TreeableNameComparator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -184,53 +185,90 @@ public class FolderHelper {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    public List<String> findSubFoldersByPath(final String siteId, final String pathToSearch, final User user)
+    public List<FolderSearchResultView> findSubFoldersPathByParentPath(final String siteId, final String pathToSearch, final User user)
             throws DotSecurityException, DotDataException {
-        final List<String> subFolders = new ArrayList<>();
-        final Host host = APILocator.getHostAPI().find(siteId,user,false);
-        if(!UtilMethods.isSet(host)) {
-            throw new IllegalArgumentException(String.format(" Couldn't find any host with id `%s` ",siteId));
-        }
-        if(pathToSearch.equals("root")){
-            final List<Folder> subFoldersOfRootPath = APILocator.getFolderAPI()
-                    .findSubFolders(host, user, false);
-            subFoldersOfRootPath.stream().limit(10).forEach(f -> subFolders.add(f.getPath()));
-        } else {
-            final String uriParam =
-                    !pathToSearch.startsWith(StringPool.FORWARD_SLASH) ? StringPool.FORWARD_SLASH
-                            .concat(pathToSearch) : pathToSearch;
-            final Folder folderByPath = APILocator.getFolderAPI()
-                    .findFolderByPath(uriParam, host, user, false);
-            //If a folder with the exact path is found, let's found the subfolders of it
-            if (UtilMethods.isSet(folderByPath) && UtilMethods.isSet(folderByPath.getInode()) && folderByPath.getPath().equals(uriParam)) {
-                final List<Folder> subFoldersOfExactPath = APILocator.getFolderAPI()
-                        .findSubFolders(folderByPath, user, false);
-                subFoldersOfExactPath.stream().limit(10).forEach(f -> subFolders.add(f.getPath()));
-            } else {//If there is no  folder found with  the exact path, let's show folders that live
-                // under the last path and startswith the path provided.
-                final int last_slash_pos = uriParam.lastIndexOf("/");
-                final String last_valid_path = uriParam.substring(0,last_slash_pos);
-                if(last_valid_path.isEmpty()){//If the last valid path was a site
-                    final List<Folder> subFoldersOfLastValidPath = APILocator.getFolderAPI()
-                            .findSubFolders(host, user, false);
-                    subFoldersOfLastValidPath.stream()
-                            .filter(f -> f.getPath().startsWith(uriParam))
-                            .limit(10).forEach(f -> subFolders.add(f.getPath()));
-                } else{//If last valid path was a folder
-                    final Folder last_valid_folder = APILocator.getFolderAPI()
-                            .findFolderByPath(last_valid_path, host, user, false);
-                    if (UtilMethods.isSet(folderByPath) && UtilMethods.isSet(folderByPath.getInode())) {
-                        final List<Folder> subFoldersOfLastValidPath = APILocator.getFolderAPI()
-                                .findSubFolders(last_valid_folder, user, false);
-                        subFoldersOfLastValidPath.stream()
-                                .filter(f -> f.getPath()
-                                        .startsWith(uriParam))
-                                .limit(10).forEach(f -> subFolders.add(f.getPath()));
+        final List<FolderSearchResultView> subFolders = new ArrayList<>();
+
+        if(pathToSearch.lastIndexOf(StringPool.FORWARD_SLASH) == 0){ //If there is only one / we need to search the subfolders under the host(s)
+            if(UtilMethods.isSet(siteId)) {
+                subFolders.addAll(findSubfoldersUnderHost(siteId,pathToSearch,user));
+            } else{
+                final List<Host> siteList = APILocator.getHostAPI().findAll(user,false);
+                for(final Host site : siteList){
+                    if(subFolders.size() < 20) {
+                        subFolders.addAll(findSubfoldersUnderHost(site.getIdentifier(), pathToSearch, user));
                     }
+                    continue;
+                }
+            }
+
+        } else {
+            if(UtilMethods.isSet(siteId)) {
+                subFolders.addAll(findSubfoldersUnderFolder(siteId,pathToSearch,user));
+            } else {
+                final List<Host> siteList = APILocator.getHostAPI().findAll(user,false);
+                for(final Host site : siteList){
+                    if(subFolders.size() < 20) {
+                        subFolders.addAll(findSubfoldersUnderFolder(site.getIdentifier(), pathToSearch, user));
+                    }
+                    continue;
                 }
             }
         }
 
+        return subFolders;
+    }
+
+    private List<FolderSearchResultView> findSubfoldersUnderHost(final String siteId, final String pathToSearch, final User user)
+            throws DotSecurityException, DotDataException {
+        final List<FolderSearchResultView> subFolders = new ArrayList<>();
+
+        final Host host = APILocator.getHostAPI().find(siteId, user, false);
+        final List<Folder> subFoldersOfRootPath = APILocator.getFolderAPI()
+                .findSubFolders(host, user, false);
+        subFoldersOfRootPath.stream().limit(20).forEach(
+                f -> subFolders.add(new FolderSearchResultView(f.getPath(), host.getHostname())));
+
+        return subFolders;
+    }
+
+    private List<FolderSearchResultView> findSubfoldersUnderFolder(final String siteId, final String pathToSearch, final User user)
+            throws DotSecurityException, DotDataException {
+        final List<FolderSearchResultView> subFolders = new ArrayList<>();
+        final Host host = APILocator.getHostAPI().find(siteId,user,false);
+        final Folder folderByPath = APILocator.getFolderAPI()
+                .findFolderByPath(pathToSearch, host, user, false);
+        //If a folder with the exact path is found, let's found the subfolders of it
+        if (UtilMethods.isSet(folderByPath) && UtilMethods.isSet(folderByPath.getInode())
+                && folderByPath.getPath().equals(pathToSearch)) {
+            final List<Folder> subFoldersOfExactPath = APILocator.getFolderAPI()
+                    .findSubFolders(folderByPath, user, false);
+            subFoldersOfExactPath.stream().limit(20)
+                    .forEach(f -> subFolders.add(new FolderSearchResultView(f.getPath(),host.getHostname())));
+        } else {//If there is no  folder found with  the exact path, let's show folders that live
+            // under the last path and startswith the path provided.
+            final int last_slash_pos = pathToSearch.lastIndexOf("/");
+            final String last_valid_path = pathToSearch.substring(0, last_slash_pos);
+            if (last_valid_path.isEmpty()) {//If the last valid path was a site
+                final List<Folder> subFoldersOfLastValidPath = APILocator.getFolderAPI()
+                        .findSubFolders(host, user, false);
+                subFoldersOfLastValidPath.stream()
+                        .filter(f -> f.getPath().startsWith(pathToSearch))
+                        .limit(20).forEach(f -> subFolders.add(new FolderSearchResultView(f.getPath(),host.getHostname())));
+            } else {//If last valid path was a folder
+                final Folder last_valid_folder = APILocator.getFolderAPI()
+                        .findFolderByPath(last_valid_path, host, user, false);
+                if (UtilMethods.isSet(folderByPath) && UtilMethods
+                        .isSet(folderByPath.getInode())) {
+                    final List<Folder> subFoldersOfLastValidPath = APILocator.getFolderAPI()
+                            .findSubFolders(last_valid_folder, user, false);
+                    subFoldersOfLastValidPath.stream()
+                            .filter(f -> f.getPath()
+                                    .startsWith(pathToSearch))
+                            .limit(20).forEach(f -> subFolders.add(new FolderSearchResultView(f.getPath(),host.getHostname())));
+                }
+            }
+        }
         return subFolders;
     }
 

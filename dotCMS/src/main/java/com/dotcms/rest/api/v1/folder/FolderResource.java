@@ -165,16 +165,25 @@ public class FolderResource implements Serializable {
         final User user = initData.getUser();
 
         String path = searchByPathForm.getPath();
-        //Removes // in case it starts with
-        path = path.startsWith(StringPool.DOUBLE_SLASH) ? path.substring(2) : path;
+        String siteId = null;
+        String folderPath = path;
 
-        final String hostPath = path.split(StringPool.FORWARD_SLASH,2)[0];
-        final Host   host     = APILocator.getHostAPI().findByName(hostPath, user,false);
-        final String siteId   = null == host? WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(httpServletRequest).getIdentifier(): host.getIdentifier();
+        if(path.startsWith(StringPool.DOUBLE_SLASH)){
+            //Removes // to search the host
+            path = path.startsWith(StringPool.DOUBLE_SLASH) ? path.substring(2) : path;
+            final String sitePath = path.split(StringPool.FORWARD_SLASH,2)[0];
+            final Host site = APILocator.getHostAPI().findByName(sitePath, user,false);
+            if(null == site){
+                throw new IllegalArgumentException(String.format(" Couldn't find any host with name `%s` ",sitePath));
+            }else{
+                siteId = APILocator.getHostAPI().findByName(sitePath, user,false).getIdentifier();
+            }
+            folderPath = path.split(StringPool.FORWARD_SLASH,2)[1];
+        }
 
-        final String folderPath = path.split(StringPool.FORWARD_SLASH).length > 1 ? path.split(StringPool.FORWARD_SLASH,2)[1] : "root";
+        folderPath = !folderPath.startsWith(StringPool.FORWARD_SLASH) ? StringPool.FORWARD_SLASH.concat(folderPath) : folderPath;
 
-        return Response.ok(new ResponseEntityView(folderHelper.findSubFoldersByPath(siteId,folderPath, user))).build(); // 200
+        return Response.ok(new ResponseEntityView(folderHelper.findSubFoldersPathByParentPath(siteId,folderPath, user))).build(); // 200
     }
 
 }
