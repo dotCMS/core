@@ -5533,7 +5533,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "/Users/danielsilva/Documents/core-release/dotCMS/src/curl-test/resources/GraphQL/contentWithBadVelocity.tar.gz"
+									"src": "resources/GraphQL/contentWithBadVelocity.tar.gz"
 								}
 							]
 						},
