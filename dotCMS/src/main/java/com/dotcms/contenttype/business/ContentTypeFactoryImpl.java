@@ -567,10 +567,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     dc.loadResult();
   }
 
-  private boolean dbDelete(ContentType type) throws DotDataException {
-
-    //Refresh prior to delete
-    type = find(type.id());
+  private boolean dbDelete(final ContentType type) throws DotDataException {
 
     // default structure can't be deleted
     if (type.defaultType()) {
@@ -580,36 +577,41 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
       throw new DotDataException("contenttype.delete.cannot.delete.system.type");
     }
 
+    //Refresh prior to delete
+    final ContentType dbType = Try.of(()->find(type.id())).getOrNull();
+    if(null == dbType){
+       Logger.warn(ContentTypeFactoryImpl.class,String.format("The ContentType with id `%s` does not exist ",type.id()));
+       return false;
+    }
+
     // deleting fields
-    FactoryLocator.getFieldFactory().deleteByContentType(type);
+    FactoryLocator.getFieldFactory().deleteByContentType(dbType);
 
     // make sure folders don't refer to this structure as default fileasset structure
 
-    updateFolderFileAssetReferences(type);
+    updateFolderFileAssetReferences(dbType);
 
 
     // delete container structures
-    APILocator.getContainerAPI().deleteContainerStructureByContentType(type);
+    APILocator.getContainerAPI().deleteContainerStructureByContentType(dbType);
 
     // delete contentlets
-    deleteContentletsByType(type);
+    deleteContentletsByType(dbType);
 
     // delete workflow schema references
-    deleteWorkflowSchemeReference(type);
+    deleteWorkflowSchemeReference(dbType);
 
     // remove structure permissions
-    APILocator.getPermissionAPI().removePermissions(type);
+    APILocator.getPermissionAPI().removePermissions(dbType);
 
 
     // delete relationships
-    deleteRelationships(type);
-
-
+    deleteRelationships(dbType);
 
     // remove structure itself
     DotConnect dc = new DotConnect();
-    dc.setSQL(this.contentTypeSql.DELETE_TYPE_BY_INODE).addParam(type.id()).loadResult();
-    dc.setSQL(this.contentTypeSql.DELETE_INODE_BY_INODE).addParam(type.id()).loadResult();
+    dc.setSQL(this.contentTypeSql.DELETE_TYPE_BY_INODE).addParam(dbType.id()).loadResult();
+    dc.setSQL(this.contentTypeSql.DELETE_INODE_BY_INODE).addParam(dbType.id()).loadResult();
     return true;
   }
 
