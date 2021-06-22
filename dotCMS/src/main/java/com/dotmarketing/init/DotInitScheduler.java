@@ -2,6 +2,8 @@ package com.dotmarketing.init;
 
 import static com.dotmarketing.util.WebKeys.DOTCMS_DISABLE_ELASTIC_READONLY_MONITOR;
 import static com.dotmarketing.util.WebKeys.DOTCMS_DISABLE_WEBSOCKET_PROTOCOL;
+
+import com.dotmarketing.quartz.job.DeleteOldESIndicesJob;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -486,6 +488,8 @@ public class DotInitScheduler {
 				addElasticReadyOnlyMonitor(sched);
 			}
 
+			addDeleteOldESIndicesJob(sched);
+
             //Starting the sequential and standard Schedulers
 	        QuartzUtils.startSchedulers();
 		} catch (SchedulerException e) {
@@ -563,6 +567,35 @@ public class DotInitScheduler {
 			Logger.info(DotInitScheduler.class, e.toString());
 		}
 	} // addElasticReadyOnlyMonitor.
+
+	private static void addDeleteOldESIndicesJob (final Scheduler scheduler) {
+		try {
+			final String jobName      = "DeleteOldESIndicesJob";
+			final String triggerName  = "trigger30";
+			final String triggerGroup = "group30";
+
+			if (Config.getBooleanProperty( "ENABLE_DELETE_OLD_ES_INDICES_JOB", true)) {
+
+				final JobBuilder deleteOldESIndicesJob = new JobBuilder().setJobClass(
+						DeleteOldESIndicesJob.class)
+						.setJobName(jobName)
+						.setJobGroup(DOTCMS_JOB_GROUP_NAME)
+						.setTriggerName(triggerName)
+						.setTriggerGroup(triggerGroup)
+						.setCronExpressionProp("DELETE_OLD_ES_INDICES_JOB_CRON_EXPRESSION")
+						.setCronExpressionPropDefault("0 0 1 ? * *")
+						.setCronMissfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+				scheduleJob(deleteOldESIndicesJob);
+			} else {
+				if ((scheduler.getJobDetail(jobName, DOTCMS_JOB_GROUP_NAME)) != null) {
+					scheduler.deleteJob(jobName, DOTCMS_JOB_GROUP_NAME);
+				}
+			}
+		} catch (Exception e) {
+
+			Logger.info(DotInitScheduler.class, e.toString());
+		}
+	}
 
    private static void addServerHeartbeatJob () {
 

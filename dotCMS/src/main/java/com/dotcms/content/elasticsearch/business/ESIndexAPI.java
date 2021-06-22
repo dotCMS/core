@@ -24,6 +24,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.Lazy;
+import io.vavr.collection.Array;
 import io.vavr.control.Try;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -44,7 +45,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
@@ -54,7 +54,6 @@ import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
-import joptsimple.internal.Strings;
 import org.apache.commons.lang.StringUtils;
 import org.apache.tools.zip.ZipEntry;
 import org.elasticsearch.ElasticsearchException;
@@ -168,6 +167,12 @@ public class ESIndexAPI {
             return two.compareTo(one);
         }
     }
+
+	private class IndexSortByDateDesc extends IndexSortByDate {
+		public int compare(String o1, String o2) {
+			return super.compare(o1, o2) * -1;
+		}
+	}
 
 	@SuppressWarnings("unchecked")
 	public Map<String, IndexStats> getIndicesStats() {
@@ -370,20 +375,78 @@ public class ESIndexAPI {
 			return true;
 		}
 
+		return deleteMultiple(indexName);
+	}
+
+	public boolean deleteMultiple(String...indexNames) {
+		if(indexNames==null || indexNames.length==0) {
+			Logger.error(this.getClass(), "No indices to delete were provided");
+			return true;
+		}
+
+		List<String> indicesWithClusterPrefix = Arrays.stream(indexNames)
+				.map(this::getNameWithClusterIDPrefix).collect(Collectors.toList());
 		try {
-            AdminLogger.log(this.getClass(), "delete", "Trying to delete index: " + indexName);
-			DeleteIndexRequest request = new DeleteIndexRequest(getNameWithClusterIDPrefix(indexName));
+			DeleteIndexRequest request = new DeleteIndexRequest(indicesWithClusterPrefix
+					.toArray(new String[0]));
 			request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
 			AcknowledgedResponse deleteIndexResponse =
 					RestHighLevelClientProvider.getInstance().getClient()
 							.indices().delete(request, RequestOptions.DEFAULT);
 
-            AdminLogger.log(this.getClass(), "delete", "Index: " + indexName + " deleted.");
-
-            return deleteIndexResponse.isAcknowledged();
+			return deleteIndexResponse.isAcknowledged();
 		} catch (Exception e) {
 			throw new ElasticsearchException(e.getMessage(),e);
 		}
+	}
+
+	public void deleteOldLiveWorkingIndices(final int inactiveLiveWorkingSetsToKeep) {
+		// get list of indices ordered by created desc and in sets of live/working
+		List<String> indices = getLiveWorkingIndicesSortByCreationDateDesc();
+
+		removeActiveLiveAndWorkingFromList(indices);
+
+		int kept = 0;
+		String lastTimestamp="";
+		List<String> indicesToRemove = new ArrayList<>(indices);
+
+		for (String index : indices) {
+			if(kept==inactiveLiveWorkingSetsToKeep) {
+				break;
+			}
+
+			final String indexTimestamp = getIndexTimestamp(index);
+
+			indicesToRemove.remove(index);
+			// let's check if the next one has the same timestamp - if so remove it
+			final String nextIndex = Try.of(()->indicesToRemove.get(0)).getOrNull();
+			if(UtilMethods.isSet(nextIndex) && indexTimestamp.equals(getIndexTimestamp(nextIndex))) {
+				indicesToRemove.remove(0);
+			}
+
+			if(!indexTimestamp.equals(lastTimestamp)) {
+				kept++;
+			}
+
+			lastTimestamp = indexTimestamp;
+		}
+
+		deleteMultiple(indicesToRemove.toArray(new String[0]));
+
+	}
+
+	private void removeActiveLiveAndWorkingFromList(List<String> indices) {
+		final IndiciesInfo info = Try.of(()->APILocator.getIndiciesAPI().loadIndicies())
+				.getOrNull();
+
+		if(info!=null) {
+			indices.remove(removeClusterIdFromName(info.getLive()));
+			indices.remove(removeClusterIdFromName(info.getWorking()));
+		}
+	}
+
+	private String getIndexTimestamp(final String indexName) {
+		return Try.of(()->indexName.substring(indexName.lastIndexOf("_") + 1)).getOrNull();
 	}
 
 	/**
@@ -882,6 +945,36 @@ public class ESIndexAPI {
 
 			return indexes.stream()
 					.filter(indexName -> hasClusterPrefix(indexName))
+					.map(this::removeClusterIdFromName)
+					.sorted(new IndexSortByDate())
+					.collect(Collectors.toList());
+		} catch (ElasticsearchStatusException | IOException e) {
+			Logger.warnAndDebug(ContentletIndexAPIImpl.class, "The list of indexes cannot be returned. Reason: " + e.getMessage(), e);
+		}
+
+		return indexes;
+	}
+
+	public List<String> getLiveWorkingIndicesSortByCreationDateDesc() {
+		final List<String> indexes = new ArrayList<>();
+		try {
+
+			GetIndexRequest request = new GetIndexRequest(IndexType.WORKING.getPattern(),
+					IndexType.LIVE.getPattern());
+
+			request.indicesOptions(
+					IndicesOptions.fromOptions(
+							false, true, true,
+							true
+					)
+			);
+
+			indexes.addAll(Arrays.asList(
+					RestHighLevelClientProvider.getInstance().getClient().indices()
+							.get(request, RequestOptions.DEFAULT).getIndices()));
+
+			return indexes.stream()
+					.filter(this::hasClusterPrefix)
 					.map(this::removeClusterIdFromName)
 					.sorted(new IndexSortByDate())
 					.collect(Collectors.toList());
