@@ -4408,7 +4408,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"languageCode\":\"fr\",\n\t\"language\":\"Frech\", \n\t\"countryCode\":\"FR\", \n\t\"country\":\"France\"\n}",
+							"raw": "{\n\t\"languageCode\":\"fr\",\n\t\"language\":\"French\", \n\t\"countryCode\":\"FR\", \n\t\"country\":\"France\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"

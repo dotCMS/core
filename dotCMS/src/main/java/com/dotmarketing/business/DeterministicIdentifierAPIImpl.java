@@ -34,11 +34,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.codec.digest.DigestUtils;
 
 
-/**
- * A Deterministic identifier is One that can be predicted based on certain components of the Type we're saving
- * So that we minimize conflicts on distributed nodes.
- * The idea is that the same piece of content will lead to the same database id.
- */
 public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAPI {
 
     static final String GENERATE_DETERMINISTIC_IDENTIFIERS = "GENERATE_DETERMINISTIC_IDENTIFIERS";

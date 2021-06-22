@@ -9,6 +9,7 @@ import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -25,6 +26,7 @@ import com.dotmarketing.business.DeterministicIdentifierAPI;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.DotValidationException;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -567,6 +569,9 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   private boolean dbDelete(ContentType type) throws DotDataException {
 
+    //Refresh prior to delete
+    type = find(type.id());
+
     // default structure can't be deleted
     if (type.defaultType()) {
       throw new DotDataException("contenttype.delete.cannot.delete.default.type");
@@ -711,25 +716,43 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
   }
 
   private void deleteRelationships(ContentType type) throws DotDataException {
-    List<Relationship> relationships;
+
     //Deletes the child relationship field (if exists) if the parent is deleted.
-    relationships = APILocator.getRelationshipAPI().byParent(type);
-    for (final Relationship rel : relationships) {
+      final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+      final List<Relationship> childRelationships = relationshipAPI.byParent(type);
+      final FieldAPI contentTypeFieldAPI = APILocator.getContentTypeFieldAPI();
+      for (final Relationship rel : childRelationships) {
       if(UtilMethods.isSet(rel.getParentRelationName()) && rel.isRelationshipField()) {
-        final Field fieldToDelete = APILocator.getContentTypeFieldAPI().byContentTypeIdAndVar(rel.getChildStructureInode(), rel.getParentRelationName());
-        APILocator.getContentTypeFieldAPI().delete(fieldToDelete);
+        final Field fieldToDelete = contentTypeFieldAPI
+                .byContentTypeIdAndVar(rel.getChildStructureInode(), rel.getParentRelationName());
+        contentTypeFieldAPI.delete(fieldToDelete);
       }
-      APILocator.getRelationshipAPI().delete(rel);
+      relationshipAPI.delete(rel);
     }
 
     //Deletes the parent relationship field if the child is deleted.
-    relationships = APILocator.getRelationshipAPI().byChild(type);
-    for (final Relationship rel : relationships) {
+    final List<Relationship> parentRelationships = relationshipAPI.byChild(type);
+    for (final Relationship rel : parentRelationships) {
       if(UtilMethods.isSet(rel.getChildRelationName()) && rel.isRelationshipField()) {
-        final Field fieldToDelete = APILocator.getContentTypeFieldAPI().byContentTypeIdAndVar(rel.getParentStructureInode(), rel.getChildRelationName());
-        APILocator.getContentTypeFieldAPI().delete(fieldToDelete);
+        final Field fieldToDelete = contentTypeFieldAPI
+                .byContentTypeIdAndVar(rel.getParentStructureInode(), rel.getChildRelationName());
+        contentTypeFieldAPI.delete(fieldToDelete);
       }
-      APILocator.getRelationshipAPI().delete(rel);
+      relationshipAPI.delete(rel);
+    }
+
+    //Once the parent - child : child - parent relationship has been cleared
+    //we need to remove the field from the actual CT
+    final List<Field> fields = type.fields().stream()
+              .filter(field -> field instanceof RelationshipField).collect(Collectors.toList());
+    for (final Field field : fields) {
+       try {
+          //if the field happens to be present in the db get it removed.
+          final Field dbField = contentTypeFieldAPI.find(field.id());
+          contentTypeFieldAPI.delete(dbField);
+       } catch (DotDataException e) {
+          Logger.warnAndDebug(DotDataException.class, "Unable to remove CT field", e);
+       }
     }
 
   }

@@ -344,7 +344,6 @@ public class DeterministicIdentifierAPITest {
                 .of(new LanguageTestCase("es", "US", "United States", "Language:es:US", 4913155),
                     new LanguageTestCase("ep", "", "", "Language:ep:", 5292269),
                     new LanguageTestCase("ru", "RUS", "", "Language:ru:RUS", 5066818),
-                    new LanguageTestCase("da", "DK", "Denmark", "Language:da:DK", 4540984),
                     new LanguageTestCase("en", "NZ", "New Zealand", "Language:en:NZ", 5382528))
                 .collect(Collectors.toList());
 
