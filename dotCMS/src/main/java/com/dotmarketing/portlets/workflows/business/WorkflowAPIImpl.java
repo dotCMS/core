@@ -2900,13 +2900,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			contentlet.setStringProperty(Contentlet.I_WANT_TO, pushPublishBean.getIWantTo());
 		}
 
-		if (UtilMethods.isSet(additionalParamsBean) && UtilMethods.isSet(additionalParamsBean.getAdditionalBeanMap()) &&
-					additionalParamsBean.getAdditionalBeanMap().containsKey(MoveContentActionlet.CONTENTLET_PATH_KEY)) {
-
-			contentlet.setProperty(MoveContentActionlet.CONTENTLET_PATH_KEY,
-					additionalParamsBean.getAdditionalBeanMap().get(MoveContentActionlet.CONTENTLET_PATH_KEY));
-		}
-
 		return contentlet;
 	}
 
@@ -2953,6 +2946,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 						// additional params applied directly to the contentlet.
 						contentlet = applyAdditionalParams(additionalParamsBean, contentlet);
 					}
+
+					if (UtilMethods.isSet(additionalParamsBean) && UtilMethods.isSet(additionalParamsBean.getAdditionalBeanMap())) {
+
+						for (Map.Entry<String, Object> entry : additionalParamsBean.getAdditionalBeanMap().entrySet()) {
+							contentlet.setProperty(entry.getKey(), entry.getValue());
+						}
+					}
+
 					fireBulkActionTask(action, contentlet, dependencies, successConsumer,
 							failConsumer, context);
 				} catch (Exception e) {

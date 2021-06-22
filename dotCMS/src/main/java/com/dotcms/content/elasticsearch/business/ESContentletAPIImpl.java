@@ -428,10 +428,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
         APILocator.getIdentifierAPI().save(identifier);
 
         // update the version ts in order to be repushed
-        final VersionInfo versionInfo = APILocator.getVersionableAPI().getVersionInfo(identifier.getId());
-        if (null != versionInfo) {
-            versionInfo.setVersionTs(new Date());
-            APILocator.getVersionableAPI().saveVersionInfo(versionInfo);
+        final Optional<ContentletVersionInfo> versionInfoOpt = APILocator.getVersionableAPI().getContentletVersionInfo(identifier.getId(), contentlet.getLanguageId());
+        if (versionInfoOpt.isPresent()) {
+            versionInfoOpt.get().setVersionTs(new Date());
+            APILocator.getVersionableAPI().saveContentletVersionInfo(versionInfoOpt.get());
         }
 
         // update the content host + folder
