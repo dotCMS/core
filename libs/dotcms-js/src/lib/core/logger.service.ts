@@ -14,13 +14,11 @@ export class LoggerService {
     private httpRequestUtils: HttpRequestUtils;
 
     constructor(private stringUtils: StringUtils) {
-        // tslint:disable:no-console
-        console.info('Setting the logger...');
         this.httpRequestUtils = new HttpRequestUtils();
         this.showLogs = this.shouldShowLogs();
 
         if (this.showLogs) {
-            console.info('Developer mode logger on');
+            console.info('Setting the logger --> Developer mode logger on');
         }
     }
 
