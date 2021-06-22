@@ -22,7 +22,15 @@ import java.util.Map;
 public class MoveContentActionlet extends WorkFlowActionlet {
 
 
+    /**
+     * This is the parameter for the Actionlet
+     */
     public static final String PATH_KEY = "path";
+
+    /**
+     * This is the parameter if want to override the path from the contentlet map properties
+     */
+    public static final String CONTENTLET_PATH_KEY = "_path_to_move";
 
     @Override
     public List<WorkflowActionletParameter> getParameters() {

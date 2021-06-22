@@ -2899,6 +2899,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			contentlet.setStringProperty(Contentlet.FILTER_KEY, pushPublishBean.getFilterKey());
 			contentlet.setStringProperty(Contentlet.I_WANT_TO, pushPublishBean.getIWantTo());
 		}
+
+		if (UtilMethods.isSet(additionalParamsBean) && UtilMethods.isSet(additionalParamsBean.getAdditionalBeanMap()) &&
+					additionalParamsBean.getAdditionalBeanMap().containsKey(MoveContentActionlet.CONTENTLET_PATH_KEY)) {
+
+			contentlet.setProperty(MoveContentActionlet.CONTENTLET_PATH_KEY,
+					additionalParamsBean.getAdditionalBeanMap().get(MoveContentActionlet.CONTENTLET_PATH_KEY));
+		}
+
 		return contentlet;
 	}
 
