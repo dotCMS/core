@@ -809,16 +809,14 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	
     @Override
     protected Contentlet find(final String inode) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
-        Contentlet contentlet;
-        if (!DbConnectionFactory.inTransaction()) {
-            contentlet = contentletCache.get(inode);
-            if (contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
-                if (CACHE_404_CONTENTLET.equals(contentlet.getInode())) {
-                    return null;
-                }
-                return contentlet;
+        Contentlet contentlet = contentletCache.get(inode);
+        if (contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
+            if (CACHE_404_CONTENTLET.equals(contentlet.getInode())) {
+                return null;
             }
+            return contentlet;
         }
+
         final Optional<Contentlet> dbContentlet = this.findInDb(inode);
         if (dbContentlet.isPresent()) {
             contentlet = dbContentlet.get();
