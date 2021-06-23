@@ -238,7 +238,7 @@ public class ESIndexAPITest {
     }
 
     /**
-     * Method to test: {@link ESIndexAPI#deleteOldLiveWorkingIndices(int)}
+     * Method to test: {@link ESIndexAPI#deleteInactiveLiveWorkingIndices(int)}
      * Given scenario: different numbers for the live/working sets to be kept (not deleted)
      * Expected result: indices older than the live/working index-set indicated to be kept are successfully deleted
      */
@@ -270,7 +270,7 @@ public class ESIndexAPITest {
             Thread.sleep(1000);
         }
 
-        esIndexAPI.deleteOldLiveWorkingIndices(inactiveLiveWorkingSetsToKeep);
+        esIndexAPI.deleteInactiveLiveWorkingIndices(inactiveLiveWorkingSetsToKeep);
 
         List<String> indicesAfterDeletion = esIndexAPI.getLiveWorkingIndicesSortedByCreationDateDesc();
         // assert active live index wasn't removed

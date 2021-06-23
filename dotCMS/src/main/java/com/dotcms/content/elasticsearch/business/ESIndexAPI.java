@@ -403,13 +403,12 @@ public class ESIndexAPI {
 	}
 
 	/**
-	 * Deletes the live/working indices older than the live/working sets indicated to be
+	 * Deletes the inactive live/working indices older than the inactive live/working sets indicated to be
 	 * kept.
-	 * The Active live/working index-set is never deleted.
 	 * @param inactiveLiveWorkingSetsToKeep indicates how many live/working sets to keep
 	 */
 
-	public void deleteOldLiveWorkingIndices(final int inactiveLiveWorkingSetsToKeep) {
+	public void deleteInactiveLiveWorkingIndices(final int inactiveLiveWorkingSetsToKeep) {
 		// get list of indices ordered by created desc and in sets of live/working
 		List<String> indices = getLiveWorkingIndicesSortedByCreationDateDesc();
 
