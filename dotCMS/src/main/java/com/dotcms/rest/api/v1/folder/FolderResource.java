@@ -144,6 +144,7 @@ public class FolderResource implements Serializable {
         return Response.ok(new ResponseEntityView(folderHelper.loadFolderAndSubFoldersByPath(siteId,path, user))).build(); // 200
     }
 
+    //TODO: DOC
     @POST
     @Path ("/byPath")
     @JSONP

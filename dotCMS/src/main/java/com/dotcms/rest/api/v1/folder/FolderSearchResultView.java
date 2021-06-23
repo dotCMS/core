@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.folder;
 
+//TODO: DOC
 public class FolderSearchResultView {
 
     private final String path;
