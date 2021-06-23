@@ -69,6 +69,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.bulk.BackoffPolicy;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -619,6 +620,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         final BulkRequest bulkRequest = new BulkRequest();
         bulkRequest.setRefreshPolicy(RefreshPolicy.NONE);
         return bulkRequest;
+        
     }
 
     public BulkProcessor createBulkProcessor(final BulkProcessorListener bulkProcessorListener) {
@@ -634,9 +636,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         
         
         builder.setBulkActions(numberToReindexInRequest)
-                .setBulkSize(new ByteSizeValue(ReindexThread.ELASTICSEARCH_BULK_SIZE,
-                        ByteSizeUnit.MB))
-                .setConcurrentRequests(ELASTICSEARCH_CONCURRENT_REQUESTS);
+                        .setBulkSize(new ByteSizeValue(ReindexThread.ELASTICSEARCH_BULK_SIZE, ByteSizeUnit.MB))
+                        .setConcurrentRequests(ELASTICSEARCH_CONCURRENT_REQUESTS)
+                        .setFlushInterval(new TimeValue(ReindexThread.ELASTICSEARCH_BULK_FLUSH_INTERVAL))
+                        .setBackoffPolicy(BackoffPolicy.exponentialBackoff(TimeValue.timeValueMillis(1000), 5));
 
         return builder.build();
     }
