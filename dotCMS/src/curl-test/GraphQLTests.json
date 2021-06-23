@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "5590550f-19b6-4fc6-ae5f-e7595294776c",
+		"_postman_id": "acd83cec-ce57-4aa4-8df1-b51dee2e610a",
 		"name": "GraphQL",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -3751,7 +3751,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"languageCode\":\"en\",\n\t\"language\":\"English\", \n\t\"countryCode\":\"GB\", \n\t\"country\":\"Great Britain\"\n}",
+							"raw": "{\n\t\"languageCode\":\"it\",\n\t\"language\":\"Italian\", \n\t\"countryCode\":\"IT\", \n\t\"country\":\"Italy\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -4408,7 +4408,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"languageCode\":\"fr\",\n\t\"language\":\"French\", \n\t\"countryCode\":\"FR\", \n\t\"country\":\"France\"\n}",
+							"raw": "{\n\t\"languageCode\":\"it\",\n\t\"language\":\"Italian\", \n\t\"countryCode\":\"IT\", \n\t\"country\":\"Italy\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"

@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "b7578db0-825a-45f8-8fc6-08877255a7a4",
+		"_postman_id": "84e466e7-ee50-432d-b995-19450f952e3e",
 		"name": "LanguageResource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -482,7 +482,31 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 400\", function () { pm.response.to.have.status(400) });"
+									"pm.test(\"Status code is 200\", function () { pm.response.to.be.ok });",
+									"",
+									"pm.test(\"languageCode returned\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"languageCode\");",
+									"});",
+									"",
+									"pm.test(\"countryCode returned\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"countryCode\");",
+									"});",
+									"",
+									"pm.test(\"language returned\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"language\");",
+									"});",
+									"",
+									"pm.test(\"country returned\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"country\");",
+									"});",
+									"",
+									"pm.test(\"Expected Language info returned\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.languageCode).to.eql(\"da\");",
+									"    pm.expect(jsonData.entity.countryCode).to.eql(\"DK\");",
+									"    pm.expect(jsonData.entity.language).to.eql(\"Danish\");",
+									"    pm.expect(jsonData.entity.country).to.eql(\"Denmark\");",
+									"});"
 								],
 								"type": "text/javascript"
 							}
