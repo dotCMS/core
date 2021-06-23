@@ -2,6 +2,7 @@
 	"info": {
 		"_postman_id": "84e466e7-ee50-432d-b995-19450f952e3e",
 		"name": "LanguageResource",
+		"description": "This collections is focused on the /v2/languages resource\nThis should cover Language CRUD Operations",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -319,7 +320,8 @@
 								"v2",
 								"languages"
 							]
-						}
+						},
+						"description": "Saves a language via POST Passing a form with the basic info required. \nLanguage code\nCountry Code\nLanguage Name \nCountry Name\nIn this case we're not passing language therefore we should expect a Bad Request"
 					},
 					"response": []
 				},
@@ -385,7 +387,8 @@
 								"v2",
 								"languages"
 							]
-						}
+						},
+						"description": "Saves a language via POST Passing a form with the basic info required. \nLanguage code\nCountry Code\nLanguage Name \nCountry Name\nIn this case we're not passing language code therefore we should expect a Bad Request"
 					},
 					"response": []
 				},
@@ -471,7 +474,8 @@
 								"languages",
 								"da-DK"
 							]
-						}
+						},
+						"description": "This version of the Save Language Method Takes a Language Tag like String Query Param \nIt it meant to rely on java APIs to determine the country name and Language name. It is useful when info isn't available.\n\nIf an Error is found a Bad Request is returned otherwise the response code should be a 200 OK code.\n\nIf we re attempt the creation of a language that already exists a 200 code is returned and the entity returned is the existing language."
 					},
 					"response": []
 				},
@@ -557,11 +561,13 @@
 								"languages",
 								"da-DK"
 							]
-						}
+						},
+						"description": "This test is meant to verify that a second creation attempt on the same language returns the same entity and not a Bad Request - Error code."
 					},
 					"response": []
 				}
 			],
+			"description": "Saves a language via POST Passing a form with the basic info required. \nLanguage code\nCountry Code\nLanguage Name \nCountry Name\n200 is the expected if the language creation succeeds otherwise a Bad request is returned.\nIf the language already exists then we return 200 with the existing matching language",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -655,7 +661,8 @@
 								"languages",
 								"it-IT"
 							]
-						}
+						},
+						"description": "Make sure a testing language exist."
 					},
 					"response": []
 				},
@@ -735,7 +742,8 @@
 								"languages",
 								"{{languageId}}"
 							]
-						}
+						},
+						"description": "Basic Happy Path scenario"
 					},
 					"response": []
 				},
@@ -815,7 +823,8 @@
 								"languages",
 								"{{languageId}}"
 							]
-						}
+						},
+						"description": "Update attempt to modify a language from an id already taken"
 					},
 					"response": []
 				},
@@ -882,7 +891,8 @@
 								"languages",
 								"{{languageId}}"
 							]
-						}
+						},
+						"description": "Update attempt missing language"
 					},
 					"response": []
 				},
@@ -949,7 +959,8 @@
 								"languages",
 								"{{languageId}}"
 							]
-						}
+						},
+						"description": "Update attempt missing language code."
 					},
 					"response": []
 				},
@@ -1016,11 +1027,13 @@
 								"languages",
 								"invalidId"
 							]
-						}
+						},
+						"description": "Update attempt using an invalid id"
 					},
 					"response": []
 				}
-			]
+			],
+			"description": "This covers a few scenarios on which we take an existing language and update it."
 		},
 		{
 			"name": "DeleteLanguage",
@@ -1091,7 +1104,8 @@
 								"v2",
 								"languages"
 							]
-						}
+						},
+						"description": "Pre-condition creating a langue"
 					},
 					"response": []
 				},
@@ -1163,7 +1177,8 @@
 								"languages",
 								"{{languageId}}"
 							]
-						}
+						},
+						"description": "Dele language Happy path"
 					},
 					"response": []
 				},
@@ -1206,7 +1221,8 @@
 								"languages",
 								"invalidId"
 							]
-						}
+						},
+						"description": "Delete Language invalid id scenario"
 					},
 					"response": []
 				}
@@ -1338,7 +1354,8 @@
 								"v1",
 								"contenttype"
 							]
-						}
+						},
+						"description": "Content Type Pre-condition"
 					},
 					"response": []
 				},
@@ -1466,11 +1483,13 @@
 								"languages",
 								"{{languageId}}"
 							]
-						}
+						},
+						"description": "Delete Language associated to an Existing Content-Type Should Fail"
 					},
 					"response": []
 				}
-			]
+			],
+			"description": "Delete Language associated to an Existing Content-Type Should Fail"
 		},
 		{
 			"name": "getAllMessages",
@@ -1546,7 +1565,8 @@
 								"it",
 								"keys"
 							]
-						}
+						},
+						"description": "get message keys for a given language code"
 					},
 					"response": []
 				},
@@ -1583,7 +1603,8 @@
 								"to",
 								"keys"
 							]
-						}
+						},
+						"description": "get message keys for a given (invalid) language code"
 					},
 					"response": []
 				},
@@ -1620,7 +1641,8 @@
 								"en_us",
 								"keys"
 							]
-						}
+						},
+						"description": "get message keys for a given language code and country code"
 					},
 					"response": []
 				},
@@ -1657,7 +1679,8 @@
 								"en_ko",
 								"keys"
 							]
-						}
+						},
+						"description": "get message keys invalid scenario"
 					},
 					"response": []
 				},
@@ -1694,7 +1717,8 @@
 								"to_to",
 								"keys"
 							]
-						}
+						},
+						"description": "get message keys invalid scenario"
 					},
 					"response": []
 				},
@@ -1731,7 +1755,8 @@
 								"to_us",
 								"keys"
 							]
-						}
+						},
+						"description": "get message keys invalid scenario"
 					},
 					"response": []
 				}
