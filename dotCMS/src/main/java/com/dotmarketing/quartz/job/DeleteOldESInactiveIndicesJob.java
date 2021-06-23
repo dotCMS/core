@@ -13,7 +13,6 @@ import org.quartz.JobExecutionException;
  * It Deletes the live/working inactive indices older than the inactive live/working sets indicated to be
  * kept by the config property MAX_INACTIVE_INDEX_SETS_TO_KEEP. If property value is not set it defaults to 2.
  *
- *
  * The job is by default scheduled to be run once a day at 1am.
  */
 public class DeleteOldESInactiveIndicesJob extends DotStatefulJob {
