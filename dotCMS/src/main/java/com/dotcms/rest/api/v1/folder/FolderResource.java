@@ -144,7 +144,55 @@ public class FolderResource implements Serializable {
         return Response.ok(new ResponseEntityView(folderHelper.loadFolderAndSubFoldersByPath(siteId,path, user))).build(); // 200
     }
 
-    //TODO: DOC
+    /**
+     * This endpoint is to retrieve subfolders of a given path,
+     * will also filter these subfolders by the path sent. The subfolders returned will be the ones
+     * the user has permissions over.
+     *
+     * E.g of the behavior of the endpoint:
+     *
+     * SiteBrowser Tree:
+     * default
+     * 	folder1
+     * 		subfolder1
+     * 		subfolder2
+     *                  testsubfolder3
+     * 	folder2
+     * 		subfolder1
+     * 	testfolder3
+     *
+     * default_copy
+     * 	folder1_copy
+     * 		subfolder1_copy
+     * 		subfolder2_copy
+     *                  testsubfolder3_copy
+     * 	folder2_copy
+     * 		subfolder1_copy
+     * 	testfolder3_copy
+     *
+     * 	Value Sent | Expected Result
+     * ------------ | -------------
+     * //default/ | folder1, folder2, testfolder3
+     * //default/fol | folder1, folder2
+     * //default/fol/ | Nothing
+     * //default/bla | Nothing
+     * //default/folder1/ | subfolder1, subfolder2, testsubfolder3
+     * //default/folder1/s | subfolder1, subfolder2
+     * //default/folder1/b | Nothing
+     * / | folder1,folder2,testfolder3,folder1_copy,folder2_copy,testfolder3_copy
+     * /f | folder1,folder2,folder1_copy,folder2_copy
+     * /folder1/ | subfolder1, subfolder2, testsubfolder3,folder1_copy,folder2_copy,testfolder3_copy
+     * /folder1/s | subfolder1, subfolder2,subfolder1_copy, subfolder2_copy
+     * f | folder1,folder2,folder1_copy,folder2_copy
+     * folder1/ | subfolder1, subfolder2, testsubfolder3,folder1_copy,folder2_copy,testfolder3_copy
+     * folder1/s | subfolder1, subfolder2,subfolder1_copy, subfolder2_copy
+     *
+     *
+     * @param searchByPathForm path to look for the sub-folders
+     * @return List of {@link FolderSearchResultView}
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @POST
     @Path ("/byPath")
     @JSONP

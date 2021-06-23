@@ -1,6 +1,8 @@
 package com.dotcms.rest.api.v1.folder;
 
-//TODO: DOC
+/**
+ * View of the Folder for the move actionlet.
+ */
 public class FolderSearchResultView {
 
     private final String path;

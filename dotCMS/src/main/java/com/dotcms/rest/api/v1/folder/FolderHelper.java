@@ -153,7 +153,15 @@ public class FolderHelper {
         return new FolderView(folder,foldersChildCustoms);
     }
 
-    //TODO: DOC
+    /**
+     * This method will return a list of {@link FolderSearchResultView} that lives under
+     * the path or starts with the path sent.
+     *
+     * @param siteId site where the  folders should live under. If is not send will look under all hosts.
+     * @param pathToSearch path + folder name to find to
+     * @param user user
+     * @return list of {@link FolderSearchResultView}
+     */
     public List<FolderSearchResultView> findSubFoldersPathByParentPath(final String siteId, final String pathToSearch, final User user)
             throws DotSecurityException, DotDataException {
         final List<FolderSearchResultView> subFolders = new ArrayList<>();
@@ -188,7 +196,10 @@ public class FolderHelper {
         return subFolders;
     }
 
-    //TODO: DOC
+    /**
+     * Will find the subfolders living directly under the host passed.
+     * If pathToSearch is sent is  gonna filter the path of the subfolder by it.
+     */
     private List<FolderSearchResultView> findSubfoldersUnderHost(final String siteId,
             final String pathToSearch, final User user)
             throws DotSecurityException, DotDataException {
@@ -204,7 +215,10 @@ public class FolderHelper {
         return subFolders;
     }
 
-    //TODO: DOC
+    /**
+     * Will find the subfolders living directly under the host passed and the last valid folder (spliting the pathToSearch by the last '/').
+     * And filter the results by what is left after the last '/'.
+     */
     private List<FolderSearchResultView> findSubfoldersUnderFolder(final String siteId,
             final String pathToSearch, final User user)
             throws DotSecurityException, DotDataException {
