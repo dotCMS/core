@@ -32,6 +32,7 @@ import com.dotcms.publisher.bundle.business.BundleAPITest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
 import com.dotcms.publisher.util.DependencyManagerTest;
+import com.dotcms.publisher.util.DependencyModDateUtilTest;
 import com.dotcms.publishing.PublisherAPIImplTest;
 import com.dotcms.publishing.PublisherFilterImplTest;
 import com.dotcms.publishing.PushPublishFiltersInitializerTest;
@@ -112,6 +113,8 @@ import org.junit.runners.Suite.SuiteClasses;
 /* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+        PushPublishBundleGeneratorTest.class,
+        RuleBundlerTest.class,
         com.dotcms.content.elasticsearch.business.ESMappingAPITest.class,
         org.apache.velocity.runtime.parser.node.SimpleNodeTest.class,
         com.liferay.portal.ejb.UserLocalManagerTest.class,
@@ -136,7 +139,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.auth.providers.jwt.JsonWebTokenUtilsIntegrationTest.class,
         com.dotcms.auth.providers.jwt.factories.ApiTokenAPITest.class,
         com.dotcms.auth.providers.jwt.services.JsonWebTokenServiceIntegrationTest.class,
-        com.dotcms.publisher.util.DependencySetTest.class,
+        DependencyModDateUtilTest.class,
         com.dotcms.publisher.business.PublisherTest.class,
         com.dotcms.publisher.endpoint.bean.PublishingEndPointTest.class,
         com.dotcms.publisher.endpoint.business.PublishingEndPointAPITest.class,
@@ -347,7 +350,6 @@ import org.junit.runners.Suite.SuiteClasses;
         LanguageUtilTest.class,
         FolderResourceTest.class,
         Task05225RemoveLoadRecordsToIndexTest.class,
-        PushPublishBundleGeneratorTest.class,
         BundleFactoryTest.class,
         PublisherFilterImplTest.class,
         PushPublishFiltersInitializerTest.class,
@@ -402,7 +404,6 @@ import org.junit.runners.Suite.SuiteClasses;
         FolderBundlerTest.class,
         HostBundlerTest.class,
         LinkBundlerTest.class,
-        RuleBundlerTest.class,
         TemplateBundlerTest.class,
         WorkflowBundlerTest.class,
         PublisherAPIImplTest.class,
