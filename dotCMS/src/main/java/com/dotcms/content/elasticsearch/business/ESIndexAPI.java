@@ -404,7 +404,8 @@ public class ESIndexAPI {
 
 	/**
 	 * Deletes the live/working indices older than the live/working sets indicated to be
-	 * kept
+	 * kept.
+	 * The Active live/working index-set is never deleted.
 	 * @param inactiveLiveWorkingSetsToKeep indicates how many live/working sets to keep
 	 */
 
