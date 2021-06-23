@@ -10,12 +10,6 @@ import { NgxTiptapModule } from '../ngx-tiptap.module';
 @NgModule({
     declarations: [BlockEditorComponent],
     exports: [BlockEditorComponent],
-    imports: [
-        CommonModule,
-        FormsModule,
-        NgxTiptapModule,
-        OrderListModule,
-        ListboxModule
-    ]
+    imports: [CommonModule, FormsModule, NgxTiptapModule, OrderListModule, ListboxModule]
 })
-export class BlockEditorModule { }
+export class BlockEditorModule {}

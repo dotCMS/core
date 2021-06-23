@@ -1,34 +1,36 @@
-import { Component, Injector, ViewEncapsulation } from '@angular/core';
+import {
+    Component,
+    ComponentFactoryResolver,
+    Injector,
+    OnInit,
+    ViewEncapsulation
+} from '@angular/core';
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
-import { ContentletBlockExtension } from '../extentions/contentlet-block.extension';
+
+import { ActionsMenu } from '../extentions/actions-menu.extension';
+import { ContentletBlock } from '../extentions/contentlet-block.extension';
 
 @Component({
-    selector: 'dot-block-editor',
+    selector: 'dotcms-block-editor',
     templateUrl: './block-editor.component.html',
     styleUrls: ['./block-editor.component.scss'],
     encapsulation: ViewEncapsulation.None
 })
-export class BlockEditorComponent {
-    items: any;
-    selectedItem: any;
+export class BlockEditorComponent implements OnInit {
     editor: Editor;
 
     value = '<p>Hello, Tiptap!</p>'; // can be HTML or JSON, see https://www.tiptap.dev/api/editor#content
 
-    constructor(private injector: Injector) {}
+    constructor(private injector: Injector, private resolver: ComponentFactoryResolver) {}
 
     ngOnInit() {
         this.editor = new Editor({
-            extensions: [StarterKit, ContentletBlockExtension(this.injector)]
+            extensions: [
+                StarterKit,
+                ContentletBlock(this.injector, this.resolver),
+                ActionsMenu(this.injector, this.resolver)
+            ]
         });
-    }
-
-    handleSelected(event: any): void {
-        this.selectedItem = event.option;
-    }
-
-    loadItems(items: any): void {
-        this.items = items;
     }
 }

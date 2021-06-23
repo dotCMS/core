@@ -1,14 +1,18 @@
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { of } from 'rxjs';
+
 import { ListboxModule } from 'primeng/listbox';
 import { OrderListModule } from 'primeng/orderlist';
-import { of } from 'rxjs';
+import { MenuModule } from 'primeng/menu';
+
 import { NgxTiptapModule } from '../ngx-tiptap.module';
 import { SuggestionsService } from '../services/suggestions.service';
 import { BlockEditorComponent } from './block-editor.component';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { SuggestionsComponent } from '../suggestions/suggestions.component';
 import { ContentletBlockComponent } from '../extentions/contentlet-block/contentlet-block.component';
-import { SuggestionListComponent } from '../suggestion-list/suggestion-list.component';
+import { ActionButtonComponent } from '../extentions/action-button/action-button.component';
 
 export default {
     title: 'BlockEditorComponent'
@@ -17,6 +21,7 @@ export default {
 export const primary = () => ({
     moduleMetadata: {
         imports: [
+            MenuModule,
             CommonModule,
             FormsModule,
             NgxTiptapModule,
@@ -81,8 +86,8 @@ export const primary = () => ({
                 }
             }
         ],
-        // We need this 2 here because they are dynamically rendered
-        entryComponents: [SuggestionListComponent, ContentletBlockComponent]
+        // We need these here because they are dynamically rendered
+        entryComponents: [SuggestionsComponent, ContentletBlockComponent, ActionButtonComponent]
     },
     component: BlockEditorComponent
 });
