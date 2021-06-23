@@ -15,7 +15,7 @@ import org.quartz.JobExecutionException;
  *
  * The job is by default scheduled to be run once a day at 1am.
  */
-public class DeleteOldESInactiveIndicesJob extends DotStatefulJob {
+public class DeleteInactiveLiveWorkingIndicesJob extends DotStatefulJob {
 
     @Override
     @WrapInTransaction

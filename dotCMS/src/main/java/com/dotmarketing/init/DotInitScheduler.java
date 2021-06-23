@@ -3,7 +3,7 @@ package com.dotmarketing.init;
 import static com.dotmarketing.util.WebKeys.DOTCMS_DISABLE_ELASTIC_READONLY_MONITOR;
 import static com.dotmarketing.util.WebKeys.DOTCMS_DISABLE_WEBSOCKET_PROTOCOL;
 
-import com.dotmarketing.quartz.job.DeleteOldESInactiveIndicesJob;
+import com.dotmarketing.quartz.job.DeleteInactiveLiveWorkingIndicesJob;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -577,7 +577,7 @@ public class DotInitScheduler {
 			if (Config.getBooleanProperty( "ENABLE_DELETE_OLD_ES_INDICES_JOB", true)) {
 
 				final JobBuilder deleteOldESIndicesJob = new JobBuilder().setJobClass(
-						DeleteOldESInactiveIndicesJob.class)
+						DeleteInactiveLiveWorkingIndicesJob.class)
 						.setJobName(jobName)
 						.setJobGroup(DOTCMS_JOB_GROUP_NAME)
 						.setTriggerName(triggerName)
