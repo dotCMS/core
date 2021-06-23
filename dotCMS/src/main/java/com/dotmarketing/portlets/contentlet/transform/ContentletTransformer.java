@@ -98,9 +98,9 @@ public class ContentletTransformer implements DBTransformer {
 
             if (identifier == null) {
                 throw new DotStateException(
-                        "Fatty's identifier not found in db. Fatty's inode: " + contentlet
+                        "Contentlet's identifier not found in db. Contentlet's inode: " + contentlet
                                 .getInode()
-                                + ". Fatty's identifier: " + contentlet.getIdentifier());
+                                + ". Contentlet's identifier: " + contentlet.getIdentifier());
             }
 
             final Folder folder;
