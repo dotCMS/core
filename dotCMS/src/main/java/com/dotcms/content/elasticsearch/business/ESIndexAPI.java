@@ -24,7 +24,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.Lazy;
-import io.vavr.collection.Array;
 import io.vavr.control.Try;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -167,12 +166,6 @@ public class ESIndexAPI {
             return two.compareTo(one);
         }
     }
-
-	private class IndexSortByDateDesc extends IndexSortByDate {
-		public int compare(String o1, String o2) {
-			return super.compare(o1, o2) * -1;
-		}
-	}
 
 	@SuppressWarnings("unchecked")
 	public Map<String, IndexStats> getIndicesStats() {
@@ -369,6 +362,11 @@ public class ESIndexAPI {
 		}
 	}
 
+	/**
+	 * Deletes the index which name matches the provided name
+	 * @param indexName the name of the index to delete
+	 * @return true if the response of the deletion was acknowledged, false if not
+	 */
 	public boolean delete(String indexName) {
 		if(indexName==null) {
 			Logger.error(this.getClass(), "Failed to delete a null ES index");
@@ -378,9 +376,13 @@ public class ESIndexAPI {
 		return deleteMultiple(indexName);
 	}
 
+	/**
+	 * Deletes the indices which names match the provided names
+	 * @param indexNames vararg with the names of the indices to delete
+	 * @return true if the response of the deletion was acknowledged, false if not
+	 */
 	public boolean deleteMultiple(String...indexNames) {
 		if(indexNames==null || indexNames.length==0) {
-			Logger.error(this.getClass(), "No indices to delete were provided");
 			return true;
 		}
 
@@ -400,9 +402,15 @@ public class ESIndexAPI {
 		}
 	}
 
+	/**
+	 * Deletes the live/working indices older than the live/working sets indicated to be
+	 * kept
+	 * @param inactiveLiveWorkingSetsToKeep indicates how many live/working sets to keep
+	 */
+
 	public void deleteOldLiveWorkingIndices(final int inactiveLiveWorkingSetsToKeep) {
 		// get list of indices ordered by created desc and in sets of live/working
-		List<String> indices = getLiveWorkingIndicesSortByCreationDateDesc();
+		List<String> indices = getLiveWorkingIndicesSortedByCreationDateDesc();
 
 		removeActiveLiveAndWorkingFromList(indices);
 
@@ -432,6 +440,11 @@ public class ESIndexAPI {
 		}
 
 		deleteMultiple(indicesToRemove.toArray(new String[0]));
+
+		if(!indicesToRemove.isEmpty()) {
+			Logger.info(this, "The following indices were deleted: "
+					+ String.join(",", indicesToRemove));
+		}
 
 	}
 
@@ -955,7 +968,13 @@ public class ESIndexAPI {
 		return indexes;
 	}
 
-	public List<String> getLiveWorkingIndicesSortByCreationDateDesc() {
+	/**
+	 * Gets a {@link List} of all live/working indices names - without the cluster-id prefix - sorted by creation date desc
+	 *
+	 * @return the list
+	 */
+
+	public List<String> getLiveWorkingIndicesSortedByCreationDateDesc() {
 		final List<String> indexes = new ArrayList<>();
 		try {
 

@@ -1,7 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
 import static com.dotcms.content.elasticsearch.business.IndiciesInfo.CLUSTER_PREFIX;
-import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -10,15 +9,10 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
+
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.enterprise.cluster.ClusterFactory;
-import com.dotcms.enterprise.publishing.remote.bundler.HostBundlerTest;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.UtilMethods;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
@@ -240,10 +234,14 @@ public class ESIndexAPITest {
 
     @DataProvider
     public static Object[] testDeleteOldIndicesDP() {
-//        return new Integer[]{2, 0, 5, 50};
-        return new Integer[]{50};
+        return new Integer[]{2, 0, 5, 50};
     }
 
+    /**
+     * Method to test: {@link ESIndexAPI#deleteOldLiveWorkingIndices(int)}
+     * Given scenario: different numbers for the live/working sets to be kept (not deleted)
+     * Expected result: indices older than the live/working index-set indicated to be kept are successfully deleted
+     */
     @Test
     @UseDataProvider("testDeleteOldIndicesDP")
     public void testDeleteOldIndices(final int inactiveLiveWorkingSetsToKeep) throws DotIndexException, IOException, InterruptedException {
@@ -274,7 +272,7 @@ public class ESIndexAPITest {
 
         esIndexAPI.deleteOldLiveWorkingIndices(inactiveLiveWorkingSetsToKeep);
 
-        List<String> indicesAfterDeletion = esIndexAPI.getLiveWorkingIndicesSortByCreationDateDesc();
+        List<String> indicesAfterDeletion = esIndexAPI.getLiveWorkingIndicesSortedByCreationDateDesc();
         // assert active live index wasn't removed
         assertTrue(indicesAfterDeletion.contains(esIndexAPI.removeClusterIdFromName(liveIndex)));
         // assert active working index wasn't removed
