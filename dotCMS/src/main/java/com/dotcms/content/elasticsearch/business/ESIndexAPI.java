@@ -425,12 +425,7 @@ public class ESIndexAPI {
 
 			final String indexTimestamp = getIndexTimestamp(index);
 
-			indicesToRemove.remove(index);
-			// let's check if the next one has the same timestamp - if so remove it
-			final String nextIndex = Try.of(()->indicesToRemove.get(0)).getOrNull();
-			if(UtilMethods.isSet(nextIndex) && indexTimestamp.equals(getIndexTimestamp(nextIndex))) {
-				indicesToRemove.remove(0);
-			}
+			deleteLiveWorkinSetFromList(indicesToRemove, index, indexTimestamp);
 
 			if(!indexTimestamp.equals(lastTimestamp)) {
 				kept++;
@@ -446,6 +441,16 @@ public class ESIndexAPI {
 					+ String.join(",", indicesToRemove));
 		}
 
+	}
+
+	private void deleteLiveWorkinSetFromList(List<String> indicesToRemove, String index, String indexTimestamp) {
+		indicesToRemove.remove(index);
+		// let's check if the next one has the same timestamp - if so remove it, because it is the
+		// the other index in the live/working set that we want to delete.
+		final String nextIndex = Try.of(()-> indicesToRemove.get(0)).getOrNull();
+		if(UtilMethods.isSet(nextIndex) && indexTimestamp.equals(getIndexTimestamp(nextIndex))) {
+			indicesToRemove.remove(0);
+		}
 	}
 
 	private void removeActiveLiveAndWorkingFromList(List<String> indices) {
