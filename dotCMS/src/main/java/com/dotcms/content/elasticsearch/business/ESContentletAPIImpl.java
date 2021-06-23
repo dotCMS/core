@@ -380,15 +380,55 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new IllegalArgumentException("The folder is not valid: " + folderPath);
         }
 
-        final Folder folder = Try.of(()-> APILocator.getFolderAPI()
-                .findFolderByPath(folderPath, host, user, false)).getOrNull();
+        Folder folder = Try.of(()-> APILocator.getFolderAPI()
+                .findFolderByPath(folderPath, host, user, respectFrontendRoles)).getOrNull();
 
         if (null == folder || !UtilMethods.isSet(folder.getInode())) {
 
-            throw new DoesNotExistException("The folder does not exists: " + folderPath);
+            // if the folder does not exists try, let's see if the current user can create it.
+            if (this.permissionAPI.doesUserHavePermission(host, PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles)) {
+                Logger.debug(this, "On Moving Contentlet, creating the Folders: " + folderPath);
+
+                try {
+                    // multiple contentlets on a bulk action may require to create the same folder
+                    // if after release to block, the folder does not exists so create it
+                    final String lockKey = folderPath;
+                    folder = lockManager.tryLock(lockKey,
+                            () -> {
+
+                                Folder testFolder = Try.of(()-> APILocator.getFolderAPI()
+                                        .findFolderByPath(folderPath, host, user, respectFrontendRoles)).getOrNull();
+
+                                if (null == testFolder || !UtilMethods.isSet(testFolder.getInode())) {
+
+                                    Logger.info(this, "Creating folders: " + folderPath + ", contentlet: " + contentlet.getIdentifier());
+                                    testFolder = DotConcurrentFactory.getInstance().getSingleSubmitter() // we need to run this in a separated thread, to use a diff conn.
+                                            .submit(()->this.createFolder(folderPath, contentlet, host, user, respectFrontendRoles)).get(); // b.c the folder is a pre-requisites
+                                }
+
+                                return testFolder;
+                            });
+                } catch (final Throwable t) {
+                    Logger.warn(getClass(),t.getMessage(),t);
+                    folder = null;
+                }
+            }
+
+            if (null == folder || !UtilMethods.isSet(folder.getInode())) {
+
+                throw new DoesNotExistException("The folder does not exists: " + folderPath + " and could not be created");
+            }
         }
 
         return this.move(contentlet, user, host, folder, respectFrontendRoles);
+    }
+
+    @WrapInTransaction
+    private Folder createFolder (final String folderPath, final Contentlet contentlet, final Host host,
+                                 final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+        Logger.info(this, "Creating folders: " + folderPath + ", contentlet: " + contentlet.getIdentifier());
+        return APILocator.getFolderAPI().createFolders(folderPath, host, user, respectFrontendRoles);
     }
 
     @WrapInTransaction
@@ -396,8 +436,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public Contentlet move(final Contentlet contentlet, final User incomingUser, final Host host, final Folder folder,
                            final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
-        Logger.debug(this, "Moving contentlet: " + contentlet.getIdentifier()
-                + " to host: " + host.getHostname() + " and path: " + folder.getPath());
+        Logger.info(this, "Moving contentlet: " + contentlet.getIdentifier()
+                + " to host: " + host.getHostname() + " and path: " + folder.getPath() + ", id: " + folder.getIdentifier());
 
         final User user = incomingUser!=null ? incomingUser: APILocator.getUserAPI().getAnonymousUser();
 
@@ -424,11 +464,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
         identifier.setHostId(host.getIdentifier());
         identifier.setParentPath(folder.getPath());
 
+        Logger.info(this, "Updating the identifier: " + identifier);
         // changing the host and path will move the contentlet
         APILocator.getIdentifierAPI().save(identifier);
 
         // update the version ts in order to be repushed
-        final Optional<ContentletVersionInfo> versionInfoOpt = APILocator.getVersionableAPI().getContentletVersionInfo(identifier.getId(), contentlet.getLanguageId());
+        final Optional<ContentletVersionInfo> versionInfoOpt = APILocator.getVersionableAPI()
+                .getContentletVersionInfo(identifier.getId(), contentlet.getLanguageId());
         if (versionInfoOpt.isPresent()) {
             versionInfoOpt.get().setVersionTs(new Date());
             APILocator.getVersionableAPI().saveContentletVersionInfo(versionInfoOpt.get());

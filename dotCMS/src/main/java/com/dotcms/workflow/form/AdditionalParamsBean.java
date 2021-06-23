@@ -14,16 +14,16 @@ public class AdditionalParamsBean {
 
     private final PushPublishBean pushPublishBean;
     private final AssignCommentBean assignCommentBean;
-    private final Map<String, Object> additionalBeanMap;
+    private final Map<String, Object> additionalParamsMap;
 
     @JsonCreator
     public AdditionalParamsBean(
             @JsonProperty("pushPublish") final PushPublishBean pushPublishBean,
             @JsonProperty("assignComment") final AssignCommentBean assignCommentBean,
-            @JsonProperty("additionalBeanMap") final Map<String, Object> additionalBeanMap) {
+            @JsonProperty("additionalParamsMap") final Map<String, Object> additionalParamsMap) {
         this.pushPublishBean = pushPublishBean;
         this.assignCommentBean = assignCommentBean;
-        this.additionalBeanMap = additionalBeanMap;
+        this.additionalParamsMap = additionalParamsMap;
     }
 
     public PushPublishBean getPushPublishBean() {
@@ -34,7 +34,7 @@ public class AdditionalParamsBean {
         return assignCommentBean;
     }
 
-    public Map<String, Object> getAdditionalBeanMap() {
-        return additionalBeanMap;
+    public Map<String, Object> getAdditionalParamsMap() {
+        return additionalParamsMap;
     }
 }

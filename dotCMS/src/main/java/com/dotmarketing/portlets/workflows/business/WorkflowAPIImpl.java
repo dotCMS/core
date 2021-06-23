@@ -2947,9 +2947,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 						contentlet = applyAdditionalParams(additionalParamsBean, contentlet);
 					}
 
-					if (UtilMethods.isSet(additionalParamsBean) && UtilMethods.isSet(additionalParamsBean.getAdditionalBeanMap())) {
+					if (UtilMethods.isSet(additionalParamsBean) && UtilMethods.isSet(additionalParamsBean.getAdditionalParamsMap())) {
 
-						for (Map.Entry<String, Object> entry : additionalParamsBean.getAdditionalBeanMap().entrySet()) {
+						for (Map.Entry<String, Object> entry : additionalParamsBean.getAdditionalParamsMap().entrySet()) {
 							contentlet.setProperty(entry.getKey(), entry.getValue());
 						}
 					}

@@ -1,5 +1,12 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.api.web.HttpServletResponseThreadLocal;
+import com.dotcms.mock.request.FakeHttpRequest;
+import com.dotcms.mock.request.MockAttributeRequest;
+import com.dotcms.mock.request.MockSessionRequest;
+import com.dotcms.mock.response.BaseResponse;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
@@ -8,9 +15,14 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import org.apache.velocity.context.Context;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -58,7 +70,7 @@ public class MoveContentActionlet extends WorkFlowActionlet {
         final Contentlet contentlet = processor.getContentlet();
         final User user             = processor.getUser();
         final String pathParam      = params.get(PATH_KEY).getValue();
-        final String path           = findFolderIdByPath(pathParam, contentlet);
+        final String path           = findFolderIdByPath(pathParam, contentlet, processor);
 
         Logger.debug(this, "Moving the contentlet to: " + path);
 
@@ -67,9 +79,53 @@ public class MoveContentActionlet extends WorkFlowActionlet {
     }
 
 
-    private String findFolderIdByPath (final String actionletPathParameter, final Contentlet contentlet)  {
+    private String findFolderIdByPath (final String actionletPathParameter,
+                                       final Contentlet contentlet,
+                                       final WorkflowProcessor processor)  {
 
         return  UtilMethods.isSet(actionletPathParameter)?
-                actionletPathParameter: contentlet.getStringProperty("_path_to_move");
+                this.evalVelocity(processor, actionletPathParameter): //helps to eval things such as ${contentlet.hostName}/trash
+                contentlet.getStringProperty(CONTENTLET_PATH_KEY);
+    }
+
+    protected String evalVelocity(final WorkflowProcessor processor, final String velocityMessage) {
+
+        final User currentUser = processor.getUser();
+        final HttpServletRequest request =
+                null == HttpServletRequestThreadLocal.INSTANCE.getRequest()?
+                        this.mockRequest(currentUser): HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        final HttpServletResponse response =
+                null == HttpServletResponseThreadLocal.INSTANCE.getResponse()?
+                        this.mockResponse(): HttpServletResponseThreadLocal.INSTANCE.getResponse();
+
+        final Context velocityContext = VelocityUtil.getInstance().getContext(request, response);
+        velocityContext.put("workflow",   processor);
+        velocityContext.put("user",       currentUser);
+        velocityContext.put("contentlet", processor.getContentlet());
+        velocityContext.put("content",    processor.getContentlet());
+
+        try {
+            return VelocityUtil.eval(velocityMessage, velocityContext);
+        } catch (Exception e1) {
+            Logger.warn(this.getClass(), "unable to parse message, falling back" + e1);
+        }
+
+        return velocityMessage;
+    }
+
+    protected HttpServletRequest  mockRequest (final User  currentUser) {
+
+        final Host host = Try.of(()->APILocator.getHostAPI()
+                .findDefaultHost(currentUser, false)).getOrElse(APILocator.systemHost());
+        return new MockAttributeRequest(
+                new MockSessionRequest(
+                        new FakeHttpRequest(host.getHostname(), StringPool.FORWARD_SLASH).request()
+                ).request()
+        ).request();
+    }
+
+    protected HttpServletResponse mockResponse () {
+
+        return new BaseResponse().response();
     }
 }
