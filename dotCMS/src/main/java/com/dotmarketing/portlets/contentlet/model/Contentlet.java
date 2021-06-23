@@ -1363,8 +1363,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
     public boolean isHost() {
       
-
-        return getContentType().variable().equals(Host.HOST_VELOCITY_VAR_NAME);
+        ContentType type = getContentType();
+        return type!= null && type.variable().equals(Host.HOST_VELOCITY_VAR_NAME);
     }
 
 	/**
