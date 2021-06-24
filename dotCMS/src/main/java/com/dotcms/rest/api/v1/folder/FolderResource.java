@@ -12,6 +12,7 @@ import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -223,11 +224,13 @@ public class FolderResource implements Serializable {
             final String sitePath = path.split(StringPool.FORWARD_SLASH,2)[0];
             final Host site = APILocator.getHostAPI().findByName(sitePath, user,false);
             if(null == site){
-                throw new IllegalArgumentException(String.format(" Couldn't find any host with name `%s` ",sitePath));
+                throw new DoesNotExistException(String.format(" Couldn't find any host with name `%s` ",sitePath));
             }else{
                 siteId = APILocator.getHostAPI().findByName(sitePath, user,false).getIdentifier();
             }
-            folderPath = path.split(StringPool.FORWARD_SLASH,2)[1];
+            folderPath = path.split(StringPool.FORWARD_SLASH,2).length == 2  ?
+                    path.split(StringPool.FORWARD_SLASH,2)[1] :
+                    StringPool.FORWARD_SLASH;
         }
 
         folderPath = !folderPath.startsWith(StringPool.FORWARD_SLASH) ? StringPool.FORWARD_SLASH.concat(folderPath) : folderPath;
