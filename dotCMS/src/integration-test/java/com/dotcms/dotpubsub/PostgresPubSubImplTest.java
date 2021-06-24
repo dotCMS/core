@@ -1,6 +1,10 @@
 package com.dotcms.dotpubsub;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assume.assumeTrue;
+
+import com.dotmarketing.db.DbConnectionFactory;
+import com.zaxxer.hikari.HikariDataSource;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -21,6 +25,8 @@ public class PostgresPubSubImplTest {
         
         IntegrationTestInitService.getInstance().init();
 
+        assumeTrue(isPostgres());
+
         pubsubA = new PostgresPubSubImpl(fakeServerA);
         topicA = new CacheTransportTopic(fakeServerA,pubsubA);
         pubsubA.subscribe(topicA);
@@ -30,7 +36,7 @@ public class PostgresPubSubImplTest {
         
     }
 
-    
+
     @Test
     public void test_ping() throws Exception{
 
@@ -234,7 +240,11 @@ public class PostgresPubSubImplTest {
         
         
     }
-    
+
+
+    private static boolean isPostgres() {
+        return DbConnectionFactory.isPostgres() && DbConnectionFactory.getDataSource() instanceof HikariDataSource;
+    }
     
     
     
