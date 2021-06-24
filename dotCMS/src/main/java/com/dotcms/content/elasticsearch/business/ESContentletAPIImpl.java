@@ -4662,7 +4662,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 //Adding back temporarily the page URL to the contentlet, is needed in order to create a proper Identifier
                 addURLToContentlet( contentlet, htmlPageURL );
 
-                Treeable parent;
+                final Treeable parent;
                 if ( UtilMethods.isSet( contentletRaw.getFolder() ) && !contentletRaw.getFolder().equals( FolderAPI.SYSTEM_FOLDER ) ) {
                     parent = APILocator.getFolderAPI().find( contentletRaw.getFolder(), sysuser, false );
                 } else {
@@ -4686,7 +4686,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
 
-                String oldURI = identifier.getURI();
+                final String oldURI = identifier.getURI();
 
                 // make sure the identifier is removed from cache
                 // because changes here may affect URI then IdentifierCache
@@ -4697,8 +4697,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET){
                     try {
                         if(contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD) == null){
-                            String binaryIdentifier = contentletRaw.getIdentifier() != null ? contentletRaw.getIdentifier() : StringPool.BLANK;
-                            String binarynode = contentletRaw.getInode() != null ? contentletRaw.getInode() : StringPool.BLANK;
+                            final String binaryIdentifier = contentletRaw.getIdentifier() != null ? contentletRaw.getIdentifier() : StringPool.BLANK;
+                            final String binarynode = contentletRaw.getInode() != null ? contentletRaw.getInode() : StringPool.BLANK;
                             throw new FileAssetValidationException("Unable to validate field: " + FileAssetAPI.BINARY_FIELD
                                     + " identifier: " + binaryIdentifier
                                     + " inode: " + binarynode);
@@ -4721,7 +4721,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     identifier.setAssetName( htmlPageURL );
                 }
                 if(UtilMethods.isSet(contentletRaw.getFolder()) && !contentletRaw.getFolder().equals(FolderAPI.SYSTEM_FOLDER)){
-                    Folder folder = APILocator.getFolderAPI().find(contentletRaw.getFolder(), sysuser, false);
+                    final Folder folder = APILocator.getFolderAPI().find(contentletRaw.getFolder(), sysuser, false);
                     Identifier folderIdent = APILocator.getIdentifierAPI().find(folder);
                     identifier.setParentPath(folderIdent.getPath());
                 }
@@ -4734,22 +4734,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             //Relate the tags with the saved contentlet
-            for ( Entry<String, String> tagEntry : tagsValues.entrySet() ) {
+            for (final Entry<String, String> tagEntry : tagsValues.entrySet() ) {
                 //From the given CSV tags names list search for the tag objects and if does not exist create them
-                List<Tag> list = tagAPI.getTagsInText(tagEntry.getValue(), tagsHost);
+                final List<Tag> tagList = tagAPI.getTagsInText(tagEntry.getValue(), tagsHost);
 
                 // empty string for tag field value wipes out existing tags
-                if(UtilMethods.isSet(list) || tagEntry.getValue().equals("")) {
+                if(UtilMethods.isSet(tagList) || StringPool.BLANK.equals(tagEntry.getValue())) {
                     tagAPI.deleteTagInodesByInodeAndFieldVarName(contentlet.getInode(),
                             tagEntry.getKey());
                 }
 
-                for (final Tag tag : list ) {
+                for (final Tag tag : tagList ) {
                     //Relate the found/created tag with this contentlet
                     tagAPI.addContentletTagInode(tag, contentlet.getInode(), tagEntry.getKey());
                 }
                 //Adding tags back as field to be returned
-                if (tagEntry.getValue()!=null && !tagEntry.getValue().equals("")) {
+                if (tagEntry.getValue()!=null && !StringPool.BLANK.equals(tagEntry.getValue())) {
                     contentlet.setProperty(tagEntry.getKey(), tagEntry.getValue());
                 } else{
                     contentlet.setProperty(tagEntry.getKey(), null);
@@ -5786,13 +5786,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             contentlet.setProperty(conVariable, value);
                         }
                     }else if(isFieldTypeBoolean(field)){
-                        contentlet.setBoolProperty(conVariable, value != null ? (Boolean)value : false);
+                        contentlet.setBoolProperty(conVariable, ConversionUtils.toBooleanFromDb(value));
                     }else if(isFieldTypeFloat(field)){
-                        contentlet.setFloatProperty(conVariable, value != null ? (Float)value : 0);
+                        contentlet.setFloatProperty(conVariable, ConversionUtils.toFloat(value, 0));
                     }else if(isFieldTypeDate(field)){
                         contentlet.setDateProperty(conVariable,value != null ? (Date)value : null);
                     }else if(isFieldTypeLong(field)){
-                        contentlet.setLongProperty(conVariable,value != null ? ((Number)value).longValue(): 0L);
+                        contentlet.setLongProperty(conVariable, ConversionUtils.toLong(value, 0L));
                     }else if(isFieldTypeBinary(field)){
                         final File myFile = (value instanceof String) ? new File(String.valueOf(value)) : (File) value; 
                         contentlet.setBinary(conVariable,myFile);

@@ -739,6 +739,7 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 		   }
 		}
 
+		final ContentletLoader contentletLoader = new ContentletLoader();
 		//Rewriting the parents contentlets of the link
 		menuLinkAPI.getParentContentlets(workingLink.getInode()).stream().filter(contentlet -> {
             try {
@@ -746,7 +747,7 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
             } catch (DotDataException | DotSecurityException e) {
                 throw new DotRuntimeException(e);
             }
-        }).forEach( contentlet -> new ContentletLoader().invalidate(contentlet));
+        }).forEach( contentlet -> contentletLoader.invalidate(contentlet));
 
 	}
 

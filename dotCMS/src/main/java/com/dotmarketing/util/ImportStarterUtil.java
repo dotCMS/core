@@ -744,7 +744,8 @@ public class ImportStarterUtil {
 
             else {
                 String id;
-                if (_importClass.equals(Relationship.class) || _importClass.equals(Template.class) || _importClass.equals(Contentlet.class)) {
+                if (Relationship.class.equals(_importClass) || Template.class.equals(_importClass)
+                        || Contentlet.class.equals(_importClass)) {
                     id = "inode";
                 } else if(_importClass.equals(ContentletVersionInfo.class)) {
                     id = "identifier";

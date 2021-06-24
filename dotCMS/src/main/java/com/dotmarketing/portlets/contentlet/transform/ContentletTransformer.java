@@ -22,6 +22,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.StringPool;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -36,6 +37,13 @@ import org.jetbrains.annotations.NotNull;
  * DBTransformer that converts DB objects into Contentlet instances
  */
 public class ContentletTransformer implements DBTransformer {
+
+    private static final String DISABLED_WYSIWYG = "disabled_wysiwyg";
+    private static final String INODE = "inode";
+    private static final String IDENTIFIER = "identifier";
+    private static final String STRUCTURE_INODE = "structure_inode";
+    private static final String SYSTEM_FIELD = "system_field";
+
     final List<Contentlet> list;
 
 
@@ -59,8 +67,8 @@ public class ContentletTransformer implements DBTransformer {
     private static Contentlet transform(final Map<String, Object> map)  {
         final Contentlet contentlet = new Contentlet();
         final String inode = (String) map.get("inode");
-        final String contentletId = (String) map.get("identifier");
-        final String contentTypeId = (String) map.get("structure_inode");
+        final String contentletId = (String) map.get(IDENTIFIER);
+        final String contentTypeId = (String) map.get(STRUCTURE_INODE);
 
         if (!UtilMethods.isSet(contentTypeId)) {
             throw new DotRuntimeException("Contentlet must have a content type.");
@@ -91,8 +99,8 @@ public class ContentletTransformer implements DBTransformer {
         return contentlet;
     }
 
-    private static void populateFolderAndHost(Contentlet contentlet, String contentletId,
-            String contentTypeId) throws DotDataException, DotSecurityException {
+    private static void populateFolderAndHost(final Contentlet contentlet, final String contentletId,
+            final String contentTypeId) throws DotDataException, DotSecurityException {
         if (UtilMethods.isSet(contentlet.getIdentifier())) {
             final Identifier identifier = APILocator.getIdentifierAPI().loadFromDb(contentletId);
 
@@ -104,7 +112,7 @@ public class ContentletTransformer implements DBTransformer {
             }
 
             final Folder folder;
-            if (!"/".equals(identifier.getParentPath())) {
+            if (!StringPool.FORWARD_SLASH.equals(identifier.getParentPath())) {
                 folder = APILocator.getFolderAPI()
                         .findFolderByPath(identifier.getParentPath(), identifier.getHostId(),
                                 APILocator.getUserAPI().getSystemUser(), false);
@@ -118,12 +126,16 @@ public class ContentletTransformer implements DBTransformer {
             final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
                     .find(contentTypeId);
 
-            if (UtilMethods.isSet(contentType.publishDateVar()))
+            if (UtilMethods.isSet(contentType.publishDateVar())) {
                 contentlet.setDateProperty(contentType.publishDateVar(),
                         identifier.getSysPublishDate());
-            if (UtilMethods.isSet(contentType.expireDateVar()))
+            }
+
+            if (UtilMethods.isSet(contentType.expireDateVar())) {
                 contentlet
-                        .setDateProperty(contentType.expireDateVar(), identifier.getSysExpireDate());
+                        .setDateProperty(contentType.expireDateVar(),
+                                identifier.getSysExpireDate());
+            }
         } else {
             if (contentlet.isSystemHost()) {
                 // When we are saving a systemHost we cannot call
@@ -138,11 +150,11 @@ public class ContentletTransformer implements DBTransformer {
         }
     }
 
-    private static void populateWysiwyg(Map<String, Object> map, Contentlet contentlet) {
-        final String wysiwyg = (String) map.get("disabled_wysiwyg");
+    private static void populateWysiwyg(final Map<String, Object> map, Contentlet contentlet) {
+        final String wysiwyg = (String) map.get(DISABLED_WYSIWYG);
         if( UtilMethods.isSet(wysiwyg) ) {
             final List<String> wysiwygFields = new ArrayList<String>();
-            final StringTokenizer st = new StringTokenizer(wysiwyg,",");
+            final StringTokenizer st = new StringTokenizer(wysiwyg,StringPool.COMMA);
             while( st.hasMoreTokens() ) wysiwygFields.add(st.nextToken().trim());
             contentlet.setDisabledWysiwyg(wysiwygFields);
         }
@@ -156,9 +168,9 @@ public class ContentletTransformer implements DBTransformer {
     private static void populateFields(final Contentlet contentlet, final Map<String, Object> originalMap)
             throws DotDataException, DotSecurityException {
         final Map<String, Object> fieldsMap = new HashMap<>();
-        final String inode = (String) originalMap.get("inode");
-        final String identifier = (String) originalMap.get("identifier");
-        final String contentTypeId = (String) originalMap.get("structure_inode");
+        final String inode = (String) originalMap.get(INODE);
+        final String identifier = (String) originalMap.get(IDENTIFIER);
+        final String contentTypeId = (String) originalMap.get(STRUCTURE_INODE);
 
         final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
                 .find(contentTypeId);
@@ -171,7 +183,7 @@ public class ContentletTransformer implements DBTransformer {
                     ||
                     LegacyFieldTypes.TAG.legacyValue().equals(field.getFieldType()) ||
                     (field.getFieldContentlet() != null && field.getFieldContentlet()
-                            .startsWith("system_field") &&
+                            .startsWith(SYSTEM_FIELD) &&
                             !LegacyFieldTypes.BINARY.legacyValue()
                                     .equals(field.getFieldType()))) {
                 continue;

@@ -46,16 +46,16 @@ public class IdentifierDateJob implements Job {
 	 * @see org.quartz.Job#execute(org.quartz.JobExecutionContext)
 	 */
 	@Override
-	public void execute(JobExecutionContext jobContext) throws JobExecutionException {
-		ContentletAPI contentletAPI = APILocator.getContentletAPI();
+	public void execute(final JobExecutionContext jobContext) throws JobExecutionException {
+		final ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
-		JobDataMap map = jobContext.getJobDetail().getJobDataMap();
-		ContentType type = (ContentType) map.get("contenttype");
-		User user = (User) map.get("user");
+		final JobDataMap map = jobContext.getJobDetail().getJobDataMap();
+		final ContentType type = (ContentType) map.get("contenttype");
+		final User user = (User) map.get("user");
 
 		try{
 			//Lucene query to be sure that I will get all fields of the contentlet
-			String luceneQuery = "+structureName:" + type.variable() +
+			final String luceneQuery = "+structureName:" + type.variable() +
 								" +working:true" +
 								" +languageId:" + APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
@@ -74,10 +74,10 @@ public class IdentifierDateJob implements Job {
 				//Iterates all the ContentletSearch of the query
 				for(ContentletSearch contentletSearch : contenletSearchList){
 					//Get the identifier of each contentlet
-					Identifier identifier= APILocator.getIdentifierAPI().find(contentletSearch.getIdentifier());
+					final Identifier identifier= APILocator.getIdentifierAPI().find(contentletSearch.getIdentifier());
 
 					//Gets contentlet info
-                    Contentlet contentlet = contentletAPI.find(contentletSearch.getInode(), user, false);
+                    final Contentlet contentlet = contentletAPI.find(contentletSearch.getInode(), user, false);
 
 					//Check if the new Publish Date Var is not null
 					if(UtilMethods.isSet(type.publishDateVar())){

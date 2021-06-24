@@ -34,8 +34,8 @@ public class SimpleMapAppContext implements AppContext {
     }
 
     public boolean doNothingOnConflict(){
-        return (this.getAttribute(QueryReplacements.DO_NOTHING) != null)
-                && ((Boolean)this.getAttribute(QueryReplacements.DO_NOTHING));
+        return (this.getAttribute(QueryReplacements.DO_NOTHING_ON_CONFLICT) != null)
+                && ((Boolean)this.getAttribute(QueryReplacements.DO_NOTHING_ON_CONFLICT));
     }
 
 } // E:O:F:SimpleMapAppContext.

@@ -25,6 +25,7 @@ import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.system.SimpleMapAppContext;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.I18NMessage;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Host;
@@ -234,6 +235,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 	@VisibleForTesting
 	public static final String LUCENE_RESERVED_KEYWORDS_REGEX = "OR|AND|NOT|TO";
+    private static final Set<String> REMOVABLE_KEY_SET = CollectionsUtils.set(WORKFLOW_ACTION_KEY,
+            WORKFLOW_ASSIGN_KEY, WORKFLOW_COMMENTS_KEY, WORKFLOW_BULK_KEY,
+            WORKFLOW_IN_PROGRESS, AUTO_ASSIGN_WORKFLOW, TITLE_IMAGE_KEY, "_use_mod_date");
 
     /**
 	 * Default factory constructor that initializes the connection with the
@@ -835,9 +839,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
     @Override
-    protected List<Contentlet> findAllCurrent ( int offset, int limit ) throws ElasticsearchException {
+    protected List<Contentlet> findAllCurrent (final int offset, final int limit ) throws ElasticsearchException {
 
-        String indexToHit;
+        final String indexToHit;
 
         try {
             indexToHit = APILocator.getIndiciesAPI().loadIndicies().getWorking();
@@ -847,8 +851,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
             return null;
         }
 
-        SearchRequest searchRequest = new SearchRequest(indexToHit);
-        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        final SearchRequest searchRequest = new SearchRequest(indexToHit);
+        final SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
         searchSourceBuilder.query(QueryBuilders.matchAllQuery());
         searchSourceBuilder.size(limit);
         searchSourceBuilder.from(offset);
@@ -856,13 +860,13 @@ public class ESContentFactoryImpl extends ContentletFactory {
         searchSourceBuilder.fetchSource(new String[] {"inode"}, null);
         searchRequest.source(searchSourceBuilder);
 
-        SearchHits  hits = cachedIndexSearch(searchRequest);
+        final SearchHits  hits = cachedIndexSearch(searchRequest);
         
         final List<Contentlet> contentlets = new ArrayList<>();
 
-        for ( SearchHit hit : hits ) {
+        for (final SearchHit hit : hits ) {
             try {
-                Map<String, Object> sourceMap = hit.getSourceAsMap();
+                final Map<String, Object> sourceMap = hit.getSourceAsMap();
                 contentlets.add( find( sourceMap.get("inode").toString()) );
             } catch ( Exception e ) {
                 throw new ElasticsearchException( e.getMessage(), e );
@@ -1917,15 +1921,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         upsertContentlet(contentlet, inode);
         contentlet.setInode(inode);
 
-
-        contentlet.getMap().remove(WORKFLOW_ACTION_KEY);
-        contentlet.getMap().remove(WORKFLOW_ASSIGN_KEY);
-        contentlet.getMap().remove(WORKFLOW_COMMENTS_KEY);
-        contentlet.getMap().remove(WORKFLOW_BULK_KEY);
-        contentlet.getMap().remove(WORKFLOW_IN_PROGRESS);
-        contentlet.getMap().remove(AUTO_ASSIGN_WORKFLOW);
-        contentlet.getMap().remove(TITLE_IMAGE_KEY);
-        contentlet.getMap().remove("_use_mod_date");
+        REMOVABLE_KEY_SET.forEach(key -> contentlet.getMap().remove(key));
 
         contentletCache.remove(inode);
         return contentlet;
@@ -1970,7 +1966,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             replacements.setAttribute(QueryReplacements.CONDITIONAL_COLUMN, "inode");
             replacements.setAttribute(QueryReplacements.CONDITIONAL_VALUE, inode);
             replacements.setAttribute(QueryReplacements.EXTRA_COLUMNS, UPSERT_INODE_EXTRA_COLUMNS);
-            replacements.setAttribute(QueryReplacements.DO_NOTHING, true);
+            replacements.setAttribute(QueryReplacements.DO_NOTHING_ON_CONFLICT, true);
 
             upsertInodeCommand
                     .execute(new DotConnect(), replacements, inode, contentlet.getOwner(),
@@ -2148,38 +2144,38 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
 	@Override
-	protected void UpdateContentWithSystemHost(String hostIdentifier) throws DotDataException {
-		Host systemHost = APILocator.getHostAPI().findSystemHost();
+	protected void UpdateContentWithSystemHost(final String hostIdentifier) throws DotDataException {
+		final Host systemHost = APILocator.getHostAPI().findSystemHost();
 		for (int i = 0; i < 10000; i++) {
-			int offset = i * 1000;
-			List<Contentlet> contentlets = findContentletsByHost(hostIdentifier, 1000, offset);
-			for (Contentlet con : contentlets)
-				con.setHost(systemHost.getIdentifier());
+			final int offset = i * 1000;
+			final List<Contentlet> contentlets = findContentletsByHost(hostIdentifier, 1000, offset);
+			for (final Contentlet contentlet : contentlets)
+				contentlet.setHost(systemHost.getIdentifier());
 		}
 	}
 
 	@Override
-	protected void removeFolderReferences(Folder folder) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException {
+	protected void removeFolderReferences(final Folder folder) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException {
 	    Identifier folderId = null;
         try{
             folderId = APILocator.getIdentifierAPI().find(folder.getIdentifier());
         }catch(Exception e){
             Logger.debug(this, "Unable to get parent folder for folder = " + folder.getInode(), e);
         }
-        DotConnect dc = new DotConnect();
+        final DotConnect dc = new DotConnect();
         dc.setSQL("select identifier,inode from identifier,contentlet where identifier.id = contentlet.identifier and parent_path = ? and host_inode=?");
         dc.addParam(folderId.getPath());
         dc.addParam(folder.getHostId());
-        List<HashMap<String, String>> contentInodes = dc.loadResults();
+        final List<HashMap<String, String>> contentInodes = dc.loadResults();
         dc.setSQL("update identifier set parent_path = ? where asset_type='contentlet' and parent_path = ? and host_inode=?");
         dc.addParam("/");
         dc.addParam(folderId.getPath());
         dc.addParam(folder.getHostId());
         dc.loadResult();
-        for(HashMap<String, String> ident:contentInodes){
-             String inode = ident.get("inode");
+        for(final HashMap<String, String> ident:contentInodes){
+             final String inode = ident.get("inode");
              contentletCache.remove(inode);
-             Contentlet content = find(inode);
+             final Contentlet content = find(inode);
              new ContentletIndexAPIImpl().addContentToIndex(content);
         }
 	}

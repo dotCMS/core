@@ -197,7 +197,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 			throw new DotDataException("identifier:" + identifier +" not found");
 		}
 
-		if (identifier.getAssetType().equals("contentlet")){
+		if ("contentlet".equals(identifier.getAssetType())){
             try {
                 return Collections.unmodifiableList(FactoryLocator.getContentletFactory()
                         .findAllVersions(identifier, true, maxResults.isPresent()?maxResults.get():null));

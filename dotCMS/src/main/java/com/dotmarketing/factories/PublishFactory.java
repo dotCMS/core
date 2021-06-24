@@ -287,6 +287,7 @@ public class PublishFactory {
 			}
 		}
 
+		final ContentletLoader contentletLoader = new ContentletLoader();
 		if (webAsset instanceof Link) {
             FactoryLocator.getMenuLinkFactory()
                     .getParentContentlets(webAsset.getInode()).stream().filter(contentlet -> {
@@ -295,7 +296,7 @@ public class PublishFactory {
                 } catch (DotDataException | DotSecurityException  e) {
                     throw new DotRuntimeException(e);
                 }
-			}).forEach( contentlet -> new ContentletLoader().invalidate(contentlet));
+			}).forEach( contentlet -> contentletLoader.invalidate(contentlet));
 
 			// Removes static menues to provoke all possible dependencies be generated.
 			Folder parentFolder = (Folder)APILocator.getFolderAPI().findParentFolder((Treeable) webAsset,user,false);
@@ -331,13 +332,14 @@ public class PublishFactory {
 		final Set<Contentlet> futureContentlets = new HashSet<>();
 		final Set<Contentlet> expiredContentlets = new HashSet<>();
 
+        final ContentletLoader contentletLoader = new ContentletLoader();
         //Publishing related pieces of content
         for ( Object asset : relatedNotPublished ) {
             if ( asset instanceof Contentlet ) {
                 Logger.debug( PublishFactory.class, "*****I'm an HTML Page -- Publishing my Contentlet Child=" + ((Contentlet) asset).getInode() );
                 try {
                     contentletAPI.publish( (Contentlet) asset, user, false );
-                    new ContentletLoader().invalidate(asset);
+                    contentletLoader.invalidate(asset);
 
                 } catch ( DotSecurityException e ) {
                     //User has no permission to publish the content in the page so we just skip it

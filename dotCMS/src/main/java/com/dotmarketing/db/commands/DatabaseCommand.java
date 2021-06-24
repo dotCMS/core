@@ -17,7 +17,7 @@ public interface DatabaseCommand {
         CONDITIONAL_COLUMN,
         CONDITIONAL_VALUE,
         EXTRA_COLUMNS,
-        DO_NOTHING
+        DO_NOTHING_ON_CONFLICT
     }
 
     /**
