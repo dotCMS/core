@@ -719,42 +719,26 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   private void deleteRelationships(ContentType type) throws DotDataException {
 
-    //Deletes the child relationship field (if exists) if the parent is deleted.
       final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
-      final List<Relationship> childRelationships = relationshipAPI.byParent(type);
       final FieldAPI contentTypeFieldAPI = APILocator.getContentTypeFieldAPI();
-      for (final Relationship rel : childRelationships) {
-      if(UtilMethods.isSet(rel.getParentRelationName()) && rel.isRelationshipField()) {
-        final Field fieldToDelete = contentTypeFieldAPI
-                .byContentTypeIdAndVar(rel.getChildStructureInode(), rel.getParentRelationName());
-        contentTypeFieldAPI.delete(fieldToDelete);
-      }
-      relationshipAPI.delete(rel);
-    }
 
-    //Deletes the parent relationship field if the child is deleted.
-    final List<Relationship> parentRelationships = relationshipAPI.byChild(type);
-    for (final Relationship rel : parentRelationships) {
-      if(UtilMethods.isSet(rel.getChildRelationName()) && rel.isRelationshipField()) {
-        final Field fieldToDelete = contentTypeFieldAPI
-                .byContentTypeIdAndVar(rel.getParentStructureInode(), rel.getChildRelationName());
-        contentTypeFieldAPI.delete(fieldToDelete);
+      //Fetch all the relationships at once so we can delete them one by one
+      final List<Relationship> relationships = relationshipAPI.byContentType(type);
+      for (final Relationship rel : relationships) {
+           if(rel.isRelationshipField()) {
+               //Deletes the child relationship field (if exists) if the parent is deleted.
+               if (UtilMethods.isSet(rel.getParentRelationName())) {
+                   final Field fieldToDelete = contentTypeFieldAPI.byContentTypeIdAndVar(rel.getChildStructureInode(), rel.getParentRelationName());
+                   contentTypeFieldAPI.delete(fieldToDelete);
+               }
+               //Deletes the parent relationship field if the child is deleted.
+               if (UtilMethods.isSet(rel.getChildRelationName())) {
+                   final Field fieldToDelete = contentTypeFieldAPI.byContentTypeIdAndVar(rel.getParentStructureInode(), rel.getChildRelationName());
+                   contentTypeFieldAPI.delete(fieldToDelete);
+               }
+           }
+          relationshipAPI.delete(rel);
       }
-      relationshipAPI.delete(rel);
-    }
-
-    //Once the parent - child : child - parent relationship has been cleared
-    //Now we need to remove the field from the actual CT.
-    final List<Field> fields = type.fields(RelationshipField.class);
-    for (final Field field : fields) {
-       try {
-          //if the field happens to be present in the db get it removed.
-          final Field dbField = contentTypeFieldAPI.find(field.id());
-          contentTypeFieldAPI.delete(dbField);
-       } catch (DotDataException e) {
-          Logger.warnAndDebug(DotDataException.class, "Unable to remove Relationship field.", e);
-       }
-    }
 
   }
 
