@@ -168,6 +168,7 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Test;
 import org.springframework.beans.BeanUtils;
 
 import javax.activation.MimeType;
@@ -3574,8 +3575,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 .dbRelatedContent(relationship, contentlet, hasParent);
         cons = permissionAPI
                 .filterCollection(cons, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
-        APILocator.getRelationshipAPI().deleteByContent(contentlet, relationship, cons);
 
+        for (final Contentlet relatedContent : cons) {
+            if (hasParent) {
+                TreeFactory.deleteTreesByParentAndChildAndRelationType(contentlet.getIdentifier(),
+                        relatedContent.getIdentifier(), relationship.getRelationTypeValue());
+            } else {
+                TreeFactory.deleteTreesByParentAndChildAndRelationType(relatedContent.getIdentifier(),
+                        contentlet.getIdentifier(), relationship.getRelationTypeValue());
+            }
+        }
+      
         final List<String> identifiersToBeRelated = contentletsToBeRelated.stream().map(
                 Contentlet::getIdentifier).collect(Collectors.toList());
 
@@ -8361,5 +8371,4 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         return contentlet;
     }
-
 }

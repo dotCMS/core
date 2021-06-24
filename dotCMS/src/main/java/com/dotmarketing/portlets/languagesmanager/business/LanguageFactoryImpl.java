@@ -4,7 +4,9 @@ import static com.dotmarketing.portlets.languagesmanager.business.LanguageCacheI
 
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.util.CloseUtils;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DeterministicIdentifierAPIImpl;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
@@ -671,7 +673,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	private void dbUpsert(final Language language) throws DotDataException {
 
 		if (language.getId() == 0) {
-			language.setId(nextId());
+			language.setId(APILocator.getDeterministicIdentifierAPI().generateDeterministicIdBestEffort(language));
 		}
 		Language tester = getLanguage(language.getId());
 		if (tester != null) {
@@ -694,10 +696,6 @@ public class LanguageFactoryImpl extends LanguageFactory {
 		}
 		CacheLocator.getLanguageCache().removeLanguage(language);
 
-	}
-
-	private synchronized long nextId(){
-		return System.currentTimeMillis();
 	}
 
 	private List<Language> fromDbList(final List<Map<String, Object>> resultSet) {

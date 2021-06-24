@@ -9,12 +9,24 @@ import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
-import com.dotcms.contenttype.model.type.*;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.Expireable;
+import com.dotcms.contenttype.model.type.FileAssetContentType;
+import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DeterministicIdentifierAPI;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.DotValidationException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -24,14 +36,23 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.VelocityUtil;
 import com.google.common.collect.ImmutableSet;
 import io.vavr.control.Try;
-import org.apache.commons.lang.time.DateUtils;
-
-import java.util.*;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.commons.lang.time.DateUtils;
 
 public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
@@ -330,12 +351,6 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
             .builder(saveType)
             .modDate(DateUtils.round(new Date(), Calendar.SECOND));
 
-    boolean isNew = false;
-    if (saveType.id() == null) {
-      isNew = true;
-      builder.id(UUID.randomUUID().toString()).build();
-    }
-
     if (!(saveType instanceof UrlMapable)) {
       builder.urlMapPattern(null);
       builder.detailPage(null);
@@ -352,6 +367,8 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
       Logger.debug(getClass(), "structure inode not found in db:" + saveType.id());
     }
 
+    //The id generator needs to use the CT variable. Since we're gonna need it upfront generating the deterministic id
+    final String variable;
     if (oldContentType == null) {
     	if (UtilMethods.isSet(saveType.variable())) {
             if(doesTypeWithVariableExist(saveType.variable())) {
@@ -359,6 +376,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
             }
 
     		builder.variable(saveType.variable());
+            variable = saveType.variable();
     	} else {
     		final String generatedVar = suggestVelocityVar(saveType.name());
 
@@ -367,12 +385,21 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
             }
 
     		builder.variable(generatedVar);
+    		variable = generatedVar;
     	}
     } else {
     	builder.variable(oldContentType.variable());
+        variable = oldContentType.variable();
     }
 
-    ContentType retType = builder.build();
+     boolean isNew = false;
+     if (saveType.id() == null) {
+        isNew = true;
+        final DeterministicIdentifierAPI generator = APILocator.getDeterministicIdentifierAPI();
+        builder.id(generator.generateDeterministicIdBestEffort(saveType, ()->variable));
+     }
+
+     ContentType retType = builder.build();
 
     if (oldContentType == null) {
       if(reservedContentTypeVars.contains(retType.variable().toLowerCase()) && !retType.system()){
@@ -540,7 +567,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     dc.loadResult();
   }
 
-  private boolean dbDelete(ContentType type) throws DotDataException {
+  private boolean dbDelete(final ContentType type) throws DotDataException {
 
     // default structure can't be deleted
     if (type.defaultType()) {
@@ -550,36 +577,41 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
       throw new DotDataException("contenttype.delete.cannot.delete.system.type");
     }
 
+    //Refresh prior to delete
+    final ContentType dbType = Try.of(()->dbById(type.id())).getOrNull();
+    if(null == dbType){
+       Logger.warn(ContentTypeFactoryImpl.class,String.format("The ContentType with id `%s` does not exist ",type.id()));
+       return false;
+    }
+
     // deleting fields
-    FactoryLocator.getFieldFactory().deleteByContentType(type);
+    FactoryLocator.getFieldFactory().deleteByContentType(dbType);
 
     // make sure folders don't refer to this structure as default fileasset structure
 
-    updateFolderFileAssetReferences(type);
+    updateFolderFileAssetReferences(dbType);
 
 
     // delete container structures
-    APILocator.getContainerAPI().deleteContainerStructureByContentType(type);
+    APILocator.getContainerAPI().deleteContainerStructureByContentType(dbType);
 
     // delete contentlets
-    deleteContentletsByType(type);
+    deleteContentletsByType(dbType);
 
     // delete workflow schema references
-    deleteWorkflowSchemeReference(type);
+    deleteWorkflowSchemeReference(dbType);
 
     // remove structure permissions
-    APILocator.getPermissionAPI().removePermissions(type);
+    APILocator.getPermissionAPI().removePermissions(dbType);
 
 
     // delete relationships
-    deleteRelationships(type);
-
-
+    deleteRelationships(dbType);
 
     // remove structure itself
     DotConnect dc = new DotConnect();
-    dc.setSQL(this.contentTypeSql.DELETE_TYPE_BY_INODE).addParam(type.id()).loadResult();
-    dc.setSQL(this.contentTypeSql.DELETE_INODE_BY_INODE).addParam(type.id()).loadResult();
+    dc.setSQL(this.contentTypeSql.DELETE_TYPE_BY_INODE).addParam(dbType.id()).loadResult();
+    dc.setSQL(this.contentTypeSql.DELETE_INODE_BY_INODE).addParam(dbType.id()).loadResult();
     return true;
   }
 
@@ -686,26 +718,27 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
   }
 
   private void deleteRelationships(ContentType type) throws DotDataException {
-    List<Relationship> relationships;
-    //Deletes the child relationship field (if exists) if the parent is deleted.
-    relationships = APILocator.getRelationshipAPI().byParent(type);
-    for (final Relationship rel : relationships) {
-      if(UtilMethods.isSet(rel.getParentRelationName()) && rel.isRelationshipField()) {
-        final Field fieldToDelete = APILocator.getContentTypeFieldAPI().byContentTypeIdAndVar(rel.getChildStructureInode(), rel.getParentRelationName());
-        APILocator.getContentTypeFieldAPI().delete(fieldToDelete);
-      }
-      APILocator.getRelationshipAPI().delete(rel);
-    }
 
-    //Deletes the parent relationship field if the child is deleted.
-    relationships = APILocator.getRelationshipAPI().byChild(type);
-    for (final Relationship rel : relationships) {
-      if(UtilMethods.isSet(rel.getChildRelationName()) && rel.isRelationshipField()) {
-        final Field fieldToDelete = APILocator.getContentTypeFieldAPI().byContentTypeIdAndVar(rel.getParentStructureInode(), rel.getChildRelationName());
-        APILocator.getContentTypeFieldAPI().delete(fieldToDelete);
+      final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+      final FieldAPI contentTypeFieldAPI = APILocator.getContentTypeFieldAPI();
+
+      //Fetch all the relationships at once so we can delete them one by one
+      final List<Relationship> relationships = relationshipAPI.byContentType(type);
+      for (final Relationship rel : relationships) {
+           if(rel.isRelationshipField()) {
+               //Deletes the child relationship field (if exists) if the parent is deleted.
+               if (UtilMethods.isSet(rel.getParentRelationName())) {
+                   final Field fieldToDelete = contentTypeFieldAPI.byContentTypeIdAndVar(rel.getChildStructureInode(), rel.getParentRelationName());
+                   contentTypeFieldAPI.delete(fieldToDelete);
+               }
+               //Deletes the parent relationship field if the child is deleted.
+               if (UtilMethods.isSet(rel.getChildRelationName())) {
+                   final Field fieldToDelete = contentTypeFieldAPI.byContentTypeIdAndVar(rel.getParentStructureInode(), rel.getChildRelationName());
+                   contentTypeFieldAPI.delete(fieldToDelete);
+               }
+           }
+          relationshipAPI.delete(rel);
       }
-      APILocator.getRelationshipAPI().delete(rel);
-    }
 
   }
 
