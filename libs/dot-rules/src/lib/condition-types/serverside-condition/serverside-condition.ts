@@ -91,7 +91,7 @@ import { LoggerService } from '@dotcms/dotcms-js';
                         [placeholder]="input.placeholder | async"
                         [formControl]="input.control"
                         [type]="input.type"
-                        [hidden]="input.argIndex !== null && input.argIndex > _rhArgCount"
+                        [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
                         (blur)="onBlur(input)"
                         #fInput="ngForm"
                     />
