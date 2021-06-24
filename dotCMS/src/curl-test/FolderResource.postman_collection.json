@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "21fb39e4-51e2-44c5-ad46-39e43477e497",
+		"_postman_id": "ce39a1f3-e3c4-4c34-8e31-311fad508282",
 		"name": "FolderResource",
 		"description": "Test for FolderResource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -164,6 +164,100 @@
 						"body": {
 							"mode": "raw",
 							"raw": "{\n    \"path\":\"//site.test.find.subfolders.by.path/\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/byPath",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"byPath"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Find Root Subfolders Passing The Site Without final /",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Folder Check\", function () {",
+									"    pm.expect(jsonData.entity[0].path).to.eql('/testfindfolder1/');",
+									"});",
+									"",
+									"pm.test(\"Length Check\", function () {",
+									"    pm.expect(jsonData.entity.length).to.eql(3);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"path\":\"//site.test.find.subfolders.by.path\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/byPath",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"byPath"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Find Root Subfolders Passing The Site Does Not Exist",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"path\":\"//site.test.find.subfolders.by.p\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
