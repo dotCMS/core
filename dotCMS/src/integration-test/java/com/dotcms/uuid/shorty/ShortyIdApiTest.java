@@ -517,7 +517,9 @@ public class ShortyIdApiTest {
             assert (y.indexOf('-') == 8);
         }
 
-        for (String[] x : expectedIds) {
+        final String[][] uuids = expectedIds.stream().filter(strings -> strings[0].contains("-")).toArray(String[][]::new);
+
+        for (String[] x : uuids) {
             String noDashes = x[0].replaceAll("-", "");
             String y = api.uuidIfy(noDashes);
             assert (x[0].equals(y));
