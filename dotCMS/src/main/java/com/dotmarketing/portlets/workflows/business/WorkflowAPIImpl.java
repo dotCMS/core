@@ -1585,7 +1585,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 				isMove         = true;
 				isMoveHasPath |= UtilMethods.isSet(workflowActionClassParameterMap) &&
-						!UtilMethods.isSet(workflowActionClassParameterMap.get(MoveContentActionlet.PATH_KEY).getValue());
+						UtilMethods.isSet(workflowActionClassParameterMap.get(MoveContentActionlet.PATH_KEY).getValue());
 			}
 		}
 
