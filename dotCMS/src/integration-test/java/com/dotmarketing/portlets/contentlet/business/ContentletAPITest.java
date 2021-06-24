@@ -4140,14 +4140,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                
         //We need to create a new copy of pages for Spanish.
         for(HTMLPageAsset liveHTMLPage : liveHTMLPages){
-            Contentlet htmlPageContentlet = APILocator.getContentletAPI().find( liveHTMLPage.getInode(), user, false );
-
-            //As a copy we need to remove this info to do a clean checkin.
-            htmlPageContentlet.getMap().remove("modDate");
-            htmlPageContentlet.getMap().remove("owner");
-            htmlPageContentlet.getMap().remove("modUser");
-
-            htmlPageContentlet.getMap().put("inode", "");
+            Contentlet htmlPageContentlet = APILocator.getContentletAPI().checkout( liveHTMLPage.getInode(), user, false );
             htmlPageContentlet.getMap().put("languageId", new Long(spanish));
 
             //Checkin and Publish.
