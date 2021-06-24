@@ -15,7 +15,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.response.MockHeaderResponse;
 import com.dotcms.mock.response.MockHttpCaptureResponse;
 import com.dotcms.mock.response.MockHttpResponse;
@@ -89,7 +89,7 @@ public class VanityUrlFilterTest {
                 forwardTo, action, order, defaultLanguage.getId());
         filtersUtil.publishVanityUrl(contentlet1);
 
-        final HttpServletRequest request = new MockHttpRequest(defaultHost.getHostname(), uri).request();
+        final HttpServletRequest request = new MockHttpRequestIntegrationTest(defaultHost.getHostname(), uri).request();
 
         final HttpServletResponse response = new MockHttpStatusAndHeadersResponse(
                 new MockHttpResponse().response()).response();
@@ -124,7 +124,7 @@ public class VanityUrlFilterTest {
                 forwardTo, action, order, defaultLanguage.getId());
         filtersUtil.publishVanityUrl(contentlet1);
 
-        final HttpServletRequest request = new MockHttpRequest(defaultHost.getHostname(), forwardTo).request();
+        final HttpServletRequest request = new MockHttpRequestIntegrationTest(defaultHost.getHostname(), forwardTo).request();
 
         final HttpServletResponse response = new MockHttpStatusAndHeadersResponse(
                 new MockHttpResponse().response()).response();
@@ -157,7 +157,7 @@ public class VanityUrlFilterTest {
                 forwardTo, action, order, defaultLanguage.getId());
         filtersUtil.publishVanityUrl(contentlet1);
 
-        final HttpServletRequest request = new MockHttpRequest(defaultHost.getHostname(), uri).request();
+        final HttpServletRequest request = new MockHttpRequestIntegrationTest(defaultHost.getHostname(), uri).request();
   
         final File tmp = File.createTempFile("testingVanity", "test");
         tmp.deleteOnExit();
@@ -197,7 +197,7 @@ public class VanityUrlFilterTest {
                 forwardTo, action, order, defaultLanguage.getId());
         filtersUtil.publishVanityUrl(contentlet1);
 
-        final HttpServletRequest request = new MockHttpRequest(defaultHost.getHostname(), uri).request();
+        final HttpServletRequest request = new MockHttpRequestIntegrationTest(defaultHost.getHostname(), uri).request();
 
         final HttpServletResponse response = new MockHttpResponse().response();
 
@@ -236,7 +236,7 @@ public class VanityUrlFilterTest {
         filtersUtil.publishVanityUrl(contentlet1);
 
 
-        final HttpServletRequest request = new MockHttpRequest(defaultHost.getHostname(), uri).request();
+        final HttpServletRequest request = new MockHttpRequestIntegrationTest(defaultHost.getHostname(), uri).request();
         final HttpServletResponse response = new MockHttpStatusResponse(new MockHeaderResponse(new MockHttpResponse().response()).response()).response();
 
         
@@ -270,7 +270,7 @@ public class VanityUrlFilterTest {
                 forwardTo, action, order, defaultLanguage.getId());
         filtersUtil.publishVanityUrl(contentlet1);
 
-        HttpServletRequest request = new MockHttpRequest(defaultHost.getHostname(), uri).request();
+        HttpServletRequest request = new MockHttpRequestIntegrationTest(defaultHost.getHostname(), uri).request();
         HttpServletResponse response = new MockHttpStatusResponse(new MockHttpResponse().response()).response();
 
         VanityURLFilter filter = new VanityURLFilter();
@@ -283,7 +283,7 @@ public class VanityUrlFilterTest {
         CacheLocator.getVanityURLCache().clearCache();
         
         // try again
-        request = new MockHttpRequest(defaultHost.getHostname(), uri).request();
+        request = new MockHttpRequestIntegrationTest(defaultHost.getHostname(), uri).request();
         response = new MockHttpStatusResponse(new MockHttpResponse().response()).response();
 
 

@@ -138,7 +138,9 @@ public class ContentletUtil {
 			final User user, final Contentlet sourceContentlet, final boolean allCategoriesInfo)
 			throws DotDataException, IOException {
 //		sourceContentlet.setTags();
-		return new DotTransformerBuilder().contentResourceOptions(allCategoriesInfo).content(sourceContentlet).build().toMaps().get(0);
+		return new DotTransformerBuilder().contentResourceOptions(allCategoriesInfo)
+				.siteToMapTransformer(false)
+				.content(sourceContentlet).build().toMaps().get(0);
 	}
 
 	/**

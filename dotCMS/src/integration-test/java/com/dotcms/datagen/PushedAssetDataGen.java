@@ -5,6 +5,7 @@ import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.bean.impl.PushPublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
+import com.dotcms.publishing.Publisher;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -19,6 +20,7 @@ public class PushedAssetDataGen extends AbstractDataGen<PushedAsset> {
     private PublishingEndPoint publishingEndPoint;
     private Environment environment;
     private Date pushDate;
+    private Class<? extends Publisher> publisherClass;
 
     public PushedAssetDataGen assetId(String assetId) {
         this.assetId = assetId;
@@ -58,6 +60,7 @@ public class PushedAssetDataGen extends AbstractDataGen<PushedAsset> {
         pushedAsset.setBundleId(bundle.getId());
         pushedAsset.setEndpointId(publishingEndPoint.getId());
         pushedAsset.setEnvironmentId(environment.getId());
+        pushedAsset.setPublisher(publisherClass.getName());
 
         if (pushDate != null) {
             pushedAsset.setPushDate(pushDate);
@@ -74,5 +77,10 @@ public class PushedAssetDataGen extends AbstractDataGen<PushedAsset> {
         } catch (DotDataException e) {
             throw new DotRuntimeException(e);
         }
+    }
+
+    public PushedAssetDataGen publisher(final Class<? extends Publisher> publisherClass) {
+        this.publisherClass = publisherClass;
+        return this;
     }
 }

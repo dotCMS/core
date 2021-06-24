@@ -9,14 +9,13 @@ import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import javax.ws.rs.core.Response;
 
 import com.dotcms.rest.exception.NotFoundException;
-import com.dotcms.util.CollectionsUtils;
 import org.glassfish.jersey.internal.util.Base64;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.util.IntegrationTestInitService;
@@ -1035,7 +1034,7 @@ public class FieldResourceTest {
     private static HttpServletRequest getHttpRequest() {
         final MockHeaderRequest request = new MockHeaderRequest(
                 (
-                        new MockSessionRequest(new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                        new MockSessionRequest(new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 ).request()
         );
 

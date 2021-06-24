@@ -28,6 +28,8 @@ import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.business.FieldAPIImpl;
 import com.dotcms.device.DeviceAPI;
 import com.dotcms.device.DeviceAPIImpl;
+import com.dotcms.dotpubsub.DotPubSubProvider;
+import com.dotcms.dotpubsub.DotPubSubProviderLocator;
 import com.dotcms.enterprise.ESSeachAPI;
 import com.dotcms.enterprise.RulesAPIProxy;
 import com.dotcms.enterprise.ServerActionAPIImplProxy;
@@ -326,6 +328,10 @@ public class APILocator extends Locator<APIIndex>{
 	public static EventAPI getEventAPI() {
 		return (EventAPI)getInstance(APIIndex.EVENT_API);
 	}
+	
+    public static DotPubSubProvider getDotPubSubProvider() {
+        return (DotPubSubProvider) DotPubSubProviderLocator.provider.get();
+    }
 
 	/**
 	 * Creates a single instance of the {@link CategoryAPI} class.
@@ -1061,6 +1067,14 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
 	/**
+	 * Creates a single instance of the {@link com.dotmarketing.business.DeterministicIdentifierAPI} class.
+	 * @return The {@link com.dotmarketing.business.DeterministicIdentifierAPI} class.
+	 */
+	public static DeterministicIdentifierAPI getDeterministicIdentifierAPI(){
+		return (DeterministicIdentifierAPI) getInstance(APIIndex.DETERMINISTIC_IDENTIFIER_API);
+	}
+
+	/**
 	 * Generates a unique instance of the specified dotCMS API.
 	 *
 	 * @param index
@@ -1205,7 +1219,8 @@ enum APIIndex
 	BROWSER_API,
 	FILESTORAGE_API,
 	CONTENTLET_METADATA_API,
-	DEVICE_API;
+	DEVICE_API,
+	DETERMINISTIC_IDENTIFIER_API;
 
 
 
@@ -1291,6 +1306,7 @@ enum APIIndex
 			case FILESTORAGE_API: return new FileStorageAPIImpl();
 			case CONTENTLET_METADATA_API: return new FileMetadataAPIImpl();
 			case DEVICE_API: return new DeviceAPIImpl();
+			case DETERMINISTIC_IDENTIFIER_API: return new DeterministicIdentifierAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

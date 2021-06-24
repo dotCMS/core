@@ -82,6 +82,19 @@ public class FileMetadataAPITest {
     }
 
     /**
+     * Simple test to verify that what we're getting via the contentlet map property is actually a map
+     * @throws Exception
+     */
+    @Test
+    public void Test_Get_Metadata_Property() throws Exception {
+        prepareIfNecessary();
+
+            final Contentlet fileAssetContent = getFileAssetContent(true, 1, TestFile.PDF);
+            assertTrue(fileAssetContent.get(FileAssetAPI.META_DATA_FIELD) instanceof Map);
+    }
+
+
+    /**
      * This test evaluates both basic vs full MD
      * Given scenarios: We're testing metadata api against different types of asset-files
      * Expected Results: we should get full and basic md for every type. Basic metadata must be included within the fm

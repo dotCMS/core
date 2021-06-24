@@ -6,18 +6,19 @@
    final boolean hasAdminRole = user.isAdmin();
    final String screenLogo = company.getCity();
    final String navLogo = company.getState();
-   final boolean screenLogoEmpty = screenLogo.trim().isEmpty() || screenLogo == null;
-   final boolean navLogoEmpty = navLogo.trim().isEmpty() || navLogo == null;
+   final boolean screenLogoIsSet = screenLogo.startsWith("/dA");
+   final boolean navLogoIsSet = navLogo.startsWith("/dA");
 %>
 <script type="text/javascript">
 	dojo.require("dojox.widget.ColorPicker");
 	dojo.require("dojo.parser"); // scan page for widgets and instantiate them
-   
-	const topNavDropZone = document.getElementById("topNav__drop-zone");
 
-	const dotAssetDropZones = document.getElementsByTagName("dot-asset-drop-zone");
+    function getTopNavDropZone() {
+        return document.getElementById("topNav__drop-zone");
+    }
 
 	function setNewColor(val) {
+        const topNavDropZone = getTopNavDropZone();
 		topNavDropZone.querySelector(".logo").style.backgroundColor = val;
 	}
 
@@ -73,6 +74,7 @@
       setTimeout(() => {
          const navBarLogoCheckboxWidget = dijit.byId('topNav_logo');
          const navBarLogoCheckbox = dojo.byId('topNav_logo');
+         const topNavDropZone = getTopNavDropZone();
 
          if(navBarLogoCheckbox.checked) {
             topNavDropZone.style.display = "block"
@@ -86,6 +88,7 @@
 	})();
 
 	function handleTopNavLogoDisplay(checked) {
+        const topNavDropZone = getTopNavDropZone();
 		topNavDropZone.style.display = checked ? "block" : "none";
 	}
 
@@ -103,7 +106,7 @@
 	}
 
    function assetIsMaxLength(asset) {
-      return asset.match(/[^\\\/]+(?=\.[\w]+$)|[^\\\/]+$/)[0].length > 50;
+      return asset.match(/[^\\\/]+(?=\.[\w]+$)|[^\\\/]+$/)[0].length > 40;
    }
 
    function setLogoAndContainerNodes({ dropZone,  logoNode, details, dropZoneLabel }) {
@@ -126,7 +129,9 @@
 		logoNode.style.display = "flex";
 		dropZone.style.display = "none";
 		dropZone.parentElement.querySelector('input[data-hidden]').value = details.asset;
-      topNavDropZone.querySelector(".logo__container").style.display = 'flex'
+
+        const topNavDropZone = getTopNavDropZone();
+        topNavDropZone.querySelector(".logo__container").style.display = 'flex'
    }
 
 	function uploadComplete(event) {
@@ -149,6 +154,8 @@
           details,
           dropZoneLabel
       }
+
+      console.log(assetIsMaxLength(details.asset), details.asset)
 
       if(assetIsMaxLength(details.asset)) {
          createMaxLengthError(dropZoneLabel);
@@ -464,31 +471,31 @@
             <div class="logo">
                <button class="logo__delete">&times;</button>
                <div class="logo__container">
-                  <% if(screenLogoEmpty) { %>
-                  <img class="logo__image" border="1" hspace="0" src="<%= IMAGE_PATH %>/company_logo?img_id=<%= company.getCompanyId() %>&key=<%= ImageKey.get(company.getCompanyId()) %>" vspace="0" />
+                  <% if(screenLogoIsSet) { %>
+                     <img class="logo__image" border="1" hspace="0" src="<%= screenLogo %>" vspace="0" />
                   <% } else { %>
-                  <img class="logo__image" border="1" hspace="0" src="<%= screenLogo %>" vspace="0" />
+                     <img class="logo__image" border="1" hspace="0" src="<%= IMAGE_PATH %>/company_logo?img_id=<%= company.getCompanyId() %>&key=<%= ImageKey.get(company.getCompanyId()) %>" vspace="0" />
                   <% } %>
                </div>
             </div>
             <dot-asset-drop-zone id="dot-asset-drop-zone-main" style="display: none;" drop-files-text="Drop Image" upload-file-text="Uploading Image..." display-indicator="true"></dot-asset-drop-zone>
-            <input type="hidden" name="loginScreenLogoInput" id="loginScreenLogoInput" data-hidden="logo-input" value="<%= ( !screenLogoEmpty ? screenLogo : "" ) %>">
-            <p class="hint"><%= LanguageUtil.get(pageContext, "loginlogo.hint") %></p>
+            <input type="hidden" name="loginScreenLogoInput" id="loginScreenLogoInput" data-hidden="logo-input" value="<%= ( screenLogoIsSet ? screenLogo : "" ) %>">
+            <p class="hint"><%= LanguageUtil.get(pageContext, "login-logo.hint") %></p>
             </div>
             <br />
             <div class="form__group">
                <label for="topNav_logo">
-               <input dojoType="dijit.form.CheckBox" type="checkbox" name="topNav" id="topNav_logo" <%= ( !navLogoEmpty ? "checked" : "" ) %> />
+               <input dojoType="dijit.form.CheckBox" type="checkbox" name="topNav" id="topNav_logo" <%= ( navLogoIsSet ? "checked" : "" ) %> />
                   <%= LanguageUtil.get(pageContext, "navlogo-checkbox.label") %>
                </label>
                <br />
                <p class="hint"><%= LanguageUtil.get(pageContext, "navlogo-checkbox.hint") %></p>
                <div id="topNav__drop-zone" style="display: none;">
                   <h3 class="drop-zone__label"><%= LanguageUtil.get(pageContext, "navlogo.label") %></h3>
-                  <div class="logo" <%= ( !navLogoEmpty ? "style='display: flex;'" : "style='display: none;'" ) %>>
+                  <div class="logo" <%= ( navLogoIsSet ? "style='display: flex;'" : "style='display: none;'" ) %>>
                      <button class="logo__delete">&times;</button>
                       <%
-                        if(!navLogoEmpty)  {
+                        if(navLogoIsSet)  {
                      %>            
                        <div class="logo__container">
                            <img class="logo__image" src="<%= navLogo %>"/>
@@ -501,8 +508,8 @@
                         }
                      %>
                   </div>
-                  <dot-asset-drop-zone id="dot-asset-drop-zone-navbar" drop-files-text="Drop Image" upload-file-text="Uploading Image..." display-indicator="true" <%= ( !navLogoEmpty ? "style='display: none;'" : "style='display: block;'" ) %>></dot-asset-drop-zone>
-                  <input type="hidden" name="topNavLogoInput" id="topNavLogoInput" data-hidden="logo-input" value="<%= ( !navLogoEmpty ? navLogo : "" ) %>">	
+                  <dot-asset-drop-zone id="dot-asset-drop-zone-navbar" drop-files-text="Drop Image" upload-file-text="Uploading Image..." display-indicator="true" <%= ( navLogoIsSet ? "style='display: none;'" : "style='display: block;'" ) %>></dot-asset-drop-zone>
+                  <input type="hidden" name="topNavLogoInput" id="topNavLogoInput" data-hidden="logo-input" value="<%= ( navLogoIsSet ? navLogo : "" ) %>">	
                   <p class="hint"><%= LanguageUtil.get(pageContext, "navlogo.hint") %></p>
                </div>
             </div>
