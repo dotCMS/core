@@ -15,7 +15,7 @@
         }
         return false;
     }
-    
+
     /**
      *
      */
@@ -43,6 +43,7 @@
      *
      */
     function renderSingleAction(action){
+        console.log('action.workflowAction', action.workflowAction);
         var actionSingleTemplate
             = '<tr class="workflowActionsOption"> '
             + '   <td style="">&nbsp;&nbsp;'+action.workflowAction.name+'</td> '
@@ -51,6 +52,7 @@
             + '             data-acction-id="'+action.workflowAction.id+'" '
             + '             data-action-commentable="'+action.workflowAction.commentable+'" '
             + '             data-action-assignable="'+action.workflowAction.assignable+'" '
+            + '             data-action-moveable="'+action.moveable+'" '
             + '             data-action-pushPublish="'+action.pushPublish+'"  '
             + '             data-action-condition="'+action.conditionPresent+'" >'+action.count+' content(s)</button>'
             + '   </td>'
@@ -239,13 +241,13 @@
     }
 
     function showPopupIfRequired(buttonElement) {
-
         var commentable = dojo.attr(buttonElement, 'data-action-commentable');
         var assignable = dojo.attr(buttonElement, 'data-action-assignable');
         var pushPublish = dojo.attr(buttonElement, 'data-action-pushPublish');
+        var moveable = dojo.attr(buttonElement, 'data-action-moveable');
         var condition = dojo.attr(buttonElement, 'data-action-condition');
 
-        var popupRequired = (commentable == 'true' || assignable == 'true' || pushPublish == 'true' || condition == 'true' );
+        var popupRequired = (commentable == 'true' || assignable == 'true' || pushPublish == 'true' || condition == 'true' || moveable == 'true' );
         if(!popupRequired){
            return false;
         }
