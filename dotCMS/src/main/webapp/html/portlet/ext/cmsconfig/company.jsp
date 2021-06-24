@@ -9,9 +9,11 @@
 <%
    final boolean hasAdminRole = user.isAdmin();
    final String screenLogo = company.getCity();
-   final String navLogo = company.getState();
    final boolean screenLogoIsSet = screenLogo.startsWith("/dA");
-   final boolean navLogoIsSet = navLogo.startsWith("/dA");
+   final String navLogo = company.getState();
+
+   final boolean navLogoIsSet = UtilMethods.isSet(navLogo) && navLogo.startsWith("/dA");
+   
    final boolean enterprise = (LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level);
 %>
 <script type="text/javascript">
@@ -23,7 +25,11 @@
 	const dotAssetDropZones = document.getElementsByTagName("dot-asset-drop-zone");
 
 	function setNewColor(val) {
-		topNavDropZone.querySelector(".logo").style.backgroundColor = val;
+        const logo = topNavDropZone ? topNavDropZone.querySelector(".logo") : null;
+
+        if (logo) {
+            logo.style.backgroundColor = val;
+        }
 	}
 
 	function bgColorStyler(val) {
@@ -79,11 +85,14 @@
          const navBarLogoCheckboxWidget = dijit.byId('topNav_logo');
          const navBarLogoCheckbox = dojo.byId('topNav_logo');
 
-         if(navBarLogoCheckbox.checked) {
+         if (navBarLogoCheckbox && navBarLogoCheckbox.checked) {
             topNavDropZone.style.display = "block"
          }
 
-         navBarLogoCheckboxWidget.on('change', handleTopNavLogoDisplay)
+         if (navBarLogoCheckboxWidget) {
+            navBarLogoCheckboxWidget.on('change', handleTopNavLogoDisplay)             
+         }
+
       }, 0)
 
       document.addEventListener('click', logoDelete)
