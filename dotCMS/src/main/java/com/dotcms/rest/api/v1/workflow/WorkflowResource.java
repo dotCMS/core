@@ -485,28 +485,10 @@ public class WorkflowResource {
             actionInputViews.add(new ActionInputView("pushPublish", Collections.emptyMap()));
         }
 
-        /*
-         * In order to determine if an action is moveable, it needs to have a MoveContentActionlet assigned AND
-         * their parameter MoveContentActionlet#PATH_KEY should be not set (b/c if it is, the path is already hardcored and does not need to ask for it)
-         */
-        final List<WorkflowActionClass>  actionClasses = Try.of(()->
-                this.workflowAPI.findActionClasses(workflowAction)).getOrNull();
+        // Has a move actionlet but the path is empty
+        if (workflowAction.hasMoveActionletActionlet() && !workflowAction.hasMoveActionletHasPathActionlet()) {
 
-        final Optional<WorkflowActionClass> actionClassesOpt =
-                null != actionClasses?  actionClasses.stream()
-                    .filter(wfClass -> wfClass.getClazz().equals(MoveContentActionlet.class.getName()))
-                    .findFirst(): Optional.empty();
-
-        if (actionClassesOpt.isPresent()) {
-
-            final Map<String, WorkflowActionClassParameter> workflowActionClassParameterMap =
-                    Try.of(()->this.workflowAPI.findParamsForActionClass(actionClassesOpt.get())).getOrNull();
-
-            if (UtilMethods.isSet(workflowActionClassParameterMap) &&
-                    !UtilMethods.isSet(workflowActionClassParameterMap.get(MoveContentActionlet.PATH_KEY).getValue())) {
-
-                actionInputViews.add(new ActionInputView("moveable", Collections.emptyMap()));
-            }
+            actionInputViews.add(new ActionInputView("moveable", Collections.emptyMap()));
         }
 
         return actionInputViews;
