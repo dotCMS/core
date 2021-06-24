@@ -1,13 +1,18 @@
+<%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
+
 <%@ include file="/html/portlet/ext/cmsconfig/init.jsp" %>
 <% request.setAttribute("requiredPortletAccess", PortletID.CONFIGURATION.toString()); %>
 <%@ include file="/html/common/uservalidation.jsp"%>
 <%@page import="com.dotcms.rest.api.v1.system.ConfigurationHelper"%>
+
 <%
    final boolean hasAdminRole = user.isAdmin();
    final String screenLogo = company.getCity();
    final String navLogo = company.getState();
    final boolean screenLogoIsSet = screenLogo.startsWith("/dA");
    final boolean navLogoIsSet = navLogo.startsWith("/dA");
+   final boolean enterprise = (LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level);
 %>
 <script type="text/javascript">
 	dojo.require("dojox.widget.ColorPicker");
@@ -478,6 +483,7 @@
             <p class="hint"><%= LanguageUtil.get(pageContext, "login-logo.hint") %></p>
             </div>
             <br />
+            <% if ( enterprise ) { %>
             <div class="form__group">
                <label for="topNav_logo">
                <input dojoType="dijit.form.CheckBox" type="checkbox" name="topNav" id="topNav_logo" <%= ( navLogoIsSet ? "checked" : "" ) %> />
@@ -508,6 +514,7 @@
                   <p class="hint"><%= LanguageUtil.get(pageContext, "navlogo.hint") %></p>
                </div>
             </div>
+            <% } %>
          </div>
       </td>
    </tr>
