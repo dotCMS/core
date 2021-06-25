@@ -33,12 +33,12 @@
 
     <!-- HTTP Connector from upstream proxy -->
     <Connector executor="tomcatConnectorThreadPool" port="8081" protocol="org.apache.coyote.http11.Http11Nio2Protocol"
-                connectionTimeout="3000" enableLookups="false" redirectPort="443" URIEncoding="UTF-8" bindOnInit="false"
+                connectionTimeout="3000" enableLookups="false" redirectPort="443" URIEncoding="UTF-8" bindOnInit="true"
                 scheme="http" proxyPort="80" />
 
     <!-- HTTPS (SSL) Connector from upstream proxy -->
     <Connector executor="tomcatConnectorThreadPool" port="8082" protocol="org.apache.coyote.http11.Http11Nio2Protocol"
-                connectionTimeout="3000" enableLookups="false" redirectPort="443" URIEncoding="UTF-8" bindOnInit="false"
+                connectionTimeout="3000" enableLookups="false" redirectPort="443" URIEncoding="UTF-8" bindOnInit="true"
                 scheme="https" proxyPort="443" secure="true" />
 
 
