@@ -27,7 +27,6 @@ build_by_commit() {
 
   cd /build/src/core
   git fetch --all --tags
-  git clean -f -d
   git pull
 
   echo "Checking out commit/tag/branch: $1"
@@ -39,6 +38,7 @@ build_by_commit() {
     git checkout ${1}
   fi
 
+  git clean -f -d
   cd dotCMS && ./gradlew clonePullTomcatDist createDistPrep -PuseGradleNode=false
   find ../dist/  -name "*.sh" -exec chmod 500 {} \;
   mv ../dist/* "${build_target_dir}"
