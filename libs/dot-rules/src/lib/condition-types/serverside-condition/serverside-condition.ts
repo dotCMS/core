@@ -8,7 +8,7 @@ import { I18nService } from '../../services/system/locale/I18n';
 import { ObservableHack } from '../../services/util/ObservableHack';
 import { CwRestDropdownInputModel } from '../../services/util/CwInputModel';
 import { Verify } from '../../services/validation/Verify';
-import { ConditionModel, ParameterModel } from '../../services/Rule';
+import { ParameterModel } from '../../services/Rule';
 import { LoggerService } from '@dotcms/dotcms-js';
 
 @Component({
@@ -160,10 +160,6 @@ export class ServersideCondition {
         return input && input.name === 'comparison';
     }
 
-    private isConditionalFieldWithLessThanThreeFields(size: number, field: any): boolean {
-        return size <= 2 && field instanceof ConditionModel;
-    }
-
     ngOnChanges(change): void {
         let paramDefs = null;
         if (change.componentInstance) {
@@ -176,23 +172,14 @@ export class ServersideCondition {
             Object.keys(paramDefs).forEach((key) => {
                 const paramDef = this.componentInstance.getParameterDef(key);
                 const param = this.componentInstance.getParameter(key);
+                if (paramDef.priority > prevPriority + 1) {
+                    this._inputs.push({ flex: 40, type: 'spacer' });
+                }
                 prevPriority = paramDef.priority;
-
+                this.loggerService.info('ServersideCondition', 'onChange', 'params', key, param);
                 const input = this.getInputFor(paramDef.inputType.type, param, paramDef);
-                this._inputs[paramDef.priority] = input;
+                this._inputs.push(input);
             });
-
-            // Cleans _inputs array from empty(undefined) elements
-            this._inputs = this._inputs.filter((i) => i);
-
-            if (
-                this.isConditionalFieldWithLessThanThreeFields(
-                    this._inputs.length,
-                    change.componentInstance.currentValue
-                )
-            ) {
-                this._inputs = [{ flex: 40, type: 'spacer' }, ...this._inputs];
-            }
 
             let comparison;
             let comparisonIdx = null;
