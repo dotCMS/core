@@ -339,12 +339,13 @@
                             		<% } %>
                                 <%=f.getFieldName()%>:</span>
                             </div>
-                            <div class="fieldValue">
+								<div class="fieldValue" style="overflow-x: scroll">
                                 <%
                                     if(f.getFieldType().equals(Field.FieldType.RELATIONSHIP.toString())){
                                         //field on the other side of the relationship
                                         request.setAttribute("relationshipRecords", contentletRelationships.getRelationshipsRecordsByField(f));
-                                %>
+										request.setAttribute("relatedField", newField);
+								%>
                                         <jsp:include page="/html/portlet/ext/contentlet/field/relationship_field.jsp"/>
                                 <%  } else {
                                         request.setAttribute("relationshipRecords", legacyRelationshipRecords); %>
