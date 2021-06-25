@@ -542,7 +542,7 @@ export class RuleEngineContainer implements OnDestroy {
                 'ruleUpdating',
                 'disabling rule due for edit.'
             );
-            this.patchRule(rule, true);
+            this.patchRule(rule, disable);
         }
         rule._saved = false;
         rule._saving = true;
@@ -637,9 +637,9 @@ export class RuleEngineContainer implements OnDestroy {
     }
 
     patchCondition(rule: RuleModel, group: ConditionGroupModel, condition: ConditionModel): void {
-        this.ruleUpdating(rule);
         try {
             if (condition.isValid()) {
+                this.ruleUpdating(rule, false);
                 if (condition.isPersisted()) {
                     this._conditionService.save(group.key, condition).subscribe(
                         (_result) => {
@@ -686,6 +686,7 @@ export class RuleEngineContainer implements OnDestroy {
                     }
                 }
             } else {
+                this.ruleUpdating(rule);
                 this.loggerService.info('RuleEngineContainer', 'patchCondition', 'Not valid');
                 rule._saving = false;
                 rule._errors = { invalid: 'Condition not valid.' };
