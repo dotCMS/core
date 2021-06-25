@@ -13,6 +13,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.StringPool;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
@@ -67,45 +68,17 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
 	}
 
 	public String getId() {
-		if (id != null) {
-			if (id.contains("-")) {
-				return id;
-			}else {
-				if(id.equals(Host.SYSTEM_HOST)){
-					return id;
-				}
-				try {
-					long oldId = Long.valueOf(id);
-					return Long.valueOf(oldId).toString();
-				} catch (Exception e) {
-					return "";
-				}
-			}
-		} else
-			return "";
+	    return UtilMethods.isSet(id) ? id : StringPool.BLANK;
+
 	}
 	
 	public boolean exists(){
-	   return !("".equals(getId()));
+	   return UtilMethods.isSet(id);
 	}
 	
 
-	public void setId(String id) {
-		if(id == null||id == "")
-			this.id = null;
-		else if (id.contains("-")) {
-			UUID uuid = UUID.fromString(id);
-			this.id = uuid.toString();
-		}else if(!id.equals(Host.SYSTEM_HOST)){
-			try {
-				long oldId = Long.parseLong(id);
-				this.id = Long.valueOf(oldId).toString();
-			} catch (Exception e) {
-				this.id = "";
-			}
-		}else if(id.equals(Host.SYSTEM_HOST)){
-			this.id = id;
-		}
+	public void setId(final String id) {
+	    this.id = UtilMethods.isSet(id) ? id : null;
 	}
 
 	public void setInode(String inode) {
@@ -196,39 +169,8 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
 			setAssetName(uRI.substring(uRI.lastIndexOf("/")+1));
 		}
 	}
-	public void addChild(Inode i) {
-		Tree tree = TreeFactory.getTree(this.id, i.inode, "child");
-		if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())) {
-			tree.setParent(this.id);
-			tree.setChild(i.getInode());
-			tree.setRelationType("child");
-			TreeFactory.saveTree(tree);
-		}
-	}
 
-	public void addChild(Identifier i, String relationType, int sortOrder) {
-		Tree tree = TreeFactory.getTree(this.id, i.id, relationType);
-		if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())) {
-			tree.setParent(this.id);
-			tree.setChild(i.getInode());
-			tree.setRelationType(relationType);
-			tree.setTreeOrder(sortOrder);
-			TreeFactory.saveTree(tree);
-		} else {
-			tree.setRelationType(relationType);
-			tree.setTreeOrder(sortOrder);
-			TreeFactory.saveTree(tree);
-		}
-	}
-	
-	public boolean deleteChild(Inode child) {
-		Tree tree = TreeFactory.getTree(this.id, child.getInode(), "child");
-		if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())) {
-			return false;
-		}
-		TreeFactory.deleteTree(tree);
-		return true;
-	}
+
 
 	public List<PermissionSummary> acceptedPermissions() {
 		return null;

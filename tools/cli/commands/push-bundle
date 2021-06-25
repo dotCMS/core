@@ -1,0 +1,57 @@
+#!/bin/bash
+set -e
+. "$DOTCLI_WORKDIR/common"
+
+
+help_push_bundle() {
+  echo "
+Command: bundle
+
+This command takes a directory that serves as the entry point for all the assets,content-types,files,site etc.
+the expected directory structure looks like this:
+/ sites
+    |- SYSTEM_HOST.site.json
+    |- demo.dotcms.com.site.json
+  / content-types
+    |- blog.contentype.json
+    |- story.contentype.json
+  / files
+         |- en-US (language)
+            |- demo.dotcms.com (site)
+               |- images (Folder)
+               |   - file1
+               |   - file2
+               |- application
+                   - file3
+                   - file4
+
+Usage:
+  ./dot-cli --bundle ~/code/etc/bundle
+  or
+  ./dot-cli --bundle ~/code/etc/bundle
+   "
+  exit 1
+}
+
+[[ ! -n "$1" ]] && help_push_bundle
+
+
+dir="$1"
+
+if [[ ! -d "$dir" ]]; then
+    echo " The directory $dir does not exist."
+    exit 1
+fi
+
+cli_log "::: Pushing Bundle :::"
+
+  cli_log "Processing sites directory."
+  bash "$DOTCLI_WORKDIR/commands/push-sites" "$dir"
+
+  cli_log "Processing content-types directory."
+  bash "$DOTCLI_WORKDIR/commands/push-content-types" "$dir"
+
+  cli_log "Processing file directory."
+  bash "$DOTCLI_WORKDIR/commands/push-files" "$dir"
+
+cli_log "::: Done Pushing Bundle :::"

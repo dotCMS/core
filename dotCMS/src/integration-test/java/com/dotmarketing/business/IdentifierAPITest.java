@@ -51,6 +51,6 @@ public class IdentifierAPITest {
         Assert.assertEquals(fakeId, cache.getIdentifier(fakeId).getId());
         Assert.assertEquals(fakeId, cache.getIdentifier(syshost.getIdentifier(), "/content."+fakeCont.getInode()).getId());
         
-        
+
     }
 }

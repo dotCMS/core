@@ -1,0 +1,62 @@
+#!/bin/bash
+set -e
+. "$DOTCLI_WORKDIR/common"
+
+
+help_push_sites() {
+  echo "
+Command: sites
+
+This command takes a directory that contains site definitions
+
+Usage:
+  ./dot-cli --sites ~/code/etc/bundle/sites
+  or
+  ./dot-cli --sites ~/code/etc/bundle/sites
+   "
+  exit 1
+}
+
+[[ ! -n "$1" ]] && help_push_sites
+
+cli_log "Pushing Sites "
+
+dir="$1"
+
+if [[ ! -d "$dir" ]]; then
+    echo " The directory $dir does not exist."
+    exit 1
+fi
+
+# for the given working directory we need to explore and determine what folder was meant to hold content-types, what folder was meant to hold sites, files and so on.
+for entry in "$dir"/*
+do
+     #echo "$entry"
+     case ${entry} in
+       *sites)
+       sitesDir=${entry}
+       ;;
+     esac
+done
+
+# Now we process sites first
+if [[ -z ${sitesDir+x} ]];
+   then cli_log "I wasn't able to find the sites directory";
+
+else
+    echo "Processing sites."
+
+    for entry in "$sitesDir"/*
+    do
+        echo "$entry"
+        if [[ -f "$entry" && "$entry" == *.site.json ]]
+         then
+             bash "$DOTCLI_WORKDIR/commands/site" "$entry"
+         else
+         echo "$entry entry has been skipped - file must end like '.site.json' ."
+        fi
+    done
+
+    echo "done processing sites."
+
+fi

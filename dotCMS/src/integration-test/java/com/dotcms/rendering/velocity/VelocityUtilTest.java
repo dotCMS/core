@@ -8,7 +8,7 @@ import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
@@ -77,7 +77,7 @@ public class VelocityUtilTest {
     public void test_getPageCacheKey_returnNull() throws Exception{
         final HttpServletRequest request = new MockSessionRequest(
                 new MockAttributeRequest(
-                        new MockHttpRequest("localhost", "/").request()
+                        new MockHttpRequestIntegrationTest("localhost", "/").request()
                 ).request())
                 .request();
 
@@ -121,7 +121,7 @@ public class VelocityUtilTest {
     
         final HttpServletRequest request = new MockSessionRequest(
                 new MockAttributeRequest(
-                        new MockHttpRequest("localhost", "/").request()
+                        new MockHttpRequestIntegrationTest("localhost", "/").request()
                 ).request())
                 .request();
     
@@ -172,7 +172,7 @@ public class VelocityUtilTest {
     public void test_servlet_context_is_not_available_in_velocity() throws Exception {
 
         final HttpServletRequest request = new MockSessionRequest(
-                        new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request()).request();
+                        new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request()).request();
 
         final HttpServletResponse response = new MockHttpResponse().response();
 
