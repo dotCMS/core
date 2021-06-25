@@ -9,6 +9,7 @@ import static com.dotmarketing.util.WebKeys.DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_REC
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
@@ -100,7 +101,8 @@ public class ConfigurationHelper implements Serializable {
 		String loginScreenLogo = Try.of(() -> APILocator.getCompanyAPI().getDefaultCompany().getCity()).getOrElse("NA");
 		loginScreenLogo = UtilMethods.isSet(loginScreenLogo) && loginScreenLogo.startsWith("/dA") ? loginScreenLogo : "NA";
 		String navBarLogo = Try.of(() -> APILocator.getCompanyAPI().getDefaultCompany().getState()).getOrElse("NA");
-		navBarLogo = UtilMethods.isSet(navBarLogo) && navBarLogo.startsWith("/dA") ? navBarLogo : "NA";
+		navBarLogo = LicenseUtil.getLevel() > LicenseLevel.COMMUNITY.level &&
+				UtilMethods.isSet(navBarLogo) && navBarLogo.startsWith("/dA") ? navBarLogo : "NA";
 
 	    try {
 			backgroundColor = APILocator.getCompanyAPI().getDefaultCompany().getSize();
