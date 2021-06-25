@@ -133,13 +133,19 @@ public class DotTemplateTool implements ViewTool {
         layoutCache.invalidate(templateInode + true);
     }
 
-    private static DrawedBody getDrawedBody(String themeInodeOrId, User user) throws DotDataException, DotSecurityException {
-        final Template template = FactoryLocator.getTemplateFactory().find(themeInodeOrId);//If null themeInodeOrId is a Id
-        final String identifier = template!=null ? template.getIdentifier() : themeInodeOrId;
+    private static DrawedBody getDrawedBody(String templateInodeOrId, User user) throws DotDataException, DotSecurityException {
+        final boolean isIdentifier = APILocator.getIdentifierAPI().isIdentifier(templateInodeOrId);
+        String identifier = templateInodeOrId;
+        if(!isIdentifier){
+            final Template template = FactoryLocator.getTemplateFactory().find(templateInodeOrId);
+            identifier = template!=null ? template.getIdentifier() :
+                    APILocator.getIdentifierAPI().findFromInode(templateInodeOrId).getId();//this is for fileAssetTemplates
+        }
         final Template workingTemplate = APILocator.getTemplateAPI().findWorkingTemplate(identifier, user, false);
 
+
         if (!workingTemplate.isDrawed()){
-            throw new RuntimeException("Template with inode: " + themeInodeOrId + " is not drawed");
+            throw new RuntimeException("Template with inode: " + templateInodeOrId + " is not drawed");
         }
 
         return new DrawedBody(workingTemplate.getTitle(), workingTemplate.getDrawedBody());
