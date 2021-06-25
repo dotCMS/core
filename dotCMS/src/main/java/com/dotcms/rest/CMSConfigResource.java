@@ -1,6 +1,8 @@
 package com.dotcms.rest;
 
 import com.dotcms.company.CompanyAPI;
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.environment.bean.Environment;
@@ -21,6 +23,7 @@ import com.liferay.portal.ejb.CompanyManagerUtil;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
@@ -63,7 +66,7 @@ public class CMSConfigResource {
      * @param secondaryColor this one is the Secondary Color
      * @param homeURL
      * @param loginLogo dotAsset Path of the logo showed at the login screen
-     * @param navLogo dotAsset Path of the logo showed at the nav bar
+     * @paramnavLogo dotAsset Path of the logo showed at the nav bar
      * @return
      * @throws IOException
      * @throws JSONException
@@ -84,9 +87,15 @@ public class CMSConfigResource {
             @FormParam("street") final String secondaryColor,
             @FormParam("homeURL") final String homeURL,
             @FormParam("city") final String loginLogo,
-            @FormParam("state") final String navLogo) throws IOException, JSONException {
+            @FormParam("state") String navLogo) throws IOException, JSONException {
 
         InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, request, response, true, PortletID.CONFIGURATION.toString() );
+
+        //Nav Logo Feature is not for Community level license
+        if(LicenseUtil.getLevel() == LicenseLevel.COMMUNITY.level && UtilMethods.isSet(navLogo)){
+            Logger.warn(this,"NavLogo Feature is only for Enterprise Edition");
+            navLogo = StringPool.BLANK;
+        }
 
         Map<String, String> paramsMap = initData.getParamsMap();
         paramsMap.put( "portalURL", portalURL );

@@ -1,5 +1,14 @@
 package com.dotmarketing.common.reindex;
 
+import java.sql.SQLException;
+import java.time.Duration;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import org.elasticsearch.action.bulk.BulkProcessor;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.SystemCache;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
@@ -24,17 +33,6 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
-import io.vavr.control.Try;
-import java.sql.SQLException;
-import java.time.Duration;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import org.elasticsearch.action.bulk.BulkProcessor;
-import org.elasticsearch.action.bulk.BulkRequest;
 
 /**
  * This thread is in charge of re-indexing the contenlet information placed in the
@@ -90,28 +88,31 @@ public class ReindexThread {
     private final int SLEEP_ON_ERROR = Config.getIntProperty("REINDEX_THREAD_SLEEP_ON_ERROR", 500);
     private long contentletsIndexed = 0;
     // bulk up to this many requests
-    public static final int ELASTICSEARCH_BULK_ACTIONS = Config
-            .getIntProperty("REINDEX_THREAD_ELASTICSEARCH_BULK_ACTIONS", 250);
-    //how many threads will be used per shard
-    public static final int ELASTICSEARCH_CONCURRENT_REQUESTS = Config
-            .getIntProperty("REINDEX_THREAD_CONCURRENT_REQUESTS", 1);
-    //Bulk size in MB. -1 means disabled
-    public static final int ELASTICSEARCH_BULK_SIZE = Config
-            .getIntProperty("REINDEX_THREAD_ELASTICSEARCH_BULK_SIZE", 10);
-    //Time (in seconds) to wait before closing bulk processor in a full reindex
-    private static final int BULK_PROCESSOR_AWAIT_TIMEOUT = Config
-            .getIntProperty("BULK_PROCESSOR_AWAIT_TIMEOUT", 20);
-    private ThreadState STATE = ThreadState.RUNNING;
-    private Future<?>  threadRunning;
-    private final ExecutorService executor = Executors.newSingleThreadExecutor(
-            new ThreadFactoryBuilder().setNameFormat("reindex-thread-%d").build()
-    );
+    public static final int ELASTICSEARCH_BULK_ACTIONS =
+                    Config.getIntProperty("REINDEX_THREAD_ELASTICSEARCH_BULK_ACTIONS", 10);
 
-    private final static String REINDEX_THREAD_PAUSED="REINDEX_THREAD_PAUSED";
-    static Lazy<SystemCache>  cache = Lazy.of(()-> CacheLocator.getSystemCache());
-    
-    
-    
+    // How often should the bulk request processor should flush its request - default 3 seconds
+    public static final int ELASTICSEARCH_BULK_FLUSH_INTERVAL =
+                    Config.getIntProperty("REINDEX_THREAD_ELASTICSEARCH_BULK_FLUSH_INTERVAL_MS", 3000);
+
+    // Setting this to number > 0 makes each bulk request asynchronous,
+    // If set to 0 the bulk requests will be performed synchronously
+    public static final int ELASTICSEARCH_CONCURRENT_REQUESTS =
+                    Config.getIntProperty("REINDEX_THREAD_CONCURRENT_REQUESTS", 1);
+
+    // Max Bulk size in MB. -1 means disabled
+    public static final int ELASTICSEARCH_BULK_SIZE =
+                    Config.getIntProperty("REINDEX_THREAD_ELASTICSEARCH_BULK_SIZE", 1);
+
+    // Time (in seconds) to wait before closing bulk processor in a full reindex
+    private static final int BULK_PROCESSOR_AWAIT_TIMEOUT = Config.getIntProperty("BULK_PROCESSOR_AWAIT_TIMEOUT", 20);
+    private ThreadState STATE = ThreadState.RUNNING;
+    private Future<?> threadRunning;
+    private final ExecutorService executor = Executors
+                    .newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("reindex-thread-%d").build());
+
+    private final static String REINDEX_THREAD_PAUSED = "REINDEX_THREAD_PAUSED";
+    private final static Lazy<SystemCache> cache = Lazy.of(() -> CacheLocator.getSystemCache());
     
     
     
@@ -208,10 +209,7 @@ public class ReindexThread {
         }
         
         
-        if (!workingRecords.isEmpty()) {
-          // if this is a reindex record
-          if (indexAPI.isInFullReindex()
-              || Try.of(()-> workingRecords.values().stream().findFirst().get().getPriority() >= ReindexQueueFactory.Priority.STRUCTURE.dbValue()).getOrElse(false) ) {
+        if (!workingRecords.isEmpty() && !ElasticReadOnlyCommand.getInstance().isIndexOrClusterReadOnly()) {
               if (bulkProcessor == null || rebuildBulkIndexer.get()) {
                   closeBulkProcessor(bulkProcessor);
                   bulkProcessorListener = new BulkProcessorListener();
@@ -221,9 +219,7 @@ public class ReindexThread {
               indexAPI.appendToBulkProcessor(bulkProcessor, workingRecords.values());
               contentletsIndexed += bulkProcessorListener.getContentletsIndexed();
               // otherwise, reindex normally
-          } else if (!ElasticReadOnlyCommand.getInstance().isIndexOrClusterReadOnly()){
-              reindexWithBulkRequest(workingRecords);
-          }
+          
         } 
       } catch (Exception ex) {
         Logger.error(this, "ReindexThread Exception", ex);
@@ -244,15 +240,7 @@ public class ReindexThread {
     }
   }
 
-    private void reindexWithBulkRequest(Map<String, ReindexEntry> workingRecords)
-            throws DotDataException {
-        BulkRequest bulk = indexAPI.createBulkRequest();
-        bulk = indexAPI.appendBulkRequest(bulk, workingRecords.values());
 
-        contentletsIndexed += bulk.numberOfActions();
-        Logger.info(this.getClass(), "---  ReindexThread total/todo/bulk: " + contentletsIndexed + "/" + workingRecords.size() + "/"  + bulk.numberOfActions());
-        indexAPI.putToIndex(bulk, new BulkActionListener(workingRecords));
-    }
 
     private boolean switchOverIfNeeded() throws LanguageException, DotDataException, SQLException, InterruptedException {
         if (ESReindexationProcessStatus.inFullReindexation() && queueApi.recordsInQueue() == 0) {

@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "acd83cec-ce57-4aa4-8df1-b51dee2e610a",
+		"_postman_id": "f8e6f36f-0e13-4a74-8439-9cc82852be81",
 		"name": "GraphQL",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -5415,7 +5415,7 @@
 								}
 							]
 						},
-						"description": "Imports a Bundle that includes:\n* Imports personas"
+						"description": "Imports a Bundle that includes:\n* Content with renderable fields"
 					},
 					"response": []
 				},
@@ -5426,7 +5426,7 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Filtered relationship fetched\", function () {",
+									"pm.test(\"Content field values are rendered and not rendered as requested\", function () {",
 									"    var jsonData = pm.response.json();",
 									"",
 									"    var contentlet = jsonData.data.TypeWithRedereableFieldsCollection[0];",
@@ -5474,6 +5474,136 @@
 							]
 						},
 						"description": "This tests that: \n* It's possible to request rendered content fields.\n* It's possible to request unrendered content fields. \n* It's possible to request the same field in both rendered and unrendered forms.   \n* If \"render\" argument is not specified, then it defaults to render:false"
+					},
+					"response": []
+				},
+				{
+					"name": "pre_ImportBundleWithContentWithBadVelocity",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"contentWithBadVelocity.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/contentWithBadVelocity.tar.gz"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* Content with a body field that can't be velocity-rendered"
+					},
+					"response": []
+				},
+				{
+					"name": "Render content with field with bad velocity",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"When error rendering field value then original field value is returned\", function () {",
+									"    var jsonData = pm.response.json();",
+									"",
+									"    var contentlet = jsonData.data.webPageContentCollection[0];",
+									"    ",
+									"    pm.expect(contentlet.body).to.eql(\"<p>&lt;p&gt;By default, CSS styles controlling the appearance of form fields reside in the following dotCMS directory:&amp;nbsp;/html/css/content/forms.css. However, redefining the CSS classes controlling the styling of form fields is fairly simple.&lt;/p&gt;\\\\n&lt;p&gt;Setting the &lt;b&gt;$contentFormMacroCSS&lt;/b&gt;&amp;nbsp;velocity variable on the Template, Container, or in a piece of content above the form on the page will over-ride the default CSS controlling form field styling. An example of the set command to a relative path is given below:&lt;/p&gt;\\\\n&lt;p&gt;&lt;b&gt;#set($contentFormMacroCSS = \\\\\\\"/global/css/&lt;span&gt;&lt;font color=\\\\\\\"#3366ff\\\\\\\"&gt;mycustomcssfile.css&lt;/font&gt;&lt;/span&gt;\\\\\\\")&lt;/b&gt;&lt;/p&gt;\\\\n&lt;p&gt;As long as the customized CSS file is read after the default dotCMS file, and before the Form itself, then the styles for the form fields will be over-ridden.&lt;/p&gt;</p>\");",
+									"    ",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n \n    webPageContentCollection(query: \"+identifier:4b70c644-8111-496b-95c3-2cf9a942f20d\") {\n      title\n      body(render: true)\n    }\n  \n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "This tests that: \n* Requesting the field \"body\" with `render:true` returns the original field value when the field value is unable to be rendered."
 					},
 					"response": []
 				}
