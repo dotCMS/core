@@ -75,6 +75,7 @@ import com.dotmarketing.portlets.folders.business.FolderFactoryImplTest;
 import com.dotmarketing.portlets.folders.model.FolderTest;
 import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtilTest;
 import com.dotmarketing.portlets.templates.business.TemplateFactoryImplTest;
+import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
 import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
 import com.dotmarketing.quartz.DotStatefulJobTest;
@@ -423,7 +424,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task210520UpdateAnonymousEmailTest.class,
         Task210510UpdateStorageTableDropMetadataColumnTest.class,
         StaticPushPublishBundleGeneratorTest.class,
-        CookieToolTest.class
+        CookieToolTest.class,
+        MoveContentActionletTest.class
 })
 public class MainSuite {
 
