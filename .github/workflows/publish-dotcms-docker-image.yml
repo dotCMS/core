@@ -43,7 +43,7 @@ jobs:
           version: ${{ ENV.DOTCMS_VERSION }}
           hash: ${{ env.BUILD_HASH }}
           label: ${{ github.event.inputs.custom_label }}
-          updateStable: ${{ github.event.inputs.updata_stable_tags }}
+          update_stable: ${{ github.event.inputs.updata_stable_tags }}
       - name: Publish docker image
         id: publish-docker-image
         uses: dotcms/publish-docker-image-action@main
