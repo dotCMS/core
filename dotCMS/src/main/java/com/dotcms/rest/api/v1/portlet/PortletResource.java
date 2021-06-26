@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.portlet;
 
 import static com.dotcms.util.CollectionsUtils.map;
+import static com.liferay.portal.model.Portlet.DATA_VIEW_MODE_KEY;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.portlet.WindowState;
@@ -94,6 +95,7 @@ public class PortletResource implements Serializable {
       initValues.put("name", formData.portletName);
       initValues.put("baseTypes", formData.baseTypes);
       initValues.put("contentTypes", formData.contentTypes);
+      initValues.put(DATA_VIEW_MODE_KEY, formData.dataViewMode);
 
       final Portlet newPortlet = APILocator.getPortletAPI()
           .savePortlet(new DotPortlet(formData.portletId, contentPortlet.getPortletClass(), initValues), initData.getUser());
@@ -211,21 +213,62 @@ public class PortletResource implements Serializable {
 
     }
 
+    /**
+     * This endpoint returns a portlet's details given its id
+     * @param request
+     * @param portletId
+     * @return
+     */
+    @GET
+    @JSONP
+    @Path("/{portletId}")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response findPortlet(@Context final HttpServletRequest request,
+            @PathParam("portletId") final String portletId) {
+
+        try {
+            final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                    .requiredBackendUser(true)
+                    .requiredFrontendUser(false)
+                    .requestAndResponse(request, null)
+                    .rejectWhenNoUser(true)
+                    .init();
+
+            final User user = initData.getUser();
+
+            if (!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(portletId, user)) {
+                return ResponseUtil.INSTANCE
+                        .getErrorResponse(request, Response.Status.UNAUTHORIZED, user.getLocale(),
+                                user.getUserId(), "unable to get portlet info");
+            }
+
+            return Response.ok(new ResponseEntityView(
+                    map("response", APILocator.getPortletAPI().findPortlet(portletId)))).build();
+        } catch (Exception e) {
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    }
+
     @GET
     @JSONP
     @Path("/{portletId}/_doesuserhaveaccess")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response doesUserHaveAccessToPortlet(@Context final HttpServletRequest request,
-            @PathParam("portletId") final String portletId) throws DotDataException {
+            @PathParam("portletId") final String portletId) {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, null)
                 .rejectWhenNoUser(true)
                 .init();
-        return Response.ok(new ResponseEntityView(map("response", APILocator.getLayoutAPI()
-                .doesUserHaveAccessToPortlet(portletId, initData.getUser())))).build();
+        try {
+            return Response.ok(new ResponseEntityView(map("response", APILocator.getLayoutAPI()
+                    .doesUserHaveAccessToPortlet(portletId, initData.getUser())))).build();
+        } catch (Exception e) {
+            return ResponseUtil.mapExceptionResponse(e);
+        }
     }
 
     /**
