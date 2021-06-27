@@ -58,6 +58,7 @@ import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.storage.StoragePersistenceAPITest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
 import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
+import com.dotmarketing.business.DeterministicIdentifierAPITest;
 import com.dotmarketing.business.helper.PermissionHelperTest;
 import com.dotmarketing.cache.FolderCacheImplIntegrationTest;
 import com.dotmarketing.common.db.DBTimeZoneCheckTest;
@@ -425,7 +426,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task210510UpdateStorageTableDropMetadataColumnTest.class,
         StaticPushPublishBundleGeneratorTest.class,
         CookieToolTest.class,
-        MoveContentActionletTest.class
+        MoveContentActionletTest.class,
+        DeterministicIdentifierAPITest.class
 })
 public class MainSuite {
 

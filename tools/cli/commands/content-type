@@ -1,0 +1,117 @@
+#!/bin/bash
+set -e
+. "$DOTCLI_WORKDIR/common"
+
+help_push_content_type() {
+  echo "
+Command: content-type
+
+This command takes a json file describing the CT that will be pushed/updated
+
+Usage:
+  ./dot-cli --content-type ~/code/etc/content-type.json
+  or
+  ./dot-cli --content-type ~/code/etc/content-type.json
+   "
+  exit 1
+}
+
+[[ ! -n "$1" ]] && help_push_content_type
+
+
+file="$1"
+
+if [[ ! -f "$file" ]]; then
+    echo " The file $file does not exist."
+    exit 1
+fi
+
+#try
+{
+
+jsonContentType=$(<${file})
+
+# verify if there's a place holder that needs replacements
+sitePlaceHolder=$(jq -r ' try .host' <<< "$jsonContentType")
+
+## if the property site on the incoming content-type json file has a place holder instead of an identifier do string substitution
+if [[ ${sitePlaceHolder} == \$* ]]; then
+    #Make a copy of the json file so we can work on it
+    working="$file.working";
+    cp ${file} ${working}
+
+    siteIndentifiers=$(< $identifiersFile)
+    site=$(echo $sitePlaceHolder | sed "s/\\$//g")
+    var=$(echo "$siteIndentifiers" | grep "$site")
+    identifier=$(echo $var | sed "s/.*=//g")
+    #replace the place holder in the file with the real identifier
+    sed -i ' ' "s/\\$sitePlaceHolder/$identifier/g" "${working}";
+    #Now that we have done the substitution on our working copy
+    #We can refresh the jsonContentType var
+    jsonContentType=$(<${working})
+fi
+
+
+contentTypeVar=$(jq -r ' try .variable' <<< "$jsonContentType")
+
+if [[ ! -z contentTypeVar ]]; then
+
+    echo "Content-type Variable name loaded is $contentTypeVar verifying against remote host."
+
+    code=$(curl -s -o /dev/null --head -w "%{http_code}" --header "Authorization: Bearer ${JSON_WEB_TOKEN}" "${DOTCMS_BASE_URL}/api/v1/contenttype/id/${contentTypeVar}" )
+
+    echo " response code was $code"
+
+    if [[ ${code} = 401 ]]; then
+         echo "Unauthorized Request - Verify your Credentials."
+         exit 1
+    fi
+
+    if [[ ${code} = 404 ]]
+    then
+       echo "Content-type does not exists on remote site. Add will be attempted."
+
+       response=$(curl -s "${DOTCMS_BASE_URL}/api/v1/contenttype"  --header "Authorization: Bearer ${JSON_WEB_TOKEN}" --header 'Content-Type: application/json' --data-raw  "$jsonContentType"  --compressed)
+       echo "$response"
+       identifier=$(jq -r ' try .entity[].id' <<< "$response")
+
+           if [[ -z ${identifier} ]];
+           then
+            echo "Unable to get identifier from response adding CT ${contentTypeVar}. Please check if there were any error messages."
+           else
+             echo "New content-type identifier :: $identifier"
+             printf "${contentTypeVar}=${identifier}\n" >> "$identifiersFile"
+           fi
+
+    else
+          echo "A content type named $contentTypeVar already exists. Update will be attempted."
+
+          response=$(curl -s -X PUT "${DOTCMS_BASE_URL}/api/v1/contenttype/id/${contentTypeVar}"  --header "Authorization: Bearer ${JSON_WEB_TOKEN}" --header 'Content-Type: application/json' --data-raw  "$jsonContentType"  --compressed)
+          echo "$response"
+
+          identifier=$(jq -r ' try .entity[].id' <<< "$response")
+
+          if [[ -z ${identifier} ]];
+          then
+            echo "Unable to get identifier from response updating CT ${contentTypeVar}. Please check if there were any error messages."
+
+          else
+           echo " Updated content-type identifier :: $identifier"
+           printf "${contentTypeVar}=${identifier}\n" >> "$identifiersFile"
+          fi
+
+    fi
+
+else
+  echo "Unable to get content type variable"
+fi
+
+#catch
+} || {
+   echo " Unexpected Exception generating CT"
+}
+
+#finally
+if [[  -f ${working} ]]; then
+     rm ${working}
+fi

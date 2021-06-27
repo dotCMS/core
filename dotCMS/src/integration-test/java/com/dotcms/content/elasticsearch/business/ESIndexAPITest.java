@@ -9,16 +9,21 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
+
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
-import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.UtilMethods;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Lazy;
+import io.vavr.control.Try;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.elasticsearch.action.admin.indices.settings.get.GetSettingsRequest;
@@ -27,7 +32,9 @@ import org.elasticsearch.client.RequestOptions;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+@RunWith(DataProviderRunner.class)
 public class ESIndexAPITest {
 
     private static ESIndexAPI esIndexAPI;
@@ -225,5 +232,58 @@ public class ESIndexAPITest {
 
     }
 
+    @DataProvider
+    public static Object[] testDeleteOldIndicesDP() {
+        return new Integer[]{2, 0, 5, 50};
+    }
+
+    /**
+     * Method to test: {@link ESIndexAPI#deleteInactiveLiveWorkingIndices(int)}
+     * Given scenario: different numbers for the live/working sets to be kept (not deleted)
+     * Expected result: indices older than the live/working index-set indicated to be kept are successfully deleted
+     */
+    @Test
+    @UseDataProvider("testDeleteOldIndicesDP")
+    public void testDeleteOldIndices(final int inactiveLiveWorkingSetsToKeep) throws DotIndexException, IOException, InterruptedException {
+        // get live and working active indices
+        final IndiciesInfo info = Try.of(()->APILocator.getIndiciesAPI().loadIndicies())
+                .getOrNull();
+
+        final String liveIndex = info.getLive();
+        final String workingIndex = info.getWorking();
+        final int LIVE_AND_WORKING_COUNT = 2;
+
+        // create a few working/live indices
+        final ContentletIndexAPI contentletIndexAPI = APILocator.getContentletIndexAPI();
+
+        List<String> indicesThatShouldStay = new ArrayList<>();
+
+        for(int i=0; i<6; i++) {
+            info.createNewIndiciesName(IndexType.REINDEX_WORKING, IndexType.REINDEX_LIVE);
+            contentletIndexAPI.createContentIndex(info.getReindexWorking(), 0);
+            contentletIndexAPI.createContentIndex(info.getReindexLive(), 0);
+
+            if(i>=6-inactiveLiveWorkingSetsToKeep) {
+                indicesThatShouldStay.add(esIndexAPI.removeClusterIdFromName(info.getReindexWorking()));
+                indicesThatShouldStay.add(esIndexAPI.removeClusterIdFromName(info.getReindexLive()));
+            }
+            Thread.sleep(1000);
+        }
+
+        esIndexAPI.deleteInactiveLiveWorkingIndices(inactiveLiveWorkingSetsToKeep);
+
+        List<String> indicesAfterDeletion = esIndexAPI.getLiveWorkingIndicesSortedByCreationDateDesc();
+        // assert active live index wasn't removed
+        assertTrue(indicesAfterDeletion.contains(esIndexAPI.removeClusterIdFromName(liveIndex)));
+        // assert active working index wasn't removed
+        assertTrue(indicesAfterDeletion.contains(esIndexAPI.removeClusterIdFromName(workingIndex)));
+        // assert proper resulting size
+        assertTrue(LIVE_AND_WORKING_COUNT + inactiveLiveWorkingSetsToKeep*2 >= indicesAfterDeletion.size());
+        // assert expected indices to stay
+        for (String indexThatShouldStay : indicesThatShouldStay) {
+            assertTrue(indicesAfterDeletion.contains(indexThatShouldStay));
+        }
+
+    }
 
 }

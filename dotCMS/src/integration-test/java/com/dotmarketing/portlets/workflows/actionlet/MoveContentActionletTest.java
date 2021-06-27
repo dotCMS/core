@@ -38,6 +38,10 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
+/**
+ * Test for the actionlet {@link MoveContentActionlet}
+ * @author jsanca
+ */
 public class MoveContentActionletTest extends BaseWorkflowIntegrationTest {
 
     private static CreateSchemeStepActionResult schemeStepActionResult = null;
