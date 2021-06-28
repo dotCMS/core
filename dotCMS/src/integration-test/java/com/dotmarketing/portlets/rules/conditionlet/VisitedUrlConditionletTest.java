@@ -21,7 +21,7 @@ import org.junit.rules.ExpectedException;
 
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Clickstream;
@@ -61,7 +61,7 @@ public class VisitedUrlConditionletTest {
 
 
   static HttpServletRequest request(String url) throws Exception {
-    HttpServletRequest request = new MockHttpRequest(host.getHostname(),url).request();
+    HttpServletRequest request = new MockHttpRequestIntegrationTest(host.getHostname(),url).request();
     request.getSession().setAttribute("clickstream", clickStream);
     request.setAttribute(WebKeys.CLICKSTREAM_IDENTIFIER_OVERRIDE, url);
     request.removeAttribute("CLICKSTREAM_RECORDED");
@@ -257,10 +257,10 @@ public class VisitedUrlConditionletTest {
     // Test when visited urls are empty
 
     if (comparison.equalsIgnoreCase(IS_NOT.getId())) {
-      Assert.assertTrue(visitedConditionlet.evaluate(new MockHttpRequest(host.getHostname(), "test").request(), response, INDEX, instance));
+      Assert.assertTrue(visitedConditionlet.evaluate(new MockHttpRequestIntegrationTest(host.getHostname(), "test").request(), response, INDEX, instance));
     } else {
       Assert
-          .assertFalse(visitedConditionlet.evaluate(new MockHttpRequest(host.getHostname(), "test").request(), response, INDEX, instance));
+          .assertFalse(visitedConditionlet.evaluate(new MockHttpRequestIntegrationTest(host.getHostname(), "test").request(), response, INDEX, instance));
     }
   }
 }

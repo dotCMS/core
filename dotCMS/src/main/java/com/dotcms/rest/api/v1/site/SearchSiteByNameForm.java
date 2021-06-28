@@ -9,14 +9,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class SearchSiteByNameForm {
 
-    private final String sitename;
+    private final String siteName;
 
     @JsonCreator
-    public SearchSiteByNameForm(@JsonProperty("sitename") final String sitename) {
-        this.sitename = sitename;
+    public SearchSiteByNameForm(@JsonProperty("siteName") final String siteName) {
+        this.siteName = siteName;
     }
 
-    public String getSitename() {
-        return sitename;
+    public String getSiteName() {
+        return siteName;
     }
 }

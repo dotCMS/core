@@ -21,7 +21,7 @@ import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.InitDataObject;
@@ -238,7 +238,7 @@ public class ContentTypeResourceTest {
 	@Test
 	public void getContentTypes() throws DotDataException {
 		final HttpServletRequest request  = new MockHeaderRequest(
-				new MockSessionRequest(new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+				new MockSessionRequest(new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
 						.request());
 		final WebResource webResource = mock(WebResource.class);
 		final InitDataObject initDataObject = mock(InitDataObject.class);
@@ -268,7 +268,7 @@ public class ContentTypeResourceTest {
 	@Test(expected = DotDataException.class)
 	public void getContentTypes_GivenNotExistingTypeName_ShouldThrowError() throws DotDataException {
 		final HttpServletRequest request  = new MockHeaderRequest(
-				new MockSessionRequest(new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+				new MockSessionRequest(new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
 						.request());
 		final WebResource webResource = mock(WebResource.class);
 		final InitDataObject initDataObject = mock(InitDataObject.class);
@@ -294,7 +294,7 @@ public class ContentTypeResourceTest {
 	@Test
 	public void getContentTypesWithoutType() throws DotDataException {
 		final HttpServletRequest request  = new MockHeaderRequest(
-				new MockSessionRequest(new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+				new MockSessionRequest(new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
 						.request());
 		final WebResource webResource = mock(WebResource.class);
 		final InitDataObject initDataObject = mock(InitDataObject.class);
@@ -448,7 +448,7 @@ public class ContentTypeResourceTest {
 	static HttpServletRequest getHttpRequest() {
 		MockHeaderRequest request = new MockHeaderRequest(
 				(
-						new MockSessionRequest(new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+						new MockSessionRequest(new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
 				).request()
 		);
 

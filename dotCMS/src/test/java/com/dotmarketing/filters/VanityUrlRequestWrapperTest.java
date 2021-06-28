@@ -7,7 +7,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.junit.Test;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestUnitTest;
 import com.dotcms.mock.request.MockParameterRequest;
 import com.dotcms.vanityurl.filters.VanityUrlRequestWrapper;
 import com.dotcms.vanityurl.model.VanityUrlResult;
@@ -36,7 +36,7 @@ public class VanityUrlRequestWrapperTest {
 
         // two url params (2 overlap)
         final HttpServletRequest baseRequest = new MockParameterRequest(
-                        new MockHttpRequest("testing", "/test?param1=" + URL + "&param2=" + URL).request(), formParameters)
+                        new MockHttpRequestUnitTest("testing", "/test?param1=" + URL + "&param2=" + URL).request(), formParameters)
                                         .request();
 
         // two vanity params (1 overlaps)
@@ -76,7 +76,7 @@ public class VanityUrlRequestWrapperTest {
     public void test_that_query_string_has_all_the_parameters() {
 
 
-        final HttpServletRequest baseRequest = new MockHttpRequest("testing", "/test?param1=" + URL + "&param2=" + URL).request();
+        final HttpServletRequest baseRequest = new MockHttpRequestUnitTest("testing", "/test?param1=" + URL + "&param2=" + URL).request();
 
         final VanityUrlResult vanityUrlResult = new VanityUrlResult("/newUrl", "param2=" + VANITY + "&param3=" + VANITY, false);
 

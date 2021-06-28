@@ -2,6 +2,7 @@ package com.dotcms.enterprise.publishing.remote.bundler;
 
 import com.dotcms.datagen.*;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.FilterDescriptor;
@@ -101,7 +102,7 @@ public class TemplateBundlerTest {
         final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
 
         final PushPublisherConfig config = new PushPublisherConfig();
-        config.setTemplates(set(template.getIdentifier()));
+        config.add(template, PusheableAsset.TEMPLATE);
         config.setOperation(PublisherConfig.Operation.PUBLISH);
 
         final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config);

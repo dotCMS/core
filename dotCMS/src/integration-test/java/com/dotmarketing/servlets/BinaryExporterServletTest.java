@@ -9,10 +9,9 @@ import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockServletPathRequest;
 import com.dotcms.mock.request.MockSessionRequest;
-import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.mock.response.MockHttpCaptureResponse;
 import com.dotcms.mock.response.MockHttpStatusResponse;
 import com.dotcms.util.CollectionsUtils;
@@ -27,7 +26,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
@@ -39,11 +37,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -216,7 +212,7 @@ public class BinaryExporterServletTest {
 
     private HttpServletRequest mockServletRequest(final String fileURI) {
         return new MockSessionRequest(new MockServletPathRequest(
-                new MockHttpRequest("localhost", fileURI).request(),
+                new MockHttpRequestIntegrationTest("localhost", fileURI).request(),
                 "/contentAsset"));
     }
 
