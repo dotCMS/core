@@ -424,11 +424,11 @@ prepareIntegrationTests.group='dotCMS tests'
 
 task dowloadStarterForTests {
 
-    /*copy {
+    copy {
         from configurations.testsStarter
         into integrationTestResourcesFolder
         rename(/starter(.+)\.zip/, "starter.zip")
-    }*/
+    }
 }
 dowloadStarterForTests.group = 'dotCMS tests'
 dowloadStarterForTests.description = 'Downloads the test starter zip to the integration tests resources folder'
