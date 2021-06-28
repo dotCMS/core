@@ -214,7 +214,6 @@ public class IntegrationResourceLinkTest extends IntegrationTestBase {
 
         final Host host = APILocator.systemHost();
         final boolean isSecure = false;
-        final File file = FileUtil.createTemporaryFile("comments-list", "txt", "This is a test temporal file");
         final User adminUser = mockLimitedUser();
 
         final Contentlet contentlet = TestDataUtils.getMultipleImageBinariesContent(true,
