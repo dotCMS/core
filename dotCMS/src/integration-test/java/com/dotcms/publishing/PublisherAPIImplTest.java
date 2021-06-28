@@ -43,6 +43,9 @@ import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.dependencies.DependencyManager;
+import com.dotcms.publishing.manifest.ManifestBuilder;
+import com.dotcms.publishing.manifest.ManifestItem;
+import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -76,8 +79,10 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -85,15 +90,19 @@ import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -103,11 +112,10 @@ import org.junit.runner.RunWith;
 
 @RunWith(DataProviderRunner.class)
 public class PublisherAPIImplTest {
-
+    private static String MANIFEST_HEADERS = "INCLUDE/EXCLUDE,object type, Id, title, site, folder, exclude by, include by";
     private static Contentlet languageVariableCreated;
 
     public static void prepare() throws Exception {
-
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
     }
@@ -154,7 +162,7 @@ public class PublisherAPIImplTest {
         prepare();
 
         return  new TestAsset[]{
-                getContentTypeWithHost(),
+                getContentTypeWithHost()/*,
                 getTemplateWithDependencies(),
                 getContainerWithDependencies(),
                 getFolderWithDependencies(),
@@ -162,8 +170,8 @@ public class PublisherAPIImplTest {
                 getLinkWithDependencies(),
                 getWorkflowWithDependencies(),
                 getLanguageWithDependencies(),
-                getRuleWithDependencies(),
-                getContentWithSeveralVersions()
+                //getRuleWithDependencies(),
+                getContentWithSeveralVersions()*/
         };
     }
 
@@ -187,13 +195,11 @@ public class PublisherAPIImplTest {
         workingVersion.setStringProperty(textField.variable(), "Working versions");
         ContentletDataGen.checkin(workingVersion);
 
-        final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI()
-                .findSystemWorkflowScheme();
-
         final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
 
         return new TestAsset(workingVersion,
-                set(host, systemWorkflowScheme, contentType, liveVersion, defaultLanguage),
+                set(host, contentType, defaultLanguage),
+                set(liveVersion),
                 "/bundlers-test/contentlet/contentlet/contentlet.content.xml");
     }
 
@@ -202,9 +208,9 @@ public class PublisherAPIImplTest {
 
         final Template template = new TemplateDataGen().host(host).nextPersisted();
         final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
-        final Rule ruleWithPage = new RuleDataGen().page(htmlPageAsset).nextPersisted();
+        final Rule ruleWithPage = new RuleDataGen().page(htmlPageAsset).host(host).nextPersisted();
 
-        return new TestAsset(ruleWithPage, set(), "/bundlers-test/rule/rule.rule.xml", false);
+        return new TestAsset(ruleWithPage, set(host), "/bundlers-test/rule/rule.rule.xml", false);
     }
 
     private static TestAsset getLanguageWithDependencies() {
@@ -225,7 +231,6 @@ public class PublisherAPIImplTest {
                     .withContentType(containerContentType, "")
                     .nextPersisted();
 
-            final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
             final Folder folder = new FolderDataGen().site(host).nextPersisted();
 
             final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
@@ -243,7 +248,7 @@ public class PublisherAPIImplTest {
 
 
             return new TestAsset(host,
-                    set(template, container, containerContentType, systemWorkflowScheme, folder, folderContentType,
+                    set(template, container, containerContentType, folder, folderContentType,
                             contentType, contentlet, language, rule), "/bundlers-test/host/host.host.xml");
         } catch (DotDataException e) {
             throw new RuntimeException(e);
@@ -258,7 +263,6 @@ public class PublisherAPIImplTest {
         final Link link = new LinkDataGen(folder)
                 .hostId(host.getIdentifier())
                 .nextPersisted();
-
 
         return new TestAsset(link, set(host, folder), "/bundlers-test/link/link.link.xml");
     }
@@ -305,14 +309,13 @@ public class PublisherAPIImplTest {
                 .host(host)
                 .nextPersisted();
 
-        final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
         final Structure folderStructure = CacheLocator.getContentTypeCache()
                 .getStructureByInode(parentFolder.getDefaultFileType());
 
         final ContentType folderContentType = new StructureTransformer(folderStructure).from();
 
         return new TestAsset(folderWithDependencies,
-                set(host, parentFolder, folderContentType, systemWorkflowScheme,
+                set(host, parentFolder, folderContentType,
                         contentType, contentlet, language, link, subFolder, contentlet_2),
                 "/bundlers-test/folder/folder.folder.xml");
     }
@@ -324,7 +327,6 @@ public class PublisherAPIImplTest {
                 .host(host)
                 .nextPersisted();
 
-        final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
         final Container container_1 = new ContainerDataGen()
                 .site(host)
                 .withContentType(contentType, "")
@@ -346,7 +348,7 @@ public class PublisherAPIImplTest {
                 .nextPersisted();
 
         return new TestAsset(templateWithTemplateLayout,
-                set(host, container_1, container_2, contentType, systemWorkflowScheme),
+                set(host, container_1, container_2, contentType),
                 "/bundlers-test/template/template.template.xml");
     }
 
@@ -374,10 +376,9 @@ public class PublisherAPIImplTest {
 
         contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentType.variable());
 
-        final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
 
         return new TestAsset(contentType,
-            set(host, workflowScheme, systemWorkflowScheme, contentTypeChild, relationship, category),
+            set(host, workflowScheme, contentTypeChild, relationship, category),
             "/bundlers-test/content_types/content_types_with_category_and_relationship.contentType.json");
     }
 
@@ -391,10 +392,8 @@ public class PublisherAPIImplTest {
                 .withContentType(contentType, "")
                 .nextPersisted();
 
-        final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
-
         return new TestAsset(containerWithContentType,
-                set(host, contentType, systemWorkflowScheme),
+                set(host, contentType),
                 "/bundlers-test/container/container.containers.container.xml");
     }
 
@@ -407,11 +406,13 @@ public class PublisherAPIImplTest {
     @UseDataProvider("publishers")
     public void generateBundle(final TestAsset testAsset) throws DotPublishingException, DotSecurityException, IOException, DotDataException {
         final Class<? extends Publisher> publisher = GenerateBundlePublisher.class;
-        final Collection<Object> dependencies = new HashSet<>();
-        dependencies.addAll(testAsset.expectedInBundle);
 
         createLanguageVariableIfNeeded();
-        addLanguageVariableDependencies(dependencies, testAsset.addLanguageVariableDependencies);
+
+        List<Contentlet> languageVariables = getLanguageVariables();
+        Set<?> languagesVariableDependencies = getLanguagesVariableDependencies(
+                languageVariables,
+                testAsset.addLanguageVariableDependencies, true, true);
 
         final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
 
@@ -434,7 +435,68 @@ public class PublisherAPIImplTest {
 
         final File extractHere = new File(bundleRoot.getParent() + File.separator + config.getName());
         extractTarArchive(bundleRoot, extractHere);
-        assertBundle(testAsset, dependencies, extractHere);
+
+        final List<Contentlet> languageVariablesAddInBundle = testAsset.addLanguageVariableDependencies ?
+                getLanguageVariables() : Collections.EMPTY_LIST;
+
+        assertBundle(testAsset,
+                getJustOneList(testAsset.otherVersions, testAsset.expectedInBundle,
+                        languageVariablesAddInBundle, languagesVariableDependencies),
+                extractHere);
+
+        final Set<String> manifestLines = testAsset.manifestLines();
+        manifestLines.addAll(getLines(languageVariablesAddInBundle, "Add Automatic by dotcms"));
+
+        for (Contentlet languageVariable : languageVariablesAddInBundle) {
+            final Collection<Object> dependenciesFrom = getLanguageVariable(languageVariable,
+                    testAsset.addLanguageVariableDependencies,
+                    true, true);
+
+            manifestLines.addAll(getLines(dependenciesFrom, "Dependency from: " + languageVariable.getIdentifier()));
+        }
+
+        manifestLines.addAll(getLines(getLanguageVariablesContentTypeDependencies(), "Dependency from: " +
+                languageVariablesAddInBundle.get(0).getIdentifier()));
+
+        assertManifestFile(extractHere, manifestLines);
+    }
+
+    @NotNull
+    private List<String> getLines(Collection<?> languageVariablesAddInBundle, String reason) {
+        return languageVariablesAddInBundle.stream()
+                .map(languageVariable -> getLine((ManifestItem) languageVariable, reason))
+                .collect(Collectors.toList());
+    }
+
+    private static Collection<Object> getJustOneList(Collection<?>... collections){
+        return Arrays.stream(collections)
+                .flatMap(collection -> collection.stream())
+                .collect(Collectors.toSet());
+    }
+
+    private void assertManifestFile(final File rootDirectory, final Set<String> manifestItems) throws IOException {
+
+        final String manifestFilePath = rootDirectory.getAbsolutePath() + File.separator + "manifest.csv";
+        final File manifestFile = new File(manifestFilePath);
+        assertTrue(manifestFile.exists());
+
+        try(BufferedReader csvReader = new BufferedReader(new FileReader(manifestFile))) {
+            String line;
+            int nLines = 0;
+
+            while ((line = csvReader.readLine()) != null) {
+                System.out.println("line = " + line);
+                /*if (nLines == 0) {
+                    assertEquals(MANIFEST_HEADERS, line);
+                } else {
+                    assertTrue(manifestItems.contains(line));
+                }*/
+
+                nLines++;
+            }
+
+            assertEquals(manifestItems.size(), nLines - 1 );
+        }
     }
 
     /**
@@ -474,9 +536,12 @@ public class PublisherAPIImplTest {
         final Collection<Object> dependencies = new HashSet<>();
         dependencies.addAll(testAsset.expectedInBundle);
         dependencies.add(testAsset.asset);
+        dependencies.addAll(testAsset.otherVersions);
 
         createLanguageVariableIfNeeded();
-        addLanguageVariableDependencies(dependencies, testAsset.addLanguageVariableDependencies);
+
+        addLanguageVariableDependencies(dependencies,
+                    testAsset.addLanguageVariableDependencies);
 
         final PublisherAPIImpl publisherAPI = new PublisherAPIImpl();
 
@@ -576,8 +641,8 @@ public class PublisherAPIImplTest {
                 .filter(file -> !file.getParentFile().getAbsolutePath().equals(messagesPath))
                 .collect(Collectors.toList());
 
-        //All the dependencies plus, the asset and the bundle xml
-        int numberFilesExpected = filesExpected.size() + 1;
+        //All the dependencies plus, the asset and the bundle xml and manifest
+        int numberFilesExpected = filesExpected.size() + 2;
         final int numberFiles = files.size();
 
         final List<String> filesExpectedPath = filesExpected.stream()
@@ -613,28 +678,16 @@ public class PublisherAPIImplTest {
     public static List<Contentlet> getLanguageVariables() throws DotDataException, DotSecurityException {
         final User systemUser = APILocator.systemUser();
         final String langVarsQuery = "+contentType:" + LanguageVariableAPI.LANGUAGEVARIABLE;
-        final List<Contentlet> langVariables = APILocator.getContentletAPI().search(langVarsQuery, 0, -1,
+        return APILocator.getContentletAPI().search(langVarsQuery, 0, -1,
                 StringPool.BLANK, systemUser, false);
-        return langVariables;
     }
 
     private static void addLanguageVariableDependencies(final Collection<Object> dependecies, boolean addLanguageVariableDependencies)
             throws DotDataException, DotSecurityException {
 
-        final Host systemHost = APILocator.getHostAPI().findSystemHost();
-        final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
-
         List<Object> languageVariablesDependencies = getLanguagesVariableDependencies(
                 addLanguageVariableDependencies, true, true).stream()
-                    .filter(dependency -> {
-                        if (Contentlet.class.isInstance(dependency)){
-                            return !((Contentlet) dependency).getIdentifier().equals(systemHost.getIdentifier());
-                        } else  if (Folder.class.isInstance(dependency)){
-                            return !((Folder) dependency).getIdentifier().equals(systemFolder.getIdentifier());
-                        } else {
-                            return true;
-                        }
-                    })
+                    .filter(dependency -> !isHostFolderSystem(dependency))
                     .collect(Collectors.toList());
 
         if (!languageVariablesDependencies.isEmpty()){
@@ -642,6 +695,23 @@ public class PublisherAPIImplTest {
         }
     }
 
+    private static boolean isHostFolderSystem(Object dependency) {
+
+        try {
+            final Host  systemHost = APILocator.getHostAPI().findSystemHost();
+            final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
+
+            if (Contentlet.class.isInstance(dependency)){
+                return ((Contentlet) dependency).getIdentifier().equals(systemHost.getIdentifier());
+            } else  if (Folder.class.isInstance(dependency)){
+                return ((Folder) dependency).getIdentifier().equals(systemFolder.getIdentifier());
+            } else {
+                return false;
+            }
+        } catch (DotDataException e) {
+            return false;
+        }
+    }
 
     public static Set<Object> getLanguagesVariableDependencies(
             boolean addLanguageVariableDependencies,
@@ -649,46 +719,39 @@ public class PublisherAPIImplTest {
             boolean addLiveAndWorking)
             throws DotDataException, DotSecurityException {
 
-        final User systemUser = APILocator.systemUser();
         final List<Contentlet> languageVariables = getLanguageVariables();
+
+        final Set<Object> languagesVariableDependencies = getLanguagesVariableDependencies(
+                languageVariables, addLanguageVariableDependencies,
+                addRulesDependencies, addLiveAndWorking);
+
+        if (addLanguageVariableDependencies) {
+            languagesVariableDependencies.addAll(languageVariables);
+        }
+
+        return languagesVariableDependencies;
+    }
+
+    public static Set<Object> getLanguagesVariableDependencies(
+            final List<Contentlet> languageVariables,
+            boolean addLanguageVariableDependencies,
+            boolean addRulesDependencies,
+            boolean addLiveAndWorking)
+            throws DotDataException, DotSecurityException {
+
+        final User systemUser = APILocator.systemUser();
         Set<Object> dependencies = new HashSet<>();
 
         for (final Contentlet langVariable : languageVariables) {
-
-            final Host host = APILocator.getHostAPI().find(langVariable.getHost(), systemUser, false);
-
-            if (addLiveAndWorking) {
-                addContentletDependencies(dependencies, host);
-            } else {
-                dependencies.add(host);
-            }
-
-            if (addRulesDependencies) {
-                List<Rule> ruleList = APILocator.getRulesAPI().getAllRulesByParent(host, systemUser, false);
-                dependencies.addAll(ruleList);
-            }
-
-            if (addLanguageVariableDependencies) {
-                final Language language = APILocator.getLanguageAPI().getLanguage(langVariable.getLanguageId());
-                dependencies.add(language);
-
-                if (addLiveAndWorking) {
-                    addContentletDependencies(dependencies, langVariable);
-                } else {
-                    dependencies.add(langVariable);
-                }
-            }
+            dependencies.addAll(
+                getLanguageVariable(langVariable, addLanguageVariableDependencies, addRulesDependencies,
+                        addLiveAndWorking)
+            );
         }
 
         Logger.info(PublisherAPIImplTest.class,"languageVariables " + languageVariables);
         if (!languageVariables.isEmpty() && addLanguageVariableDependencies) {
-            final ContentType languageVariableContentType =
-                    APILocator.getContentTypeAPI(systemUser).find(LanguageVariableAPI.LANGUAGEVARIABLE);
-
-            dependencies.add(languageVariableContentType);
-
-            final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
-            dependencies.add(systemWorkflowScheme);
+            dependencies.addAll(getLanguageVariablesContentTypeDependencies());
 
             final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
             dependencies.add(systemFolder);
@@ -697,10 +760,56 @@ public class PublisherAPIImplTest {
             dependencies.add(systemHost);
         }
 
+        return dependencies.stream()
+                .filter(dependency -> !isHostFolderSystem(dependency))
+                .collect(Collectors.toSet());
+    }
+
+    private static List<Object> getLanguageVariablesContentTypeDependencies()
+            throws DotSecurityException, DotDataException {
+
+        final User systemUser = APILocator.systemUser();
+
+        final ContentType contentType = APILocator.getContentTypeAPI(systemUser)
+                .find(LanguageVariableAPI.LANGUAGEVARIABLE);
+
+        final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
+        return list(systemWorkflowScheme, contentType);
+    }
+
+    private static Collection<Object> getLanguageVariable(final Contentlet langVariable,
+            final boolean addLanguageVariableDependencies, final boolean addRulesDependencies,
+            boolean addLiveAndWorking)
+            throws DotDataException, DotSecurityException {
+
+        final Collection<Object> dependencies = new HashSet<>();
+
+        final User systemUser = APILocator.systemUser();
+        final Host host = APILocator.getHostAPI().find(langVariable.getHost(), systemUser, false);
+
+        if (addLiveAndWorking) {
+            addContentletVersion(dependencies, host);
+        }
+        dependencies.add(host);
+
+        if (addRulesDependencies) {
+            List<Rule> ruleList = APILocator.getRulesAPI().getAllRulesByParent(host, systemUser, false);
+            dependencies.addAll(ruleList);
+        }
+
+        if (addLanguageVariableDependencies) {
+            final Language language = APILocator.getLanguageAPI().getLanguage(langVariable.getLanguageId());
+            dependencies.add(language);
+
+            if (addLiveAndWorking) {
+                addContentletVersion(dependencies, langVariable);
+            }
+        }
+
         return dependencies;
     }
 
-    private static void addContentletDependencies(final Set<Object> dependencies, final Contentlet contentlet)
+    private static void addContentletVersion(final Collection<Object> dependencies, final Contentlet contentlet)
             throws DotDataException, DotSecurityException {
 
         final User systemUser = APILocator.systemUser();
@@ -710,32 +819,17 @@ public class PublisherAPIImplTest {
 
         final Contentlet workingContentlet =
                 APILocator.getContentletAPI().find(contentletVersionInfo.getWorkingInode(), systemUser, false);
-        dependencies.add(workingContentlet);
 
-        if (contentletVersionInfo.getLiveInode() != null && !contentletVersionInfo.getWorkingInode().equals(contentletVersionInfo.getLiveInode())){
+        if (!workingContentlet.getInode().equals(contentlet.getInode())) {
+            dependencies.add(workingContentlet);
+        }
+
+        if (contentletVersionInfo.getLiveInode() != null &&
+                !contentletVersionInfo.getWorkingInode().equals(contentletVersionInfo.getLiveInode()) &&
+                !contentletVersionInfo.getLiveInode().equals(contentlet.getInode())){
             final Contentlet liveContentlet =
                     APILocator.getContentletAPI().find(contentletVersionInfo.getLiveInode(), systemUser, false);
             dependencies.add(liveContentlet);
-        }
-    }
-
-    private static class TestAsset {
-        Object asset;
-        Set<Object> expectedInBundle;
-        String fileExpectedPath;
-        boolean addLanguageVariableDependencies = true;
-
-        public TestAsset(Object asset, Set<Object> expectedInBundle, String fileExpectedPath) {
-            this(asset, expectedInBundle, fileExpectedPath, true);
-        }
-
-        public TestAsset(Object asset, Set<Object> expectedInBundle, String fileExpectedPath, boolean addLanguageVariableDependencies) {
-            this.asset = asset;
-            this.expectedInBundle = expectedInBundle;
-            this.fileExpectedPath = fileExpectedPath;
-            this.addLanguageVariableDependencies = addLanguageVariableDependencies;
-
-
         }
     }
 
@@ -769,6 +863,72 @@ public class PublisherAPIImplTest {
                     }
                 }
             }
+        }
+    }
+
+    private static String getLine(final ManifestItem asset, final String reason) {
+        final ManifestInfo manifestInfo = asset.getManifestInfo();
+
+        return list(
+                "INCLUDE",
+                manifestInfo.objectType(),
+                manifestInfo.id(),
+                manifestInfo.title(),
+                manifestInfo.site(),
+                manifestInfo.folder(),
+                "",
+                reason
+        ).stream().collect(Collectors.joining(","));
+    }
+
+    private static class TestAsset {
+        Object asset;
+        Set<Object> expectedInBundle;
+        String fileExpectedPath;
+        boolean addLanguageVariableDependencies = true;
+        Set<Object> otherVersions = Collections.EMPTY_SET;
+
+        public TestAsset(Object asset, Set<Object> expectedInBundle, String fileExpectedPath) {
+            this(asset, expectedInBundle, fileExpectedPath, true);
+        }
+
+        public TestAsset(Object asset, Set<Object> expectedInBundle, final Set<Object> otherVersions, String fileExpectedPath) {
+            this(asset, expectedInBundle, otherVersions, fileExpectedPath, true);
+        }
+
+        public TestAsset(Object asset, Set<Object> expectedInBundle, String fileExpectedPath, boolean addLanguageVariableDependencies) {
+            this.asset = asset;
+            this.expectedInBundle = expectedInBundle;
+            this.fileExpectedPath = fileExpectedPath;
+            this.addLanguageVariableDependencies = addLanguageVariableDependencies;
+        }
+
+        public TestAsset(
+                final Object asset,
+                final Set<Object> expectedInBundle,
+                final Set<Object> otherVersions,
+                final String fileExpectedPath,
+                final boolean addLanguageVariableDependencies) {
+
+            this.asset = asset;
+            this.expectedInBundle = expectedInBundle;
+            this.fileExpectedPath = fileExpectedPath;
+            this.addLanguageVariableDependencies = addLanguageVariableDependencies;
+            this.otherVersions = otherVersions != null ? otherVersions : Collections.EMPTY_SET;
+        }
+
+        public Set<String> manifestLines() {
+            final Set<String> lines = new HashSet<>();
+            final ManifestItem assetManifestItem = (ManifestItem) (ManifestItem) asset;
+            lines.add(getLine(assetManifestItem, "Add directly by User"));
+
+            final String dependencyReeason = "Dependency from: " + assetManifestItem.getManifestInfo().id();
+
+            for (Object dependency : expectedInBundle) {
+                lines.add(getLine((ManifestItem) dependency, dependencyReeason));
+            }
+
+            return lines;
         }
     }
 }

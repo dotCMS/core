@@ -1,5 +1,9 @@
 package com.dotmarketing.portlets.containers.model;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
+import com.dotcms.publisher.util.PusheableAsset;
+import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotmarketing.beans.*;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -23,7 +27,7 @@ import java.util.List;
 /**
  * Containers encapsulate the formatting for specific content types so it can be reused in multiple templates and feed for content (contentlets)
  */
-public class Container extends WebAsset implements Serializable {
+public class Container extends WebAsset implements Serializable, ManifestItem {
 
     /*
      * Convenience access 
@@ -311,4 +315,12 @@ public class Container extends WebAsset implements Serializable {
 				&& ((Container) o).getInode().equals(this.getInode()) );
 	}
 
+	@Override
+	public ManifestInfo getManifestInfo(){
+		return new ManifestInfo(map(
+			"object type", PusheableAsset.CONTAINER.getType(),
+			"id", this.getIdentifier(),
+			"title", this.getTitle()
+		));
+	}
 }

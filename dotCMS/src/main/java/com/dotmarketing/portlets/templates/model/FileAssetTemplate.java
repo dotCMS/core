@@ -1,5 +1,8 @@
 package com.dotmarketing.portlets.templates.model;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
+import com.dotcms.publisher.util.PusheableAsset;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Source;
 import com.dotmarketing.business.APILocator;
@@ -122,5 +125,13 @@ public class FileAssetTemplate extends Template {
         //inode of the template is the inode of the properties.vtl
         return
                 Try.of(()->APILocator.getContentletAPI().find(this.inode,APILocator.systemUser(),false)).getOrNull();
+    }
+
+    @Override
+    public ManifestInfo getManifestInfo(){
+        return super.getManifestInfo().merge(map(
+                "site", this.getHost(),
+                "path", this.getPath()
+        ));
     }
 }

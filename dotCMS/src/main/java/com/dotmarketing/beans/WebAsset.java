@@ -1,5 +1,12 @@
 package com.dotmarketing.beans;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
+import com.dotcms.publisher.util.PusheableAsset;
+import com.dotcms.publishing.manifest.ManifestItem;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.templates.model.Template;
 import java.util.Map;
 
 import com.dotmarketing.business.APILocator;
@@ -20,7 +27,7 @@ import com.liferay.portal.model.User;
  *
  * @author  maria
  */
-public abstract class WebAsset extends Inode implements Permissionable, Versionable,Treeable, Ruleable{
+public abstract class WebAsset extends Inode implements Permissionable, Versionable,Treeable, Ruleable {
 
 
 	private static final long serialVersionUID = 1L;

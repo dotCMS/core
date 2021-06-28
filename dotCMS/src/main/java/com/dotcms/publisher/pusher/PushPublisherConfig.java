@@ -3,9 +3,14 @@ package com.dotcms.publisher.pusher;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publisher.util.dependencies.DependencyManager;
 import com.dotcms.publisher.util.dependencies.DependencyProcessor;
+import com.dotcms.publishing.manifest.ManifestBuilder;
+import com.dotcms.publishing.manifest.ManifestItem;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.PublishQueueElement;
@@ -214,31 +219,46 @@ public class PushPublisherConfig extends PublisherConfig {
 		return bundleAssets;
 	}
 
-	public <T> boolean addWithDependencies(final T asset, final PusheableAsset pusheableAsset) {
+	public <T> boolean addWithDependencies(final T asset, final PusheableAsset pusheableAsset,
+			final String reason) {
 		final String key = DependencyManager.getBundleKey(asset);
+		final boolean added = bundleAssets.isAdded(key, pusheableAsset);
 		final boolean isAlreadyAdded = bundleAssets.isDependenciesAdded(key, pusheableAsset);
 
 		if(!isAlreadyAdded) {
 			bundleAssets.addWithDependencies(key, pusheableAsset);
 			this.dependencyProcessor.addAsset(asset, pusheableAsset);
+
+			if (!added) {
+				writeManifestItem(asset, reason);
+			}
 		}
 
 		return !isAlreadyAdded;
 	}
 
-	public <T> boolean add(final T asset, final PusheableAsset pusheableAsset) {
+	public <T> boolean add(final T asset, final PusheableAsset pusheableAsset, final String reason) {
 		final String key = DependencyManager.getBundleKey(asset);
 
 		if(!bundleAssets.isAdded(key, pusheableAsset)) {
 			bundleAssets.add(key, pusheableAsset);
+			writeManifestItem(asset, reason);
 			return true;
 		} else {
 			return false;
 		}
 	}
 
+	private <T> void writeManifestItem(final T asset, final String reason) {
+		if (ManifestItem.class.isAssignableFrom(asset.getClass())) {
+			manifestBuilder.include((ManifestItem) asset, reason);
+		} else {
+			Logger.warn(PushPublisherConfig.class,
+					String.format("It is not possible add %s into the manifest", asset));
+		}
+	}
+
 	public void waitUntilResolveAllDependencies() throws ExecutionException {
 		this.dependencyProcessor.waitUntilResolveAllDependencies();
 	}
-
 }

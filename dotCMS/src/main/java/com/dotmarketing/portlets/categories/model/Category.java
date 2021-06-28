@@ -1,5 +1,10 @@
 package com.dotmarketing.portlets.categories.model;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
+import com.dotcms.publisher.util.PusheableAsset;
+import com.dotcms.publishing.manifest.ManifestItem;
+import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Tree;
@@ -26,7 +31,7 @@ import java.util.Map;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
 
-public class Category extends Inode implements Serializable {
+public class Category extends Inode implements Serializable, ManifestItem {
 
 	private static final long serialVersionUID = 1L;
 
@@ -249,6 +254,16 @@ public class Category extends Inode implements Serializable {
 	       append("keywords", keywords).
 	       append("categoryVelocityVarName", categoryVelocityVarName).
 	       toString();
+	}
+
+	@Override
+	public ManifestInfo getManifestInfo() {
+
+		return new ManifestInfo(map(
+				"object type", PusheableAsset.CATEGORY.getType(),
+				"id", this.getInode(),
+				"title", this.getTitle()
+		));
 	}
 
 }

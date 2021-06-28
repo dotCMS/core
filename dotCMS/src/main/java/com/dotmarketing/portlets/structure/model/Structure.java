@@ -1,7 +1,12 @@
 package com.dotmarketing.portlets.structure.model;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
+import com.dotcms.publisher.util.PusheableAsset;
+import com.dotcms.publishing.manifest.ManifestItem;
+import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
@@ -27,7 +32,8 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 
 
 
-public class Structure extends Inode implements Permissionable, Treeable,ContentTypeIf  {
+public class Structure extends Inode implements Permissionable, Treeable,ContentTypeIf,
+        ManifestItem {
 
     public static final String STRUCTURE_TYPE_ALL       = "catchall";
 
@@ -404,4 +410,15 @@ public class Structure extends Inode implements Permissionable, Treeable,Content
         this.modDate = modDate;
     }
 
+    @JsonIgnore
+    @Override
+    public ManifestInfo getManifestInfo(){
+        return new ManifestInfo(map(
+                "object type", PusheableAsset.CONTENT_TYPE.getType(),
+                "id", this.identifier,
+                "title", this.name,
+                "site", this.host,
+                "folder", this.folder
+        ));
+    }
 }

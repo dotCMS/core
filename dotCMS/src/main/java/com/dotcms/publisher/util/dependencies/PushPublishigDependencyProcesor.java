@@ -7,6 +7,8 @@ import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.publishing.PublisherFilter;
+import com.dotcms.publishing.manifest.ManifestItem;
+import com.dotcms.publishing.manifest.ManifestReason;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -201,9 +203,9 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
                     pushPublishigDependencyProvider.getContentTypeByFolder(folder));
 
             //Add the default structure of this folder
-            tryToAddAndProcessDependencies(PusheableAsset.CONTENT_TYPE,
+            tryToAddAsDependency(PusheableAsset.CONTENT_TYPE,
                     CacheLocator.getContentTypeCache()
-                            .getStructureByInode(folder.getDefaultFileType()));
+                            .getStructureByInode(folder.getDefaultFileType()), folder);
 
             // SubFolders
             tryToAddAllAndProcessDependencies(PusheableAsset.FOLDER,
@@ -233,14 +235,15 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
             }
 
             if (UtilMethods.isSet(workingTemplate.getTheme())) {
-                tryToAddAndProcessDependencies(PusheableAsset.FOLDER,
-                        pushPublishigDependencyProvider.getThemeByTemplate(workingTemplate));
+                tryToAddAsDependency(PusheableAsset.FOLDER,
+                        pushPublishigDependencyProvider.getThemeByTemplate(workingTemplate), template);
             }
 
             if(workingTemplate instanceof FileAssetTemplate){
                 //Process FileAssetTemplate
-                tryToAddAndProcessDependencies(PusheableAsset.FOLDER,
-                        pushPublishigDependencyProvider.getFileAssetTemplateRootFolder(FileAssetTemplate.class.cast(workingTemplate)));
+                tryToAddAsDependency(PusheableAsset.FOLDER,
+                        pushPublishigDependencyProvider.getFileAssetTemplateRootFolder(FileAssetTemplate.class.cast(workingTemplate)),
+                        template);
             }
         } catch (DotSecurityException | DotDataException e) {
 
@@ -290,8 +293,9 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
 
             if (containerById instanceof FileAssetContainer) {
                 // Process FileAssetContainer
-                tryToAddAndProcessDependencies(PusheableAsset.FOLDER,
-                        pushPublishigDependencyProvider.getFileAssetContainerRootFolder(FileAssetContainer.class.cast(containerById)));
+                tryToAddAsDependency(PusheableAsset.FOLDER,
+                        pushPublishigDependencyProvider.getFileAssetContainerRootFolder(FileAssetContainer.class.cast(containerById)),
+                        container);
             }
 
         } catch (DotSecurityException e) {
@@ -451,8 +455,9 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
                         pushPublishigDependencyProvider.getFolderById(contentletWithDependenciesToProcess.getFolder()));
 
                 // Language Dependency
-                tryToAddAndProcessDependencies(PusheableAsset.LANGUAGE,
-                        APILocator.getLanguageAPI().getLanguage(contentletWithDependenciesToProcess.getLanguageId())
+                tryToAddAsDependency(PusheableAsset.LANGUAGE,
+                        APILocator.getLanguageAPI().getLanguage(contentletWithDependenciesToProcess.getLanguageId()),
+                        contentlet
                 );
 
                 try {
@@ -470,9 +475,10 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
                 }
 
                 if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES", true)) {
-                    tryToAddAndProcessDependencies(PusheableAsset.CONTENT_TYPE,
+                    tryToAddAsDependency(PusheableAsset.CONTENT_TYPE,
                             CacheLocator.getContentTypeCache()
-                                    .getStructureByInode(contentletWithDependenciesToProcess.getStructureInode())
+                                    .getStructureByInode(contentletWithDependenciesToProcess.getStructureInode()),
+                            contentlet
                     );
 
                 }
@@ -550,12 +556,12 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
     public void processRelationshipDependencies(final Relationship relationship) {
 
         try {
-            tryToAddAndProcessDependencies(PusheableAsset.CONTENT_TYPE,
+            tryToAddAsDependency(PusheableAsset.CONTENT_TYPE,
                     CacheLocator.getContentTypeCache()
-                            .getStructureByInode(relationship.getChildStructureInode()));
+                            .getStructureByInode(relationship.getChildStructureInode()), relationship);
 
-            tryToAddAndProcessDependencies(PusheableAsset.CONTENT_TYPE, CacheLocator.getContentTypeCache()
-                            .getStructureByInode(relationship.getParentStructureInode()));
+            tryToAddAsDependency(PusheableAsset.CONTENT_TYPE, CacheLocator.getContentTypeCache()
+                            .getStructureByInode(relationship.getParentStructureInode()), relationship);
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(this, e.getMessage(),e);
         }
@@ -622,7 +628,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
 
                 // Templates dependencies
                 if(!(workingTemplateWP instanceof FileAssetTemplate)) {
-                    tryToAddAndProcessDependencies(PusheableAsset.TEMPLATE, workingTemplateWP);
+                    tryToAddAsDependency(PusheableAsset.TEMPLATE, workingTemplateWP, workingPage);
                 } else {
                     dependencyProcessor.addAsset(workingTemplateWP, PusheableAsset.TEMPLATE);
                 }
@@ -635,7 +641,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
             // Templates dependencies
             if (liveTemplateLP != null ) {
                 if(!(liveTemplateLP instanceof FileAssetTemplate)) {
-                    tryToAddAndProcessDependencies(PusheableAsset.TEMPLATE, liveTemplateLP);
+                    tryToAddAsDependency(PusheableAsset.TEMPLATE, liveTemplateLP, workingPage);
                 } else {
                     dependencyProcessor.addAsset(liveTemplateLP, PusheableAsset.TEMPLATE);
                 }
@@ -664,8 +670,8 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
         dependencyProcessor.waitUntilResolveAllDependencies();
     }
 
-    private <T> boolean add(final PusheableAsset pusheableAsset, final T asset) {
-        final boolean isAdded = config.add(asset, pusheableAsset);
+    private <T> boolean add(final PusheableAsset pusheableAsset, final T asset, final String reason) {
+        final boolean isAdded = config.add(asset, pusheableAsset, reason);
 
         if (isAdded) {
             pushedAssetUtil.savePushedAssetForAllEnv(asset, pusheableAsset);
@@ -709,12 +715,20 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
         }
     }
 
-    private <T> void tryToAddAndProcessDependencies(final PusheableAsset pusheableAsset, final T asset)
+    private void tryToAddAsDependency(final PusheableAsset pusheableAsset,
+            final ManifestItem dependency, final ManifestItem from)
             throws DotDataException, DotSecurityException {
+
+        tryToAddAndProcessDependencies(pusheableAsset, dependency,
+                ManifestReason.DEPENDENCY_FROM.toString(from));
+    }
+
+    private <T> void tryToAddAndProcessDependencies(final PusheableAsset pusheableAsset,
+            final T asset, final String reason) {
         if (UtilMethods.isSet(asset)) {
             try {
                 tryToAdd(pusheableAsset, asset);
-                config.addWithDependencies(asset, pusheableAsset);
+                config.addWithDependencies(asset, pusheableAsset, reason);
             } catch (AssetExcludeByFilterException e) {
                 //ignore
             } catch (AssetExcludeException e) {
@@ -738,6 +752,11 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
 
         if (!UtilMethods.isSet(asset)) {
             return false;
+        }
+
+        if (isHostFolderSystem(asset)) {
+            throw new AssetExcludeByFilterException(String.format("Exclude System Folder/Host",
+                    config.getOperation()));
         }
 
         if (isExcludeByFilter(pusheableAsset)) {
@@ -792,6 +811,24 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
             tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET, langVariables);
         }catch (Exception e){
             Logger.error(this, e.getMessage(),e);
+        }
+    }
+
+    private static boolean isHostFolderSystem(Object dependency) {
+
+        try {
+            final Host  systemHost = APILocator.getHostAPI().findSystemHost();
+            final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
+
+            if (Contentlet.class.isInstance(dependency)){
+                return ((Contentlet) dependency).getIdentifier().equals(systemHost.getIdentifier());
+            } else  if (Folder.class.isInstance(dependency)){
+                return ((Folder) dependency).getIdentifier().equals(systemFolder.getIdentifier());
+            } else {
+                return false;
+            }
+        } catch (DotDataException e) {
+            return false;
         }
     }
 }

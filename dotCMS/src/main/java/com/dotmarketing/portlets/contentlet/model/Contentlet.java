@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.model;
 
+import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.portlets.contentlet.business.MetadataCache.EMPTY_METADATA_MAP;
 import static com.dotmarketing.util.UtilMethods.isSet;
 
@@ -15,6 +16,8 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.publisher.util.PusheableAsset;
+import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.util.ConversionUtils;
@@ -37,14 +40,17 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.Categorizable;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.BinaryFileFilter;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.InodeUtils;
@@ -80,7 +86,8 @@ import org.apache.commons.lang.builder.ToStringBuilder;
  * @author David Tores
  *
  */
-public class Contentlet implements Serializable, Permissionable, Categorizable, Versionable, Treeable, Ruleable  {
+public class Contentlet implements Serializable, Permissionable, Categorizable, Versionable, Treeable, Ruleable,
+		ManifestItem {
 
   private static final long serialVersionUID = 1L;
   public static final String TITTLE_KEY = "title";
@@ -1621,6 +1628,25 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	    getMap().remove(CONTENTLET_ASSET_NAME_COPY);
 	    getMap().remove(TEMPLATE_MAPPINGS);
 		getWritableNullProperties().clear();
+	}
+
+	@Override
+	public ManifestInfo getManifestInfo() {
+		String type = null;
+
+		if (Host.class.isInstance(this.getClass()) || this.isHost()) {
+			type = PusheableAsset.SITE.getType();
+		} else  {
+			type =  PusheableAsset.CONTENTLET.getType();
+		}
+
+		return new ManifestInfo(map(
+				"object type", type,
+				"id", this.getIdentifier(),
+				"title", this.getTitle(),
+				"site", this.getHost(),
+				"folder", this.getFolder()
+		));
 	}
 
 

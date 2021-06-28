@@ -1,5 +1,8 @@
 package com.dotcms.publishing;
 
+import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publishing.manifest.ManifestBuilder;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -82,7 +85,11 @@ public class PublisherAPIImpl implements PublisherAPI {
                 // will return true after that always.
                 final boolean bundleExists = BundlerUtil.bundleExists(config);
 
-                try (BundleOutput output = publisher.createBundleOutput()){
+                try (BundleOutput output = publisher.createBundleOutput();
+                     ManifestBuilder manifestBuilder = new ManifestBuilder()){
+
+                    manifestBuilder.create();
+                    config.setManifestBuilder(manifestBuilder);
                     status.addOutput(output);
                     // Run bundlers
 
@@ -137,6 +144,16 @@ public class PublisherAPIImpl implements PublisherAPI {
                         Logger.info(this, "Retrying bundle: " + config.getId()
                                 + ", we don't need to run bundlers again");
                     }
+
+                    config.getManifestFile().ifPresent((manifestFile) -> {
+                        try {
+                            manifestBuilder.close();
+                            output.copyFile(manifestFile, "/manifest.csv");
+                        } catch (IOException e) {
+                            Logger.error(PublisherAPIImpl.class, "Error trying to copy the manifest file: " +
+                                    e.getMessage());
+                        }
+                    });
                 }
 
                 publisher.process(status);

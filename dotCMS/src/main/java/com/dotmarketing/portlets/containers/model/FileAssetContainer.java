@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.containers.model;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Source;
 import com.dotmarketing.business.APILocator;
@@ -154,5 +156,13 @@ public class FileAssetContainer extends Container {
 
     public Host getHost() {
         return host;
+    }
+
+    @Override
+    public ManifestInfo getManifestInfo(){
+        return super.getManifestInfo().merge(map(
+                "site", this.getHost(),
+                "path", this.getPath()
+        ));
     }
 }

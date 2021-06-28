@@ -22,7 +22,11 @@
 
 package com.liferay.portal.model;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.publisher.util.PusheableAsset;
+import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Role;
@@ -53,7 +57,7 @@ import java.util.TimeZone;
  * @version $Revision: 1.34 $
  *
  */
-public class User extends UserModel implements Recipient {
+public class User extends UserModel implements Recipient, ManifestItem {
 
 	public static final String DEFAULT = "default";
 
@@ -415,4 +419,13 @@ public class User extends UserModel implements Recipient {
 	private User _user;
 	private Date modificationDate;
 
+	@JsonIgnore
+	@Override
+	public ManifestInfo getManifestInfo(){
+		return new ManifestInfo(map(
+			"object type", PusheableAsset.USER.getType(),
+			"id", this.getUserId(),
+			"title", this.getFullName()
+		));
+	}
 }

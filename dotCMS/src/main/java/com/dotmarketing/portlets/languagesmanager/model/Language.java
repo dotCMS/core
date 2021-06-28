@@ -1,5 +1,10 @@
 package com.dotmarketing.portlets.languagesmanager.model;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
+import com.dotcms.publisher.util.PusheableAsset;
+import com.dotcms.publishing.manifest.ManifestItem;
+import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
 import java.io.Serializable;
 import java.util.Locale;
 
@@ -14,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  *
  * @author  maria
  */
-public class Language implements Serializable {
+public class Language implements Serializable, ManifestItem {
     private static final long serialVersionUID = 1L;
 
     /** identifier field */
@@ -178,7 +183,15 @@ public class Language implements Serializable {
 		return this.getLanguageCode().toLowerCase();
 	}
 
-
+    @JsonIgnore
+    @Override
+    public ManifestInfo getManifestInfo(){
+        return new ManifestInfo(map(
+                "object type", PusheableAsset.LANGUAGE.getType(),
+                "id", this.id,
+                "title", this.language
+        ));
+    }
 
 
 
