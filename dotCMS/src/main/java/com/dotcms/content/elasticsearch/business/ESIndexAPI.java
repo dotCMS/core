@@ -169,7 +169,7 @@ public class ESIndexAPI {
 
 	@SuppressWarnings("unchecked")
 	public Map<String, IndexStats> getIndicesStats() {
-		final Request request = new Request("GET", "/_stats");
+        final Request request = new Request("GET", "/" + clusterPrefix.get() + "*/_stats");
 		final Map<String, Object> jsonMap = performLowLevelRequest(request);
 
 		final Map<String, IndexStats> indexStatsMap = new HashMap<>();
