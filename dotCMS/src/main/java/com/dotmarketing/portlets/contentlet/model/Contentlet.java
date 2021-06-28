@@ -344,11 +344,16 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 					// if it is a binary
 					if (binaryValue == null && Field.FieldType.BINARY.toString().equals(field.getFieldType()) && field.isIndexed()) {
-						binaryValue = this.getBinary(field.getVelocityVarName()).getName();
+					    final File binaryFile = this.getBinary(field.getVelocityVarName());
+					    if (null != binaryFile) {
+                            binaryValue = binaryFile.getName();
+                        }
 					}
 				}
 			} catch(Exception e){
-				Logger.warn(this.getClass(), "unable to get field value " + field.getVelocityVarName() + " " + e, e);
+                Logger.warn(this.getClass(),
+                        "unable to get field value " + field.getVelocityVarName()
+                                + " . Content inode: " + this.getInode() + ". Reason: " + e, e);
 			}
 		}
 
