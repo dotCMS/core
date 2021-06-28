@@ -101,6 +101,14 @@
                       "type": "text"
                   }
               }
+          },
+          {
+              "key_value": {
+                  "match": "*value_flat",
+                  "mapping": {
+                      "type": "keyword"
+                  }
+              }
           }
       ]
 }

@@ -64,6 +64,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.ThreadSafeSimpleDateFormat;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.liferay.portal.model.User;
@@ -848,12 +849,14 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
             final String keyValuePrefix = FileAssetAPI.META_DATA_FIELD.toLowerCase();
             keyValueMap.forEach((k, v) -> contentletMap.put(keyValuePrefix + PERIOD + k, v));
-		} else {
-			keyValueMap.forEach((k, v) -> {
-				((List)contentletMap.computeIfAbsent(keyName, key -> new ArrayList<>())).add(
-						ImmutableMap.of( "key", k, "value", v));
-			});
-		}
+		} 
+
+		keyValueMap.forEach((k, v) -> {
+			((List)contentletMap.computeIfAbsent(keyName, key -> new ArrayList<>())).add(
+                ImmutableMap.of( "key", k, "value", String.valueOf(v),  "value__flat", k + "__" + v)   
+			 );
+		});
+		
 	}
 
 	/**
