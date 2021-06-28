@@ -61,6 +61,7 @@ import com.dotmarketing.business.helper.PermissionHelperTest;
 import com.dotmarketing.cache.FolderCacheImplIntegrationTest;
 import com.dotmarketing.common.db.DBTimeZoneCheckTest;
 import com.dotmarketing.filters.AutoLoginFilterTest;
+import com.dotmarketing.image.filter.ImageFilterApiImplTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.osgi.GenericBundleActivatorTest;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
@@ -422,7 +423,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task210520UpdateAnonymousEmailTest.class,
         Task210510UpdateStorageTableDropMetadataColumnTest.class,
         StaticPushPublishBundleGeneratorTest.class,
-        CookieToolTest.class
+        CookieToolTest.class,
+        ImageFilterApiImplTest.class
 })
 public class MainSuite {
 
