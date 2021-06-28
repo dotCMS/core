@@ -2,6 +2,7 @@ package com.dotcms.rendering.velocity.viewtools;
 
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.Theme;
+import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtil;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -136,10 +137,10 @@ public class DotTemplateTool implements ViewTool {
     private static DrawedBody getDrawedBody(String templateInodeOrId, User user) throws DotDataException, DotSecurityException {
         final boolean isIdentifier = APILocator.getIdentifierAPI().isIdentifier(templateInodeOrId);
         String identifier = templateInodeOrId;
-        if(!isIdentifier){
+        if(!isIdentifier && !FileAssetTemplateUtil.getInstance().isFolderAssetTemplateId(templateInodeOrId)){
             final Template template = FactoryLocator.getTemplateFactory().find(templateInodeOrId);
             identifier = template!=null ? template.getIdentifier() :
-                    APILocator.getIdentifierAPI().findFromInode(templateInodeOrId).getId();//this is for fileAssetTemplates
+                    APILocator.getIdentifierAPI().findFromInode(templateInodeOrId).getId();//this is for find the id of fileAssetTemplates by inode
         }
         final Template workingTemplate = APILocator.getTemplateAPI().findWorkingTemplate(identifier, user, false);
 
