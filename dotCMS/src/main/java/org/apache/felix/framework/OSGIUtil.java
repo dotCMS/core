@@ -301,19 +301,37 @@ public class OSGIUtil {
         Iterator<String> it = Config.getKeys();
         while (it.hasNext()) {
             final String key = it.next();
-            if (key != null && key.startsWith("felix.")) {
-                if (key.equals(FELIX_BASE_DIR)) {
-                    // Allow the property in the file to be felix.base.dir
-                    properties.put(key, Config.getStringProperty(key));
-                    Logger.info(this,
-                            () -> "Found property  " + key + "=" + Config.getStringProperty(key));
-                } else {
-                    String value = (UtilMethods.isSet(Config.getStringProperty(key, null))) ? Config.getStringProperty(key) : null;
-                    String felixKey = key.substring(6);
-                    properties.put(felixKey, value);
-                    Logger.info(OSGIUtil.class, () -> "Found property  " + felixKey + "=" + value);
-                }
+            if(key==null) {
+                continue;
             }
+            if (key.startsWith("felix.")) {
+
+                final String value = (UtilMethods.isSet(Config.getStringProperty(key, null))) ? Config.getStringProperty(key)
+                                : null;
+                String felixKey = key.substring(6);
+                properties.put(felixKey, value);
+                Logger.info(OSGIUtil.class, () -> "Found property  " + felixKey + "=" + value);
+
+            }
+            if (key.startsWith("DOT_FELIX_FELIX")) {
+                final String felixKey = key.replace("DOT_FELIX_FELIX", "FELIX").replace("_", ".").toLowerCase();
+                String value = (UtilMethods.isSet(Config.getStringProperty(key, null))) ? Config.getStringProperty(key)
+                                : null;
+                properties.put(felixKey, value);
+                Logger.info(OSGIUtil.class, () -> "Found property  " + felixKey + "=" + value);
+            }
+            if (key.startsWith("DOT_FELIX_OSGI")) {
+                final String felixKey = key.replace("DOT_FELIX_OSGI", "OSGI").replace("_", ".").toLowerCase();
+                String value = (UtilMethods.isSet(Config.getStringProperty(key, null))) ? Config.getStringProperty(key)
+                                : null;
+                properties.put(felixKey, value);
+                Logger.info(OSGIUtil.class, () -> "Found property  " + felixKey + "=" + value);
+            }
+
+            
+            
+            
+            
         }
         return properties;
     }
