@@ -54,7 +54,11 @@ var saveCompanyBasicInfo = function () {
   var loginScreenLogoPath = document.getElementById(
     "loginScreenLogoInput"
   ).value;
-  var topNavLogoPath = document.getElementById("topNavLogoInput").value;
+  
+  var topNavLogo = document.getElementById("topNavLogoInput");
+  if (topNavLogo) {
+    var topNavLogoPath = topNavLogo.value;
+  }
 
   if (!loginScreenLogoPath) {
     showDotCMSSystemMessage("Login Screen Logo cannot be empty", true);
@@ -70,8 +74,11 @@ var saveCompanyBasicInfo = function () {
     street: secondaryColor,
     homeURL: bgURL,
     city: loginScreenLogoPath,
-    state: topNavLogoPath,
   };
+
+  if (topNavLogoPath) {
+      content.state = topNavLogoPath
+  }
 
 
   var xhrArgs = {

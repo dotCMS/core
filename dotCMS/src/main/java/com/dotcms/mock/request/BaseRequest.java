@@ -1,6 +1,5 @@
 package com.dotcms.mock.request;
 
-import org.mockito.Mockito;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -12,6 +11,6 @@ import javax.servlet.http.HttpServletRequest;
 public class BaseRequest implements MockRequest {
 
     public HttpServletRequest request() {
-        return Mockito.mock(HttpServletRequest.class);
+        return new DotCMSMockRequest();
     }
 }

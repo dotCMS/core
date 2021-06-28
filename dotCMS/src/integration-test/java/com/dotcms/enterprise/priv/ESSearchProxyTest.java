@@ -3,7 +3,9 @@ package com.dotcms.enterprise.priv;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -58,6 +60,27 @@ public class ESSearchProxyTest extends IntegrationTestBase {
     @Test
     public void test_esSearch_WithLicense_Success() throws Exception {
         final String query = "{\"query\":{\"query_string\":{\"query\":\"+basetype:5 +parentpath:*\\\\\\/abou*\"}}}";
+        final List<ESSearchResults> resultsList = getEsSearchResults(query);
+        Assert.assertFalse(resultsList.isEmpty());
+    }
+
+    /**
+     * MethodToTest {@link ESSearchAPIImpl#esSearch(String, boolean, User, boolean)}
+     * Given Scenario: ContentType with a Date Field can be query via ES
+     * ExpectedResult: Should return list of contentlets
+     * @throws Exception
+     */
+    @Test
+    public void test_esSearch_WithDates_Success() throws Exception{
+        final Host newHost = new SiteDataGen().nextPersisted();
+        final ContentType blogContentType = TestDataUtils.getBlogLikeContentType(newHost);
+        for(int i=0;i<10;i++) {
+            TestDataUtils.getBlogContent(true, 1,blogContentType.id(),newHost);
+        }
+        final String query = "{\"query\":{\"query_string\":{\"query\":\"+contenttype:" + blogContentType.variable()
+                + " +conhost:"+ newHost.getIdentifier()
+                +" +" + blogContentType.variable() + ".sysPublishDate:[2021-01-01t00\\:00\\:00 TO 2121-12-01t00\\:00\\:00]\""
+                +"}}}";
         final List<ESSearchResults> resultsList = getEsSearchResults(query);
         Assert.assertFalse(resultsList.isEmpty());
     }

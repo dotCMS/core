@@ -168,6 +168,7 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Test;
 import org.springframework.beans.BeanUtils;
 
 import javax.activation.MimeType;
@@ -1572,7 +1573,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @param respectFrontendRoles If the User executing this action has the front-end role, or if front-end roles must
      *                             be validated against this user, set to {@code true}. Otherwise, set to {@code
      *                             false}.
-     * @param limit                The limit to the amount of results that will be returned.
+     * @param limitParam                The limit to the amount of results that will be returned.
      * @param offset               The offset applied to the result, mostly for pagination purposes.
      *
      * @return The list of {@link Contentlet} objects that are the children of the specified Contentlet.
@@ -1581,20 +1582,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotDataException     An error occurred when interacting with the data source.
      */
     private List<Contentlet> getRelatedChildren(final Contentlet contentlet, final Relationship rel,
-            final User user, final boolean respectFrontendRoles, final int limit, final int offset)
+            final User user, final boolean respectFrontendRoles, final int limitParam, final int offset)
             throws DotSecurityException, DotDataException {
         final boolean HAS_PARENT = Boolean.TRUE;
         final boolean WORKING_VERSION = Boolean.FALSE;
         if (rel.isRelationshipField() && GET_RELATED_CONTENT_FROM_DB) {
-            return APILocator.getRelationshipAPI()
-                    .dbRelatedContent(rel, contentlet, HAS_PARENT, WORKING_VERSION, "tree_order", limit, offset);
+            return FactoryLocator.getRelationshipFactory()
+                    .dbRelatedContent(rel, contentlet, HAS_PARENT, WORKING_VERSION, "tree_order", limitParam, offset);
         } else {
 
             final List<Contentlet> result = new ArrayList<>();
             final String relationshipName = rel.getRelationTypeValue().toLowerCase();
+            final int limit = limitParam <= 0 ? MAX_LIMIT : limitParam;
 
             SearchResponse response;
             final boolean DONT_PULL_PARENTS = Boolean.FALSE;
+
             //Search for related content in existing contentlet
             if (UtilMethods.isSet(contentlet.getInode())) {
                 response = APILocator.getEsSearchAPI()
@@ -1652,7 +1655,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @param respectFrontendRoles If the User executing this action has the front-end role, or if front-end roles must
      *                             be validated against this user, set to {@code true}. Otherwise, set to {@code
      *                             false}.
-     * @param limit                The limit to the amount of results that will be returned.
+     * @param limitParam                The limit to the amount of results that will be returned.
      * @param offset               The offset applied to the result, mostly for pagination purposes.
      *
      * @return The list of {@link Contentlet} objects that are the parents of the specified Contentlet.
@@ -1661,19 +1664,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotDataException     An error occurred when interacting with the data source.
      */
     private List<Contentlet> getRelatedParents(final Contentlet contentlet, final Relationship rel,
-            final User user, final boolean respectFrontendRoles, final int limit, final int offset)
+            final User user, final boolean respectFrontendRoles, int limitParam, final int offset)
             throws DotSecurityException, DotDataException {
         final boolean HAS_NO_PARENT = Boolean.FALSE;
         final boolean WORKING_VERSION = Boolean.FALSE;
         if (rel.isRelationshipField() && GET_RELATED_CONTENT_FROM_DB) {
-            return APILocator.getRelationshipAPI()
-                    .dbRelatedContent(rel, contentlet, HAS_NO_PARENT, WORKING_VERSION, "tree_order", limit, offset);
+            return FactoryLocator.getRelationshipFactory()
+                    .dbRelatedContent(rel, contentlet, HAS_NO_PARENT, WORKING_VERSION, "tree_order", limitParam, offset);
         } else {
             final Map<String, Contentlet> relatedMap = new HashMap<>();
             final String relationshipName = rel.getRelationTypeValue().toLowerCase();
+            final int limit = limitParam <= 0 ? MAX_LIMIT : limitParam;
 
             SearchResponse response;
             final boolean PULL_PARENTS = Boolean.TRUE;
+
             //Search for related content in existing contentlet
             if (UtilMethods.isSet(contentlet.getInode())) {
                 response = APILocator.getEsSearchAPI()
@@ -3596,8 +3601,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 .dbRelatedContent(relationship, contentlet, hasParent);
         cons = permissionAPI
                 .filterCollection(cons, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
-        APILocator.getRelationshipAPI().deleteByContent(contentlet, relationship, cons);
 
+        for (final Contentlet relatedContent : cons) {
+            if (hasParent) {
+                TreeFactory.deleteTreesByParentAndChildAndRelationType(contentlet.getIdentifier(),
+                        relatedContent.getIdentifier(), relationship.getRelationTypeValue());
+            } else {
+                TreeFactory.deleteTreesByParentAndChildAndRelationType(relatedContent.getIdentifier(),
+                        contentlet.getIdentifier(), relationship.getRelationTypeValue());
+            }
+        }
+      
         final List<String> identifiersToBeRelated = contentletsToBeRelated.stream().map(
                 Contentlet::getIdentifier).collect(Collectors.toList());
 
@@ -5543,7 +5557,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @param contentRelationships
      * @param contentType
      * @param relationshipAPI
-     * @throws DotDataException 
+     * @throws DotDataException
      */
     private void getWipeOutRelationships(final ContentletRelationships contentRelationships,
             final ContentType contentType, final RelationshipAPI relationshipAPI) throws DotDataException {
@@ -8404,5 +8418,4 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         return contentlet;
     }
-
 }

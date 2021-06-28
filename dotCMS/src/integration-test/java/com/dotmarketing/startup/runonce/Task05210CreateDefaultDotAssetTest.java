@@ -1,10 +1,13 @@
 package com.dotmarketing.startup.runonce;
 
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -16,6 +19,8 @@ import java.util.stream.Collectors;
 import static org.junit.Assert.assertTrue;
 
 public class Task05210CreateDefaultDotAssetTest {
+
+    private static final String dotAssetInode = Task05210CreateDefaultDotAsset.DOTASSET_VARIABLE_INODE;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -51,23 +56,24 @@ public class Task05210CreateDefaultDotAssetTest {
         }
 
         final List<Map<String, Object>> workflowSchemeXStructure = new DotConnect().setSQL("select * from workflow_scheme_x_structure where structure_id = ?")
-                .addParam(Task05210CreateDefaultDotAsset.DOTASSET_VARIABLE_INODE)
+                .addParam(dotAssetInode)
                 .loadObjectResults();
 
         new DotConnect().setSQL("delete from workflow_scheme_x_structure where structure_id = ?")
-                .addParam(Task05210CreateDefaultDotAsset.DOTASSET_VARIABLE_INODE).loadResult();
+                .addParam(dotAssetInode).loadResult();
 
         new DotConnect().setSQL("delete from structure where inode = ?")
-                .addParam(Task05210CreateDefaultDotAsset.DOTASSET_VARIABLE_INODE).loadResult();
+                .addParam(dotAssetInode).loadResult();
 
         new DotConnect().setSQL("delete from inode where inode = ?")
-                .addParam(Task05210CreateDefaultDotAsset.DOTASSET_VARIABLE_INODE).loadResult();
+                .addParam(dotAssetInode).loadResult();
 
         return workflowSchemeXStructure;
     }
 
     @Test
-    public void Test_Upgrade_Task() throws DotDataException {
+    public void Test_Upgrade_Task() throws DotDataException, DotSecurityException {
+        deleteAlldotAssetContent();
         final List<Map<String, Object>> constraint = removeConstraintIfAny();
 
         final Task05210CreateDefaultDotAsset task =  new Task05210CreateDefaultDotAsset();
@@ -79,10 +85,16 @@ public class Task05210CreateDefaultDotAssetTest {
 
     private void addConstraintIfAny(final  List<Map<String, Object>> constraint) throws DotDataException {
         FactoryLocator.getWorkFlowFactory().saveSchemeIdsForContentType(
-                Task05210CreateDefaultDotAsset.DOTASSET_VARIABLE_INODE,
+                dotAssetInode,
                 constraint.stream().map(register -> (String) register.get("scheme_id")).collect(Collectors.toSet()),
                 null
         );
+    }
+
+    private void deleteAlldotAssetContent() throws DotSecurityException, DotDataException {
+        final List<Contentlet> contentletList = APILocator.getContentletAPI()
+                .findByStructure(dotAssetInode,APILocator.systemUser(),false,-1,0);
+        APILocator.getContentletAPI().delete(contentletList,APILocator.systemUser(),false,true);
     }
 
 

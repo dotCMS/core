@@ -24,7 +24,7 @@ import com.dotcms.datagen.LinkDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.mock.request.MockHeaderRequest;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.util.IntegrationTestInitService;
@@ -71,7 +71,7 @@ public class NavToolCacheTest extends IntegrationTestBase {
     createData();
 
     HttpServletRequest request =
-        new MockHeaderRequest(new MockHttpRequest(site.getHostname(), "/").request(), "Origin", "localhost").request();
+        new MockHeaderRequest(new MockHttpRequestIntegrationTest(site.getHostname(), "/").request(), "Origin", "localhost").request();
     HttpServletResponse response = new MockHttpResponse().response();
 
     // fat context
@@ -117,7 +117,7 @@ public class NavToolCacheTest extends IntegrationTestBase {
     final Folder testFolder = new FolderDataGen().showOnMenu(true).site(site).nextPersisted();
     
     HttpServletRequest request =
-        new MockHeaderRequest(new MockHttpRequest(site.getHostname(), "/").request(), "Origin", "localhost").request();
+        new MockHeaderRequest(new MockHttpRequestIntegrationTest(site.getHostname(), "/").request(), "Origin", "localhost").request();
     HttpServletResponse response = new MockHttpResponse().response();
 
     // fat context

@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "65e5acc7-cbd9-4ee3-bf14-72af0e6315da",
+		"_postman_id": "90ad55aa-c2e7-4fc8-b56f-68e526c20695",
 		"name": "Site Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -207,8 +207,8 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code should be 400\", function () {",
-							"    pm.response.to.have.status(400);",
+							"pm.test(\"Status code should be 404\", function () {",
+							"    pm.response.to.have.status(404);",
 							"});",
 							"",
 							""
@@ -656,7 +656,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"sitename\":\"default\"\n}",
+					"raw": "{\n    \"siteName\":\"default\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -1402,8 +1402,8 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code should be 400\", function () {",
-							"    pm.response.to.have.status(400);",
+							"pm.test(\"Status code should be 404\", function () {",
+							"    pm.response.to.have.status(404);",
 							"});",
 							""
 						],
@@ -1440,74 +1440,6 @@
 						"site",
 						"xxx",
 						"_unpublish"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Get Site by Name Copy",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"var jsonData = pm.response.json();",
-							"",
-							"pm.test(\"Status code is 200\", () => {",
-							"  pm.expect(pm.response.code).to.eql(200);",
-							"});",
-							"",
-							"pm.test(\"To Check if Value is Null\", function () {",
-							"",
-							"    pm.expect(jsonData.entity.siteName).eq(\"default\");",
-							"});",
-							"",
-							"pm.collectionVariables.set(\"hostInode\", jsonData.entity.inode);",
-							"pm.collectionVariables.set(\"hostdentifier\", jsonData.entity.identifier);",
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						}
-					]
-				},
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"sitename\":\"default\"\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/site/_byname",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"site",
-						"_byname"
 					]
 				}
 			},
@@ -1570,8 +1502,8 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code should be 400\", function () {",
-							"    pm.response.to.have.status(400);",
+							"pm.test(\"Status code should be 404\", function () {",
+							"    pm.response.to.have.status(404);",
 							"});",
 							""
 						],
@@ -1720,7 +1652,7 @@
 					"script": {
 						"exec": [
 							"pm.test(\"Status code should be 400\", function () {",
-							"    pm.response.to.have.status(400);",
+							"    pm.response.to.have.status(404);",
 							"});"
 						],
 						"type": "text/javascript"

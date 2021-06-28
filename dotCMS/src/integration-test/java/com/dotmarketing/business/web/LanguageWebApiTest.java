@@ -15,7 +15,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.dotcms.mock.request.MockAttributeRequest;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockParameterRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.util.IntegrationTestInitService;
@@ -42,7 +42,7 @@ public class LanguageWebApiTest {
 
 
         HttpServletRequest pageRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                         .request();
 
         Language lang = lapi.getLanguage(pageRequest);
@@ -56,7 +56,7 @@ public class LanguageWebApiTest {
         final Language spanishLanguage = TestDataUtils.getSpanishLanguage();
 
         HttpServletRequest pageRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                         .request();
         
         // test passing in a parameter
@@ -74,11 +74,11 @@ public class LanguageWebApiTest {
         final Language spanishLanguage = TestDataUtils.getSpanishLanguage();
 
         HttpServletRequest pageRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                         .request();
         
         pageRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                         .request();
         
         // test passing in a parameter
@@ -97,11 +97,11 @@ public class LanguageWebApiTest {
         final Language spanishLanguage = TestDataUtils.getSpanishLanguage();
 
         HttpServletRequest pageRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                         .request();
         
         pageRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                         .request();
 
         pageRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(spanishLanguage.getId()));
@@ -118,7 +118,7 @@ public class LanguageWebApiTest {
         final Language spanishLanguage = TestDataUtils.getSpanishLanguage();
 
         HttpServletRequest pageRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                         .request();
         
         assertEquals(pageRequest.getSession(false), null);
@@ -139,7 +139,7 @@ public class LanguageWebApiTest {
     @Test
     public void testLangInTimeMachine() {
         HttpServletRequest pageRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                         .request();
 
         final Language spanishLanguage = TestDataUtils.getSpanishLanguage();
@@ -168,7 +168,7 @@ public class LanguageWebApiTest {
     public void testBadLangWebKeyParameter() {
 
         HttpServletRequest pageRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                         .request();
         Language lang1 = lapi.getLanguage(pageRequest);
         assertEquals(lang1.getId(), 1);
@@ -176,7 +176,7 @@ public class LanguageWebApiTest {
         
         
         pageRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                         .request();
         // test passing in a parameter
         ImmutableMap<String, String> map =
@@ -189,7 +189,7 @@ public class LanguageWebApiTest {
         
         
         pageRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                         .request();
         // test passing in a parameter
         map =
@@ -208,7 +208,7 @@ public class LanguageWebApiTest {
         final Language spanishLanguage = TestDataUtils.getSpanishLanguage();
         
         HttpServletRequest pageRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                         .request();
         
         Map<String, String> map = new HashMap<>();
@@ -223,7 +223,7 @@ public class LanguageWebApiTest {
         
         
         pageRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                         .request();
 
         pageRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(spanishLanguage.getId()));

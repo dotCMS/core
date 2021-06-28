@@ -1,0 +1,34 @@
+#!/bin/bash
+set -e
+. "$DOTCLI_WORKDIR/common"
+
+#####################################################################################
+# This script is consumed by others expecting it to return a language ID via stdout #
+# Do not fill it with unnecessary calls to echo as it might break the output        #
+#####################################################################################
+
+langDir="$1"
+
+if [[ ! -d "$langDir" ]]; then
+    cli_log " The directory $langDir does not exist."
+    exit 1
+fi
+
+     languageTag=$(basename "${langDir}")
+     code=$(curl -s -o /dev/null --head -w "%{http_code}" --header "Authorization: Bearer ${JSON_WEB_TOKEN}" "${DOTCMS_BASE_URL}/api/v2/languages/${languageTag}" )
+     if [[ 404 == ${code} ]];
+     then
+        response=$(curl -s -X POST "${DOTCMS_BASE_URL}/api/v2/languages/${languageTag}" --header "Authorization: Bearer ${JSON_WEB_TOKEN}" )
+        identifier=$(jq -r 'try .entity.id' <<< "$response")
+
+     else
+        response=$(curl -s --header "Authorization: Bearer ${JSON_WEB_TOKEN}" "${DOTCMS_BASE_URL}/api/v2/languages/${languageTag}" )
+        identifier=$(jq -r 'try .entity.id' <<< "$response")
+     fi
+
+    if [[ ! -z ${identifier+x} ]]; then
+       # value returned by the script
+       echo "$identifier"
+      else
+       echo null
+    fi
