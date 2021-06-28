@@ -216,31 +216,8 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
                             "filter", new String[] {"subsample"}
             );
             incomingImage = new SubSampleImageFilter().runFilter(incomingImage, params);
-            originalSize = getWidthHeight(incomingImage);
         }
         
-/*
-        int biggestSide=Math.max(originalSize.width, originalSize.height);
-        final int biggestSideDesired = Math.max(width, height);
-        while(biggestSide/2 >  biggestSideDesired) {
-            Logger.info(getClass(), "Writing intermediate image: have " + biggestSide  + "px, want " + biggestSideDesired + "px");
-            final Map<String, String[]> params = ImmutableMap.of(
-                            "subsample_w", new String[] {String.valueOf(biggestSide/2)},
-                            "subsample_h", new String[] {String.valueOf(biggestSide/2)},
-                            "subsample_hash", new String[] {hash},
-                            "filter", new String[] {"subsample"}
-            );
-            incomingImage = new SubSampleImageFilter().runFilter(incomingImage, params);
-            originalSize = getWidthHeight(incomingImage);
-            biggestSide=Math.max(originalSize.width, originalSize.height);
-        }
-        
-*/
-        
-        
-
-
-
         return this.resizeImage(incomingImage, width, height, resampleOption);
 
     }
