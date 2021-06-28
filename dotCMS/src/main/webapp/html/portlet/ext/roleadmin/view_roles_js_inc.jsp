@@ -1228,6 +1228,7 @@
 	    data.portletName =dijit.byId("customPortletName").attr('value');
 	    data.baseTypes =dijit.byId("customPortletBaseTypes").attr('value');
 	    data.contentTypes =dijit.byId("customPortletContentTypes").attr('value');
+	    data.dataViewMode = dojo.query('input[type=radio][name=dataViewMode]:checked')[0].value;;
 
 	      var xhrArgs = {
 	          url : "/api/v1/portlet/custom",
