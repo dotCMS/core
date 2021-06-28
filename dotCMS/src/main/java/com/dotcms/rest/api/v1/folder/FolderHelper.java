@@ -208,7 +208,7 @@ public class FolderHelper {
         final Host host = APILocator.getHostAPI().find(siteId, user, false);
         final List<Folder> subFoldersOfRootPath = APILocator.getFolderAPI()
                 .findSubFolders(host, user, false);
-        subFoldersOfRootPath.stream().filter(f -> f.getPath().startsWith(pathToSearch))
+        subFoldersOfRootPath.stream().filter(folder -> folder.getPath().startsWith(pathToSearch))
                 .limit(20).forEach(
                 f -> subFolders.add(new FolderSearchResultView(f.getPath(), host.getHostname())));
 
@@ -225,19 +225,19 @@ public class FolderHelper {
         final List<FolderSearchResultView> subFolders = new ArrayList<>();
         final Host host = APILocator.getHostAPI().find(siteId, user, false);
 
-        final int last_slash_pos = pathToSearch.lastIndexOf("/");
-        final String last_valid_path = pathToSearch.substring(0, last_slash_pos);
-        final Folder last_valid_folder = APILocator.getFolderAPI()
-                .findFolderByPath(last_valid_path, host, user, false);
-        if (UtilMethods.isSet(last_valid_folder) && UtilMethods
-                .isSet(last_valid_folder.getInode())) {
+        final int lastIndexOf = pathToSearch.lastIndexOf(StringPool.FORWARD_SLASH);
+        final String lastValidPath = pathToSearch.substring(0, lastIndexOf);
+        final Folder lastValidFolder = APILocator.getFolderAPI()
+                .findFolderByPath(lastValidPath, host, user, false);
+        if (UtilMethods.isSet(lastValidFolder) && UtilMethods
+                .isSet(lastValidFolder.getInode())) {
             final List<Folder> subFoldersOfLastValidPath = APILocator.getFolderAPI()
-                    .findSubFolders(last_valid_folder, user, false);
+                    .findSubFolders(lastValidFolder, user, false);
             subFoldersOfLastValidPath.stream()
-                    .filter(f -> f.getPath()
+                    .filter(folder -> folder.getPath()
                             .startsWith(pathToSearch))
-                    .limit(20).forEach(f -> subFolders
-                    .add(new FolderSearchResultView(f.getPath(), host.getHostname())));
+                    .limit(20).forEach(folder -> subFolders
+                    .add(new FolderSearchResultView(folder.getPath(), host.getHostname())));
         }
         return subFolders;
     }

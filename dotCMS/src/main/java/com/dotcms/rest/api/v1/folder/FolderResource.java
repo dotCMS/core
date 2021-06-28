@@ -226,7 +226,7 @@ public class FolderResource implements Serializable {
             if(null == site){
                 throw new DoesNotExistException(String.format(" Couldn't find any host with name `%s` ",sitePath));
             }else{
-                siteId = APILocator.getHostAPI().findByName(sitePath, user,false).getIdentifier();
+                siteId = site.getIdentifier();
             }
             folderPath = path.split(StringPool.FORWARD_SLASH,2).length == 2  ?
                     path.split(StringPool.FORWARD_SLASH,2)[1] :
