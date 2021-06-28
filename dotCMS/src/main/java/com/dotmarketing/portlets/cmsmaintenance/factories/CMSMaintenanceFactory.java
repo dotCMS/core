@@ -80,11 +80,11 @@ public class CMSMaintenanceFactory {
                 startDate.add(Calendar.SECOND,
                         Config.getIntProperty("DROP_OLD_ASSET_ITERATE_BY_SECONDS", 60 * 60 * 24 * 30));
                 // We should never go past the date the user entered
+                totalRecords += deletedRecords;
+                HibernateUtil.commitTransaction();
                 if (startDate.getTime().after(assetsOlderThan)) {
                     break;
                 }
-                totalRecords += deletedRecords;
-                HibernateUtil.commitTransaction();
             } catch (final Exception ex) {
                 Logger.error(CMSMaintenanceFactory.class,
                         String.format("An error occurred when deleting old asset versions: %s", ex.getMessage()), ex);

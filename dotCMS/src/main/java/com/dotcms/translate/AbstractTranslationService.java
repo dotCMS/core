@@ -79,7 +79,6 @@ public abstract class AbstractTranslationService implements TranslationService {
             Contentlet translated = apiProvider.contentletAPI()
                 .checkout(src.getInode(), user, false);
 
-            translated.setInode("");
             translated.setLanguageId(translateTo.getId());
 
             int i = 0;

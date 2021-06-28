@@ -92,13 +92,9 @@ jobs:
           echo "COMMIT_MESSG: ${COMMIT_MESSG}"
           echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
 
-          if [[ ${BUILD_ID} =~ master|^release-.*|^test-.* ]]; then
-            SPECIAL_BRANCH=true
-          else
-            SPECIAL_BRANCH=false
-          fi
+          [[ ${BUILD_ID} =~ master|^release-.*|^test-.* ]] && SPECIAL_BRANCH=true
 
-          if [[ ${IS_PR} == true || ${SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ run-all|run-curl ]]; then
+          if [[ ${IS_PR} == true || "${SPECIAL_BRANCH}" == 'true' || ${COMMIT_MESSG} =~ run-all|run-curl ]]; then
             echo "jobRun=true" >> $GITHUB_ENV
           else
             echo "jobRun=false" >> $GITHUB_ENV
@@ -161,52 +157,25 @@ jobs:
           echo "COMMIT_MESSG: ${COMMIT_MESSG}"
           echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
 
-          if [[ ${BUILD_ID} =~ master|^release-.*|^test-.* ]]; then
-            SPECIAL_BRANCH=true
-          else
-            SPECIAL_BRANCH=false
-          fi
+          [[ ${IS_PR} == false && ${BUILD_ID} =~ master|^release-.*|^test-.* ]] && SPECIAL_BRANCH=true
 
-          if [[ ${IS_PR} == false && ${SPECIAL_BRANCH} == true ]]; then
-            PUSH_AND_SPECIAL_BRANCH=true
-          else
-            PUSH_AND_SPECIAL_BRANCH=false
-          fi
+          # Evaluate postgres
+          [[ ((! ${COMMIT_MESSG} =~ run-mysql|run-oracle|run-mssql) || ${COMMIT_MESSG} =~ run-all|run-postgres) \
+            && "${{ matrix.databaseType }}" == 'postgres' ]] && RUN_POSTGRES=true
+          # Evaluate mysql
+          [[ ("${SPECIAL_BRANCH}" == 'true' || ${COMMIT_MESSG} =~ run-all|run-mysql) \
+            && "${{ matrix.databaseType }}" == 'mysql' ]] && RUN_MYSQL=true
+          # Evaluate oracle
+          [[ ("${SPECIAL_BRANCH}" == 'true' || ${COMMIT_MESSG} =~ run-all|run-oracle) \
+            && "${{ matrix.databaseType }}" == 'oracle' ]] && RUN_ORACLE=true && echo "WAIT_DB_FOR=60" >> $GITHUB_ENV
+          # Evaluate mssql
+          [[ ("${SPECIAL_BRANCH}" == 'true' || ${COMMIT_MESSG} =~ run-all|run-mssql) \
+            && "${{ matrix.databaseType }}" == 'mssql' ]] && RUN_MSSQL=true
 
-          if [[ (! ${COMMIT_MESSG} =~ run-mysql|run-oracle|run-mssql) || ${COMMIT_MESSG} =~ run-all|run-postgres ]]; then
-            RUN_POSTGRES=true
+          if [[ "${RUN_POSTGRES}" == 'true' || "${RUN_MYSQL}" == 'true' || "${RUN_ORACLE}" == 'true' || "${RUN_MSSQL}" == 'true' ]]; then
+            JOB_RUN=true
           else
-            RUN_POSTGRES=false
-          fi
-          echo "runPostgres=${RUN_POSTGRES}" >> $GITHUB_ENV
-
-          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ run-all|run-mysql ]]; then
-            RUN_MYSQL=true
-          else
-            RUN_MYSQL=false
-          fi
-          echo "runMysql=${RUN_MYSQL}" >> $GITHUB_ENV
-
-          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ run-all|run-oracle ]]; then
-            RUN_ORACLE=true
-          else
-            RUN_ORACLE=false
-          fi
-          echo "runOracle=${RUN_ORACLE}" >> $GITHUB_ENV
-
-          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ run-all|run-mssql ]]; then
-            RUN_MSSQL=true
-          else
-            RUN_MSSQL=false
-          fi
-          echo "runMssql=${RUN_MSSQL}" >> $GITHUB_ENV
-
-          JOB_RUN=false
-          echo "jobRun=false" >> $GITHUB_ENV
-          if [[ ${IS_PR} == true || ${SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ run-all|run-postgres|run-mysql|run-oracle|run-mssql|run-unit ]]; then
-            if [[ (${RUN_POSTGRES} == true && "${{ matrix.databaseType }}" == "postgres") || (${RUN_MYSQL} == true && "${{ matrix.databaseType }}" == "mysql") || (${RUN_ORACLE}  == true && "${{ matrix.databaseType }}" == "oracle") || (${RUN_MSSQL} == true && "${{ matrix.databaseType }}" == "mssql") ]]; then
-              JOB_RUN=true
-            fi
+            JOB_RUN=false
           fi
           echo "jobRun=${JOB_RUN}" >> $GITHUB_ENV
       - name: Prepare dot-cicd

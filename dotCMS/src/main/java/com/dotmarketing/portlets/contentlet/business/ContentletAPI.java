@@ -424,15 +424,6 @@ public interface ContentletAPI {
 	 */
 	public void cleanHostField(Structure structure, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotMappingException;
 
-	/**
-	 * Finds the next date that a contentlet must be reviewed
-	 * @param content 
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @return Date
-	 * @throws DotSecurityException
-	 */
-	public Date getNextReview(Contentlet content, User user, boolean respectFrontendRoles) throws DotSecurityException;
 
 	/**
 	 * Retrieves all references for a Contentlet. The result is an ArrayList of type Map whose key will 
@@ -1691,23 +1682,6 @@ public interface ContentletAPI {
 	 */
 	public boolean isFieldTypeFloat(Field field);
 
-	/**
-	 * Converts a "fat" (legacy) contentlet into a new contentlet.
-	 * @param fatty Fat contentlet to be converted.
-	 * @return A "light" contentlet.
-	 * @throws DotDataException
-	 * @throws DotSecurityException 
-	 */
-	public Contentlet convertFatContentletToContentlet (com.dotmarketing.portlets.contentlet.business.Contentlet fatty) throws DotDataException, DotSecurityException;
-	
-	/**
-	 * Converts a "light" contentlet into a "fat" (legacy) contentlet.
-	 * @param cont A "light" contentlet to be converted.
-	 * @return fatty Fat contentlet.
-	 * @throws DotDataException
-	 */
-	public com.dotmarketing.portlets.contentlet.business.Contentlet convertContentletToFatContentlet (Contentlet cont, com.dotmarketing.portlets.contentlet.business.Contentlet fatty) throws DotDataException;
-    
    /**
     * Delete old versions contents that are older than a given date
 	* Used by the Drop Old Assets Version Tool. For regular deletion
