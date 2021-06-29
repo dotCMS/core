@@ -848,12 +848,12 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			fileMetadataAPI.filterMetadataFields(keyValueMap, allowedFields);
 
             final String keyValuePrefix = FileAssetAPI.META_DATA_FIELD.toLowerCase();
-            keyValueMap.forEach((k, v) -> contentletMap.put(keyValuePrefix + PERIOD + k, v));
+            keyValueMap.forEach((k, v) -> contentletMap.put(keyValuePrefix + PERIOD + k, String.valueOf(v)));
 		} 
 
 		keyValueMap.forEach((k, v) -> {
 			((List)contentletMap.computeIfAbsent(keyName, key -> new ArrayList<>())).add(
-                ImmutableMap.of( "key", k, "value", String.valueOf(v),  "value__flat", k + "__" + v)   
+                ImmutableMap.of( "key", k.toLowerCase(), "value", String.valueOf(v),  "key_value", (k + "_" + v).toLowerCase())   
 			 );
 		});
 		

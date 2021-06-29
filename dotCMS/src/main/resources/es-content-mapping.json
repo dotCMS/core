@@ -84,10 +84,17 @@
                   }
               }
           },
-
           {
               "hostname" : {
                   "path_match": "host.hostname",
+                  "mapping": {
+                      "type": "keyword"
+                  }
+              }
+          },
+          {
+              "key_value": {
+                  "match": "*key_value",
                   "mapping": {
                       "type": "keyword"
                   }
@@ -99,14 +106,6 @@
                   "mapping": {
                       "analyzer": "my_analyzer",
                       "type": "text"
-                  }
-              }
-          },
-          {
-              "key_value": {
-                  "match": "*value_flat",
-                  "mapping": {
-                      "type": "keyword"
                   }
               }
           }
