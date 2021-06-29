@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.links.business;
 
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import java.util.List;
 import java.util.Map;
 
@@ -62,5 +63,12 @@ public interface MenuLinkFactory {
      * @throws DotDataException 
      */
 	void save(Link menuLink, Folder destination) throws DotDataException, DotStateException, DotSecurityException;
-	
+
+    /**
+     * Given a link inode, it will return a list of all parent contentlets it has
+     * @param childInode {@link Link}'s inode
+     * @return
+     * @throws DotDataException
+     */
+	List<Contentlet> getParentContentlets(final String childInode) throws DotDataException;
 }

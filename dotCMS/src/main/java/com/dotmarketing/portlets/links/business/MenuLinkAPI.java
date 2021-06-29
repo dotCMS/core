@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.links.business;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -158,4 +160,11 @@ public interface MenuLinkAPI {
 	 */
 	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException;
 
+    /**
+     * Given a link inode, it will return a list of all parent contentlets it has
+     * @param childInode {@link Link}'s inode
+     * @return
+     * @throws DotDataException
+     */
+    List<Contentlet> getParentContentlets(String childInode) throws DotDataException;
 }

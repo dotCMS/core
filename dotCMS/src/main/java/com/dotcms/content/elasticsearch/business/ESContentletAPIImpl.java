@@ -1266,32 +1266,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         cleanField(structure, null, oldField, user, respectFrontendRoles);
     }
 
-    @Override
-    public Date getNextReview(Contentlet content, User user, boolean respectFrontendRoles) throws DotSecurityException {
-
-        Date baseDate = new Date();
-        String reviewInterval = content.getReviewInterval();
-        Pattern p = Pattern.compile("(\\d+)([dmy])");
-        Matcher m = p.matcher(reviewInterval);
-        boolean b = m.matches();
-        GregorianCalendar cal = new GregorianCalendar();
-        cal.setTime(baseDate);
-        if (b) {
-            int num = Integer.parseInt(m.group(1));
-            String qual = m.group(2);
-            if (qual.equals("d")) {
-                cal.add(GregorianCalendar.DATE, num);
-            }
-            if (qual.equals("m")) {
-                cal.add(GregorianCalendar.MONTH, num);
-            }
-            if (qual.equals("y")) {
-                cal.add(GregorianCalendar.YEAR, num);
-            }
-        }
-        return cal.getTime();
-    }
-
     /**
      * Searches for a HTML Page with a given identifier and a given languageId, the languageId will be use only
      * the new HTML Pages (pages as content).
@@ -4793,10 +4767,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
             HashMap<String, String> tagsValues = new HashMap<>();
             String tagsHost = Host.SYSTEM_HOST;
 
-
-            
-            
-
             for ( com.dotcms.contenttype.model.field.Field field : contentType.fields(TagField.class) ) {
                 String value = null;
                 if ( contentlet.getStringProperty(field.variable()) != null ) {
@@ -4844,29 +4814,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
             contentlet.setIndexPolicyDependencies(indexPolicyDependencies);
 
 
-            //Relate the tags with the saved contentlet
-            for ( Entry<String, String> tagEntry : tagsValues.entrySet() ) {
-                //From the given CSV tags names list search for the tag objects and if does not exist create them
-                List<Tag> list = tagAPI.getTagsInText(tagEntry.getValue(), tagsHost);
-
-                // empty string for tag field value wipes out existing tags
-                if(UtilMethods.isSet(list) || tagEntry.getValue().equals("")) {
-                    tagAPI.deleteTagInodesByInodeAndFieldVarName(contentlet.getInode(),
-                            tagEntry.getKey());
-                }
-
-                for ( Tag tag : list ) {
-                    //Relate the found/created tag with this contentlet
-                    tagAPI.addContentletTagInode(tag, contentlet.getInode(), tagEntry.getKey());
-                }
-            }
-
             if (!InodeUtils.isSet(contentlet.getIdentifier())) {
 
                 //Adding back temporarily the page URL to the contentlet, is needed in order to create a proper Identifier
                 addURLToContentlet( contentlet, htmlPageURL );
 
-                Treeable parent;
+                final Treeable parent;
                 if ( UtilMethods.isSet( contentletRaw.getFolder() ) && !contentletRaw.getFolder().equals( FolderAPI.SYSTEM_FOLDER ) ) {
                     parent = APILocator.getFolderAPI().find( contentletRaw.getFolder(), sysuser, false );
                 } else {
@@ -4890,7 +4843,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
 
-                String oldURI = identifier.getURI();
+                final String oldURI = identifier.getURI();
 
                 // make sure the identifier is removed from cache
                 // because changes here may affect URI then IdentifierCache
@@ -4901,8 +4854,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET){
                     try {
                         if(contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD) == null){
-                            String binaryIdentifier = contentletRaw.getIdentifier() != null ? contentletRaw.getIdentifier() : StringPool.BLANK;
-                            String binarynode = contentletRaw.getInode() != null ? contentletRaw.getInode() : StringPool.BLANK;
+                            final String binaryIdentifier = contentletRaw.getIdentifier() != null ? contentletRaw.getIdentifier() : StringPool.BLANK;
+                            final String binarynode = contentletRaw.getInode() != null ? contentletRaw.getInode() : StringPool.BLANK;
                             throw new FileAssetValidationException("Unable to validate field: " + FileAssetAPI.BINARY_FIELD
                                     + " identifier: " + binaryIdentifier
                                     + " inode: " + binarynode);
@@ -4925,7 +4878,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     identifier.setAssetName( htmlPageURL );
                 }
                 if(UtilMethods.isSet(contentletRaw.getFolder()) && !contentletRaw.getFolder().equals(FolderAPI.SYSTEM_FOLDER)){
-                    Folder folder = APILocator.getFolderAPI().find(contentletRaw.getFolder(), sysuser, false);
+                    final Folder folder = APILocator.getFolderAPI().find(contentletRaw.getFolder(), sysuser, false);
                     Identifier folderIdent = APILocator.getIdentifierAPI().find(folder);
                     identifier.setParentPath(folderIdent.getPath());
                 }
@@ -4935,6 +4888,29 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 identifier = APILocator.getIdentifierAPI().save(identifier);
 
                 changedURI = ! oldURI.equals(identifier.getURI());
+            }
+
+            //Relate the tags with the saved contentlet
+            for (final Entry<String, String> tagEntry : tagsValues.entrySet() ) {
+                //From the given CSV tags names list search for the tag objects and if does not exist create them
+                final List<Tag> tagList = tagAPI.getTagsInText(tagEntry.getValue(), tagsHost);
+
+                // empty string for tag field value wipes out existing tags
+                if(UtilMethods.isSet(tagList) || StringPool.BLANK.equals(tagEntry.getValue())) {
+                    tagAPI.deleteTagInodesByInodeAndFieldVarName(contentlet.getInode(),
+                            tagEntry.getKey());
+                }
+
+                for (final Tag tag : tagList ) {
+                    //Relate the found/created tag with this contentlet
+                    tagAPI.addContentletTagInode(tag, contentlet.getInode(), tagEntry.getKey());
+                }
+                //Adding tags back as field to be returned
+                if (tagEntry.getValue()!=null && !StringPool.BLANK.equals(tagEntry.getValue())) {
+                    contentlet.setProperty(tagEntry.getKey(), tagEntry.getValue());
+                } else{
+                    contentlet.setProperty(tagEntry.getKey(), null);
+                }
             }
 
             APILocator.getVersionableAPI().setWorking(contentlet);
@@ -5932,12 +5908,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     contentlet.setLanguageId((Long)value);
                 }else if(conVariable.equals(Contentlet.STRUCTURE_INODE_KEY)){
                     contentlet.setStructureInode((String)value);
-                }else if(conVariable.equals(Contentlet.LAST_REVIEW_KEY)){
-                    contentlet.setLastReview((Date)value);
-                }else if(conVariable.equals(Contentlet.NEXT_REVIEW_KEY)){
-                    contentlet.setNextReview((Date)value);
-                }else if(conVariable.equals(Contentlet.REVIEW_INTERNAL_KEY)){
-                    contentlet.setReviewInterval((String)value);
                 }else if(conVariable.equals(Contentlet.DISABLED_WYSIWYG_KEY)){
                     contentlet.setDisabledWysiwyg((List<String>)value);
                 }else if(conVariable.equals(Contentlet.MOD_DATE_KEY)){
@@ -5973,13 +5943,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             contentlet.setProperty(conVariable, value);
                         }
                     }else if(isFieldTypeBoolean(field)){
-                        contentlet.setBoolProperty(conVariable, value != null ? (Boolean)value : null);
+                        contentlet.setBoolProperty(conVariable, ConversionUtils.toBooleanFromDb(value));
                     }else if(isFieldTypeFloat(field)){
-                        contentlet.setFloatProperty(conVariable, value != null ? (Float)value : null);
+                        contentlet.setFloatProperty(conVariable, ConversionUtils.toFloat(value, 0));
                     }else if(isFieldTypeDate(field)){
                         contentlet.setDateProperty(conVariable,value != null ? (Date)value : null);
                     }else if(isFieldTypeLong(field)){
-                        contentlet.setLongProperty(conVariable,value != null ? ((Number)value).longValue(): null);
+                        contentlet.setLongProperty(conVariable, ConversionUtils.toLong(value, 0L));
                     }else if(isFieldTypeBinary(field)){
                         final File myFile = (value instanceof String) ? new File(String.valueOf(value)) : (File) value; 
                         contentlet.setBinary(conVariable,myFile);
@@ -7078,23 +7048,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return true;
         }
         return false;
-    }
-
-    @CloseDBIfOpened
-    @Override
-    public com.dotmarketing.portlets.contentlet.business.Contentlet convertContentletToFatContentlet(
-            Contentlet cont,
-            com.dotmarketing.portlets.contentlet.business.Contentlet fatty)
-            throws DotDataException {
-        return contentFactory.convertContentletToFatContentlet(cont, fatty);
-    }
-
-    @CloseDBIfOpened
-    @Override
-    public Contentlet convertFatContentletToContentlet(
-            com.dotmarketing.portlets.contentlet.business.Contentlet fatty)
-            throws DotDataException, DotSecurityException {
-        return contentFactory.convertFatContentletToContentlet(fatty);
     }
 
     /**

@@ -145,7 +145,6 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             //Spanish version
             newsContentletInSpanish = contentletAPI.checkout(newsContentlet.getInode(), user, false);
             newsContentletInSpanish.setIndexPolicy(IndexPolicy.FORCE);
-            newsContentletInSpanish.setInode("");
             newsContentletInSpanish.setLanguageId(spanishLanguage.getId());
 
             newsContentletInSpanish = contentletAPI.checkin(newsContentletInSpanish,  user, false);

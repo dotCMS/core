@@ -7,10 +7,12 @@ public class FolderSearchResultView {
 
     private final String path;
     private final String hostname;
+    private final boolean addChildrenAllowed;
 
-    public FolderSearchResultView(String path, String hostname) {
+    public FolderSearchResultView(final String path, final String hostname, final boolean addChildrenAllowed) {
         this.path = path;
         this.hostname = hostname;
+        this.addChildrenAllowed = addChildrenAllowed;
     }
 
 
@@ -21,4 +23,6 @@ public class FolderSearchResultView {
     public String getHostname() {
         return hostname;
     }
+
+    public boolean isAddChildrenAllowed(){ return addChildrenAllowed; }
 }

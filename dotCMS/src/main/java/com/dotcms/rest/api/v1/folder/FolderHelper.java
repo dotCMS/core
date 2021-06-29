@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.folder;
 import com.dotcms.util.TreeableNameComparator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -210,7 +211,9 @@ public class FolderHelper {
                 .findSubFolders(host, user, false);
         subFoldersOfRootPath.stream().filter(folder -> folder.getPath().startsWith(pathToSearch))
                 .limit(20).forEach(
-                f -> subFolders.add(new FolderSearchResultView(f.getPath(), host.getHostname())));
+                folder -> subFolders.add(new FolderSearchResultView(folder.getPath(), host.getHostname(),
+                        Try.of(() -> APILocator.getPermissionAPI().doesUserHavePermission(folder,
+                                PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user)).getOrElse(false))));
 
         return subFolders;
     }
@@ -237,7 +240,9 @@ public class FolderHelper {
                     .filter(folder -> folder.getPath()
                             .startsWith(pathToSearch))
                     .limit(20).forEach(folder -> subFolders
-                    .add(new FolderSearchResultView(folder.getPath(), host.getHostname())));
+                    .add(new FolderSearchResultView(folder.getPath(), host.getHostname(),
+                            Try.of(() -> APILocator.getPermissionAPI().doesUserHavePermission(folder,
+                                    PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user)).getOrElse(false))));
         }
         return subFolders;
     }

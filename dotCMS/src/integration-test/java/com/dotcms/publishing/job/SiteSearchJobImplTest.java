@@ -756,21 +756,12 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         }
     }
 
-    private HTMLPageAsset createNewVersionHtmlPage(HTMLPageAsset pageDefaultLang, Language secondLang)
-            throws DotSecurityException, DotDataException {
-        Contentlet pageSecondLang = contentletAPI.find(pageDefaultLang.getInode(), systemUser, false);
-        pageSecondLang.setInode("");
-        pageSecondLang.setLanguageId(secondLang.getId());
-        pageSecondLang = contentletAPI.checkin(pageSecondLang, systemUser, false);
-        ContentletDataGen.publish(pageSecondLang);
-        return APILocator.getHTMLPageAssetAPI().fromContentlet(pageSecondLang);
-    }
-
     private void createNewVersionAndPublishExistingEmployeeContent(Language newLang,
             Contentlet contentToCheckout, String firstName) throws DotDataException, DotSecurityException {
+
         Contentlet contentInNewLang = contentletAPI
-                .find(contentToCheckout.getInode(), systemUser, false);
-        contentInNewLang.setInode("");
+                .checkout(contentToCheckout.getInode(), systemUser, false);
+
         contentInNewLang.setLanguageId(newLang.getId());
         contentInNewLang.setStringProperty("firstName", firstName);
         contentInNewLang = contentletAPI.checkin(contentInNewLang, systemUser, false);

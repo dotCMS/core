@@ -22,9 +22,6 @@ import com.liferay.portal.model.User;
  * <li> Inode
  * <li> languageId
  * <li> stInode
- * <li> lastReview
- * <li> nextReview
- * <li> reviewInternal
  * <li> disabledWYSIWYG
  * <li> locked
  * <li> archived
@@ -156,9 +153,6 @@ public interface FieldAPI {
 			Contentlet.INODE_KEY,
 			Contentlet.LANGUAGEID_KEY,
 			Contentlet.STRUCTURE_INODE_KEY,
-			Contentlet.LAST_REVIEW_KEY,
-			Contentlet.NEXT_REVIEW_KEY,
-			Contentlet.REVIEW_INTERNAL_KEY,
 			Contentlet.DISABLED_WYSIWYG_KEY,
 			Contentlet.LOCKED_KEY,
 			Contentlet.ARCHIVED_KEY,
@@ -186,7 +180,7 @@ public interface FieldAPI {
 	/**
 	 * Returns a field based on the Content Type Id and the Field Variable
 	 * 
-	 * @param type Content Type Id to search on
+	 * @param id Content Type Id to search on
 	 * @param fieldVar Field Variable to search on
 	 * @return Field Object that met the Field Variable and related to the Content Type
 	 * @throws DotDataException Error occurred when performing the action.
@@ -196,7 +190,7 @@ public interface FieldAPI {
     /**
 	 * Deletes a field variable from a field (as specified in the passed in FieldVariable object)
 	 * 
-	 * @param field Field Variable that wants to be deleted.
+	 * @param fieldVar Field Variable that wants to be deleted.
 	 * @throws DotDataException Error occurred when performing the action.
 	 */
     void delete(FieldVariable fieldVar) throws DotDataException;
