@@ -11,7 +11,7 @@ echo "Merge Docker Config ...."
 cd /srv/templates/tomcat/OVERRIDE
 [[ -f ./conf/server-${TOMCAT_VERSION}.xml ]] && \
   mv ./conf/server-${TOMCAT_VERSION}.xml ./conf/server.xml && \
-  rm ./conf/server-*.xml
+  rm -f ./conf/server-*.xml
 for OVERRIDEFILE in $(find . -type f); do
     OVERRIDE_FOLDER=$(dirname $OVERRIDEFILE)
     [[ ! -d "${TOMCAT_HOME}/${OVERRIDE_FOLDER}" ]] && mkdir -p "${TOMCAT_HOME}/${OVERRIDE_FOLDER}"

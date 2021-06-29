@@ -85,9 +85,9 @@ public class ContentletAjaxTest {
 		
 		String ident = contentlet.getIdentifier();
 		contentlet = APILocator.getContentletAPI().findContentletByIdentifier(ident, true, defaultLang.getId(), systemUser, false);
+		contentlet = APILocator.getContentletAPI().checkout(contentlet.getInode(), systemUser, false);
 		contentlet.setLanguageId(language.getId());
 		contentlet.setStringProperty("body", "italianTestIssue5330");
-		contentlet.setInode("");
         contentlet.setIndexPolicy(IndexPolicy.FORCE);
         contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
 

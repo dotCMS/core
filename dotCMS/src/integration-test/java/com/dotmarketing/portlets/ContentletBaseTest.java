@@ -376,7 +376,6 @@ public class ContentletBaseTest extends IntegrationTestBase {
 
         //Create the new Contentlet
         Contentlet contentlet = new Contentlet();
-        contentlet.setReviewInterval( "1m" );
         contentlet.setStructureInode( structure.getInode() );
         contentlet.setHost( defaultHost.getIdentifier() );
         if ( UtilMethods.isSet( language ) ) {

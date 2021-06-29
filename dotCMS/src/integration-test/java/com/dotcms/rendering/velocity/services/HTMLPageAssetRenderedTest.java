@@ -252,10 +252,9 @@ public class HTMLPageAssetRenderedTest {
         contentlet2English.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(contentlet2English, systemUser, false);
 
-        Contentlet contentlet2Spanish = contentletAPI.find(contentlet2English.getInode(), systemUser, false);
+        Contentlet contentlet2Spanish = contentletAPI.checkout(contentlet2English.getInode(), systemUser, false);
         contentlet2Spanish.setProperty("title","content2Spa");
         contentlet2Spanish.setProperty("body","content2Spa");
-        contentlet2Spanish.setInode("");
         contentlet2Spanish.setLanguageId(spanishLanguage.getId());
         contentlet2Spanish.setIndexPolicy(IndexPolicy.WAIT_FOR);
         contentlet2Spanish.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
@@ -536,8 +535,7 @@ public class HTMLPageAssetRenderedTest {
         final String pageName = "test2Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(template, pageName, 1);
 
-        Contentlet pageSpanishVersion = contentletAPI.find(pageEnglishVersion.getInode(),systemUser,false);
-        pageSpanishVersion.setInode("");
+        Contentlet pageSpanishVersion = contentletAPI.checkout(pageEnglishVersion.getInode(),systemUser,false);
         pageSpanishVersion.setLanguageId(spanishLanguage.getId());
         pageSpanishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
         pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
@@ -904,8 +902,7 @@ public class HTMLPageAssetRenderedTest {
         final String pageName = "test5Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(template, pageName, 1);
 
-        Contentlet pageSpanishVersion = contentletAPI.find(pageEnglishVersion.getInode(),systemUser,false);
-        pageSpanishVersion.setInode("");
+        Contentlet pageSpanishVersion = contentletAPI.checkout(pageEnglishVersion.getInode(),systemUser,false);
         pageSpanishVersion.setLanguageId(spanishLanguage.getId());
         pageSpanishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
         pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
@@ -969,9 +966,8 @@ public class HTMLPageAssetRenderedTest {
 
         final String pageName = "test6Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(template, pageName, 1);
-        Contentlet pageSpanishVersion = contentletAPI.find(pageEnglishVersion.getInode(),systemUser,false);
+        Contentlet pageSpanishVersion = contentletAPI.checkout(pageEnglishVersion.getInode(),systemUser,false);
 
-        pageSpanishVersion.setInode("");
         pageSpanishVersion.setLanguageId(spanishLanguage.getId());
         pageSpanishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
         pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);

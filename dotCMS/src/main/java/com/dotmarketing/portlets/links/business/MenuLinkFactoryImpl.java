@@ -16,6 +16,7 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.menubuilders.RefreshMenus;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.util.InodeUtils;
@@ -258,6 +259,19 @@ public class MenuLinkFactoryImpl implements MenuLinkFactory {
 		}
 
 		return assets;
-
 	}
+
+    @Override
+    public List<Contentlet> getParentContentlets(final String childInode) throws DotDataException {
+
+        final DotConnect dotConnect = new DotConnect();
+        dotConnect.setSQL("SELECT contentlet.* from contentlet, tree, inode where tree.child = ? and "
+                + "tree.parent = contentlet.inode and inode.inode = contentlet.inode "
+                + "and inode.type = 'contentlet'");
+
+        dotConnect.addParam(childInode);
+
+        return TransformerLocator
+                .createContentletTransformer(dotConnect.loadObjectResults()).asList();
+    }
 }

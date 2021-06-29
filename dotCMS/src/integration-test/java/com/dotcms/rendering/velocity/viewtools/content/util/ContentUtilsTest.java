@@ -300,7 +300,6 @@ public class ContentUtilsTest {
             Contentlet parentInSpanish = contentletAPI
                     .checkout(parentInEnglish.getInode(), user, false);
 
-            parentInSpanish.setInode("");
             parentInSpanish.setLanguageId(spanishLanguage.getId());
             parentInSpanish.setIndexPolicy(IndexPolicy.FORCE);
 
@@ -582,7 +581,6 @@ public class ContentUtilsTest {
             childContent = contentletAPI
                     .checkout(childContent.getInode(), user, false);
 
-            childContent.setInode("");
             childContent.setLanguageId(defaultLanguage.getId());
             childContent.setIndexPolicy(IndexPolicy.FORCE);
 
@@ -606,7 +604,6 @@ public class ContentUtilsTest {
             parentContent = contentletAPI
                     .checkout(parentContent.getInode(), user, false);
 
-            parentContent.setInode("");
             parentContent.setLanguageId(defaultLanguage.getId());
             parentContent.setIndexPolicy(IndexPolicy.FORCE);
 
