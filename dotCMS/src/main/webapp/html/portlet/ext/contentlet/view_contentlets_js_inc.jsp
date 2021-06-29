@@ -1376,7 +1376,7 @@
           }
 
           if (viewDisplayMode) {
-              changeView(viewDisplayMode);
+              changeView(viewDisplayMode, true);
           }
 
           // Wait for the "HostFolderFilteringSelect" widget to end the values updating process before proceeding with the search, if necessary.
@@ -1761,8 +1761,10 @@
             pushHandler.showDialog(objId, false, isArchived);
         }
 
-        function changeView(view) {
-          localStorage.setItem(DOTCMS_DATAVIEW_MODE, view)
+        function changeView(view, skipLocalStorage = false) {
+          if (!skipLocalStorage) {
+            localStorage.setItem(DOTCMS_DATAVIEW_MODE, view)
+          }
           state.view = view;
 
           let card = getViewCardEl();
