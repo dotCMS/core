@@ -96,11 +96,16 @@ public class OSGIUtil {
 
         Logger.info(this, () -> "Felix base dir: " + felixDirectory);
 
+        final String felixAutoDeployDirectory = Config.getStringProperty(AUTO_DEPLOY_DIR_PROPERTY,  felixDirectory + File.separator + "bundle") ;
+        final String felixLoadDirectory =       Config.getStringProperty(FELIX_FILEINSTALL_DIR,     felixDirectory + File.separator + "load") ;
+        final String felixUndeployDirectory =   Config.getStringProperty(FELIX_UNDEPLOYED_DIR,      felixDirectory + File.separator + "undeployed") ;
+        final String felixCacheDirectory =      Config.getStringProperty(FELIX_FRAMEWORK_STORAGE,   felixDirectory + File.separator + "felix-cache") ;
+
         felixProps.put(FELIX_BASE_DIR, felixDirectory);
-        felixProps.put(AUTO_DEPLOY_DIR_PROPERTY, felixDirectory + File.separator + "bundle");
-        felixProps.put(FELIX_FRAMEWORK_STORAGE, felixDirectory + File.separator + "felix-cache");
-        felixProps.put(FELIX_FILEINSTALL_DIR, felixDirectory + File.separator + "load");
-        felixProps.put(FELIX_UNDEPLOYED_DIR, felixDirectory + File.separator + "undeployed");
+        felixProps.put(AUTO_DEPLOY_DIR_PROPERTY, felixAutoDeployDirectory);
+        felixProps.put(FELIX_FRAMEWORK_STORAGE, felixCacheDirectory);
+        felixProps.put(FELIX_FILEINSTALL_DIR, felixLoadDirectory);
+        felixProps.put(FELIX_UNDEPLOYED_DIR, felixUndeployDirectory);
 
         felixProps.put("felix.auto.deploy.action", "install,start");
         felixProps.put("felix.fileinstall.start.level", "1");
