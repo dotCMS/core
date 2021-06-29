@@ -16,7 +16,7 @@ public class NullTransport implements CacheTransport {
   private final AtomicBoolean isInitialized = new AtomicBoolean(false);
 
   @Override
-  public void init() throws CacheTransportException {
+  public void init(Server localServer) throws CacheTransportException {
     isInitialized.set(true);
   }
 

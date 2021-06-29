@@ -1,10 +1,12 @@
 package com.dotcms.cache.lettuce;
 
-public class NullLettuceClient implements LettuceClient {
+import io.lettuce.core.api.StatefulRedisConnection;
+
+public class NullLettuceClient<K, V> implements LettuceClient {
 
     @Override
-    public LettuceConnectionWrapper get() {
-        return new LettuceConnectionWrapper(null);
+    public StatefulRedisConnection<K, V> get() {
+        return null;
     }
 
 }

@@ -13,4 +13,10 @@ public class HazelcastCacheTransportClient extends AbstractHazelcastCacheTranspo
     public boolean shouldReinit() {
 	    return false;
     }
+    
+    @Override
+    public boolean requiresAutowiring() {
+       
+        return false;
+    }
 }
