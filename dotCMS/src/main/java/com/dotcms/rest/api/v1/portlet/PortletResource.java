@@ -227,27 +227,17 @@ public class PortletResource implements Serializable {
     public final Response findPortlet(@Context final HttpServletRequest request,
             @PathParam("portletId") final String portletId) {
 
-        try {
-            final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                    .requiredBackendUser(true)
-                    .requiredFrontendUser(false)
-                    .requestAndResponse(request, null)
-                    .rejectWhenNoUser(true)
-                    .init();
+        new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, null)
+                .rejectWhenNoUser(true)
+                .requiredPortlet(portletId)
+                .init();
 
-            final User user = initData.getUser();
+        return Response.ok(new ResponseEntityView(
+                map("response", APILocator.getPortletAPI().findPortlet(portletId)))).build();
 
-            if (!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(portletId, user)) {
-                return ResponseUtil.INSTANCE
-                        .getErrorResponse(request, Response.Status.UNAUTHORIZED, user.getLocale(),
-                                user.getUserId(), "unable to get portlet info");
-            }
-
-            return Response.ok(new ResponseEntityView(
-                    map("response", APILocator.getPortletAPI().findPortlet(portletId)))).build();
-        } catch (Exception e) {
-            return ResponseUtil.mapExceptionResponse(e);
-        }
     }
 
     @GET
