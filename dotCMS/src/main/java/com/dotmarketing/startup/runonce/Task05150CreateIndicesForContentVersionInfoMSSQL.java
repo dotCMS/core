@@ -30,11 +30,6 @@ public class Task05150CreateIndicesForContentVersionInfoMSSQL extends AbstractJD
     }
 
     @Override
-    public String getH2Script() {
-        return null;
-    }
-
-    @Override
     protected List<String> getTablesToDropConstraints() {
         return Collections.emptyList();
     }

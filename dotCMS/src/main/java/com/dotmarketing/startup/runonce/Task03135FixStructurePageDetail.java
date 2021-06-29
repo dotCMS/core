@@ -45,10 +45,6 @@ public class Task03135FixStructurePageDetail extends AbstractJDBCStartupTask {
 		return SQL_UPDATE_STRUCTURE_BY_URL_MAP;
 	}
 
-	@Override
-	public String getH2Script() {
-		return SQL_UPDATE_STRUCTURE_BY_URL_MAP;
-	}
 
 	protected List getTablesToDropConstraints() {
 		return null;

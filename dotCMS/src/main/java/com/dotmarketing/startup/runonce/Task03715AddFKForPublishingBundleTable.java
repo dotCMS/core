@@ -35,12 +35,6 @@ public class Task03715AddFKForPublishingBundleTable implements StartupTask {
 
         	//Add Foreign Key
             dc.executeStatement("ALTER TABLE publishing_bundle ADD CONSTRAINT FK_publishing_bundle_owner FOREIGN KEY (owner) REFERENCES user_(userid);");
-        }else if(DbConnectionFactory.isH2()) {
-        	//Fix Inconsistent Data
-        	dc.executeStatement("UPDATE publishing_bundle SET owner = 'system' WHERE owner NOT IN ( SELECT userid FROM user_ );");
-
-        	//Add Foreign Key
-            dc.executeStatement("ALTER TABLE publishing_bundle ADD CONSTRAINT FK_publishing_bundle_owner FOREIGN KEY (owner) REFERENCES user_(userid);");
         }
     }
 

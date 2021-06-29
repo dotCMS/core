@@ -91,23 +91,6 @@ public class Task03725NewNotificationTable extends AbstractJDBCStartupTask {
     }
 
     @Override
-    public String getH2Script() {
-        return "DROP TABLE notification;\n" +
-                "CREATE TABLE notification (\n" +
-                "  group_id           VARCHAR(36)  NOT NULL,\n" +
-                "  user_id            VARCHAR(255) NOT NULL,\n" +
-                "  message            TEXT         NOT NULL,\n" +
-                "  notification_type  VARCHAR(100),\n" +
-                "  notification_level VARCHAR(100),\n" +
-                "  time_sent          TIMESTAMP    NOT NULL,\n" +
-                "  was_read           BIT\n" +
-                ");\n" +
-                "ALTER TABLE notification ADD CONSTRAINT pk_notification PRIMARY KEY (group_id, user_id);\n" +
-                "ALTER TABLE notification ALTER was_read SET DEFAULT 0;" +
-                "CREATE INDEX idx_not_read ON notification (was_read);";
-    }
-
-    @Override
     protected List<String> getTablesToDropConstraints() {
         return null;
     }

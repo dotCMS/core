@@ -27,22 +27,6 @@ public class Task04365RelationshipUniqueConstraint extends AbstractJDBCStartupTa
     private static final String ORACLE_ADD_UNIQUE_CONSTRAINT = "ALTER TABLE relationship ADD CONSTRAINT unique_relation_type_value UNIQUE (relation_type_value)";
 
     @Override
-    public String getH2Script() {
-        final StringBuilder builder = new StringBuilder()
-            //Delete duplicates
-            .append("DELETE FROM relationship WHERE inode NOT IN ( ")
-            .append("  SELECT MAX (inode) FROM relationship GROUP BY relation_type_value ); ")
-
-            //Delete orphaned inodes
-            .append("DELETE FROM inode WHERE inode.type = 'relationship' AND NOT EXISTS (")
-            .append("  SELECT 1 FROM relationship WHERE inode.inode = relationship.inode); ")
-
-            //Create Unique Key
-            .append("ALTER TABLE relationship ADD CONSTRAINT unique_relation_type_value UNIQUE (relation_type_value); ");
-        return builder.toString();
-    }
-
-    @Override
     public String getPostgresScript() {
         final StringBuilder builder = new StringBuilder()
             //Delete duplicates

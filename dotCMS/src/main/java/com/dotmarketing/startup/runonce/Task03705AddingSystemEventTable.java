@@ -89,23 +89,6 @@ public class Task03705AddingSystemEventTable extends AbstractJDBCStartupTask {
 				"CREATE INDEX idx_system_event ON system_event (created);";
 	}
 
-	/**
-	 * The SQL DDL for creating the table and index for H2.
-	 *
-	 * @return
-	 */
-	@Override
-	public String getH2Script () {
-		return "CREATE TABLE system_event (\n" +
-					"identifier VARCHAR(36) NOT NULL,\n" +
-					"event_type VARCHAR(50) NOT NULL,\n" +
-					"payload TEXT NOT NULL,\n" +
-					"created BIGINT NOT NULL,\n" +
-					"PRIMARY KEY (identifier)\n" +
-				")\n" +
-				"CREATE INDEX idx_system_event ON system_event (created);";
-	}
-
 	@Override
 	protected List<String> getTablesToDropConstraints() {
 		// Not required for this task

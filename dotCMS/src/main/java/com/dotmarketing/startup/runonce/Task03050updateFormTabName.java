@@ -35,9 +35,5 @@ public class Task03050updateFormTabName extends AbstractJDBCStartupTask {
 		return true;
 	}
 
-    @Override
-    public String getH2Script() {
-        return "UPDATE cms_layout SET layout_name='Forms & Polls' WHERE id='81c3bb50-9f64-4a39-9027-46ee92192799'; ";
-    }
 
 }

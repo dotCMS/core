@@ -71,17 +71,6 @@ public class Task03710AddFKForIntegrityCheckerTables implements StartupTask {
             dc.executeStatement("alter table schemes_ir add constraint FK_scheme_ir_ep foreign key (endpoint_id) references publishing_end_point(id);");
             dc.executeStatement("alter table htmlpages_ir add constraint FK_page_ir_ep foreign key (endpoint_id) references publishing_end_point(id);");
             dc.executeStatement("alter table fileassets_ir add constraint FK_file_ir_ep foreign key (endpoint_id) references publishing_end_point(id);");
-        }else if(DbConnectionFactory.isH2()) {
-            dc.executeStatement("truncate table folders_ir;");
-            dc.executeStatement("truncate table structures_ir;");
-            dc.executeStatement("truncate table schemes_ir;");
-            dc.executeStatement("truncate table htmlpages_ir;");
-            dc.executeStatement("truncate table fileassets_ir;");
-            dc.executeStatement("alter table folders_ir add constraint FK_folder_ir_ep foreign key (endpoint_id) references publishing_end_point(id);");
-            dc.executeStatement("alter table structures_ir add constraint FK_structure_ir_ep foreign key (endpoint_id) references publishing_end_point(id);");
-            dc.executeStatement("alter table schemes_ir add constraint FK_scheme_ir_ep foreign key (endpoint_id) references publishing_end_point(id);");
-            dc.executeStatement("alter table htmlpages_ir add constraint FK_page_ir_ep foreign key (endpoint_id) references publishing_end_point(id);");
-            dc.executeStatement("alter table fileassets_ir add constraint FK_file_ir_ep foreign key (endpoint_id) references publishing_end_point(id);");
         }
     }
 
